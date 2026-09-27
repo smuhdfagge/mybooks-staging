@@ -4,6 +4,8 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -46,7 +48,14 @@ class EnsureTwoFactorVerified
             return $next($request);
         }
 
-        // Redirect to 2FA challenge
+        // Signed in (e.g. through a remember-me cookie) but 2FA has not been
+        // completed in this session. The challenge routes are guest-only, so
+        // sign out and hand over to the normal login challenge flow.
+        $remember = Auth::guard('web')->viaRemember();
+        Auth::guard('web')->logout();
+        $request->session()->put('two_factor:user_id', $user->id);
+        $request->session()->put('two_factor:remember', $remember);
+
         return redirect()->route('two-factor.challenge');
     }
 
@@ -59,7 +68,7 @@ class EnsureTwoFactorVerified
         }
 
         foreach ($this->exempt as $pattern) {
-            if (str_is($pattern, $routeName)) {
+            if (Str::is($pattern, $routeName)) {
                 return true;
             }
         }

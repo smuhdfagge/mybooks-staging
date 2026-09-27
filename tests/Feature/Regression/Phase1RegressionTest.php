@@ -88,6 +88,23 @@ class Phase1RegressionTest extends TestCase
         $this->get(route('two-factor.challenge'))->assertOk();
     }
 
+    public function test_c3_user_can_complete_the_challenge_and_continue(): void
+    {
+        $this->createAuthenticatedUser(['view dashboard']);
+        $secret = 'ABCDEFGHIJKLMNOP';
+        $this->user->forceFill([
+            'two_factor_secret' => Crypt::encryptString($secret),
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        $this->get(route('dashboard'))->assertRedirect(route('two-factor.challenge'));
+
+        $code = (new \PragmaRX\Google2FA\Google2FA())->getCurrentOtp($secret);
+        $this->post(route('two-factor.verify'), ['code' => $code])->assertRedirect(route('dashboard'));
+        $this->assertAuthenticatedAs($this->user);
+        $this->get(route('dashboard'))->assertOk();
+    }
+
     public function test_c3_verified_2fa_session_passes(): void
     {
         $this->createAuthenticatedUser(['view dashboard']);
