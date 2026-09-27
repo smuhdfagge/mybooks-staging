@@ -77,9 +77,9 @@
                         <div class="flex flex-wrap gap-4">
                             @foreach($roles as $role)
                                 <label class="flex items-center">
-                                    <input type="checkbox" name="roles[]" value="{{ $role->name }}"
+                                    <input type="checkbox" name="roles[]" value="{{ $role->id }}"
                                         class="rounded border-gray-300 dark:border-gray-600 text-indigo-600 shadow-sm focus:ring-indigo-500"
-                                        {{ in_array($role->name, old('roles', [])) ? 'checked' : '' }}>
+                                        {{ in_array($role->id, array_map('intval', old('roles', []))) ? 'checked' : '' }}>
                                     <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">{{ $role->name }}</span>
                                 </label>
                             @endforeach

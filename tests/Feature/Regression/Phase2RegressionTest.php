@@ -88,4 +88,123 @@ class Phase2RegressionTest extends TestCase
         $this->assertTrue($admin->fresh()->hasPermissionTo('manage subscription'));
         $this->assertFalse($viewer->fresh()->hasPermissionTo('manage subscription'));
     }
+
+    // ── H4 (quick fix): role assignment ─────────────────────────
+
+    /** A second organisation, created while someone is signed in. */
+    private function otherTenant()
+    {
+        return \App\Models\Customer::withoutTenantGuard(fn () => $this->createTenantWithSubscription()[0]);
+    }
+
+    private function makeRoles(): array
+    {
+        $otherTenant = $this->otherTenant();
+        Permission::findOrCreate('delete invoices', 'web');
+
+        $global = Role::create(['name' => 'accountant', 'guard_name' => 'web']);
+        $own = Role::create(['name' => 'My Clerk', 'guard_name' => 'web', 'tenant_id' => $this->tenant->id]);
+        $foreign = Role::create(['name' => 'Their Auditor', 'guard_name' => 'web', 'tenant_id' => $otherTenant->id]);
+        $foreign->givePermissionTo('delete invoices');
+        $super = Role::create(['name' => 'super-admin', 'guard_name' => 'web']);
+
+        return [$global, $own, $foreign, $super];
+    }
+
+    private function userPayload(array $roleIds, array $extra = []): array
+    {
+        return array_merge([
+            'name' => 'New Person',
+            'email' => 'new.person@example.com',
+            'password' => 'Str0ng#Passw0rd!x',
+            'password_confirmation' => 'Str0ng#Passw0rd!x',
+            'roles' => $roleIds,
+        ], $extra);
+    }
+
+    public function test_h4_can_assign_own_and_system_roles(): void
+    {
+        $this->createAuthenticatedUser(['create users']);
+        [$global, $own] = $this->makeRoles();
+
+        $this->post(route('settings.users.store'), $this->userPayload([$global->id, $own->id]))
+            ->assertRedirect(route('settings.users'));
+
+        $created = User::where('email', 'new.person@example.com')->firstOrFail();
+        $this->assertEqualsCanonicalizing(['accountant', 'My Clerk'], $created->getRoleNames()->all());
+    }
+
+    public function test_h4_cannot_assign_another_tenants_role_or_super_admin(): void
+    {
+        $this->createAuthenticatedUser(['create users']);
+        [, , $foreign, $super] = $this->makeRoles();
+
+        foreach ([$foreign, $super] as $role) {
+            $this->post(route('settings.users.store'), $this->userPayload([$role->id]))
+                ->assertSessionHasErrors('roles.0');
+        }
+        $this->assertNull(User::where('email', 'new.person@example.com')->first());
+
+        // Old name-based payloads are rejected too
+        $this->post(route('settings.users.store'), $this->userPayload(['Their Auditor']))
+            ->assertSessionHasErrors('roles.0');
+    }
+
+    public function test_h4_user_cannot_change_own_roles_or_deactivate_self(): void
+    {
+        $this->createAuthenticatedUser(['edit users']);
+        [$global, $own] = $this->makeRoles();
+        $this->user->assignRole($own);
+
+        $this->put(route('settings.users.update', $this->user), [
+            'name' => $this->user->name,
+            'email' => $this->user->email,
+            'is_active' => false,
+            'roles' => [$global->id],
+        ])->assertRedirect(route('settings.users'));
+
+        $this->user->refresh();
+        $this->assertSame(['My Clerk'], $this->user->getRoleNames()->all());
+        $this->assertTrue((bool) $this->user->is_active);
+    }
+
+    public function test_h4_editing_another_user_keeps_roles_the_editor_cannot_assign(): void
+    {
+        $this->createAuthenticatedUser(['edit users']);
+        [$global, $own, , $super] = $this->makeRoles();
+        $other = User::factory()->create(['tenant_id' => $this->tenant->id]);
+        $other->assignRole($super);
+
+        $this->put(route('settings.users.update', $other), [
+            'name' => $other->name,
+            'email' => $other->email,
+            'roles' => [$own->id],
+        ])->assertRedirect(route('settings.users'));
+
+        $this->assertEqualsCanonicalizing(['super-admin', 'My Clerk'], $other->fresh()->getRoleNames()->all());
+    }
+
+    public function test_h4_edit_form_lists_only_assignable_roles(): void
+    {
+        $this->createAuthenticatedUser(['edit users']);
+        $this->makeRoles();
+        $other = User::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $this->get(route('settings.users.edit', $other))
+            ->assertOk()
+            ->assertSee('My Clerk')
+            ->assertSee('accountant')
+            ->assertDontSee('Their Auditor')
+            ->assertDontSee('super-admin');
+    }
+
+    public function test_h4_duplicate_role_name_gives_a_form_error_not_a_crash(): void
+    {
+        $this->createAuthenticatedUser(['create roles']);
+        $otherTenant = $this->otherTenant();
+        Role::create(['name' => 'Cashier', 'guard_name' => 'web', 'tenant_id' => $otherTenant->id]);
+
+        $this->post(route('settings.roles.store'), ['name' => 'Cashier', 'permissions' => []])
+            ->assertSessionHasErrors(['name' => 'That role name is already in use. Please choose a different name.']);
+    }
 }

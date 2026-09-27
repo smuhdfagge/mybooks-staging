@@ -10,12 +10,20 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\TestEmailNotification;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Spatie\Permission\Exceptions\RoleAlreadyExists;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Permission;
 
 class SettingsController extends Controller
 {
+    /**
+     * Role names are still unique across all organisations until roles are
+     * scoped per tenant (H4, full fix in Phase 7).
+     */
+    private const ROLE_NAME_TAKEN = 'That role name is already in use. Please choose a different name.';
+
     public function company()
     {
         $tenant = auth()->user()->tenant;
@@ -54,6 +62,33 @@ class SettingsController extends Controller
         return redirect()->back()->with('success', 'Company profile updated successfully.');
     }
 
+    /**
+     * Roles a tenant may assign: its own roles plus the shared system roles,
+     * never the platform-wide super-admin role (finding H4).
+     */
+    private function assignableRoles()
+    {
+        return Role::forTenant(auth()->user()->tenant_id)
+            ->where('name', '!=', 'super-admin')
+            ->orderBy('name');
+    }
+
+    /**
+     * Validation rules for the roles[] field, which carries role IDs.
+     */
+    private function roleRules(): array
+    {
+        return [
+            'roles' => 'array',
+            'roles.*' => ['integer', Rule::in($this->assignableRoles()->pluck('id')->all())],
+        ];
+    }
+
+    private function rolesFromIds(array $ids)
+    {
+        return $this->assignableRoles()->whereIn('id', $ids)->get();
+    }
+
     public function users()
     {
         return view('settings.users.index');
@@ -71,7 +106,7 @@ class SettingsController extends Controller
                 ->with('error', "You have reached the maximum number of users allowed on the {$planName} plan. Please upgrade your subscription to add more users.");
         }
 
-        $roles = Role::forTenant(auth()->user()->tenant_id)->get();
+        $roles = $this->assignableRoles()->get();
         return view('settings.users.create', compact('roles'));
     }
 
@@ -92,8 +127,7 @@ class SettingsController extends Controller
             'email' => 'required|email|max:255|unique:users',
             'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
             'phone' => 'nullable|string|max:50',
-            'roles' => 'array',
-            'roles.*' => 'exists:roles,name',
+            ...$this->roleRules(),
         ]);
 
         $user = User::create([
@@ -105,7 +139,7 @@ class SettingsController extends Controller
         ]);
 
         if (!empty($validated['roles'])) {
-            $user->syncRoles($validated['roles']);
+            $user->syncRoles($this->rolesFromIds($validated['roles']));
         }
 
         return redirect()->route('settings.users')->with('success', 'User created successfully.');
@@ -117,8 +151,9 @@ class SettingsController extends Controller
             abort(403);
         }
 
-        $roles = Role::forTenant(auth()->user()->tenant_id)->get();
-        return view('settings.users.edit', compact('user', 'roles'));
+        $roles = $this->assignableRoles()->get();
+        $isSelf = $user->id === auth()->id() && ! auth()->user()->isSuperAdmin();
+        return view('settings.users.edit', compact('user', 'roles', 'isSelf'));
     }
 
     public function updateUser(Request $request, User $user)
@@ -133,22 +168,28 @@ class SettingsController extends Controller
             'password' => ['nullable', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
             'phone' => 'nullable|string|max:50',
             'is_active' => 'boolean',
-            'roles' => 'array',
-            'roles.*' => 'exists:roles,name',
+            ...$this->roleRules(),
         ]);
+
+        // Users cannot change their own roles or deactivate themselves (H4).
+        $isSelf = $user->id === auth()->id() && ! auth()->user()->isSuperAdmin();
 
         $user->update([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'phone' => $validated['phone'] ?? null,
-            'is_active' => $validated['is_active'] ?? true,
+            'is_active' => $isSelf ? $user->is_active : ($validated['is_active'] ?? true),
         ]);
 
         if (!empty($validated['password'])) {
             $user->update(['password' => Hash::make($validated['password'])]);
         }
 
-        $user->syncRoles($validated['roles'] ?? []);
+        if (! $isSelf) {
+            // Keep any role the editor cannot see or assign (e.g. super-admin).
+            $kept = $user->roles->reject(fn ($role) => $this->assignableRoles()->whereKey($role->id)->exists());
+            $user->syncRoles($kept->merge($this->rolesFromIds($validated['roles'] ?? [])));
+        }
 
         return redirect()->route('settings.users')->with('success', 'User updated successfully.');
     }
@@ -205,11 +246,15 @@ class SettingsController extends Controller
             'permissions.*' => 'exists:permissions,name',
         ]);
 
-        $role = Role::create([
-            'name' => $validated['name'],
-            'guard_name' => 'web',
-            'tenant_id' => $tenantId,
-        ]);
+        try {
+            $role = Role::create([
+                'name' => $validated['name'],
+                'guard_name' => 'web',
+                'tenant_id' => $tenantId,
+            ]);
+        } catch (RoleAlreadyExists) {
+            return back()->withInput()->withErrors(['name' => self::ROLE_NAME_TAKEN]);
+        }
         
         if (!empty($validated['permissions'])) {
             $role->syncPermissions($validated['permissions']);
@@ -270,11 +315,15 @@ class SettingsController extends Controller
             ]);
 
             // Create a new tenant-specific role based on the system role
-            $newRole = Role::create([
-                'name' => $validated['name'],
-                'guard_name' => 'web',
-                'tenant_id' => $tenantId,
-            ]);
+            try {
+                $newRole = Role::create([
+                    'name' => $validated['name'],
+                    'guard_name' => 'web',
+                    'tenant_id' => $tenantId,
+                ]);
+            } catch (RoleAlreadyExists) {
+                return back()->withInput()->withErrors(['name' => self::ROLE_NAME_TAKEN]);
+            }
             
             $newRole->syncPermissions($validated['permissions'] ?? []);
 
