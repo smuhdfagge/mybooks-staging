@@ -8,6 +8,7 @@ use App\Models\BomItem;
 use App\Models\Item;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 
 class BillOfMaterialController extends Controller
@@ -31,12 +32,12 @@ class BillOfMaterialController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'item_id' => 'required|exists:items,id|unique:bill_of_materials,item_id',
+            'item_id' => ['required', Rule::exists('items', 'id')->where('tenant_id', auth()->user()->tenant_id), 'unique:bill_of_materials,item_id'],
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'output_quantity' => 'required|numeric|min:0.0001',
             'components' => 'required|array|min:1',
-            'components.*.item_id' => 'required|exists:items,id',
+            'components.*.item_id' => ['required', Rule::exists('items', 'id')->where('tenant_id', auth()->user()->tenant_id)],
             'components.*.quantity' => 'required|numeric|min:0.0001',
             'components.*.waste_percentage' => 'nullable|numeric|min:0|max:100',
             'components.*.notes' => 'nullable|string',
@@ -101,7 +102,7 @@ class BillOfMaterialController extends Controller
             'output_quantity' => 'required|numeric|min:0.0001',
             'is_active' => 'boolean',
             'components' => 'required|array|min:1',
-            'components.*.item_id' => 'required|exists:items,id',
+            'components.*.item_id' => ['required', Rule::exists('items', 'id')->where('tenant_id', auth()->user()->tenant_id)],
             'components.*.quantity' => 'required|numeric|min:0.0001',
             'components.*.waste_percentage' => 'nullable|numeric|min:0|max:100',
             'components.*.notes' => 'nullable|string',
@@ -167,7 +168,7 @@ class BillOfMaterialController extends Controller
     {
         $validated = $request->validate([
             'quantity' => 'required|numeric|min:0.0001',
-            'warehouse_id' => 'nullable|exists:warehouses,id',
+            'warehouse_id' => ['nullable', Rule::exists('warehouses', 'id')->where('tenant_id', auth()->user()->tenant_id)],
             'notes' => 'nullable|string',
         ]);
 

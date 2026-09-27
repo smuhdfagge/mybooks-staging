@@ -7,6 +7,7 @@ use App\Models\StockTransfer;
 use App\Models\StockTransferItem;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 
 class StockTransferController extends Controller
@@ -31,11 +32,11 @@ class StockTransferController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'from_warehouse_id' => 'required|exists:warehouses,id',
-            'to_warehouse_id' => 'required|exists:warehouses,id|different:from_warehouse_id',
+            'from_warehouse_id' => ['required', Rule::exists('warehouses', 'id')->where('tenant_id', auth()->user()->tenant_id)],
+            'to_warehouse_id' => ['required', Rule::exists('warehouses', 'id')->where('tenant_id', auth()->user()->tenant_id), 'different:from_warehouse_id'],
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
-            'items.*.item_id' => 'required|exists:items,id',
+            'items.*.item_id' => ['required', Rule::exists('items', 'id')->where('tenant_id', auth()->user()->tenant_id)],
             'items.*.quantity' => 'required|numeric|min:0.0001',
             'items.*.notes' => 'nullable|string',
         ]);
@@ -84,7 +85,7 @@ class StockTransferController extends Controller
     {
         $validated = $request->validate([
             'items' => 'nullable|array',
-            'items.*.id' => 'exists:stock_transfer_items,id',
+            'items.*.id' => [Rule::exists('stock_transfer_items', 'id')->where('stock_transfer_id', $stockTransfer->id)],
             'items.*.quantity_received' => 'numeric|min:0',
         ]);
 
@@ -93,6 +94,7 @@ class StockTransferController extends Controller
             if (!empty($validated['items'])) {
                 foreach ($validated['items'] as $itemData) {
                     StockTransferItem::where('id', $itemData['id'])
+                        ->where('stock_transfer_id', $stockTransfer->id)
                         ->update(['quantity_received' => $itemData['quantity_received']]);
                 }
                 $stockTransfer->refresh();

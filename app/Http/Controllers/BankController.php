@@ -244,7 +244,7 @@ class BankController extends Controller
     {
         $validated = $request->validate([
             'transaction_ids' => 'required|array|min:1',
-            'transaction_ids.*' => 'integer|exists:bank_transactions,id',
+            'transaction_ids.*' => ['integer', Rule::exists('bank_transactions', 'id')->where('tenant_id', auth()->user()->tenant_id)->where('bank_id', $bank->id)],
             'statement_balance' => 'required|numeric',
             'statement_date' => 'required|date',
         ]);
@@ -270,7 +270,7 @@ class BankController extends Controller
     {
         $validated = $request->validate([
             'transaction_ids' => 'required|array|min:1',
-            'transaction_ids.*' => 'integer|exists:bank_transactions,id',
+            'transaction_ids.*' => ['integer', Rule::exists('bank_transactions', 'id')->where('tenant_id', auth()->user()->tenant_id)->where('bank_id', $bank->id)],
         ]);
 
         $count = $reconciliationService->unreconcile($bank, $validated['transaction_ids']);

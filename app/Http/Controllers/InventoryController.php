@@ -8,6 +8,7 @@ use App\Models\InventoryLayer;
 use App\Models\Item;
 use App\Services\StockValuationService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class InventoryController extends Controller
 {
@@ -29,7 +30,7 @@ class InventoryController extends Controller
             'type' => 'required|in:in,out,adjustment',
             'quantity' => 'required|numeric|min:0.0001',
             'unit_cost' => 'nullable|numeric|min:0',
-            'warehouse_id' => 'nullable|exists:warehouses,id',
+            'warehouse_id' => ['nullable', Rule::exists('warehouses', 'id')->where('tenant_id', auth()->user()->tenant_id)],
             'batch_number' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
         ]);

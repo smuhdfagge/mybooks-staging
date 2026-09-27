@@ -47,7 +47,7 @@ class DeliveryNoteController extends Controller
             'shipping_address' => 'nullable|string',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
-            'items.*.item_id' => 'nullable|exists:items,id',
+            'items.*.item_id' => ['nullable', Rule::exists('items', 'id')->where('tenant_id', auth()->user()->tenant_id)],
             'items.*.description' => 'required|string',
             'items.*.quantity_ordered' => 'required|numeric|min:0',
             'items.*.quantity_delivered' => 'required|numeric|min:0.01',

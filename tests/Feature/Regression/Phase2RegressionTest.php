@@ -275,4 +275,51 @@ class Phase2RegressionTest extends TestCase
 
         $this->assertSame(1, \App\Models\InvoiceTemplate::count());
     }
+
+    // ── L2: validation stays inside the tenant ─────────────────
+
+    private function transferFor(int $tenantId, string $status): \App\Models\StockTransfer
+    {
+        return \App\Models\StockTransfer::withoutTenantGuard(function () use ($tenantId, $status) {
+            $from = \App\Models\Warehouse::create(['tenant_id' => $tenantId, 'name' => 'A', 'code' => 'A'.$tenantId]);
+            $to = \App\Models\Warehouse::create(['tenant_id' => $tenantId, 'name' => 'B', 'code' => 'B'.$tenantId]);
+            $item = \App\Models\Item::factory()->create(['tenant_id' => $tenantId, 'track_inventory' => false]);
+            $transfer = \App\Models\StockTransfer::create([
+                'tenant_id' => $tenantId, 'transfer_number' => 'ST-'.$tenantId,
+                'from_warehouse_id' => $from->id, 'to_warehouse_id' => $to->id, 'status' => $status,
+            ]);
+            $transfer->items()->create(['item_id' => $item->id, 'quantity' => 5, 'quantity_received' => 0]);
+
+            return $transfer;
+        });
+    }
+
+    public function test_l2_receiving_a_transfer_cannot_touch_another_tenants_transfer_lines(): void
+    {
+        $this->createAuthenticatedUser(['adjust inventory']);
+        $mine = $this->transferFor($this->tenant->id, \App\Models\StockTransfer::STATUS_IN_TRANSIT);
+        $theirs = $this->transferFor($this->otherTenant()->id, \App\Models\StockTransfer::STATUS_IN_TRANSIT);
+        $theirLine = $theirs->items()->first();
+
+        $this->post(route('stock-transfers.receive', $mine), [
+            'items' => [['id' => $theirLine->id, 'quantity_received' => 999]],
+        ])->assertSessionHasErrors('items.0.id');
+
+        $this->assertEquals(0, (float) $theirLine->fresh()->quantity_received);
+    }
+
+    public function test_l2_api_employee_rejects_another_tenants_department(): void
+    {
+        [$tenant] = $this->createTenantWithSubscription();
+        $user = User::factory()->create(['tenant_id' => $tenant->id]);
+        $user->givePermissionTo(Permission::findOrCreate('create employees', 'web'));
+        $other = \App\Models\Customer::withoutTenantGuard(fn () => $this->createTenantWithSubscription()[0]);
+        $foreignDept = \App\Models\Department::withoutTenantGuard(fn () => \App\Models\Department::create([
+            'tenant_id' => $other->id, 'name' => 'Theirs', 'code' => 'THR',
+        ]));
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson('/api/v1/employees', ['first_name' => 'A', 'last_name' => 'B', 'department_id' => $foreignDept->id])
+            ->assertJsonValidationErrors('department_id');
+    }
 }
