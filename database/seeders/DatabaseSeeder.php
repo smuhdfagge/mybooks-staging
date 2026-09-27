@@ -27,13 +27,23 @@ class DatabaseSeeder extends Seeder
         
         // Create roles
         $this->createRoles();
-        
+
+        // Demo and super-admin accounts all use the password "password", so
+        // they are only created on developer machines and in tests (M8).
+        // On a server, create the platform admin with AdminUserSeeder:
+        //   ADMIN_EMAIL=... ADMIN_PASSWORD=... php artisan db:seed --class=AdminUserSeeder
+        if (! app()->environment(['local', 'testing'])) {
+            $this->command?->warn('Skipping demo and super-admin accounts outside local/testing.');
+
+            return;
+        }
+
         // Create Super Admin
         $this->createSuperAdmin();
-        
+
         // Create Admin Panel Users
         $this->createAdminPanelUsers();
-        
+
         // Create Demo Tenant with sample data
         $this->createDemoTenant();
     }
@@ -70,6 +80,7 @@ class DatabaseSeeder extends Seeder
             'view vendors', 'create vendors', 'edit vendors', 'delete vendors',
             'view expenses', 'create expenses', 'edit expenses', 'delete expenses',
             'view bills', 'create bills', 'edit bills', 'delete bills',
+            'view purchase-orders', 'create purchase-orders', 'edit purchase-orders', 'delete purchase-orders',
             'view recurrent-bills', 'create recurrent-bills', 'edit recurrent-bills', 'delete recurrent-bills',
             'view recurrent-expenses', 'create recurrent-expenses', 'edit recurrent-expenses', 'delete recurrent-expenses',
             'view payments-made', 'create payments-made', 'edit payments-made', 'delete payments-made',
@@ -147,6 +158,7 @@ class DatabaseSeeder extends Seeder
             'view payments-received', 'create payments-received',
             'view vendors', 'view expenses', 'create expenses', 'edit expenses',
             'view bills', 'create bills', 'edit bills',
+            'view purchase-orders', 'create purchase-orders', 'edit purchase-orders',
             'view payments-made', 'create payments-made',
             'view chart-of-accounts', 'create chart-of-accounts', 'edit chart-of-accounts',
             'view journals', 'create journals', 'edit journals', 'post journals',
@@ -195,7 +207,7 @@ class DatabaseSeeder extends Seeder
             'pending-bills dashboard-widgets', 'low-stock dashboard-widgets',
             'view items', 'view inventory',
             'view customers', 'view invoices', 'view sales-orders', 'view sales-receipts', 'view payments-received',
-            'view vendors', 'view expenses', 'view bills', 'view payments-made',
+            'view vendors', 'view expenses', 'view bills', 'view purchase-orders', 'view payments-made',
             'view employees', 'view departments', 'view designations', 'view leaves', 'view payroll',
             'view chart-of-accounts', 'view journals',
             'view banks',

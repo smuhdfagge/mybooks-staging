@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Http\Middleware\EnsureAccountActive;
 use App\Services\ActivityLogService;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
@@ -48,6 +49,16 @@ class LoginRequest extends FormRequest
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
+            ]);
+        }
+
+        // Correct password, but the user or their organisation is deactivated
+        // (finding H1). Only someone who knows the password sees this message.
+        if (! EnsureAccountActive::isActive(Auth::user())) {
+            Auth::guard('web')->logout();
+
+            throw ValidationException::withMessages([
+                'email' => EnsureAccountActive::MESSAGE,
             ]);
         }
 

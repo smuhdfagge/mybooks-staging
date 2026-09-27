@@ -18,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->group(base_path('routes/admin.php'));
         },
     )
+    // Listeners are mapped explicitly in AppServiceProvider::boot().
+    // Auto-discovery is switched off so each listener is registered once
+    // (with both on, every journal listener ran twice — finding N1).
+    ->withEvents(discover: false)
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
 
@@ -31,6 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'plan' => \App\Http\Middleware\CheckPlanAccess::class,
             'two-factor' => \App\Http\Middleware\EnsureTwoFactorVerified::class,
             'tenant' => \App\Http\Middleware\VerifyTenantOwnership::class,
+            'active' => \App\Http\Middleware\EnsureAccountActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

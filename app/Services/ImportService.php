@@ -167,6 +167,10 @@ class ImportService
      */
     protected function readXlsx(string $path): array
     {
+        if (! Import::excelSupported()) {
+            throw new \RuntimeException('Excel import is not available: the phpoffice/phpspreadsheet package is not installed.');
+        }
+
         $spreadsheet = IOFactory::load($path);
         $worksheet = $spreadsheet->getActiveSheet();
         $rows = $worksheet->toArray();

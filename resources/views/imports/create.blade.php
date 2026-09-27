@@ -93,14 +93,14 @@
                                     <label for="file" class="relative cursor-pointer rounded-md font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 focus-within:outline-none">
                                         <span>Upload a file</span>
                                         <input id="file" name="file" type="file" class="sr-only" required
-                                               accept=".csv,.xlsx,.xls,.json,.txt"
+                                               accept="{{ collect(\App\Models\Import::acceptedExtensions())->map(fn ($e) => '.'.$e)->implode(',') }}"
                                                x-ref="fileInput"
                                                @change="fileName = $event.target.files[0]?.name || ''">
                                     </label>
                                     <p class="pl-1">or drag and drop</p>
                                 </div>
                                 <p class="text-xs text-gray-500 dark:text-gray-400">
-                                    CSV, Excel (.xlsx), or JSON up to 10MB
+                                    {{ \App\Models\Import::excelSupported() ? 'CSV, Excel (.xlsx), or JSON' : 'CSV or JSON' }} up to 10MB
                                 </p>
                                 <p x-show="fileName" x-text="'Selected: ' + fileName" class="text-sm font-medium text-indigo-600 dark:text-indigo-400 mt-2"></p>
                             </div>

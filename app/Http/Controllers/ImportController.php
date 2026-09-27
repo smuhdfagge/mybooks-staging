@@ -51,7 +51,18 @@ class ImportController extends Controller
     {
         $validated = $request->validate([
             'type' => 'required|string|in:' . implode(',', array_keys(Import::getImportTypes())),
-            'file' => 'required|file|mimes:csv,txt,xlsx,xls,json|max:' . config('mybooks.import_max_file_size', 10240),
+            'file' => [
+                'required',
+                'file',
+                function ($attribute, $value, $fail) {
+                    $extension = strtolower($value->getClientOriginalExtension());
+                    if (in_array($extension, ['xlsx', 'xls']) && ! Import::excelSupported()) {
+                        $fail('Excel import is not available yet. Please save the sheet as CSV and upload that instead.');
+                    }
+                },
+                'mimes:' . implode(',', Import::acceptedExtensions()),
+                'max:' . config('mybooks.import_max_file_size', 10240),
+            ],
         ]);
 
         $file = $request->file('file');

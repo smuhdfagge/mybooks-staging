@@ -132,7 +132,7 @@ Route::get('/docs/api', function () {
 | Authenticated Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'verified', 'two-factor', 'subscription', 'tenant'])->group(function () {
+Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', 'tenant'])->group(function () {
     
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])
@@ -973,7 +973,7 @@ Route::middleware(['auth', 'verified', 'two-factor', 'subscription', 'tenant'])-
             Route::get('/users/{user}/edit', [SettingsController::class, 'editUser'])->name('users.edit');
             Route::put('/users/{user}', [SettingsController::class, 'updateUser'])->name('users.update');
         });
-        Route::delete('/users/{user}', [SettingsController::class, 'destroyUser'])
+        Route::delete('/users/{user}', [SettingsController::class, 'deleteUser'])
             ->middleware('permission:delete users')
             ->name('users.destroy');
         
