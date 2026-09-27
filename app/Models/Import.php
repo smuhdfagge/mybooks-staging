@@ -105,15 +105,41 @@ class Import extends Model
     }
 
     /**
+     * Excel files need the phpoffice/phpspreadsheet package. Until it is
+     * installed, Excel uploads are refused with a clear message instead of
+     * failing during processing (finding H5).
+     */
+    public static function excelSupported(): bool
+    {
+        return class_exists(\PhpOffice\PhpSpreadsheet\IOFactory::class);
+    }
+
+    /**
+     * File extensions accepted by the upload form.
+     */
+    public static function acceptedExtensions(): array
+    {
+        return self::excelSupported()
+            ? ['csv', 'txt', 'xlsx', 'xls', 'json']
+            : ['csv', 'txt', 'json'];
+    }
+
+    /**
      * Get available formats with labels
      */
     public static function getFormats(): array
     {
-        return [
+        $formats = [
             self::FORMAT_CSV => 'CSV (Comma Separated Values)',
             self::FORMAT_XLSX => 'Excel Spreadsheet (.xlsx)',
             self::FORMAT_JSON => 'JSON (JavaScript Object Notation)',
         ];
+
+        if (! self::excelSupported()) {
+            unset($formats[self::FORMAT_XLSX]);
+        }
+
+        return $formats;
     }
 
     /**

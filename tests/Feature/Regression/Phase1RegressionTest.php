@@ -318,8 +318,35 @@ class Phase1RegressionTest extends TestCase
 
     // ── H5: Excel import library ────────────────────────────────
 
+    public function test_h5_excel_upload_is_refused_cleanly_while_library_is_missing(): void
+    {
+        if (\App\Models\Import::excelSupported()) {
+            $this->markTestSkipped('phpoffice/phpspreadsheet is installed; Excel import is enabled.');
+        }
+
+        $this->createAuthenticatedUser(['import data']);
+        $file = \Illuminate\Http\UploadedFile::fake()->create('customers.xlsx', 10,
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+        $this->post(route('imports.upload'), ['type' => 'customers', 'file' => $file])
+            ->assertSessionHasErrors(['file' => 'Excel import is not available yet. Please save the sheet as CSV and upload that instead.']);
+        $this->assertSame(0, \App\Models\Import::count());
+    }
+
+    public function test_h5_csv_upload_still_works(): void
+    {
+        $this->createAuthenticatedUser(['import data']);
+        $file = \Illuminate\Http\UploadedFile::fake()->createWithContent('customers.csv', "name,email\nAda,ada@example.com\n");
+
+        $this->post(route('imports.upload'), ['type' => 'customers', 'file' => $file])->assertSessionHasNoErrors();
+        $this->assertSame(1, \App\Models\Import::count());
+    }
+
     public function test_h5_spreadsheet_library_is_installed(): void
     {
+        if (! \App\Models\Import::excelSupported()) {
+            $this->markTestSkipped('Run: composer require phpoffice/phpspreadsheet  (then Excel import switches on).');
+        }
         $this->assertTrue(class_exists(\PhpOffice\PhpSpreadsheet\IOFactory::class));
     }
 
