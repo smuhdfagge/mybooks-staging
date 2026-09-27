@@ -214,6 +214,28 @@ class Phase1RegressionTest extends TestCase
         $this->actingAs($admin)->get(route('purchase-orders.index'))->assertOk();
     }
 
+    public function test_n2_migration_grants_purchase_order_access_to_existing_roles(): void
+    {
+        [$tenant] = $this->createTenantWithSubscription();
+        foreach (['view bills', 'create bills', 'edit bills', 'delete bills'] as $p) {
+            Permission::findOrCreate($p, 'web');
+        }
+        Permission::where('name', 'like', '% purchase-orders')->delete();
+
+        $admin = Role::create(['name' => 'admin', 'guard_name' => 'web']);
+        $clerk = Role::create(['name' => 'Tenant Clerk', 'guard_name' => 'web', 'tenant_id' => $tenant->id]);
+        $clerk->givePermissionTo(['view bills', 'create bills']);
+
+        $migration = require database_path('migrations/2026_09_28_000002_add_purchase_order_permissions.php');
+        $migration->up();
+
+        $this->assertTrue($admin->fresh()->hasPermissionTo('delete purchase-orders'));
+        $this->assertTrue($clerk->fresh()->hasPermissionTo('view purchase-orders'));
+        $this->assertTrue($clerk->fresh()->hasPermissionTo('create purchase-orders'));
+        $this->assertFalse($clerk->fresh()->hasPermissionTo('delete purchase-orders'));
+        $this->assertNotNull(Permission::where('name', 'reconcile banks')->first());
+    }
+
     // ── H1: inactive users and tenants ──────────────────────────
 
     public function test_h1_inactive_user_cannot_log_in(): void
