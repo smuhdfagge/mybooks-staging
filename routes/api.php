@@ -70,7 +70,7 @@ Route::prefix('v1')->group(function () {
     | Protected Routes (Authentication Required)
     |--------------------------------------------------------------------------
     */
-    Route::middleware(['auth:sanctum', 'throttle:api', 'subscription', 'tenant'])->group(function () {
+    Route::middleware(['auth:sanctum', 'active', 'throttle:api', 'subscription', 'tenant'])->group(function () {
         // Auth routes (exempt from permission checks)
         Route::prefix('auth')->group(function () {
             Route::post('logout', [AuthController::class, 'logout']);

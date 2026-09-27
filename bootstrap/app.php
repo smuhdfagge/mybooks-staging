@@ -35,6 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'plan' => \App\Http\Middleware\CheckPlanAccess::class,
             'two-factor' => \App\Http\Middleware\EnsureTwoFactorVerified::class,
             'tenant' => \App\Http\Middleware\VerifyTenantOwnership::class,
+            'active' => \App\Http\Middleware\EnsureAccountActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -40,7 +40,7 @@ Route::middleware('guest')->group(function () {
         ->name('password.store');
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'active'])->group(function () {
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');
 
@@ -82,7 +82,7 @@ Route::middleware('guest')->group(function () {
 });
 
 // 2FA management (requires full auth)
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'active'])->group(function () {
     Route::get('two-factor/setup', [TwoFactorController::class, 'setup'])
         ->name('two-factor.setup');
     Route::post('two-factor/confirm', [TwoFactorController::class, 'confirm'])

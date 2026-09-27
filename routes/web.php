@@ -132,7 +132,7 @@ Route::get('/docs/api', function () {
 | Authenticated Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'verified', 'two-factor', 'subscription', 'tenant'])->group(function () {
+Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', 'tenant'])->group(function () {
     
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])

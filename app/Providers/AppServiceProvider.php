@@ -85,6 +85,13 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
+        // Livewire component actions are sent to /livewire/update, not to the
+        // page's route, so page middleware does not run on them unless it is
+        // marked persistent. Keep deactivated users out of open pages (H1).
+        \Livewire\Livewire::addPersistentMiddleware([
+            \App\Http\Middleware\EnsureAccountActive::class,
+        ]);
+
         // Implicitly grant "Super Admin" role all permissions
         // This works in the app by using gate-level logic
         Gate::before(function ($user, $ability) {

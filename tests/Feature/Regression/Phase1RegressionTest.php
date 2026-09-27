@@ -276,6 +276,29 @@ class Phase1RegressionTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_h1_deactivated_user_cannot_keep_using_an_open_livewire_page(): void
+    {
+        $this->createAuthenticatedUser(['view customers']);
+        \App\Models\Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $html = $this->get(route('customers.index'))->assertOk()->getContent();
+        preg_match_all('/wire:snapshot="([^"]+)"/', $html, $matches);
+        $snapshot = collect($matches[1])
+            ->map(fn ($s) => html_entity_decode($s))
+            ->first(fn ($s) => str_contains(json_decode($s, true)['memo']['name'], 'customers'));
+        $this->assertNotNull($snapshot, 'customers table component not found on page');
+
+        $payload = ['components' => [['snapshot' => $snapshot, 'updates' => ['search' => 'x'], 'calls' => []]]];
+        $update = \Livewire\Livewire::getUpdateUri();
+
+        $this->withHeaders(['X-Livewire' => '1'])->postJson($update, $payload)->assertOk();
+
+        $this->user->forceFill(['is_active' => false])->save();
+
+        $this->withHeaders(['X-Livewire' => '1'])->postJson($update, $payload)->assertRedirect(route('login'));
+        $this->assertGuest();
+    }
+
     public function test_h1_api_token_of_deactivated_user_is_rejected_and_revoked(): void
     {
         [$tenant] = $this->createTenantWithSubscription();
