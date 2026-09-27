@@ -4,11 +4,14 @@ namespace App\Livewire\Subscriptions;
 
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Livewire\Concerns\ChecksPermissions;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class SubscriptionManager extends Component
 {
+    use ChecksPermissions;
+
     public $currentSubscription;
     public $currentPlan;
     public $plans;
@@ -47,6 +50,8 @@ class SubscriptionManager extends Component
 
     public function changePlan()
     {
+        $this->requirePermission('manage subscription');
+
         $this->validate([
             'selectedPlanId' => 'required|exists:plans,id',
             'selectedBillingCycle' => 'required|in:monthly,annual',
@@ -105,6 +110,8 @@ class SubscriptionManager extends Component
 
     public function cancelSubscription()
     {
+        $this->requirePermission('manage subscription');
+
         $this->validate([
             'cancellationReason' => 'nullable|string|max:500',
         ]);
@@ -120,6 +127,8 @@ class SubscriptionManager extends Component
 
     public function reactivateSubscription()
     {
+        $this->requirePermission('manage subscription');
+
         if ($this->currentSubscription && $this->currentSubscription->isCancelled()) {
             $this->currentSubscription->update([
                 'status' => Subscription::STATUS_ACTIVE,
@@ -133,6 +142,8 @@ class SubscriptionManager extends Component
 
     public function render()
     {
-        return view('livewire.subscriptions.subscription-manager');
+        return view('livewire.subscriptions.subscription-manager', [
+            'canManage' => auth()->user()?->can('manage subscription') ?? false,
+        ]);
     }
 }

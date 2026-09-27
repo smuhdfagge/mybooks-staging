@@ -81,6 +81,7 @@
                         </div>
                     </div>
 
+                    @if($canManage)
                     <div class="mt-6 flex flex-wrap gap-3">
                         <button wire:click="openUpgradeModal" class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,6 +105,9 @@
                             </button>
                         @endif
                     </div>
+                    @else
+                    <p class="mt-6 text-sm text-gray-500 dark:text-gray-400">Only an administrator can change or cancel the subscription.</p>
+                    @endif
                 @else
                     <div class="text-center py-8">
                         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -112,12 +116,16 @@
                         <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No active subscription</h3>
                         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by choosing a plan below.</p>
                         <div class="mt-6">
+                            @if($canManage)
                             <button wire:click="openUpgradeModal" class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                                 </svg>
                                 Choose a Plan
                             </button>
+                            @else
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Ask an administrator to choose a plan.</p>
+                            @endif
                         </div>
                     </div>
                 @endif
@@ -176,7 +184,7 @@
                                 @endforeach
                             </ul>
 
-                            @if(!$currentPlan || $currentPlan->id !== $plan->id)
+                            @if($canManage && (!$currentPlan || $currentPlan->id !== $plan->id))
                                 <button wire:click="openUpgradeModal({{ $plan->id }})" class="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition">
                                     @if($currentPlan && $currentPlan->monthly_price > $plan->monthly_price)
                                         Downgrade
