@@ -27,13 +27,23 @@ class DatabaseSeeder extends Seeder
         
         // Create roles
         $this->createRoles();
-        
+
+        // Demo and super-admin accounts all use the password "password", so
+        // they are only created on developer machines and in tests (M8).
+        // On a server, create the platform admin with AdminUserSeeder:
+        //   ADMIN_EMAIL=... ADMIN_PASSWORD=... php artisan db:seed --class=AdminUserSeeder
+        if (! app()->environment(['local', 'testing'])) {
+            $this->command?->warn('Skipping demo and super-admin accounts outside local/testing.');
+
+            return;
+        }
+
         // Create Super Admin
         $this->createSuperAdmin();
-        
+
         // Create Admin Panel Users
         $this->createAdminPanelUsers();
-        
+
         // Create Demo Tenant with sample data
         $this->createDemoTenant();
     }

@@ -356,7 +356,8 @@ class Phase1RegressionTest extends TestCase
     {
         $this->app['env'] = 'production';
 
-        $this->seed(\Database\Seeders\DatabaseSeeder::class);
+        $this->artisan('db:seed', ['--class' => \Database\Seeders\DatabaseSeeder::class, '--force' => true])
+            ->assertSuccessful();
 
         $this->assertSame(0, User::where('email', 'like', '%@mybooks.local')->count());
         $this->assertSame(0, User::where('is_super_admin', true)->count());
