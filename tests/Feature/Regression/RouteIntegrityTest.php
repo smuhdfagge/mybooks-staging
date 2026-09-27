@@ -77,7 +77,7 @@ class RouteIntegrityTest extends TestCase
     {
         $missing = [];
 
-        $files = (new Finder())->files()->in(app_path())->name('*.php');
+        $files = (new Finder)->files()->in(app_path())->name('*.php');
         foreach ($files as $file) {
             preg_match_all("/\\bview\\(\\s*['\"]([a-z0-9_.\\-]+)['\"]/i", $file->getContents(), $m);
             foreach ($m[1] as $name) {

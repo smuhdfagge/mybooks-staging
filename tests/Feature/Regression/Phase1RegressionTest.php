@@ -4,8 +4,8 @@ namespace Tests\Feature\Regression;
 
 use App\Models\Bank;
 use App\Models\Expense;
-use App\Models\Plan;
 use App\Models\PayrollBatch;
+use App\Models\Plan;
 use App\Models\PurchaseOrder;
 use App\Models\Role;
 use App\Models\Subscription;
@@ -99,7 +99,7 @@ class Phase1RegressionTest extends TestCase
 
         $this->get(route('dashboard'))->assertRedirect(route('two-factor.challenge'));
 
-        $code = (new \PragmaRX\Google2FA\Google2FA())->getCurrentOtp($secret);
+        $code = (new \PragmaRX\Google2FA\Google2FA)->getCurrentOtp($secret);
         $this->post(route('two-factor.verify'), ['code' => $code])->assertRedirect(route('dashboard'));
         $this->assertAuthenticatedAs($this->user);
         $this->get(route('dashboard'))->assertOk();
