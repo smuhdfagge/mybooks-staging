@@ -1,0 +1,111 @@
+<?php
+
+namespace App\Providers;
+
+use App\Models\User;
+use App\Services\ActivityLogService;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Logout;
+use Illuminate\Auth\Events\Failed;
+use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
+
+class AppServiceProvider extends ServiceProvider
+{
+    /**
+     * Register any application services.
+     */
+    public function register(): void
+    {
+        // Register a per-request CSP nonce (cryptographically random).
+        // Shared between SecurityHeaders middleware and Blade views.
+        $this->app->singleton('csp-nonce', function () {
+            return base64_encode(random_bytes(16));
+        });
+    }
+
+    /**
+     * Bootstrap any application services.
+     */
+    public function boot(): void
+    {
+        // Configure password strength defaults (NIST 800-63B compliant)
+        Password::defaults(function () {
+            return Password::min(8)
+                ->letters()
+                ->mixedCase()
+                ->numbers()
+                ->symbols()
+                ->uncompromised();
+        });
+
+        // ── API Rate Limiters ─────────────────────────────────────
+        // Standard API: 60 req/min per user (fallback to IP)
+        RateLimiter::for('api', function (Request $request) {
+            return Limit::perMinute(60)->by(
+                $request->user()?->id ?: $request->ip()
+            );
+        });
+
+        // API reads (GET): higher limit — 120 req/min per user
+        RateLimiter::for('api-read', function (Request $request) {
+            return Limit::perMinute(120)->by(
+                $request->user()?->id ?: $request->ip()
+            );
+        });
+
+        // API writes (POST/PUT/DELETE): lower limit — 30 req/min per user
+        RateLimiter::for('api-write', function (Request $request) {
+            return Limit::perMinute(30)->by(
+                $request->user()?->id ?: $request->ip()
+            );
+        });
+
+        // Sensitive operations (auth, password): 5 req/min per IP
+        RateLimiter::for('auth-sensitive', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip());
+        });
+
+        // Export/backup: 10 req/min per user (expensive operations)
+        RateLimiter::for('api-export', function (Request $request) {
+            return Limit::perMinute(10)->by(
+                $request->user()?->id ?: $request->ip()
+            );
+        });
+
+        // Implicitly grant "Super Admin" role all permissions
+        // This works in the app by using gate-level logic
+        Gate::before(function ($user, $ability) {
+            return $user->isSuperAdmin() ? true : null;
+        });
+
+        // Log authentication events (only for regular users, not admin users)
+        Event::listen(Login::class, function (Login $event) {
+            if ($event->user instanceof User) {
+                ActivityLogService::logLogin($event->user);
+            }
+        });
+
+        Event::listen(Logout::class, function (Logout $event) {
+            if ($event->user instanceof User) {
+                ActivityLogService::logLogout($event->user);
+            }
+        });
+
+        Event::listen(Failed::class, function (Failed $event) {
+            ActivityLogService::logFailedLogin($event->credentials['email'] ?? 'unknown');
+        });
+
+        Event::listen(PasswordReset::class, function (PasswordReset $event) {
+            if ($event->user instanceof User) {
+                ActivityLogService::logPasswordReset($event->user);
+            }
+        });
+    }
+}
