@@ -5,10 +5,11 @@ namespace App\Livewire\FixedAssets;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\FixedAssetCategory;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class CategoriesTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $sortField = 'name';
@@ -80,6 +81,16 @@ class CategoriesTable extends Component
             ->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'delete' => 'delete fixed-assets',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -96,6 +107,8 @@ class CategoriesTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'delete':

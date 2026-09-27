@@ -4,9 +4,12 @@ namespace App\Livewire\Settings;
 
 use App\Models\InvoiceTemplate;
 use Livewire\Component;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class InvoiceTemplateEditor extends Component
 {
+    use ChecksPermissions;
+
     public ?InvoiceTemplate $template = null;
     public string $name = '';
     public array $settings = [];
@@ -124,6 +127,8 @@ class InvoiceTemplateEditor extends Component
 
     public function save()
     {
+        $this->requirePermission('edit settings');
+
         $this->validate();
 
         $tenantId = auth()->user()->tenant_id;
@@ -151,6 +156,8 @@ class InvoiceTemplateEditor extends Component
 
     public function setAsDefault()
     {
+        $this->requirePermission('edit settings');
+
         if (!$this->template) {
             return;
         }

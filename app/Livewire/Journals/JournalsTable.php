@@ -5,10 +5,11 @@ namespace App\Livewire\Journals;
 use App\Models\Journal;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class JournalsTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $sortField = 'journal_date';
@@ -80,6 +81,18 @@ class JournalsTable extends Component
             ->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'post' => 'post journals',
+            'void' => 'edit journals',
+            'delete' => 'delete journals',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -96,6 +109,8 @@ class JournalsTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'post':

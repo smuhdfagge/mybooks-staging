@@ -6,10 +6,11 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\SalesReceipt;
 use App\Models\Customer;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class SalesReceiptsTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $paymentMethod = '';
@@ -93,6 +94,16 @@ class SalesReceiptsTable extends Component
             ->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'delete' => 'delete sales-receipts',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -109,6 +120,8 @@ class SalesReceiptsTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'delete':

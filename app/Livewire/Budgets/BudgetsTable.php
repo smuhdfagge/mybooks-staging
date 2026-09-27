@@ -5,10 +5,11 @@ namespace App\Livewire\Budgets;
 use App\Models\Budget;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class BudgetsTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $sortField = 'fiscal_year';
@@ -86,6 +87,18 @@ class BudgetsTable extends Component
             ->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'activate' => 'edit budgets',
+            'lock' => 'edit budgets',
+            'delete' => 'delete budgets',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -102,6 +115,8 @@ class BudgetsTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'activate':

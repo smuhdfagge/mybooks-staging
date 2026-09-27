@@ -5,10 +5,11 @@ namespace App\Livewire\Deductions;
 use App\Models\Deduction;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class DeductionsTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $amountType = '';
@@ -40,6 +41,8 @@ class DeductionsTable extends Component
 
     public function toggleActive(Deduction $deduction)
     {
+        $this->requirePermission('create payroll');
+
         abort_unless($deduction->tenant_id === auth()->user()->tenant_id, 403);
 
         $deduction->update(['is_active' => !$deduction->is_active]);
@@ -61,6 +64,18 @@ class DeductionsTable extends Component
         return $this->buildQuery()->pluck('id')->map(fn($id) => (string) $id)->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'activate' => 'create payroll',
+            'deactivate' => 'create payroll',
+            'delete' => 'create payroll',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -77,6 +92,8 @@ class DeductionsTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'activate':

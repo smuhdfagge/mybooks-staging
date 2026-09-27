@@ -6,10 +6,11 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\PurchaseOrder;
 use App\Models\Vendor;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class PurchaseOrdersTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $status = '';
@@ -92,6 +93,18 @@ class PurchaseOrdersTable extends Component
             ->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'confirm' => 'edit purchase-orders',
+            'cancel' => 'edit purchase-orders',
+            'delete' => 'delete purchase-orders',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -106,6 +119,8 @@ class PurchaseOrdersTable extends Component
             $this->errorMessage = 'Please select an action.';
             return;
         }
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'confirm':

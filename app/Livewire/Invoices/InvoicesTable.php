@@ -7,10 +7,11 @@ use App\Models\Customer;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class InvoicesTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $status = '';
@@ -86,6 +87,19 @@ class InvoicesTable extends Component
             ->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'mark_sent' => 'send invoices',
+            'mark_paid' => 'create payments-received',
+            'mark_cancelled' => 'edit invoices',
+            'delete' => 'delete invoices',
+        ];
+    }
+
     public function applyBulkAction()
     {
         if (empty($this->selectedItems)) {
@@ -99,6 +113,8 @@ class InvoicesTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'mark_sent':

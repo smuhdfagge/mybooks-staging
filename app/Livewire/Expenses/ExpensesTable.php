@@ -6,10 +6,11 @@ use App\Models\Expense;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class ExpensesTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $sortField = 'expense_date';
@@ -96,6 +97,8 @@ class ExpensesTable extends Component
 
     public function confirmDelete($expenseId)
     {
+        $this->requirePermission('delete expenses');
+
         $expense = Expense::find($expenseId);
         if ($expense && !in_array($expense->status, [Expense::STATUS_DRAFT, Expense::STATUS_REJECTED])) {
             $this->errorMessage = 'Only draft or rejected expenses can be deleted.';
@@ -107,6 +110,8 @@ class ExpensesTable extends Component
 
     public function deleteExpense()
     {
+        $this->requirePermission('delete expenses');
+
         $this->successMessage = '';
         $this->errorMessage = '';
 
@@ -147,6 +152,8 @@ class ExpensesTable extends Component
      */
     public function submitForApproval($expenseId)
     {
+        $this->requirePermission('edit expenses');
+
         $this->successMessage = '';
         $this->errorMessage = '';
 
@@ -170,6 +177,8 @@ class ExpensesTable extends Component
      */
     public function approveExpense($expenseId)
     {
+        $this->requireAdmin();
+
         $this->successMessage = '';
         $this->errorMessage = '';
 
@@ -198,6 +207,8 @@ class ExpensesTable extends Component
      */
     public function openRejectModal($expenseId)
     {
+        $this->requireAdmin();
+
         if (!auth()->user()->hasRole('admin') && !auth()->user()->isSuperAdmin()) {
             $this->errorMessage = 'You do not have permission to reject expenses.';
             return;
@@ -213,6 +224,8 @@ class ExpensesTable extends Component
      */
     public function rejectExpense()
     {
+        $this->requireAdmin();
+
         $this->successMessage = '';
         $this->errorMessage = '';
 
@@ -254,6 +267,8 @@ class ExpensesTable extends Component
      */
     public function markAsPaid($expenseId)
     {
+        $this->requireAdmin();
+
         $this->successMessage = '';
         $this->errorMessage = '';
 
@@ -280,6 +295,19 @@ class ExpensesTable extends Component
         $this->successMessage = 'Expense marked as paid. Journal entries and account balances have been updated.';
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'delete' => 'delete expenses',
+            'submit' => 'edit expenses',
+            'approve' => self::ADMIN_ONLY,
+            'mark_paid' => self::ADMIN_ONLY,
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -297,6 +325,8 @@ class ExpensesTable extends Component
 
         $count = count($this->selectedItems);
         $isAdmin = auth()->user()->hasRole('admin') || auth()->user()->isSuperAdmin();
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'delete':

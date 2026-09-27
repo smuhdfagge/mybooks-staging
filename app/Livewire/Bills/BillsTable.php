@@ -7,10 +7,11 @@ use App\Models\Vendor;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class BillsTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $status = '';
@@ -108,6 +109,18 @@ class BillsTable extends Component
             ->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'mark_paid' => 'create payments-made',
+            'mark_cancelled' => 'edit bills',
+            'delete' => 'delete bills',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -124,6 +137,8 @@ class BillsTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'mark_paid':
@@ -189,6 +204,8 @@ class BillsTable extends Component
 
     public function delete($id)
     {
+        $this->requirePermission('delete bills');
+
         $bill = Bill::findOrFail($id);
         
         // Check if bill has payments

@@ -6,10 +6,11 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\SalesOrder;
 use App\Models\Customer;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class SalesOrdersTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $status = '';
@@ -93,6 +94,18 @@ class SalesOrdersTable extends Component
             ->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'confirm' => 'edit sales-orders',
+            'cancel' => 'edit sales-orders',
+            'delete' => 'delete sales-orders',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -109,6 +122,8 @@ class SalesOrdersTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'confirm':

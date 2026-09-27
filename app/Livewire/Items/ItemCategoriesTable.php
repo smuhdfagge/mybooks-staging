@@ -5,10 +5,11 @@ namespace App\Livewire\Items;
 use App\Models\ItemCategory;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class ItemCategoriesTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $showInactive = false;
@@ -50,6 +51,8 @@ class ItemCategoriesTable extends Component
 
     public function toggleActive(ItemCategory $category)
     {
+        $this->requirePermission('edit items');
+
         $category->update(['is_active' => !$category->is_active]);
         $this->successMessage = 'Category status updated.';
     }
@@ -88,6 +91,18 @@ class ItemCategoriesTable extends Component
             ->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'activate' => 'edit items',
+            'deactivate' => 'edit items',
+            'delete' => 'delete items',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -104,6 +119,8 @@ class ItemCategoriesTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'activate':
@@ -155,6 +172,8 @@ class ItemCategoriesTable extends Component
 
     public function deleteCategory($categoryId)
     {
+        $this->requirePermission('delete items');
+
         $this->successMessage = '';
         $this->errorMessage = '';
         

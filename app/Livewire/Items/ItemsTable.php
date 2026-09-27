@@ -6,10 +6,11 @@ use App\Models\Item;
 use App\Models\ItemCategory;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class ItemsTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public string $search = '';
     public string $type = '';
@@ -90,6 +91,18 @@ class ItemsTable extends Component
             ->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'activate' => 'edit items',
+            'deactivate' => 'edit items',
+            'delete' => 'delete items',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -106,6 +119,8 @@ class ItemsTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'activate':
@@ -157,6 +172,8 @@ class ItemsTable extends Component
 
     public function deleteItem($itemId)
     {
+        $this->requirePermission('delete items');
+
         $item = Item::findOrFail($itemId);
         
         // Check if item has related records that prevent deletion

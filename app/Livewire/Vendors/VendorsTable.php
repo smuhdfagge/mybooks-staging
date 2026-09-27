@@ -5,10 +5,11 @@ namespace App\Livewire\Vendors;
 use App\Models\Vendor;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class VendorsTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $status = '';
@@ -81,6 +82,18 @@ class VendorsTable extends Component
             ->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'activate' => 'edit vendors',
+            'deactivate' => 'edit vendors',
+            'delete' => 'delete vendors',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -97,6 +110,8 @@ class VendorsTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'activate':

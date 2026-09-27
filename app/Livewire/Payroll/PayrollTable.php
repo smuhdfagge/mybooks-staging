@@ -8,10 +8,11 @@ use App\Models\ActivityLog;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\DB;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class PayrollTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $status = '';
@@ -94,6 +95,19 @@ class PayrollTable extends Component
             ->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'approve' => 'approve payroll',
+            'mark_paid' => 'edit payroll',
+            'cancel' => 'edit payroll',
+            'delete' => 'delete payroll',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -110,6 +124,8 @@ class PayrollTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'approve':

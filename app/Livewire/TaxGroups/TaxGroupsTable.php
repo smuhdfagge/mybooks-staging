@@ -5,10 +5,11 @@ namespace App\Livewire\TaxGroups;
 use App\Models\TaxGroup;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class TaxGroupsTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $showInactive = false;
@@ -49,6 +50,8 @@ class TaxGroupsTable extends Component
 
     public function toggleActive(TaxGroup $taxGroup)
     {
+        $this->requirePermission('edit tax-rates');
+
         $taxGroup->update(['is_active' => !$taxGroup->is_active]);
         session()->flash('message', 'Tax group status updated.');
     }
@@ -87,6 +90,18 @@ class TaxGroupsTable extends Component
             ->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'activate' => 'edit tax-rates',
+            'deactivate' => 'edit tax-rates',
+            'delete' => 'delete tax-rates',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -103,6 +118,8 @@ class TaxGroupsTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'activate':

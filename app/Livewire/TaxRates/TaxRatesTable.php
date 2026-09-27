@@ -5,10 +5,11 @@ namespace App\Livewire\TaxRates;
 use App\Models\TaxRate;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class TaxRatesTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $appliesTo = '';
@@ -56,6 +57,8 @@ class TaxRatesTable extends Component
 
     public function toggleDefault(TaxRate $taxRate)
     {
+        $this->requirePermission('edit tax-rates');
+
         if (!$taxRate->is_default) {
             $taxRate->setAsDefault();
             session()->flash('message', 'Default tax rate updated.');
@@ -64,6 +67,8 @@ class TaxRatesTable extends Component
 
     public function toggleActive(TaxRate $taxRate)
     {
+        $this->requirePermission('edit tax-rates');
+
         $taxRate->update(['is_active' => !$taxRate->is_active]);
         session()->flash('message', 'Tax rate status updated.');
     }
@@ -106,6 +111,18 @@ class TaxRatesTable extends Component
             ->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'activate' => 'edit tax-rates',
+            'deactivate' => 'edit tax-rates',
+            'delete' => 'delete tax-rates',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -122,6 +139,8 @@ class TaxRatesTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'activate':

@@ -5,10 +5,11 @@ namespace App\Livewire\Customers;
 use App\Models\Customer;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class CustomersTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $status = '';
@@ -82,6 +83,18 @@ class CustomersTable extends Component
             ->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'activate' => 'edit customers',
+            'deactivate' => 'edit customers',
+            'delete' => 'delete customers',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -98,6 +111,8 @@ class CustomersTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'activate':
@@ -152,6 +167,8 @@ class CustomersTable extends Component
 
     public function deleteCustomer($customerId)
     {
+        $this->requirePermission('delete customers');
+
         $this->successMessage = '';
         $this->errorMessage = '';
         
