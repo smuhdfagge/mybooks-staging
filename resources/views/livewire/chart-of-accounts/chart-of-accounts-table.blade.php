@@ -1,4 +1,5 @@
-<div class="py-6">
+<div class="relative py-6">
+    <x-table-loading />
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <!-- Flash Messages -->
         <x-flash-messages :successMessage="$successMessage" :errorMessage="$errorMessage" />
@@ -27,6 +28,15 @@
                         <x-bulk-actions :actions="['activate' => 'Activate', 'deactivate' => 'Deactivate', 'delete' => 'Delete']" :selectedCount="count($selectedItems)" />
                     </div>
                     <div class="flex items-center gap-2">
+                        {{-- View mode toggle --}}
+                        <div class="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
+                            <button wire:click="$set('viewMode', 'tree')" class="px-3 py-1.5 text-xs font-medium transition-colors {{ $viewMode === 'tree' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600' }}" title="Tree View" aria-label="Tree View">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                            </button>
+                            <button wire:click="$set('viewMode', 'flat')" class="px-3 py-1.5 text-xs font-medium transition-colors {{ $viewMode === 'flat' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600' }}" title="Table View" aria-label="Table View">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18M3 18h18M3 6h18"/></svg>
+                            </button>
+                        </div>
                         <label class="text-sm text-gray-600 dark:text-gray-400">Show:</label>
                         <select wire:model.live="perPage" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="10">10</option>
@@ -113,16 +123,117 @@
                     </div>
                 </div>
 
+                {{-- Tree View --}}
+                @if($viewMode === 'tree')
+                <div class="space-y-3">
+                    @php
+                        $typeConfig = [
+                            'asset' => ['label' => 'Assets', 'color' => 'blue', 'icon' => 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'],
+                            'liability' => ['label' => 'Liabilities', 'color' => 'red', 'icon' => 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z'],
+                            'equity' => ['label' => 'Equity', 'color' => 'purple', 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
+                            'income' => ['label' => 'Income', 'color' => 'green', 'icon' => 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6'],
+                            'expense' => ['label' => 'Expenses', 'color' => 'yellow', 'icon' => 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6'],
+                        ];
+                    @endphp
+
+                    @foreach($typeConfig as $typeKey => $config)
+                        @if(isset($groupedAccounts[$typeKey]) && $groupedAccounts[$typeKey]->count() > 0)
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                            {{-- Type header --}}
+                            <button wire:click="toggleType('{{ $typeKey }}')"
+                                    class="w-full flex items-center justify-between px-4 py-3 bg-{{ $config['color'] }}-50 dark:bg-{{ $config['color'] }}-900/20 hover:bg-{{ $config['color'] }}-100 dark:hover:bg-{{ $config['color'] }}-900/30 transition-colors"
+                                    aria-expanded="{{ !in_array($typeKey, $collapsedTypes) ? 'true' : 'false' }}">
+                                <div class="flex items-center gap-3">
+                                    <svg class="w-5 h-5 text-{{ $config['color'] }}-600 dark:text-{{ $config['color'] }}-400 transition-transform duration-200 {{ in_array($typeKey, $collapsedTypes) ? '-rotate-90' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                    </svg>
+                                    <svg class="w-5 h-5 text-{{ $config['color'] }}-600 dark:text-{{ $config['color'] }}-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $config['icon'] }}"/>
+                                    </svg>
+                                    <span class="font-semibold text-{{ $config['color'] }}-800 dark:text-{{ $config['color'] }}-300">{{ $config['label'] }}</span>
+                                    <span class="text-xs text-{{ $config['color'] }}-600 dark:text-{{ $config['color'] }}-400 bg-{{ $config['color'] }}-100 dark:bg-{{ $config['color'] }}-900/50 px-2 py-0.5 rounded-full">
+                                        {{ $groupedAccounts[$typeKey]->count() }} accounts
+                                    </span>
+                                </div>
+                                <span class="text-sm font-bold text-{{ $config['color'] }}-800 dark:text-{{ $config['color'] }}-300">
+                                    {{ number_format($groupedAccounts[$typeKey]->sum('current_balance'), 2) }}
+                                </span>
+                            </button>
+
+                            {{-- Accounts list --}}
+                            @if(!in_array($typeKey, $collapsedTypes))
+                            <div class="divide-y divide-gray-100 dark:divide-gray-700">
+                                @foreach($groupedAccounts[$typeKey]->sortBy('account_code') as $account)
+                                <div class="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors {{ $account->parent_id ? 'pl-10' : '' }}">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        @if($account->parent_id)
+                                            <svg class="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                            </svg>
+                                        @endif
+                                        <code class="text-xs font-mono text-gray-500 dark:text-gray-400 flex-shrink-0">{{ $account->account_code }}</code>
+                                        <a href="{{ route('chart-of-accounts.show', $account) }}" class="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-indigo-400 truncate">
+                                            {{ $account->name }}
+                                        </a>
+                                        @if($account->is_system)
+                                            <span class="text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 flex-shrink-0">System</span>
+                                        @endif
+                                        @if(!$account->is_active)
+                                            <span class="text-xs px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 flex-shrink-0">Inactive</span>
+                                        @endif
+                                    </div>
+                                    <div class="flex items-center gap-3 flex-shrink-0">
+                                        <span class="text-sm font-medium text-gray-900 dark:text-gray-100 tabular-nums">
+                                            {{ number_format($account->current_balance, 2) }}
+                                        </span>
+                                        <div class="flex items-center gap-1">
+                                            <a href="{{ route('chart-of-accounts.show', $account) }}" class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" title="View" aria-label="View {{ $account->name }}">
+                                                <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                </svg>
+                                            </a>
+                                            @if(!$account->is_system)
+                                            <a href="{{ route('chart-of-accounts.edit', $account) }}" class="p-1 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400" title="Edit" aria-label="Edit {{ $account->name }}">
+                                                <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                </svg>
+                                            </a>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                            @endif
+                        </div>
+                        @endif
+                    @endforeach
+
+                    @if(collect($groupedAccounts)->flatten()->isEmpty())
+                        <div class="text-center py-12">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                            </svg>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No accounts found</h3>
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Try adjusting your search or filters.</p>
+                        </div>
+                    @endif
+                </div>
+                @endif
+
+                {{-- Flat Table View --}}
+                @if($viewMode === 'flat')
                 <!-- Table -->
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr>
-                                <th class="px-4 py-3 text-left">
+                                <th scope="col" class="px-4 py-3 text-left">
                                     <input type="checkbox" wire:model.live="selectAll"
                                         class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                                 </th>
-                                <th wire:click="sortBy('account_code')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                                <th scope="col" wire:click="sortBy('account_code')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
                                     <div class="flex items-center space-x-1">
                                         <span>Code</span>
                                         @if($sortField === 'account_code')
@@ -132,7 +243,7 @@
                                         @endif
                                     </div>
                                 </th>
-                                <th wire:click="sortBy('name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                                <th scope="col" wire:click="sortBy('name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
                                     <div class="flex items-center space-x-1">
                                         <span>Account Name</span>
                                         @if($sortField === 'name')
@@ -142,7 +253,7 @@
                                         @endif
                                     </div>
                                 </th>
-                                <th wire:click="sortBy('type')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                                <th scope="col" wire:click="sortBy('type')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
                                     <div class="flex items-center space-x-1">
                                         <span>Type</span>
                                         @if($sortField === 'type')
@@ -152,9 +263,9 @@
                                         @endif
                                     </div>
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Parent Account</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                                <th wire:click="sortBy('current_balance')" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Parent Account</th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                <th scope="col" wire:click="sortBy('current_balance')" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
                                     <div class="flex items-center justify-end space-x-1">
                                         <span>Balance</span>
                                         @if($sortField === 'current_balance')
@@ -164,7 +275,7 @@
                                         @endif
                                     </div>
                                 </th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -226,15 +337,15 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <div class="flex items-center justify-end space-x-2">
-                                            <a href="{{ route('chart-of-accounts.show', $account) }}" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200" title="View">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <a href="{{ route('chart-of-accounts.show', $account) }}" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200" title="View" aria-label="View">
+                                                <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                                 </svg>
                                             </a>
                                             @if(!$account->is_system)
-                                                <a href="{{ route('chart-of-accounts.edit', $account) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300" title="Edit">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <a href="{{ route('chart-of-accounts.edit', $account) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300" title="Edit" aria-label="Edit">
+                                                    <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                                     </svg>
                                                 </a>
@@ -271,6 +382,7 @@
                         {{ $accounts->links() }}
                     </div>
                 @endif
+                @endif {{-- end flat view --}}
             </div>
         </div>
     </div>

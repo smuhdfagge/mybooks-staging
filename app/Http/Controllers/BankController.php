@@ -7,6 +7,7 @@ use App\Models\ChartOfAccount;
 use App\Models\PaymentReceived;
 use App\Models\PaymentMade;
 use App\Models\Expense;
+use App\Services\BankReconciliationService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -226,5 +227,55 @@ class BankController extends Controller
             ->values();
         
         return view('banks.transactions', compact('bank', 'transactions'));
+    }
+
+    public function reconcile(Request $request, Bank $bank, BankReconciliationService $reconciliationService)
+    {
+        $fromDate = $request->query('from_date');
+        $toDate = $request->query('to_date');
+
+        $unreconciledTransactions = $reconciliationService->getUnreconciledTransactions($bank, $fromDate, $toDate);
+        $summary = $reconciliationService->getSummary($bank);
+
+        return view('banks.reconcile', compact('bank', 'unreconciledTransactions', 'summary', 'fromDate', 'toDate'));
+    }
+
+    public function processReconciliation(Request $request, Bank $bank, BankReconciliationService $reconciliationService)
+    {
+        $validated = $request->validate([
+            'transaction_ids' => 'required|array|min:1',
+            'transaction_ids.*' => 'integer|exists:bank_transactions,id',
+            'statement_balance' => 'required|numeric',
+            'statement_date' => 'required|date',
+        ]);
+
+        $result = $reconciliationService->reconcile(
+            $bank,
+            $validated['transaction_ids'],
+            (float) $validated['statement_balance'],
+            $validated['statement_date']
+        );
+
+        if ($result['success']) {
+            return redirect()->route('banks.reconcile', $bank)->with('success', $result['message']);
+        }
+
+        return redirect()->back()
+            ->withInput()
+            ->with('error', $result['message'])
+            ->with('reconciliation_difference', $result['difference']);
+    }
+
+    public function unreconcile(Request $request, Bank $bank, BankReconciliationService $reconciliationService)
+    {
+        $validated = $request->validate([
+            'transaction_ids' => 'required|array|min:1',
+            'transaction_ids.*' => 'integer|exists:bank_transactions,id',
+        ]);
+
+        $count = $reconciliationService->unreconcile($bank, $validated['transaction_ids']);
+
+        return redirect()->route('banks.reconcile', $bank)
+            ->with('success', "Successfully unreconciled {$count} transaction(s).");
     }
 }

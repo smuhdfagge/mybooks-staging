@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
+use App\Events\PaymentMadeCreated;
+use App\Events\PaymentMadeUpdated;
+use App\Events\PaymentMadeDeleting;
+use App\Events\PaymentMadeDeleted;
 use App\Services\JournalService;
 
 class PaymentMade extends Model
@@ -83,33 +87,19 @@ class PaymentMade extends Model
     protected static function booted()
     {
         static::created(function ($payment) {
-            if ($payment->bill) {
-                $payment->bill->updateBalances();
-            }
-            // Create journal entry for the payment
-            if ($payment->amount > 0) {
-                $payment->createJournalEntry();
-            }
+            PaymentMadeCreated::dispatch($payment);
         });
 
         static::updated(function ($payment) {
-            // Update journal entry when payment is modified
-            if ($payment->amount > 0) {
-                $payment->createJournalEntry();
-            }
+            PaymentMadeUpdated::dispatch($payment);
         });
 
-        // Use deleting event to ensure journal cleanup happens before payment deletion
         static::deleting(function ($payment) {
-            // Delete journal entry and reverse chart of account balances
-            $journalService = app(JournalService::class);
-            $journalService->deleteJournalForTransaction(PaymentMade::class, $payment->id, $payment->tenant_id);
+            PaymentMadeDeleting::dispatch($payment);
         });
 
         static::deleted(function ($payment) {
-            if ($payment->bill) {
-                $payment->bill->updateBalances();
-            }
+            PaymentMadeDeleted::dispatch($payment);
         });
     }
 }

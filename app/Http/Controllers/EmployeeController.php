@@ -9,6 +9,7 @@ use App\Models\Designation;
 use App\Models\SalaryStructure;
 use App\Models\State;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class EmployeeController extends Controller
@@ -61,11 +62,17 @@ class EmployeeController extends Controller
             'emergency_contact_name' => 'nullable|string|max:100',
             'emergency_contact_phone' => 'nullable|string|max:50',
             'notes' => 'nullable|string',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         $validated['tenant_id'] = $tenantId;
         $validated['employee_id'] = Employee::generateEmployeeId($tenantId);
         $validated['status'] = 'active';
+
+        if ($request->hasFile('photo')) {
+            $validated['photo_path'] = $request->file('photo')->store('employee-photos', 'public');
+        }
+        unset($validated['photo']);
 
         Employee::create($validated);
 
@@ -128,7 +135,17 @@ class EmployeeController extends Controller
             'emergency_contact_phone' => 'nullable|string|max:50',
             'status' => 'required|in:active,on-leave,terminated,resigned',
             'notes' => 'nullable|string',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
+
+        if ($request->hasFile('photo')) {
+            // Delete old photo
+            if ($employee->photo_path) {
+                Storage::disk('public')->delete($employee->photo_path);
+            }
+            $validated['photo_path'] = $request->file('photo')->store('employee-photos', 'public');
+        }
+        unset($validated['photo']);
 
         $employee->update($validated);
 

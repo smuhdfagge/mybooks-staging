@@ -6,6 +6,9 @@ use App\Models\SalesOrder;
 use App\Models\SalesOrderItem;
 use App\Models\Customer;
 use App\Models\Item;
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
+use App\Models\Inventory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -138,7 +141,114 @@ class SalesOrderController extends Controller
 
     public function convertToInvoice(SalesOrder $salesOrder)
     {
-        // Logic to convert sales order to invoice
-        return redirect()->route('invoices.create', ['sales_order_id' => $salesOrder->id]);
+        if (!in_array($salesOrder->status, ['confirmed', 'processing'])) {
+            return redirect()->back()->with('error', 'Only confirmed or processing orders can be converted to invoices.');
+        }
+
+        $salesOrder->load('items');
+        $tenantId = auth()->user()->tenant_id;
+
+        DB::beginTransaction();
+        try {
+            $invoice = Invoice::create([
+                'tenant_id' => $tenantId,
+                'customer_id' => $salesOrder->customer_id,
+                'sales_order_id' => $salesOrder->id,
+                'invoice_number' => Invoice::generateNumber($tenantId),
+                'invoice_date' => now(),
+                'due_date' => now()->addDays(30),
+                'reference' => $salesOrder->order_number,
+                'notes' => $salesOrder->notes,
+                'terms' => $salesOrder->terms,
+                'discount_type' => $salesOrder->discount_type,
+                'discount_amount' => $salesOrder->discount_amount ?? 0,
+                'status' => 'draft',
+                'created_by' => auth()->id(),
+            ]);
+
+            $subtotal = 0;
+            $totalTax = 0;
+
+            foreach ($salesOrder->items as $soItem) {
+                $qty = $soItem->quantity - ($soItem->quantity_fulfilled ?? 0);
+                if ($qty <= 0) {
+                    continue;
+                }
+
+                $lineTotal = $qty * $soItem->unit_price;
+                $taxRate = $soItem->tax_rate ?? 0;
+                $taxAmount = $lineTotal * ($taxRate / 100);
+
+                InvoiceItem::create([
+                    'invoice_id' => $invoice->id,
+                    'item_id' => $soItem->item_id,
+                    'description' => $soItem->description,
+                    'quantity' => $qty,
+                    'unit_price' => $soItem->unit_price,
+                    'tax_rate' => $taxRate,
+                    'tax_amount' => $taxAmount,
+                    'total' => $lineTotal + $taxAmount,
+                ]);
+
+                $subtotal += $lineTotal;
+                $totalTax += $taxAmount;
+            }
+
+            if ($subtotal === 0) {
+                DB::rollBack();
+                return redirect()->back()->with('error', 'All items have already been fulfilled. Nothing to invoice.');
+            }
+
+            $discountAmount = $salesOrder->discount_amount ?? 0;
+            if (($salesOrder->discount_type ?? null) === 'percentage') {
+                $discountAmount = $subtotal * ($discountAmount / 100);
+            }
+
+            $total = $subtotal + $totalTax - $discountAmount;
+
+            $invoice->update([
+                'subtotal' => $subtotal,
+                'tax_amount' => $totalTax,
+                'discount_amount' => $discountAmount,
+                'total' => $total,
+                'balance_due' => $total,
+            ]);
+
+            // Reserve inventory for invoice items
+            foreach ($invoice->items as $invoiceItem) {
+                if ($invoiceItem->item_id) {
+                    $item = Item::find($invoiceItem->item_id);
+                    if ($item && $item->track_inventory && $item->type !== 'service') {
+                        $inventory = Inventory::where('item_id', $item->id)
+                            ->where('tenant_id', $tenantId)
+                            ->first();
+                        if ($inventory) {
+                            $inventory->reserved_quantity = ($inventory->reserved_quantity ?? 0) + $invoiceItem->quantity;
+                            $inventory->save();
+                        }
+                    }
+                }
+            }
+
+            // Update sales order status
+            $salesOrder->update(['status' => 'invoiced']);
+
+            DB::commit();
+
+            return redirect()->route('invoices.show', $invoice)
+                ->with('success', "Invoice {$invoice->invoice_number} created from Sales Order {$salesOrder->order_number}.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Failed to convert sales order: ' . $e->getMessage());
+        }
+    }
+
+    public function createDeliveryNote(SalesOrder $salesOrder)
+    {
+        if (!in_array($salesOrder->status, ['confirmed', 'processing'])) {
+            return redirect()->back()->with('error', 'Only confirmed or processing orders can have delivery notes.');
+        }
+
+        return redirect()->route('delivery-notes.create', ['sales_order_id' => $salesOrder->id]);
     }
 }

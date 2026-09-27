@@ -12,13 +12,17 @@ use App\Models\PaymentReceived;
 use App\Models\PaymentMade;
 use App\Models\SalesReceipt;
 use App\Models\Payroll;
+use App\Contracts\JournalServiceInterface;
+use App\Services\AccountCodeService;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
-class JournalService
+class JournalService implements JournalServiceInterface
 {
     /**
-     * Standard account codes for double-entry bookkeeping
+     * Standard account codes for double-entry bookkeeping.
+     * These constants serve as system defaults.
+     * At runtime, use $this->acct() which resolves per-tenant overrides.
      */
     const ACCOUNT_CASH = '1000';
     const ACCOUNT_CHECKING = '1100';
@@ -46,7 +50,16 @@ class JournalService
     const ACCOUNT_GARNISHMENTS_PAYABLE = '2360';
 
     /**
-     * Payment method to account mapping
+     * Resolve an account code for a tenant.
+     * Delegates to AccountCodeService which checks tenant settings then falls back to defaults.
+     */
+    protected function acct(int $tenantId, string $logicalName): string
+    {
+        return AccountCodeService::resolve($tenantId, $logicalName);
+    }
+
+    /**
+     * Payment method to account mapping — delegated to AccountCodeService.
      */
     protected array $paymentMethodAccounts = [
         'cash' => '1000',      // Cash
@@ -65,67 +78,67 @@ class JournalService
      * Map a deduction name to its specific liability account code.
      * Uses keyword matching since deduction names are tenant-defined.
      */
-    protected function mapDeductionToLiabilityAccount(string $name): string
+    protected function mapDeductionToLiabilityAccount(string $name, int $tenantId): string
     {
         $name = strtolower($name);
 
         if (preg_match('/\btax\b|\\bpaye\\b|\\bwithholding\\b/', $name)) {
-            return self::ACCOUNT_TAX_PAYABLE;
+            return $this->acct($tenantId, 'tax_payable');
         }
         if (preg_match('/pension|provident|retirement|401k|superannuation|nssf/', $name)) {
-            return self::ACCOUNT_PENSION_PAYABLE;
+            return $this->acct($tenantId, 'pension_payable');
         }
         if (preg_match('/insurance|health|medical|nhif|hmo/', $name)) {
-            return self::ACCOUNT_INSURANCE_PAYABLE;
+            return $this->acct($tenantId, 'insurance_payable');
         }
         if (preg_match('/union|dues/', $name)) {
-            return self::ACCOUNT_UNION_DUES_PAYABLE;
+            return $this->acct($tenantId, 'union_dues_payable');
         }
         if (preg_match('/garnish|court|child.?support|alimony/', $name)) {
-            return self::ACCOUNT_GARNISHMENTS_PAYABLE;
+            return $this->acct($tenantId, 'garnishments_payable');
         }
 
-        return self::ACCOUNT_PAYROLL_LIABILITIES;
+        return $this->acct($tenantId, 'payroll_liabilities');
     }
 
     /**
      * Map an employer contribution name to its specific expense account code.
      */
-    protected function mapContributionToExpenseAccount(string $name): string
+    protected function mapContributionToExpenseAccount(string $name, int $tenantId): string
     {
         $name = strtolower($name);
 
         if (preg_match('/pension|provident|retirement|401k|superannuation|nssf/', $name)) {
-            return self::ACCOUNT_EMPLOYER_PENSION;
+            return $this->acct($tenantId, 'employer_pension');
         }
         if (preg_match('/insurance|health|medical|nhif|hmo/', $name)) {
-            return self::ACCOUNT_EMPLOYER_HEALTH_INSURANCE;
+            return $this->acct($tenantId, 'employer_health_insurance');
         }
         if (preg_match('/worker|comp|wc\\b|wcf/', $name)) {
-            return self::ACCOUNT_WORKERS_COMP;
+            return $this->acct($tenantId, 'workers_comp');
         }
 
-        return self::ACCOUNT_PAYROLL_TAXES;
+        return $this->acct($tenantId, 'payroll_taxes');
     }
 
     /**
      * Map an employer contribution name to its specific liability account code.
      */
-    protected function mapContributionToLiabilityAccount(string $name): string
+    protected function mapContributionToLiabilityAccount(string $name, int $tenantId): string
     {
         $name = strtolower($name);
 
         if (preg_match('/pension|provident|retirement|401k|superannuation|nssf/', $name)) {
-            return self::ACCOUNT_PENSION_PAYABLE;
+            return $this->acct($tenantId, 'pension_payable');
         }
         if (preg_match('/insurance|health|medical|nhif|hmo/', $name)) {
-            return self::ACCOUNT_INSURANCE_PAYABLE;
+            return $this->acct($tenantId, 'insurance_payable');
         }
         if (preg_match('/worker|comp|wc\\b|wcf/', $name)) {
-            return self::ACCOUNT_PAYROLL_LIABILITIES;
+            return $this->acct($tenantId, 'payroll_liabilities');
         }
 
-        return self::ACCOUNT_PAYROLL_LIABILITIES;
+        return $this->acct($tenantId, 'payroll_liabilities');
     }
 
     /**
@@ -146,6 +159,8 @@ class JournalService
         }
 
         return DB::transaction(function () use ($invoice) {
+            $t = $invoice->tenant_id;
+
             // Check if journal already exists for this invoice
             $existingJournal = Journal::where('reference_type', Invoice::class)
                 ->where('reference_id', $invoice->id)
@@ -171,19 +186,19 @@ class JournalService
             ]);
 
             // Debit: Accounts Receivable
-            $this->createEntry($journal, self::ACCOUNT_ACCOUNTS_RECEIVABLE, $invoice->total, 0, 
+            $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), $invoice->total, 0, 
                 "Invoice {$invoice->invoice_number} - {$invoice->customer->name}");
 
             // Credit: Sales Revenue (subtotal less discount)
             $revenueAmount = $invoice->subtotal - ($invoice->discount_amount ?? 0);
             if ($revenueAmount > 0) {
-                $this->createEntry($journal, self::ACCOUNT_SALES_REVENUE, 0, $revenueAmount,
+                $this->createEntry($journal, $this->acct($t, 'sales_revenue'), 0, $revenueAmount,
                     "Sales - Invoice {$invoice->invoice_number}");
             }
 
             // Credit: Sales Tax Payable (if tax amount exists)
             if ($invoice->tax_amount > 0) {
-                $this->createEntry($journal, self::ACCOUNT_SALES_TAX_PAYABLE, 0, $invoice->tax_amount,
+                $this->createEntry($journal, $this->acct($t, 'sales_tax_payable'), 0, $invoice->tax_amount,
                     "Tax - Invoice {$invoice->invoice_number}");
             }
 
@@ -191,10 +206,10 @@ class JournalService
             $cogsAmount = $this->calculateCOGS($invoice);
             if ($cogsAmount > 0) {
                 // Debit: Cost of Goods Sold (expense)
-                $this->createEntry($journal, self::ACCOUNT_COST_OF_GOODS_SOLD, $cogsAmount, 0,
+                $this->createEntry($journal, $this->acct($t, 'cost_of_goods_sold'), $cogsAmount, 0,
                     "COGS - Invoice {$invoice->invoice_number}");
                 // Credit: Inventory (reduce inventory asset)
-                $this->createEntry($journal, self::ACCOUNT_INVENTORY, 0, $cogsAmount,
+                $this->createEntry($journal, $this->acct($t, 'inventory'), 0, $cogsAmount,
                     "Inventory Sold - Invoice {$invoice->invoice_number}");
             }
 
@@ -208,20 +223,22 @@ class JournalService
     }
 
     /**
-     * Calculate Cost of Goods Sold for an invoice based on item cost prices
+     * Calculate Cost of Goods Sold for an invoice using stock valuation service.
      */
     protected function calculateCOGS(Invoice $invoice): float
     {
         $cogs = 0;
-        
+        $valuationService = app(StockValuationService::class);
+
         foreach ($invoice->items as $invoiceItem) {
             if ($invoiceItem->item && $invoiceItem->item->track_inventory) {
-                // Use the item's cost price
-                $costPrice = $invoiceItem->item->cost_price ?? 0;
-                $cogs += $costPrice * $invoiceItem->quantity;
+                $cogs += $valuationService->calculateCogs(
+                    $invoiceItem->item,
+                    $invoiceItem->quantity
+                );
             }
         }
-        
+
         return $cogs;
     }
 
@@ -230,6 +247,8 @@ class JournalService
      */
     protected function updateInvoiceJournal(Invoice $invoice, Journal $journal): Journal
     {
+        $t = $invoice->tenant_id;
+
         // Delete old entries
         $this->reverseAccountBalances($journal);
         $journal->entries()->delete();
@@ -242,26 +261,26 @@ class JournalService
         ]);
 
         // Recreate entries
-        $this->createEntry($journal, self::ACCOUNT_ACCOUNTS_RECEIVABLE, $invoice->total, 0,
+        $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), $invoice->total, 0,
             "Invoice {$invoice->invoice_number} - {$invoice->customer->name}");
 
         $revenueAmount = $invoice->subtotal - ($invoice->discount_amount ?? 0);
         if ($revenueAmount > 0) {
-            $this->createEntry($journal, self::ACCOUNT_SALES_REVENUE, 0, $revenueAmount,
+            $this->createEntry($journal, $this->acct($t, 'sales_revenue'), 0, $revenueAmount,
                 "Sales - Invoice {$invoice->invoice_number}");
         }
 
         if ($invoice->tax_amount > 0) {
-            $this->createEntry($journal, self::ACCOUNT_SALES_TAX_PAYABLE, 0, $invoice->tax_amount,
+            $this->createEntry($journal, $this->acct($t, 'sales_tax_payable'), 0, $invoice->tax_amount,
                 "Tax - Invoice {$invoice->invoice_number}");
         }
 
         // Record Cost of Goods Sold for inventory items
         $cogsAmount = $this->calculateCOGS($invoice);
         if ($cogsAmount > 0) {
-            $this->createEntry($journal, self::ACCOUNT_COST_OF_GOODS_SOLD, $cogsAmount, 0,
+            $this->createEntry($journal, $this->acct($t, 'cost_of_goods_sold'), $cogsAmount, 0,
                 "COGS - Invoice {$invoice->invoice_number}");
-            $this->createEntry($journal, self::ACCOUNT_INVENTORY, 0, $cogsAmount,
+            $this->createEntry($journal, $this->acct($t, 'inventory'), 0, $cogsAmount,
                 "Inventory Sold - Invoice {$invoice->invoice_number}");
         }
 
@@ -286,6 +305,8 @@ class JournalService
         }
 
         return DB::transaction(function () use ($bill) {
+            $t = $bill->tenant_id;
+
             $existingJournal = Journal::where('reference_type', Bill::class)
                 ->where('reference_id', $bill->id)
                 ->first();
@@ -321,30 +342,30 @@ class JournalService
             }
 
             if ($inventoryAmount > 0) {
-                $this->createEntry($journal, self::ACCOUNT_INVENTORY, $inventoryAmount, 0,
+                $this->createEntry($journal, $this->acct($t, 'inventory'), $inventoryAmount, 0,
                     "Inventory Purchase - Bill {$bill->bill_number}");
             }
 
             if ($expenseAmount > 0) {
                 // Use a general expense account or could be more specific based on item categories
-                $this->createEntry($journal, '6990', $expenseAmount, 0,
+                $this->createEntry($journal, $this->acct($t, 'miscellaneous_expense'), $expenseAmount, 0,
                     "Expense - Bill {$bill->bill_number}");
             }
 
             // If no items or all have zero totals, debit inventory by default
             if ($inventoryAmount == 0 && $expenseAmount == 0 && $bill->subtotal > 0) {
-                $this->createEntry($journal, self::ACCOUNT_INVENTORY, $bill->subtotal, 0,
+                $this->createEntry($journal, $this->acct($t, 'inventory'), $bill->subtotal, 0,
                     "Purchase - Bill {$bill->bill_number}");
             }
 
             // Debit: Tax if applicable (Input VAT is typically an asset)
             if ($bill->tax_amount > 0) {
-                $this->createEntry($journal, '1400', $bill->tax_amount, 0,
+                $this->createEntry($journal, $this->acct($t, 'prepaid_expenses'), $bill->tax_amount, 0,
                     "Input Tax - Bill {$bill->bill_number}"); // Prepaid/Input Tax
             }
 
             // Credit: Accounts Payable
-            $this->createEntry($journal, self::ACCOUNT_ACCOUNTS_PAYABLE, 0, $bill->total,
+            $this->createEntry($journal, $this->acct($t, 'accounts_payable'), 0, $bill->total,
                 "Bill {$bill->bill_number} - {$bill->vendor->name}");
 
             $journal->updateTotals();
@@ -361,6 +382,8 @@ class JournalService
      */
     protected function updateBillJournal(Bill $bill, Journal $journal): Journal
     {
+        $t = $bill->tenant_id;
+
         $this->reverseAccountBalances($journal);
         $journal->entries()->delete();
 
@@ -382,26 +405,26 @@ class JournalService
         }
 
         if ($inventoryAmount > 0) {
-            $this->createEntry($journal, self::ACCOUNT_INVENTORY, $inventoryAmount, 0,
+            $this->createEntry($journal, $this->acct($t, 'inventory'), $inventoryAmount, 0,
                 "Inventory Purchase - Bill {$bill->bill_number}");
         }
 
         if ($expenseAmount > 0) {
-            $this->createEntry($journal, '6990', $expenseAmount, 0,
+            $this->createEntry($journal, $this->acct($t, 'miscellaneous_expense'), $expenseAmount, 0,
                 "Expense - Bill {$bill->bill_number}");
         }
 
         if ($inventoryAmount == 0 && $expenseAmount == 0 && $bill->subtotal > 0) {
-            $this->createEntry($journal, self::ACCOUNT_INVENTORY, $bill->subtotal, 0,
+            $this->createEntry($journal, $this->acct($t, 'inventory'), $bill->subtotal, 0,
                 "Purchase - Bill {$bill->bill_number}");
         }
 
         if ($bill->tax_amount > 0) {
-            $this->createEntry($journal, '1400', $bill->tax_amount, 0,
+            $this->createEntry($journal, $this->acct($t, 'prepaid_expenses'), $bill->tax_amount, 0,
                 "Input Tax - Bill {$bill->bill_number}");
         }
 
-        $this->createEntry($journal, self::ACCOUNT_ACCOUNTS_PAYABLE, 0, $bill->total,
+        $this->createEntry($journal, $this->acct($t, 'accounts_payable'), 0, $bill->total,
             "Bill {$bill->bill_number} - {$bill->vendor->name}");
 
         $journal->updateTotals();
@@ -425,6 +448,8 @@ class JournalService
         }
 
         return DB::transaction(function () use ($expense) {
+            $t = $expense->tenant_id;
+
             $existingJournal = Journal::where('reference_type', Expense::class)
                 ->where('reference_id', $expense->id)
                 ->first();
@@ -448,19 +473,19 @@ class JournalService
             ]);
 
             // Debit: Expense Account (use the expense's assigned account)
-            $expenseAccountCode = $expense->expenseAccount?->account_code ?? '6990';
+            $expenseAccountCode = $expense->expenseAccount?->account_code ?? $this->acct($t, 'miscellaneous_expense');
             $this->createEntry($journal, $expenseAccountCode, $expense->amount, 0,
                 "Expense - {$expense->name}");
 
             // Debit: Input Tax (if applicable)
             if ($expense->tax_amount > 0) {
-                $this->createEntry($journal, '1400', $expense->tax_amount, 0,
+                $this->createEntry($journal, $this->acct($t, 'prepaid_expenses'), $expense->tax_amount, 0,
                     "Input Tax - {$expense->expense_number}");
             }
 
             // Credit: Payment Account (cash, bank, etc.)
             $paymentAccountCode = $expense->paidThroughAccount?->account_code 
-                ?? $this->getPaymentAccountCode($expense->payment_method);
+                ?? $this->getPaymentAccountCode($expense->payment_method, $t);
             $this->createEntry($journal, $paymentAccountCode, 0, $expense->total,
                 "Payment - {$expense->expense_number}");
 
@@ -478,6 +503,8 @@ class JournalService
      */
     protected function updateExpenseJournal(Expense $expense, Journal $journal): Journal
     {
+        $t = $expense->tenant_id;
+
         $this->reverseAccountBalances($journal);
         $journal->entries()->delete();
 
@@ -487,17 +514,17 @@ class JournalService
             'description' => "Expense {$expense->expense_number} - {$expense->name}",
         ]);
 
-        $expenseAccountCode = $expense->expenseAccount?->account_code ?? '6990';
+        $expenseAccountCode = $expense->expenseAccount?->account_code ?? $this->acct($t, 'miscellaneous_expense');
         $this->createEntry($journal, $expenseAccountCode, $expense->amount, 0,
             "Expense - {$expense->name}");
 
         if ($expense->tax_amount > 0) {
-            $this->createEntry($journal, '1400', $expense->tax_amount, 0,
+            $this->createEntry($journal, $this->acct($t, 'prepaid_expenses'), $expense->tax_amount, 0,
                 "Input Tax - {$expense->expense_number}");
         }
 
         $paymentAccountCode = $expense->paidThroughAccount?->account_code
-            ?? $this->getPaymentAccountCode($expense->payment_method);
+            ?? $this->getPaymentAccountCode($expense->payment_method, $t);
         $this->createEntry($journal, $paymentAccountCode, 0, $expense->total,
             "Payment - {$expense->expense_number}");
 
@@ -531,6 +558,8 @@ class JournalService
         }
 
         return DB::transaction(function () use ($payment) {
+            $t = $payment->tenant_id;
+
             $existingJournal = Journal::where('reference_type', PaymentReceived::class)
                 ->where('reference_id', $payment->id)
                 ->first();
@@ -566,26 +595,26 @@ class JournalService
 
             if ($payment->is_deposit) {
                 // Customer deposit: Debit Cash, Credit Customer Deposits (liability)
-                $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method);
+                $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method, $t);
                 $this->createEntry($journal, $paymentAccountCode, $payment->amount, 0,
                     "Customer Deposit - {$payment->payment_number}");
 
-                $this->createEntry($journal, self::ACCOUNT_CUSTOMER_DEPOSITS, 0, $payment->amount,
+                $this->createEntry($journal, $this->acct($t, 'customer_deposits'), 0, $payment->amount,
                     "Customer Deposit from {$payment->customer->name}");
             } elseif ($payment->payment_method === 'deposit') {
                 // Payment from deposit: Debit Customer Deposits (reduce liability), Credit A/R
-                $this->createEntry($journal, self::ACCOUNT_CUSTOMER_DEPOSITS, $payment->amount, 0,
+                $this->createEntry($journal, $this->acct($t, 'customer_deposits'), $payment->amount, 0,
                     "Deposit Applied - {$payment->payment_number}");
 
-                $this->createEntry($journal, self::ACCOUNT_ACCOUNTS_RECEIVABLE, 0, $payment->amount,
+                $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), 0, $payment->amount,
                     "Payment for {$payment->customer->name}");
             } else {
                 // Regular payment: Debit Cash/Bank, Credit A/R
-                $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method);
+                $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method, $t);
                 $this->createEntry($journal, $paymentAccountCode, $payment->amount, 0,
                     "Payment Received - {$payment->payment_number}");
 
-                $this->createEntry($journal, self::ACCOUNT_ACCOUNTS_RECEIVABLE, 0, $payment->amount,
+                $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), 0, $payment->amount,
                     "Payment for {$payment->customer->name}");
             }
 
@@ -603,6 +632,8 @@ class JournalService
      */
     protected function updatePaymentReceivedJournal(PaymentReceived $payment, Journal $journal): Journal
     {
+        $t = $payment->tenant_id;
+
         $this->reverseAccountBalances($journal);
         $journal->entries()->delete();
 
@@ -625,26 +656,26 @@ class JournalService
 
         if ($payment->is_deposit) {
             // Customer deposit: Debit Cash, Credit Customer Deposits (liability)
-            $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method);
+            $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method, $t);
             $this->createEntry($journal, $paymentAccountCode, $payment->amount, 0,
                 "Customer Deposit - {$payment->payment_number}");
 
-            $this->createEntry($journal, self::ACCOUNT_CUSTOMER_DEPOSITS, 0, $payment->amount,
+            $this->createEntry($journal, $this->acct($t, 'customer_deposits'), 0, $payment->amount,
                 "Customer Deposit from {$payment->customer->name}");
         } elseif ($payment->payment_method === 'deposit') {
             // Payment from deposit: Debit Customer Deposits (reduce liability), Credit A/R
-            $this->createEntry($journal, self::ACCOUNT_CUSTOMER_DEPOSITS, $payment->amount, 0,
+            $this->createEntry($journal, $this->acct($t, 'customer_deposits'), $payment->amount, 0,
                 "Deposit Applied - {$payment->payment_number}");
 
-            $this->createEntry($journal, self::ACCOUNT_ACCOUNTS_RECEIVABLE, 0, $payment->amount,
+            $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), 0, $payment->amount,
                 "Payment for {$payment->customer->name}");
         } else {
             // Regular payment: Debit Cash/Bank, Credit A/R
-            $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method);
+            $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method, $t);
             $this->createEntry($journal, $paymentAccountCode, $payment->amount, 0,
                 "Payment Received - {$payment->payment_number}");
 
-            $this->createEntry($journal, self::ACCOUNT_ACCOUNTS_RECEIVABLE, 0, $payment->amount,
+            $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), 0, $payment->amount,
                 "Payment for {$payment->customer->name}");
         }
 
@@ -674,6 +705,8 @@ class JournalService
         }
 
         return DB::transaction(function () use ($refund) {
+            $t = $refund->tenant_id;
+
             $existingJournal = Journal::where('reference_type', \App\Models\InvoiceRefund::class)
                 ->where('reference_id', $refund->id)
                 ->first();
@@ -706,18 +739,18 @@ class JournalService
 
             // Debit: Sales Revenue (reduce income)
             if ($revenueRefund > 0) {
-                $this->createEntry($journal, self::ACCOUNT_SALES_REVENUE, $revenueRefund, 0,
+                $this->createEntry($journal, $this->acct($t, 'sales_revenue'), $revenueRefund, 0,
                     "Sales Refund - {$refund->refund_number}");
             }
 
             // Debit: Sales Tax Payable (reduce tax liability) - if there was tax
             if ($taxRefund > 0) {
-                $this->createEntry($journal, self::ACCOUNT_SALES_TAX_PAYABLE, $taxRefund, 0,
+                $this->createEntry($journal, $this->acct($t, 'sales_tax_payable'), $taxRefund, 0,
                     "Tax Refund - {$refund->refund_number}");
             }
 
             // Credit: Payment Account (cash/bank going out)
-            $paymentAccountCode = $this->getPaymentAccountCode($refund->refund_method);
+            $paymentAccountCode = $this->getPaymentAccountCode($refund->refund_method, $t);
             $this->createEntry($journal, $paymentAccountCode, 0, $refund->amount,
                 "Refund Payment - {$refund->refund_number}");
 
@@ -735,6 +768,8 @@ class JournalService
      */
     protected function updateRefundJournal(\App\Models\InvoiceRefund $refund, Journal $journal): Journal
     {
+        $t = $refund->tenant_id;
+
         $this->reverseAccountBalances($journal);
         $journal->entries()->delete();
 
@@ -753,16 +788,16 @@ class JournalService
         $taxRefund = ($invoice->tax_amount ?? 0) * $refundPercentage;
 
         if ($revenueRefund > 0) {
-            $this->createEntry($journal, self::ACCOUNT_SALES_REVENUE, $revenueRefund, 0,
+            $this->createEntry($journal, $this->acct($t, 'sales_revenue'), $revenueRefund, 0,
                 "Sales Refund - {$refund->refund_number}");
         }
 
         if ($taxRefund > 0) {
-            $this->createEntry($journal, self::ACCOUNT_SALES_TAX_PAYABLE, $taxRefund, 0,
+            $this->createEntry($journal, $this->acct($t, 'sales_tax_payable'), $taxRefund, 0,
                 "Tax Refund - {$refund->refund_number}");
         }
 
-        $paymentAccountCode = $this->getPaymentAccountCode($refund->refund_method);
+        $paymentAccountCode = $this->getPaymentAccountCode($refund->refund_method, $t);
         $this->createEntry($journal, $paymentAccountCode, 0, $refund->amount,
             "Refund Payment - {$refund->refund_number}");
 
@@ -787,6 +822,8 @@ class JournalService
         }
 
         return DB::transaction(function () use ($payment) {
+            $t = $payment->tenant_id;
+
             $existingJournal = Journal::where('reference_type', PaymentMade::class)
                 ->where('reference_id', $payment->id)
                 ->first();
@@ -812,11 +849,11 @@ class JournalService
             ]);
 
             // Debit: Accounts Payable (reduces liability)
-            $this->createEntry($journal, self::ACCOUNT_ACCOUNTS_PAYABLE, $payment->amount, 0,
+            $this->createEntry($journal, $this->acct($t, 'accounts_payable'), $payment->amount, 0,
                 "Payment to {$payment->vendor->name}");
 
             // Credit: Cash/Bank account
-            $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method);
+            $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method, $t);
             $this->createEntry($journal, $paymentAccountCode, 0, $payment->amount,
                 "Payment Made - {$payment->payment_number}");
 
@@ -834,6 +871,8 @@ class JournalService
      */
     protected function updatePaymentMadeJournal(PaymentMade $payment, Journal $journal): Journal
     {
+        $t = $payment->tenant_id;
+
         $this->reverseAccountBalances($journal);
         $journal->entries()->delete();
 
@@ -845,10 +884,10 @@ class JournalService
             'description' => "Payment Made {$payment->payment_number} - {$payment->vendor->name}{$billRef}",
         ]);
 
-        $this->createEntry($journal, self::ACCOUNT_ACCOUNTS_PAYABLE, $payment->amount, 0,
+        $this->createEntry($journal, $this->acct($t, 'accounts_payable'), $payment->amount, 0,
             "Payment to {$payment->vendor->name}");
 
-        $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method);
+        $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method, $t);
         $this->createEntry($journal, $paymentAccountCode, 0, $payment->amount,
             "Payment Made - {$payment->payment_number}");
 
@@ -878,6 +917,8 @@ class JournalService
         }
 
         return DB::transaction(function () use ($receipt) {
+            $t = $receipt->tenant_id;
+
             $existingJournal = Journal::where('reference_type', SalesReceipt::class)
                 ->where('reference_id', $receipt->id)
                 ->first();
@@ -903,29 +944,29 @@ class JournalService
             ]);
 
             // Debit: Cash/Bank (based on payment method)
-            $paymentAccountCode = $this->getPaymentAccountCode($receipt->payment_method ?? 'cash');
+            $paymentAccountCode = $this->getPaymentAccountCode($receipt->payment_method ?? 'cash', $t);
             $this->createEntry($journal, $paymentAccountCode, $receipt->total, 0,
                 "Cash Sale - {$receipt->receipt_number}");
 
             // Credit: Sales Revenue (subtotal less discount)
             $revenueAmount = $receipt->subtotal - ($receipt->discount_amount ?? 0);
             if ($revenueAmount > 0) {
-                $this->createEntry($journal, self::ACCOUNT_SALES_REVENUE, 0, $revenueAmount,
+                $this->createEntry($journal, $this->acct($t, 'sales_revenue'), 0, $revenueAmount,
                     "Sales - Receipt {$receipt->receipt_number}");
             }
 
             // Credit: Sales Tax Payable (if tax amount exists)
             if ($receipt->tax_amount > 0) {
-                $this->createEntry($journal, self::ACCOUNT_SALES_TAX_PAYABLE, 0, $receipt->tax_amount,
+                $this->createEntry($journal, $this->acct($t, 'sales_tax_payable'), 0, $receipt->tax_amount,
                     "Tax - Receipt {$receipt->receipt_number}");
             }
 
             // Record Cost of Goods Sold for inventory items
             $cogsAmount = $this->calculateSalesReceiptCOGS($receipt);
             if ($cogsAmount > 0) {
-                $this->createEntry($journal, self::ACCOUNT_COST_OF_GOODS_SOLD, $cogsAmount, 0,
+                $this->createEntry($journal, $this->acct($t, 'cost_of_goods_sold'), $cogsAmount, 0,
                     "COGS - Receipt {$receipt->receipt_number}");
-                $this->createEntry($journal, self::ACCOUNT_INVENTORY, 0, $cogsAmount,
+                $this->createEntry($journal, $this->acct($t, 'inventory'), 0, $cogsAmount,
                     "Inventory Sold - Receipt {$receipt->receipt_number}");
             }
 
@@ -939,16 +980,19 @@ class JournalService
     }
 
     /**
-     * Calculate COGS for a sales receipt based on item cost prices
+     * Calculate COGS for a sales receipt using stock valuation service.
      */
     protected function calculateSalesReceiptCOGS(SalesReceipt $receipt): float
     {
         $cogs = 0;
+        $valuationService = app(StockValuationService::class);
 
         foreach ($receipt->items as $receiptItem) {
             if ($receiptItem->item && $receiptItem->item->track_inventory) {
-                $costPrice = $receiptItem->item->cost_price ?? 0;
-                $cogs += $costPrice * $receiptItem->quantity;
+                $cogs += $valuationService->calculateCogs(
+                    $receiptItem->item,
+                    $receiptItem->quantity
+                );
             }
         }
 
@@ -960,6 +1004,8 @@ class JournalService
      */
     protected function updateSalesReceiptJournal(SalesReceipt $receipt, Journal $journal): Journal
     {
+        $t = $receipt->tenant_id;
+
         $this->reverseAccountBalances($journal);
         $journal->entries()->delete();
 
@@ -971,26 +1017,26 @@ class JournalService
             'description' => "Sales Receipt {$receipt->receipt_number} - {$customerName}",
         ]);
 
-        $paymentAccountCode = $this->getPaymentAccountCode($receipt->payment_method ?? 'cash');
+        $paymentAccountCode = $this->getPaymentAccountCode($receipt->payment_method ?? 'cash', $t);
         $this->createEntry($journal, $paymentAccountCode, $receipt->total, 0,
             "Cash Sale - {$receipt->receipt_number}");
 
         $revenueAmount = $receipt->subtotal - ($receipt->discount_amount ?? 0);
         if ($revenueAmount > 0) {
-            $this->createEntry($journal, self::ACCOUNT_SALES_REVENUE, 0, $revenueAmount,
+            $this->createEntry($journal, $this->acct($t, 'sales_revenue'), 0, $revenueAmount,
                 "Sales - Receipt {$receipt->receipt_number}");
         }
 
         if ($receipt->tax_amount > 0) {
-            $this->createEntry($journal, self::ACCOUNT_SALES_TAX_PAYABLE, 0, $receipt->tax_amount,
+            $this->createEntry($journal, $this->acct($t, 'sales_tax_payable'), 0, $receipt->tax_amount,
                 "Tax - Receipt {$receipt->receipt_number}");
         }
 
         $cogsAmount = $this->calculateSalesReceiptCOGS($receipt);
         if ($cogsAmount > 0) {
-            $this->createEntry($journal, self::ACCOUNT_COST_OF_GOODS_SOLD, $cogsAmount, 0,
+            $this->createEntry($journal, $this->acct($t, 'cost_of_goods_sold'), $cogsAmount, 0,
                 "COGS - Receipt {$receipt->receipt_number}");
-            $this->createEntry($journal, self::ACCOUNT_INVENTORY, 0, $cogsAmount,
+            $this->createEntry($journal, $this->acct($t, 'inventory'), 0, $cogsAmount,
                 "Inventory Sold - Receipt {$receipt->receipt_number}");
         }
 
@@ -1021,6 +1067,8 @@ class JournalService
         }
 
         return DB::transaction(function () use ($payroll) {
+            $t = $payroll->tenant_id;
+
             $existingJournal = Journal::where('reference_type', Payroll::class)
                 ->where('reference_id', $payroll->id)
                 ->first();
@@ -1046,19 +1094,19 @@ class JournalService
 
             // Debit: Salaries & Wages (basic salary only)
             if ($payroll->basic_salary > 0) {
-                $this->createEntry($journal, self::ACCOUNT_SALARIES_WAGES, $payroll->basic_salary, 0,
+                $this->createEntry($journal, $this->acct($t, 'salaries_wages'), $payroll->basic_salary, 0,
                     "Basic Salary - {$payroll->employee->name} ({$payroll->payroll_number})");
             }
 
             // Debit: Allowances Expense
             if ($payroll->allowances > 0) {
-                $this->createEntry($journal, self::ACCOUNT_ALLOWANCES_EXPENSE, $payroll->allowances, 0,
+                $this->createEntry($journal, $this->acct($t, 'allowances_expense'), $payroll->allowances, 0,
                     "Allowances - {$payroll->employee->name} ({$payroll->payroll_number})");
             }
 
             // Debit: Overtime Expense
             if ($payroll->overtime_amount > 0) {
-                $this->createEntry($journal, self::ACCOUNT_OVERTIME_EXPENSE, $payroll->overtime_amount, 0,
+                $this->createEntry($journal, $this->acct($t, 'overtime_expense'), $payroll->overtime_amount, 0,
                     "Overtime - {$payroll->employee->name} ({$payroll->payroll_number})");
             }
 
@@ -1070,25 +1118,25 @@ class JournalService
                     foreach ($contributionDetails as $contribution) {
                         $amount = (float) ($contribution['amount'] ?? 0);
                         if ($amount > 0) {
-                            $expenseAccount = $this->mapContributionToExpenseAccount($contribution['name'] ?? '');
+                            $expenseAccount = $this->mapContributionToExpenseAccount($contribution['name'] ?? '', $t);
                             $this->createEntry($journal, $expenseAccount, $amount, 0,
                                 "{$contribution['name']} - {$payroll->payroll_number}");
                         }
                     }
                 } else {
-                    $this->createEntry($journal, self::ACCOUNT_PAYROLL_TAXES, $employerContributions, 0,
+                    $this->createEntry($journal, $this->acct($t, 'payroll_taxes'), $employerContributions, 0,
                         "Employer Contributions - {$payroll->payroll_number}");
                 }
             }
 
             // Credit: Cash/Bank (net salary paid to employee)
-            $paymentAccountCode = $this->getPaymentAccountCode($payroll->payment_method ?? 'bank_transfer');
+            $paymentAccountCode = $this->getPaymentAccountCode($payroll->payment_method ?? 'bank_transfer', $t);
             $this->createEntry($journal, $paymentAccountCode, 0, $payroll->net_salary,
                 "Net Pay - {$payroll->payroll_number}");
 
             // Credit: Tax Payable (income tax withheld from employee)
             if ($payroll->tax_deduction > 0) {
-                $this->createEntry($journal, self::ACCOUNT_TAX_PAYABLE, 0, $payroll->tax_deduction,
+                $this->createEntry($journal, $this->acct($t, 'tax_payable'), 0, $payroll->tax_deduction,
                     "Tax Withheld - {$payroll->payroll_number}");
             }
 
@@ -1102,7 +1150,7 @@ class JournalService
                     }
                     $amount = (float) ($deduction['amount'] ?? 0);
                     if ($amount > 0) {
-                        $liabilityAccount = $this->mapDeductionToLiabilityAccount($deduction['name'] ?? '');
+                        $liabilityAccount = $this->mapDeductionToLiabilityAccount($deduction['name'] ?? '', $t);
                         $this->createEntry($journal, $liabilityAccount, 0, $amount,
                             "{$deduction['name']} - {$payroll->payroll_number}");
                         $mappedTotal += $amount;
@@ -1110,7 +1158,7 @@ class JournalService
                 }
                 $remainder = round($payroll->other_deductions - $mappedTotal, 2);
                 if ($remainder > 0) {
-                    $this->createEntry($journal, self::ACCOUNT_PAYROLL_LIABILITIES, 0, $remainder,
+                    $this->createEntry($journal, $this->acct($t, 'payroll_liabilities'), 0, $remainder,
                         "Other Deductions - {$payroll->payroll_number}");
                 }
             }
@@ -1122,13 +1170,13 @@ class JournalService
                     foreach ($contributionDetails as $contribution) {
                         $amount = (float) ($contribution['amount'] ?? 0);
                         if ($amount > 0) {
-                            $liabilityAccount = $this->mapContributionToLiabilityAccount($contribution['name'] ?? '');
+                            $liabilityAccount = $this->mapContributionToLiabilityAccount($contribution['name'] ?? '', $t);
                             $this->createEntry($journal, $liabilityAccount, 0, $amount,
                                 "{$contribution['name']} Payable - {$payroll->payroll_number}");
                         }
                     }
                 } else {
-                    $this->createEntry($journal, self::ACCOUNT_PAYROLL_LIABILITIES, 0, $employerContributions,
+                    $this->createEntry($journal, $this->acct($t, 'payroll_liabilities'), 0, $employerContributions,
                         "Employer Contributions Payable - {$payroll->payroll_number}");
                 }
             }
@@ -1147,6 +1195,8 @@ class JournalService
      */
     protected function updatePayrollJournal(Payroll $payroll, Journal $journal): Journal
     {
+        $t = $payroll->tenant_id;
+
         $this->reverseAccountBalances($journal);
         $journal->entries()->delete();
 
@@ -1159,19 +1209,19 @@ class JournalService
 
         // Debit: Basic Salary
         if ($payroll->basic_salary > 0) {
-            $this->createEntry($journal, self::ACCOUNT_SALARIES_WAGES, $payroll->basic_salary, 0,
+            $this->createEntry($journal, $this->acct($t, 'salaries_wages'), $payroll->basic_salary, 0,
                 "Basic Salary - {$payroll->employee->name} ({$payroll->payroll_number})");
         }
 
         // Debit: Allowances
         if ($payroll->allowances > 0) {
-            $this->createEntry($journal, self::ACCOUNT_ALLOWANCES_EXPENSE, $payroll->allowances, 0,
+            $this->createEntry($journal, $this->acct($t, 'allowances_expense'), $payroll->allowances, 0,
                 "Allowances - {$payroll->employee->name} ({$payroll->payroll_number})");
         }
 
         // Debit: Overtime
         if ($payroll->overtime_amount > 0) {
-            $this->createEntry($journal, self::ACCOUNT_OVERTIME_EXPENSE, $payroll->overtime_amount, 0,
+            $this->createEntry($journal, $this->acct($t, 'overtime_expense'), $payroll->overtime_amount, 0,
                 "Overtime - {$payroll->employee->name} ({$payroll->payroll_number})");
         }
 
@@ -1183,23 +1233,23 @@ class JournalService
                 foreach ($contributionDetails as $contribution) {
                     $amount = (float) ($contribution['amount'] ?? 0);
                     if ($amount > 0) {
-                        $expenseAccount = $this->mapContributionToExpenseAccount($contribution['name'] ?? '');
+                        $expenseAccount = $this->mapContributionToExpenseAccount($contribution['name'] ?? '', $t);
                         $this->createEntry($journal, $expenseAccount, $amount, 0,
                             "{$contribution['name']} - {$payroll->payroll_number}");
                     }
                 }
             } else {
-                $this->createEntry($journal, self::ACCOUNT_PAYROLL_TAXES, $employerContributions, 0,
+                $this->createEntry($journal, $this->acct($t, 'payroll_taxes'), $employerContributions, 0,
                     "Employer Contributions - {$payroll->payroll_number}");
             }
         }
 
-        $paymentAccountCode = $this->getPaymentAccountCode($payroll->payment_method ?? 'bank_transfer');
+        $paymentAccountCode = $this->getPaymentAccountCode($payroll->payment_method ?? 'bank_transfer', $t);
         $this->createEntry($journal, $paymentAccountCode, 0, $payroll->net_salary,
             "Net Pay - {$payroll->payroll_number}");
 
         if ($payroll->tax_deduction > 0) {
-            $this->createEntry($journal, self::ACCOUNT_TAX_PAYABLE, 0, $payroll->tax_deduction,
+            $this->createEntry($journal, $this->acct($t, 'tax_payable'), 0, $payroll->tax_deduction,
                 "Tax Withheld - {$payroll->payroll_number}");
         }
 
@@ -1212,7 +1262,7 @@ class JournalService
                 }
                 $amount = (float) ($deduction['amount'] ?? 0);
                 if ($amount > 0) {
-                    $liabilityAccount = $this->mapDeductionToLiabilityAccount($deduction['name'] ?? '');
+                    $liabilityAccount = $this->mapDeductionToLiabilityAccount($deduction['name'] ?? '', $t);
                     $this->createEntry($journal, $liabilityAccount, 0, $amount,
                         "{$deduction['name']} - {$payroll->payroll_number}");
                     $mappedTotal += $amount;
@@ -1220,7 +1270,7 @@ class JournalService
             }
             $remainder = round($payroll->other_deductions - $mappedTotal, 2);
             if ($remainder > 0) {
-                $this->createEntry($journal, self::ACCOUNT_PAYROLL_LIABILITIES, 0, $remainder,
+                $this->createEntry($journal, $this->acct($t, 'payroll_liabilities'), 0, $remainder,
                     "Other Deductions - {$payroll->payroll_number}");
             }
         }
@@ -1231,13 +1281,13 @@ class JournalService
                 foreach ($contributionDetails as $contribution) {
                     $amount = (float) ($contribution['amount'] ?? 0);
                     if ($amount > 0) {
-                        $liabilityAccount = $this->mapContributionToLiabilityAccount($contribution['name'] ?? '');
+                        $liabilityAccount = $this->mapContributionToLiabilityAccount($contribution['name'] ?? '', $t);
                         $this->createEntry($journal, $liabilityAccount, 0, $amount,
                             "{$contribution['name']} Payable - {$payroll->payroll_number}");
                     }
                 }
             } else {
-                $this->createEntry($journal, self::ACCOUNT_PAYROLL_LIABILITIES, 0, $employerContributions,
+                $this->createEntry($journal, $this->acct($t, 'payroll_liabilities'), 0, $employerContributions,
                     "Employer Contributions Payable - {$payroll->payroll_number}");
             }
         }
@@ -1343,16 +1393,21 @@ class JournalService
     }
 
     /**
-     * Get the payment account code based on payment method
+     * Get the payment account code based on payment method, resolved per-tenant.
      */
-    protected function getPaymentAccountCode(?string $paymentMethod): string
+    protected function getPaymentAccountCode(?string $paymentMethod, int $tenantId = 0): string
     {
+        if ($tenantId > 0) {
+            return AccountCodeService::resolvePaymentMethod($tenantId, $paymentMethod);
+        }
+
+        // Legacy fallback when tenantId not provided
         if ($paymentMethod === null || $paymentMethod === '') {
-            return self::ACCOUNT_CASH;
+            return $this->acct($t, 'cash');
         }
 
         $method = strtolower(str_replace(' ', '_', $paymentMethod));
-        return $this->paymentMethodAccounts[$method] ?? self::ACCOUNT_CASH;
+        return $this->paymentMethodAccounts[$method] ?? $this->acct($t, 'cash');
     }
 
     /**

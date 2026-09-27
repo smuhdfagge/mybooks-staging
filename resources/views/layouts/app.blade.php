@@ -146,6 +146,14 @@
     </style>
 </head>
 <body class="h-full font-sans antialiased bg-gray-50 dark:bg-gray-900" x-data="{ sidebarOpen: false }">
+    {{-- Skip to main content (accessibility) --}}
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:rounded-md focus:shadow-lg focus:outline-none">
+        Skip to main content
+    </a>
+
+    {{-- Toast notification system --}}
+    <x-toast />
+
     <div class="min-h-screen flex flex-col">
         <!-- Mobile sidebar backdrop -->
         <div x-show="sidebarOpen" 
@@ -169,8 +177,11 @@
             @include('components.header')
 
             <!-- Page content -->
-            <main class="flex-1 py-4 sm:py-6">
+            <main id="main-content" class="flex-1 py-4 sm:py-6">
                 <div class="mx-auto max-w-7xl px-3 sm:px-4 lg:px-6">
+                    <!-- Auto-breadcrumbs (route-driven) -->
+                    <x-breadcrumbs />
+
                     <!-- Page heading -->
                     @if(isset($header))
                     <div class="mb-4 sm:mb-6">
@@ -180,7 +191,7 @@
 
                     <!-- Flash messages -->
                     @if (session('success'))
-                    <div class="mb-4 rounded-lg bg-green-50 p-4 dark:bg-green-900/50" x-data="{ show: true }" x-show="show" x-transition>
+                    <div class="mb-4 rounded-lg bg-green-50 p-4 dark:bg-green-900/50" x-data="{ show: true }" x-show="show" x-transition role="alert" aria-live="polite">
                         <div class="flex">
                             <div class="flex-shrink-0">
                                 <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
@@ -200,7 +211,7 @@
                     @endif
 
                     @if (session('error'))
-                    <div class="mb-4 rounded-lg bg-red-50 p-4 dark:bg-red-900/50" x-data="{ show: true }" x-show="show" x-transition>
+                    <div class="mb-4 rounded-lg bg-red-50 p-4 dark:bg-red-900/50" x-data="{ show: true }" x-show="show" x-transition role="alert" aria-live="assertive">
                         <div class="flex">
                             <div class="flex-shrink-0">
                                 <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">

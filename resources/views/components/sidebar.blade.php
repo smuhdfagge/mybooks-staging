@@ -95,8 +95,8 @@
         @endcanany
 
         <!-- Purchases Module -->
-        @canany(['view vendors', 'view expenses', 'view bills', 'view recurrent-bills', 'view recurrent-expenses', 'view payments-made'])
-        <div x-data="{ open: {{ request()->is('purchases*') || request()->is('vendors*') || request()->is('bills*') || request()->is('expenses*') ? 'true' : 'false' }} }">
+        @canany(['view vendors', 'view expenses', 'view bills', 'view purchase-orders', 'view recurrent-bills', 'view recurrent-expenses', 'view payments-made'])
+        <div x-data="{ open: {{ request()->is('purchases*') || request()->is('vendors*') || request()->is('bills*') || request()->is('purchase-orders*') || request()->is('expenses*') ? 'true' : 'false' }} }">
             <button @click="open = !open" 
                     class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors">
                 <div class="flex items-center">
@@ -118,6 +118,9 @@
                 @endcan
                 @can('view bills')
                 <a href="{{ route('bills.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('bills.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Bills</a>
+                @endcan
+                @can('view purchase-orders')
+                <a href="{{ route('purchase-orders.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('purchase-orders.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Purchase Orders</a>
                 @endcan
                 @can('view recurrent-bills')
                 <a href="{{ route('recurrent-bills.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('recurrent-bills.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Recurrent Bills</a>
@@ -312,6 +315,7 @@
                 @can('view settings')
                 <a href="{{ route('settings.company') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('settings.company') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Company Profile</a>
                 <a href="{{ route('settings.notifications') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('settings.notifications*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Notifications</a>
+                <a href="{{ route('settings.invoice-templates.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('settings.invoice-templates*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Invoice Templates</a>
                 <a href="{{ route('settings.subscription') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('settings.subscription') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">
                     Subscription
                 </a>

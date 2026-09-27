@@ -31,16 +31,20 @@ class VerifyTenantOwnership
             return $next($request);
         }
 
-        // Inspect all route parameters for Eloquent models
+        // Inspect all route parameters for Eloquent models.
+        // Use getAttributes() instead of isset() to avoid Eloquent's __isset
+        // returning false for nullable foreign keys that are actually set.
         foreach ($request->route()?->parameters() ?? [] as $parameter) {
-            if ($parameter instanceof Model && isset($parameter->tenant_id)) {
-                if ((int) $parameter->tenant_id !== (int) $userTenantId) {
+            if ($parameter instanceof Model && array_key_exists('tenant_id', $parameter->getAttributes())) {
+                $modelTenantId = $parameter->getAttribute('tenant_id');
+                // Null tenant_id means a global/shared record (e.g. system roles) — allow access.
+                if ($modelTenantId !== null && (int) $modelTenantId !== (int) $userTenantId) {
                     ActivityLogService::logSuspiciousActivity(
                         'Cross-tenant access attempt blocked',
                         [
                             'target_model' => get_class($parameter),
                             'target_id' => $parameter->getKey(),
-                            'target_tenant' => $parameter->tenant_id,
+                            'target_tenant' => $modelTenantId,
                             'user_tenant' => $userTenantId,
                             'url' => $request->fullUrl(),
                         ]

@@ -19,68 +19,7 @@
     </head>
     <body class="bg-white dark:bg-gray-900 antialiased" x-data="{ mobileMenuOpen: false }">
         
-        <!-- Navigation -->
-        <nav class="fixed w-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 z-50">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-16">
-                    <div class="flex items-center">
-                        <span class="text-2xl font-bold gradient-text">MyBooks</span>
-                    </div>
-                    
-                    <!-- Desktop Menu -->
-                    <div class="hidden md:flex items-center space-x-8">
-                        <a href="#features" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">Features</a>
-                        <a href="#how-it-works" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">How It Works</a>
-                        <a href="#modules" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">Modules</a>
-                        <a href="{{ route('about') }}" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">About Us</a>
-                        @if (Route::has('login'))
-                            @auth
-                                <a href="{{ url('/dashboard') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">Dashboard</a>
-                            @else
-                                <a href="{{ route('login') }}" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">Log in</a>
-                                @if (Route::has('register'))
-                                    <a href="{{ route('register') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">Get Started</a>
-                                @endif
-                            @endauth
-                        @endif
-                    </div>
-
-                    <!-- Mobile Menu Button -->
-                    <div class="md:hidden">
-                        <button @click="mobileMenuOpen = !mobileMenuOpen" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none">
-                            <!-- Hamburger Icon -->
-                            <svg x-show="!mobileMenuOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                            </svg>
-                            <!-- Close Icon -->
-                            <svg x-show="mobileMenuOpen" x-cloak class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Mobile Menu -->
-                <div x-show="mobileMenuOpen" x-cloak x-transition class="md:hidden pb-4">
-                    <div class="flex flex-col space-y-4">
-                        <a href="#features" @click="mobileMenuOpen = false" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">Features</a>
-                        <a href="#how-it-works" @click="mobileMenuOpen = false" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">How It Works</a>
-                        <a href="#modules" @click="mobileMenuOpen = false" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">Modules</a>
-                        <a href="{{ route('about') }}" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">About Us</a>
-                        @if (Route::has('login'))
-                            @auth
-                                <a href="{{ url('/dashboard') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-center">Dashboard</a>
-                            @else
-                                <a href="{{ route('login') }}" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">Log in</a>
-                                @if (Route::has('register'))
-                                    <a href="{{ route('register') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-center">Get Started</a>
-                                @endif
-                            @endauth
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </nav>
+        @include('partials.public-nav')
 
         <!-- Hero Section -->
         <section class="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
@@ -514,7 +453,9 @@
                                 <span class="text-gray-600 dark:text-gray-300">Invoicing & expenses</span>
                             </li>
                             <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20
+                                <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                <span class="text-gray-600 dark:text-gray-300">Financial reports</span>
+                            </li>
                             <li class="flex items-start gap-3">
                                 <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                 <span class="text-gray-600 dark:text-gray-300">Email support</span>
@@ -523,7 +464,7 @@
                     </div>
 
                     <!-- Professional Plan -->
-                    <div class="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl shadow-2xl p-8 transform scale-105 relative">
+                    <div class="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl shadow-2xl p-8 transform md:scale-105 relative">
                         <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-yellow-400 text-gray-900 px-4 py-1 rounded-full text-sm font-semibold">Most Popular</div>
                         <div class="text-center">
                             <h3 class="text-2xl font-bold text-white mb-2">Professional</h3>
@@ -666,43 +607,7 @@
             </div>
         </section>
 
-        <!-- Footer -->
-        <footer class="bg-gray-900 text-gray-300 py-12 px-4 sm:px-6 lg:px-8">
-            <div class="max-w-7xl mx-auto">
-                <div class="grid md:grid-cols-4 gap-8 mb-8">
-                    <div>
-                        <h3 class="text-white font-bold text-xl mb-4">MyBooks</h3>
-                        <p class="text-gray-400 text-sm">Complete accounting and bookkeeping solution for modern businesses.</p>
-                    </div>
-                    <div>
-                        <h4 class="text-white font-semibold mb-4">Product</h4>
-                        <ul class="space-y-2 text-sm">
-                            <li><a href="#features" class="hover:text-white transition">Features</a></li>
-                            <li><a href="#modules" class="hover:text-white transition">Modules</a></li>
-                            <li><a href="#how-it-works" class="hover:text-white transition">How It Works</a></li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4 class="text-white font-semibold mb-4">Company</h4>
-                        <ul class="space-y-2 text-sm">
-                            <li><a href="{{ route('about') }}" class="hover:text-white transition">About Us</a></li>
-                            <li><a href="{{ route('contact') }}" class="hover:text-white transition">Contact</a></li>
-                            <li><a href="{{ route('support') }}" class="hover:text-white transition">Support</a></li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4 class="text-white font-semibold mb-4">Legal</h4>
-                        <ul class="space-y-2 text-sm">
-                            <li><a href="{{ route('privacy-policy') }}" class="hover:text-white transition">Privacy Policy</a></li>
-                            <li><a href="{{ route('terms-of-service') }}" class="hover:text-white transition">Terms of Service</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="border-t border-gray-800 pt-8 text-center text-sm text-gray-400">
-                    <p>&copy; {{ date('Y') }} MyBooks. All rights reserved.</p>
-                </div>
-            </div>
-        </footer>
+        @include('partials.public-footer')
 
         @include('partials.tawk-to')
         <script nonce="{{ app('csp-nonce') }}">

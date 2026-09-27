@@ -1,13 +1,24 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    {{ $item->name }}
-                </h2>
-                @if($item->sku)
-                    <p class="text-sm text-gray-500 dark:text-gray-400">SKU: {{ $item->sku }}</p>
+            <div class="flex items-center gap-4">
+                @if($item->image_path)
+                    <img src="{{ asset('storage/' . $item->image_path) }}" alt="{{ $item->name }}" class="h-14 w-14 rounded-lg object-cover ring-2 ring-gray-200 dark:ring-gray-700">
+                @else
+                    <div class="h-14 w-14 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center ring-2 ring-gray-200 dark:ring-gray-700">
+                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
+                    </div>
                 @endif
+                <div>
+                    <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+                        {{ $item->name }}
+                    </h2>
+                    @if($item->sku)
+                        <p class="text-sm text-gray-500 dark:text-gray-400">SKU: {{ $item->sku }}</p>
+                    @endif
+                </div>
             </div>
             <div class="flex flex-wrap gap-2">
                 <a href="{{ route('items.edit', $item) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">

@@ -45,12 +45,6 @@
 
     <div class="py-6">
         <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 dark:bg-green-900/50 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-300 px-4 py-3 rounded relative" role="alert">
-                    <span class="block sm:inline">{{ session('success') }}</span>
-                </div>
-            @endif
-
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Order Info -->
                 <div class="lg:col-span-2 space-y-6">
@@ -67,6 +61,7 @@
                                 <span class="px-3 py-1 rounded-full text-xs font-medium
                                     @if($salesOrder->status === 'draft') bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300
                                     @elseif($salesOrder->status === 'confirmed') bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300
+                                    @elseif($salesOrder->status === 'invoiced') bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300
                                     @elseif($salesOrder->status === 'completed') bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300
                                     @elseif($salesOrder->status === 'cancelled') bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300
                                     @endif">

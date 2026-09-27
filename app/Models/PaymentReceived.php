@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
+use App\Events\PaymentReceivedCreated;
+use App\Events\PaymentReceivedUpdated;
+use App\Events\PaymentReceivedDeleting;
+use App\Events\PaymentReceivedDeleted;
 use App\Services\JournalService;
 
 class PaymentReceived extends Model
@@ -179,49 +183,19 @@ class PaymentReceived extends Model
     protected static function booted()
     {
         static::created(function ($payment) {
-            if ($payment->invoice) {
-                $payment->invoice->updateBalances();
-            }
-            
-            // Update customer deposit balance if this is a deposit
-            if ($payment->is_deposit) {
-                $payment->customer->updateDepositBalance();
-            }
-            
-            // Create journal entry for the payment
-            if ($payment->amount > 0) {
-                $payment->createJournalEntry();
-            }
+            PaymentReceivedCreated::dispatch($payment);
         });
 
         static::updated(function ($payment) {
-            // Update customer deposit balance if this is a deposit
-            if ($payment->is_deposit) {
-                $payment->customer->updateDepositBalance();
-            }
-            
-            // Update journal entry when payment is modified
-            if ($payment->amount > 0) {
-                $payment->createJournalEntry();
-            }
+            PaymentReceivedUpdated::dispatch($payment);
         });
 
-        // Use deleting event to ensure journal cleanup happens before payment deletion
         static::deleting(function ($payment) {
-            // Delete journal entry and reverse chart of account balances
-            $journalService = app(JournalService::class);
-            $journalService->deleteJournalForTransaction(PaymentReceived::class, $payment->id, $payment->tenant_id);
+            PaymentReceivedDeleting::dispatch($payment);
         });
 
         static::deleted(function ($payment) {
-            if ($payment->invoice) {
-                $payment->invoice->updateBalances();
-            }
-            
-            // Update customer deposit balance if this was a deposit
-            if ($payment->is_deposit && $payment->customer) {
-                $payment->customer->updateDepositBalance();
-            }
+            PaymentReceivedDeleted::dispatch($payment);
         });
     }
 }

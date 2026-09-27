@@ -15,6 +15,7 @@
 
     <div class="py-6">
         <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
+            <x-form-auto-save formKey="journal-create">
             @if(session('error'))
                 <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
                     <span class="block sm:inline">{{ session('error') }}</span>
@@ -249,6 +250,7 @@
                     </div>
                 </form>
             </div>
+            </x-form-auto-save>
         </div>
     </div>
 

@@ -55,6 +55,7 @@ class Employee extends Model
         'emergency_contact_phone',
         'status',
         'notes',
+        'photo_path',
     ];
 
     protected $casts = [
@@ -90,6 +91,16 @@ class Employee extends Model
     public function payrolls()
     {
         return $this->hasMany(Payroll::class);
+    }
+
+    public function loans()
+    {
+        return $this->hasMany(EmployeeLoan::class);
+    }
+
+    public function activeLoans()
+    {
+        return $this->hasMany(EmployeeLoan::class)->where('status', EmployeeLoan::STATUS_ACTIVE);
     }
 
     public function salaryStructure()

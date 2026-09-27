@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
+use App\Events\BillSaved;
+use App\Events\BillDeleting;
 use App\Services\JournalService;
 use Illuminate\Support\Facades\DB;
 
@@ -82,17 +84,14 @@ class Bill extends Model
 
     protected static function booted()
     {
-        // Create journal entry when bill is created or updated (skip drafts)
         static::saved(function ($bill) {
             if ($bill->total > 0 && $bill->status !== 'draft') {
-                $bill->createJournalEntry();
+                BillSaved::dispatch($bill);
             }
         });
 
-        // Delete journal entry when bill is deleted
         static::deleting(function ($bill) {
-            $journalService = app(JournalService::class);
-            $journalService->deleteJournalForTransaction(Bill::class, $bill->id, $bill->tenant_id);
+            BillDeleting::dispatch($bill);
         });
     }
 
@@ -142,10 +141,29 @@ class Bill extends Model
                             ]
                         );
                         
+                        // Update weighted average cost
+                        $unitCost = $billItem->quantity > 0
+                            ? ($billItem->total ?? ($billItem->unit_price * $billItem->quantity)) / $billItem->quantity
+                            : ($item->cost_price ?? 0);
+                        $valuationService = app(\App\Services\StockValuationService::class);
+                        $valuationService->updateWeightedAverageCost($inventory, $billItem->quantity, $unitCost);
+
                         // Add quantity
-                        $previousQty = $inventory->quantity;
                         $inventory->quantity += $billItem->quantity;
                         $inventory->save();
+
+                        // Create inventory layer for FIFO tracking
+                        InventoryLayer::create([
+                            'tenant_id' => $this->tenant_id,
+                            'item_id' => $billItem->item_id,
+                            'warehouse_id' => $inventory->warehouse_id,
+                            'quantity' => $billItem->quantity,
+                            'remaining_quantity' => $billItem->quantity,
+                            'unit_cost' => $unitCost,
+                            'reference_type' => 'bill',
+                            'reference_id' => $this->id,
+                            'received_date' => now()->toDateString(),
+                        ]);
                         
                         // Record inventory history
                         InventoryHistory::create([

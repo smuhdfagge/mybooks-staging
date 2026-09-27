@@ -1,0 +1,415 @@
+﻿
+   PASS  Tests\Unit\ExampleTest
+  Γ£ô that true is true                                                    0.01s  
+
+   PASS  Tests\Unit\Models\BankTest
+  Γ£ô masked account number hides digits                                   0.90s  
+  Γ£ô masked account number short number                                   0.06s  
+  Γ£ô masked account number empty                                          0.05s  
+  Γ£ô formatted balance                                                    0.06s  
+  Γ£ô get account types                                                    0.03s  
+  Γ£ô scope active                                                         0.08s  
+  Γ£ô scope primary                                                        0.06s  
+  Γ£ô soft deletes                                                         0.06s  
+  Γ£ô boolean casts                                                        0.06s  
+
+   PASS  Tests\Unit\Models\ChartOfAccountTest
+  Γ£ô is debit balance for assets                                          0.06s  
+  Γ£ô is debit balance for expenses                                        0.06s  
+  Γ£ô is credit balance for liabilities                                    0.06s  
+  Γ£ô is credit balance for equity                                         0.06s  
+  Γ£ô is credit balance for income                                         0.06s  
+  Γ£ô get types returns all types                                          0.03s  
+  Γ£ô parent child relationship                                            0.08s  
+  Γ£ô soft deletes                                                         0.06s  
+  Γ£ô is system cast                                                       0.06s  
+
+   PASS  Tests\Unit\Models\InvoiceTest
+  Γ£ô generate number starts at one                                        0.07s  
+  Γ£ô generate number increments                                           0.07s  
+  Γ£ô generate number is tenant scoped                                     0.07s  
+  Γ£ô is released                                                          0.15s  
+  Γ£ô can be released when paid and not released                           0.10s  
+  Γ£ô cannot be released when already released                             0.09s  
+  Γ£ô cannot be released when draft                                        0.09s  
+  Γ£ô customer relationship                                                0.08s  
+  Γ£ô soft deletes                                                         0.07s  
+  Γ£ô generate waybill number                                              0.06s  
+
+   PASS  Tests\Unit\Models\JournalTest
+  Γ£ô is balanced returns true when equal                                  0.07s  
+  Γ£ô is balanced returns false when unequal                               0.06s  
+  Γ£ô is balanced handles floating point precision                         0.06s  
+  Γ£ô is balanced fails at threshold                                       0.06s  
+  Γ£ô generate number creates sequential numbers                           0.08s  
+  Γ£ô generate number starts at one                                        0.06s  
+  Γ£ô entries relationship                                                 0.07s  
+  Γ£ô update totals                                                        0.07s  
+  Γ£ô post fails when unbalanced                                           0.07s  
+  Γ£ô post marks journal as posted                                         0.07s  
+  Γ£ô post updates account balances                                        0.07s  
+  Γ£ô soft deletes                                                         0.07s  
+
+   PASS  Tests\Unit\Models\PlanTest
+  Γ£ô get price for monthly cycle                                          0.04s  
+  Γ£ô get price for annual cycle                                           0.03s  
+  Γ£ô allows billing cycle monthly                                         0.03s  
+  Γ£ô allows billing cycle annual                                          0.03s  
+  Γ£ô scope active                                                         0.03s  
+  Γ£ô subscriptions relationship                                           0.06s  
+  Γ£ô features cast as array                                               0.03s  
+
+   PASS  Tests\Unit\Models\ScopeActiveTest
+  Γ£ô customer scope active returns only active                            0.07s  
+  Γ£ô customer scope active returns empty when none active                 0.06s  
+  Γ£ô vendor scope active returns only active                              0.07s  
+  Γ£ô chart of account scope active returns only active                    0.07s  
+  Γ£ô item scope active returns only active                                0.07s  
+  Γ£ô scope active is chainable with where                                 0.06s  
+
+   PASS  Tests\Unit\Models\SubscriptionTest
+  Γ£ô is active returns true for active subscription                       0.07s  
+  Γ£ô is active returns false for cancelled                                0.06s  
+  Γ£ô has expired returns false for future end date                        0.06s  
+  Γ£ô has expired returns true for past end date                           0.07s  
+  Γ£ô is cancelled returns true with cancelled status                      0.06s  
+  Γ£ô is cancelled returns false for active                                0.06s  
+  Γ£ô days until expiration returns positive for future                    0.07s  
+  Γ£ô days until expiration returns null when no end date                  0.07s  
+  Γ£ô renew extends subscription                                           0.06s  
+  Γ£ô renew annual extends by 12 months                                    0.07s  
+  Γ£ô cancel sets cancelled status                                         0.07s  
+  Γ£ô scope active filters by status                                       0.06s  
+  Γ£ô on trial always returns false                                        0.06s  
+  Γ£ô belongs to tenant relationship                                       0.06s  
+  Γ£ô belongs to plan relationship                                         0.06s  
+
+   PASS  Tests\Unit\Models\TenantTest
+  Γ£ô tenant has users relationship                                        0.07s  
+  Γ£ô tenant has subscriptions relationship                                0.06s  
+  Γ£ô tenant has active subscription returns true when active              0.07s  
+  Γ£ô tenant has active subscription returns false when no subscription    0.06s  
+  Γ£ô tenant has active subscription returns false when cancelled          0.06s  
+  Γ£ô tenant can add users within plan limit                               0.07s  
+  Γ£ô tenant cannot add users beyond plan limit                            0.06s  
+  Γ£ô tenant cannot add users without subscription                         0.06s  
+  Γ£ô tenant remaining user slots                                          0.06s  
+  Γ£ô tenant remaining slots zero without subscription                     0.07s  
+  Γ£ô subscription status attribute active                                 0.06s  
+  Γ£ô subscription status attribute no subscription                        0.06s  
+  Γ£ô currency symbol attribute                                            0.09s  
+  Γ£ô tenant creates default chart of accounts                             0.06s  
+  Γ£ô tenant soft deletes                                                  0.06s  
+  Γ£ô is active cast to boolean                                            0.06s  
+
+   PASS  Tests\Unit\Models\UserTest
+  Γ£ô user belongs to tenant                                               0.07s  
+  Γ£ô is super admin returns true for super admin                          0.06s  
+  Γ£ô is super admin returns false for regular user                        0.06s  
+  Γ£ô belongs to tenant method                                             0.07s  
+  Γ£ô scope active                                                         0.07s  
+  Γ£ô scope for tenant                                                     0.07s  
+  Γ£ô password is hashed                                                   0.06s  
+  Γ£ô is active cast to boolean                                            0.07s  
+
+   PASS  Tests\Unit\Traits\BelongsToTenantTest
+  Γ£ô auto sets tenant id on creation                                      0.07s  
+  Γ£ô global scope filters by tenant                                       0.06s  
+  Γ£ô without global scopes returns all                                    0.07s  
+  Γ£ô tenant relationship exists                                           0.06s  
+
+   PASS  Tests\Feature\Api\CustomerApiTest
+  Γ£ô health endpoint is public                                            0.07s  
+  Γ£ô unauthenticated request gets 401                                     0.04s  
+  Γ£ô user without permission gets 403                                     0.08s  
+  Γ£ô user can list customers                                              0.09s  
+  Γ£ô user can create customer via api                                     0.10s  
+  Γ£ô user can view customer via api                                       0.07s  
+  Γ£ô user cannot view other tenant customer via api                       0.07s  
+  Γ£ô user without subscription gets 403 json                              0.07s  
+  Γ£ô api login                                                            0.07s  
+  Γ£ô api login invalid credentials                                        0.07s  
+  Γ£ô api search customers                                                 0.08s  
+
+   PASS  Tests\Feature\Api\ReportApiTest
+  Γ£ô unauthenticated request gets 401                                     0.04s  
+  Γ£ô user without permission gets 403                                     0.07s  
+  Γ£ô profit loss returns json                                             0.08s  
+  Γ£ô profit loss with date filter                                         0.08s  
+  Γ£ô balance sheet returns json                                           0.07s  
+  Γ£ô cash flow returns json                                               0.08s  
+  Γ£ô trial balance returns json                                           0.09s  
+  Γ£ô accounts receivable returns json                                     0.07s  
+  Γ£ô accounts payable returns json                                        0.07s  
+  Γ£ô sales report returns json                                            0.07s  
+  Γ£ô tax summary returns json                                             0.07s  
+  Γ£ô general ledger returns json                                          0.08s  
+  Γ£ô sales by customer returns json                                       0.08s  
+  Γ£ô sales by item returns json                                           0.07s  
+  Γ£ô purchase by vendor returns json                                      0.07s  
+  Γ£ô inventory summary returns json                                       0.07s  
+  Γ£ô payroll summary returns json                                         0.07s  
+  Γ£ô customer statement returns json                                      0.07s  
+  Γ£ô report does not leak cross tenant data                               0.07s  
+
+   PASS  Tests\Feature\Auth\AuthenticationTest
+  Γ£ô login screen can be rendered                                         0.07s  
+  Γ£ô users can authenticate using the login screen                        0.07s  
+  Γ£ô users can not authenticate with invalid password                     0.28s  
+  Γ£ô users can logout                                                     0.07s  
+
+   PASS  Tests\Feature\Auth\EmailVerificationTest
+  Γ£ô email verification screen can be rendered                            0.07s  
+  Γ£ô email can be verified                                                0.08s  
+  Γ£ô email is not verified with invalid hash                              0.07s  
+
+   PASS  Tests\Feature\Auth\PasswordConfirmationTest
+  Γ£ô confirm password screen can be rendered                              0.08s  
+  Γ£ô password can be confirmed                                            0.07s  
+  Γ£ô password is not confirmed with invalid password                      0.29s  
+
+   PASS  Tests\Feature\Auth\PasswordResetTest
+  Γ£ô reset password link screen can be rendered                           0.04s  
+  Γ£ô reset password link can be requested                                 0.29s  
+  Γ£ô reset password screen can be rendered                                0.30s  
+  Γ£ô password can be reset with valid token                               1.12s  
+
+   PASS  Tests\Feature\Auth\PasswordUpdateTest
+  Γ£ô password can be updated                                              0.71s  
+  Γ£ô correct password must be provided to update password                 0.07s  
+
+   PASS  Tests\Feature\Auth\RegistrationTest
+  Γ£ô registration screen can be rendered                                  0.10s  
+  Γ£ô new users can register                                               1.21s  
+
+   PASS  Tests\Feature\BankServiceTest
+  Γ£ô credit increases bank balance                                        0.09s  
+  Γ£ô credit logs the operation                                            0.08s  
+  Γ£ô credit skips when bank id is null                                    0.07s  
+  Γ£ô credit skips when amount is zero                                     0.07s  
+  Γ£ô credit logs warning for missing bank                                 0.08s  
+  Γ£ô debit decreases bank balance                                         0.07s  
+  Γ£ô debit skips when bank id is null                                     0.07s  
+  Γ£ô debit logs warning for missing bank                                  0.07s  
+  Γ£ô adjust on update same bank incoming amount change                    0.07s  
+  Γ£ô adjust on update same bank outgoing amount change                    0.07s  
+  Γ£ô adjust on update bank changed incoming                               0.07s  
+  Γ£ô adjust on update bank changed outgoing                               0.08s  
+  Γ£ô adjust on update no change is noop                                   0.07s  
+  Γ£ô adjust on update old bank null new bank set                          0.08s  
+  Γ£ô adjust on update old bank set new bank null                          0.11s  
+
+   PASS  Tests\Feature\BelongsToTenantHardeningTest
+  Γ£ô creating model without tenant id or auth throws                      0.04s  
+  Γ£ô creating model with explicit tenant id no auth succeeds              0.04s  
+  Γ£ô tenant id cannot be changed on update                                0.07s  
+  Γ£ô updating without changing tenant id succeeds                         0.07s  
+  Γ£ô with tenant guard disabled allows creation without auth              0.04s  
+  Γ£ô skip tenant guard instance flag                                      0.03s  
+  Γ£ô global scope qualifies column with table name                        0.07s  
+  Γ£ô auth user tenant id overwrites explicit tenant id                    0.06s  
+
+   PASS  Tests\Feature\ConfigTest
+  Γ£ô support email has default                                            0.03s  
+  Γ£ô import max file size has default                                     0.03s  
+  Γ£ô currencies config returns array                                      0.04s  
+  Γ£ô currencies have required keys                                        0.03s  
+  Γ£ô currency symbol resolved from config                                 0.06s  
+  Γ£ô unknown currency falls back to code                                  0.06s  
+
+   PASS  Tests\Feature\CustomerCrudTest
+  Γ£ô unauthenticated user is redirected                                   0.04s  
+  Γ£ô user without permission gets 403                                     0.07s  
+  Γ£ô user with permission can view index                                  0.10s  
+  Γ£ô user can create customer                                             0.07s  
+  Γ£ô customer creation requires name                                      0.07s  
+  Γ£ô user can view own tenant customer                                    0.09s  
+  Γ£ô user cannot view other tenant customer                               0.07s  
+  Γ£ô user can update customer                                             0.08s  
+  Γ£ô user cannot update other tenant customer                             0.07s  
+  Γ£ô user can delete customer                                             0.08s  
+  Γ£ô user cannot delete other tenant customer                             0.07s  
+  Γ£ô user without subscription is redirected                              0.06s  
+
+   PASS  Tests\Feature\ErrorPageTest
+  Γ£ô 404 page renders                                                     0.05s  
+  Γ£ô 403 page renders                                                     0.07s  
+  Γ£ô error views exist                                                    0.03s  
+  Γ£ô 419 view renders                                                     0.03s  
+  Γ£ô 429 view renders                                                     0.03s  
+  Γ£ô 500 view renders                                                     0.04s  
+  Γ£ô 503 view renders                                                     0.03s  
+
+   PASS  Tests\Feature\ExampleTest
+  Γ£ô the application returns a successful response                        0.04s  
+
+   PASS  Tests\Feature\ExportServicePdfTest
+  Γ£ô export to pdf creates pdf file                                       0.16s  
+  Γ£ô export to pdf contains pdf magic bytes                               0.12s  
+  Γ£ô export to pdf sets file size                                         0.09s  
+
+   PASS  Tests\Feature\ImportPermissionTest
+  Γ£ô import route requires import data permission                         0.09s  
+  Γ£ô import route allows user with import data permission                 0.08s  
+  Γ£ô export permission does not grant import access                       0.07s  
+
+   PASS  Tests\Feature\JournalIntegrationTest
+  Γ£ô sales receipt creates journal on save                                0.08s  
+  Γ£ô sales receipt with zero total skips journal                          0.07s  
+  Γ£ô sales receipt updates account balances                               0.07s  
+  Γ£ô payroll creates journal on mark as paid                              0.09s  
+  Γ£ô payroll mark as paid requires approved status                        0.07s  
+  Γ£ô payroll is paid helper                                               0.06s  
+  Γ£ô bill draft does not create journal                                   0.07s  
+
+   PASS  Tests\Feature\Middleware\CheckSubscriptionTest
+  Γ£ô guest passes through                                                 0.03s  
+  Γ£ô user without tenant gets error                                       0.04s  
+  Γ£ô user without subscription gets redirected                            0.06s  
+  Γ£ô user with active subscription passes                                 0.06s  
+  Γ£ô user with cancelled subscription gets redirected                     0.07s  
+  Γ£ô exempt routes pass without subscription                              0.06s  
+  Γ£ô json request gets json response                                      0.06s  
+
+   PASS  Tests\Feature\NotificationDeduplicationTest
+  Γ£ô overdue reminder sends on first call                                 0.08s  
+  Γ£ô overdue reminder skips duplicate within cooldown                     0.12s  
+  Γ£ô overdue reminder resends after cooldown expires                      0.12s  
+  Γ£ô overdue reminder skips customer without email                        0.09s  
+
+   PASS  Tests\Feature\PayrollTest
+  Γ£ô calculate totals computes correctly                                  0.06s  
+  Γ£ô gross salary includes basic allowances and overtime                  0.06s  
+  Γ£ô journal debits equal credits basic payroll                           0.08s  
+  Γ£ô journal debits equal credits with allowances and overtime            0.09s  
+  Γ£ô journal maps basic salary to 6000 account                            0.09s  
+  Γ£ô journal maps allowances to 6030 account                              0.09s  
+  Γ£ô journal maps overtime to 6040 account                                0.08s  
+  Γ£ô no overtime double counting                                          0.08s  
+  Γ£ô journal employer contributions balance                               0.08s  
+  Γ£ô only approved payroll can be marked as paid                          0.07s  
+  Γ£ô approved payroll can be marked as paid                               0.09s  
+  Γ£ô is paid helper                                                       0.06s  
+  Γ£ô creator cannot approve own payroll                                   0.08s  
+  Γ£ô different user can approve payroll                                   0.08s  
+  Γ£ô flat tax fallback when no brackets                                   0.06s  
+  Γ£ô progressive tax with brackets                                        0.07s  
+  Γ£ô zero taxable income returns zero                                     0.06s  
+  Γ£ô employer percentage contributions                                    0.03s  
+  Γ£ô employer fixed contributions                                         0.03s  
+  Γ£ô employer contributions with cap                                      0.03s  
+  Γ£ô duplicate payroll period prevented in batch generation               0.08s  
+  Γ£ô deleting payroll removes journal                                     0.08s  
+  Γ£ô payroll updates account balances                                     0.08s  
+  Γ£ô batch mark as paid creates journals for all                          0.10s  
+  Γ£ô paid payroll cannot be edited                                        0.07s  
+  Γ£ô paid payroll cannot be deleted                                       0.07s  
+  Γ£ô only draft can be approved                                           0.08s  
+  Γ£ô tax withheld posts to tax payable account                            0.08s  
+  Γ£ô deductions split by type to correct liability accounts               0.09s  
+  Γ£ô employer contributions split to correct expense and liability        0.10s  
+  Γ£ô unrecognized deductions fall back to payroll liabilities             0.08s  
+  Γ£ô new accounts exist in default chart                                  0.03s  
+
+   PASS  Tests\Feature\ProfileTest
+  Γ£ô profile page is displayed                                            0.12s  
+  Γ£ô profile information can be updated                                   0.08s  
+  Γ£ô email verification status is unchanged when the email address is unΓÇª 0.07s  
+  Γ£ô user can delete their account                                        0.08s  
+  Γ£ô correct password must be provided to delete account                  0.06s  
+
+   PASS  Tests\Feature\RateLimitingTest
+  Γ£ô contact form is rate limited                                         0.05s  
+  Γ£ô register is rate limited                                             3.72s  
+  Γ£ô forgot password is rate limited                                      1.11s  
+
+   PASS  Tests\Feature\RecalculateAccountBalancesTest
+  Γ£ô recalculate command fixes incorrect balances                         0.12s  
+  Γ£ô recalculate dry run does not modify balances                         0.08s  
+  Γ£ô recalculate with tenant filter                                       0.09s  
+  Γ£ô recalculate ignores soft deleted journals                            0.12s  
+
+   PASS  Tests\Feature\RecurringTransactionsTest
+  Γ£ô recurrent invoice is due when active and date passed                 0.08s  
+  Γ£ô recurrent invoice is not due when paused                             0.06s  
+  Γ£ô recurrent invoice is not due when future date                        0.07s  
+  Γ£ô recurrent invoice is not due past end date                           0.06s  
+  Γ£ô recurrent invoice advance next date monthly                          0.06s  
+  Γ£ô recurrent invoice auto stops past end date                           0.07s  
+  Γ£ô recurrent bill is due when active                                    0.06s  
+  Γ£ô recurrent bill advance next date quarterly                           0.06s  
+  Γ£ô recurrent expense is due when active                                 0.06s  
+  Γ£ô recurrent expense is not due when stopped                            0.07s  
+  Γ£ô recurrent expense advance next date weekly                           0.07s  
+
+   PASS  Tests\Feature\ReportTest
+  Γ£ô unauthenticated user is redirected from reports                      0.05s  
+  Γ£ô user without permission gets 403                                     0.07s  
+  Γ£ô reports index loads                                                  0.09s  
+  Γ£ô profit loss report loads                                             0.12s  
+  Γ£ô profit loss with journal data                                        0.08s  
+  Γ£ô balance sheet report loads                                           0.10s  
+  Γ£ô cash flow report loads                                               0.11s  
+  Γ£ô trial balance report loads                                           0.12s  
+  Γ£ô general ledger loads without account                                 0.10s  
+  Γ£ô general ledger loads with account                                    0.08s  
+  Γ£ô accounts receivable report loads                                     0.09s  
+  Γ£ô accounts payable report loads                                        0.08s  
+  Γ£ô sales by customer report loads                                       0.09s  
+  Γ£ô sales by item report loads                                           0.10s  
+  Γ£ô purchase by vendor report loads                                      0.09s  
+  Γ£ô customer statement loads without customer                            0.08s  
+  Γ£ô customer statement loads with customer                               0.09s  
+  Γ£ô inventory summary report loads                                       0.11s  
+  Γ£ô payroll summary report loads                                         0.08s  
+  Γ£ô comparative profit loss loads                                        0.09s  
+  Γ£ô comparative balance sheet loads                                      0.09s  
+  Γ£ô comparative cash flow loads                                          0.08s  
+  Γ£ô vat gst return loads                                                 0.11s  
+  Γ£ô tax liability loads                                                  0.09s  
+  Γ£ô custom report index loads                                            0.08s  
+  Γ£ô custom report create loads                                           0.08s  
+
+   PASS  Tests\Feature\SalaryStructureVersioningTest
+  Γ£ô create version snapshot captures current state                       0.08s  
+  Γ£ô update increments version and creates history                        0.06s  
+  Γ£ô multiple updates create sequential versions                          0.07s  
+  Γ£ô to snapshot contains complete structure data                         0.07s  
+  Γ£ô payroll stores structure snapshot at generation time                 0.07s  
+  Γ£ô editing structure does not change existing payroll values            0.08s  
+  Γ£ô versions relationship ordered desc                                   0.07s  
+  Γ£ô version items snapshot includes all item fields                      0.06s  
+  Γ£ô update via controller creates version and bumps                      0.08s  
+  Γ£ô new structure starts at version 1                                    0.06s  
+
+   PASS  Tests\Feature\SecurityAndRetentionTest
+  Γ£ô salary change creates sensitive field audit                          0.07s  
+  Γ£ô bank account change creates masked audit                             0.06s  
+  Γ£ô status change creates plain audit                                    0.06s  
+  Γ£ô salary structure basic salary change audited                         0.08s  
+  Γ£ô non sensitive change does not create sensitive audit                 0.06s  
+  Γ£ô multiple sensitive fields in one update                              0.07s  
+  Γ£ô sensitive audit description includes field labels                    0.08s  
+  Γ£ô retention config has defaults                                        0.04s  
+  Γ£ô purge command dry run shows counts                                   0.06s  
+  Γ£ô purge anonymizes terminated employee past retention                  0.06s  
+  Γ£ô purge does not anonymize active employees                            0.07s  
+  Γ£ô purge does not anonymize recently terminated                         0.06s  
+  Γ£ô purge creates anonymization audit log                                0.07s  
+  Γ£ô purge prunes old activity logs                                       0.07s  
+  Γ£ô purge hard deletes old soft deleted employees                        0.07s  
+
+   PASS  Tests\Feature\SoftDeletesTest
+  Γ£ô payment received supports soft delete                                0.07s  
+  Γ£ô payment made supports soft delete                                    0.07s  
+  Γ£ô payroll supports soft delete                                         0.06s  
+
+   PASS  Tests\Feature\YearEndCloseTest
+  Γ£ô year end close creates closing journals                              0.11s  
+  Γ£ô year end close handles net loss                                      0.13s  
+  Γ£ô year end close prevents double lock                                  0.06s  
+  Γ£ô year end close with no transactions                                  0.06s  
+
+  Tests:    331 passed (707 assertions)
+  Duration: 32.93s
+

@@ -306,7 +306,7 @@ class SettingsController extends Controller
         return redirect()->route('settings.roles')->with('success', 'Role updated successfully.');
     }
 
-    public function deleteRole(Role $role)
+    public function destroyRole(Role $role)
     {
         // Prevent deleting global/system roles
         if ($role->isGlobal()) {

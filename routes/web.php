@@ -7,11 +7,17 @@ use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\ItemCategoryController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\WarehouseController;
+use App\Http\Controllers\StockTransferController;
+use App\Http\Controllers\BillOfMaterialController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\SalesOrderController;
 use App\Http\Controllers\SalesReceiptController;
 use App\Http\Controllers\PaymentReceivedController;
+use App\Http\Controllers\QuotationController;
+use App\Http\Controllers\DeliveryNoteController;
+use App\Http\Controllers\CreditNoteController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\BillController;
@@ -40,6 +46,8 @@ use App\Http\Controllers\ExportController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\BankController;
 use App\Http\Controllers\BudgetController;
+use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\InvoiceTemplateController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -182,10 +190,65 @@ Route::middleware(['auth', 'verified', 'two-factor', 'subscription', 'tenant'])-
         Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
         Route::get('inventory/{item}', [InventoryController::class, 'show'])->name('inventory.show');
         Route::get('inventory/{item}/history', [InventoryController::class, 'history'])->name('inventory.history');
+        Route::get('inventory/{item}/valuation', [InventoryController::class, 'valuation'])->name('inventory.valuation');
     });
     Route::post('inventory/{item}/adjust', [InventoryController::class, 'adjust'])
         ->middleware('permission:adjust inventory')
         ->name('inventory.adjust');
+
+    // Warehouses
+    Route::middleware('permission:create items')->group(function () {
+        Route::get('warehouses/create', [WarehouseController::class, 'create'])->name('warehouses.create');
+        Route::post('warehouses', [WarehouseController::class, 'store'])->name('warehouses.store');
+    });
+    Route::middleware('permission:view inventory')->group(function () {
+        Route::get('warehouses', [WarehouseController::class, 'index'])->name('warehouses.index');
+        Route::get('warehouses/{warehouse}', [WarehouseController::class, 'show'])->name('warehouses.show');
+    });
+    Route::middleware('permission:edit items')->group(function () {
+        Route::get('warehouses/{warehouse}/edit', [WarehouseController::class, 'edit'])->name('warehouses.edit');
+        Route::put('warehouses/{warehouse}', [WarehouseController::class, 'update'])->name('warehouses.update');
+    });
+    Route::delete('warehouses/{warehouse}', [WarehouseController::class, 'destroy'])
+        ->middleware('permission:delete items')
+        ->name('warehouses.destroy');
+
+    // Stock Transfers
+    Route::middleware('permission:adjust inventory')->group(function () {
+        Route::get('stock-transfers', [StockTransferController::class, 'index'])->name('stock-transfers.index');
+        Route::get('stock-transfers/create', [StockTransferController::class, 'create'])->name('stock-transfers.create');
+        Route::post('stock-transfers', [StockTransferController::class, 'store'])->name('stock-transfers.store');
+        Route::get('stock-transfers/{stockTransfer}', [StockTransferController::class, 'show'])->name('stock-transfers.show');
+        Route::post('stock-transfers/{stockTransfer}/ship', [StockTransferController::class, 'ship'])->name('stock-transfers.ship');
+        Route::post('stock-transfers/{stockTransfer}/receive', [StockTransferController::class, 'receive'])->name('stock-transfers.receive');
+        Route::delete('stock-transfers/{stockTransfer}', [StockTransferController::class, 'destroy'])->name('stock-transfers.destroy');
+    });
+
+    // Bill of Materials
+    Route::middleware('permission:create items')->group(function () {
+        Route::get('bill-of-materials/create', [BillOfMaterialController::class, 'create'])->name('bill-of-materials.create');
+        Route::post('bill-of-materials', [BillOfMaterialController::class, 'store'])->name('bill-of-materials.store');
+    });
+    Route::middleware('permission:view items')->group(function () {
+        Route::get('bill-of-materials', [BillOfMaterialController::class, 'index'])->name('bill-of-materials.index');
+        Route::get('bill-of-materials/{billOfMaterial}', [BillOfMaterialController::class, 'show'])->name('bill-of-materials.show');
+    });
+    Route::middleware('permission:edit items')->group(function () {
+        Route::get('bill-of-materials/{billOfMaterial}/edit', [BillOfMaterialController::class, 'edit'])->name('bill-of-materials.edit');
+        Route::put('bill-of-materials/{billOfMaterial}', [BillOfMaterialController::class, 'update'])->name('bill-of-materials.update');
+    });
+    Route::delete('bill-of-materials/{billOfMaterial}', [BillOfMaterialController::class, 'destroy'])
+        ->middleware('permission:delete items')
+        ->name('bill-of-materials.destroy');
+
+    // Assembly Orders
+    Route::middleware('permission:adjust inventory')->group(function () {
+        Route::get('assembly-orders', [BillOfMaterialController::class, 'assemblyOrders'])->name('assembly-orders.index');
+        Route::get('bill-of-materials/{billOfMaterial}/assemble', [BillOfMaterialController::class, 'createAssemblyOrder'])->name('assembly-orders.create');
+        Route::post('bill-of-materials/{billOfMaterial}/assemble', [BillOfMaterialController::class, 'storeAssemblyOrder'])->name('assembly-orders.store');
+        Route::get('assembly-orders/{assemblyOrder}', [BillOfMaterialController::class, 'showAssemblyOrder'])->name('assembly-orders.show');
+        Route::post('assembly-orders/{assemblyOrder}/complete', [BillOfMaterialController::class, 'completeAssemblyOrder'])->name('assembly-orders.complete');
+    });
 
     /*
     |--------------------------------------------------------------------------
@@ -305,6 +368,69 @@ Route::middleware(['auth', 'verified', 'two-factor', 'subscription', 'tenant'])-
         ->middleware('permission:delete payments-received')
         ->name('payments-received.destroy');
 
+    // Quotations / Estimates
+    Route::middleware('permission:create invoices')->group(function () {
+        Route::get('quotations/create', [QuotationController::class, 'create'])->name('quotations.create');
+        Route::post('quotations', [QuotationController::class, 'store'])->name('quotations.store');
+    });
+    Route::middleware('permission:view invoices')->group(function () {
+        Route::get('quotations', [QuotationController::class, 'index'])->name('quotations.index');
+        Route::get('quotations/{quotation}', [QuotationController::class, 'show'])->name('quotations.show');
+        Route::get('quotations/{quotation}/print', [QuotationController::class, 'print'])->name('quotations.print');
+    });
+    Route::middleware('permission:edit invoices')->group(function () {
+        Route::get('quotations/{quotation}/edit', [QuotationController::class, 'edit'])->name('quotations.edit');
+        Route::put('quotations/{quotation}', [QuotationController::class, 'update'])->name('quotations.update');
+        Route::post('quotations/{quotation}/send', [QuotationController::class, 'send'])->name('quotations.send');
+        Route::post('quotations/{quotation}/accept', [QuotationController::class, 'accept'])->name('quotations.accept');
+        Route::post('quotations/{quotation}/reject', [QuotationController::class, 'reject'])->name('quotations.reject');
+        Route::post('quotations/{quotation}/convert', [QuotationController::class, 'convertToSalesOrder'])->name('quotations.convert');
+    });
+    Route::delete('quotations/{quotation}', [QuotationController::class, 'destroy'])
+        ->middleware('permission:delete invoices')
+        ->name('quotations.destroy');
+
+    // Delivery Notes
+    Route::middleware('permission:create invoices')->group(function () {
+        Route::get('delivery-notes/create', [DeliveryNoteController::class, 'create'])->name('delivery-notes.create');
+        Route::post('delivery-notes', [DeliveryNoteController::class, 'store'])->name('delivery-notes.store');
+    });
+    Route::middleware('permission:view invoices')->group(function () {
+        Route::get('delivery-notes', [DeliveryNoteController::class, 'index'])->name('delivery-notes.index');
+        Route::get('delivery-notes/{deliveryNote}', [DeliveryNoteController::class, 'show'])->name('delivery-notes.show');
+        Route::get('delivery-notes/{deliveryNote}/print', [DeliveryNoteController::class, 'print'])->name('delivery-notes.print');
+    });
+    Route::middleware('permission:edit invoices')->group(function () {
+        Route::post('delivery-notes/{deliveryNote}/dispatch', [DeliveryNoteController::class, 'dispatch'])->name('delivery-notes.dispatch');
+        Route::post('delivery-notes/{deliveryNote}/confirm', [DeliveryNoteController::class, 'confirmDelivery'])->name('delivery-notes.confirm');
+    });
+    Route::delete('delivery-notes/{deliveryNote}', [DeliveryNoteController::class, 'destroy'])
+        ->middleware('permission:delete invoices')
+        ->name('delivery-notes.destroy');
+    // Delivery note from Sales Order
+    Route::post('sales-orders/{salesOrder}/delivery-note', [SalesOrderController::class, 'createDeliveryNote'])
+        ->middleware('permission:edit sales-orders')
+        ->name('sales-orders.delivery-note');
+
+    // Credit Notes
+    Route::middleware('permission:create invoices')->group(function () {
+        Route::get('credit-notes/create', [CreditNoteController::class, 'create'])->name('credit-notes.create');
+        Route::post('credit-notes', [CreditNoteController::class, 'store'])->name('credit-notes.store');
+    });
+    Route::middleware('permission:view invoices')->group(function () {
+        Route::get('credit-notes', [CreditNoteController::class, 'index'])->name('credit-notes.index');
+        Route::get('credit-notes/{creditNote}', [CreditNoteController::class, 'show'])->name('credit-notes.show');
+    });
+    Route::middleware('permission:edit invoices')->group(function () {
+        Route::post('credit-notes/{creditNote}/open', [CreditNoteController::class, 'open'])->name('credit-notes.open');
+        Route::post('credit-notes/{creditNote}/void', [CreditNoteController::class, 'void'])->name('credit-notes.void');
+        Route::get('credit-notes/{creditNote}/apply', [CreditNoteController::class, 'showApply'])->name('credit-notes.apply');
+        Route::post('credit-notes/{creditNote}/apply', [CreditNoteController::class, 'apply'])->name('credit-notes.apply.store');
+    });
+    Route::delete('credit-notes/{creditNote}', [CreditNoteController::class, 'destroy'])
+        ->middleware('permission:delete invoices')
+        ->name('credit-notes.destroy');
+
     /*
     |--------------------------------------------------------------------------
     | Purchases Module
@@ -370,6 +496,27 @@ Route::middleware(['auth', 'verified', 'two-factor', 'subscription', 'tenant'])-
     Route::delete('bills/{bill}', [BillController::class, 'destroy'])
         ->middleware('permission:delete bills')
         ->name('bills.destroy');
+
+    // Purchase Orders - Create routes MUST come before wildcard routes
+    Route::middleware('permission:create purchase-orders')->group(function () {
+        Route::get('purchase-orders/create', [PurchaseOrderController::class, 'create'])->name('purchase-orders.create');
+        Route::post('purchase-orders', [PurchaseOrderController::class, 'store'])->name('purchase-orders.store');
+    });
+    Route::middleware('permission:view purchase-orders')->group(function () {
+        Route::get('purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
+        Route::get('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show'])->name('purchase-orders.show');
+    });
+    Route::middleware('permission:edit purchase-orders')->group(function () {
+        Route::get('purchase-orders/{purchaseOrder}/edit', [PurchaseOrderController::class, 'edit'])->name('purchase-orders.edit');
+        Route::put('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'update'])->name('purchase-orders.update');
+        Route::patch('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'update']);
+        Route::post('purchase-orders/{purchaseOrder}/confirm', [PurchaseOrderController::class, 'confirm'])->name('purchase-orders.confirm');
+        Route::post('purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel');
+        Route::post('purchase-orders/{purchaseOrder}/convert-to-bill', [PurchaseOrderController::class, 'convertToBill'])->name('purchase-orders.convert-to-bill');
+    });
+    Route::delete('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'destroy'])
+        ->middleware('permission:delete purchase-orders')
+        ->name('purchase-orders.destroy');
     
     // Recurrent Bills - Create routes MUST come before wildcard routes
     Route::middleware('permission:create recurrent-bills')->group(function () {
@@ -583,6 +730,22 @@ Route::middleware(['auth', 'verified', 'two-factor', 'subscription', 'tenant'])-
         ->middleware('permission:approve payroll')
         ->name('payroll-batches.approve');
 
+    // Bank file export for batch
+    Route::middleware('permission:view payroll')->group(function () {
+        Route::get('payroll-batches/{payrollBatch}/bank-file', [PayrollController::class, 'exportBankFile'])->name('payroll-batches.bank-file');
+    });
+
+    // Tax templates management
+    Route::middleware('permission:create payroll')->group(function () {
+        Route::get('payroll-tax-templates', [PayrollController::class, 'taxTemplates'])->name('payroll.tax-templates');
+        Route::post('payroll-tax-templates/apply', [PayrollController::class, 'applyTaxTemplate'])->name('payroll.apply-tax-template');
+    });
+
+    // Retroactive pay adjustments
+    Route::middleware('permission:edit payroll')->group(function () {
+        Route::post('payroll-retroactive-adjustment', [PayrollController::class, 'retroactiveAdjustment'])->name('payroll.retroactive-adjustment');
+    });
+
     /*
     |--------------------------------------------------------------------------
     | Accountant Module
@@ -650,6 +813,12 @@ Route::middleware(['auth', 'verified', 'two-factor', 'subscription', 'tenant'])-
     Route::delete('banks/{bank}', [BankController::class, 'destroy'])
         ->middleware('permission:delete banks')
         ->name('banks.destroy');
+
+    Route::middleware('permission:reconcile banks')->group(function () {
+        Route::get('banks/{bank}/reconcile', [BankController::class, 'reconcile'])->name('banks.reconcile');
+        Route::post('banks/{bank}/reconcile', [BankController::class, 'processReconciliation'])->name('banks.reconcile.process');
+        Route::post('banks/{bank}/unreconcile', [BankController::class, 'unreconcile'])->name('banks.unreconcile');
+    });
 
     /*
     |--------------------------------------------------------------------------
@@ -831,6 +1000,17 @@ Route::middleware(['auth', 'verified', 'two-factor', 'subscription', 'tenant'])-
         Route::middleware('permission:edit settings')->group(function () {
             Route::put('/notifications', [SettingsController::class, 'updateNotifications'])->name('notifications.update');
             Route::post('/notifications/test', [SettingsController::class, 'sendTestEmail'])->name('notifications.test');
+        });
+
+        // Invoice Templates
+        Route::middleware('permission:view settings')->group(function () {
+            Route::get('/invoice-templates', [InvoiceTemplateController::class, 'index'])->name('invoice-templates.index');
+            Route::get('/invoice-templates/create', [InvoiceTemplateController::class, 'create'])->name('invoice-templates.create');
+            Route::get('/invoice-templates/{invoiceTemplate}/edit', [InvoiceTemplateController::class, 'edit'])->name('invoice-templates.edit');
+        });
+        Route::middleware('permission:edit settings')->group(function () {
+            Route::post('/invoice-templates/{invoiceTemplate}/set-default', [InvoiceTemplateController::class, 'setDefault'])->name('invoice-templates.set-default');
+            Route::delete('/invoice-templates/{invoiceTemplate}', [InvoiceTemplateController::class, 'destroy'])->name('invoice-templates.destroy');
         });
 
         // Subscription Management

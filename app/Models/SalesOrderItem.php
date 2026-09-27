@@ -14,6 +14,7 @@ class SalesOrderItem extends Model
         'item_id',
         'description',
         'quantity',
+        'quantity_fulfilled',
         'unit_price',
         'discount',
         'tax_rate',
@@ -23,6 +24,7 @@ class SalesOrderItem extends Model
 
     protected $casts = [
         'quantity' => 'decimal:2',
+        'quantity_fulfilled' => 'decimal:2',
         'unit_price' => 'decimal:2',
         'discount' => 'decimal:2',
         'tax_rate' => 'decimal:2',

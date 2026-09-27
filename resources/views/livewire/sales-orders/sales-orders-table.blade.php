@@ -1,4 +1,5 @@
-<div>
+<div class="relative">
+    <x-table-loading />
     <!-- Flash Messages -->
     <x-flash-messages :successMessage="$successMessage" :errorMessage="$errorMessage" />
 
@@ -17,6 +18,7 @@
                 <option value="">All Statuses</option>
                 <option value="draft">Draft</option>
                 <option value="confirmed">Confirmed</option>
+                <option value="invoiced">Invoiced</option>
                 <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled</option>
             </select>
@@ -62,7 +64,7 @@
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                    <th class="px-4 py-3 text-left">
+                    <th scope="col" class="px-4 py-3 text-left">
                         <input type="checkbox" wire:model.live="selectAll"
                             class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                     </th>
@@ -109,6 +111,7 @@
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                                 @if($order->status === 'draft') bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300
                                 @elseif($order->status === 'confirmed') bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300
+                                @elseif($order->status === 'invoiced') bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300
                                 @elseif($order->status === 'completed') bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300
                                 @elseif($order->status === 'cancelled') bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300
                                 @endif">

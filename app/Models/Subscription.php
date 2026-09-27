@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 
 class Subscription extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $fillable = [
         'tenant_id',
@@ -49,14 +50,6 @@ class Subscription extends Model
      */
     const CYCLE_MONTHLY = 'monthly';
     const CYCLE_ANNUAL = 'annual';
-
-    /**
-     * Get the tenant for this subscription
-     */
-    public function tenant()
-    {
-        return $this->belongsTo(Tenant::class);
-    }
 
     /**
      * Get the plan for this subscription

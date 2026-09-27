@@ -12,6 +12,13 @@ class Item extends Model
 {
     use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity;
 
+    const VALUATION_WEIGHTED_AVERAGE = 'weighted_average';
+    const VALUATION_FIFO = 'fifo';
+
+    const TRACKING_NONE = 'none';
+    const TRACKING_BATCH = 'batch';
+    const TRACKING_SERIAL = 'serial';
+
     protected $fillable = [
         'tenant_id',
         'category_id',
@@ -20,13 +27,18 @@ class Item extends Model
         'description',
         'type',
         'unit',
+        'purchase_uom_id',
+        'sales_uom_id',
         'selling_price',
         'cost_price',
         'tax_rate',
         'is_taxable',
         'track_inventory',
+        'valuation_method',
+        'tracking_type',
         'reorder_level',
         'is_active',
+        'image_path',
     ];
 
     protected $casts = [
@@ -140,6 +152,36 @@ class Item extends Model
     public function billItems()
     {
         return $this->hasMany(BillItem::class);
+    }
+
+    public function inventoryLayers()
+    {
+        return $this->hasMany(InventoryLayer::class);
+    }
+
+    public function batches()
+    {
+        return $this->hasMany(InventoryBatch::class);
+    }
+
+    public function serialNumbers()
+    {
+        return $this->hasMany(SerialNumber::class);
+    }
+
+    public function billOfMaterial()
+    {
+        return $this->hasOne(BillOfMaterial::class);
+    }
+
+    public function purchaseUom()
+    {
+        return $this->belongsTo(UnitOfMeasure::class, 'purchase_uom_id');
+    }
+
+    public function salesUom()
+    {
+        return $this->belongsTo(UnitOfMeasure::class, 'sales_uom_id');
     }
 
     public function getCurrentStockAttribute()

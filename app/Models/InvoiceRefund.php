@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Services\JournalService;
+use App\Events\InvoiceRefundDeleting;
 
 class InvoiceRefund extends Model
 {
@@ -204,9 +205,7 @@ class InvoiceRefund extends Model
     protected static function booted()
     {
         static::deleting(function ($refund) {
-            // Delete associated journal when refund is deleted
-            $journalService = app(JournalService::class);
-            $journalService->deleteJournalForTransaction(InvoiceRefund::class, $refund->id, $refund->tenant_id);
+            InvoiceRefundDeleting::dispatch($refund);
         });
     }
 }

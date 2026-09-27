@@ -15,6 +15,8 @@ class ChartOfAccountsTable extends Component
     public $sortDirection = 'asc';
     public $perPage = 25;
     public $typeFilter = '';
+    public $viewMode = 'tree'; // 'flat' or 'tree'
+    public $collapsedTypes = [];
 
     // Bulk operation properties
     public $selectedItems = [];
@@ -23,7 +25,16 @@ class ChartOfAccountsTable extends Component
     public $successMessage = '';
     public $errorMessage = '';
 
-    protected $queryString = ['search', 'sortField', 'sortDirection', 'typeFilter'];
+    protected $queryString = ['search', 'sortField', 'sortDirection', 'typeFilter', 'viewMode'];
+
+    public function toggleType($type)
+    {
+        if (in_array($type, $this->collapsedTypes)) {
+            $this->collapsedTypes = array_values(array_diff($this->collapsedTypes, [$type]));
+        } else {
+            $this->collapsedTypes[] = $type;
+        }
+    }
 
     public function updatingSearch()
     {
@@ -165,9 +176,30 @@ class ChartOfAccountsTable extends Component
 
         $types = ChartOfAccount::getTypes();
 
+        // Group accounts by type for tree view
+        $groupedAccounts = [];
+        if ($this->viewMode === 'tree') {
+            $allAccounts = ChartOfAccount::with(['parent', 'children'])
+                ->when($this->search, function ($query) {
+                    $query->where(function ($q) {
+                        $q->where('account_code', 'like', '%' . $this->search . '%')
+                          ->orWhere('name', 'like', '%' . $this->search . '%')
+                          ->orWhere('description', 'like', '%' . $this->search . '%');
+                    });
+                })
+                ->when($this->typeFilter, function ($query) {
+                    $query->where('type', $this->typeFilter);
+                })
+                ->orderBy('account_code', 'asc')
+                ->get();
+
+            $groupedAccounts = $allAccounts->groupBy('type');
+        }
+
         return view('livewire.chart-of-accounts.chart-of-accounts-table', [
             'accounts' => $accounts,
             'types' => $types,
+            'groupedAccounts' => $groupedAccounts,
         ]);
     }
 }

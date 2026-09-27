@@ -9,6 +9,8 @@ use App\Models\Employee;
 use App\Models\SalaryStructure;
 use App\Models\ActivityLog;
 use App\Services\PayrollTaxService;
+use App\Services\BankFileExportService;
+use App\Jobs\ProcessPayrollBatch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -378,6 +380,25 @@ class PayrollController extends Controller
                         $totalOtherDeductions += $calculated;
                     }
 
+                    // Include active loan/advance deductions
+                    $activeLoans = \App\Models\EmployeeLoan::getActiveDeductionsForEmployee(
+                        $employee->id,
+                        $payPeriodEnd->toDateString()
+                    );
+                    foreach ($activeLoans as $loan) {
+                        $loanAmount = min((float) $loan->installment_amount, (float) $loan->outstanding_balance);
+                        if ($loanAmount > 0) {
+                            $deductionDetails[] = [
+                                'name' => ucfirst($loan->type) . ': ' . ($loan->description ?: $loan->loan_number),
+                                'amount_type' => 'fixed',
+                                'rate' => $loanAmount,
+                                'amount' => $loanAmount,
+                                '_loan_id' => $loan->id,
+                            ];
+                            $totalOtherDeductions += $loanAmount;
+                        }
+                    }
+
                     $totalDeductions = $taxDeduction + $totalOtherDeductions;
                     $netSalary = $grossSalary - $totalDeductions;
 
@@ -528,32 +549,48 @@ class PayrollController extends Controller
                 ->with('error', 'Only approved batches can be marked as paid.');
         }
 
-        DB::beginTransaction();
+        $approvedCount = $payrollBatch->payrolls()->where('status', 'approved')->count();
 
-        try {
-            $payrollBatch->update([
-                'status' => 'paid',
-                'paid_at' => now(),
-            ]);
+        // For small batches (≤10), process synchronously for immediate feedback
+        if ($approvedCount <= 10) {
+            DB::beginTransaction();
 
-            foreach ($payrollBatch->payrolls()->where('status', 'approved')->get() as $payroll) {
-                $payroll->markAsPaid();
+            try {
+                $payrollBatch->update([
+                    'status' => 'paid',
+                    'paid_at' => now(),
+                ]);
+
+                foreach ($payrollBatch->payrolls()->where('status', 'approved')->get() as $payroll) {
+                    $payroll->markAsPaid();
+                }
+
+                DB::commit();
+
+                return redirect()->route('payroll-batches.show', $payrollBatch)
+                    ->with('success', 'Payroll batch marked as paid.');
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                DB::rollBack();
+                return redirect()->route('payroll-batches.show', $payrollBatch)
+                    ->with('error', collect($e->errors())->flatten()->first() ?? 'Validation failed while marking batch as paid.');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                report($e);
+                return redirect()->route('payroll-batches.show', $payrollBatch)
+                    ->with('error', 'Failed to mark batch as paid: ' . $e->getMessage());
             }
-
-            DB::commit();
-
-            return redirect()->route('payroll-batches.show', $payrollBatch)
-                ->with('success', 'Payroll batch marked as paid.');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            DB::rollBack();
-            return redirect()->route('payroll-batches.show', $payrollBatch)
-                ->with('error', collect($e->errors())->flatten()->first() ?? 'Validation failed while marking batch as paid.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            report($e);
-            return redirect()->route('payroll-batches.show', $payrollBatch)
-                ->with('error', 'Failed to mark batch as paid: ' . $e->getMessage());
         }
+
+        // For large batches, dispatch to queue
+        $payrollBatch->update([
+            'status' => 'paid',
+            'paid_at' => now(),
+        ]);
+
+        ProcessPayrollBatch::dispatch($payrollBatch);
+
+        return redirect()->route('payroll-batches.show', $payrollBatch)
+            ->with('success', "Payroll batch queued for processing ({$approvedCount} records). Journal entries will be created in the background.");
     }
 
     public function destroyBatch(PayrollBatch $payrollBatch)
@@ -645,5 +682,172 @@ class PayrollController extends Controller
             'companyLogo' => $companyLogo,
             'generatedAt' => now()->format('F j, Y g:i A'),
         ];
+    }
+
+    /**
+     * Export bank file for a payroll batch in the specified format.
+     */
+    public function exportBankFile(PayrollBatch $payrollBatch, BankFileExportService $exportService)
+    {
+        abort_unless($payrollBatch->tenant_id === auth()->user()->tenant_id, 403);
+
+        if (!in_array($payrollBatch->status, ['approved', 'paid'])) {
+            return redirect()->route('payroll-batches.show', $payrollBatch)
+                ->with('error', 'Bank file can only be exported for approved or paid batches.');
+        }
+
+        $format = request()->input('format', 'csv');
+
+        try {
+            $result = $exportService->exportBatch($payrollBatch, $format);
+
+            return response($result['content'])
+                ->header('Content-Type', $result['mime_type'])
+                ->header('Content-Disposition', 'attachment; filename="' . $result['filename'] . '"');
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->route('payroll-batches.show', $payrollBatch)
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Show form for applying a statutory tax template.
+     */
+    public function taxTemplates()
+    {
+        $templates = \App\Models\StatutoryTaxTemplate::orderBy('country_code')
+            ->orderByDesc('tax_year')
+            ->get()
+            ->groupBy('country_code');
+
+        $currentBrackets = \App\Models\TaxBracket::where('is_active', true)
+            ->orderBy('sort_order')
+            ->get();
+
+        return view('payroll.tax-templates', compact('templates', 'currentBrackets'));
+    }
+
+    /**
+     * Apply a statutory tax template to the current tenant.
+     */
+    public function applyTaxTemplate(Request $request)
+    {
+        $validated = $request->validate([
+            'template_id' => 'required|exists:statutory_tax_templates,id',
+        ]);
+
+        $template = \App\Models\StatutoryTaxTemplate::findOrFail($validated['template_id']);
+        $tenantId = auth()->user()->tenant_id;
+
+        $created = $template->applyToTenant($tenantId);
+
+        return redirect()->route('payroll.tax-templates')
+            ->with('success', "{$template->name} applied successfully. {$created} tax brackets created.");
+    }
+
+    /**
+     * Calculate retroactive pay adjustments for an employee when salary structure changes.
+     */
+    public function retroactiveAdjustment(Request $request)
+    {
+        $tenantId = auth()->user()->tenant_id;
+
+        $validated = $request->validate([
+            'employee_id' => ['required', Rule::exists('employees', 'id')->where('tenant_id', $tenantId)],
+            'effective_from' => 'required|date',
+            'recalculate' => 'nullable|boolean',
+        ]);
+
+        $employee = Employee::with('salaryStructure.items')->findOrFail($validated['employee_id']);
+        $effectiveFrom = $validated['effective_from'];
+        $doRecalculate = $validated['recalculate'] ?? false;
+
+        // Find payrolls in the affected period that used an older salary structure
+        $affectedPayrolls = Payroll::where('employee_id', $employee->id)
+            ->where('pay_period_start', '>=', $effectiveFrom)
+            ->whereIn('status', ['paid', 'approved'])
+            ->orderBy('pay_period_start')
+            ->get();
+
+        if ($affectedPayrolls->isEmpty()) {
+            return back()->with('info', 'No payroll records found in the affected period.');
+        }
+
+        $adjustments = [];
+        $structure = $employee->salaryStructure;
+
+        if (!$structure) {
+            return back()->with('error', 'Employee has no active salary structure.');
+        }
+
+        $taxService = app(PayrollTaxService::class);
+
+        foreach ($affectedPayrolls as $payroll) {
+            // Calculate what the payroll should have been with the current structure
+            $newBasic = $structure->basic_salary;
+            $newAllowances = $structure->calculateAllowances();
+            $newGross = $newBasic + $newAllowances + (float) $payroll->overtime_amount;
+
+            $taxableAmount = $newGross;
+            foreach ($structure->allowances as $item) {
+                if (!$item->is_taxable) {
+                    $calculated = $item->amount_type === 'percentage'
+                        ? round($newBasic * $item->amount / 100, 2)
+                        : $item->amount;
+                    $taxableAmount -= $calculated;
+                }
+            }
+
+            $taxResult = $taxService->calculateTax($taxableAmount, $tenantId, 0, 'monthly');
+            $newTax = $taxResult['tax'];
+
+            $newDeductions = $structure->calculateDeductions();
+            $newTotalDeductions = $newTax + $newDeductions;
+            $newNet = $newGross - $newTotalDeductions;
+
+            $difference = round($newNet - (float) $payroll->net_salary, 2);
+
+            $adjustments[] = [
+                'payroll' => $payroll,
+                'old_gross' => (float) $payroll->gross_salary,
+                'new_gross' => $newGross,
+                'old_net' => (float) $payroll->net_salary,
+                'new_net' => $newNet,
+                'difference' => $difference,
+            ];
+        }
+
+        $totalAdjustment = collect($adjustments)->sum('difference');
+
+        if ($doRecalculate && $totalAdjustment != 0) {
+            // Create an adjustment payroll record for the difference
+            $payroll = Payroll::create([
+                'tenant_id' => $tenantId,
+                'payroll_number' => Payroll::generateNumber($tenantId),
+                'employee_id' => $employee->id,
+                'salary_structure_id' => $structure->id,
+                'salary_structure_snapshot' => $structure->toSnapshot(),
+                'pay_period_start' => $affectedPayrolls->first()->pay_period_start,
+                'pay_period_end' => $affectedPayrolls->last()->pay_period_end,
+                'pay_date' => now()->toDateString(),
+                'basic_salary' => $totalAdjustment > 0 ? $totalAdjustment : 0,
+                'allowances' => 0,
+                'overtime_hours' => 0,
+                'overtime_amount' => 0,
+                'gross_salary' => abs($totalAdjustment),
+                'tax_deduction' => 0,
+                'other_deductions' => $totalAdjustment < 0 ? abs($totalAdjustment) : 0,
+                'total_deductions' => $totalAdjustment < 0 ? abs($totalAdjustment) : 0,
+                'net_salary' => $totalAdjustment,
+                'status' => 'draft',
+                'notes' => "Retroactive adjustment for period {$affectedPayrolls->first()->pay_period_start->format('M Y')} to {$affectedPayrolls->last()->pay_period_end->format('M Y')} based on salary structure change effective {$effectiveFrom}.",
+                'created_by' => auth()->id(),
+            ]);
+
+            return redirect()->route('payroll.show', $payroll)
+                ->with('success', "Retroactive adjustment payroll created. Net difference: " . number_format($totalAdjustment, 2));
+        }
+
+        return view('payroll.retroactive-preview', compact('employee', 'adjustments', 'totalAdjustment', 'effectiveFrom'));
     }
 }

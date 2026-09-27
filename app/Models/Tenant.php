@@ -43,6 +43,7 @@ class Tenant extends Model
         'default_purchase_tax_id',
         'prices_include_tax',
         'tax_per_line_item',
+        'invoice_template_id',
     ];
 
     protected $casts = [
@@ -61,6 +62,16 @@ class Tenant extends Model
     public function defaultPurchaseTax()
     {
         return $this->belongsTo(TaxRate::class, 'default_purchase_tax_id');
+    }
+
+    public function invoiceTemplate()
+    {
+        return $this->belongsTo(InvoiceTemplate::class);
+    }
+
+    public function invoiceTemplates()
+    {
+        return $this->hasMany(InvoiceTemplate::class);
     }
 
     public function users()

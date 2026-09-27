@@ -146,6 +146,22 @@ class InvoiceController extends Controller
         $invoice->load(['customer', 'items.item', 'tenant']);
         $tenant = $invoice->tenant ?? auth()->user()->tenant;
         
+        // Load the active invoice template settings
+        $template = $tenant->invoiceTemplate;
+        if (!$template) {
+            $template = \App\Models\InvoiceTemplate::where('tenant_id', $tenant->id)
+                ->where('is_default', true)
+                ->first();
+        }
+
+        if ($template) {
+            $templateSettings = array_merge(
+                \App\Models\InvoiceTemplate::getDefaultSettings(),
+                $template->settings ?? []
+            );
+            return view('invoices.templates.print-templated', compact('invoice', 'tenant', 'templateSettings'));
+        }
+
         return view('invoices.print', compact('invoice', 'tenant'));
     }
 

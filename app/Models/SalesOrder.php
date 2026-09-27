@@ -26,6 +26,7 @@ class SalesOrder extends Model
         'discount_amount',
         'discount_type',
         'total',
+        'total_fulfilled_amount',
         'notes',
         'terms',
         'created_by',
@@ -38,6 +39,7 @@ class SalesOrder extends Model
         'tax_amount' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'total' => 'decimal:2',
+        'total_fulfilled_amount' => 'decimal:2',
     ];
 
     public function customer()
@@ -55,6 +57,16 @@ class SalesOrder extends Model
         return $this->hasMany(Invoice::class);
     }
 
+    public function deliveryNotes()
+    {
+        return $this->hasMany(DeliveryNote::class);
+    }
+
+    public function quotation()
+    {
+        return $this->hasOne(Quotation::class, 'converted_to_so_id');
+    }
+
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -69,5 +81,48 @@ class SalesOrder extends Model
         
         $number = $lastOrder ? intval(substr($lastOrder->order_number, 3)) + 1 : 1;
         return 'SO-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Update fulfillment status based on item quantities.
+     */
+    public function updateFulfillmentStatus(): void
+    {
+        $this->load('items');
+        $allFulfilled = true;
+        $anyFulfilled = false;
+
+        foreach ($this->items as $item) {
+            if ($item->quantity_fulfilled >= $item->quantity) {
+                $anyFulfilled = true;
+            } else {
+                $allFulfilled = false;
+                if ($item->quantity_fulfilled > 0) {
+                    $anyFulfilled = true;
+                }
+            }
+        }
+
+        if ($allFulfilled && $anyFulfilled) {
+            $this->status = 'completed';
+        } elseif ($anyFulfilled) {
+            $this->status = 'processing';
+        }
+
+        // Calculate fulfilled amount
+        $fulfilledAmount = $this->items->sum(function ($item) {
+            $ratio = $item->quantity > 0 ? $item->quantity_fulfilled / $item->quantity : 0;
+            return $item->total * min($ratio, 1);
+        });
+        $this->total_fulfilled_amount = $fulfilledAmount;
+        $this->save();
+    }
+
+    /**
+     * Check if any items have unfulfilled quantities.
+     */
+    public function hasUnfulfilledItems(): bool
+    {
+        return $this->items()->whereRaw('quantity_fulfilled < quantity')->exists();
     }
 }

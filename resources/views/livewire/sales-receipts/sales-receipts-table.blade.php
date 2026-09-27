@@ -1,4 +1,5 @@
-<div>
+<div class="relative">
+    <x-table-loading />
     <!-- Flash Messages -->
     <x-flash-messages :successMessage="$successMessage" :errorMessage="$errorMessage" />
 
@@ -63,7 +64,7 @@
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                    <th class="px-4 py-3 text-left">
+                    <th scope="col" class="px-4 py-3 text-left">
                         <input type="checkbox" wire:model.live="selectAll"
                             class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                     </th>

@@ -8,7 +8,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
-use App\Services\BankService;
+use App\Events\ExpensePaid;
+use App\Events\ExpenseDeleting;
 use App\Services\JournalService;
 
 class Expense extends Model
@@ -315,19 +316,7 @@ class Expense extends Model
             'status' => self::STATUS_PAID,
         ]);
 
-        // Create journal entry now that it's paid
-        if ($this->total > 0) {
-            $this->createJournalEntry();
-        }
-
-        // Update bank balance if expense paid via bank (decrease balance)
-        if ($this->bank_id) {
-            app(BankService::class)->debit(
-                $this->bank_id,
-                $this->total,
-                "Expense #{$this->expense_number} paid"
-            );
-        }
+        ExpensePaid::dispatch($this);
 
         return true;
     }
@@ -358,13 +347,8 @@ class Expense extends Model
 
     protected static function booted()
     {
-        // Only create journal entry when expense is marked as paid
-        // Journal entries are now created via the markAsPaid() method
-        
-        // Delete journal entry when expense is deleted
         static::deleting(function ($expense) {
-            $journalService = app(JournalService::class);
-            $journalService->deleteJournalForTransaction(Expense::class, $expense->id, $expense->tenant_id);
+            ExpenseDeleting::dispatch($expense);
         });
     }
 }

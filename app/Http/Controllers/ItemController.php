@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Item;
 use App\Models\ItemCategory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class ItemController extends Controller
@@ -37,9 +38,16 @@ class ItemController extends Controller
             'is_taxable' => 'boolean',
             'track_inventory' => 'boolean',
             'reorder_level' => 'nullable|integer|min:0',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
 
         $validated['tenant_id'] = $tenantId;
+
+        if ($request->hasFile('image')) {
+            $validated['image_path'] = $request->file('image')->store('item-images', 'public');
+        }
+        unset($validated['image']);
+
         $item = Item::create($validated);
 
         return redirect()->route('items.index')->with('success', 'Item created successfully.');
@@ -73,7 +81,16 @@ class ItemController extends Controller
             'is_taxable' => 'boolean',
             'track_inventory' => 'boolean',
             'reorder_level' => 'nullable|integer|min:0',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
+
+        if ($request->hasFile('image')) {
+            if ($item->image_path) {
+                Storage::disk('public')->delete($item->image_path);
+            }
+            $validated['image_path'] = $request->file('image')->store('item-images', 'public');
+        }
+        unset($validated['image']);
 
         $item->update($validated);
 

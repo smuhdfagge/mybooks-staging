@@ -2,8 +2,12 @@
 
 namespace App\Providers;
 
+use App\Contracts\JournalServiceInterface;
+use App\Events;
+use App\Listeners;
 use App\Models\User;
 use App\Services\ActivityLogService;
+use App\Services\JournalService;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Auth\Events\Failed;
@@ -28,6 +32,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton('csp-nonce', function () {
             return base64_encode(random_bytes(16));
         });
+
+        $this->app->bind(JournalServiceInterface::class, JournalService::class);
     }
 
     /**
@@ -107,5 +113,41 @@ class AppServiceProvider extends ServiceProvider
                 ActivityLogService::logPasswordReset($event->user);
             }
         });
+
+        // ── Domain Event → Listener mappings ─────────────────────
+        // Invoices
+        Event::listen(Events\InvoiceSaved::class, Listeners\CreateInvoiceJournal::class);
+        Event::listen(Events\InvoiceDeleting::class, Listeners\DeleteInvoiceJournal::class);
+
+        // Bills
+        Event::listen(Events\BillSaved::class, Listeners\CreateBillJournal::class);
+        Event::listen(Events\BillDeleting::class, Listeners\DeleteBillJournal::class);
+
+        // Sales Receipts
+        Event::listen(Events\SalesReceiptSaved::class, Listeners\CreateSalesReceiptJournal::class);
+        Event::listen(Events\SalesReceiptDeleting::class, Listeners\DeleteSalesReceiptJournal::class);
+
+        // Payments Received
+        Event::listen(Events\PaymentReceivedCreated::class, Listeners\HandlePaymentReceivedCreated::class);
+        Event::listen(Events\PaymentReceivedUpdated::class, Listeners\HandlePaymentReceivedUpdated::class);
+        Event::listen(Events\PaymentReceivedDeleting::class, Listeners\HandlePaymentReceivedDeleting::class);
+        Event::listen(Events\PaymentReceivedDeleted::class, Listeners\HandlePaymentReceivedDeleted::class);
+
+        // Payments Made
+        Event::listen(Events\PaymentMadeCreated::class, Listeners\HandlePaymentMadeCreated::class);
+        Event::listen(Events\PaymentMadeUpdated::class, Listeners\HandlePaymentMadeUpdated::class);
+        Event::listen(Events\PaymentMadeDeleting::class, Listeners\HandlePaymentMadeDeleting::class);
+        Event::listen(Events\PaymentMadeDeleted::class, Listeners\HandlePaymentMadeDeleted::class);
+
+        // Expenses
+        Event::listen(Events\ExpensePaid::class, Listeners\HandleExpensePaid::class);
+        Event::listen(Events\ExpenseDeleting::class, Listeners\DeleteExpenseJournal::class);
+
+        // Payroll
+        Event::listen(Events\PayrollPaid::class, Listeners\HandlePayrollPaid::class);
+        Event::listen(Events\PayrollDeleting::class, Listeners\DeletePayrollJournal::class);
+
+        // Invoice Refunds
+        Event::listen(Events\InvoiceRefundDeleting::class, Listeners\DeleteInvoiceRefundJournal::class);
     }
 }

@@ -16,7 +16,7 @@
     <div class="py-6">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <form action="{{ route('items.store') }}" method="POST" class="p-6">
+                <form action="{{ route('items.store') }}" method="POST" class="p-6" enctype="multipart/form-data">
                     @csrf
 
                     <!-- Basic Information -->
@@ -27,6 +27,29 @@
                             </svg>
                             Basic Information
                         </h3>
+
+                        <!-- Image Upload -->
+                        <div class="mb-6" x-data="{ preview: null }">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Item Image</label>
+                            <div class="flex items-center gap-4">
+                                <div class="h-24 w-24 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-gray-50 dark:bg-gray-700">
+                                    <img x-show="preview" :src="preview" class="h-24 w-24 rounded-lg object-cover" alt="Image preview" x-cloak>
+                                    <svg x-show="!preview" class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <label for="item-image-upload" class="cursor-pointer inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition">
+                                        Upload Image
+                                    </label>
+                                    <input type="file" name="image" accept="image/*" class="hidden" id="item-image-upload"
+                                        @change="const file = $event.target.files[0]; if(file) { const reader = new FileReader(); reader.onload = e => preview = e.target.result; reader.readAsDataURL(file); }">
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">JPG, PNG, GIF or WebP. Max 2MB.</p>
+                                    @error('image') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="md:col-span-2">
                                 <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Item Name <span class="text-red-500">*</span></label>

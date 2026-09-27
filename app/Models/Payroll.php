@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
+use App\Events\PayrollPaid;
+use App\Events\PayrollDeleting;
 use App\Services\JournalService;
 
 class Payroll extends Model
@@ -142,9 +144,7 @@ class Payroll extends Model
 
         $this->withoutPeriodValidation()->update(['status' => self::STATUS_PAID]);
 
-        if ($this->net_salary > 0) {
-            $this->createJournalEntry();
-        }
+        PayrollPaid::dispatch($this);
 
         return true;
     }
@@ -159,12 +159,8 @@ class Payroll extends Model
 
     protected static function booted()
     {
-        // Journal entries for payroll are created via markAsPaid() (cash-basis)
-
-        // Delete journal entry when payroll is deleted
         static::deleting(function ($payroll) {
-            $journalService = app(JournalService::class);
-            $journalService->deleteJournalForTransaction(Payroll::class, $payroll->id, $payroll->tenant_id);
+            PayrollDeleting::dispatch($payroll);
         });
     }
 }

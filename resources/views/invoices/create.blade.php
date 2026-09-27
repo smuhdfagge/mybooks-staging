@@ -15,6 +15,7 @@
 
     <div class="py-6">
         <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
+            <x-form-auto-save formKey="invoice-create">
             <form action="{{ route('invoices.store') }}" method="POST" x-data="invoiceForm()" class="space-y-6">
                 @csrf
 
@@ -324,6 +325,7 @@
                     </button>
                 </div>
             </form>
+            </x-form-auto-save>
         </div>
     </div>
 

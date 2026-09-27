@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
+use App\Events\SalesReceiptSaved;
+use App\Events\SalesReceiptDeleting;
 use App\Services\JournalService;
 
 class SalesReceipt extends Model
@@ -79,17 +81,14 @@ class SalesReceipt extends Model
 
     protected static function booted()
     {
-        // Create journal entry when sales receipt is created or updated
         static::saved(function ($receipt) {
             if ($receipt->total > 0) {
-                $receipt->createJournalEntry();
+                SalesReceiptSaved::dispatch($receipt);
             }
         });
 
-        // Delete journal entry when sales receipt is deleted
         static::deleting(function ($receipt) {
-            $journalService = app(JournalService::class);
-            $journalService->deleteJournalForTransaction(SalesReceipt::class, $receipt->id, $receipt->tenant_id);
+            SalesReceiptDeleting::dispatch($receipt);
         });
     }
 }

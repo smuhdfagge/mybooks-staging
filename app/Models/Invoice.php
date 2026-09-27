@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
+use App\Events\InvoiceSaved;
+use App\Events\InvoiceDeleting;
 use App\Services\JournalService;
 
 class Invoice extends Model
@@ -81,6 +83,21 @@ class Invoice extends Model
         return $this->hasMany(InvoiceRefund::class);
     }
 
+    public function creditNotes()
+    {
+        return $this->hasMany(CreditNote::class);
+    }
+
+    public function creditNoteApplications()
+    {
+        return $this->hasMany(CreditNoteApplication::class);
+    }
+
+    public function deliveryNotes()
+    {
+        return $this->hasMany(DeliveryNote::class);
+    }
+
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -102,17 +119,14 @@ class Invoice extends Model
 
     protected static function booted()
     {
-        // Create journal entry when invoice is created or updated
         static::saved(function ($invoice) {
             if ($invoice->total > 0 && $invoice->status !== 'draft') {
-                $invoice->createJournalEntry();
+                InvoiceSaved::dispatch($invoice);
             }
         });
 
-        // Delete journal entry when invoice is deleted
         static::deleting(function ($invoice) {
-            $journalService = app(JournalService::class);
-            $journalService->deleteJournalForTransaction(Invoice::class, $invoice->id, $invoice->tenant_id);
+            InvoiceDeleting::dispatch($invoice);
         });
     }
 

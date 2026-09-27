@@ -14,64 +14,7 @@
     </head>
     <body class="bg-white dark:bg-gray-900 antialiased" x-data="{ mobileMenuOpen: false }">
         
-        <!-- Navigation -->
-        <nav class="fixed w-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 z-50">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-16">
-                    <div class="flex items-center">
-                        <a href="{{ route('home') }}" class="text-2xl font-bold gradient-text">MyBooks</a>
-                    </div>
-                    
-                    <!-- Desktop Menu -->
-                    <div class="hidden md:flex items-center space-x-8">
-                        <a href="{{ route('home') }}#features" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">Features</a>
-                        <a href="{{ route('home') }}#how-it-works" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">How It Works</a>
-                        <a href="{{ route('home') }}#modules" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">Modules</a>
-                        <a href="{{ route('about') }}" class="text-indigo-600 dark:text-indigo-400 font-medium">About Us</a>
-                        @if (Route::has('login'))
-                            @auth
-                                <a href="{{ url('/dashboard') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">Dashboard</a>
-                            @else
-                                <a href="{{ route('login') }}" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">Log in</a>
-                                @if (Route::has('register'))
-                                    <a href="{{ route('register') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">Get Started</a>
-                                @endif
-                            @endauth
-                        @endif
-                    </div>
-
-                    <!-- Mobile Menu Button -->
-                    <div class="md:hidden">
-                        <button @click="mobileMenuOpen = !mobileMenuOpen" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path x-show="!mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                                <path x-show="mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Mobile Menu -->
-                <div x-show="mobileMenuOpen" x-transition class="md:hidden pb-4">
-                    <div class="flex flex-col space-y-4">
-                        <a href="{{ route('home') }}#features" @click="mobileMenuOpen = false" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">Features</a>
-                        <a href="{{ route('home') }}#how-it-works" @click="mobileMenuOpen = false" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">How It Works</a>
-                        <a href="{{ route('home') }}#modules" @click="mobileMenuOpen = false" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">Modules</a>
-                        <a href="{{ route('about') }}" class="text-indigo-600 dark:text-indigo-400 font-medium">About Us</a>
-                        @if (Route::has('login'))
-                            @auth
-                                <a href="{{ url('/dashboard') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-center">Dashboard</a>
-                            @else
-                                <a href="{{ route('login') }}" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">Log in</a>
-                                @if (Route::has('register'))
-                                    <a href="{{ route('register') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-center">Get Started</a>
-                                @endif
-                            @endauth
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </nav>
+        @include('partials.public-nav', ['active' => 'about'])
 
         <!-- Hero Section -->
         <section class="pt-32 pb-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
@@ -251,43 +194,5 @@
             </div>
         </section>
 
-        <!-- Footer -->
-        <footer class="bg-gray-900 text-gray-300 py-12 px-4 sm:px-6 lg:px-8">
-            <div class="max-w-7xl mx-auto">
-                <div class="grid md:grid-cols-4 gap-8 mb-8">
-                    <div>
-                        <h3 class="text-white font-bold text-xl mb-4">MyBooks</h3>
-                        <p class="text-gray-400 text-sm">Complete accounting and bookkeeping solution for modern businesses.</p>
-                    </div>
-                    <div>
-                        <h4 class="text-white font-semibold mb-4">Product</h4>
-                        <ul class="space-y-2 text-sm">
-                            <li><a href="{{ route('home') }}#features" class="hover:text-white transition">Features</a></li>
-                            <li><a href="{{ route('home') }}#modules" class="hover:text-white transition">Modules</a></li>
-                            <li><a href="{{ route('home') }}#how-it-works" class="hover:text-white transition">How It Works</a></li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4 class="text-white font-semibold mb-4">Company</h4>
-                        <ul class="space-y-2 text-sm">
-                            <li><a href="{{ route('about') }}" class="text-white font-medium">About Us</a></li>
-                            <li><a href="{{ route('contact') }}" class="hover:text-white transition">Contact</a></li>
-                            <li><a href="{{ route('support') }}" class="hover:text-white transition">Support</a></li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4 class="text-white font-semibold mb-4">Legal</h4>
-                        <ul class="space-y-2 text-sm">
-                            <li><a href="{{ route('privacy-policy') }}" class="hover:text-white transition">Privacy Policy</a></li>
-                            <li><a href="{{ route('terms-of-service') }}" class="hover:text-white transition">Terms of Service</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="border-t border-gray-800 pt-8 text-center text-sm text-gray-400">
-                    <p>&copy; {{ date('Y') }} MyBooks. All rights reserved.</p>
-                </div>
-            </div>
-        </footer>
-
-    </body>
+        @include('partials.public-footer', ['active' => 'about'])
 </html>
