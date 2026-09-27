@@ -115,6 +115,8 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // ── Domain Event → Listener mappings ─────────────────────
+        // This is the only place listeners are registered: event discovery is
+        // disabled in bootstrap/app.php. Add new listeners here.
         // Invoices
         Event::listen(Events\InvoiceSaved::class, Listeners\CreateInvoiceJournal::class);
         Event::listen(Events\InvoiceDeleting::class, Listeners\DeleteInvoiceJournal::class);

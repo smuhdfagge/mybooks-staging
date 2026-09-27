@@ -18,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->group(base_path('routes/admin.php'));
         },
     )
+    // Listeners are mapped explicitly in AppServiceProvider::boot().
+    // Auto-discovery is switched off so each listener is registered once
+    // (with both on, every journal listener ran twice — finding N1).
+    ->withEvents(discover: false)
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
 
