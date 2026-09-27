@@ -207,4 +207,72 @@ class Phase2RegressionTest extends TestCase
         $this->post(route('settings.roles.store'), ['name' => 'Cashier', 'permissions' => []])
             ->assertSessionHasErrors(['name' => 'That role name is already in use. Please choose a different name.']);
     }
+
+    // ── L12: global search respects permissions ─────────────────
+
+    public function test_l12_global_search_only_shows_sections_the_user_can_view(): void
+    {
+        $this->createAuthenticatedUser(['view customers']);
+        \App\Models\Customer::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Zebra Customer']);
+        \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Zebra Vendor']);
+
+        Livewire::test(\App\Livewire\GlobalSearch::class)
+            ->set('query', 'Zebra')
+            ->assertSee('Zebra Customer')
+            ->assertDontSee('Zebra Vendor');
+    }
+
+    public function test_l12_global_search_stays_inside_the_tenant(): void
+    {
+        $this->createAuthenticatedUser(['view customers']);
+        $other = $this->otherTenant();
+        \App\Models\Customer::withoutTenantGuard(fn () => \App\Models\Customer::factory()->create([
+            'tenant_id' => $other->id, 'name' => 'Zebra Elsewhere', 'email' => 'zebra@elsewhere.test',
+        ]));
+
+        Livewire::test(\App\Livewire\GlobalSearch::class)
+            ->set('query', 'zebra@')
+            ->assertDontSee('Zebra Elsewhere');
+    }
+
+    // ── L13: invoice template editor ────────────────────────────
+
+    public function test_l13_template_editor_requires_edit_settings_to_save(): void
+    {
+        $this->createAuthenticatedUser(['view settings']);
+
+        Livewire::test(\App\Livewire\Settings\InvoiceTemplateEditor::class)
+            ->set('name', 'Mine')
+            ->call('save')
+            ->assertForbidden();
+
+        $this->assertSame(0, \App\Models\InvoiceTemplate::count());
+    }
+
+    public function test_l13_template_colours_and_font_are_validated(): void
+    {
+        $this->createAuthenticatedUser(['edit settings']);
+
+        Livewire::test(\App\Livewire\Settings\InvoiceTemplateEditor::class)
+            ->set('name', 'Mine')
+            ->set('primary_color', 'red;}')
+            ->set('font_family', 'x; } body { display:none')
+            ->call('save')
+            ->assertHasErrors(['primary_color', 'font_family']);
+
+        $this->assertSame(0, \App\Models\InvoiceTemplate::count());
+    }
+
+    public function test_l13_valid_template_saves(): void
+    {
+        $this->createAuthenticatedUser(['edit settings']);
+
+        Livewire::test(\App\Livewire\Settings\InvoiceTemplateEditor::class)
+            ->set('name', 'Mine')
+            ->set('primary_color', '#123ABC')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame(1, \App\Models\InvoiceTemplate::count());
+    }
 }
