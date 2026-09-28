@@ -22,3 +22,8 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Test runner output (L14)
+/test-results.xml
+/test_*_output.txt
+/*.junit.xml
