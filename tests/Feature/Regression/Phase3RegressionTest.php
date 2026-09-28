@@ -709,4 +709,50 @@ class Phase3RegressionTest extends TestCase
         $this->assertEquals(2, (float) $stock->fresh()->quantity);
         $this->assertNull($invoice->fresh()->released_at);
     }
+
+    // ── Opening-balance import follows the ledger rules ─────────
+
+    private function runOpeningBalanceImport(string $csv): \App\Models\Import
+    {
+        \Illuminate\Support\Facades\Storage::fake('imports');
+        $path = $this->tenant->id.'/opening.csv';
+        \Illuminate\Support\Facades\Storage::disk('imports')->put($path, $csv);
+
+        $import = \App\Models\Import::create([
+            'tenant_id' => $this->tenant->id, 'user_id' => $this->user->id,
+            'type' => \App\Models\Import::TYPE_OPENING_BALANCES, 'format' => \App\Models\Import::FORMAT_CSV,
+            'status' => \App\Models\Import::STATUS_PENDING, 'original_filename' => 'opening.csv',
+            'file_path' => $path, 'file_size' => strlen($csv),
+        ]);
+
+        app(\App\Services\ImportService::class)->processImport($import);
+
+        return $import->fresh();
+    }
+
+    public function test_opening_balance_import_posts_a_numbered_journal_and_updates_balances(): void
+    {
+        $this->createAuthenticatedUser();
+
+        $import = $this->runOpeningBalanceImport("account_code,debit,credit\n1000,5000,0\n3000,0,5000\n");
+
+        $journal = \App\Models\Journal::where('description', 'Opening Balances Import')->firstOrFail();
+        $this->assertMatchesRegularExpression('/^JE-\\d{6}$/', (string) $journal->journal_number);
+        $this->assertSame(5000.0, $this->accountBalance($this->tenant->id, '1000'));
+        $this->assertSame(5000.0, $this->accountBalance($this->tenant->id, '3000'));
+        $this->assertStoredBalancesMatchLedger($this->tenant->id);
+        $this->assertSame(2, (int) $import->successful_rows);
+    }
+
+    public function test_unbalanced_opening_balance_import_is_refused(): void
+    {
+        $this->createAuthenticatedUser();
+
+        $import = $this->runOpeningBalanceImport("account_code,debit,credit\n1000,5000,0\n3000,0,4000\n");
+
+        $this->assertSame(0, \App\Models\Journal::where('description', 'Opening Balances Import')->count());
+        $this->assertSame(0.0, $this->accountBalance($this->tenant->id, '1000'));
+        $this->assertSame(0, (int) $import->successful_rows);
+        $this->assertStringContainsString('do not equal total credits', implode(' ', $import->errors ?? []));
+    }
 }
