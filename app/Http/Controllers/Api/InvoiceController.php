@@ -461,16 +461,39 @@ class InvoiceController extends BaseApiController
      */
     public function updateStatus(Request $request, Invoice $invoice): JsonResponse
     {
+        // Only real transitions (finding I3). Paid, partial and overdue come
+        // from payments and due dates, never from a status field.
         $validated = $request->validate([
-            'status' => 'required|in:draft,unpaid,partial,paid,overdue,cancelled',
+            'status' => 'required|in:unpaid,cancelled',
         ]);
 
         $oldStatus = $invoice->status;
-        $invoice->update(['status' => $validated['status']]);
+        $newStatus = $validated['status'];
+
+        if ($newStatus === 'unpaid' && $oldStatus !== 'draft') {
+            return $this->error('Only a draft invoice can be issued', 422);
+        }
+
+        if ($newStatus === 'cancelled') {
+            if (! in_array($oldStatus, ['draft', 'sent', 'unpaid', 'overdue'], true)) {
+                return $this->error("A {$oldStatus} invoice can't be cancelled", 422);
+            }
+            if ((float) $invoice->amount_paid > 0 || $invoice->creditNoteApplications()->exists()) {
+                return $this->error('Remove or refund the payments and credits before cancelling this invoice', 422);
+            }
+        }
+
+        DB::transaction(function () use ($invoice, $newStatus) {
+            if ($newStatus === 'cancelled') {
+                $invoice->releaseInventoryReservation();
+            }
+            // Saving fires InvoiceSaved: issuing posts the journal, cancelling reverses it.
+            $invoice->update(['status' => $newStatus]);
+        });
 
         $invoice->logCustomActivity(
             ActivityLog::ACTION_UPDATED,
-            "Invoice '{$invoice->invoice_number}' status changed from {$oldStatus} to {$validated['status']}"
+            "Invoice '{$invoice->invoice_number}' status changed from {$oldStatus} to {$newStatus}"
         );
 
         return $this->success(

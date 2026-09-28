@@ -1076,7 +1076,12 @@ Content-Disposition: attachment; filename="INV-00001.pdf"
 }
 ```
 
-Valid statuses: `draft`, `unpaid`, `cancelled`
+Allowed changes:
+
+- `unpaid`: issue a draft invoice (posts it to the ledger).
+- `cancelled`: cancel a draft, sent, unpaid or overdue invoice that has no payments or credits applied. The ledger entry is reversed and reserved stock is released.
+
+Anything else returns 422. `paid`, `partial` and `overdue` are set by payments and due dates, not by this endpoint.
 
 ---
 
@@ -1156,6 +1161,8 @@ Valid statuses: `draft`, `unpaid`, `cancelled`
 ### Approve Expense
 
 **Endpoint:** `POST /expenses/{id}/approve`
+
+Needs the admin role, and the approver can't be the person who raised the expense (403 otherwise). Rejecting also needs the admin role. New expenses can only be created as `draft` or `pending_approval`.
 
 ### Reject Expense
 
