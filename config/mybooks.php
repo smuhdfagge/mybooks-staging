@@ -12,6 +12,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | HSTS (finding L10)
+    |--------------------------------------------------------------------------
+    |
+    | Turn these on only if every subdomain of the site's domain is served
+    | over HTTPS, permanently. preload also needs includeSubDomains and a
+    | submission at hstspreload.org.
+    |
+    */
+
+    'hsts' => [
+        'include_subdomains' => (bool) env('MYBOOKS_HSTS_INCLUDE_SUBDOMAINS', false),
+        'preload' => (bool) env('MYBOOKS_HSTS_PRELOAD', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | File Upload Limits (in kilobytes)
     |--------------------------------------------------------------------------
     */
@@ -78,5 +94,38 @@ return [
         // Months to keep soft-deleted records before hard-deleting
         'soft_deleted_months' => (int) env('MYBOOKS_RETENTION_SOFT_DELETED_MONTHS', 12),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Unfinished modules (finding N4)
+    |--------------------------------------------------------------------------
+    |
+    | These modules have back-end code but no screens yet, or their ledger
+    | postings are not finished. Their URLs answer 404 until switched on.
+    | Switch one on only once its screens exist and its tests pass.
+    |
+    */
+
+    'features' => [
+        'quotations' => (bool) env('MYBOOKS_FEATURE_QUOTATIONS', false),
+        'delivery_notes' => (bool) env('MYBOOKS_FEATURE_DELIVERY_NOTES', false),
+        'credit_notes' => (bool) env('MYBOOKS_FEATURE_CREDIT_NOTES', false),
+        'warehouses' => (bool) env('MYBOOKS_FEATURE_WAREHOUSES', false),
+        'stock_transfers' => (bool) env('MYBOOKS_FEATURE_STOCK_TRANSFERS', false),
+        'assembly' => (bool) env('MYBOOKS_FEATURE_ASSEMBLY', false),              // bills of materials and assembly orders
+        'inventory_valuation' => (bool) env('MYBOOKS_FEATURE_INVENTORY_VALUATION', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Queue worker from the scheduler (finding N7)
+    |--------------------------------------------------------------------------
+    |
+    | On hosting that can't keep "php artisan queue:work" running, set this
+    | to true and the scheduler empties the queue every minute.
+    |
+    */
+
+    'queue_work_from_scheduler' => (bool) env('QUEUE_WORK_FROM_SCHEDULER', false),
 
 ];

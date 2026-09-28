@@ -818,6 +818,180 @@ class ReportController extends BaseApiController
     }
 
     /**
+     * Payroll register for one month (?month=YYYY-MM&status=&department_id=).
+     */
+    public function payrollRegister(Request $request): JsonResponse
+    {
+        $request->validate(['month' => 'nullable|date_format:Y-m']);
+        $month = $request->get('month', now()->format('Y-m'));
+        $data = $this->payrollReports()->payrollRegister($this->getTenantId(), $month, $request->get('status'), $request->get('department_id'));
+
+        return $this->success([
+            'period' => ['month' => $month, 'start_date' => $data['startDate']->toDateString(), 'end_date' => $data['endDate']->toDateString()],
+            'payrolls' => $data['payrolls']->map(fn ($p) => [
+                'payroll_number' => $p->payroll_number,
+                'employee' => $this->employeeSummary($p->employee),
+                'status' => $p->status,
+                'pay_period_start' => $p->pay_period_start?->toDateString(),
+                'pay_date' => $p->pay_date?->toDateString(),
+                'basic_salary' => (float) $p->basic_salary,
+                'allowances' => (float) $p->allowances,
+                'overtime_amount' => (float) $p->overtime_amount,
+                'gross_salary' => (float) $p->gross_salary,
+                'tax_deduction' => (float) $p->tax_deduction,
+                'other_deductions' => (float) $p->other_deductions,
+                'total_deductions' => (float) $p->total_deductions,
+                'net_salary' => (float) $p->net_salary,
+                'employer_contributions' => (float) $p->employer_contributions,
+            ])->values(),
+            'totals' => array_map('floatval', $data['totals']),
+            'status_counts' => $data['statusCounts'],
+        ]);
+    }
+
+    /**
+     * Year-to-date earnings per employee (?year=&employee_id=).
+     */
+    public function ytdEarnings(Request $request): JsonResponse
+    {
+        $request->validate(['year' => 'nullable|integer|min:2000|max:2100']);
+        $year = (int) $request->get('year', now()->year);
+        $data = $this->payrollReports()->ytdEarnings($this->getTenantId(), $year, $request->get('employee_id'));
+
+        return $this->success([
+            'year' => $year,
+            'by_employee' => $data['byEmployee']->map(fn ($row) => ['employee' => $this->employeeSummary($row['employee'])]
+                + collect($row)->except('employee')->all())->values(),
+            'totals' => $data['grandTotals'],
+        ]);
+    }
+
+    /**
+     * Payroll tax deducted, for filing (?start_date=&end_date=).
+     */
+    public function taxLiabilityPayroll(Request $request): JsonResponse
+    {
+        [$start, $end] = $this->payrollPeriod($request);
+        $data = $this->payrollReports()->taxLiability($this->getTenantId(), $start, $end);
+
+        return $this->success([
+            'period' => ['start_date' => $start, 'end_date' => $end],
+            'by_employee' => $this->withEmployeeSummary($data['byEmployee']),
+            'by_month' => $data['monthlyBreakdown'],
+            'by_department' => $data['byDepartment'],
+            'totals' => $data['totals'],
+        ]);
+    }
+
+    /**
+     * Employer contributions (?start_date=&end_date=).
+     */
+    public function employerContributions(Request $request): JsonResponse
+    {
+        [$start, $end] = $this->payrollPeriod($request);
+        $data = $this->payrollReports()->employerContributions($this->getTenantId(), $start, $end);
+
+        return $this->success([
+            'period' => ['start_date' => $start, 'end_date' => $end],
+            'by_type' => $data['contributionTypes'],
+            'by_employee' => $this->withEmployeeSummary($data['byEmployee']),
+            'by_month' => $data['monthlyTrend'],
+            'totals' => $data['totals'],
+        ]);
+    }
+
+    /**
+     * Net pay to disburse (?start_date=&end_date=&status=approved&payment_method=).
+     * Includes the employee's bank details, so it needs the payroll permission too.
+     */
+    public function bankDisbursement(Request $request): JsonResponse
+    {
+        if (! $request->user()->can('view payroll')) {
+            return $this->forbidden('You need the view payroll permission to see bank details.');
+        }
+
+        [$start, $end] = $this->payrollPeriod($request);
+        $status = $request->get('status', Payroll::STATUS_APPROVED);
+        $data = $this->payrollReports()->bankDisbursement($this->getTenantId(), $start, $end, $status, $request->get('payment_method'));
+
+        return $this->success([
+            'period' => ['start_date' => $start, 'end_date' => $end],
+            'status' => $status,
+            'payments' => $data['payrolls']->map(fn ($p) => [
+                'payroll_number' => $p->payroll_number,
+                'employee' => $this->employeeSummary($p->employee),
+                'bank_name' => $p->employee?->bank_name,
+                'bank_account_number' => $p->employee?->bank_account_number,
+                'payment_method' => $p->payment_method,
+                'pay_date' => $p->pay_date?->toDateString(),
+                'net_salary' => (float) $p->net_salary,
+            ])->values(),
+            'by_payment_method' => $data['byPaymentMethod'],
+            'totals' => $data['totals'],
+        ]);
+    }
+
+    /**
+     * Salary structure changes, plus one employee's pay by month (?employee_id=).
+     */
+    public function salaryRevisionHistory(Request $request): JsonResponse
+    {
+        $data = $this->payrollReports()->salaryRevisionHistory($this->getTenantId(), $request->get('employee_id'));
+
+        return $this->success([
+            'versions' => $data['versions']->map(fn ($v) => [
+                'id' => $v->id,
+                'salary_structure' => $v->salaryStructure?->name,
+                'version' => $v->version,
+                'basic_salary' => (float) $v->basic_salary,
+                'effective_from' => $v->effective_from ? \Illuminate\Support\Carbon::parse($v->effective_from)->toDateString() : null,
+                'changed_by' => $v->changedByUser?->name,
+                'changed_at' => $v->created_at?->toIso8601String(),
+                'reason' => $v->change_reason,
+            ])->values(),
+            'employee' => $this->employeeSummary($data['selectedEmployee']),
+            'salary_progression' => $data['salaryProgression'],
+        ]);
+    }
+
+    private function payrollReports(): \App\Services\Reports\PayrollReportService
+    {
+        return app(\App\Services\Reports\PayrollReportService::class);
+    }
+
+    /** @return array{0: string, 1: string} */
+    private function payrollPeriod(Request $request): array
+    {
+        $request->validate(['start_date' => 'nullable|date', 'end_date' => 'nullable|date|after_or_equal:start_date']);
+
+        return [
+            $request->get('start_date', now()->startOfMonth()->format('Y-m-d')),
+            $request->get('end_date', now()->format('Y-m-d')),
+        ];
+    }
+
+    /** Name and department only; never salary or ID details. */
+    private function employeeSummary($employee): ?array
+    {
+        if (! $employee) {
+            return null;
+        }
+
+        return [
+            'id' => $employee->id,
+            'employee_id' => $employee->employee_id,
+            'name' => trim($employee->first_name.' '.$employee->last_name),
+            'department' => $employee->department?->name,
+        ];
+    }
+
+    private function withEmployeeSummary($rows)
+    {
+        return $rows->map(fn ($row) => ['employee' => $this->employeeSummary($row['employee'])]
+            + collect($row)->except('employee')->all())->values();
+    }
+
+    /**
      * Get Customer Statement Report
      */
     public function customerStatement(Request $request): JsonResponse

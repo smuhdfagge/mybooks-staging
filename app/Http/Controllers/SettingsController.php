@@ -19,10 +19,28 @@ use Spatie\Permission\Models\Permission;
 class SettingsController extends Controller
 {
     /**
-     * Role names are still unique across all organisations until roles are
-     * scoped per tenant (H4, full fix in Phase 7).
+     * Role names are unique within an organisation (H4). This only shows if
+     * two people create the same name at the same moment.
      */
     private const ROLE_NAME_TAKEN = 'That role name is already in use. Please choose a different name.';
+
+    /** Validation: not a reserved system role name. */
+    private function notReservedRoleName(): \Closure
+    {
+        return function ($attribute, $value, $fail) {
+            if (in_array(mb_strtolower(trim((string) $value)), Role::RESERVED_NAMES, true)) {
+                $fail('That name is reserved for a system role. Please choose a different name.');
+            }
+        };
+    }
+
+    /**
+     * /settings has no page of its own; company settings is the first one.
+     */
+    public function index()
+    {
+        return redirect()->route('settings.company');
+    }
 
     public function company()
     {
@@ -232,6 +250,7 @@ class SettingsController extends Controller
                 'required',
                 'string',
                 'max:255',
+                $this->notReservedRoleName(),
                 function ($attribute, $value, $fail) use ($tenantId) {
                     $exists = Role::withoutGlobalScopes()
                         ->where('name', $value)
@@ -301,6 +320,7 @@ class SettingsController extends Controller
                     'required',
                     'string',
                     'max:255',
+                    $this->notReservedRoleName(),
                     function ($attribute, $value, $fail) use ($tenantId) {
                         $exists = Role::where('name', $value)
                             ->where('tenant_id', $tenantId)
@@ -335,6 +355,7 @@ class SettingsController extends Controller
                 'required',
                 'string',
                 'max:255',
+                $this->notReservedRoleName(),
                 function ($attribute, $value, $fail) use ($tenantId, $role) {
                     $exists = Role::where('name', $value)
                         ->where('tenant_id', $tenantId)

@@ -20,6 +20,7 @@ class Bill extends Model
     protected $fillable = [
         'tenant_id',
         'vendor_id',
+        'purchase_order_id',
         'bill_number',
         'vendor_bill_number',
         'bill_date',
@@ -47,6 +48,11 @@ class Bill extends Model
         'balance_due' => 'decimal:2',
         'inventory_updated_at' => 'datetime',
     ];
+
+    public function purchaseOrder()
+    {
+        return $this->belongsTo(PurchaseOrder::class);
+    }
 
     public function vendor()
     {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bill;
+use App\Models\PurchaseOrder;
 use App\Models\BillItem;
 use App\Models\Vendor;
 use App\Models\Item;
@@ -19,12 +20,38 @@ class BillController extends Controller
         return view('bills.index');
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $vendors = Vendor::where('is_active', true)->get();
         $items = Item::where('is_active', true)->get();
         $billNumber = Bill::generateNumber(auth()->user()->tenant_id);
-        return view('bills.create', compact('vendors', 'items', 'billNumber'));
+
+        // "Convert to bill" from a purchase order fills the form from the
+        // order (finding N8).
+        $purchaseOrder = null;
+        $prefillItems = null;
+        if ($request->filled('purchase_order_id')) {
+            $purchaseOrder = PurchaseOrder::with('items.item')->findOrFail($request->integer('purchase_order_id'));
+
+            if (! in_array($purchaseOrder->status, PurchaseOrder::BILLABLE, true)) {
+                return redirect()->route('purchase-orders.show', $purchaseOrder)
+                    ->with('error', 'This purchase order can no longer be billed.');
+            }
+
+            $prefillItems = $purchaseOrder->items->map(fn ($line) => [
+                'item_id' => (string) $line->item_id,
+                'description' => $line->description ?: $line->item?->name,
+                // Bill what arrived when goods have been received, else what was ordered
+                'quantity' => (float) ($line->quantity_received > 0 ? $line->quantity_received : $line->quantity),
+                'unit_price' => (float) $line->unit_price,
+                'tax_rate' => (float) $line->tax_rate,
+                'itemSearch' => $line->item?->name ?? '',
+                'itemDropdownOpen' => false,
+                'itemHighlightedIndex' => 0,
+            ])->values()->all();
+        }
+
+        return view('bills.create', compact('vendors', 'items', 'billNumber', 'purchaseOrder', 'prefillItems'));
     }
 
     public function store(StoreBillRequest $request)
@@ -32,6 +59,15 @@ class BillController extends Controller
         $tenantId = auth()->user()->tenant_id;
 
         $validated = $request->validated();
+
+        $purchaseOrder = null;
+        if (! empty($validated['purchase_order_id'])) {
+            $purchaseOrder = PurchaseOrder::find($validated['purchase_order_id']);
+
+            if ((int) $purchaseOrder->vendor_id !== (int) $validated['vendor_id']) {
+                return back()->withInput()->withErrors(['vendor_id' => "The vendor must be the purchase order's vendor."]);
+            }
+        }
 
         DB::beginTransaction();
 
@@ -54,6 +90,7 @@ class BillController extends Controller
             $bill = Bill::create([
                 'tenant_id' => $tenantId,
                 'vendor_id' => $validated['vendor_id'],
+                'purchase_order_id' => $purchaseOrder?->id,
                 'bill_number' => Bill::generateNumber($tenantId),
                 'bill_date' => $validated['bill_date'],
                 'due_date' => $validated['due_date'],
@@ -84,6 +121,17 @@ class BillController extends Controller
                     'discount' => $discount,
                     'total' => $itemTotal - $discount + $tax,
                 ]);
+            }
+
+            if ($purchaseOrder) {
+                // Locked so two people can't bill the same order at once
+                $purchaseOrder = PurchaseOrder::lockForUpdate()->find($purchaseOrder->id);
+                if (! in_array($purchaseOrder->status, PurchaseOrder::BILLABLE, true)) {
+                    DB::rollBack();
+
+                    return back()->withInput()->withErrors(['purchase_order_id' => 'This purchase order has already been billed or cannot be billed.']);
+                }
+                $purchaseOrder->update(['status' => PurchaseOrder::STATUS_BILLED]);
             }
 
             DB::commit();

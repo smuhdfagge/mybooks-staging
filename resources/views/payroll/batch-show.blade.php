@@ -23,7 +23,7 @@
                         </button>
                     </form>
                 @endif
-                @if($payrollBatch->status === 'approved')
+                @if(in_array($payrollBatch->status, ['approved', 'failed']))
                     <form action="{{ route('payroll-batches.mark-paid', $payrollBatch) }}" method="POST" class="inline"
                         onsubmit="return confirm('Mark all payroll records as paid?')">
                         @csrf
@@ -31,7 +31,7 @@
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>
-                            Mark All as Paid
+                            {{ $payrollBatch->status === 'failed' ? 'Try Again' : 'Mark All as Paid' }}
                         </button>
                     </form>
                 @endif
@@ -72,9 +72,16 @@
                     {{ $payrollBatch->status === 'draft' ? 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100' : '' }}
                     {{ $payrollBatch->status === 'approved' ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100' : '' }}
                     {{ $payrollBatch->status === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' : '' }}
+                    {{ $payrollBatch->status === 'processing' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100' : '' }}
+                    {{ $payrollBatch->status === 'failed' ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100' : '' }}
                     {{ $payrollBatch->status === 'cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100' : '' }}">
                     Status: {{ ucfirst($payrollBatch->status) }}
                 </span>
+                @if($payrollBatch->status === 'processing')
+                    <p class="mt-2 text-sm text-yellow-700 dark:text-yellow-300">Being paid in the background. Refresh this page in a minute.</p>
+                @elseif($payrollBatch->status === 'failed')
+                    <p class="mt-2 text-sm text-red-700 dark:text-red-300">Paying this batch failed and nothing was paid: {{ $payrollBatch->failure_reason }}. Fix the problem and use Try Again.</p>
+                @endif
             </div>
 
             <!-- Summary Cards -->

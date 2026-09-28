@@ -18,6 +18,12 @@
             <x-form-auto-save formKey="bill-create">
             <form action="{{ route('bills.store') }}" method="POST" x-data="billForm()" class="space-y-6">
                 @csrf
+                @if($purchaseOrder)
+                    <input type="hidden" name="purchase_order_id" value="{{ $purchaseOrder->id }}">
+                    <div class="rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 p-4 text-sm text-indigo-800 dark:text-indigo-200">
+                        Billing purchase order <a href="{{ route('purchase-orders.show', $purchaseOrder) }}" class="font-semibold underline">{{ $purchaseOrder->order_number }}</a>. Check the quantities and prices against the vendor's bill before saving.
+                    </div>
+                @endif
 
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
@@ -41,7 +47,7 @@
                                     { id: '{{ $vendor->id }}', name: '{{ addslashes($vendor->name) }}{{ $vendor->company_name ? " (" . addslashes($vendor->company_name) . ")" : "" }}' },
                                     @endforeach
                                 ],
-                                selectedId: '{{ old('vendor_id', request('vendor_id')) }}'
+                                selectedId: '{{ old('vendor_id', request('vendor_id', $purchaseOrder?->vendor_id)) }}'
                             })" class="relative">
                                 <label for="vendor_search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor <span class="text-red-500">*</span></label>
                                 <input type="hidden" name="vendor_id" :value="selectedId" required>
@@ -115,7 +121,7 @@
 
                         <div class="mb-6">
                             <label for="reference" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor Bill Number / Reference</label>
-                            <input type="text" name="reference" id="reference" value="{{ old('reference') }}"
+                            <input type="text" name="reference" id="reference" value="{{ old('reference', $purchaseOrder?->order_number) }}"
                                 class="w-full md:w-1/2 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
                     </div>
@@ -352,7 +358,7 @@
 
         function billForm() {
             return {
-                items: [{ item_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 }],
+                items: @js($prefillItems ?: [['item_id' => '', 'description' => '', 'quantity' => 1, 'unit_price' => 0, 'tax_rate' => 0, 'itemSearch' => '', 'itemDropdownOpen' => false, 'itemHighlightedIndex' => 0]]),
                 availableProducts: [
                     @foreach($items as $item)
                     { id: '{{ $item->id }}', name: '{{ addslashes($item->name) }}', price: {{ $item->cost_price ?? $item->selling_price }}, desc: '{{ addslashes($item->description ?? $item->name) }}', tax: {{ $item->tax_rate ?? 0 }} },

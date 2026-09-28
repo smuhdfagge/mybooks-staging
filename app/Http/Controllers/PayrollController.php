@@ -544,7 +544,8 @@ class PayrollController extends Controller
     {
         abort_unless($payrollBatch->tenant_id === auth()->user()->tenant_id, 403);
 
-        if ($payrollBatch->status !== 'approved') {
+        // A failed background run can be tried again (N7)
+        if (! in_array($payrollBatch->status, [PayrollBatch::STATUS_APPROVED, PayrollBatch::STATUS_FAILED], true)) {
             return redirect()->route('payroll-batches.show', $payrollBatch)
                 ->with('error', 'Only approved batches can be marked as paid.');
         }
@@ -581,25 +582,28 @@ class PayrollController extends Controller
             }
         }
 
-        // For large batches, dispatch to queue
+        // Large batches run in the background. The batch shows "processing"
+        // until the job has paid every record; it only becomes "paid" at the
+        // end, and "failed" if the job fails (N7).
         $payrollBatch->update([
-            'status' => 'paid',
-            'paid_at' => now(),
+            'status' => PayrollBatch::STATUS_PROCESSING,
+            'paid_at' => null,
+            'failure_reason' => null,
         ]);
 
         ProcessPayrollBatch::dispatch($payrollBatch);
 
         return redirect()->route('payroll-batches.show', $payrollBatch)
-            ->with('success', "Payroll batch queued for processing ({$approvedCount} records). Journal entries will be created in the background.");
+            ->with('success', "Payroll batch queued for processing ({$approvedCount} records). It will show as paid once every record and journal entry is done.");
     }
 
     public function destroyBatch(PayrollBatch $payrollBatch)
     {
         abort_unless($payrollBatch->tenant_id === auth()->user()->tenant_id, 403);
 
-        if ($payrollBatch->status === 'paid') {
+        if (in_array($payrollBatch->status, [PayrollBatch::STATUS_PAID, PayrollBatch::STATUS_PROCESSING], true)) {
             return redirect()->route('payroll.index')
-                ->with('error', 'Paid batch cannot be deleted.');
+                ->with('error', 'A paid batch, or one being processed, cannot be deleted.');
         }
 
         DB::beginTransaction();

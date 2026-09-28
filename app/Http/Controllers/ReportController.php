@@ -28,6 +28,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 
+use App\Services\Reports\PayrollReportService;
+
 class ReportController extends Controller
 {
     protected ReportExportService $exportService;
@@ -847,49 +849,11 @@ class ReportController extends Controller
         $month = $request->get('month', now()->format('Y-m'));
         $status = $request->get('status');
         $departmentId = $request->get('department_id');
-
-        $startDate = \Carbon\Carbon::parse($month . '-01')->startOfMonth();
-        $endDate = $startDate->copy()->endOfMonth();
-
         $departments = Department::where('tenant_id', $tenantId)->orderBy('name')->get();
 
-        $query = Payroll::where('tenant_id', $tenantId)
-            ->whereBetween('pay_period_start', [$startDate, $endDate])
-            ->with(['employee.department', 'salaryStructure']);
-
-        if ($status) {
-            $query->where('status', $status);
-        }
-
-        if ($departmentId) {
-            $query->whereHas('employee', fn($q) => $q->where('department_id', $departmentId));
-        }
-
-        $payrolls = $query->orderBy('payroll_number')->get();
-
-        $totals = [
-            'basic_salary' => $payrolls->sum('basic_salary'),
-            'allowances' => $payrolls->sum('allowances'),
-            'overtime_amount' => $payrolls->sum('overtime_amount'),
-            'gross_salary' => $payrolls->sum('gross_salary'),
-            'tax_deduction' => $payrolls->sum('tax_deduction'),
-            'other_deductions' => $payrolls->sum('other_deductions'),
-            'total_deductions' => $payrolls->sum('total_deductions'),
-            'net_salary' => $payrolls->sum('net_salary'),
-            'employer_contributions' => $payrolls->sum('employer_contributions'),
-        ];
-
-        $statusCounts = [
-            'draft' => $payrolls->where('status', 'draft')->count(),
-            'approved' => $payrolls->where('status', 'approved')->count(),
-            'paid' => $payrolls->where('status', 'paid')->count(),
-            'cancelled' => $payrolls->where('status', 'cancelled')->count(),
-        ];
-
-        return view('reports.payroll-register', compact(
-            'payrolls', 'departments', 'totals', 'statusCounts',
-            'month', 'status', 'departmentId', 'startDate', 'endDate'
-        ));
+        return view('reports.payroll-register', app(PayrollReportService::class)
+            ->payrollRegister($tenantId, $month, $status, $departmentId)
+            + compact('departments', 'month', 'status', 'departmentId'));
     }
 
     /**
@@ -898,75 +862,13 @@ class ReportController extends Controller
     public function ytdEarnings(Request $request)
     {
         $tenantId = auth()->user()->tenant_id;
-        $year = $request->get('year', now()->year);
+        $year = (int) $request->get('year', now()->year);
         $employeeId = $request->get('employee_id');
-
-        $startDate = \Carbon\Carbon::create($year, 1, 1)->startOfYear();
-        $endDate = \Carbon\Carbon::create($year, 12, 31)->endOfYear();
-
         $employees = Employee::where('tenant_id', $tenantId)->orderBy('first_name')->get();
 
-        $query = Payroll::where('tenant_id', $tenantId)
-            ->whereIn('status', [Payroll::STATUS_APPROVED, Payroll::STATUS_PAID])
-            ->whereBetween('pay_date', [$startDate, $endDate])
-            ->with('employee.department');
-
-        if ($employeeId) {
-            $query->where('employee_id', $employeeId);
-        }
-
-        $payrolls = $query->orderBy('pay_date')->get();
-
-        $byEmployee = $payrolls->groupBy('employee_id')->map(function ($records) {
-            $employee = $records->first()->employee;
-
-            // Monthly breakdown
-            $monthlyBreakdown = $records->groupBy(function ($p) {
-                return $p->pay_date->format('Y-m');
-            })->map(function ($monthRecords) {
-                return [
-                    'basic_salary' => (float) $monthRecords->sum('basic_salary'),
-                    'allowances' => (float) $monthRecords->sum('allowances'),
-                    'overtime' => (float) $monthRecords->sum('overtime_amount'),
-                    'gross' => (float) $monthRecords->sum('gross_salary'),
-                    'tax' => (float) $monthRecords->sum('tax_deduction'),
-                    'deductions' => (float) $monthRecords->sum('total_deductions'),
-                    'net' => (float) $monthRecords->sum('net_salary'),
-                    'employer_contributions' => (float) $monthRecords->sum('employer_contributions'),
-                ];
-            })->sortKeys();
-
-            return [
-                'employee' => $employee,
-                'ytd_basic' => (float) $records->sum('basic_salary'),
-                'ytd_allowances' => (float) $records->sum('allowances'),
-                'ytd_overtime' => (float) $records->sum('overtime_amount'),
-                'ytd_gross' => (float) $records->sum('gross_salary'),
-                'ytd_tax' => (float) $records->sum('tax_deduction'),
-                'ytd_other_deductions' => (float) $records->sum('other_deductions'),
-                'ytd_total_deductions' => (float) $records->sum('total_deductions'),
-                'ytd_net' => (float) $records->sum('net_salary'),
-                'ytd_employer_contributions' => (float) $records->sum('employer_contributions'),
-                'pay_periods' => $records->count(),
-                'monthly_breakdown' => $monthlyBreakdown,
-            ];
-        })->sortBy(fn($r) => $r['employee']->first_name)->values();
-
-        $grandTotals = [
-            'basic' => $byEmployee->sum('ytd_basic'),
-            'allowances' => $byEmployee->sum('ytd_allowances'),
-            'overtime' => $byEmployee->sum('ytd_overtime'),
-            'gross' => $byEmployee->sum('ytd_gross'),
-            'tax' => $byEmployee->sum('ytd_tax'),
-            'deductions' => $byEmployee->sum('ytd_total_deductions'),
-            'net' => $byEmployee->sum('ytd_net'),
-            'employer_contributions' => $byEmployee->sum('ytd_employer_contributions'),
-        ];
-
-        return view('reports.ytd-earnings', compact(
-            'byEmployee', 'employees', 'grandTotals',
-            'year', 'employeeId', 'startDate', 'endDate'
-        ));
+        return view('reports.ytd-earnings', app(PayrollReportService::class)
+            ->ytdEarnings($tenantId, $year, $employeeId)
+            + compact('employees', 'year', 'employeeId'));
     }
 
     /**
@@ -974,72 +876,12 @@ class ReportController extends Controller
      */
     public function taxLiabilityPayroll(Request $request)
     {
-        $tenantId = auth()->user()->tenant_id;
         $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->get('end_date', now()->format('Y-m-d'));
 
-        $payrolls = Payroll::where('tenant_id', $tenantId)
-            ->whereIn('status', [Payroll::STATUS_APPROVED, Payroll::STATUS_PAID])
-            ->whereBetween('pay_date', [$startDate, $endDate])
-            ->with('employee.department')
-            ->orderBy('pay_date')
-            ->get();
-
-        // Per-employee tax summary
-        $byEmployee = $payrolls->groupBy('employee_id')->map(function ($records) {
-            $employee = $records->first()->employee;
-            return [
-                'employee' => $employee,
-                'taxable_income' => (float) $records->sum('gross_salary'),
-                'tax_deducted' => (float) $records->sum('tax_deduction'),
-                'pay_periods' => $records->count(),
-                'effective_rate' => $records->sum('gross_salary') > 0
-                    ? round(($records->sum('tax_deduction') / $records->sum('gross_salary')) * 100, 2)
-                    : 0,
-            ];
-        })->sortByDesc('tax_deducted')->values();
-
-        // Monthly breakdown
-        $monthlyBreakdown = $payrolls->groupBy(function ($p) {
-            return $p->pay_date->format('Y-m');
-        })->map(function ($records, $month) {
-            return [
-                'month' => $month,
-                'employee_count' => $records->unique('employee_id')->count(),
-                'total_taxable' => (float) $records->sum('gross_salary'),
-                'total_tax' => (float) $records->sum('tax_deduction'),
-                'effective_rate' => $records->sum('gross_salary') > 0
-                    ? round(($records->sum('tax_deduction') / $records->sum('gross_salary')) * 100, 2)
-                    : 0,
-            ];
-        })->sortKeys()->values();
-
-        // By department
-        $byDepartment = $payrolls->groupBy(function ($p) {
-            return $p->employee?->department_id ?? 0;
-        })->map(function ($records) {
-            $dept = $records->first()->employee?->department;
-            return [
-                'department_name' => $dept?->name ?? 'Unassigned',
-                'employee_count' => $records->unique('employee_id')->count(),
-                'total_taxable' => (float) $records->sum('gross_salary'),
-                'total_tax' => (float) $records->sum('tax_deduction'),
-            ];
-        })->sortByDesc('total_tax')->values();
-
-        $totals = [
-            'total_taxable' => (float) $payrolls->sum('gross_salary'),
-            'total_tax' => (float) $payrolls->sum('tax_deduction'),
-            'employee_count' => $payrolls->unique('employee_id')->count(),
-            'effective_rate' => $payrolls->sum('gross_salary') > 0
-                ? round(($payrolls->sum('tax_deduction') / $payrolls->sum('gross_salary')) * 100, 2)
-                : 0,
-        ];
-
-        return view('reports.tax-liability-payroll', compact(
-            'byEmployee', 'monthlyBreakdown', 'byDepartment', 'totals',
-            'startDate', 'endDate'
-        ));
+        return view('reports.tax-liability-payroll', app(PayrollReportService::class)
+            ->taxLiability(auth()->user()->tenant_id, $startDate, $endDate)
+            + compact('startDate', 'endDate'));
     }
 
     /**
@@ -1047,73 +889,12 @@ class ReportController extends Controller
      */
     public function employerContributions(Request $request)
     {
-        $tenantId = auth()->user()->tenant_id;
         $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->get('end_date', now()->format('Y-m-d'));
 
-        $payrolls = Payroll::where('tenant_id', $tenantId)
-            ->whereIn('status', [Payroll::STATUS_APPROVED, Payroll::STATUS_PAID])
-            ->whereBetween('pay_date', [$startDate, $endDate])
-            ->with('employee.department')
-            ->orderBy('pay_date')
-            ->get();
-
-        // Aggregate contribution types across all payrolls
-        $contributionTypes = [];
-        foreach ($payrolls as $payroll) {
-            if (!empty($payroll->employer_contribution_details)) {
-                foreach ($payroll->employer_contribution_details as $detail) {
-                    $name = $detail['name'] ?? 'Unknown';
-                    if (!isset($contributionTypes[$name])) {
-                        $contributionTypes[$name] = ['name' => $name, 'total' => 0, 'count' => 0];
-                    }
-                    $contributionTypes[$name]['total'] += (float) ($detail['amount'] ?? 0);
-                    $contributionTypes[$name]['count']++;
-                }
-            }
-        }
-        $contributionTypes = collect($contributionTypes)->sortByDesc('total')->values();
-
-        // By employee
-        $byEmployee = $payrolls->where('employer_contributions', '>', 0)->groupBy('employee_id')->map(function ($records) {
-            $employee = $records->first()->employee;
-            return [
-                'employee' => $employee,
-                'gross_salary' => (float) $records->sum('gross_salary'),
-                'employer_contributions' => (float) $records->sum('employer_contributions'),
-                'details' => $records->pluck('employer_contribution_details')->flatten(1)->groupBy('name')->map(function ($items) {
-                    return (float) $items->sum('amount');
-                }),
-                'cost_ratio' => $records->sum('gross_salary') > 0
-                    ? round(($records->sum('employer_contributions') / $records->sum('gross_salary')) * 100, 2)
-                    : 0,
-            ];
-        })->sortByDesc('employer_contributions')->values();
-
-        // Monthly trend
-        $monthlyTrend = $payrolls->groupBy(function ($p) {
-            return $p->pay_date->format('Y-m');
-        })->map(function ($records, $month) {
-            return [
-                'month' => $month,
-                'total_gross' => (float) $records->sum('gross_salary'),
-                'total_contributions' => (float) $records->sum('employer_contributions'),
-                'employee_count' => $records->unique('employee_id')->count(),
-            ];
-        })->sortKeys()->values();
-
-        $totals = [
-            'total_gross' => (float) $payrolls->sum('gross_salary'),
-            'total_employer_contributions' => (float) $payrolls->sum('employer_contributions'),
-            'total_net' => (float) $payrolls->sum('net_salary'),
-            'total_cost' => (float) $payrolls->sum('gross_salary') + (float) $payrolls->sum('employer_contributions'),
-            'employee_count' => $payrolls->unique('employee_id')->count(),
-        ];
-
-        return view('reports.employer-contributions', compact(
-            'contributionTypes', 'byEmployee', 'monthlyTrend', 'totals',
-            'startDate', 'endDate'
-        ));
+        return view('reports.employer-contributions', app(PayrollReportService::class)
+            ->employerContributions(auth()->user()->tenant_id, $startDate, $endDate)
+            + compact('startDate', 'endDate'));
     }
 
     /**
@@ -1121,46 +902,14 @@ class ReportController extends Controller
      */
     public function bankDisbursement(Request $request)
     {
-        $tenantId = auth()->user()->tenant_id;
         $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->get('end_date', now()->format('Y-m-d'));
         $status = $request->get('status', Payroll::STATUS_APPROVED);
         $paymentMethod = $request->get('payment_method');
 
-        $query = Payroll::where('tenant_id', $tenantId)
-            ->whereBetween('pay_date', [$startDate, $endDate])
-            ->with('employee')
-            ->orderBy('payroll_number');
-
-        if ($status) {
-            $query->where('status', $status);
-        }
-
-        if ($paymentMethod) {
-            $query->where('payment_method', $paymentMethod);
-        }
-
-        $payrolls = $query->get();
-
-        // Group by payment method
-        $byPaymentMethod = $payrolls->groupBy('payment_method')->map(function ($records, $method) {
-            return [
-                'method' => $method ?: 'Not Specified',
-                'count' => $records->count(),
-                'total' => (float) $records->sum('net_salary'),
-            ];
-        })->values();
-
-        $totals = [
-            'count' => $payrolls->count(),
-            'total_net' => (float) $payrolls->sum('net_salary'),
-            'total_gross' => (float) $payrolls->sum('gross_salary'),
-        ];
-
-        return view('reports.bank-disbursement', compact(
-            'payrolls', 'byPaymentMethod', 'totals',
-            'startDate', 'endDate', 'status', 'paymentMethod'
-        ));
+        return view('reports.bank-disbursement', app(PayrollReportService::class)
+            ->bankDisbursement(auth()->user()->tenant_id, $startDate, $endDate, $status, $paymentMethod)
+            + compact('startDate', 'endDate', 'status', 'paymentMethod'));
     }
 
     /**
@@ -1170,47 +919,11 @@ class ReportController extends Controller
     {
         $tenantId = auth()->user()->tenant_id;
         $employeeId = $request->get('employee_id');
-
         $employees = Employee::where('tenant_id', $tenantId)->orderBy('first_name')->get();
 
-        // Salary structure versions
-        $versions = SalaryStructureVersion::whereHas('salaryStructure', function ($q) use ($tenantId) {
-            $q->where('tenant_id', $tenantId);
-        })
-            ->with(['salaryStructure', 'changedByUser'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        // If filtering by employee, get their payroll history to show salary progression
-        $salaryProgression = collect();
-        $selectedEmployee = null;
-        if ($employeeId) {
-            $selectedEmployee = Employee::where('tenant_id', $tenantId)->find($employeeId);
-
-            if ($selectedEmployee) {
-                $salaryProgression = Payroll::where('tenant_id', $tenantId)
-                    ->where('employee_id', $employeeId)
-                    ->whereIn('status', [Payroll::STATUS_APPROVED, Payroll::STATUS_PAID])
-                    ->orderBy('pay_date')
-                    ->get()
-                    ->groupBy(function ($p) {
-                        return $p->pay_date->format('Y-m');
-                    })->map(function ($records, $month) {
-                        return [
-                            'month' => $month,
-                            'basic_salary' => (float) $records->avg('basic_salary'),
-                            'allowances' => (float) $records->avg('allowances'),
-                            'gross_salary' => (float) $records->avg('gross_salary'),
-                            'net_salary' => (float) $records->avg('net_salary'),
-                        ];
-                    })->sortKeys()->values();
-            }
-        }
-
-        return view('reports.salary-revision-history', compact(
-            'versions', 'employees', 'salaryProgression',
-            'selectedEmployee', 'employeeId'
-        ));
+        return view('reports.salary-revision-history', app(PayrollReportService::class)
+            ->salaryRevisionHistory($tenantId, $employeeId)
+            + compact('employees', 'employeeId'));
     }
 
     public function customerStatement(Request $request)
@@ -3055,11 +2768,7 @@ class ReportController extends Controller
      */
     public function customReportStore(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'data_source' => 'required|string',
-            'columns' => 'required|array|min:1',
-        ]);
+        $request->validate(CustomReport::validationRules($request->input('data_source')));
 
         $customReport = CustomReport::create([
             'tenant_id' => auth()->user()->tenant_id,
@@ -3101,11 +2810,7 @@ class ReportController extends Controller
     {
         $this->authorizeReport($customReport);
 
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'data_source' => 'required|string',
-            'columns' => 'required|array|min:1',
-        ]);
+        $request->validate(CustomReport::validationRules($request->input('data_source')));
 
         $customReport->update([
             'name' => $request->name,
@@ -3192,6 +2897,11 @@ class ReportController extends Controller
         if (!empty($customReport->sort_by)) {
             foreach ($customReport->sort_by as $sort) {
                 if (isset($sort['column']) && isset($sort['direction'])) {
+                    // Only the source's own columns, in a known direction (M7);
+                    // reports saved before this check may hold anything.
+                    if (! isset($sourceConfig['columns'][$sort['column']]) || ! in_array(strtolower((string) $sort['direction']), ['asc', 'desc'], true)) {
+                        continue;
+                    }
                     // Handle relation sorting
                     if (strpos($sort['column'], '.') !== false) {
                         // For simplicity, skip relation sorting in raw query
@@ -3312,8 +3022,9 @@ class ReportController extends Controller
             $operator = $filter['operator'];
             $value = $filter['value'] ?? null;
 
-            // Skip relation columns for now
-            if (strpos($column, '.') !== false) {
+            // Only the data source's allowed columns (M7), and not relation
+            // columns (not supported yet)
+            if (! isset($columnConfig[$column]) || strpos($column, '.') !== false) {
                 continue;
             }
 

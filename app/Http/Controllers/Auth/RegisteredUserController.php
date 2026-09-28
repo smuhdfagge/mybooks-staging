@@ -99,8 +99,8 @@ class RegisteredUserController extends Controller
 
             // Ensure admin role exists and assign it
             $adminRole = \App\Models\Role::firstOrCreate(
-                ['name' => 'admin', 'guard_name' => 'web'],
-                ['tenant_id' => null]
+                ['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => null],
+                []
             );
             $user->assignRole($adminRole);
 

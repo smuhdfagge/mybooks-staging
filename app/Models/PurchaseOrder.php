@@ -13,6 +13,12 @@ class PurchaseOrder extends Model
 {
     use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, ValidatesAccountingPeriod;
 
+    /** A bill has been raised for this order (finding N8). */
+    public const STATUS_BILLED = 'billed';
+
+    /** Statuses from which a bill can be raised. */
+    public const BILLABLE = ['confirmed', 'partially_received', 'received'];
+
     protected $fillable = [
         'tenant_id',
         'vendor_id',

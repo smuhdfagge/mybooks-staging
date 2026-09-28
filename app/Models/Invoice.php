@@ -141,9 +141,14 @@ class Invoice extends Model
         return 'INV-' . str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
+    /**
+     * amount_paid counts payments and applied credit notes, so recording a
+     * payment after a credit doesn't wipe the credit out (N5).
+     */
     public function updateBalances()
     {
-        $this->amount_paid = $this->payments()->sum('amount');
+        $this->amount_paid = round((float) $this->payments()->sum('amount')
+            + (float) $this->creditNoteApplications()->sum('amount'), 2);
         $this->balance_due = $this->total - $this->amount_paid;
         $this->status = $this->balance_due <= 0 ? 'paid' : ($this->amount_paid > 0 ? 'partial' : 'unpaid');
         $this->withoutPeriodValidation()->save();

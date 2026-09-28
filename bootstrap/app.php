@@ -36,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'two-factor' => \App\Http\Middleware\EnsureTwoFactorVerified::class,
             'tenant' => \App\Http\Middleware\VerifyTenantOwnership::class,
             'active' => \App\Http\Middleware\EnsureAccountActive::class,
+            'feature' => \App\Http\Middleware\EnsureFeatureEnabled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

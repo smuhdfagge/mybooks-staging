@@ -53,6 +53,11 @@ class CreditNoteController extends Controller
             'items.*.tax_rate' => 'nullable|numeric|min:0|max:100',
         ]);
 
+        if (! empty($validated['invoice_id'])
+            && (int) Invoice::whereKey($validated['invoice_id'])->value('customer_id') !== (int) $validated['customer_id']) {
+            return back()->withInput()->withErrors(['invoice_id' => 'That invoice belongs to a different customer.']);
+        }
+
         $creditNote = DB::transaction(function () use ($tenantId, $validated) {
             $cn = CreditNote::create([
                 'tenant_id' => $tenantId,
@@ -119,11 +124,9 @@ class CreditNoteController extends Controller
 
     public function void(CreditNote $creditNote)
     {
-        if ($creditNote->total_applied > 0) {
-            return redirect()->back()->with('error', 'Cannot void a credit note that has been partially applied.');
+        if (! $creditNote->void()) {
+            return redirect()->back()->with('error', 'Cannot void a credit note that has been applied, or is already void.');
         }
-
-        $creditNote->update(['status' => CreditNote::STATUS_VOID]);
         return redirect()->back()->with('success', 'Credit note voided.');
     }
 
@@ -154,15 +157,17 @@ class CreditNoteController extends Controller
             'amount' => 'required|numeric|min:0.01|max:' . $creditNote->balance,
         ]);
 
-        $invoice = Invoice::findOrFail($validated['invoice_id']);
+        try {
+            $invoice = DB::transaction(function () use ($creditNote, $validated) {
+                $creditNote = CreditNote::lockForUpdate()->findOrFail($creditNote->id);
+                $invoice = Invoice::lockForUpdate()->findOrFail($validated['invoice_id']);
+                $creditNote->applyToInvoice($invoice, (float) $validated['amount']);
 
-        if ($validated['amount'] > $invoice->balance_due) {
-            return redirect()->back()->with('error', 'Amount exceeds invoice balance due.');
+                return $invoice;
+            });
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
         }
-
-        DB::transaction(function () use ($creditNote, $invoice, $validated) {
-            $creditNote->applyToInvoice($invoice, $validated['amount']);
-        });
 
         return redirect()->route('credit-notes.show', $creditNote)
             ->with('success', "Applied {$validated['amount']} to Invoice {$invoice->invoice_number}.");
@@ -175,6 +180,11 @@ class CreditNoteController extends Controller
         }
 
         DB::transaction(function () use ($creditNote) {
+            // An opened credit note has a journal; reverse it (N5)
+            if ($creditNote->status !== CreditNote::STATUS_DRAFT) {
+                app(\App\Services\JournalService::class)
+                    ->reverseDocumentJournal(CreditNote::class, $creditNote->id, 'Credit note deleted');
+            }
             $creditNote->items()->delete();
             $creditNote->delete();
         });

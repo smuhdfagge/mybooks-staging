@@ -235,7 +235,12 @@ class PurchaseOrderController extends Controller
 
     public function convertToBill(PurchaseOrder $purchaseOrder)
     {
-        if (!in_array($purchaseOrder->status, ['confirmed', 'partially_received', 'received'])) {
+        if ($purchaseOrder->status === PurchaseOrder::STATUS_BILLED) {
+            return redirect()->route('purchase-orders.show', $purchaseOrder)
+                ->with('error', 'This purchase order has already been billed.');
+        }
+
+        if (!in_array($purchaseOrder->status, PurchaseOrder::BILLABLE, true)) {
             return redirect()->route('purchase-orders.show', $purchaseOrder)
                 ->with('error', 'Only confirmed or received purchase orders can be converted to bills.');
         }
