@@ -131,4 +131,23 @@ class Phase7RegressionTest extends TestCase
 
         $this->get(route('salary-structures.edit', $structure))->assertOk()->assertSee('basicSalary: ', false);
     }
+
+    public function test_l10_hsts_leaves_subdomains_and_preload_off_by_default(): void
+    {
+        config(['app.env' => 'production']);
+
+        $header = $this->get('/login')->headers->get('Strict-Transport-Security');
+        $this->assertSame('max-age=31536000', $header);
+
+        config(['mybooks.hsts.include_subdomains' => true, 'mybooks.hsts.preload' => true]);
+        $this->assertSame('max-age=31536000; includeSubDomains; preload', $this->get('/login')->headers->get('Strict-Transport-Security'));
+    }
+
+    public function test_l9_root_htaccess_refuses_dotfiles_and_fails_closed(): void
+    {
+        $htaccess = file_get_contents(base_path('.htaccess'));
+
+        $this->assertStringContainsString('<FilesMatch "^\\.">', $htaccess);
+        $this->assertMatchesRegularExpression('/<IfModule !mod_rewrite\.c>\s*Require all denied/', $htaccess);
+    }
 }

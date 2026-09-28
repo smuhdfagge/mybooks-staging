@@ -12,6 +12,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | HSTS (finding L10)
+    |--------------------------------------------------------------------------
+    |
+    | Turn these on only if every subdomain of the site's domain is served
+    | over HTTPS, permanently. preload also needs includeSubDomains and a
+    | submission at hstspreload.org.
+    |
+    */
+
+    'hsts' => [
+        'include_subdomains' => (bool) env('MYBOOKS_HSTS_INCLUDE_SUBDOMAINS', false),
+        'preload' => (bool) env('MYBOOKS_HSTS_PRELOAD', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | File Upload Limits (in kilobytes)
     |--------------------------------------------------------------------------
     */
