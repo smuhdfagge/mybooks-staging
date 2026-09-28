@@ -36,12 +36,13 @@
                                 <h4 class="text-xl font-bold text-gray-900 dark:text-white">{{ $currentPlan->name }} Plan</h4>
                                 <div class="flex items-center mt-1">
                                     <span class="px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                        @if($currentSubscription->status === 'active') bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
+                                        @if($currentSubscription->isCancelled()) bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
+                                        @elseif($currentSubscription->status === 'active') bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
                                         @elseif($currentSubscription->status === 'cancelled') bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
                                         @elseif($currentSubscription->status === 'past_due') bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
                                         @else bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200
                                         @endif">
-                                        {{ ucfirst(str_replace('_', ' ', $currentSubscription->status)) }}
+                                        {{ $currentSubscription->isCancelled() ? 'Cancelled' : ucfirst(str_replace('_', ' ', $currentSubscription->status)) }}
                                     </span>
                                     <span class="mx-2 text-gray-400">•</span>
                                     <span class="text-sm text-gray-600 dark:text-gray-400">{{ ucfirst($currentSubscription->billing_cycle) }} billing</span>
@@ -72,11 +73,11 @@
                                         Next Billing Date
                                     @endif
                                 </div>
-                                <div class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{{ $currentSubscription->ends_at->format('M d, Y') }}</div>
+                                <div class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{{ $currentSubscription->ends_at?->format('M d, Y') ?? 'No end date' }}</div>
                             </div>
                             <div>
                                 <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Days Remaining</div>
-                                <div class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{{ $currentSubscription->daysUntilExpiration() }} days</div>
+                                <div class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{{ $currentSubscription->daysUntilExpiration() ?? '—' }} days</div>
                             </div>
                         </div>
                     </div>

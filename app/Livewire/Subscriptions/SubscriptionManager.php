@@ -129,15 +129,18 @@ class SubscriptionManager extends Component
     {
         $this->requirePermission('manage subscription');
 
-        if ($this->currentSubscription && $this->currentSubscription->isCancelled()) {
-            $this->currentSubscription->update([
-                'status' => Subscription::STATUS_ACTIVE,
-                'cancelled_at' => null,
-                'cancellation_reason' => null,
-            ]);
-            $this->currentSubscription->refresh();
-            session()->flash('success', 'Your subscription has been reactivated!');
+        if (! $this->currentSubscription || ! $this->currentSubscription->isCancelled()) {
+            return;
         }
+
+        if (! $this->currentSubscription->reactivate()) {
+            session()->flash('error', 'This subscription has already ended. Please renew to continue.');
+
+            return;
+        }
+
+        $this->currentSubscription->refresh();
+        session()->flash('success', 'Your subscription has been reactivated!');
     }
 
     public function render()

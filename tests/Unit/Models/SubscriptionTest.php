@@ -88,13 +88,15 @@ class SubscriptionTest extends TestCase
         $this->assertGreaterThan(now()->addMonths(11), $this->subscription->ends_at);
     }
 
-    public function test_cancel_sets_cancelled_status(): void
+    public function test_cancel_keeps_the_paid_period_running(): void
     {
         $this->createAuthenticatedUser();
         $this->subscription->cancel('Too expensive');
         $this->subscription->refresh();
 
-        $this->assertEquals(Subscription::STATUS_CANCELLED, $this->subscription->status);
+        // M1: access continues until ends_at
+        $this->assertEquals(Subscription::STATUS_ACTIVE, $this->subscription->status);
+        $this->assertTrue($this->subscription->isCancelled());
         $this->assertNotNull($this->subscription->cancelled_at);
         $this->assertEquals('Too expensive', $this->subscription->cancellation_reason);
     }
