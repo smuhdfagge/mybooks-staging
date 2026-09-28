@@ -54,7 +54,6 @@
                     <select wire:model="bulkAction" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                         <option value="">Select Action</option>
                         <option value="mark_sent">Mark as Sent</option>
-                        <option value="mark_paid">Mark as Paid</option>
                         <option value="mark_cancelled">Mark as Cancelled</option>
                         <option value="delete">Delete</option>
                     </select>

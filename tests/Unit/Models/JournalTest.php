@@ -9,38 +9,49 @@ use Tests\TestCase;
 
 class JournalTest extends TestCase
 {
+    /**
+     * A journal with real lines. Balance is judged from the lines, not from
+     * the total_debit/total_credit columns, which can be stale (finding M2).
+     */
+    private function journalWithLines(float $debit, float $credit, array $attributes = []): Journal
+    {
+        $this->createAuthenticatedUser();
+        $asset = ChartOfAccount::where('tenant_id', $this->tenant->id)->where('type', 'asset')->first();
+        $income = ChartOfAccount::where('tenant_id', $this->tenant->id)->where('type', 'income')->first();
+
+        $journal = Journal::factory()->create(array_merge(['tenant_id' => $this->tenant->id], $attributes));
+        JournalEntry::factory()->debit($debit)->create(['journal_id' => $journal->id, 'account_id' => $asset->id]);
+        JournalEntry::factory()->credit($credit)->create(['journal_id' => $journal->id, 'account_id' => $income->id]);
+
+        return $journal;
+    }
+
     public function test_is_balanced_returns_true_when_equal(): void
     {
-        $journal = Journal::factory()->make([
-            'total_debit' => 1000.00,
-            'total_credit' => 1000.00,
-        ]);
-        $this->assertTrue($journal->isBalanced());
+        $this->assertTrue($this->journalWithLines(1000.00, 1000.00)->isBalanced());
     }
 
     public function test_is_balanced_returns_false_when_unequal(): void
     {
-        $journal = Journal::factory()->unbalanced()->make();
-        $this->assertFalse($journal->isBalanced());
+        $this->assertFalse($this->journalWithLines(1000.00, 500.00)->isBalanced());
     }
 
     public function test_is_balanced_handles_floating_point_precision(): void
     {
-        $journal = Journal::factory()->make([
-            'total_debit' => 1000.001,
-            'total_credit' => 1000.005,
-        ]);
-        // Difference is 0.004 which is < 0.01
-        $this->assertTrue($journal->isBalanced());
+        // Lines are stored to 2 decimals, so these both become 1000.00
+        $this->assertTrue($this->journalWithLines(1000.001, 1000.004)->isBalanced());
     }
 
     public function test_is_balanced_fails_at_threshold(): void
     {
-        $journal = Journal::factory()->make([
-            'total_debit' => 1000.00,
-            'total_credit' => 1000.02,
-        ]);
-        // Difference is 0.02 which is >= 0.01
+        // One kobo out is unbalanced
+        $this->assertFalse($this->journalWithLines(1000.00, 1000.01)->isBalanced());
+    }
+
+    public function test_is_balanced_ignores_stale_total_columns(): void
+    {
+        // The stored totals say balanced, the lines do not
+        $journal = $this->journalWithLines(250.00, 200.00, ['total_debit' => 0, 'total_credit' => 0]);
         $this->assertFalse($journal->isBalanced());
     }
 
@@ -119,16 +130,20 @@ class JournalTest extends TestCase
 
     public function test_post_fails_when_unbalanced(): void
     {
-        $this->createAuthenticatedUser();
-
-        $journal = Journal::factory()->create([
-            'tenant_id' => $this->tenant->id,
-            'total_debit' => 1000,
-            'total_credit' => 500,
-        ]);
+        $journal = $this->journalWithLines(1000, 500);
 
         $this->expectException(\Exception::class);
         $this->expectExceptionMessage('Journal entries must be balanced before posting.');
+        $journal->post();
+    }
+
+    public function test_post_fails_when_journal_has_no_lines(): void
+    {
+        $this->createAuthenticatedUser();
+        $journal = Journal::factory()->create(['tenant_id' => $this->tenant->id, 'total_debit' => 500, 'total_credit' => 500]);
+
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Journal has no lines to post.');
         $journal->post();
     }
 

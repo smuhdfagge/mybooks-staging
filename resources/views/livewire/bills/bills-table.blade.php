@@ -52,7 +52,7 @@
             </div>
 
             <!-- Bulk Actions -->
-            <x-bulk-actions :actions="['mark_paid' => 'Mark as Paid', 'mark_cancelled' => 'Cancel', 'delete' => 'Delete']" :selectedCount="count($selectedItems)" />
+            <x-bulk-actions :actions="['mark_cancelled' => 'Cancel', 'delete' => 'Delete']" :selectedCount="count($selectedItems)" />
         </div>
 
         @if($search || $status || $vendor_id || $dateFrom || $dateTo)

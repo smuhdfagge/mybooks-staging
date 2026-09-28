@@ -254,28 +254,19 @@ class JournalController extends BaseApiController
             return $this->error('Journal entry is already posted.', 422);
         }
 
+        if (! $journal->entries()->exists()) {
+            return $this->error('Journal entry has no lines to post.', 422);
+        }
+
         if (!$journal->isBalanced()) {
             return $this->error('Journal entry must be balanced before posting.', 422);
         }
 
         DB::beginTransaction();
         try {
-            // Update account balances
-            foreach ($journal->entries as $entry) {
-                $account = $entry->account;
-                if ($account->isDebitBalance()) {
-                    $account->current_balance += ($entry->debit - $entry->credit);
-                } else {
-                    $account->current_balance += ($entry->credit - $entry->debit);
-                }
-                $account->save();
-            }
-
-            $journal->update([
-                'is_posted' => true,
-                'posted_at' => now(),
-                'status' => 'posted',
-            ]);
+            // Same posting code as the web app (checks balance, updates
+            // account balances, marks posted).
+            $journal->post();
 
             DB::commit();
 

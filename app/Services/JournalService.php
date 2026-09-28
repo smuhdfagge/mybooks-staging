@@ -155,6 +155,13 @@ class JournalService implements JournalServiceInterface
      */
     public function createInvoiceJournal(Invoice $invoice): ?Journal
     {
+        if ($invoice->status === 'cancelled') {
+            // A cancelled invoice keeps its original journal plus a reversal (C5).
+            $this->reverseDocumentJournal(Invoice::class, $invoice->id, 'Invoice cancelled');
+
+            return null;
+        }
+
         if ($invoice->total <= 0) {
             return null;
         }
@@ -301,6 +308,12 @@ class JournalService implements JournalServiceInterface
      */
     public function createBillJournal(Bill $bill): ?Journal
     {
+        if ($bill->status === 'cancelled') {
+            $this->reverseDocumentJournal(Bill::class, $bill->id, 'Bill cancelled');
+
+            return null;
+        }
+
         if ($bill->total <= 0) {
             return null;
         }
@@ -1289,7 +1302,9 @@ class JournalService implements JournalServiceInterface
     public function reverseJournal(Journal $journal, string $reason = 'Reversed'): Journal
     {
         return DB::transaction(function () use ($journal, $reason) {
-            $this->reverseAccountBalances($journal);
+            // The reversing journal's own lines undo the original when they are
+            // applied below. Also un-applying the original here reversed it
+            // twice (a 1,075 invoice left receivables at -1,075).
 
             $reversingJournal = Journal::create([
                 'tenant_id' => $journal->tenant_id,
@@ -1321,6 +1336,22 @@ class JournalService implements JournalServiceInterface
 
             return $reversingJournal;
         });
+    }
+
+    /**
+     * Reverse the posted journal of a document (once). The original journal
+     * and the reversal both stay in the ledger.
+     */
+    public function reverseDocumentJournal(string $referenceType, int $referenceId, string $reason): ?Journal
+    {
+        $journal = Journal::with('entries.account')
+            ->where('reference_type', $referenceType)
+            ->where('reference_id', $referenceId)
+            ->where('status', 'posted')
+            ->whereNot('reference', 'like', 'REV-%')
+            ->first();
+
+        return $journal ? $this->reverseJournal($journal, $reason) : null;
     }
 
     /**
