@@ -481,7 +481,7 @@ class JournalService implements JournalServiceInterface
 
             // Credit: Payment Account (cash, bank, etc.)
             $paymentAccountCode = $expense->paidThroughAccount?->account_code 
-                ?? $this->getPaymentAccountCode($expense->payment_method, $t);
+                ?? $this->paymentAccountFor($expense->bank, $expense->payment_method, $t);
             $this->createEntry($journal, $paymentAccountCode, 0, $expense->total,
                 "Payment - {$expense->expense_number}");
 
@@ -520,7 +520,7 @@ class JournalService implements JournalServiceInterface
         }
 
         $paymentAccountCode = $expense->paidThroughAccount?->account_code
-            ?? $this->getPaymentAccountCode($expense->payment_method, $t);
+            ?? $this->paymentAccountFor($expense->bank, $expense->payment_method, $t);
         $this->createEntry($journal, $paymentAccountCode, 0, $expense->total,
             "Payment - {$expense->expense_number}");
 
@@ -591,7 +591,7 @@ class JournalService implements JournalServiceInterface
 
             if ($payment->is_deposit) {
                 // Customer deposit: Debit Cash, Credit Customer Deposits (liability)
-                $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method, $t);
+                $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
                 $this->createEntry($journal, $paymentAccountCode, $payment->amount, 0,
                     "Customer Deposit - {$payment->payment_number}");
 
@@ -606,7 +606,7 @@ class JournalService implements JournalServiceInterface
                     "Payment for {$payment->customer->name}");
             } else {
                 // Regular payment: Debit Cash/Bank, Credit A/R
-                $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method, $t);
+                $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
                 $this->createEntry($journal, $paymentAccountCode, $payment->amount, 0,
                     "Payment Received - {$payment->payment_number}");
 
@@ -652,7 +652,7 @@ class JournalService implements JournalServiceInterface
 
         if ($payment->is_deposit) {
             // Customer deposit: Debit Cash, Credit Customer Deposits (liability)
-            $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method, $t);
+            $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
             $this->createEntry($journal, $paymentAccountCode, $payment->amount, 0,
                 "Customer Deposit - {$payment->payment_number}");
 
@@ -667,7 +667,7 @@ class JournalService implements JournalServiceInterface
                 "Payment for {$payment->customer->name}");
         } else {
             // Regular payment: Debit Cash/Bank, Credit A/R
-            $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method, $t);
+            $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
             $this->createEntry($journal, $paymentAccountCode, $payment->amount, 0,
                 "Payment Received - {$payment->payment_number}");
 
@@ -849,7 +849,7 @@ class JournalService implements JournalServiceInterface
                 "Payment to {$payment->vendor->name}");
 
             // Credit: Cash/Bank account
-            $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method, $t);
+            $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
             $this->createEntry($journal, $paymentAccountCode, 0, $payment->amount,
                 "Payment Made - {$payment->payment_number}");
 
@@ -883,7 +883,7 @@ class JournalService implements JournalServiceInterface
         $this->createEntry($journal, $this->acct($t, 'accounts_payable'), $payment->amount, 0,
             "Payment to {$payment->vendor->name}");
 
-        $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method, $t);
+        $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
         $this->createEntry($journal, $paymentAccountCode, 0, $payment->amount,
             "Payment Made - {$payment->payment_number}");
 
@@ -1433,19 +1433,33 @@ class JournalService implements JournalServiceInterface
     /**
      * Get the payment account code based on payment method, resolved per-tenant.
      */
-    protected function getPaymentAccountCode(?string $paymentMethod, int $tenantId = 0): string
+    protected function getPaymentAccountCode(?string $paymentMethod, int $tenantId): string
     {
-        if ($tenantId > 0) {
-            return AccountCodeService::resolvePaymentMethod($tenantId, $paymentMethod);
+        // tenantId is required: the old fallback for a missing tenant used an
+        // undefined variable and would have crashed (L16).
+        return AccountCodeService::resolvePaymentMethod($tenantId, $paymentMethod);
+    }
+
+    /**
+     * Ledger account for money moving through a bank or payment method.
+     *
+     * When a bank account is chosen and it is linked to its own ledger
+     * account (Banks > chart of account), post there, so each bank can be
+     * reconciled in the ledger (M5). Otherwise use the payment method's
+     * default account (cash, checking, ...), as before.
+     */
+    protected function paymentAccountFor(?\App\Models\Bank $bank, ?string $paymentMethod, int $tenantId): string
+    {
+        if ($bank && $bank->chart_of_account_id) {
+            $code = ChartOfAccount::where('tenant_id', $tenantId)
+                ->whereKey($bank->chart_of_account_id)
+                ->value('account_code');
+            if ($code) {
+                return $code;
+            }
         }
 
-        // Legacy fallback when tenantId not provided
-        if ($paymentMethod === null || $paymentMethod === '') {
-            return $this->acct($t, 'cash');
-        }
-
-        $method = strtolower(str_replace(' ', '_', $paymentMethod));
-        return $this->paymentMethodAccounts[$method] ?? $this->acct($t, 'cash');
+        return $this->getPaymentAccountCode($paymentMethod, $tenantId);
     }
 
     /**

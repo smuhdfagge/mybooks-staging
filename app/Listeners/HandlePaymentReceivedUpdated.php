@@ -15,6 +15,11 @@ class HandlePaymentReceivedUpdated
     {
         $payment = $event->payment;
 
+        // Editing the amount must update what the invoice still owes (M5).
+        if ($payment->invoice) {
+            $payment->invoice->updateBalances();
+        }
+
         if ($payment->is_deposit) {
             $payment->customer->updateDepositBalance();
         }

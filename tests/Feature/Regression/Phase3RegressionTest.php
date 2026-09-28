@@ -505,4 +505,132 @@ class Phase3RegressionTest extends TestCase
         $this->assertStoredBalancesMatchLedger($this->tenant->id);
         $this->assertAllJournalsBalance($this->tenant->id);
     }
+
+    // ── M5: payment checks and bank ledger accounts ────────────
+
+    private function paymentForm(int $customerId, ?int $invoiceId, float $amount, array $extra = []): array
+    {
+        return array_merge([
+            'customer_id' => $customerId, 'invoice_id' => $invoiceId, 'payment_date' => now()->toDateString(),
+            'amount' => $amount, 'payment_method' => 'cash',
+        ], $extra);
+    }
+
+    public function test_m5_overpaying_an_invoice_is_a_form_error(): void
+    {
+        $this->createAuthenticatedUser(['create payments-received']);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $invoice = Invoice::factory()->sent()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000040']);
+
+        $this->post(route('payments-received.store'), $this->paymentForm($customer->id, $invoice->id, 2000))
+            ->assertSessionHasErrors('amount');
+        $this->assertSame(0, PaymentReceived::count());
+
+        $this->post(route('payments-received.store'), $this->paymentForm($customer->id, $invoice->id, 1075))
+            ->assertSessionHasNoErrors();
+        $this->assertSame('paid', $invoice->fresh()->status);
+    }
+
+    public function test_m5_invoice_must_belong_to_the_customer_and_be_payable(): void
+    {
+        $this->createAuthenticatedUser(['create payments-received']);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $other = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $invoice = Invoice::factory()->sent()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000041']);
+        $draft = Invoice::factory()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000042']);
+
+        $this->post(route('payments-received.store'), $this->paymentForm($other->id, $invoice->id, 100))
+            ->assertSessionHasErrors(['invoice_id' => 'This invoice belongs to a different customer.']);
+        $this->post(route('payments-received.store'), $this->paymentForm($customer->id, $draft->id, 100))
+            ->assertSessionHasErrors('invoice_id');
+        $this->assertSame(0, PaymentReceived::count());
+    }
+
+    public function test_m5_editing_a_payment_cannot_overpay(): void
+    {
+        $this->createAuthenticatedUser(['edit payments-received']);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $invoice = Invoice::factory()->sent()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000043']);
+        $payment = PaymentReceived::create([
+            'tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_id' => $invoice->id,
+            'payment_number' => 'PR-000043', 'payment_date' => now(), 'amount' => 500, 'payment_method' => 'cash',
+            'is_deposit' => false, 'unused_amount' => 0, 'created_by' => $this->user->id,
+        ]);
+
+        $form = ['payment_date' => now()->toDateString(), 'payment_method' => 'cash'];
+        $this->put(route('payments-received.update', $payment), $form + ['amount' => 1100])->assertSessionHasErrors('amount');
+        $this->put(route('payments-received.update', $payment), $form + ['amount' => 1075])->assertSessionHasNoErrors();
+        $this->assertSame('paid', $invoice->fresh()->status);
+    }
+
+    public function test_m5_bill_payment_checks(): void
+    {
+        $this->createAuthenticatedUser(['create payments-made']);
+        $vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $other = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $bill = Bill::factory()->create(['tenant_id' => $this->tenant->id, 'vendor_id' => $vendor->id, 'status' => 'unpaid', 'bill_number' => 'BIL-000040']);
+        $form = fn ($vendorId, $amount) => [
+            'vendor_id' => $vendorId, 'bill_id' => $bill->id, 'payment_date' => now()->toDateString(),
+            'amount' => $amount, 'payment_method' => 'cash',
+        ];
+
+        $this->post(route('payments-made.store'), $form($other->id, 100))->assertSessionHasErrors('bill_id');
+        $this->post(route('payments-made.store'), $form($vendor->id, 10000))->assertSessionHasErrors('amount');
+        $this->assertSame(0, PaymentMade::count());
+    }
+
+    public function test_m5_api_accepts_ids_sent_as_strings(): void
+    {
+        [$tenant] = $this->createTenantWithSubscription();
+        $user = \App\Models\User::factory()->create(['tenant_id' => $tenant->id]);
+        $user->givePermissionTo(\Spatie\Permission\Models\Permission::findOrCreate('create payments-received', 'web'));
+        $customer = Customer::factory()->create(['tenant_id' => $tenant->id]);
+        $invoice = Invoice::factory()->sent()->create(['tenant_id' => $tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000044']);
+
+        // Form-encoded, so IDs arrive as strings. The old strict comparison rejected this.
+        $this->actingAs($user, 'sanctum')
+            ->post('/api/v1/payments-received', [
+                'customer_id' => (string) $customer->id, 'invoice_id' => (string) $invoice->id,
+                'payment_date' => now()->toDateString(), 'amount' => '100', 'payment_method' => 'cash',
+            ], ['Accept' => 'application/json'])
+            ->assertSuccessful();
+    }
+
+    public function test_m5_payment_posts_to_the_banks_own_ledger_account(): void
+    {
+        $this->createAuthenticatedUser();
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $invoice = Invoice::factory()->sent()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000045']);
+        $gtAccount = \App\Models\ChartOfAccount::create([
+            'tenant_id' => $this->tenant->id, 'account_code' => '1190', 'name' => 'GTBank Current',
+            'type' => 'asset', 'sub_type' => 'bank', 'is_active' => true, 'current_balance' => 0,
+        ]);
+        $bank = \App\Models\Bank::factory()->create(['tenant_id' => $this->tenant->id, 'chart_of_account_id' => $gtAccount->id]);
+
+        PaymentReceived::create([
+            'tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_id' => $invoice->id, 'bank_id' => $bank->id,
+            'payment_number' => 'PR-000045', 'payment_date' => now(), 'amount' => 1075, 'payment_method' => 'bank_transfer',
+            'is_deposit' => false, 'unused_amount' => 0, 'created_by' => $this->user->id,
+        ]);
+
+        $this->assertSame(1075.0, $this->accountBalance($this->tenant->id, '1190'));
+        $this->assertSame(0.0, $this->accountBalance($this->tenant->id, '1100'));
+        $this->assertStoredBalancesMatchLedger($this->tenant->id);
+    }
+
+    public function test_m5_bank_without_a_ledger_account_uses_the_payment_method_account(): void
+    {
+        $this->createAuthenticatedUser();
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $invoice = Invoice::factory()->sent()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000046']);
+        $bank = \App\Models\Bank::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        PaymentReceived::create([
+            'tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_id' => $invoice->id, 'bank_id' => $bank->id,
+            'payment_number' => 'PR-000046', 'payment_date' => now(), 'amount' => 1075, 'payment_method' => 'bank_transfer',
+            'is_deposit' => false, 'unused_amount' => 0, 'created_by' => $this->user->id,
+        ]);
+
+        $this->assertSame(1075.0, $this->accountBalance($this->tenant->id, '1100'));
+    }
 }
