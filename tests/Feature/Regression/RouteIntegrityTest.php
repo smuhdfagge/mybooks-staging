@@ -19,12 +19,6 @@ use Tests\TestCase;
 class RouteIntegrityTest extends TestCase
 {
     private const KNOWN_MISSING_METHODS = [
-        'App\Http\Controllers\Api\ReportController@payrollRegister',
-        'App\Http\Controllers\Api\ReportController@ytdEarnings',
-        'App\Http\Controllers\Api\ReportController@taxLiabilityPayroll',
-        'App\Http\Controllers\Api\ReportController@employerContributions',
-        'App\Http\Controllers\Api\ReportController@bankDisbursement',
-        'App\Http\Controllers\Api\ReportController@salaryRevisionHistory',
     ];
 
     private const KNOWN_MISSING_VIEWS = [

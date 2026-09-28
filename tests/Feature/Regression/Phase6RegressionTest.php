@@ -132,4 +132,61 @@ class Phase6RegressionTest extends TestCase
 
         $this->get(route('exports.show', $export))->assertOk()->assertSee('Disk full')->assertSee('Customers');
     }
+
+    private function payrollFixture(): void
+    {
+        $employee = \App\Models\Employee::withoutEvents(fn () => \App\Models\Employee::create([
+            'tenant_id' => $this->tenant->id, 'employee_id' => 'EMP-001', 'first_name' => 'Hauwa', 'last_name' => 'Musa',
+            'email' => 'hauwa@example.com', 'hire_date' => now()->subYear(), 'status' => 'active',
+            'bank_name' => 'Zenith', 'bank_account_number' => '0123456789',
+        ]));
+
+        \App\Models\Payroll::withoutEvents(fn () => \App\Models\Payroll::create([
+            'tenant_id' => $this->tenant->id, 'employee_id' => $employee->id, 'payroll_number' => 'PAY-000001',
+            'pay_period_start' => now()->startOfMonth(), 'pay_period_end' => now()->endOfMonth(), 'pay_date' => now(),
+            'basic_salary' => 100000, 'allowances' => 20000, 'gross_salary' => 120000, 'tax_deduction' => 9000,
+            'total_deductions' => 9000, 'net_salary' => 111000, 'employer_contributions' => 12000,
+            'status' => 'approved', 'payment_method' => 'bank_transfer', 'created_by' => $this->user->id,
+        ]));
+    }
+
+    public function test_n9_api_payroll_reports_answer(): void
+    {
+        $this->createAuthenticatedUser(['view reports', 'view payroll']);
+        $this->payrollFixture();
+        $api = $this->actingAs($this->user, 'sanctum');
+
+        $api->getJson('/api/v1/reports/payroll-register')->assertOk()
+            ->assertJsonPath('data.totals.net_salary', 111000)
+            ->assertJsonPath('data.payrolls.0.employee.name', 'Hauwa Musa');
+        $api->getJson('/api/v1/reports/ytd-earnings')->assertOk()->assertJsonPath('data.totals.gross', 120000);
+        $api->getJson('/api/v1/reports/tax-liability-payroll')->assertOk()->assertJsonPath('data.totals.total_tax', 9000);
+        $api->getJson('/api/v1/reports/employer-contributions')->assertOk()->assertJsonPath('data.totals.total_employer_contributions', 12000);
+        $api->getJson('/api/v1/reports/bank-disbursement')->assertOk()
+            ->assertJsonPath('data.totals.total_net', 111000)
+            ->assertJsonPath('data.payments.0.bank_account_number', '0123456789');
+        $api->getJson('/api/v1/reports/salary-revision-history')->assertOk()->assertJsonStructure(['data' => ['versions', 'salary_progression']]);
+
+        // Salary details stay out of the employee block
+        $this->assertArrayNotHasKey('basic_salary', $api->getJson('/api/v1/reports/ytd-earnings')->json('data.by_employee.0.employee'));
+    }
+
+    public function test_n9_bank_details_need_the_payroll_permission(): void
+    {
+        $this->createAuthenticatedUser(['view reports']);
+        $this->payrollFixture();
+
+        $this->actingAs($this->user, 'sanctum')->getJson('/api/v1/reports/bank-disbursement')->assertForbidden();
+    }
+
+    public function test_n9_web_payroll_reports_still_render(): void
+    {
+        $this->createAuthenticatedUser(['view reports']);
+        $this->payrollFixture();
+
+        foreach (['payroll-register', 'ytd-earnings', 'tax-liability-payroll', 'employer-contributions', 'bank-disbursement', 'salary-revision-history'] as $report) {
+            $this->get(route("reports.{$report}"))->assertOk();
+        }
+        $this->get(route('reports.payroll-register'))->assertSee('Hauwa');
+    }
 }
