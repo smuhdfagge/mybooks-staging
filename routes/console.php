@@ -57,3 +57,15 @@ Schedule::command('retention:purge --force')
     ->withoutOverlapping()
     ->onOneServer()
     ->appendOutputTo(storage_path('logs/retention-purge.log'));
+
+/*
+|--------------------------------------------------------------------------
+| Billing
+|--------------------------------------------------------------------------
+*/
+
+// Expire ended subscriptions and send 7-day and 1-day renewal reminders
+Schedule::command('subscriptions:expire')
+    ->dailyAt('00:10')
+    ->withoutOverlapping()
+    ->onOneServer();
