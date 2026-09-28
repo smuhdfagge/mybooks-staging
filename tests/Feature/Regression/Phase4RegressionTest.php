@@ -251,4 +251,38 @@ class Phase4RegressionTest extends TestCase
 
         $this->assertEquals(100.0, (float) InventoryLayer::where('item_id', $item->id)->value('unit_cost'));
     }
+
+    public function test_a_cash_sale_cannot_sell_more_than_is_available(): void
+    {
+        $this->user->givePermissionTo(\Spatie\Permission\Models\Permission::findOrCreate('create sales-receipts', 'web'));
+        $item = $this->stockItem('fifo');
+        $form = fn ($qty) => [
+            'receipt_date' => now()->toDateString(), 'payment_method' => 'cash',
+            'items' => [['item_id' => $item->id, 'description' => $item->name, 'quantity' => $qty, 'unit_price' => 50]],
+        ];
+
+        $this->post(route('sales-receipts.store'), $form(11))->assertSessionHasErrors('items.0.quantity');
+        $this->assertSame(0, SalesReceipt::count());
+
+        $this->post(route('sales-receipts.store'), $form(10))->assertSessionHasNoErrors();
+        $this->assertEquals(0, (float) Inventory::where('item_id', $item->id)->value('quantity'));
+    }
+
+    public function test_editing_a_cash_sale_can_reuse_its_own_stock(): void
+    {
+        $this->user->givePermissionTo(\Spatie\Permission\Models\Permission::findOrCreate('edit sales-receipts', 'web'));
+        $item = $this->stockItem('fifo');
+        $receipt = $this->cashSale($item, 10);
+        $this->assertEquals(0, (float) Inventory::where('item_id', $item->id)->value('quantity'));
+
+        $this->put(route('sales-receipts.update', $receipt), [
+            'receipt_date' => now()->toDateString(), 'payment_method' => 'cash',
+            'items' => [['item_id' => $item->id, 'description' => $item->name, 'quantity' => 8, 'unit_price' => 50]],
+        ])->assertSessionHasNoErrors();
+
+        $this->assertEquals(2, (float) Inventory::where('item_id', $item->id)->value('quantity'));
+        $this->assertSame([0.0, 2.0], $this->remainingLayers($item));
+        $this->assertSame(110.0, $this->cogs());   // 5 @ 10 + 3 @ 20
+        $this->assertStoredBalancesMatchLedger($this->tenant->id);
+    }
 }
