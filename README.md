@@ -91,6 +91,12 @@ By default the only disk is `backups` (`storage/app/backups` on the same server)
 
 **Restore test (do this every quarter):** download a backup, unzip it with the password (7-Zip or `unzip`), load `database.sql` into an empty database with `mysql new_db < database.sql`, and check the row counts look right. `files/` holds the uploads to copy back under `storage/app/`.
 
+## Errors and logs
+
+Logs go to `storage/logs/laravel-YYYY-MM-DD.log`, one file a day, kept for `LOG_DAILY_DAYS` (14). Set `LOG_LEVEL=warning` in production.
+
+In production, server errors are also emailed to `ERROR_ALERT_EMAIL` (default: the support email). Each distinct error is sent at most once an hour, with at most 20 alerts an hour in total. The email holds the error, where it happened, the page and the user and business IDs, never form data. For a fuller service later (grouping, history), Sentry or Flare can replace this.
+
 ## Feature switches
 
 Unfinished modules answer 404 until they are switched on in `.env`. Only switch one on once its screens exist and its tests pass.

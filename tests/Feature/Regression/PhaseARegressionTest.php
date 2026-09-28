@@ -488,4 +488,60 @@ class PhaseARegressionTest extends TestCase
         $this->assertCount(1, $events);
         $this->assertSame('30 1 * * *', $events->first()->expression);
     }
+
+    // ── O2: error alerts ────────────────────────────────────────
+
+    /** @return \Illuminate\Support\Collection<int, \Symfony\Component\Mailer\SentMessage> */
+    private function sentMail()
+    {
+        return app('mail.manager')->mailer('array')->getSymfonyTransport()->messages();
+    }
+
+    public function test_o2_server_errors_are_emailed_once_an_hour_without_personal_data(): void
+    {
+        config([
+            'mail.default' => 'array',
+            'mybooks.error_alerts.enabled' => true,
+            'mybooks.error_alerts.email' => 'alerts@example.com',
+        ]);
+        \Illuminate\Support\Facades\Cache::flush();
+
+        $boom = fn () => new \RuntimeException('SQLSTATE[HY000]: General error');
+        report($boom());
+        report($boom()); // same error again: not emailed twice
+
+        $this->assertCount(1, $this->sentMail());
+        $email = $this->sentMail()->first()->getOriginalMessage();
+        $this->assertSame('alerts@example.com', $email->getTo()[0]->getAddress());
+        $this->assertStringContainsString('RuntimeException', $email->getSubject());
+        $this->assertStringContainsString('PhaseARegressionTest.php', $email->getTextBody());
+    }
+
+    public function test_o2_alerts_are_capped_per_hour(): void
+    {
+        config([
+            'mail.default' => 'array',
+            'mybooks.error_alerts.enabled' => true,
+            'mybooks.error_alerts.email' => 'alerts@example.com',
+            'mybooks.error_alerts.max_per_hour' => 3,
+        ]);
+        \Illuminate\Support\Facades\Cache::flush();
+
+        // Six distinct errors (different lines).
+        report(new \RuntimeException('error 1'));
+        report(new \RuntimeException('error 2'));
+        report(new \RuntimeException('error 3'));
+        report(new \RuntimeException('error 4'));
+        report(new \RuntimeException('error 5'));
+        report(new \RuntimeException('error 6'));
+
+        $this->assertCount(3, $this->sentMail());
+    }
+
+    public function test_o2_logs_rotate_daily_by_default(): void
+    {
+        // A server without LOG_STACK in .env gets daily, rotated files.
+        $this->assertStringContainsString("env('LOG_STACK', 'daily')", file_get_contents(config_path('logging.php')));
+        $this->assertMatchesRegularExpression('/^LOG_STACK=daily$/m', file_get_contents(base_path('.env.example')));
+    }
 }

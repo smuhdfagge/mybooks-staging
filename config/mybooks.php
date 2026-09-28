@@ -155,4 +155,21 @@ return [
         'enabled' => (bool) env('BACKUP_ENABLED', true),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Error alerts (finding O2)
+    |--------------------------------------------------------------------------
+    |
+    | Server errors are emailed to ERROR_ALERT_EMAIL: each distinct error at
+    | most once an hour, and at most ERROR_ALERT_MAX_PER_HOUR in total. On
+    | outside production unless ERROR_ALERTS_ENABLED says otherwise.
+    |
+    */
+
+    'error_alerts' => [
+        'email' => env('ERROR_ALERT_EMAIL', env('MYBOOKS_SUPPORT_EMAIL')),
+        'enabled' => (bool) env('ERROR_ALERTS_ENABLED', env('APP_ENV') === 'production'),
+        'max_per_hour' => (int) env('ERROR_ALERT_MAX_PER_HOUR', 20),
+    ],
+
 ];

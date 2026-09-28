@@ -40,5 +40,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Email server errors to the support address (finding O2). Only
+        // reportable errors reach this (not 404s, validation, auth, etc.),
+        // and the normal logging still happens.
+        $exceptions->reportable(function (Throwable $e) {
+            app(\App\Services\ErrorAlerter::class)->report($e);
+        });
     })->create();
