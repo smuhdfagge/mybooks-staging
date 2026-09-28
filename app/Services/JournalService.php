@@ -15,6 +15,7 @@ use App\Models\Payroll;
 use App\Contracts\JournalServiceInterface;
 use App\Services\AccountCodeService;
 use Illuminate\Support\Facades\DB;
+use App\Exceptions\UnbalancedJournalException;
 use InvalidArgumentException;
 
 class JournalService implements JournalServiceInterface
@@ -154,6 +155,13 @@ class JournalService implements JournalServiceInterface
      */
     public function createInvoiceJournal(Invoice $invoice): ?Journal
     {
+        if ($invoice->status === 'cancelled') {
+            // A cancelled invoice keeps its original journal plus a reversal (C5).
+            $this->reverseDocumentJournal(Invoice::class, $invoice->id, 'Invoice cancelled');
+
+            return null;
+        }
+
         if ($invoice->total <= 0) {
             return null;
         }
@@ -300,6 +308,12 @@ class JournalService implements JournalServiceInterface
      */
     public function createBillJournal(Bill $bill): ?Journal
     {
+        if ($bill->status === 'cancelled') {
+            $this->reverseDocumentJournal(Bill::class, $bill->id, 'Bill cancelled');
+
+            return null;
+        }
+
         if ($bill->total <= 0) {
             return null;
         }
@@ -330,16 +344,7 @@ class JournalService implements JournalServiceInterface
             ]);
 
             // Debit: Inventory (for items that track inventory) or General Expense
-            $inventoryAmount = 0;
-            $expenseAmount = 0;
-
-            foreach ($bill->items as $item) {
-                if ($item->item && $item->item->track_inventory) {
-                    $inventoryAmount += $item->total;
-                } else {
-                    $expenseAmount += $item->total;
-                }
-            }
+            [$inventoryAmount, $expenseAmount] = $this->billDebitSplit($bill);
 
             if ($inventoryAmount > 0) {
                 $this->createEntry($journal, $this->acct($t, 'inventory'), $inventoryAmount, 0,
@@ -354,7 +359,7 @@ class JournalService implements JournalServiceInterface
 
             // If no items or all have zero totals, debit inventory by default
             if ($inventoryAmount == 0 && $expenseAmount == 0 && $bill->subtotal > 0) {
-                $this->createEntry($journal, $this->acct($t, 'inventory'), $bill->subtotal, 0,
+                $this->createEntry($journal, $this->acct($t, 'inventory'), round((float) $bill->subtotal - (float) ($bill->discount_amount ?? 0), 2), 0,
                     "Purchase - Bill {$bill->bill_number}");
             }
 
@@ -393,16 +398,7 @@ class JournalService implements JournalServiceInterface
             'description' => "Bill {$bill->bill_number} - {$bill->vendor->name}",
         ]);
 
-        $inventoryAmount = 0;
-        $expenseAmount = 0;
-
-        foreach ($bill->items as $item) {
-            if ($item->item && $item->item->track_inventory) {
-                $inventoryAmount += $item->total;
-            } else {
-                $expenseAmount += $item->total;
-            }
-        }
+        [$inventoryAmount, $expenseAmount] = $this->billDebitSplit($bill);
 
         if ($inventoryAmount > 0) {
             $this->createEntry($journal, $this->acct($t, 'inventory'), $inventoryAmount, 0,
@@ -415,7 +411,7 @@ class JournalService implements JournalServiceInterface
         }
 
         if ($inventoryAmount == 0 && $expenseAmount == 0 && $bill->subtotal > 0) {
-            $this->createEntry($journal, $this->acct($t, 'inventory'), $bill->subtotal, 0,
+            $this->createEntry($journal, $this->acct($t, 'inventory'), round((float) $bill->subtotal - (float) ($bill->discount_amount ?? 0), 2), 0,
                 "Purchase - Bill {$bill->bill_number}");
         }
 
@@ -485,7 +481,7 @@ class JournalService implements JournalServiceInterface
 
             // Credit: Payment Account (cash, bank, etc.)
             $paymentAccountCode = $expense->paidThroughAccount?->account_code 
-                ?? $this->getPaymentAccountCode($expense->payment_method, $t);
+                ?? $this->paymentAccountFor($expense->bank, $expense->payment_method, $t);
             $this->createEntry($journal, $paymentAccountCode, 0, $expense->total,
                 "Payment - {$expense->expense_number}");
 
@@ -524,7 +520,7 @@ class JournalService implements JournalServiceInterface
         }
 
         $paymentAccountCode = $expense->paidThroughAccount?->account_code
-            ?? $this->getPaymentAccountCode($expense->payment_method, $t);
+            ?? $this->paymentAccountFor($expense->bank, $expense->payment_method, $t);
         $this->createEntry($journal, $paymentAccountCode, 0, $expense->total,
             "Payment - {$expense->expense_number}");
 
@@ -595,7 +591,7 @@ class JournalService implements JournalServiceInterface
 
             if ($payment->is_deposit) {
                 // Customer deposit: Debit Cash, Credit Customer Deposits (liability)
-                $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method, $t);
+                $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
                 $this->createEntry($journal, $paymentAccountCode, $payment->amount, 0,
                     "Customer Deposit - {$payment->payment_number}");
 
@@ -610,7 +606,7 @@ class JournalService implements JournalServiceInterface
                     "Payment for {$payment->customer->name}");
             } else {
                 // Regular payment: Debit Cash/Bank, Credit A/R
-                $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method, $t);
+                $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
                 $this->createEntry($journal, $paymentAccountCode, $payment->amount, 0,
                     "Payment Received - {$payment->payment_number}");
 
@@ -656,7 +652,7 @@ class JournalService implements JournalServiceInterface
 
         if ($payment->is_deposit) {
             // Customer deposit: Debit Cash, Credit Customer Deposits (liability)
-            $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method, $t);
+            $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
             $this->createEntry($journal, $paymentAccountCode, $payment->amount, 0,
                 "Customer Deposit - {$payment->payment_number}");
 
@@ -671,7 +667,7 @@ class JournalService implements JournalServiceInterface
                 "Payment for {$payment->customer->name}");
         } else {
             // Regular payment: Debit Cash/Bank, Credit A/R
-            $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method, $t);
+            $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
             $this->createEntry($journal, $paymentAccountCode, $payment->amount, 0,
                 "Payment Received - {$payment->payment_number}");
 
@@ -853,7 +849,7 @@ class JournalService implements JournalServiceInterface
                 "Payment to {$payment->vendor->name}");
 
             // Credit: Cash/Bank account
-            $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method, $t);
+            $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
             $this->createEntry($journal, $paymentAccountCode, 0, $payment->amount,
                 "Payment Made - {$payment->payment_number}");
 
@@ -887,7 +883,7 @@ class JournalService implements JournalServiceInterface
         $this->createEntry($journal, $this->acct($t, 'accounts_payable'), $payment->amount, 0,
             "Payment to {$payment->vendor->name}");
 
-        $paymentAccountCode = $this->getPaymentAccountCode($payment->payment_method, $t);
+        $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
         $this->createEntry($journal, $paymentAccountCode, 0, $payment->amount,
             "Payment Made - {$payment->payment_number}");
 
@@ -1306,7 +1302,9 @@ class JournalService implements JournalServiceInterface
     public function reverseJournal(Journal $journal, string $reason = 'Reversed'): Journal
     {
         return DB::transaction(function () use ($journal, $reason) {
-            $this->reverseAccountBalances($journal);
+            // The reversing journal's own lines undo the original when they are
+            // applied below. Also un-applying the original here reversed it
+            // twice (a 1,075 invoice left receivables at -1,075).
 
             $reversingJournal = Journal::create([
                 'tenant_id' => $journal->tenant_id,
@@ -1341,33 +1339,73 @@ class JournalService implements JournalServiceInterface
     }
 
     /**
-     * Delete journal entries for a transaction (when transaction is deleted)
+     * Reverse the posted journal of a document (once). The original journal
+     * and the reversal both stay in the ledger.
+     */
+    public function reverseDocumentJournal(string $referenceType, int $referenceId, string $reason): ?Journal
+    {
+        $journal = Journal::with('entries.account')
+            ->where('reference_type', $referenceType)
+            ->where('reference_id', $referenceId)
+            ->where('status', 'posted')
+            ->whereNot('reference', 'like', 'REV-%')
+            ->first();
+
+        return $journal ? $this->reverseJournal($journal, $reason) : null;
+    }
+
+    /**
+     * Called when a document (invoice, bill, payment, expense, payroll,
+     * sales receipt, refund) is deleted.
+     *
+     * A posted journal is kept and reversed with a new journal dated today,
+     * so the ledger shows what happened (finding M6). Previously it was
+     * force-deleted, leaving no trace. A journal that was never posted (so
+     * never reached the balances) is still removed.
      */
     public function deleteJournalForTransaction(string $referenceType, int $referenceId, ?int $tenantId = null): void
     {
-        // Resolve tenant_id from parameter, auth context, or fail safely
+        foreach ($this->journalsForTransaction($referenceType, $referenceId, $tenantId) as $journal) {
+            if ($journal->status === 'posted' && ! str_starts_with((string) $journal->reference, 'REV-')) {
+                $this->reverseJournal($journal, class_basename($referenceType).' deleted');
+            } elseif (! in_array($journal->status, ['posted', 'reversed'], true)) {
+                $journal->entries()->forceDelete();
+                $journal->forceDelete();
+            }
+        }
+    }
+
+    /**
+     * Remove a document's journals completely, undoing their effect on the
+     * balances. Only for repair commands that rebuild journals from scratch
+     * (e.g. payroll:fix-journals); normal deletes use deleteJournalForTransaction().
+     */
+    public function purgeJournalForTransaction(string $referenceType, int $referenceId, ?int $tenantId = null): void
+    {
+        foreach ($this->journalsForTransaction($referenceType, $referenceId, $tenantId) as $journal) {
+            if ($journal->status === 'posted') {
+                $this->reverseAccountBalances($journal);
+            }
+            $journal->entries()->forceDelete();
+            $journal->forceDelete();
+        }
+    }
+
+    protected function journalsForTransaction(string $referenceType, int $referenceId, ?int $tenantId)
+    {
         $tenantId = $tenantId ?? auth()->user()?->tenant_id;
 
         $query = Journal::withoutGlobalScopes()
             ->where('reference_type', $referenceType)
-            ->where('reference_id', $referenceId);
+            ->where('reference_id', $referenceId)
+            ->orderBy('id');
 
-        // Always scope to tenant to prevent cross-tenant deletion
+        // Always scope to tenant to prevent cross-tenant changes
         if ($tenantId) {
             $query->where('tenant_id', $tenantId);
         }
 
-        $journal = $query->first();
-
-        if ($journal) {
-            // Reverse the account balances first
-            $this->reverseAccountBalances($journal);
-            
-            // Force delete entries and journal (not soft delete) 
-            // since these are accounting records that should be removed when source transaction is deleted
-            $journal->entries()->forceDelete();
-            $journal->forceDelete();
-        }
+        return $query->get();
     }
 
     /**
@@ -1387,27 +1425,41 @@ class JournalService implements JournalServiceInterface
             'journal_id' => $journal->id,
             'account_id' => $account->id,
             'description' => $description,
-            'debit' => $debit,
-            'credit' => $credit,
+            'debit' => round($debit, 2),
+            'credit' => round($credit, 2),
         ]);
     }
 
     /**
      * Get the payment account code based on payment method, resolved per-tenant.
      */
-    protected function getPaymentAccountCode(?string $paymentMethod, int $tenantId = 0): string
+    protected function getPaymentAccountCode(?string $paymentMethod, int $tenantId): string
     {
-        if ($tenantId > 0) {
-            return AccountCodeService::resolvePaymentMethod($tenantId, $paymentMethod);
+        // tenantId is required: the old fallback for a missing tenant used an
+        // undefined variable and would have crashed (L16).
+        return AccountCodeService::resolvePaymentMethod($tenantId, $paymentMethod);
+    }
+
+    /**
+     * Ledger account for money moving through a bank or payment method.
+     *
+     * When a bank account is chosen and it is linked to its own ledger
+     * account (Banks > chart of account), post there, so each bank can be
+     * reconciled in the ledger (M5). Otherwise use the payment method's
+     * default account (cash, checking, ...), as before.
+     */
+    protected function paymentAccountFor(?\App\Models\Bank $bank, ?string $paymentMethod, int $tenantId): string
+    {
+        if ($bank && $bank->chart_of_account_id) {
+            $code = ChartOfAccount::where('tenant_id', $tenantId)
+                ->whereKey($bank->chart_of_account_id)
+                ->value('account_code');
+            if ($code) {
+                return $code;
+            }
         }
 
-        // Legacy fallback when tenantId not provided
-        if ($paymentMethod === null || $paymentMethod === '') {
-            return $this->acct($t, 'cash');
-        }
-
-        $method = strtolower(str_replace(' ', '_', $paymentMethod));
-        return $this->paymentMethodAccounts[$method] ?? $this->acct($t, 'cash');
+        return $this->getPaymentAccountCode($paymentMethod, $tenantId);
     }
 
     /**
@@ -1415,6 +1467,15 @@ class JournalService implements JournalServiceInterface
      */
     public function updateAccountBalances(Journal $journal): void
     {
+        // Always read the journal's lines as they are now. The update paths
+        // load the old lines (to reverse them), delete them and create new
+        // ones; without a reload this re-applied the old amounts (C4).
+        $journal->load('entries.account');
+
+        // Never let an unbalanced journal reach the account balances (M2).
+        // Callers run inside DB::transaction, so this rolls the posting back.
+        $this->assertBalanced($journal);
+
         foreach ($journal->entries as $entry) {
             $account = $entry->account;
             
@@ -1436,6 +1497,8 @@ class JournalService implements JournalServiceInterface
      */
     protected function reverseAccountBalances(Journal $journal): void
     {
+        $journal->load('entries.account');
+
         foreach ($journal->entries as $entry) {
             $account = $entry->account;
             
@@ -1462,13 +1525,72 @@ class JournalService implements JournalServiceInterface
     }
 
     /**
+     * Split a bill's cost (net of tax) between inventory and expense.
+     *
+     * Line totals include their tax, and the tax is debited separately to
+     * input tax, so each line is taken net of tax. Previously the full line
+     * total was used, so a taxed bill's journal was out by the tax amount as
+     * soon as it was rebuilt with its lines (e.g. on payment).
+     *
+     * Any rounding difference against subtotal - discount goes to the larger
+     * side, so debits always equal the bill total.
+     *
+     * @return array{0: float, 1: float} [inventory, expense]
+     */
+    protected function billDebitSplit(Bill $bill): array
+    {
+        $inventory = 0.0;
+        $expense = 0.0;
+
+        foreach ($bill->items as $item) {
+            $net = (float) $item->total - (float) ($item->tax_amount ?? 0);
+            if ($item->item && $item->item->track_inventory) {
+                $inventory += $net;
+            } else {
+                $expense += $net;
+            }
+        }
+
+        $inventory = round($inventory, 2);
+        $expense = round($expense, 2);
+
+        if ($inventory == 0.0 && $expense == 0.0) {
+            return [0.0, 0.0];
+        }
+
+        $target = round((float) $bill->subtotal - (float) ($bill->discount_amount ?? 0), 2);
+        $difference = round($target - ($inventory + $expense), 2);
+
+        if ($difference != 0.0 && abs($difference) <= 0.05) {
+            if ($inventory >= $expense) {
+                $inventory = round($inventory + $difference, 2);
+            } else {
+                $expense = round($expense + $difference, 2);
+            }
+        }
+
+        return [$inventory, $expense];
+    }
+
+    /**
      * Check if a journal is balanced
      */
     public function isJournalBalanced(Journal $journal): bool
     {
-        $totalDebit = $journal->entries()->sum('debit');
-        $totalCredit = $journal->entries()->sum('credit');
-        
-        return abs($totalDebit - $totalCredit) < 0.01; // Allow for small floating point differences
+        $totalDebit = round((float) $journal->entries()->sum('debit'), 2);
+        $totalCredit = round((float) $journal->entries()->sum('credit'), 2);
+
+        // Amounts are stored to the kobo, so after rounding they must match exactly.
+        return abs($totalDebit - $totalCredit) < 0.005;
+    }
+
+    /**
+     * @throws UnbalancedJournalException
+     */
+    public function assertBalanced(Journal $journal): void
+    {
+        if (! $this->isJournalBalanced($journal)) {
+            throw UnbalancedJournalException::for($journal);
+        }
     }
 }

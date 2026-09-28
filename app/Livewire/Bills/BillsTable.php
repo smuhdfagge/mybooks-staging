@@ -115,7 +115,6 @@ class BillsTable extends Component
     protected function bulkActionPermissions(): array
     {
         return [
-            'mark_paid' => 'create payments-made',
             'mark_cancelled' => 'edit bills',
             'delete' => 'delete bills',
         ];
@@ -141,25 +140,32 @@ class BillsTable extends Component
         $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
-            case 'mark_paid':
+            case 'mark_cancelled':
+                // Save each bill so its journal is reversed (C5). Bills with
+                // payments must have the payments removed first.
+                $cancelled = 0;
+                $skipped = 0;
+                $failed = [];
                 $bills = Bill::whereIn('id', $this->selectedItems)
-                    ->whereIn('status', ['pending', 'partial', 'overdue'])
+                    ->whereIn('status', ['draft', 'pending', 'unpaid', 'overdue'])
                     ->get();
                 foreach ($bills as $bill) {
-                    $bill->update([
-                        'status' => 'paid',
-                        'amount_paid' => $bill->total,
-                        'balance_due' => 0,
-                    ]);
+                    if ((float) $bill->amount_paid > 0) {
+                        $skipped++;
+                        continue;
+                    }
+                    try {
+                        DB::transaction(fn () => $bill->update(['status' => 'cancelled']));
+                        $cancelled++;
+                    } catch (\Throwable $e) {
+                        report($e);
+                        $failed[] = $bill->bill_number;
+                    }
                 }
-                $this->successMessage = "Successfully marked {$bills->count()} bill(s) as paid.";
-                break;
-
-            case 'mark_cancelled':
-                Bill::whereIn('id', $this->selectedItems)
-                    ->whereIn('status', ['draft', 'pending'])
-                    ->update(['status' => 'cancelled']);
-                $this->successMessage = "Successfully cancelled selected bill(s).";
+                $this->successMessage = "Cancelled {$cancelled} bill(s)." . ($skipped ? " Skipped {$skipped} with payments." : '');
+                if ($failed) {
+                    $this->errorMessage = 'Not cancelled (closed period or invalid totals): ' . implode(', ', $failed) . '.';
+                }
                 break;
 
             case 'delete':

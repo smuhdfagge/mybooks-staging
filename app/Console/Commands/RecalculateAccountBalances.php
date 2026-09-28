@@ -61,7 +61,9 @@ class RecalculateAccountBalances extends Command
                     ->where('account_id', $account->id)
                     ->get();
 
-                $balance = 0;
+                // Opening balances are stored on the account, not as journal
+                // lines, so start from them or they would be wiped.
+                $balance = (float) ($account->opening_balance ?? 0);
 
                 foreach ($entries as $entry) {
                     if ($account->isDebitBalance()) {

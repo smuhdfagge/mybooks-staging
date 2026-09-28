@@ -6,6 +6,7 @@ use App\Models\PaymentMade;
 use App\Models\Bill;
 use App\Http\Resources\PaymentMadeResource;
 use Illuminate\Http\Request;
+use App\Services\PaymentValidation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -94,18 +95,12 @@ class PaymentMadeController extends BaseApiController
             'notes' => 'nullable|string',
         ]);
 
-        // Validate bill belongs to vendor if provided
+        // Same checks as the web form (M5). The old strict !== comparison
+        // failed whenever the vendor ID arrived as a string.
         if (!empty($validated['bill_id'])) {
-            $bill = Bill::find($validated['bill_id']);
-            if ($bill->vendor_id !== $validated['vendor_id']) {
-                return $this->validationError([
-                    'bill_id' => ['Bill does not belong to the selected vendor'],
-                ]);
-            }
-            if ($validated['amount'] > $bill->balance_due) {
-                return $this->validationError([
-                    'amount' => ['Payment amount cannot exceed bill balance due'],
-                ]);
+            $errors = PaymentValidation::forBill(Bill::find($validated['bill_id']), $validated['vendor_id'], (float) $validated['amount']);
+            if ($errors) {
+                return $this->validationError(array_map(fn ($message) => [$message], $errors));
             }
         }
 
@@ -119,7 +114,7 @@ class PaymentMadeController extends BaseApiController
 
             // Update bill if linked
             if (!empty($validated['bill_id'])) {
-                $bill->updateBalances();
+                $payment->bill?->updateBalances();
             }
 
             DB::commit();

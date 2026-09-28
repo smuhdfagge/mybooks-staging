@@ -275,12 +275,12 @@ class DepreciationService
 
         $journal->updateTotals();
 
-        // Update account balances
-        $depreciationAccount->current_balance += $amount;
-        $depreciationAccount->save();
+        // Apply to the account balances with the normal debit/credit rules
+        // (M6). The manual arithmetic here added the credit to Accumulated
+        // Depreciation, an asset account, so it moved the wrong way.
+        app(JournalService::class)->updateAccountBalances($journal);
 
-        $accumulatedAccount->current_balance += $amount;
-        $accumulatedAccount->save();
+
 
         return $journal;
     }
@@ -364,17 +364,9 @@ class DepreciationService
      */
     protected function reverseJournal(Journal $journal): void
     {
-        foreach ($journal->entries as $entry) {
-            $account = $entry->account;
-            if ($account->isDebitBalance()) {
-                $account->current_balance -= ($entry->debit - $entry->credit);
-            } else {
-                $account->current_balance -= ($entry->credit - $entry->debit);
-            }
-            $account->save();
-        }
-
-        $journal->withoutPeriodValidation()->update(['status' => 'reversed']);
+        // Post a reversing journal (M6). Only undoing the balances left the
+        // original lines counting in the ledger, so balances and ledger disagreed.
+        app(JournalService::class)->reverseJournal($journal, 'Depreciation reversed');
     }
 
     /**
@@ -472,8 +464,6 @@ class DepreciationService
                 'debit' => $asset->accumulated_depreciation,
                 'credit' => 0,
             ]);
-            $accumulatedAccount->current_balance -= $asset->accumulated_depreciation;
-            $accumulatedAccount->save();
         }
 
         // Debit: Cash (if sold for money)
@@ -485,8 +475,6 @@ class DepreciationService
                 'debit' => $amount,
                 'credit' => 0,
             ]);
-            $cashAccount->current_balance += $amount;
-            $cashAccount->save();
         }
 
         // Credit: Asset Account (remove the asset)
@@ -497,8 +485,6 @@ class DepreciationService
             'debit' => 0,
             'credit' => $asset->purchase_cost,
         ]);
-        $assetAccount->current_balance -= $asset->purchase_cost;
-        $assetAccount->save();
 
         // Handle gain or loss
         if ($gainLoss != 0 && $gainLossAccount) {
@@ -511,7 +497,6 @@ class DepreciationService
                     'debit' => 0,
                     'credit' => $gainLoss,
                 ]);
-                $gainLossAccount->current_balance += $gainLoss;
             } else {
                 // Loss - Debit
                 JournalEntry::create([
@@ -521,12 +506,15 @@ class DepreciationService
                     'debit' => abs($gainLoss),
                     'credit' => 0,
                 ]);
-                $gainLossAccount->current_balance += abs($gainLoss);
             }
-            $gainLossAccount->save();
         }
 
         $journal->updateTotals();
+
+        // Apply to the account balances with the normal debit/credit rules
+        // (M6). The manual arithmetic here added the credit to Accumulated
+        // Depreciation, an asset account, so it moved the wrong way.
+        app(JournalService::class)->updateAccountBalances($journal);
 
         return $journal;
     }

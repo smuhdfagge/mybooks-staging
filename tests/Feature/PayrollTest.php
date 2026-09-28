@@ -619,7 +619,7 @@ class PayrollTest extends TestCase
 
     // ── Payroll Deletion Journal Cleanup ─────────────────────────
 
-    public function test_deleting_payroll_removes_journal(): void
+    public function test_deleting_paid_payroll_reverses_its_journal(): void
     {
         $this->createAuthenticatedUser();
         $this->seedDefaultAccounts($this->tenant->id);
@@ -641,11 +641,21 @@ class PayrollTest extends TestCase
 
         $payroll->delete();
 
-        // Journal should be force-deleted
-        $this->assertNull(
-            Journal::withTrashed()->where('reference_type', Payroll::class)
-                ->where('reference_id', $payroll->id)->first()
-        );
+        // The original journal is kept and a reversing journal is posted,
+        // so the ledger shows both (finding M6). Previously it was force-deleted.
+        $journals = Journal::withTrashed()->where('reference_type', Payroll::class)
+            ->where('reference_id', $payroll->id)->orderBy('id')->get();
+        $this->assertCount(2, $journals);
+        $this->assertSame('reversed', $journals[0]->status);
+        $this->assertSame('REV-'.$journals[0]->journal_number, $journals[1]->reference);
+
+        // Every account's lines across both journals net to zero
+        $net = \App\Models\JournalEntry::whereIn('journal_id', $journals->pluck('id'))
+            ->selectRaw('account_id, SUM(debit) - SUM(credit) as net')
+            ->groupBy('account_id')->pluck('net');
+        foreach ($net as $value) {
+            $this->assertEqualsWithDelta(0, (float) $value, 0.001);
+        }
     }
 
     // ── Account Balance Tests ────────────────────────────────────

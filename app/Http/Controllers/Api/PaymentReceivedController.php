@@ -6,6 +6,7 @@ use App\Models\PaymentReceived;
 use App\Models\Invoice;
 use App\Http\Resources\PaymentReceivedResource;
 use Illuminate\Http\Request;
+use App\Services\PaymentValidation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -100,18 +101,16 @@ class PaymentReceivedController extends BaseApiController
             'is_deposit' => 'boolean',
         ]);
 
-        // Validate invoice belongs to customer if provided
-        if (!empty($validated['invoice_id'])) {
-            $invoice = Invoice::find($validated['invoice_id']);
-            if ($invoice->customer_id !== $validated['customer_id']) {
-                return $this->validationError([
-                    'invoice_id' => ['Invoice does not belong to the selected customer'],
-                ]);
-            }
-            if ($validated['amount'] > $invoice->balance_due) {
-                return $this->validationError([
-                    'amount' => ['Payment amount cannot exceed invoice balance due'],
-                ]);
+        // Same checks as the web form (M5). The old strict !== comparison
+        // failed whenever the customer ID arrived as a string.
+        if (!empty($validated['invoice_id']) && ! ($validated['is_deposit'] ?? false)) {
+            $errors = PaymentValidation::forInvoice(
+                Invoice::find($validated['invoice_id']),
+                $validated['customer_id'],
+                (float) $validated['amount']
+            );
+            if ($errors) {
+                return $this->validationError(array_map(fn ($message) => [$message], $errors));
             }
         }
 
@@ -130,7 +129,7 @@ class PaymentReceivedController extends BaseApiController
 
             // Update invoice if linked
             if (!empty($validated['invoice_id'])) {
-                $invoice->updateBalances();
+                $payment->invoice?->updateBalances();
             }
 
             // Update customer deposit balance if it's a deposit

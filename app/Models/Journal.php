@@ -72,7 +72,13 @@ class Journal extends Model
 
     public function isBalanced(): bool
     {
-        return abs((float) $this->total_debit - (float) $this->total_credit) < 0.01;
+        // Check the lines themselves. total_debit/total_credit are only
+        // filled in by updateTotals(), so a draft journal read 0 = 0 and
+        // counted as balanced whatever its lines said.
+        $debit = round((float) $this->entries()->sum('debit'), 2);
+        $credit = round((float) $this->entries()->sum('credit'), 2);
+
+        return abs($debit - $credit) < 0.005;
     }
 
     public function updateTotals()
@@ -84,6 +90,10 @@ class Journal extends Model
 
     public function post()
     {
+        if (! $this->entries()->exists()) {
+            throw new \Exception('Journal has no lines to post.');
+        }
+
         if (!$this->isBalanced()) {
             throw new \Exception('Journal entries must be balanced before posting.');
         }

@@ -43,6 +43,14 @@ class InvoiceController extends Controller
 
     public function store(StoreInvoiceRequest $request)
     {
+        // One transaction: invoice, lines, totals and stock reservations are
+        // saved together, and stock rows stay locked from the availability
+        // check until they are reserved (M4).
+        return DB::transaction(fn () => $this->storeInvoice($request));
+    }
+
+    private function storeInvoice(StoreInvoiceRequest $request)
+    {
         $tenantId = auth()->user()->tenant_id;
 
         $validated = $request->validated();
@@ -56,6 +64,7 @@ class InvoiceController extends Controller
                 if ($item && $item->track_inventory) {
                     $inventory = Inventory::where('item_id', $item->id)
                         ->where('tenant_id', $tenantId)
+                        ->lockForUpdate()
                         ->first();
                     
                     $availableQty = $inventory ? $inventory->available_quantity : 0;
@@ -184,6 +193,11 @@ class InvoiceController extends Controller
 
     public function update(StoreInvoiceRequest $request, Invoice $invoice)
     {
+        return DB::transaction(fn () => $this->updateInvoice($request, $invoice));
+    }
+
+    private function updateInvoice(StoreInvoiceRequest $request, Invoice $invoice)
+    {
         if ($invoice->status === 'paid') {
             return redirect()->back()->with('error', 'Cannot edit a paid invoice.');
         }
@@ -210,6 +224,7 @@ class InvoiceController extends Controller
                     if ($item && $item->track_inventory) {
                         $inventory = Inventory::where('item_id', $item->id)
                             ->where('tenant_id', $tenantId)
+                            ->lockForUpdate()
                             ->first();
                         
                         // Available = current available + what will be released from this invoice
@@ -361,12 +376,17 @@ class InvoiceController extends Controller
                 if ($invoiceItem->item_id) {
                     $inventory = Inventory::where('item_id', $invoiceItem->item_id)
                         ->where('tenant_id', auth()->user()->tenant_id)
+                        ->lockForUpdate()
                         ->first();
                     
                     if ($inventory) {
                         // Deduct from both quantity and reserved_quantity
                         $previousQty = $inventory->quantity;
-                        $inventory->quantity = max(0, $inventory->quantity - $invoiceItem->quantity);
+                        // Refuse rather than silently clamping stock at zero (M4)
+                        if ((float) $inventory->quantity < (float) $invoiceItem->quantity) {
+                            throw new \RuntimeException("Not enough stock to release {$invoiceItem->description}: {$inventory->quantity} on hand, {$invoiceItem->quantity} needed.");
+                        }
+                        $inventory->quantity = $inventory->quantity - $invoiceItem->quantity;
                         $inventory->reserved_quantity = max(0, $inventory->reserved_quantity - $invoiceItem->quantity);
                         $inventory->save();
                         

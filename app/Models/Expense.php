@@ -14,7 +14,7 @@ use App\Services\JournalService;
 
 class Expense extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, ValidatesAccountingPeriod;
+    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, ValidatesAccountingPeriod, \App\Traits\KeepsTotalsBalanced;
 
     // Status constants
     const STATUS_DRAFT = 'draft';
@@ -350,5 +350,13 @@ class Expense extends Model
         static::deleting(function ($expense) {
             ExpenseDeleting::dispatch($expense);
         });
+    }
+
+    /**
+     * total = amount + tax_amount (see KeepsTotalsBalanced).
+     */
+    protected function documentTotalParts(): array
+    {
+        return [['amount', 'tax_amount'], []];
     }
 }

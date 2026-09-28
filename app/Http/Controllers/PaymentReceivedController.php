@@ -11,6 +11,8 @@ use App\Models\NotificationSetting;
 use App\Services\BankService;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use App\Services\PaymentValidation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
@@ -69,6 +71,24 @@ class PaymentReceivedController extends Controller
         $isDeposit = $request->boolean('is_deposit');
         $applyDepositId = $validated['apply_deposit_id'] ?? null;
         $depositAmountToApply = $validated['deposit_amount'] ?? 0;
+
+        // Business checks (M5): right customer, payable invoice, not more than
+        // is owed, deposit has enough left. Shown as form errors.
+        $invoice = ! empty($validated['invoice_id']) ? Invoice::find($validated['invoice_id']) : null;
+        if ($applyDepositId && $depositAmountToApply > 0) {
+            $errors = PaymentValidation::forDepositApplication(
+                PaymentReceived::find($applyDepositId),
+                $invoice,
+                $validated['customer_id'],
+                (float) $depositAmountToApply,
+                (float) $validated['amount'] - (float) $depositAmountToApply
+            );
+        } elseif (! $isDeposit) {
+            $errors = PaymentValidation::forInvoice($invoice, $validated['customer_id'], (float) $validated['amount']);
+        }
+        if (! empty($errors)) {
+            throw ValidationException::withMessages($errors);
+        }
 
         return DB::transaction(function () use ($validated, $tenantId, $isDeposit, $applyDepositId, $depositAmountToApply, $request) {
             // If applying a deposit to an invoice
@@ -191,6 +211,20 @@ class PaymentReceivedController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        // The new amount may not exceed what the invoice still owes, counting
+        // this payment's current amount as available again (M5).
+        if (! $paymentReceived->is_deposit && $paymentReceived->invoice) {
+            $errors = PaymentValidation::forInvoice(
+                $paymentReceived->invoice,
+                $paymentReceived->customer_id,
+                (float) $validated['amount'],
+                (float) $paymentReceived->amount
+            );
+            if ($errors) {
+                throw ValidationException::withMessages($errors);
+            }
+        }
+
         DB::transaction(function () use ($paymentReceived, $validated) {
             // If this is a deposit, update unused_amount proportionally
             if ($paymentReceived->is_deposit) {
@@ -252,10 +286,13 @@ class PaymentReceivedController extends Controller
         ]);
 
         $invoice = Invoice::findOrFail($validated['invoice_id']);
-        
-        // Validate the amount doesn't exceed invoice balance
-        if ($validated['amount'] > $invoice->balance_due) {
-            return redirect()->back()->with('error', 'Amount exceeds invoice balance due.');
+
+        // Same customer, payable invoice, not more than is owed (M5)
+        $errors = PaymentValidation::forDepositApplication(
+            $paymentReceived, $invoice, $paymentReceived->customer_id, (float) $validated['amount'], 0.0
+        );
+        if ($errors) {
+            throw ValidationException::withMessages($errors);
         }
 
         try {

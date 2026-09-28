@@ -47,7 +47,7 @@ class FixPayrollJournals extends Command
                         ->first();
 
                     if ($existingJournal) {
-                        $journalService->deleteJournalForTransaction(Payroll::class, $payroll->id, $tenantId);
+                        $journalService->purgeJournalForTransaction(Payroll::class, $payroll->id, $tenantId);
                         $fixed++;
                     } else {
                         $created++;

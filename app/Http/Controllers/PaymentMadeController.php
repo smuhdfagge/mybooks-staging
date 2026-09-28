@@ -8,6 +8,8 @@ use App\Models\Vendor;
 use App\Models\Bank;
 use App\Services\BankService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use App\Services\PaymentValidation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
@@ -46,7 +48,13 @@ class PaymentMadeController extends Controller
             'reference' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
         ]);
-        
+
+        // Right vendor, payable bill, not more than is owed (M5)
+        $bill = ! empty($validated['bill_id']) ? Bill::find($validated['bill_id']) : null;
+        if ($errors = PaymentValidation::forBill($bill, $validated['vendor_id'], (float) $validated['amount'])) {
+            throw ValidationException::withMessages($errors);
+        }
+
         $payment = DB::transaction(function () use ($tenantId, $validated) {
             $payment = PaymentMade::create([
                 'tenant_id' => $tenantId,
@@ -102,6 +110,14 @@ class PaymentMadeController extends Controller
             'reference' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
         ]);
+
+        // Not more than the bill still owes, counting this payment's current
+        // amount as available again (M5)
+        if ($paymentMade->bill && ($errors = PaymentValidation::forBill(
+            $paymentMade->bill, $paymentMade->vendor_id, (float) $validated['amount'], (float) $paymentMade->amount
+        ))) {
+            throw ValidationException::withMessages($errors);
+        }
 
         DB::transaction(function () use ($paymentMade, $validated) {
             $this->bankService->adjustOnUpdate(

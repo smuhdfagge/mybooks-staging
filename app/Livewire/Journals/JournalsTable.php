@@ -3,6 +3,7 @@
 namespace App\Livewire\Journals;
 
 use App\Models\Journal;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Livewire\Concerns\ChecksPermissions;
@@ -114,17 +115,47 @@ class JournalsTable extends Component
 
         switch ($this->bulkAction) {
             case 'post':
-                Journal::whereIn('id', $this->selectedItems)
-                    ->where('status', 'draft')
-                    ->update(['status' => 'posted']);
-                $this->successMessage = "Successfully posted selected journal(s).";
+                // Post through Journal::post(), which checks the journal balances
+                // and updates the account balances (C5). A status-only update
+                // left balances untouched.
+                $posted = 0;
+                $failed = [];
+                foreach (Journal::with('entries.account')->whereIn('id', $this->selectedItems)->where('status', 'draft')->get() as $journal) {
+                    try {
+                        DB::transaction(fn () => $journal->post());
+                        $posted++;
+                    } catch (\Throwable $e) {
+                        report($e);
+                        $failed[] = $journal->journal_number;
+                    }
+                }
+                $this->successMessage = "Posted {$posted} journal(s).";
+                if ($failed) {
+                    $this->errorMessage = 'Not posted (unbalanced or in a closed period): ' . implode(', ', $failed) . '.';
+                }
                 break;
 
             case 'void':
-                Journal::whereIn('id', $this->selectedItems)
-                    ->where('status', 'posted')
-                    ->update(['status' => 'voided']);
-                $this->successMessage = "Successfully voided selected journal(s).";
+                // A posted journal is voided by a reversing journal, so the
+                // ledger keeps a record and balances are restored (C5, M6).
+                // Journals created by invoices, bills etc. belong to their
+                // document and are changed through it instead.
+                $voided = 0;
+                $skipped = [];
+                $journalService = app(\App\Services\JournalService::class);
+                foreach (Journal::with('entries.account')->whereIn('id', $this->selectedItems)->where('status', 'posted')->get() as $journal) {
+                    if ($journal->reference_type) {
+                        $skipped[] = $journal->journal_number;
+                        continue;
+                    }
+                    // Marks the original 'reversed' (the journals.status enum has no 'voided').
+                    $journalService->reverseJournal($journal, 'Voided');
+                    $voided++;
+                }
+                $this->successMessage = "Voided {$voided} journal(s) with reversing entries.";
+                if ($skipped) {
+                    $this->errorMessage = 'Skipped (belong to a document; change the document instead): ' . implode(', ', $skipped) . '.';
+                }
                 break;
 
             case 'delete':

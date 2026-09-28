@@ -1020,20 +1020,32 @@ class ImportService
             $import->update(['processed_rows' => $index + 1]);
         }
 
-        // Create journal entry if entries exist
-        if (!empty($journalEntries)) {
-            // Check if debits equal credits
-            if (abs($totalDebit - $totalCredit) > 0.01) {
-                $this->warnings[] = "Warning: Total debits ({$totalDebit}) do not equal total credits ({$totalCredit}). Difference: " . abs($totalDebit - $totalCredit);
-            }
+        // Opening balances must balance: debits = credits. Previously this was
+        // only a warning, an unbalanced journal was saved, it had no journal
+        // number and the account balances were never updated.
+        $totalDebit = round($totalDebit, 2);
+        $totalCredit = round($totalCredit, 2);
 
+        if (!empty($journalEntries) && abs($totalDebit - $totalCredit) >= 0.005) {
+            $this->errors[] = 'Total debits (' . number_format($totalDebit, 2) . ') do not equal total credits ('
+                . number_format($totalCredit, 2) . '), a difference of ' . number_format(abs($totalDebit - $totalCredit), 2)
+                . '. Nothing was imported. Correct the file and import it again.';
+            $failed += $successful;
+            $successful = 0;
+            $journalEntries = [];
+        }
+
+        if (!empty($journalEntries)) {
             DB::transaction(function () use ($journalEntries, $asOfDate) {
                 $journal = Journal::create([
                     'tenant_id' => $this->tenantId,
+                    'journal_number' => Journal::generateNumber($this->tenantId),
                     'journal_date' => $asOfDate ?? now(),
                     'reference' => 'OB-' . date('Ymd'),
                     'description' => 'Opening Balances Import',
                     'status' => 'posted',
+                    'is_posted' => true,
+                    'posted_at' => now(),
                     'created_by' => auth()->id(),
                 ]);
 
@@ -1041,11 +1053,16 @@ class ImportService
                     JournalEntry::create([
                         'journal_id' => $journal->id,
                         'account_id' => $entry['account_id'],
-                        'debit' => $entry['debit'],
-                        'credit' => $entry['credit'],
+                        'debit' => round($entry['debit'], 2),
+                        'credit' => round($entry['credit'], 2),
                         'description' => $entry['description'],
                     ]);
                 }
+
+                $journal->updateTotals();
+
+                // Apply to account balances (checks the journal balances)
+                app(\App\Services\JournalService::class)->updateAccountBalances($journal);
             });
         }
 

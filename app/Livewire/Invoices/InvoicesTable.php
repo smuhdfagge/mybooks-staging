@@ -94,7 +94,6 @@ class InvoicesTable extends Component
     {
         return [
             'mark_sent' => 'send invoices',
-            'mark_paid' => 'create payments-received',
             'mark_cancelled' => 'edit invoices',
             'delete' => 'delete invoices',
         ];
@@ -118,31 +117,54 @@ class InvoicesTable extends Component
 
         switch ($this->bulkAction) {
             case 'mark_sent':
-                Invoice::whereIn('id', $this->selectedItems)
-                    ->where('status', 'draft')
-                    ->update(['status' => 'sent']);
-                $this->successMessage = "Successfully marked {$count} invoice(s) as sent.";
-                break;
-
-            case 'mark_paid':
-                $invoices = Invoice::whereIn('id', $this->selectedItems)
-                    ->whereIn('status', ['sent', 'overdue', 'partial'])
-                    ->get();
-                foreach ($invoices as $invoice) {
-                    $invoice->update([
-                        'status' => 'paid',
-                        'amount_paid' => $invoice->total,
-                        'balance_due' => 0,
-                    ]);
+                // Save each invoice so its journal is created and the closed-
+                // period check runs (C5). A query-builder update skipped both.
+                $sent = 0;
+                $failed = [];
+                foreach (Invoice::whereIn('id', $this->selectedItems)->where('status', 'draft')->get() as $invoice) {
+                    try {
+                        DB::transaction(fn () => $invoice->update(['status' => 'sent']));
+                        $sent++;
+                    } catch (\Throwable $e) {
+                        report($e);
+                        $failed[] = $invoice->invoice_number;
+                    }
                 }
-                $this->successMessage = "Successfully marked {$invoices->count()} invoice(s) as paid.";
+                $this->successMessage = "Marked {$sent} invoice(s) as sent.";
+                if ($failed) {
+                    $this->errorMessage = 'Not changed (closed period or invalid totals): ' . implode(', ', $failed) . '.';
+                }
                 break;
 
             case 'mark_cancelled':
-                Invoice::whereIn('id', $this->selectedItems)
-                    ->whereIn('status', ['draft', 'sent'])
-                    ->update(['status' => 'cancelled']);
-                $this->successMessage = "Successfully cancelled {$count} invoice(s).";
+                // Cancelling a posted invoice reverses its journal and releases
+                // any stock it reserved. Invoices with payments are skipped.
+                $cancelled = 0;
+                $skipped = 0;
+                $failed = [];
+                $invoices = Invoice::with('items')->whereIn('id', $this->selectedItems)
+                    ->whereIn('status', ['draft', 'sent', 'unpaid', 'overdue'])
+                    ->get();
+                foreach ($invoices as $invoice) {
+                    if ((float) $invoice->amount_paid > 0) {
+                        $skipped++;
+                        continue;
+                    }
+                    try {
+                        DB::transaction(function () use ($invoice) {
+                            $invoice->releaseInventoryReservation();
+                            $invoice->update(['status' => 'cancelled']);
+                        });
+                        $cancelled++;
+                    } catch (\Throwable $e) {
+                        report($e);
+                        $failed[] = $invoice->invoice_number;
+                    }
+                }
+                $this->successMessage = "Cancelled {$cancelled} invoice(s)." . ($skipped ? " Skipped {$skipped} with payments." : '');
+                if ($failed) {
+                    $this->errorMessage = 'Not cancelled (closed period or invalid totals): ' . implode(', ', $failed) . '.';
+                }
                 break;
 
             case 'delete':
