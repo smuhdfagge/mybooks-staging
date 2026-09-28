@@ -137,7 +137,8 @@ Route::prefix('v1')->group(function () {
         });
 
         // Sync (for offline mobile support)
-        Route::middleware('permission:view settings')->prefix('sync')->group(function () {
+        // Each entity checks its own view permission inside SyncController (I1).
+        Route::prefix('sync')->group(function () {
             Route::get('/', [SyncController::class, 'index'])->name('api.sync.index');
             Route::get('status', [SyncController::class, 'status'])->name('api.sync.status');
             Route::get('deleted', [SyncController::class, 'deleted'])->name('api.sync.deleted');

@@ -29,6 +29,38 @@ use Illuminate\Http\Request;
 class SyncController extends BaseApiController
 {
     /**
+     * Permission needed to sync each entity. Sync used to check only
+     * "view settings", so anyone with that could download invoices, bills,
+     * payments and accounts they are not allowed to see (finding I1).
+     */
+    private const PERMISSIONS = [
+        'customers' => 'view customers',
+        'vendors' => 'view vendors',
+        'items' => 'view items',
+        'accounts' => 'view chart-of-accounts',
+        'tax_rates' => 'view tax-rates',
+        'invoices' => 'view invoices',
+        'bills' => 'view bills',
+        'expenses' => 'view expenses',
+        'payments_received' => 'view payments-received',
+        'payments_made' => 'view payments-made',
+    ];
+
+    /**
+     * The requested entities the user may see (unknown names are dropped).
+     *
+     * @param  array<int, string>  $entities
+     * @return array<int, string>
+     */
+    private function allowedEntities(Request $request, array $entities): array
+    {
+        return array_values(array_filter(
+            array_map('trim', $entities),
+            fn ($entity) => isset(self::PERMISSIONS[$entity]) && $request->user()->can(self::PERMISSIONS[$entity])
+        ));
+    }
+
+    /**
      * Get all data modified since a given timestamp for offline sync
      *
      * Usage: GET /api/v1/sync?updated_since=2026-01-10T00:00:00Z
@@ -50,7 +82,8 @@ class SyncController extends BaseApiController
         // Parse requested entities (default: all)
         $requestedEntities = $request->get('entities')
             ? explode(',', $request->get('entities'))
-            : ['customers', 'vendors', 'items', 'accounts', 'tax_rates', 'invoices', 'bills', 'expenses', 'payments_received', 'payments_made'];
+            : array_keys(self::PERMISSIONS);
+        $requestedEntities = $this->allowedEntities($request, $requestedEntities);
 
         $data = [];
         $syncTimestamp = now()->toIso8601String();
@@ -188,6 +221,10 @@ class SyncController extends BaseApiController
             return $this->notFound("Entity '{$entity}' not found");
         }
 
+        if (! $request->user()->can(self::PERMISSIONS[$entity])) {
+            return $this->forbidden("You do not have permission to sync {$entity}");
+        }
+
         $data = $this->getSyncData(
             $entityConfig['model'],
             $entityConfig['resource'],
@@ -222,6 +259,7 @@ class SyncController extends BaseApiController
         $requestedEntities = $request->get('entities')
             ? explode(',', $request->get('entities'))
             : ['customers', 'vendors', 'items', 'invoices', 'bills', 'expenses'];
+        $requestedEntities = $this->allowedEntities($request, $requestedEntities);
 
         $deleted = [];
 
@@ -253,6 +291,7 @@ class SyncController extends BaseApiController
     public function status(Request $request): JsonResponse
     {
         $tenantId = $this->getTenantId();
+        $allowed = array_flip($this->allowedEntities($request, array_keys(self::PERMISSIONS)));
 
         $counts = [
             'customers' => Customer::where('tenant_id', $tenantId)->count(),
@@ -276,8 +315,8 @@ class SyncController extends BaseApiController
 
         return $this->success([
             'server_time' => now()->toIso8601String(),
-            'counts' => $counts,
-            'last_updated' => $lastUpdated,
+            'counts' => array_intersect_key($counts, $allowed),
+            'last_updated' => array_intersect_key($lastUpdated, $allowed),
         ]);
     }
 
