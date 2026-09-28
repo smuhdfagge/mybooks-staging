@@ -2,7 +2,10 @@
 
 namespace Tests\Feature\Regression;
 
+use App\Models\Customer;
 use App\Models\Employee;
+use App\Models\Expense;
+use App\Models\Invoice;
 use App\Models\Item;
 use App\Models\Payroll;
 use App\Models\SalaryStructure;
@@ -272,5 +275,111 @@ class PhaseARegressionTest extends TestCase
         ])->post(route('two-factor.confirm'), ['code' => $code]);
 
         $this->assertSame($before, $user->fresh()->two_factor_secret);
+    }
+
+    // ── I1, I3, I4: API rules ───────────────────────────────────
+
+    public function test_i1_sync_only_returns_what_the_user_may_view(): void
+    {
+        $this->createAuthenticatedUser(['view customers']);
+        Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        Invoice::withoutEvents(fn () => Invoice::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => Customer::factory()->create(['tenant_id' => $this->tenant->id])->id,
+        ]));
+
+        $data = $this->getJson(route('api.sync.index'))->assertOk()->json('data.data');
+
+        $this->assertArrayHasKey('customers', $data);
+        $this->assertArrayNotHasKey('invoices', $data);
+        $this->assertArrayNotHasKey('bills', $data);
+
+        $this->getJson(route('api.sync.entity', 'invoices'))->assertForbidden();
+        $this->getJson(route('api.sync.entity', 'customers'))->assertOk();
+        $this->assertArrayNotHasKey('invoices', $this->getJson(route('api.sync.status'))->json('data.counts'));
+    }
+
+    private function apiInvoice(array $attrs = []): Invoice
+    {
+        return Invoice::withoutEvents(fn () => Invoice::factory()->create(array_merge([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => Customer::factory()->create(['tenant_id' => $this->tenant->id])->id,
+        ], $attrs)));
+    }
+
+    public function test_i3_api_cannot_mark_an_invoice_paid(): void
+    {
+        $this->createAuthenticatedUser(['view invoices', 'edit invoices']);
+        $invoice = $this->apiInvoice(['status' => 'unpaid']);
+
+        $this->putJson(route('api.invoices.status', $invoice), ['status' => 'paid'])->assertStatus(422);
+
+        $this->assertSame('unpaid', $invoice->fresh()->status);
+    }
+
+    public function test_i3_api_cannot_cancel_an_invoice_with_payments(): void
+    {
+        $this->createAuthenticatedUser(['view invoices', 'edit invoices']);
+        $invoice = $this->apiInvoice(['status' => 'partial', 'amount_paid' => 500, 'balance_due' => 575]);
+
+        $this->putJson(route('api.invoices.status', $invoice), ['status' => 'cancelled'])->assertStatus(422);
+        $this->assertSame('partial', $invoice->fresh()->status);
+    }
+
+    public function test_i3_api_can_issue_a_draft_and_cancel_an_unpaid_invoice(): void
+    {
+        $this->createAuthenticatedUser(['view invoices', 'edit invoices']);
+        $draft = $this->apiInvoice(['status' => 'draft']);
+        $unpaid = $this->apiInvoice(['status' => 'unpaid']);
+
+        $this->putJson(route('api.invoices.status', $draft), ['status' => 'unpaid'])->assertOk();
+        $this->putJson(route('api.invoices.status', $unpaid), ['status' => 'cancelled'])->assertOk();
+
+        $this->assertSame('unpaid', $draft->fresh()->status);
+        $this->assertSame('cancelled', $unpaid->fresh()->status);
+        // An issued invoice can't go back to draft through the API.
+        $this->putJson(route('api.invoices.status', $draft), ['status' => 'draft'])->assertStatus(422);
+    }
+
+    public function test_i4_api_expense_approval_needs_an_admin_who_did_not_raise_it(): void
+    {
+        $clerk = $this->createAuthenticatedUser(['view expenses', 'edit expenses', 'create expenses']);
+        $expense = Expense::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'status' => Expense::STATUS_PENDING_APPROVAL,
+            'created_by' => $clerk->id,
+        ]);
+
+        // Not an admin
+        $this->postJson(route('api.expenses.approve', $expense))->assertForbidden();
+
+        // An admin approving their own expense
+        \App\Models\Role::query()->firstOrCreate(['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => null]);
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        $clerk->assignRole('admin');
+        $this->postJson(route('api.expenses.approve', $expense))->assertForbidden();
+
+        $this->assertSame(Expense::STATUS_PENDING_APPROVAL, $expense->fresh()->status);
+
+        // Another admin can
+        $manager = \App\Models\User::factory()->create(['tenant_id' => $this->tenant->id]);
+        $manager->givePermissionTo(['view expenses', 'edit expenses']);
+        $manager->assignRole('admin');
+        $this->actingAs($manager)->postJson(route('api.expenses.approve', $expense))->assertOk();
+        $this->assertSame(Expense::STATUS_APPROVED, $expense->fresh()->status);
+    }
+
+    public function test_i4_api_cannot_create_an_expense_already_approved_or_paid(): void
+    {
+        $this->createAuthenticatedUser(['view expenses', 'create expenses']);
+        $account = \App\Models\ChartOfAccount::factory()->create(['tenant_id' => $this->tenant->id, 'type' => 'expense']);
+
+        $this->postJson(route('api.expenses.store'), [
+            'expense_account_id' => $account->id,
+            'name' => 'Fuel',
+            'expense_date' => '2026-09-01',
+            'amount' => 5000,
+            'status' => 'paid',
+        ])->assertStatus(422)->assertJsonValidationErrors('status');
     }
 }
