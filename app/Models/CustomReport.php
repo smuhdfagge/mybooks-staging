@@ -206,6 +206,38 @@ class CustomReport extends Model
     }
 
     /**
+     * Validation rules for saving a report (finding M7): every column,
+     * filter, sort, grouping and aggregation must come from the chosen data
+     * source's allowed list.
+     */
+    public static function validationRules(?string $dataSource): array
+    {
+        $sources = static::getDataSources();
+        $source = $sources[$dataSource] ?? ['columns' => [], 'date_fields' => [], 'group_fields' => []];
+        $columns = array_keys($source['columns']);
+
+        return [
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'data_source' => ['required', \Illuminate\Validation\Rule::in(array_keys($sources))],
+            'columns' => 'required|array|min:1',
+            'columns.*' => ['required', 'string', \Illuminate\Validation\Rule::in($columns)],
+            'filters' => 'nullable|array',
+            'filters.*.column' => ['required', 'string', \Illuminate\Validation\Rule::in($columns)],
+            'filters.*.operator' => ['required', \Illuminate\Validation\Rule::in(array_keys(static::getFilterOperators()))],
+            'filters.*.value' => 'nullable',
+            'sort_by' => 'nullable|array',
+            'sort_by.*.column' => ['required', 'string', \Illuminate\Validation\Rule::in($columns)],
+            'sort_by.*.direction' => ['required', \Illuminate\Validation\Rule::in(['asc', 'desc'])],
+            'group_by' => ['nullable', 'string', \Illuminate\Validation\Rule::in($source['group_fields'] ?? [])],
+            'aggregations' => 'nullable|array',
+            'aggregations.*.column' => ['required', 'string', \Illuminate\Validation\Rule::in($columns)],
+            'aggregations.*.function' => ['required', \Illuminate\Validation\Rule::in(array_keys(static::getAggregations()))],
+            'date_field' => ['nullable', 'string', \Illuminate\Validation\Rule::in($source['date_fields'] ?? [])],
+        ];
+    }
+
+    /**
      * Get available aggregation functions
      */
     public static function getAggregations(): array

@@ -17,7 +17,7 @@ return new class extends Migration
         Permission::firstOrCreate(['name' => 'manage subscription', 'guard_name' => 'web']);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        Role::whereIn('name', ['super-admin', 'admin'])
+        Role::whereNull('tenant_id')->whereIn('name', ['super-admin', 'admin'])
             ->get()
             ->each(fn (Role $role) => $role->givePermissionTo('manage subscription'));
 

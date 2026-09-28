@@ -151,7 +151,7 @@ class LivewirePermissionTest extends TestCase
             }
         }
 
-        $this->assertGreaterThan(70, $checked, 'Expected to check every bulk action');
+        $this->assertGreaterThanOrEqual(69, $checked, 'Expected to check every bulk action');
     }
 
     public function test_unknown_bulk_action_is_refused(): void

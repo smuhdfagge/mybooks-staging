@@ -20,8 +20,8 @@ class EnsureTenantAdminRoles extends Command
 
         // Ensure the global admin role exists
         $adminRole = Role::firstOrCreate(
-            ['name' => 'admin', 'guard_name' => 'web'],
-            ['tenant_id' => null]
+            ['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => null],
+            []
         );
 
         $this->info("Admin role ID: {$adminRole->id}");

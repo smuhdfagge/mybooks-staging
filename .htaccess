@@ -1,4 +1,18 @@
+# MyBooks: the web server's document root should be the public/ folder.
+# This file is only a fallback for hosting where that can't be changed.
+
+# Never serve dotfiles (.env, .git, ...) from anywhere (finding L9).
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Without mod_rewrite the rule above does nothing and the project root
+# (.env, storage/, vendor/) would be served as plain files. Refuse instead.
+<IfModule !mod_rewrite.c>
+    Require all denied
 </IfModule>

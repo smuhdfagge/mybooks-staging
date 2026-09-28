@@ -47,7 +47,17 @@ class SecurityHeaders
 
         // ── Transport Security ──────────────────────────────────
         if ($request->secure() || config('app.env') === 'production') {
-            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+            // includeSubDomains and preload are opt-in (L10): once a domain is
+            // on the browsers' preload list, every subdomain must serve HTTPS
+            // for years, and removal is slow.
+            $hsts = 'max-age=31536000';
+            if (config('mybooks.hsts.include_subdomains')) {
+                $hsts .= '; includeSubDomains';
+                if (config('mybooks.hsts.preload')) {
+                    $hsts .= '; preload';
+                }
+            }
+            $response->headers->set('Strict-Transport-Security', $hsts);
         }
 
         // ── Cache Control (prevent caching of authenticated responses) ──

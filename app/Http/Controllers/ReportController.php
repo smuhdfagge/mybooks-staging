@@ -2768,11 +2768,7 @@ class ReportController extends Controller
      */
     public function customReportStore(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'data_source' => 'required|string',
-            'columns' => 'required|array|min:1',
-        ]);
+        $request->validate(CustomReport::validationRules($request->input('data_source')));
 
         $customReport = CustomReport::create([
             'tenant_id' => auth()->user()->tenant_id,
@@ -2814,11 +2810,7 @@ class ReportController extends Controller
     {
         $this->authorizeReport($customReport);
 
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'data_source' => 'required|string',
-            'columns' => 'required|array|min:1',
-        ]);
+        $request->validate(CustomReport::validationRules($request->input('data_source')));
 
         $customReport->update([
             'name' => $request->name,
@@ -2905,6 +2897,11 @@ class ReportController extends Controller
         if (!empty($customReport->sort_by)) {
             foreach ($customReport->sort_by as $sort) {
                 if (isset($sort['column']) && isset($sort['direction'])) {
+                    // Only the source's own columns, in a known direction (M7);
+                    // reports saved before this check may hold anything.
+                    if (! isset($sourceConfig['columns'][$sort['column']]) || ! in_array(strtolower((string) $sort['direction']), ['asc', 'desc'], true)) {
+                        continue;
+                    }
                     // Handle relation sorting
                     if (strpos($sort['column'], '.') !== false) {
                         // For simplicity, skip relation sorting in raw query
@@ -3025,8 +3022,9 @@ class ReportController extends Controller
             $operator = $filter['operator'];
             $value = $filter['value'] ?? null;
 
-            // Skip relation columns for now
-            if (strpos($column, '.') !== false) {
+            // Only the data source's allowed columns (M7), and not relation
+            // columns (not supported yet)
+            if (! isset($columnConfig[$column]) || strpos($column, '.') !== false) {
                 continue;
             }
 

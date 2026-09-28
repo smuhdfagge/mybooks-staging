@@ -25,19 +25,19 @@ class FixedAssetsPermissionsSeeder extends Seeder
         }
 
         // Assign to super-admin role (all permissions)
-        $superAdminRole = Role::where('name', 'super-admin')->first();
+        $superAdminRole = Role::whereNull('tenant_id')->where('name', 'super-admin')->first();
         if ($superAdminRole) {
             $superAdminRole->givePermissionTo($fixedAssetPermissions);
         }
 
         // Assign to admin role if exists
-        $adminRole = Role::where('name', 'admin')->first();
+        $adminRole = Role::whereNull('tenant_id')->where('name', 'admin')->first();
         if ($adminRole) {
             $adminRole->givePermissionTo($fixedAssetPermissions);
         }
 
         // Assign view/create/edit/depreciate to accountant role if exists
-        $accountantRole = Role::where('name', 'accountant')->first();
+        $accountantRole = Role::whereNull('tenant_id')->where('name', 'accountant')->first();
         if ($accountantRole) {
             $accountantRole->givePermissionTo([
                 'view fixed-assets',
