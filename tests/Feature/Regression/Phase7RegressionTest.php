@@ -104,4 +104,20 @@ class Phase7RegressionTest extends TestCase
 
         $this->get(route('reports.custom.run', $report))->assertOk();
     }
+
+    public function test_l1_salary_structure_form_escapes_old_input(): void
+    {
+        $this->createAuthenticatedUser(['create payroll', 'view payroll']);
+        $evil = "1';alert(document.cookie);//</script><script>alert(1)</script>";
+
+        $html = $this->withSession(['_old_input' => ['basic_salary' => $evil]])
+            ->get(route('salary-structures.create'))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringNotContainsString('<script>alert(1)</script>', $html);
+        $this->assertStringNotContainsString("'1';alert(document.cookie)", $html);
+        $this->assertStringNotContainsString('{!!', file_get_contents(resource_path('views/payroll/salary-structures/create.blade.php')));
+        $this->assertStringNotContainsString('{!!', file_get_contents(resource_path('views/payroll/salary-structures/edit.blade.php')));
+    }
 }

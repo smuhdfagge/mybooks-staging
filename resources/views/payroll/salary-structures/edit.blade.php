@@ -262,11 +262,11 @@
                 $deductionsData = old('deductions', $salaryStructure->deductions->map(fn($d) => ['name' => $d->name, 'amount_type' => $d->amount_type, 'amount' => $d->amount, 'is_taxable' => (string)$d->is_taxable])->values()->toArray()) ?: [['name' => '', 'amount_type' => 'fixed', 'amount' => '', 'is_taxable' => '0']];
             @endphp
             return {
-                basicSalary: '{!! old("basic_salary", $salaryStructure->basic_salary) !!}',
-                allowances: {!! json_encode($allowancesData) !!},
-                deductions: {!! json_encode($deductionsData) !!},
-                allowanceTemplates: {!! $allowanceTemplates->map(fn($a) => ['id' => $a->id, 'name' => $a->name, 'amount_type' => $a->amount_type, 'amount' => $a->amount, 'is_taxable' => (string)(int)$a->is_taxable])->values()->toJson() !!},
-                deductionTemplates: {!! $deductionTemplates->map(fn($d) => ['id' => $d->id, 'name' => $d->name, 'amount_type' => $d->amount_type, 'amount' => $d->amount, 'is_taxable' => (string)(int)$d->is_taxable])->values()->toJson() !!},
+                basicSalary: @js((string) old('basic_salary', $salaryStructure->basic_salary)),
+                allowances: @js($allowancesData),
+                deductions: @js($deductionsData),
+                allowanceTemplates: @js($allowanceTemplates->map(fn($a) => ['id' => $a->id, 'name' => $a->name, 'amount_type' => $a->amount_type, 'amount' => $a->amount, 'is_taxable' => (string)(int)$a->is_taxable])->values()),
+                deductionTemplates: @js($deductionTemplates->map(fn($d) => ['id' => $d->id, 'name' => $d->name, 'amount_type' => $d->amount_type, 'amount' => $d->amount, 'is_taxable' => (string)(int)$d->is_taxable])->values()),
 
                 onAllowanceSelected(index) {
                     let tpl = this.allowanceTemplates.find(t => t.name === this.allowances[index].name);
