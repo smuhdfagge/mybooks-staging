@@ -189,4 +189,74 @@ class Phase6RegressionTest extends TestCase
         }
         $this->get(route('reports.payroll-register'))->assertSee('Hauwa');
     }
+
+    private function purchaseOrder(string $status = 'received'): \App\Models\PurchaseOrder
+    {
+        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $item = \App\Models\Item::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Fish feed 15kg']);
+        $po = \App\Models\PurchaseOrder::create([
+            'tenant_id' => $this->tenant->id, 'vendor_id' => $vendor->id, 'order_number' => 'PO-000001',
+            'order_date' => now(), 'status' => $status, 'subtotal' => 50000, 'total' => 50000,
+        ]);
+        $po->items()->create([
+            'item_id' => $item->id, 'description' => 'Fish feed 15kg', 'quantity' => 10, 'quantity_received' => 8,
+            'unit_price' => 5000, 'tax_rate' => 0, 'tax_amount' => 0, 'total' => 50000,
+        ]);
+
+        return $po;
+    }
+
+    public function test_n8_convert_to_bill_fills_the_bill_from_the_order(): void
+    {
+        $this->createAuthenticatedUser(['view purchase-orders', 'edit purchase-orders', 'create bills']);
+        $po = $this->purchaseOrder();
+
+        $this->post(route('purchase-orders.convert-to-bill', $po))
+            ->assertRedirect(route('bills.create', ['purchase_order_id' => $po->id]));
+
+        $this->get(route('bills.create', ['purchase_order_id' => $po->id]))->assertOk()
+            ->assertSee('PO-000001')
+            ->assertSee('Fish feed 15kg')
+            ->assertSee('\u0022quantity\u0022:8,', false)   // what was received, not the 10 ordered
+            ->assertSee('name="purchase_order_id"', false);
+    }
+
+    public function test_n8_saving_the_bill_links_it_and_marks_the_order_billed(): void
+    {
+        $this->createAuthenticatedUser(['view purchase-orders', 'edit purchase-orders', 'create bills']);
+        $po = $this->purchaseOrder();
+        $line = $po->items()->first();
+        $payload = [
+            'purchase_order_id' => $po->id, 'vendor_id' => $po->vendor_id,
+            'bill_date' => now()->toDateString(), 'due_date' => now()->addDays(30)->toDateString(),
+            'items' => [['item_id' => $line->item_id, 'description' => 'Fish feed 15kg', 'quantity' => 8, 'unit_price' => 5000, 'tax_rate' => 0]],
+        ];
+
+        $this->post(route('bills.store'), $payload)->assertSessionHasNoErrors();
+
+        $bill = \App\Models\Bill::sole();
+        $this->assertSame($po->id, $bill->purchase_order_id);
+        $this->assertSame('billed', $po->fresh()->status);
+        $this->assertCount(1, $po->fresh()->bills);
+
+        // Can't be billed twice
+        $this->post(route('purchase-orders.convert-to-bill', $po))->assertSessionHas('error');
+        $this->post(route('bills.store'), $payload)->assertSessionHasErrors('purchase_order_id');
+        $this->assertSame(1, \App\Models\Bill::count());
+    }
+
+    public function test_n8_bill_vendor_must_match_the_order(): void
+    {
+        $this->createAuthenticatedUser(['create bills']);
+        $po = $this->purchaseOrder();
+        $other = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $this->post(route('bills.store'), [
+            'purchase_order_id' => $po->id, 'vendor_id' => $other->id,
+            'bill_date' => now()->toDateString(), 'due_date' => now()->addDays(30)->toDateString(),
+            'items' => [['description' => 'x', 'quantity' => 1, 'unit_price' => 1]],
+        ])->assertSessionHasErrors('vendor_id');
+
+        $this->assertSame('received', $po->fresh()->status);
+    }
 }

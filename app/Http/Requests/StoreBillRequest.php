@@ -18,6 +18,7 @@ class StoreBillRequest extends FormRequest
 
         return [
             'vendor_id' => ['required', Rule::exists('vendors', 'id')->where('tenant_id', $tenantId)],
+            'purchase_order_id' => ['nullable', Rule::exists('purchase_orders', 'id')->where('tenant_id', $tenantId)->whereNull('deleted_at')],
             'bill_date' => ['required', 'date'],
             'due_date' => ['required', 'date', 'after_or_equal:bill_date'],
             'reference' => ['nullable', 'string', 'max:100'],
