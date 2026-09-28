@@ -27,19 +27,19 @@ class DashboardWidgetPermissionsSeeder extends Seeder
         }
 
         // Super Admin - all widgets
-        $superAdmin = Role::where('name', 'super-admin')->first();
+        $superAdmin = Role::whereNull('tenant_id')->where('name', 'super-admin')->first();
         if ($superAdmin) {
             $superAdmin->givePermissionTo($widgetPermissions);
         }
 
         // Admin - all widgets
-        $admin = Role::where('name', 'admin')->first();
+        $admin = Role::whereNull('tenant_id')->where('name', 'admin')->first();
         if ($admin) {
             $admin->givePermissionTo($widgetPermissions);
         }
 
         // Accountant - financial widgets
-        $accountant = Role::where('name', 'accountant')->first();
+        $accountant = Role::whereNull('tenant_id')->where('name', 'accountant')->first();
         if ($accountant) {
             $accountant->givePermissionTo([
                 'total-revenue dashboard-widgets',
@@ -53,7 +53,7 @@ class DashboardWidgetPermissionsSeeder extends Seeder
         }
 
         // Sales - sales-related widgets
-        $sales = Role::where('name', 'sales')->first();
+        $sales = Role::whereNull('tenant_id')->where('name', 'sales')->first();
         if ($sales) {
             $sales->givePermissionTo([
                 'total-revenue dashboard-widgets',
@@ -64,7 +64,7 @@ class DashboardWidgetPermissionsSeeder extends Seeder
         }
 
         // HR Manager - employee widget
-        $hr = Role::where('name', 'hr-manager')->first();
+        $hr = Role::whereNull('tenant_id')->where('name', 'hr-manager')->first();
         if ($hr) {
             $hr->givePermissionTo([
                 'employees-count dashboard-widgets',
@@ -73,7 +73,7 @@ class DashboardWidgetPermissionsSeeder extends Seeder
         }
 
         // Viewer - read-only overview widgets
-        $viewer = Role::where('name', 'viewer')->first();
+        $viewer = Role::whereNull('tenant_id')->where('name', 'viewer')->first();
         if ($viewer) {
             $viewer->givePermissionTo([
                 'total-revenue dashboard-widgets',

@@ -137,16 +137,16 @@ class DatabaseSeeder extends Seeder
     private function createRoles(): void
     {
         // Super Admin - has all permissions including tenant management
-        $superAdmin = Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+        $superAdmin = Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web', 'tenant_id' => null]);
         $superAdmin->syncPermissions(Permission::all());
         
         // Admin - full access within tenant (excluding tenant management)
-        $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => null]);
         $adminPermissions = Permission::where('name', '!=', 'manage tenants')->pluck('name')->toArray();
         $admin->syncPermissions($adminPermissions);
         
         // Accountant
-        $accountant = Role::firstOrCreate(['name' => 'accountant', 'guard_name' => 'web']);
+        $accountant = Role::firstOrCreate(['name' => 'accountant', 'guard_name' => 'web', 'tenant_id' => null]);
         $accountant->syncPermissions([
             'view dashboard',
             'total-revenue dashboard-widgets', 'outstanding-receivables dashboard-widgets',
@@ -170,7 +170,7 @@ class DatabaseSeeder extends Seeder
         ]);
         
         // Sales
-        $sales = Role::firstOrCreate(['name' => 'sales', 'guard_name' => 'web']);
+        $sales = Role::firstOrCreate(['name' => 'sales', 'guard_name' => 'web', 'tenant_id' => null]);
         $sales->syncPermissions([
             'view dashboard',
             'total-revenue dashboard-widgets', 'outstanding-receivables dashboard-widgets',
@@ -185,7 +185,7 @@ class DatabaseSeeder extends Seeder
         ]);
         
         // HR Manager
-        $hr = Role::firstOrCreate(['name' => 'hr-manager', 'guard_name' => 'web']);
+        $hr = Role::firstOrCreate(['name' => 'hr-manager', 'guard_name' => 'web', 'tenant_id' => null]);
         $hr->syncPermissions([
             'view dashboard',
             'employees-count dashboard-widgets', 'quick-actions dashboard-widgets',
@@ -199,7 +199,7 @@ class DatabaseSeeder extends Seeder
         ]);
         
         // Viewer
-        $viewer = Role::firstOrCreate(['name' => 'viewer', 'guard_name' => 'web']);
+        $viewer = Role::firstOrCreate(['name' => 'viewer', 'guard_name' => 'web', 'tenant_id' => null]);
         $viewer->syncPermissions([
             'view dashboard',
             'total-revenue dashboard-widgets', 'outstanding-receivables dashboard-widgets',

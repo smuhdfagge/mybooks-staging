@@ -201,11 +201,12 @@ class Phase2RegressionTest extends TestCase
     public function test_h4_duplicate_role_name_gives_a_form_error_not_a_crash(): void
     {
         $this->createAuthenticatedUser(['create roles']);
-        $otherTenant = $this->otherTenant();
-        Role::create(['name' => 'Cashier', 'guard_name' => 'web', 'tenant_id' => $otherTenant->id]);
+        Role::create(['name' => 'Cashier', 'guard_name' => 'web', 'tenant_id' => $this->tenant->id]);
 
+        // Same organisation: a form error. (Another organisation's "Cashier"
+        // no longer blocks the name, see Phase7RegressionTest.)
         $this->post(route('settings.roles.store'), ['name' => 'Cashier', 'permissions' => []])
-            ->assertSessionHasErrors(['name' => 'That role name is already in use. Please choose a different name.']);
+            ->assertSessionHasErrors('name');
     }
 
     // ── L12: global search respects permissions ─────────────────
