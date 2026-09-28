@@ -67,4 +67,41 @@ class Phase7RegressionTest extends TestCase
             ->assertSessionHasErrors('name');
         $this->assertSame(0, Role::where('tenant_id', $this->tenant->id)->count());
     }
+
+    public function test_m7_custom_report_rejects_columns_outside_the_data_source(): void
+    {
+        $this->createAuthenticatedUser(['view reports']);
+        $base = ['name' => 'Test', 'data_source' => 'invoices', 'columns' => ['invoice_number', 'total']];
+
+        $this->post(route('reports.custom.store'), array_merge($base, ['columns' => ['invoice_number', 'tenant_id']]))
+            ->assertSessionHasErrors('columns.1');
+        $this->post(route('reports.custom.store'), array_merge($base, ['filters' => [['column' => 'deleted_at', 'operator' => 'is_null']]]))
+            ->assertSessionHasErrors('filters.0.column');
+        $this->post(route('reports.custom.store'), array_merge($base, ['sort_by' => [['column' => 'total', 'direction' => 'sideways']]]))
+            ->assertSessionHasErrors('sort_by.0.direction');
+        $this->post(route('reports.custom.store'), array_merge($base, ['aggregations' => [['column' => 'total', 'function' => 'drop']]]))
+            ->assertSessionHasErrors('aggregations.0.function');
+        $this->post(route('reports.custom.store'), array_merge($base, ['data_source' => 'users']))
+            ->assertSessionHasErrors('data_source');
+        $this->assertSame(0, \App\Models\CustomReport::count());
+
+        $this->post(route('reports.custom.store'), $base + [
+            'filters' => [['column' => 'status', 'operator' => 'equals', 'value' => 'sent']],
+            'sort_by' => [['column' => 'total', 'direction' => 'desc']],
+        ])->assertSessionHasNoErrors();
+        $this->assertSame(1, \App\Models\CustomReport::count());
+    }
+
+    public function test_m7_old_reports_with_unknown_columns_still_run(): void
+    {
+        $this->createAuthenticatedUser(['view reports']);
+        $report = \App\Models\CustomReport::create([
+            'tenant_id' => $this->tenant->id, 'created_by' => $this->user->id, 'name' => 'Old', 'data_source' => 'invoices',
+            'columns' => ['invoice_number'],
+            'filters' => [['column' => 'no_such_column', 'operator' => 'equals', 'value' => 'x']],
+            'sort_by' => [['column' => 'no_such_column', 'direction' => 'asc']],
+        ]);
+
+        $this->get(route('reports.custom.run', $report))->assertOk();
+    }
 }
