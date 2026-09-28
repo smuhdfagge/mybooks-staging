@@ -136,7 +136,7 @@
         @endcanany
 
         <!-- Human Resource Module -->
-        @canany(['view employees', 'view departments', 'view designations', 'view leaves'])
+        @canany(['view employees', 'view departments', 'view designations', 'view leaves', 'view leave-types'])
         <div x-data="{ open: {{ request()->is('hr*') || request()->is('employees*') || request()->is('departments*') ? 'true' : 'false' }} }">
             <button @click="open = !open" 
                     class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors">
@@ -159,6 +159,9 @@
                 @endcan
                 @can('view designations')
                 <a href="{{ route('designations.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('designations.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Designation</a>
+                @endcan
+                @can('view leave-types')
+                <a href="{{ route('leave-types.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('leave-types.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Leave Types</a>
                 @endcan
                 @can('view leaves')
                 <a href="{{ route('leaves.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('leaves.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Leaves</a>

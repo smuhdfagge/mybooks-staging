@@ -30,7 +30,6 @@ class RouteIntegrityTest extends TestCase
     private const KNOWN_MISSING_VIEWS = [
         // Older gaps (N9)
         'exports.show',
-        'leave-types.create', 'leave-types.edit', 'leave-types.index', 'leave-types.show',
         // Unrouted TenantManagementController (L3, to be deleted)
         'tenants.index', 'tenants.list', 'tenants.show',
     ];

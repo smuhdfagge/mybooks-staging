@@ -98,4 +98,27 @@ class Phase6RegressionTest extends TestCase
         $this->put(route('departments.update', $parent), ['name' => 'Operations', 'parent_id' => $child->id])
             ->assertSessionHasErrors('parent_id');
     }
+
+    public function test_n9_leave_types_can_be_managed_and_keep_their_days(): void
+    {
+        $this->createAuthenticatedUser(['view leave-types', 'create leave-types', 'edit leave-types']);
+
+        $this->get(route('leave-types.index'))->assertOk()->assertSee('No leave types yet');
+        $this->get(route('leave-types.create'))->assertOk();
+
+        $this->post(route('leave-types.store'), [
+            'name' => 'Annual leave', 'code' => 'AL', 'days_per_year' => 21, 'is_paid' => '1', 'is_active' => '1',
+        ])->assertRedirect(route('leave-types.index'));
+
+        $type = \App\Models\LeaveType::sole();
+        $this->assertSame(21, $type->days_per_year);   // was lost before (days_allowed)
+        $this->get(route('leave-types.show', $type))->assertOk()->assertSee('Annual leave');
+        $this->get(route('leave-types.edit', $type))->assertOk();
+
+        $this->put(route('leave-types.update', $type), ['name' => 'Annual leave', 'days_per_year' => 24, 'is_active' => '0'])
+            ->assertRedirect(route('leave-types.index'));
+        $this->assertSame(24, $type->fresh()->days_per_year);
+        $this->assertFalse($type->fresh()->is_active);
+        $this->assertFalse($type->fresh()->is_paid);
+    }
 }
