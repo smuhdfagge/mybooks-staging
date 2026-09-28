@@ -73,7 +73,7 @@ composer analyse           # PHPStan; new code must not add to phpstan-baseline.
    ```
    * * * * * cd /path/to/mybooks && php artisan schedule:run >> /dev/null 2>&1
    ```
-5. **Queue.** Large payroll batches, imports and exports run on the queue. Keep `php artisan queue:work` running (Supervisor or similar). On shared hosting that can't do that, set `QUEUE_WORK_FROM_SCHEDULER=true` and the scheduler empties the queue every minute.
+5. **Queue.** Emails, large payroll batches, imports and exports run on the queue. The scheduler (step 4) empties it every minute, so shared hosting needs nothing more. If Supervisor keeps `php artisan queue:work --timeout=600` running, you can set `QUEUE_WORK_FROM_SCHEDULER=false`. Keep `DB_QUEUE_RETRY_AFTER` above 600.
 6. **First time billing is switched on.** Run `php artisan subscriptions:grace --days=14` once (try `--dry-run` first). Organisations already past their end date then get two weeks to pay instead of being locked out immediately.
 
 Take a database backup before every deploy. Deploy one phase of changes at a time.

@@ -12,13 +12,13 @@ Artisan::command('inspire', function () {
 |--------------------------------------------------------------------------
 | Queue worker for shared hosting
 |--------------------------------------------------------------------------
-| Large payroll batches, imports and exports run on the queue. If the server
-| can't keep "php artisan queue:work" running (shared hosting), set
-| QUEUE_WORK_FROM_SCHEDULER=true and the scheduler empties the queue every
-| minute instead.
+| Emails, large payroll batches, imports and exports run on the queue. The
+| scheduler empties it every minute unless QUEUE_WORK_FROM_SCHEDULER=false
+| (only worth doing when Supervisor keeps "php artisan queue:work" running).
+| --timeout lets the longest jobs (600s) finish.
 */
 if (config('mybooks.queue_work_from_scheduler')) {
-    Schedule::command('queue:work --stop-when-empty --max-time=55 --tries=1')
+    Schedule::command('queue:work --stop-when-empty --max-time=55 --timeout=600 --tries=1')
         ->everyMinute()
         ->withoutOverlapping()
         ->onOneServer();

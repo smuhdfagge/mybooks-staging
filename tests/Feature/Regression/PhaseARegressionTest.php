@@ -382,4 +382,28 @@ class PhaseARegressionTest extends TestCase
             'status' => 'paid',
         ])->assertStatus(422)->assertJsonValidationErrors('status');
     }
+
+    // ── R5: queue on shared hosting ─────────────────────────────
+
+    public function test_r5_a_long_job_is_not_handed_to_a_second_worker_while_it_runs(): void
+    {
+        $retryAfter = config('queue.connections.database.retry_after');
+
+        foreach (glob(app_path('Jobs/*.php')) as $file) {
+            $class = 'App\\Jobs\\'.basename($file, '.php');
+            $timeout = (new \ReflectionClass($class))->getDefaultProperties()['timeout'] ?? 60;
+            $this->assertGreaterThan($timeout, $retryAfter, "{$class} can run {$timeout}s but the queue retries after {$retryAfter}s, so it would run twice");
+        }
+    }
+
+    public function test_r5_the_scheduler_runs_the_queue_by_default(): void
+    {
+        $this->assertTrue(config('mybooks.queue_work_from_scheduler'));
+
+        $commands = collect(app(\Illuminate\Console\Scheduling\Schedule::class)->events())
+            ->map(fn ($e) => $e->command ?? '')
+            ->filter(fn ($c) => str_contains($c, 'queue:work'));
+
+        $this->assertCount(1, $commands);
+    }
 }

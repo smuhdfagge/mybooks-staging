@@ -121,11 +121,15 @@ return [
     | Queue worker from the scheduler (finding N7)
     |--------------------------------------------------------------------------
     |
-    | On hosting that can't keep "php artisan queue:work" running, set this
-    | to true and the scheduler empties the queue every minute.
+    | The scheduler empties the queue every minute, so emails, payroll
+    | batches, imports and exports go out on hosting that can't keep
+    | "php artisan queue:work" running (most shared hosting). On by default
+    | since round 3 (finding R5): with it off and no worker, queued emails
+    | never left. If Supervisor runs a worker, it can be switched off, but
+    | leaving it on does no harm.
     |
     */
 
-    'queue_work_from_scheduler' => (bool) env('QUEUE_WORK_FROM_SCHEDULER', false),
+    'queue_work_from_scheduler' => (bool) env('QUEUE_WORK_FROM_SCHEDULER', true),
 
 ];
