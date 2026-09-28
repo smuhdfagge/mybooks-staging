@@ -2,25 +2,32 @@
 
 namespace App\Livewire\TaxRates;
 
+use App\Livewire\Concerns\ChecksPermissions;
 use App\Models\TaxRate;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Livewire\Concerns\ChecksPermissions;
 
 class TaxRatesTable extends Component
 {
     use ChecksPermissions, WithPagination;
 
     public $search = '';
+
     public $appliesTo = '';
+
     public $showInactive = false;
+
     public $perPage = 15;
 
     // Bulk operation properties
     public $selectedItems = [];
+
     public $selectAll = false;
+
     public $bulkAction = '';
+
     public $successMessage = '';
+
     public $errorMessage = '';
 
     protected $queryString = [
@@ -59,7 +66,7 @@ class TaxRatesTable extends Component
     {
         $this->requirePermission('edit tax-rates');
 
-        if (!$taxRate->is_default) {
+        if (! $taxRate->is_default) {
             $taxRate->setAsDefault();
             session()->flash('message', 'Default tax rate updated.');
         }
@@ -69,7 +76,7 @@ class TaxRatesTable extends Component
     {
         $this->requirePermission('edit tax-rates');
 
-        $taxRate->update(['is_active' => !$taxRate->is_active]);
+        $taxRate->update(['is_active' => ! $taxRate->is_active]);
         session()->flash('message', 'Tax rate status updated.');
     }
 
@@ -102,12 +109,12 @@ class TaxRatesTable extends Component
             $query->where('applies_to', $this->appliesTo);
         }
 
-        if (!$this->showInactive) {
+        if (! $this->showInactive) {
             $query->where('is_active', true);
         }
 
         return $query->pluck('id')
-            ->map(fn($id) => (string) $id)
+            ->map(fn ($id) => (string) $id)
             ->toArray();
     }
 
@@ -130,11 +137,13 @@ class TaxRatesTable extends Component
 
         if (empty($this->selectedItems)) {
             $this->errorMessage = 'Please select at least one tax rate.';
+
             return;
         }
 
         if (empty($this->bulkAction)) {
             $this->errorMessage = 'Please select an action.';
+
             return;
         }
 
@@ -156,32 +165,36 @@ class TaxRatesTable extends Component
             case 'delete':
                 $deletedCount = 0;
                 $skippedCount = 0;
-                
+
                 foreach ($this->selectedItems as $taxRateId) {
                     $taxRate = TaxRate::find($taxRateId);
-                    if (!$taxRate) continue;
-                    
+                    if (! $taxRate) {
+                        continue;
+                    }
+
                     // Check if tax rate is used in tax groups or transactions
                     if ($taxRate->taxGroups()->exists()) {
                         $skippedCount++;
+
                         continue;
                     }
-                    
+
                     $taxRate->delete();
                     $deletedCount++;
                 }
-                
+
                 if ($deletedCount > 0 && $skippedCount > 0) {
                     $this->successMessage = "Deleted {$deletedCount} tax rate(s). Skipped {$skippedCount} tax rate(s) used in tax groups.";
                 } elseif ($deletedCount > 0) {
                     $this->successMessage = "Successfully deleted {$deletedCount} tax rate(s).";
                 } else {
-                    $this->errorMessage = "Could not delete any tax rates. All selected tax rates are used in tax groups.";
+                    $this->errorMessage = 'Could not delete any tax rates. All selected tax rates are used in tax groups.';
                 }
                 break;
 
             default:
                 $this->errorMessage = 'Invalid action selected.';
+
                 return;
         }
 
@@ -207,7 +220,7 @@ class TaxRatesTable extends Component
             $query->where('applies_to', $this->appliesTo);
         }
 
-        if (!$this->showInactive) {
+        if (! $this->showInactive) {
             $query->where('is_active', true);
         }
 

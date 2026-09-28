@@ -2,20 +2,23 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class StockTransfer extends Model
 {
-    use HasFactory, BelongsToTenant, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity;
 
     const STATUS_DRAFT = 'draft';
+
     const STATUS_IN_TRANSIT = 'in_transit';
+
     const STATUS_COMPLETED = 'completed';
+
     const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [
@@ -68,7 +71,7 @@ class StockTransfer extends Model
 
         $nextNumber = $latest ? ((int) substr($latest->transfer_number, 3)) + 1 : 1;
 
-        return 'ST-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+        return 'ST-'.str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -82,7 +85,7 @@ class StockTransfer extends Model
 
         foreach ($this->items as $transferItem) {
             $item = $transferItem->item;
-            if (!$item || !$item->track_inventory) {
+            if (! $item || ! $item->track_inventory) {
                 continue;
             }
 
@@ -127,7 +130,7 @@ class StockTransfer extends Model
 
         foreach ($this->items as $transferItem) {
             $item = $transferItem->item;
-            if (!$item || !$item->track_inventory) {
+            if (! $item || ! $item->track_inventory) {
                 continue;
             }
 

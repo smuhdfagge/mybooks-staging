@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Invoice;
 use App\Models\Bill;
-use App\Models\Expense;
 use App\Models\Employee;
+use App\Models\Expense;
 use App\Models\Inventory;
+use App\Models\Invoice;
 
 class DashboardController extends Controller
 {
@@ -41,7 +41,7 @@ class DashboardController extends Controller
                     $query->where('status', 'overdue')
                         ->orWhere(function ($q) {
                             $q->whereIn('status', ['unpaid', 'partial'])
-                              ->where('due_date', '<', now());
+                                ->where('due_date', '<', now());
                         });
                 })
                 ->count();

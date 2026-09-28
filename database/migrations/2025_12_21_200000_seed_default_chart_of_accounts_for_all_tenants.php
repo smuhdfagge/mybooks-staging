@@ -1,13 +1,13 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
 use App\Services\ChartOfAccountService;
+use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
+     *
      * This migration ensures all existing tenants have the default chart of accounts.
      * New tenants will automatically get the default accounts via the Tenant model's
      * booted method.
@@ -16,7 +16,7 @@ return new class extends Migration
     {
         // Seed default chart of accounts for all existing tenants
         $summary = ChartOfAccountService::seedAllTenants();
-        
+
         // Log the summary (optional - useful for debugging)
         if ($summary['tenants_seeded'] > 0) {
             \Illuminate\Support\Facades\Log::info('Default Chart of Accounts seeded', $summary);
@@ -25,7 +25,7 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
-     * 
+     *
      * Note: We don't remove the accounts on rollback as they may have
      * been used in transactions. Only remove system accounts that have
      * no journal entries.

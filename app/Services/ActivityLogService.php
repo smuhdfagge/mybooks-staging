@@ -135,7 +135,7 @@ class ActivityLogService
             ],
             'ip_address' => Request::ip(),
             'user_agent' => Request::userAgent(),
-            'description' => "Full backup created (format: {$format}, includes: " . implode(', ', $includedData) . ")",
+            'description' => "Full backup created (format: {$format}, includes: ".implode(', ', $includedData).')',
         ]);
     }
 
@@ -160,7 +160,7 @@ class ActivityLogService
             'model_type' => $modelType,
             'model_id' => $modelId,
             'model_name' => $modelName,
-            'new_values' => !empty($properties) ? $properties : null,
+            'new_values' => ! empty($properties) ? $properties : null,
             'ip_address' => Request::ip(),
             'user_agent' => Request::userAgent(),
             'description' => $description,
@@ -327,7 +327,7 @@ class ActivityLogService
             'description' => $description,
         ]);
 
-        if (!$user?->tenant_id) {
+        if (! $user?->tenant_id) {
             $log->skipTenantGuard = true;
         }
 

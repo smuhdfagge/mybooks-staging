@@ -2,22 +2,22 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\MorphOne;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Events\InvoiceDeleting;
+use App\Events\InvoiceSaved;
+use App\Services\JournalService;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
-use App\Events\InvoiceSaved;
-use App\Events\InvoiceDeleting;
-use App\Services\JournalService;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Invoice extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, ValidatesAccountingPeriod, \App\Traits\KeepsTotalsBalanced;
+    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     protected $fillable = [
         'tenant_id',
@@ -128,6 +128,7 @@ class Invoice extends Model
     public function createJournalEntry(): ?Journal
     {
         $journalService = app(JournalService::class);
+
         return $journalService->createInvoiceJournal($this);
     }
 
@@ -150,9 +151,10 @@ class Invoice extends Model
             ->where('tenant_id', $tenantId)
             ->latest('id')
             ->first();
-        
+
         $number = $lastInvoice ? intval(substr($lastInvoice->invoice_number, 4)) + 1 : 1;
-        return 'INV-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+        return 'INV-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -175,9 +177,10 @@ class Invoice extends Model
             ->whereNotNull('waybill_number')
             ->latest('id')
             ->first();
-        
+
         $number = $lastWaybill ? intval(substr($lastWaybill->waybill_number, 3)) + 1 : 1;
-        return 'WB-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+        return 'WB-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     public function isReleased()
@@ -187,7 +190,7 @@ class Invoice extends Model
 
     public function canBeReleased()
     {
-        return $this->status === 'paid' && !$this->isReleased();
+        return $this->status === 'paid' && ! $this->isReleased();
     }
 
     /**
@@ -310,7 +313,7 @@ class Invoice extends Model
                 $item = Item::find($invoiceItem->item_id);
 
                 // Skip for services or items that don't track inventory
-                if (!$item || !$item->track_inventory || $item->type === 'service') {
+                if (! $item || ! $item->track_inventory || $item->type === 'service') {
                     continue;
                 }
 

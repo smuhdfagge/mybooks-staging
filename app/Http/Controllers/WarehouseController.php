@@ -38,7 +38,7 @@ class WarehouseController extends Controller
 
         $warehouse = Warehouse::create($validated);
 
-        if (!empty($validated['is_default'])) {
+        if (! empty($validated['is_default'])) {
             $warehouse->setAsDefault();
         }
 
@@ -65,7 +65,7 @@ class WarehouseController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:20|unique:warehouses,code,' . $warehouse->id,
+            'code' => 'required|string|max:20|unique:warehouses,code,'.$warehouse->id,
             'address' => 'nullable|string',
             'contact_person' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:50',
@@ -76,7 +76,7 @@ class WarehouseController extends Controller
 
         $warehouse->update($validated);
 
-        if (!empty($validated['is_default'])) {
+        if (! empty($validated['is_default'])) {
             $warehouse->setAsDefault();
         }
 

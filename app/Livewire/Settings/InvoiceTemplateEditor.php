@@ -2,43 +2,68 @@
 
 namespace App\Livewire\Settings;
 
+use App\Livewire\Concerns\ChecksPermissions;
 use App\Models\InvoiceTemplate;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
-use App\Livewire\Concerns\ChecksPermissions;
 
 class InvoiceTemplateEditor extends Component
 {
     use ChecksPermissions;
 
     public ?InvoiceTemplate $template = null;
+
     public string $name = '';
+
     public array $settings = [];
+
     public bool $isNew = false;
 
     // Settings properties bound to form
     public string $primary_color = '#3B82F6';
+
     public string $secondary_color = '#1F2937';
+
     public string $accent_color = '#059669';
+
     public string $font_family = 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif';
+
     public string $font_size = '13';
+
     public string $header_bg_color = '#FFFFFF';
+
     public string $header_text_color = '#1F2937';
+
     public string $table_header_bg = '#F9FAFB';
+
     public string $table_header_text = '#6B7280';
+
     public string $table_border_color = '#E5E7EB';
+
     public string $footer_bg_color = '#F9FAFB';
+
     public string $footer_text_color = '#6B7280';
+
     public bool $show_logo = true;
+
     public bool $show_status_badge = true;
+
     public bool $show_tax_column = true;
+
     public bool $show_payment_info = true;
+
     public bool $show_notes = true;
+
     public bool $show_terms = true;
+
     public bool $show_footer = true;
+
     public string $footer_text = 'Thank you for your business!';
+
     public string $layout = 'classic';
+
     public string $border_style = 'solid';
+
     public string $border_width = '3';
 
     /**
@@ -151,6 +176,7 @@ class InvoiceTemplateEditor extends Component
             $this->isNew = false;
 
             session()->flash('success', 'Invoice template created successfully.');
+
             return redirect()->route('settings.invoice-templates.edit', $this->template);
         }
 
@@ -166,7 +192,7 @@ class InvoiceTemplateEditor extends Component
     {
         $this->requirePermission('edit settings');
 
-        if (!$this->template) {
+        if (! $this->template) {
             return;
         }
 

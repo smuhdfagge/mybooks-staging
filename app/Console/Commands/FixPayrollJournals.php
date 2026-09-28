@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Models\Journal;
-use App\Models\JournalEntry;
 use App\Models\Payroll;
 use App\Services\JournalService;
 use Illuminate\Console\Command;
@@ -12,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 class FixPayrollJournals extends Command
 {
     protected $signature = 'payroll:fix-journals {tenant_id}';
+
     protected $description = 'Regenerate journal entries for paid payroll records';
 
     public function handle(JournalService $journalService): int
@@ -28,6 +28,7 @@ class FixPayrollJournals extends Command
 
         if ($paidPayrolls->isEmpty()) {
             $this->warn('No paid payroll records to fix.');
+
             return 0;
         }
 
@@ -58,7 +59,7 @@ class FixPayrollJournals extends Command
             } catch (\Exception $e) {
                 $errors++;
                 $this->newLine();
-                $this->error("Error on {$payroll->payroll_number}: " . $e->getMessage());
+                $this->error("Error on {$payroll->payroll_number}: ".$e->getMessage());
             }
 
             $bar->advance();

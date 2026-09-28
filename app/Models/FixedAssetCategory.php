@@ -2,17 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class FixedAssetCategory extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'tenant_id',
@@ -33,8 +33,11 @@ class FixedAssetCategory extends Model
 
     // Depreciation Methods
     const METHOD_STRAIGHT_LINE = 'straight_line';
+
     const METHOD_DECLINING_BALANCE = 'declining_balance';
+
     const METHOD_DOUBLE_DECLINING = 'double_declining';
+
     const METHOD_SUM_OF_YEARS = 'sum_of_years';
 
     public static function getDepreciationMethods(): array

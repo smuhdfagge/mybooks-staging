@@ -2,24 +2,27 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Item extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
 
     const VALUATION_WEIGHTED_AVERAGE = 'weighted_average';
+
     const VALUATION_FIFO = 'fifo';
 
     const TRACKING_NONE = 'none';
+
     const TRACKING_BATCH = 'batch';
+
     const TRACKING_SERIAL = 'serial';
 
     protected $fillable = [
@@ -77,7 +80,7 @@ class Item extends Model
      */
     public function getEffectiveTaxRateAttribute(): ?float
     {
-        if (!$this->is_taxable) {
+        if (! $this->is_taxable) {
             return 0;
         }
 
@@ -105,9 +108,9 @@ class Item extends Model
         // Last resort: find any active default sales tax for this tenant
         $defaultTax = TaxRate::where('tenant_id', $this->tenant_id)
             ->where('is_active', true)
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->where('applies_to', 'sales')
-                  ->orWhere('applies_to', 'both');
+                    ->orWhere('applies_to', 'both');
             })
             ->where('is_default', true)
             ->first();
@@ -124,7 +127,7 @@ class Item extends Model
      */
     public function calculateTax(float $amount): float
     {
-        if (!$this->is_taxable) {
+        if (! $this->is_taxable) {
             return 0;
         }
 

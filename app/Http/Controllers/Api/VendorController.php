@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Vendor;
 use App\Http\Resources\VendorResource;
-use Illuminate\Http\Request;
+use App\Models\Vendor;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class VendorController extends BaseApiController
 {

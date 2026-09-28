@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Customer;
 use App\Http\Resources\CustomerResource;
-use Illuminate\Http\Request;
+use App\Models\Customer;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class CustomerController extends BaseApiController
 {

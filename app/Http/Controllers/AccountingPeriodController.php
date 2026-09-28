@@ -14,7 +14,7 @@ class AccountingPeriodController extends Controller
     {
         $periods = AccountingPeriod::orderBy('start_date', 'desc')->get();
         $fiscalYears = AccountingPeriod::distinct()->pluck('fiscal_year')->filter()->sort()->reverse();
-        
+
         return view('accounting-periods.index', compact('periods', 'fiscalYears'));
     }
 
@@ -41,7 +41,7 @@ class AccountingPeriodController extends Controller
                     ->orWhereBetween('end_date', [$validated['start_date'], $validated['end_date']])
                     ->orWhere(function ($q) use ($validated) {
                         $q->where('start_date', '<=', $validated['start_date'])
-                          ->where('end_date', '>=', $validated['end_date']);
+                            ->where('end_date', '>=', $validated['end_date']);
                     });
             })
             ->exists();
@@ -66,7 +66,7 @@ class AccountingPeriodController extends Controller
     {
         // Get summary of transactions in this period
         $summary = $this->getPeriodSummary($accountingPeriod);
-        
+
         return view('accounting-periods.show', compact('accountingPeriod', 'summary'));
     }
 
@@ -159,7 +159,7 @@ class AccountingPeriodController extends Controller
                 ->with('error', 'Locked periods cannot be reopened. This is a permanent year-end closing.');
         }
 
-        if (!$accountingPeriod->isClosed()) {
+        if (! $accountingPeriod->isClosed()) {
             return redirect()->route('accounting-periods.show', $accountingPeriod)
                 ->with('error', 'This period is already open.');
         }
@@ -202,7 +202,7 @@ class AccountingPeriodController extends Controller
                 ->with('success', $message);
         } catch (\Exception $e) {
             return redirect()->route('accounting-periods.show', $accountingPeriod)
-                ->with('error', 'Year-end close failed: ' . $e->getMessage());
+                ->with('error', 'Year-end close failed: '.$e->getMessage());
         }
     }
 
@@ -234,7 +234,7 @@ class AccountingPeriodController extends Controller
         );
 
         return redirect()->route('accounting-periods.index')
-            ->with('success', 'Monthly periods generated for fiscal year ' . $validated['fiscal_year']);
+            ->with('success', 'Monthly periods generated for fiscal year '.$validated['fiscal_year']);
     }
 
     /**
@@ -253,33 +253,33 @@ class AccountingPeriodController extends Controller
                 ->whereNull('deleted_at')
                 ->selectRaw('COUNT(*) as count, COALESCE(SUM(total), 0) as total')
                 ->first(),
-            
+
             'bills' => DB::table('bills')
                 ->where('tenant_id', $tenantId)
                 ->whereBetween('bill_date', [$startDate, $endDate])
                 ->whereNull('deleted_at')
                 ->selectRaw('COUNT(*) as count, COALESCE(SUM(total), 0) as total')
                 ->first(),
-            
+
             'expenses' => DB::table('expenses')
                 ->where('tenant_id', $tenantId)
                 ->whereBetween('expense_date', [$startDate, $endDate])
                 ->whereNull('deleted_at')
                 ->selectRaw('COUNT(*) as count, COALESCE(SUM(total), 0) as total')
                 ->first(),
-            
+
             'payments_received' => DB::table('payments_received')
                 ->where('tenant_id', $tenantId)
                 ->whereBetween('payment_date', [$startDate, $endDate])
                 ->selectRaw('COUNT(*) as count, COALESCE(SUM(amount), 0) as total')
                 ->first(),
-            
+
             'payments_made' => DB::table('payments_made')
                 ->where('tenant_id', $tenantId)
                 ->whereBetween('payment_date', [$startDate, $endDate])
                 ->selectRaw('COUNT(*) as count, COALESCE(SUM(amount), 0) as total')
                 ->first(),
-            
+
             'journals' => DB::table('journals')
                 ->where('tenant_id', $tenantId)
                 ->whereBetween('journal_date', [$startDate, $endDate])

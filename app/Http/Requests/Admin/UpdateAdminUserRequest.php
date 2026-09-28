@@ -20,7 +20,7 @@ class UpdateAdminUserRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:admin_users,email,' . $adminUser->id],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:admin_users,email,'.$adminUser->id],
             'password' => ['nullable', 'confirmed', Password::defaults()],
             'role' => ['required', Rule::in(AdminUser::ROLES)],
         ];

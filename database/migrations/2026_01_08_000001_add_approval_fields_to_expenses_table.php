@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreignId('rejected_by')->nullable()->after('rejection_reason')->constrained('users')->nullOnDelete();
             $table->timestamp('rejected_at')->nullable()->after('rejected_by');
             $table->timestamp('submitted_at')->nullable()->after('rejected_at');
-            
+
             // Add index for faster status filtering
             $table->index('status');
         });

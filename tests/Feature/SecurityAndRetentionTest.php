@@ -15,10 +15,10 @@ class SecurityAndRetentionTest extends TestCase
         return Employee::withoutEvents(function () use ($attrs) {
             return Employee::create(array_merge([
                 'tenant_id' => $this->tenant->id,
-                'employee_id' => 'EMP-' . str_pad(rand(1, 99999), 5, '0', STR_PAD_LEFT),
+                'employee_id' => 'EMP-'.str_pad(rand(1, 99999), 5, '0', STR_PAD_LEFT),
                 'first_name' => 'Test',
                 'last_name' => 'Employee',
-                'email' => 'test' . rand(1, 99999) . '@example.com',
+                'email' => 'test'.rand(1, 99999).'@example.com',
                 'hire_date' => now()->subYear(),
                 'status' => 'active',
             ], $attrs));

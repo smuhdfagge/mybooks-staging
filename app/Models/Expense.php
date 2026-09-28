@@ -2,27 +2,31 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\MorphOne;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Events\ExpenseDeleting;
+use App\Events\ExpensePaid;
+use App\Services\JournalService;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
-use App\Events\ExpensePaid;
-use App\Events\ExpenseDeleting;
-use App\Services\JournalService;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Expense extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, ValidatesAccountingPeriod, \App\Traits\KeepsTotalsBalanced;
+    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     // Status constants
     const STATUS_DRAFT = 'draft';
+
     const STATUS_PENDING_APPROVAL = 'pending_approval';
+
     const STATUS_APPROVED = 'approved';
+
     const STATUS_REJECTED = 'rejected';
+
     const STATUS_PAID = 'paid';
 
     protected $fillable = [
@@ -118,9 +122,10 @@ class Expense extends Model
             ->where('tenant_id', $tenantId)
             ->latest('id')
             ->first();
-        
+
         $number = $lastExpense ? intval(substr($lastExpense->expense_number, 4)) + 1 : 1;
-        return 'EXP-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+        return 'EXP-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     /** @return MorphOne<Journal, $this> */
@@ -135,6 +140,7 @@ class Expense extends Model
     public function createJournalEntry(): ?Journal
     {
         $journalService = app(JournalService::class);
+
         return $journalService->createExpenseJournal($this);
     }
 
@@ -165,7 +171,7 @@ class Expense extends Model
      */
     public function getStatusColorAttribute(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             self::STATUS_DRAFT => 'gray',
             self::STATUS_PENDING_APPROVAL => 'yellow',
             self::STATUS_APPROVED => 'blue',
@@ -260,7 +266,7 @@ class Expense extends Model
      */
     public function submitForApproval(): bool
     {
-        if (!$this->canBeSubmitted()) {
+        if (! $this->canBeSubmitted()) {
             return false;
         }
 
@@ -280,7 +286,7 @@ class Expense extends Model
      */
     public function approve(int $approverId): bool
     {
-        if (!$this->canBeApproved()) {
+        if (! $this->canBeApproved()) {
             return false;
         }
 
@@ -298,7 +304,7 @@ class Expense extends Model
      */
     public function reject(int $rejectorId, ?string $reason = null): bool
     {
-        if (!$this->canBeRejected()) {
+        if (! $this->canBeRejected()) {
             return false;
         }
 
@@ -319,7 +325,7 @@ class Expense extends Model
      */
     public function markAsPaid(): bool
     {
-        if (!$this->canBeMarkedAsPaid()) {
+        if (! $this->canBeMarkedAsPaid()) {
             return false;
         }
 

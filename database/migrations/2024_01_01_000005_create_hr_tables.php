@@ -18,7 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('manager_id')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
+
             $table->index(['tenant_id', 'name']);
         });
 
@@ -32,7 +32,7 @@ return new class extends Migration
             $table->integer('level')->default(1);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
+
             $table->index(['tenant_id', 'name']);
         });
 
@@ -70,7 +70,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->timestamps();
             $table->softDeletes();
-            
+
             $table->index(['tenant_id', 'employee_id']);
             $table->index(['tenant_id', 'status']);
         });
@@ -92,7 +92,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
+
             $table->index(['tenant_id', 'name']);
         });
 
@@ -111,7 +111,7 @@ return new class extends Migration
             $table->text('rejection_reason')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
-            
+
             $table->index(['tenant_id', 'employee_id']);
             $table->index(['tenant_id', 'status']);
         });
@@ -141,7 +141,7 @@ return new class extends Migration
             $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('approved_at')->nullable();
             $table->timestamps();
-            
+
             $table->index(['tenant_id', 'payroll_number']);
             $table->index(['tenant_id', 'status']);
             $table->index(['tenant_id', 'pay_date']);

@@ -5,12 +5,12 @@ namespace App\Services;
 use App\Models\AccountingPeriod;
 use App\Models\ChartOfAccount;
 use App\Models\Journal;
-use App\Models\JournalEntry;
 use Illuminate\Support\Facades\DB;
 
 class YearEndCloseService
 {
     const ACCOUNT_RETAINED_EARNINGS = '3200';
+
     const ACCOUNT_INCOME_SUMMARY = '3300';
 
     protected JournalService $journalService;
@@ -30,8 +30,8 @@ class YearEndCloseService
      * 4. Closes Income Summary to Retained Earnings
      * 5. Locks the accounting period
      *
-     * @param AccountingPeriod $period The year-end period to close
-     * @param string|null $notes Optional closing notes
+     * @param  AccountingPeriod  $period  The year-end period to close
+     * @param  string|null  $notes  Optional closing notes
      * @return array Summary of the closing process
      */
     public function performYearEndClose(AccountingPeriod $period, ?string $notes = null): array
@@ -58,7 +58,7 @@ class YearEndCloseService
             $closingEntries = [];
 
             // Step 2: Close revenue accounts → Income Summary
-            if (!empty($incomeAccounts)) {
+            if (! empty($incomeAccounts)) {
                 $journal = $this->createClosingJournal(
                     $tenantId,
                     $endDate,
@@ -93,7 +93,7 @@ class YearEndCloseService
             }
 
             // Step 3: Close expense accounts → Income Summary
-            if (!empty($expenseAccounts)) {
+            if (! empty($expenseAccounts)) {
                 $journal = $this->createClosingJournal(
                     $tenantId,
                     $endDate,

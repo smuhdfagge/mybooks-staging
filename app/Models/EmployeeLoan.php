@@ -2,24 +2,29 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class EmployeeLoan extends Model
 {
-    use SoftDeletes, BelongsToTenant, LogsActivity;
+    use BelongsToTenant, LogsActivity, SoftDeletes;
 
     const TYPE_LOAN = 'loan';
+
     const TYPE_ADVANCE = 'advance';
+
     const TYPE_SALARY_ADVANCE = 'salary_advance';
 
     const STATUS_ACTIVE = 'active';
+
     const STATUS_COMPLETED = 'completed';
+
     const STATUS_CANCELLED = 'cancelled';
+
     const STATUS_PAUSED = 'paused';
 
     protected $fillable = [
@@ -89,7 +94,8 @@ class EmployeeLoan extends Model
             ->first();
 
         $number = $last ? intval(substr($last->loan_number, 5)) + 1 : 1;
-        return 'LOAN-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+        return 'LOAN-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     /**

@@ -2,20 +2,19 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
-use App\Models\ActivityLog;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Journal extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, ValidatesAccountingPeriod;
+    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     protected $fillable = [
         'tenant_id',
@@ -71,9 +70,10 @@ class Journal extends Model
             ->where('tenant_id', $tenantId)
             ->latest('id')
             ->first();
-        
+
         $number = $lastJournal ? intval(substr($lastJournal->journal_number, 3)) + 1 : 1;
-        return 'JE-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+        return 'JE-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     public function isBalanced(): bool
@@ -100,7 +100,7 @@ class Journal extends Model
             throw new \Exception('Journal has no lines to post.');
         }
 
-        if (!$this->isBalanced()) {
+        if (! $this->isBalanced()) {
             throw new \Exception('Journal entries must be balanced before posting.');
         }
 
@@ -112,7 +112,7 @@ class Journal extends Model
                 $delta = (float) ($entry->credit - $entry->debit);
             }
             ChartOfAccount::where('id', $account->id)
-                ->update(['current_balance' => \DB::raw('current_balance + (' . (float) $delta . ')')]);
+                ->update(['current_balance' => \DB::raw('current_balance + ('.(float) $delta.')')]);
         }
 
         $this->is_posted = true;

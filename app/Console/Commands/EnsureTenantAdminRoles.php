@@ -55,6 +55,7 @@ class EnsureTenantAdminRoles extends Command
         foreach ($firstUsers as $user) {
             if ($user->hasRole('admin')) {
                 $alreadyOk++;
+
                 continue;
             }
 
@@ -69,7 +70,7 @@ class EnsureTenantAdminRoles extends Command
 
         $this->newLine();
         $this->info("Already OK: {$alreadyOk}");
-        $this->info(($dryRun ? 'Would fix' : 'Fixed') . ": {$fixed}");
+        $this->info(($dryRun ? 'Would fix' : 'Fixed').": {$fixed}");
 
         if ($dryRun && $fixed > 0) {
             $this->newLine();

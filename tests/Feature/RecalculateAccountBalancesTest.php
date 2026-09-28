@@ -20,6 +20,7 @@ class RecalculateAccountBalancesTest extends TestCase
 
         if ($account) {
             $account->update(['current_balance' => $balance]);
+
             return $account->fresh();
         }
 

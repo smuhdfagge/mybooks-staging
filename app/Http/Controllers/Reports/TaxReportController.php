@@ -4,28 +4,9 @@ namespace App\Http\Controllers\Reports;
 
 use App\Models\Bill;
 use App\Models\BillItem;
-use App\Models\ChartOfAccount;
-use App\Models\CustomReport;
-use App\Models\Customer;
-use App\Models\Department;
-use App\Models\Employee;
-use App\Models\Expense;
-use App\Models\Inventory;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
-use App\Models\Item;
-use App\Models\Journal;
-use App\Models\JournalEntry;
-use App\Models\PaymentMade;
-use App\Models\PaymentReceived;
-use App\Models\Payroll;
-use App\Models\PayrollBatch;
-use App\Models\SalaryStructureVersion;
 use App\Models\TaxRate;
-use App\Models\Vendor;
-use App\Services\ReportExportService;
-use App\Services\Reports\PayrollReportService;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -55,11 +36,11 @@ class TaxReportController extends ReportController
 
         // Output Tax (Sales) - Tax collected on sales
         $outputTaxQuery = InvoiceItem::select(
-                'invoice_items.tax_rate',
-                DB::raw('SUM(invoice_items.quantity * invoice_items.unit_price) as taxable_amount'),
-                DB::raw('SUM(invoice_items.tax_amount) as tax_amount'),
-                DB::raw('COUNT(DISTINCT invoice_items.invoice_id) as transaction_count')
-            )
+            'invoice_items.tax_rate',
+            DB::raw('SUM(invoice_items.quantity * invoice_items.unit_price) as taxable_amount'),
+            DB::raw('SUM(invoice_items.tax_amount) as tax_amount'),
+            DB::raw('COUNT(DISTINCT invoice_items.invoice_id) as transaction_count')
+        )
             ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
             ->where('invoices.tenant_id', $tenantId)
             ->whereBetween('invoices.invoice_date', [$startDate, $endDate])
@@ -79,11 +60,11 @@ class TaxReportController extends ReportController
 
         // Input Tax (Purchases) - Tax paid on purchases
         $inputTaxQuery = BillItem::select(
-                'bill_items.tax_rate',
-                DB::raw('SUM(bill_items.quantity * bill_items.unit_price) as taxable_amount'),
-                DB::raw('SUM(bill_items.tax_amount) as tax_amount'),
-                DB::raw('COUNT(DISTINCT bill_items.bill_id) as transaction_count')
-            )
+            'bill_items.tax_rate',
+            DB::raw('SUM(bill_items.quantity * bill_items.unit_price) as taxable_amount'),
+            DB::raw('SUM(bill_items.tax_amount) as tax_amount'),
+            DB::raw('COUNT(DISTINCT bill_items.bill_id) as transaction_count')
+        )
             ->join('bills', 'bill_items.bill_id', '=', 'bills.id')
             ->where('bills.tenant_id', $tenantId)
             ->whereBetween('bills.bill_date', [$startDate, $endDate])
@@ -106,7 +87,7 @@ class TaxReportController extends ReportController
         $totalOutputTaxable = $outputTaxByRate->sum('taxable_amount');
         $totalInputTax = $inputTaxByRate->sum('tax_amount');
         $totalInputTaxable = $inputTaxByRate->sum('taxable_amount');
-        
+
         // Net VAT/GST payable (or refundable if negative)
         $netTaxPayable = $totalOutputTax - $totalInputTax;
 
@@ -149,7 +130,7 @@ class TaxReportController extends ReportController
         $groupBy = $request->get('group_by', 'month'); // month, quarter, tax_rate
 
         // Allowlist to prevent unexpected input flowing into SQL helpers
-        if (!in_array($groupBy, ['month', 'quarter', 'year'], true)) {
+        if (! in_array($groupBy, ['month', 'quarter', 'year'], true)) {
             $groupBy = 'month';
         }
 
@@ -161,11 +142,11 @@ class TaxReportController extends ReportController
 
         // Tax Collected (Sales Tax / Output VAT)
         $taxCollectedQuery = Invoice::select(
-                DB::raw($this->getDateGrouping('invoices.invoice_date', $groupBy) . ' as period'),
-                DB::raw('SUM(invoices.tax_amount) as tax_amount'),
-                DB::raw('SUM(invoices.subtotal) as taxable_sales'),
-                DB::raw('COUNT(*) as invoice_count')
-            )
+            DB::raw($this->getDateGrouping('invoices.invoice_date', $groupBy).' as period'),
+            DB::raw('SUM(invoices.tax_amount) as tax_amount'),
+            DB::raw('SUM(invoices.subtotal) as taxable_sales'),
+            DB::raw('COUNT(*) as invoice_count')
+        )
             ->where('tenant_id', $tenantId)
             ->whereBetween('invoice_date', [$startDate, $endDate])
             ->whereIn('status', ['sent', 'paid', 'partial', 'overdue'])
@@ -176,11 +157,11 @@ class TaxReportController extends ReportController
 
         // Tax Paid (Input VAT / Purchase Tax)
         $taxPaidQuery = Bill::select(
-                DB::raw($this->getDateGrouping('bills.bill_date', $groupBy) . ' as period'),
-                DB::raw('SUM(bills.tax_amount) as tax_amount'),
-                DB::raw('SUM(bills.subtotal) as taxable_purchases'),
-                DB::raw('COUNT(*) as bill_count')
-            )
+            DB::raw($this->getDateGrouping('bills.bill_date', $groupBy).' as period'),
+            DB::raw('SUM(bills.tax_amount) as tax_amount'),
+            DB::raw('SUM(bills.subtotal) as taxable_purchases'),
+            DB::raw('COUNT(*) as bill_count')
+        )
             ->where('tenant_id', $tenantId)
             ->whereBetween('bill_date', [$startDate, $endDate])
             ->whereIn('status', ['approved', 'paid', 'partial', 'overdue'])
@@ -191,10 +172,10 @@ class TaxReportController extends ReportController
 
         // Tax by Rate breakdown
         $taxByRateOutput = InvoiceItem::select(
-                'invoice_items.tax_rate',
-                DB::raw('SUM(invoice_items.tax_amount) as tax_amount'),
-                DB::raw('SUM(invoice_items.quantity * invoice_items.unit_price) as taxable_amount')
-            )
+            'invoice_items.tax_rate',
+            DB::raw('SUM(invoice_items.tax_amount) as tax_amount'),
+            DB::raw('SUM(invoice_items.quantity * invoice_items.unit_price) as taxable_amount')
+        )
             ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
             ->where('invoices.tenant_id', $tenantId)
             ->whereBetween('invoices.invoice_date', [$startDate, $endDate])
@@ -205,10 +186,10 @@ class TaxReportController extends ReportController
             ->get();
 
         $taxByRateInput = BillItem::select(
-                'bill_items.tax_rate',
-                DB::raw('SUM(bill_items.tax_amount) as tax_amount'),
-                DB::raw('SUM(bill_items.quantity * bill_items.unit_price) as taxable_amount')
-            )
+            'bill_items.tax_rate',
+            DB::raw('SUM(bill_items.tax_amount) as tax_amount'),
+            DB::raw('SUM(bill_items.quantity * bill_items.unit_price) as taxable_amount')
+        )
             ->join('bills', 'bill_items.bill_id', '=', 'bills.id')
             ->where('bills.tenant_id', $tenantId)
             ->whereBetween('bills.bill_date', [$startDate, $endDate])
@@ -221,11 +202,11 @@ class TaxReportController extends ReportController
         // Combine periods for liability calculation
         $periods = collect();
         $allPeriods = $taxCollected->pluck('period')->merge($taxPaid->pluck('period'))->unique()->sort();
-        
+
         foreach ($allPeriods as $period) {
             $collected = $taxCollected->firstWhere('period', $period);
             $paid = $taxPaid->firstWhere('period', $period);
-            
+
             $periods->push([
                 'period' => $period,
                 'period_label' => $this->formatPeriodLabel($period, $groupBy),
@@ -251,6 +232,7 @@ class TaxReportController extends ReportController
         $periodsWithCumulative = $periods->map(function ($period) use (&$cumulativeLiability) {
             $cumulativeLiability += $period['net_liability'];
             $period['cumulative_liability'] = $cumulativeLiability;
+
             return $period;
         });
 

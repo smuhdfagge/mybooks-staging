@@ -8,7 +8,7 @@ class ErrorPageTest extends TestCase
 {
     public function test_404_page_renders(): void
     {
-        $response = $this->get('/this-page-does-not-exist-' . uniqid());
+        $response = $this->get('/this-page-does-not-exist-'.uniqid());
         $response->assertStatus(404);
         $response->assertSee('404');
         $response->assertSee('Page Not Found');

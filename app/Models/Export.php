@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\BelongsToTenant;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Export extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     protected $fillable = [
         'tenant_id',
@@ -39,29 +39,47 @@ class Export extends Model
 
     // Status constants
     const STATUS_PENDING = 'pending';
+
     const STATUS_PROCESSING = 'processing';
+
     const STATUS_COMPLETED = 'completed';
+
     const STATUS_FAILED = 'failed';
 
     // Type constants
     const TYPE_FULL_BACKUP = 'full_backup';
+
     const TYPE_CUSTOMERS = 'customers';
+
     const TYPE_VENDORS = 'vendors';
+
     const TYPE_ITEMS = 'items';
+
     const TYPE_INVOICES = 'invoices';
+
     const TYPE_BILLS = 'bills';
+
     const TYPE_EXPENSES = 'expenses';
+
     const TYPE_EMPLOYEES = 'employees';
+
     const TYPE_PAYROLL = 'payroll';
+
     const TYPE_JOURNALS = 'journals';
+
     const TYPE_CHART_OF_ACCOUNTS = 'chart_of_accounts';
+
     const TYPE_ACTIVITY_LOGS = 'activity_logs';
 
     // Format constants
     const FORMAT_CSV = 'csv';
+
     const FORMAT_XLSX = 'xlsx';
+
     const FORMAT_PDF = 'pdf';
+
     const FORMAT_JSON = 'json';
+
     const FORMAT_ZIP = 'zip';
 
     /** @return BelongsTo<User, $this> */
@@ -126,8 +144,8 @@ class Export extends Model
      */
     public function isDownloadable(): bool
     {
-        return $this->status === self::STATUS_COMPLETED 
-            && $this->file_path 
+        return $this->status === self::STATUS_COMPLETED
+            && $this->file_path
             && \Illuminate\Support\Facades\Storage::disk('exports')->exists($this->file_path);
     }
 
@@ -144,7 +162,7 @@ class Export extends Model
      */
     public function getFormattedFileSizeAttribute(): string
     {
-        if (!$this->file_size) {
+        if (! $this->file_size) {
             return '-';
         }
 
@@ -157,7 +175,7 @@ class Export extends Model
             $unit++;
         }
 
-        return round($size, 2) . ' ' . $units[$unit];
+        return round($size, 2).' '.$units[$unit];
     }
 
     /**
@@ -165,7 +183,7 @@ class Export extends Model
      */
     public function getStatusBadgeClassAttribute(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             self::STATUS_PENDING => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
             self::STATUS_PROCESSING => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
             self::STATUS_COMPLETED => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
@@ -197,7 +215,7 @@ class Export extends Model
     {
         return $query->where(function ($q) {
             $q->whereNull('expires_at')
-              ->orWhere('expires_at', '>', now());
+                ->orWhere('expires_at', '>', now());
         });
     }
 }

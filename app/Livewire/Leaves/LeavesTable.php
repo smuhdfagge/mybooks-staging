@@ -2,30 +2,40 @@
 
 namespace App\Livewire\Leaves;
 
+use App\Livewire\Concerns\ChecksPermissions;
+use App\Models\Employee;
 use App\Models\Leave;
 use App\Models\LeaveType;
-use App\Models\Employee;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Livewire\Concerns\ChecksPermissions;
 
 class LeavesTable extends Component
 {
     use ChecksPermissions, WithPagination;
 
     public $search = '';
+
     public $status = '';
+
     public $leaveType = '';
+
     public $employee = '';
+
     public $sortField = 'start_date';
+
     public $sortDirection = 'desc';
+
     public $perPage = 10;
 
     // Bulk operation properties
     public $selectedItems = [];
+
     public $selectAll = false;
+
     public $bulkAction = '';
+
     public $successMessage = '';
+
     public $errorMessage = '';
 
     protected $queryString = [
@@ -88,15 +98,15 @@ class LeavesTable extends Component
     {
         return Leave::query()
             ->with(['employee'])
-            ->when($this->search, fn($q) => $q->whereHas('employee', function($query) {
+            ->when($this->search, fn ($q) => $q->whereHas('employee', function ($query) {
                 $query->where('first_name', 'like', "%{$this->search}%")
                     ->orWhere('last_name', 'like', "%{$this->search}%");
             }))
-            ->when($this->status, fn($q) => $q->where('status', $this->status))
-            ->when($this->leaveType, fn($q) => $q->where('leave_type_id', $this->leaveType))
-            ->when($this->employee, fn($q) => $q->where('employee_id', $this->employee))
+            ->when($this->status, fn ($q) => $q->where('status', $this->status))
+            ->when($this->leaveType, fn ($q) => $q->where('leave_type_id', $this->leaveType))
+            ->when($this->employee, fn ($q) => $q->where('employee_id', $this->employee))
             ->pluck('id')
-            ->map(fn($id) => (string) $id)
+            ->map(fn ($id) => (string) $id)
             ->toArray();
     }
 
@@ -119,11 +129,13 @@ class LeavesTable extends Component
 
         if (empty($this->selectedItems)) {
             $this->errorMessage = 'Please select at least one leave request.';
+
             return;
         }
 
         if (empty($this->bulkAction)) {
             $this->errorMessage = 'Please select an action.';
+
             return;
         }
 
@@ -138,8 +150,9 @@ class LeavesTable extends Component
 
                 foreach ($this->selectedItems as $leaveId) {
                     $leave = Leave::find($leaveId);
-                    if (!$leave || $leave->status !== 'pending') {
+                    if (! $leave || $leave->status !== 'pending') {
                         $skippedCount++;
+
                         continue;
                     }
 
@@ -157,7 +170,7 @@ class LeavesTable extends Component
                         $this->successMessage .= " Skipped {$skippedCount} non-pending request(s).";
                     }
                 } else {
-                    $this->errorMessage = "No pending leave requests to approve.";
+                    $this->errorMessage = 'No pending leave requests to approve.';
                 }
                 break;
 
@@ -167,8 +180,9 @@ class LeavesTable extends Component
 
                 foreach ($this->selectedItems as $leaveId) {
                     $leave = Leave::find($leaveId);
-                    if (!$leave || $leave->status !== 'pending') {
+                    if (! $leave || $leave->status !== 'pending') {
                         $skippedCount++;
+
                         continue;
                     }
 
@@ -186,7 +200,7 @@ class LeavesTable extends Component
                         $this->successMessage .= " Skipped {$skippedCount} non-pending request(s).";
                     }
                 } else {
-                    $this->errorMessage = "No pending leave requests to reject.";
+                    $this->errorMessage = 'No pending leave requests to reject.';
                 }
                 break;
 
@@ -196,10 +210,13 @@ class LeavesTable extends Component
 
                 foreach ($this->selectedItems as $leaveId) {
                     $leave = Leave::find($leaveId);
-                    if (!$leave) continue;
+                    if (! $leave) {
+                        continue;
+                    }
 
                     if ($leave->status !== 'pending') {
                         $skippedCount++;
+
                         continue;
                     }
 
@@ -212,12 +229,13 @@ class LeavesTable extends Component
                 } elseif ($deletedCount > 0) {
                     $this->successMessage = "Successfully deleted {$deletedCount} leave request(s).";
                 } else {
-                    $this->errorMessage = "Could not delete any leave requests. Only pending leaves can be deleted.";
+                    $this->errorMessage = 'Could not delete any leave requests. Only pending leaves can be deleted.';
                 }
                 break;
 
             default:
                 $this->errorMessage = 'Invalid action selected.';
+
                 return;
         }
 
@@ -230,13 +248,13 @@ class LeavesTable extends Component
     {
         $leaves = Leave::query()
             ->with(['employee', 'leaveType', 'approvedBy'])
-            ->when($this->search, fn($q) => $q->whereHas('employee', function($query) {
+            ->when($this->search, fn ($q) => $q->whereHas('employee', function ($query) {
                 $query->where('first_name', 'like', "%{$this->search}%")
                     ->orWhere('last_name', 'like', "%{$this->search}%");
             }))
-            ->when($this->status, fn($q) => $q->where('status', $this->status))
-            ->when($this->leaveType, fn($q) => $q->where('leave_type_id', $this->leaveType))
-            ->when($this->employee, fn($q) => $q->where('employee_id', $this->employee))
+            ->when($this->status, fn ($q) => $q->where('status', $this->status))
+            ->when($this->leaveType, fn ($q) => $q->where('leave_type_id', $this->leaveType))
+            ->when($this->employee, fn ($q) => $q->where('employee_id', $this->employee))
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
 

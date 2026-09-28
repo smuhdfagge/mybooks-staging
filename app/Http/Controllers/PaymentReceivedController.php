@@ -2,19 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PaymentReceived;
-use App\Models\Invoice;
-use App\Models\Customer;
 use App\Models\Bank;
-use App\Models\CustomerDepositApplication;
+use App\Models\Customer;
+use App\Models\Invoice;
 use App\Models\NotificationSetting;
+use App\Models\PaymentReceived;
 use App\Services\BankService;
 use App\Services\NotificationService;
-use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 use App\Services\PaymentValidation;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class PaymentReceivedController extends Controller
 {
@@ -35,18 +34,18 @@ class PaymentReceivedController extends Controller
         $invoice = $invoiceId ? Invoice::find($invoiceId) : null;
         $paymentNumber = PaymentReceived::generateNumber(auth()->user()->tenant_id);
         $banks = Bank::where('is_active', true)->orderBy('name')->get();
-        
+
         // Get all unpaid invoices for dynamic filtering
         $unpaidInvoices = Invoice::whereIn('status', ['draft', 'sent', 'unpaid', 'partial'])
             ->select('id', 'customer_id', 'invoice_number', 'balance_due', 'total')
             ->get();
-        
+
         // Get customer deposits for applying to invoices
         $customerDeposits = PaymentReceived::where('is_deposit', true)
             ->where('unused_amount', '>', 0)
             ->select('id', 'customer_id', 'payment_number', 'unused_amount', 'payment_date')
             ->get();
-        
+
         return view('payments-received.create', compact('customers', 'invoice', 'paymentNumber', 'unpaidInvoices', 'customerDeposits', 'banks'));
     }
 
@@ -90,24 +89,24 @@ class PaymentReceivedController extends Controller
             throw ValidationException::withMessages($errors);
         }
 
-        return DB::transaction(function () use ($validated, $tenantId, $isDeposit, $applyDepositId, $depositAmountToApply, $request) {
+        return DB::transaction(function () use ($validated, $tenantId, $isDeposit, $applyDepositId, $depositAmountToApply) {
             // If applying a deposit to an invoice
-            if ($applyDepositId && $depositAmountToApply > 0 && !empty($validated['invoice_id'])) {
+            if ($applyDepositId && $depositAmountToApply > 0 && ! empty($validated['invoice_id'])) {
                 $deposit = PaymentReceived::findOrFail($applyDepositId);
                 $invoice = Invoice::findOrFail($validated['invoice_id']);
-                
+
                 // Validate the deposit can be applied
-                if (!$deposit->is_deposit || $deposit->unused_amount < $depositAmountToApply) {
+                if (! $deposit->is_deposit || $deposit->unused_amount < $depositAmountToApply) {
                     throw new \InvalidArgumentException('Invalid deposit or insufficient balance');
                 }
-                
+
                 if ($invoice->balance_due < $depositAmountToApply) {
                     throw new \InvalidArgumentException('Deposit amount exceeds invoice balance');
                 }
-                
+
                 // Apply the deposit
                 $application = $deposit->applyToInvoice($invoice, $depositAmountToApply, $validated['notes'] ?? null);
-                
+
                 // If there's additional payment amount beyond the deposit
                 $remainingAmount = $validated['amount'] - $depositAmountToApply;
                 if ($remainingAmount > 0) {
@@ -132,14 +131,14 @@ class PaymentReceivedController extends Controller
                         $remainingAmount,
                         "Payment received #{$payment->payment_number} (deposit application remainder)"
                     );
-                    
+
                     return redirect()->route('payments-received.show', $payment)->with('success', 'Payment and deposit applied successfully.');
                 }
-                
+
                 // Return the applied payment
                 return redirect()->route('payments-received.show', $application->appliedPayment)->with('success', 'Deposit applied to invoice successfully.');
             }
-            
+
             // Regular payment or new deposit
             $payment = PaymentReceived::create([
                 'tenant_id' => $tenantId,
@@ -164,7 +163,7 @@ class PaymentReceivedController extends Controller
             );
 
             // Send payment confirmation if enabled (not for deposits)
-            if (!$isDeposit) {
+            if (! $isDeposit) {
                 $settings = NotificationSetting::getForTenant($tenantId);
                 if ($settings->send_payment_confirmation) {
                     $this->notificationService->sendPaymentConfirmation($payment);
@@ -172,6 +171,7 @@ class PaymentReceivedController extends Controller
             }
 
             $message = $isDeposit ? 'Customer deposit recorded.' : 'Payment recorded.';
+
             return redirect()->route('payments-received.show', $payment)->with('success', $message);
         });
     }
@@ -179,12 +179,12 @@ class PaymentReceivedController extends Controller
     public function show(PaymentReceived $paymentReceived)
     {
         $paymentReceived->load(['customer', 'invoice', 'journal.entries.account', 'depositApplications.invoice']);
-        
+
         // If this is a deposit, also load the customer's deposit balance
         if ($paymentReceived->is_deposit) {
             $paymentReceived->load('customer');
         }
-        
+
         return view('payments-received.show', compact('paymentReceived'));
     }
 
@@ -195,6 +195,7 @@ class PaymentReceivedController extends Controller
             ->whereIn('status', ['unpaid', 'partial'])
             ->get();
         $banks = Bank::where('is_active', true)->orderBy('name')->get();
+
         return view('payments-received.edit', compact('paymentReceived', 'customers', 'invoices', 'banks'));
     }
 
@@ -273,7 +274,7 @@ class PaymentReceivedController extends Controller
      */
     public function applyDeposit(Request $request, PaymentReceived $paymentReceived)
     {
-        if (!$paymentReceived->is_deposit) {
+        if (! $paymentReceived->is_deposit) {
             return redirect()->back()->with('error', 'This payment is not a deposit.');
         }
 
@@ -281,7 +282,7 @@ class PaymentReceivedController extends Controller
 
         $validated = $request->validate([
             'invoice_id' => ['required', Rule::exists('invoices', 'id')->where('tenant_id', $tenantId)],
-            'amount' => 'required|numeric|min:0.01|max:' . $paymentReceived->unused_amount,
+            'amount' => 'required|numeric|min:0.01|max:'.$paymentReceived->unused_amount,
             'notes' => 'nullable|string',
         ]);
 
@@ -297,6 +298,7 @@ class PaymentReceivedController extends Controller
 
         try {
             $application = $paymentReceived->applyToInvoice($invoice, $validated['amount'], $validated['notes']);
+
             return redirect()->route('payments-received.show', $paymentReceived)
                 ->with('success', 'Deposit applied to invoice successfully.');
         } catch (\Exception $e) {
@@ -309,7 +311,7 @@ class PaymentReceivedController extends Controller
      */
     public function showApplyDeposit(PaymentReceived $paymentReceived)
     {
-        if (!$paymentReceived->is_deposit || $paymentReceived->unused_amount <= 0) {
+        if (! $paymentReceived->is_deposit || $paymentReceived->unused_amount <= 0) {
             return redirect()->route('payments-received.show', $paymentReceived)
                 ->with('error', 'This deposit has no available balance to apply.');
         }

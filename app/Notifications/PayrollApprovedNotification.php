@@ -28,14 +28,14 @@ class PayrollApprovedNotification extends Notification implements ShouldQueue
         return (new MailMessage)
             ->subject("Payroll Approved - {$this->payroll->payroll_number}")
             ->greeting("Hello {$employeeName},")
-            ->line("Your payroll has been approved and processed.")
+            ->line('Your payroll has been approved and processed.')
             ->line("**Payroll Number:** {$this->payroll->payroll_number}")
             ->line("**Pay Period:** {$this->payroll->pay_period_start->format('M d')} - {$this->payroll->pay_period_end->format('M d, Y')}")
             ->line("**Pay Date:** {$this->payroll->pay_date->format('M d, Y')}")
             ->line('---')
-            ->line("**Gross Salary:** " . number_format($this->payroll->gross_salary, 2))
-            ->line("**Total Deductions:** " . number_format($this->payroll->total_deductions, 2))
-            ->line("**Net Salary:** " . number_format($this->payroll->net_salary, 2))
+            ->line('**Gross Salary:** '.number_format($this->payroll->gross_salary, 2))
+            ->line('**Total Deductions:** '.number_format($this->payroll->total_deductions, 2))
+            ->line('**Net Salary:** '.number_format($this->payroll->net_salary, 2))
             ->line('---')
             ->line('If you have any questions about your pay, please contact HR.');
     }

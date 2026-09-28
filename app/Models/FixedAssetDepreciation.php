@@ -2,15 +2,15 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FixedAssetDepreciation extends Model
 {
-    use HasFactory, BelongsToTenant, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity;
 
     protected $fillable = [
         'tenant_id',
@@ -36,7 +36,9 @@ class FixedAssetDepreciation extends Model
 
     // Status Constants
     const STATUS_SCHEDULED = 'scheduled';
+
     const STATUS_POSTED = 'posted';
+
     const STATUS_REVERSED = 'reversed';
 
     public static function getStatuses(): array

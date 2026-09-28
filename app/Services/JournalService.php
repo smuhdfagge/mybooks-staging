@@ -2,20 +2,19 @@
 
 namespace App\Services;
 
+use App\Contracts\JournalServiceInterface;
+use App\Exceptions\UnbalancedJournalException;
+use App\Models\Bill;
+use App\Models\ChartOfAccount;
+use App\Models\Expense;
+use App\Models\Invoice;
 use App\Models\Journal;
 use App\Models\JournalEntry;
-use App\Models\ChartOfAccount;
-use App\Models\Invoice;
-use App\Models\Bill;
-use App\Models\Expense;
-use App\Models\PaymentReceived;
 use App\Models\PaymentMade;
-use App\Models\SalesReceipt;
+use App\Models\PaymentReceived;
 use App\Models\Payroll;
-use App\Contracts\JournalServiceInterface;
-use App\Services\AccountCodeService;
+use App\Models\SalesReceipt;
 use Illuminate\Support\Facades\DB;
-use App\Exceptions\UnbalancedJournalException;
 use InvalidArgumentException;
 
 class JournalService implements JournalServiceInterface
@@ -26,28 +25,51 @@ class JournalService implements JournalServiceInterface
      * At runtime, use $this->acct() which resolves per-tenant overrides.
      */
     const ACCOUNT_CASH = '1000';
+
     const ACCOUNT_CHECKING = '1100';
+
     const ACCOUNT_ACCOUNTS_RECEIVABLE = '1200';
+
     const ACCOUNT_INVENTORY = '1300';
+
     const ACCOUNT_ACCOUNTS_PAYABLE = '2000';
+
     const ACCOUNT_CUSTOMER_DEPOSITS = '2350';
+
     const ACCOUNT_SALES_TAX_PAYABLE = '2400';
+
     const ACCOUNT_SALES_REVENUE = '4000';
+
     const ACCOUNT_COST_OF_GOODS_SOLD = '5000';
+
     const ACCOUNT_EMPLOYEE_ADVANCES = '1250';
+
     const ACCOUNT_ACCRUED_SALARIES = '2210';
+
     const ACCOUNT_SALARIES_WAGES = '6000';
+
     const ACCOUNT_PAYROLL_TAXES = '6020';
+
     const ACCOUNT_ALLOWANCES_EXPENSE = '6030';
+
     const ACCOUNT_OVERTIME_EXPENSE = '6040';
+
     const ACCOUNT_EMPLOYER_PENSION = '6050';
+
     const ACCOUNT_EMPLOYER_HEALTH_INSURANCE = '6060';
+
     const ACCOUNT_WORKERS_COMP = '6070';
+
     const ACCOUNT_PAYROLL_LIABILITIES = '2300';
+
     const ACCOUNT_TAX_PAYABLE = '2310';
+
     const ACCOUNT_PENSION_PAYABLE = '2320';
+
     const ACCOUNT_INSURANCE_PAYABLE = '2330';
+
     const ACCOUNT_UNION_DUES_PAYABLE = '2340';
+
     const ACCOUNT_GARNISHMENTS_PAYABLE = '2360';
 
     /**
@@ -144,11 +166,11 @@ class JournalService implements JournalServiceInterface
 
     /**
      * Create journal entry for an invoice (Accounts Receivable)
-     * 
+     *
      * Debit: Accounts Receivable (asset increases)
      * Credit: Sales Revenue (income increases)
      * Credit: Sales Tax Payable (liability increases) - if applicable
-     * 
+     *
      * For inventory items (Perpetual Inventory Method):
      * Debit: Cost of Goods Sold (expense increases)
      * Credit: Inventory (asset decreases)
@@ -196,7 +218,7 @@ class JournalService implements JournalServiceInterface
             ]);
 
             // Debit: Accounts Receivable
-            $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), $invoice->total, 0, 
+            $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), $invoice->total, 0,
                 "Invoice {$invoice->invoice_number} - {$invoice->customer->name}");
 
             // Credit: Sales Revenue (subtotal less discount)
@@ -292,7 +314,7 @@ class JournalService implements JournalServiceInterface
 
     /**
      * Create journal entry for a bill (Accounts Payable)
-     * 
+     *
      * Debit: Expense Account or Inventory (depending on items)
      * Credit: Accounts Payable (liability increases)
      */
@@ -423,7 +445,7 @@ class JournalService implements JournalServiceInterface
 
     /**
      * Create journal entry for an expense
-     * 
+     *
      * Debit: Expense Account (expense increases)
      * Credit: Cash/Bank Account (asset decreases)
      */
@@ -470,7 +492,7 @@ class JournalService implements JournalServiceInterface
             }
 
             // Credit: Payment Account (cash, bank, etc.)
-            $paymentAccountCode = $expense->paidThroughAccount?->account_code 
+            $paymentAccountCode = $expense->paidThroughAccount?->account_code
                 ?? $this->paymentAccountFor($expense->bank, $expense->payment_method, $t);
             $this->createEntry($journal, $paymentAccountCode, 0, $expense->total,
                 "Payment - {$expense->expense_number}");
@@ -524,15 +546,15 @@ class JournalService implements JournalServiceInterface
 
     /**
      * Create journal entry for payment received (customer payment on invoice)
-     * 
+     *
      * For regular payments:
      * Debit: Cash/Bank (asset increases)
      * Credit: Accounts Receivable (asset decreases)
-     * 
+     *
      * For customer deposits:
      * Debit: Cash/Bank (asset increases)
      * Credit: Customer Deposits (liability increases)
-     * 
+     *
      * For payments from deposit:
      * Debit: Customer Deposits (liability decreases)
      * Credit: Accounts Receivable (asset decreases)
@@ -564,7 +586,7 @@ class JournalService implements JournalServiceInterface
                 $invoiceRef = $payment->invoice ? " for Invoice {$payment->invoice->invoice_number}" : '';
                 $description = "Payment Received {$payment->payment_number} - {$payment->customer->name}{$invoiceRef}";
             }
-            
+
             $journal = Journal::create([
                 'tenant_id' => $payment->tenant_id,
                 'journal_number' => Journal::generateNumber($payment->tenant_id),
@@ -675,12 +697,12 @@ class JournalService implements JournalServiceInterface
 
     /**
      * Create journal entry for invoice refund
-     * 
+     *
      * Reverses the original invoice and payment entries:
      * Debit: Sales Revenue (income decreases - reduces revenue)
      * Debit: Sales Tax Payable (liability decreases - reduces tax liability, if applicable)
      * Credit: Cash/Bank (asset decreases - money going out)
-     * 
+     *
      * This properly reflects that we're giving money back to the customer
      * and reducing our recorded revenue.
      */
@@ -797,7 +819,7 @@ class JournalService implements JournalServiceInterface
 
     /**
      * Create journal entry for payment made (vendor payment on bill)
-     * 
+     *
      * Debit: Accounts Payable (liability decreases)
      * Credit: Cash/Bank (asset decreases)
      */
@@ -887,11 +909,11 @@ class JournalService implements JournalServiceInterface
 
     /**
      * Create journal entry for a sales receipt (cash sale)
-     * 
+     *
      * Debit: Cash/Bank (asset increases - based on payment method)
      * Credit: Sales Revenue (income increases)
      * Credit: Sales Tax Payable (liability increases) - if applicable
-     * 
+     *
      * For inventory items (Perpetual Inventory Method):
      * Debit: Cost of Goods Sold (expense increases)
      * Credit: Inventory (asset decreases)
@@ -1070,7 +1092,7 @@ class JournalService implements JournalServiceInterface
 
     /**
      * Create journal entry for payroll
-     * 
+     *
      * Debit: Salaries & Wages (expense increases - basic salary)
      * Debit: Allowances Expense (expense increases - allowances)
      * Debit: Overtime Expense (expense increases - overtime, if any)
@@ -1134,7 +1156,7 @@ class JournalService implements JournalServiceInterface
             $employerContributions = (float) ($payroll->employer_contributions ?? 0);
             if ($employerContributions > 0) {
                 $contributionDetails = $payroll->employer_contribution_details ?? [];
-                if (!empty($contributionDetails)) {
+                if (! empty($contributionDetails)) {
                     foreach ($contributionDetails as $contribution) {
                         $amount = (float) ($contribution['amount'] ?? 0);
                         if ($amount > 0) {
@@ -1186,7 +1208,7 @@ class JournalService implements JournalServiceInterface
             // Credit: Liability accounts (employer contributions split by type)
             if ($employerContributions > 0) {
                 $contributionDetails = $payroll->employer_contribution_details ?? [];
-                if (!empty($contributionDetails)) {
+                if (! empty($contributionDetails)) {
                     foreach ($contributionDetails as $contribution) {
                         $amount = (float) ($contribution['amount'] ?? 0);
                         if ($amount > 0) {
@@ -1249,7 +1271,7 @@ class JournalService implements JournalServiceInterface
         $employerContributions = (float) ($payroll->employer_contributions ?? 0);
         if ($employerContributions > 0) {
             $contributionDetails = $payroll->employer_contribution_details ?? [];
-            if (!empty($contributionDetails)) {
+            if (! empty($contributionDetails)) {
                 foreach ($contributionDetails as $contribution) {
                     $amount = (float) ($contribution['amount'] ?? 0);
                     if ($amount > 0) {
@@ -1297,7 +1319,7 @@ class JournalService implements JournalServiceInterface
 
         if ($employerContributions > 0) {
             $contributionDetails = $payroll->employer_contribution_details ?? [];
-            if (!empty($contributionDetails)) {
+            if (! empty($contributionDetails)) {
                 foreach ($contributionDetails as $contribution) {
                     $amount = (float) ($contribution['amount'] ?? 0);
                     if ($amount > 0) {
@@ -1410,7 +1432,7 @@ class JournalService implements JournalServiceInterface
 
             // Create reversing entries (swap debit and credit)
             foreach ($journal->entries as $entry) {
-                $this->createEntry($reversingJournal, $entry->account->account_code, 
+                $this->createEntry($reversingJournal, $entry->account->account_code,
                     $entry->credit, $entry->debit, "Reversal: {$entry->description}");
             }
 
@@ -1507,7 +1529,7 @@ class JournalService implements JournalServiceInterface
             ->where('account_code', $accountCode)
             ->first();
 
-        if (!$account) {
+        if (! $account) {
             throw new InvalidArgumentException("Account with code {$accountCode} not found for tenant {$journal->tenant_id}");
         }
 
@@ -1568,7 +1590,7 @@ class JournalService implements JournalServiceInterface
 
         foreach ($journal->entries as $entry) {
             $account = $entry->account;
-            
+
             // For debit-balance accounts (Assets, Expenses): Debits increase, Credits decrease
             // For credit-balance accounts (Liabilities, Equity, Income): Credits increase, Debits decrease
             if ($account->isDebitBalance()) {
@@ -1576,9 +1598,9 @@ class JournalService implements JournalServiceInterface
             } else {
                 $delta = (float) ($entry->credit - $entry->debit);
             }
-            
+
             ChartOfAccount::where('id', $account->id)
-                ->update(['current_balance' => \DB::raw('current_balance + (' . (float) $delta . ')')]);
+                ->update(['current_balance' => \DB::raw('current_balance + ('.(float) $delta.')')]);
         }
     }
 
@@ -1591,15 +1613,15 @@ class JournalService implements JournalServiceInterface
 
         foreach ($journal->entries as $entry) {
             $account = $entry->account;
-            
+
             if ($account->isDebitBalance()) {
                 $delta = (float) ($entry->debit - $entry->credit);
             } else {
                 $delta = (float) ($entry->credit - $entry->debit);
             }
-            
+
             ChartOfAccount::where('id', $account->id)
-                ->update(['current_balance' => \DB::raw('current_balance - (' . (float) $delta . ')')]);
+                ->update(['current_balance' => \DB::raw('current_balance - ('.(float) $delta.')')]);
         }
     }
 

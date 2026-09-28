@@ -40,8 +40,8 @@ class ExportController extends Controller
     {
         $type = $request->get('type', Export::TYPE_CUSTOMERS);
         $exportTypes = Export::getExportTypes();
-        $formats = $type === Export::TYPE_FULL_BACKUP 
-            ? Export::getBackupFormats() 
+        $formats = $type === Export::TYPE_FULL_BACKUP
+            ? Export::getBackupFormats()
             : Export::getFormats();
 
         return view('exports.create', compact('type', 'exportTypes', 'formats'));
@@ -53,7 +53,7 @@ class ExportController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'type' => 'required|string|in:' . implode(',', array_keys(Export::getExportTypes())),
+            'type' => 'required|string|in:'.implode(',', array_keys(Export::getExportTypes())),
             'format' => 'required|string',
             'date_from' => 'nullable|date',
             'date_to' => 'nullable|date|after_or_equal:date_from',
@@ -66,15 +66,15 @@ class ExportController extends Controller
             ? array_keys(Export::getBackupFormats())
             : array_keys(Export::getFormats());
 
-        if (!in_array($validated['format'], $allowedFormats)) {
+        if (! in_array($validated['format'], $allowedFormats)) {
             return back()->withErrors(['format' => 'Invalid format for this export type.']);
         }
 
         $options = [];
-        if (!empty($validated['date_from'])) {
+        if (! empty($validated['date_from'])) {
             $options['date_from'] = $validated['date_from'];
         }
-        if (!empty($validated['date_to'])) {
+        if (! empty($validated['date_to'])) {
             $options['date_to'] = $validated['date_to'];
         }
 
@@ -84,7 +84,7 @@ class ExportController extends Controller
             'type' => $validated['type'],
             'format' => $validated['format'],
             'status' => Export::STATUS_PENDING,
-            'options' => !empty($options) ? $options : null,
+            'options' => ! empty($options) ? $options : null,
             'included_data' => $validated['included_data'] ?? null,
         ]);
 
@@ -95,13 +95,13 @@ class ExportController extends Controller
         if ($export->status === Export::STATUS_COMPLETED) {
             // Log the export
             ActivityLogService::logExport($validated['type'], ['format' => $validated['format']]);
-            
+
             return redirect()->route('exports.index')
                 ->with('success', 'Export completed successfully. You can download it below.');
         }
 
         return redirect()->route('exports.index')
-            ->with('error', 'Export failed: ' . ($export->error_message ?? 'Unknown error'));
+            ->with('error', 'Export failed: '.($export->error_message ?? 'Unknown error'));
     }
 
     /**
@@ -110,7 +110,7 @@ class ExportController extends Controller
     public function quickExport(Request $request)
     {
         $validated = $request->validate([
-            'type' => 'required|string|in:' . implode(',', array_keys(Export::getExportTypes())),
+            'type' => 'required|string|in:'.implode(',', array_keys(Export::getExportTypes())),
             'format' => 'required|string|in:csv,json',
         ]);
 
@@ -127,7 +127,7 @@ class ExportController extends Controller
         if ($export->status === Export::STATUS_COMPLETED && $export->isDownloadable()) {
             // Log the quick export
             ActivityLogService::logExport($validated['type'], ['format' => $validated['format']]);
-            
+
             return $this->download($export);
         }
 
@@ -144,7 +144,7 @@ class ExportController extends Controller
             abort(403);
         }
 
-        if (!$export->isDownloadable()) {
+        if (! $export->isDownloadable()) {
             return back()->with('error', 'Export is not available for download.');
         }
 
@@ -240,7 +240,7 @@ class ExportController extends Controller
     public function processBackup(Request $request)
     {
         $validated = $request->validate([
-            'format' => 'required|string|in:' . implode(',', array_keys(Export::getBackupFormats())),
+            'format' => 'required|string|in:'.implode(',', array_keys(Export::getBackupFormats())),
             'included_data' => 'required|array|min:1',
             'included_data.*' => 'string',
         ]);
@@ -259,12 +259,12 @@ class ExportController extends Controller
         if ($export->status === Export::STATUS_COMPLETED) {
             // Log the backup activity
             ActivityLogService::logBackup($validated['included_data'], $validated['format']);
-            
+
             return redirect()->route('exports.index')
                 ->with('success', 'Full backup completed successfully. You can download it below.');
         }
 
         return redirect()->route('exports.index')
-            ->with('error', 'Backup failed: ' . ($export->error_message ?? 'Unknown error'));
+            ->with('error', 'Backup failed: '.($export->error_message ?? 'Unknown error'));
     }
 }

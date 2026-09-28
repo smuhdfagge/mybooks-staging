@@ -2,32 +2,8 @@
 
 namespace App\Http\Controllers\Reports;
 
-use App\Models\Bill;
-use App\Models\BillItem;
-use App\Models\ChartOfAccount;
 use App\Models\CustomReport;
-use App\Models\Customer;
-use App\Models\Department;
-use App\Models\Employee;
-use App\Models\Expense;
-use App\Models\Inventory;
-use App\Models\Invoice;
-use App\Models\InvoiceItem;
-use App\Models\Item;
-use App\Models\Journal;
-use App\Models\JournalEntry;
-use App\Models\PaymentMade;
-use App\Models\PaymentReceived;
-use App\Models\Payroll;
-use App\Models\PayrollBatch;
-use App\Models\SalaryStructureVersion;
-use App\Models\TaxRate;
-use App\Models\Vendor;
-use App\Services\ReportExportService;
-use App\Services\Reports\PayrollReportService;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 /**
  * The custom report builder.
@@ -144,7 +120,7 @@ class CustomReportController extends ReportController
     public function customReportDestroy(CustomReport $customReport)
     {
         $this->authorizeReport($customReport);
-        
+
         $customReport->delete();
 
         return redirect()->route('reports.custom.index')
@@ -157,8 +133,8 @@ class CustomReportController extends ReportController
     public function customReportToggleFavorite(CustomReport $customReport)
     {
         $this->authorizeReport($customReport);
-        
-        $customReport->update(['is_favorite' => !$customReport->is_favorite]);
+
+        $customReport->update(['is_favorite' => ! $customReport->is_favorite]);
 
         return back()->with('success', $customReport->is_favorite ? 'Report added to favorites.' : 'Report removed from favorites.');
     }
@@ -174,7 +150,7 @@ class CustomReportController extends ReportController
         $dataSources = CustomReport::getDataSources();
         $sourceConfig = $dataSources[$customReport->data_source] ?? null;
 
-        if (!$sourceConfig) {
+        if (! $sourceConfig) {
             return back()->with('error', 'Invalid data source.');
         }
 
@@ -193,17 +169,17 @@ class CustomReportController extends ReportController
 
         // Load necessary relations
         $relations = $this->extractRelations($customReport->columns, $sourceConfig['columns']);
-        if (!empty($relations)) {
+        if (! empty($relations)) {
             $query->with($relations);
         }
 
         // Apply filters
-        if (!empty($customReport->filters)) {
+        if (! empty($customReport->filters)) {
             $query = $this->applyFilters($query, $customReport->filters, $sourceConfig['columns']);
         }
 
         // Apply sorting
-        if (!empty($customReport->sort_by)) {
+        if (! empty($customReport->sort_by)) {
             foreach ($customReport->sort_by as $sort) {
                 if (isset($sort['column']) && isset($sort['direction'])) {
                     // Only the source's own columns, in a known direction (M7);
@@ -229,22 +205,22 @@ class CustomReportController extends ReportController
         $aggregatedData = null;
         if ($customReport->group_by) {
             $groupedData = $this->groupData($data, $customReport->group_by);
-            
+
             // Calculate aggregations per group
-            if (!empty($customReport->aggregations)) {
+            if (! empty($customReport->aggregations)) {
                 $aggregatedData = $this->calculateAggregations($groupedData, $customReport->aggregations);
             }
         }
 
         // Calculate overall aggregations
         $totals = [];
-        if (!empty($customReport->aggregations)) {
+        if (! empty($customReport->aggregations)) {
             foreach ($customReport->aggregations as $agg) {
                 if (isset($agg['column']) && isset($agg['function'])) {
                     $column = $agg['column'];
                     $function = $agg['function'];
                     $value = $this->calculateSingleAggregation($data, $column, $function);
-                    $totals[$column . '_' . $function] = $value;
+                    $totals[$column.'_'.$function] = $value;
                 }
             }
         }
@@ -253,7 +229,7 @@ class CustomReportController extends ReportController
         $customReport->update(['last_run_at' => now()]);
 
         return view('reports.custom.run', compact(
-            'customReport', 'data', 'groupedData', 'aggregatedData', 
+            'customReport', 'data', 'groupedData', 'aggregatedData',
             'totals', 'sourceConfig', 'startDate', 'endDate'
         ));
     }
@@ -266,7 +242,7 @@ class CustomReportController extends ReportController
         $dataSource = $request->get('data_source');
         $dataSources = CustomReport::getDataSources();
 
-        if (!isset($dataSources[$dataSource])) {
+        if (! isset($dataSources[$dataSource])) {
             return response()->json(['error' => 'Invalid data source'], 400);
         }
 
@@ -289,11 +265,11 @@ class CustomReportController extends ReportController
             abort(403);
         }
 
-        if (!$allowShared && $customReport->created_by !== $userId) {
+        if (! $allowShared && $customReport->created_by !== $userId) {
             abort(403);
         }
 
-        if ($allowShared && $customReport->created_by !== $userId && !$customReport->is_public) {
+        if ($allowShared && $customReport->created_by !== $userId && ! $customReport->is_public) {
             abort(403);
         }
     }
@@ -304,11 +280,11 @@ class CustomReportController extends ReportController
     protected function extractRelations(array $selectedColumns, array $columnConfig): array
     {
         $relations = [];
-        
+
         foreach ($selectedColumns as $column) {
             if (isset($columnConfig[$column]['relation'])) {
                 $relation = $columnConfig[$column]['relation'];
-                if (!in_array($relation, $relations)) {
+                if (! in_array($relation, $relations)) {
                     $relations[] = $relation;
                 }
             }
@@ -323,7 +299,7 @@ class CustomReportController extends ReportController
     protected function applyFilters($query, array $filters, array $columnConfig)
     {
         foreach ($filters as $filter) {
-            if (!isset($filter['column']) || !isset($filter['operator'])) {
+            if (! isset($filter['column']) || ! isset($filter['operator'])) {
                 continue;
             }
 
@@ -408,7 +384,7 @@ class CustomReportController extends ReportController
             $result[$groupKey] = [];
             foreach ($aggregations as $agg) {
                 if (isset($agg['column']) && isset($agg['function'])) {
-                    $key = $agg['column'] . '_' . $agg['function'];
+                    $key = $agg['column'].'_'.$agg['function'];
                     $result[$groupKey][$key] = $this->calculateSingleAggregation($items, $agg['column'], $agg['function']);
                 }
             }

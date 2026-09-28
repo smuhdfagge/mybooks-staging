@@ -30,11 +30,11 @@ class BillDueNotification extends Notification implements ShouldQueue
         return (new MailMessage)
             ->subject("Bill Payment Due Soon: {$this->bill->bill_number}")
             ->greeting("Hello {$notifiable->name},")
-            ->line("This is a reminder that the following bill is due for payment:")
+            ->line('This is a reminder that the following bill is due for payment:')
             ->line("**Bill Number:** {$this->bill->bill_number}")
             ->line("**Vendor:** {$vendorName}")
             ->line("**Due Date:** {$this->bill->due_date->format('M d, Y')}")
-            ->line("**Amount Due:** " . number_format($this->bill->balance_due, 2))
+            ->line('**Amount Due:** '.number_format($this->bill->balance_due, 2))
             ->action('View Bill', $url)
             ->line('Please ensure payment is made on time.');
     }

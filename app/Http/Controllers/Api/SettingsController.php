@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Tenant;
-use App\Models\TaxRate;
-use App\Http\Resources\TenantResource;
 use App\Http\Resources\TaxRateResource;
-use Illuminate\Http\Request;
+use App\Models\TaxRate;
+use App\Models\Tenant;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class SettingsController extends BaseApiController
@@ -20,7 +19,7 @@ class SettingsController extends BaseApiController
         $user = auth()->user();
         $tenant = $user->tenant;
 
-        if (!$tenant) {
+        if (! $tenant) {
             return $this->error('No organization found.', 404);
         }
 
@@ -64,7 +63,7 @@ class SettingsController extends BaseApiController
     {
         $tenant = auth()->user()->tenant;
 
-        if (!$tenant) {
+        if (! $tenant) {
             return $this->error('No organization found.', 404);
         }
 
@@ -107,7 +106,7 @@ class SettingsController extends BaseApiController
     {
         $tenant = auth()->user()->tenant;
 
-        if (!$tenant) {
+        if (! $tenant) {
             return $this->error('No organization found.', 404);
         }
 
@@ -133,7 +132,7 @@ class SettingsController extends BaseApiController
     {
         $tenant = auth()->user()->tenant;
 
-        if (!$tenant) {
+        if (! $tenant) {
             return $this->error('No organization found.', 404);
         }
 
@@ -149,7 +148,7 @@ class SettingsController extends BaseApiController
             $taxRate = TaxRate::where('id', $validated['default_sales_tax_id'])
                 ->where('tenant_id', $tenant->id)
                 ->first();
-            if (!$taxRate) {
+            if (! $taxRate) {
                 return $this->validationError(['default_sales_tax_id' => ['Invalid tax rate selected.']]);
             }
         }
@@ -158,7 +157,7 @@ class SettingsController extends BaseApiController
             $taxRate = TaxRate::where('id', $validated['default_purchase_tax_id'])
                 ->where('tenant_id', $tenant->id)
                 ->first();
-            if (!$taxRate) {
+            if (! $taxRate) {
                 return $this->validationError(['default_purchase_tax_id' => ['Invalid tax rate selected.']]);
             }
         }
@@ -185,7 +184,7 @@ class SettingsController extends BaseApiController
     {
         $tenant = auth()->user()->tenant;
 
-        if (!$tenant) {
+        if (! $tenant) {
             return $this->error('No organization found.', 404);
         }
 

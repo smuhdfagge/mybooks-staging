@@ -2,24 +2,31 @@
 
 namespace App\Livewire\Allowances;
 
+use App\Livewire\Concerns\ChecksPermissions;
 use App\Models\Allowance;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Livewire\Concerns\ChecksPermissions;
 
 class AllowancesTable extends Component
 {
     use ChecksPermissions, WithPagination;
 
     public $search = '';
+
     public $amountType = '';
+
     public $showInactive = false;
+
     public $perPage = 15;
 
     public $selectedItems = [];
+
     public $selectAll = false;
+
     public $bulkAction = '';
+
     public $successMessage = '';
+
     public $errorMessage = '';
 
     protected $queryString = [
@@ -28,10 +35,25 @@ class AllowancesTable extends Component
         'showInactive' => ['except' => false],
     ];
 
-    public function updatingSearch() { $this->resetPage(); }
-    public function updatingAmountType() { $this->resetPage(); }
-    public function updatingShowInactive() { $this->resetPage(); }
-    public function updatingPerPage() { $this->resetPage(); }
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingAmountType()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingShowInactive()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingPerPage()
+    {
+        $this->resetPage();
+    }
 
     public function clearFilters()
     {
@@ -45,7 +67,7 @@ class AllowancesTable extends Component
 
         abort_unless($allowance->tenant_id === auth()->user()->tenant_id, 403);
 
-        $allowance->update(['is_active' => !$allowance->is_active]);
+        $allowance->update(['is_active' => ! $allowance->is_active]);
         $this->successMessage = 'Allowance status updated.';
     }
 
@@ -61,7 +83,7 @@ class AllowancesTable extends Component
 
     private function getFilteredIds()
     {
-        return $this->buildQuery()->pluck('id')->map(fn($id) => (string) $id)->toArray();
+        return $this->buildQuery()->pluck('id')->map(fn ($id) => (string) $id)->toArray();
     }
 
     /**
@@ -83,11 +105,13 @@ class AllowancesTable extends Component
 
         if (empty($this->selectedItems)) {
             $this->errorMessage = 'Please select at least one allowance.';
+
             return;
         }
 
         if (empty($this->bulkAction)) {
             $this->errorMessage = 'Please select an action.';
+
             return;
         }
 
@@ -119,6 +143,7 @@ class AllowancesTable extends Component
 
             default:
                 $this->errorMessage = 'Invalid action selected.';
+
                 return;
         }
 
@@ -142,7 +167,7 @@ class AllowancesTable extends Component
             $query->where('amount_type', $this->amountType);
         }
 
-        if (!$this->showInactive) {
+        if (! $this->showInactive) {
             $query->where('is_active', true);
         }
 

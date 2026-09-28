@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Bank;
 use App\Models\ChartOfAccount;
-use App\Models\PaymentReceived;
-use App\Models\PaymentMade;
 use App\Models\Expense;
+use App\Models\PaymentMade;
+use App\Models\PaymentReceived;
 use App\Services\BankReconciliationService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -25,7 +25,7 @@ class BankController extends Controller
             ->orderBy('account_code')
             ->get();
         $accountTypes = Bank::getAccountTypes();
-        
+
         return view('banks.create', compact('chartOfAccounts', 'accountTypes'));
     }
 
@@ -55,7 +55,7 @@ class BankController extends Controller
         $validated['current_balance'] = $validated['opening_balance'] ?? 0;
 
         // If setting as primary, unset other primary banks
-        if (!empty($validated['is_primary'])) {
+        if (! empty($validated['is_primary'])) {
             Bank::where('tenant_id', $validated['tenant_id'])
                 ->where('is_primary', true)
                 ->update(['is_primary' => false]);
@@ -69,7 +69,7 @@ class BankController extends Controller
     public function show(Bank $bank)
     {
         $bank->load(['chartOfAccount']);
-        
+
         // Get recent transactions from payments received, payments made, and expenses
         $paymentsReceived = PaymentReceived::where('bank_id', $bank->id)
             ->with('customer')
@@ -117,7 +117,7 @@ class BankController extends Controller
             ->sortByDesc('date')
             ->take(10)
             ->values();
-        
+
         return view('banks.show', compact('bank', 'recentTransactions'));
     }
 
@@ -128,7 +128,7 @@ class BankController extends Controller
             ->orderBy('account_code')
             ->get();
         $accountTypes = Bank::getAccountTypes();
-        
+
         return view('banks.edit', compact('bank', 'chartOfAccounts', 'accountTypes'));
     }
 
@@ -154,7 +154,7 @@ class BankController extends Controller
         ]);
 
         // If setting as primary, unset other primary banks
-        if (!empty($validated['is_primary']) && !$bank->is_primary) {
+        if (! empty($validated['is_primary']) && ! $bank->is_primary) {
             Bank::where('tenant_id', auth()->user()->tenant_id)
                 ->where('is_primary', true)
                 ->update(['is_primary' => false]);
@@ -172,6 +172,7 @@ class BankController extends Controller
         }
 
         $bank->delete();
+
         return redirect()->route('banks.index')->with('success', 'Bank account deleted successfully.');
     }
 
@@ -225,7 +226,7 @@ class BankController extends Controller
         $transactions = $paymentsReceived->concat($paymentsMade)->concat($expenses)
             ->sortByDesc('date')
             ->values();
-        
+
         return view('banks.transactions', compact('bank', 'transactions'));
     }
 

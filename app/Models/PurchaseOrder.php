@@ -2,18 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PurchaseOrder extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, ValidatesAccountingPeriod;
+    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     /** A bill has been raised for this order (finding N8). */
     public const STATUS_BILLED = 'billed';
@@ -83,7 +83,7 @@ class PurchaseOrder extends Model
 
         $number = $last ? (int) substr($last->order_number, 3) + 1 : 1;
 
-        return 'PO-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+        return 'PO-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     public function hasUnreceivedItems(): bool

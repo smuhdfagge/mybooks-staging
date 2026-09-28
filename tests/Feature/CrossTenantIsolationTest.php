@@ -8,7 +8,6 @@ use App\Models\Role;
 use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\User;
-use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 /**
@@ -21,8 +20,11 @@ use Tests\TestCase;
 class CrossTenantIsolationTest extends TestCase
 {
     private Tenant $tenantA;
+
     private Tenant $tenantB;
+
     private User $userA;
+
     private User $userB;
 
     protected function setUp(): void
@@ -156,7 +158,7 @@ class CrossTenantIsolationTest extends TestCase
     public function test_tenant_b_cannot_edit_tenant_a_role(): void
     {
         $roleA = Role::create([
-            'name' => 'accounts-' . $this->tenantA->id,
+            'name' => 'accounts-'.$this->tenantA->id,
             'guard_name' => 'web',
             'tenant_id' => $this->tenantA->id,
         ]);
@@ -169,7 +171,7 @@ class CrossTenantIsolationTest extends TestCase
     public function test_tenant_b_cannot_delete_tenant_a_role(): void
     {
         $roleA = Role::create([
-            'name' => 'billing-' . $this->tenantA->id,
+            'name' => 'billing-'.$this->tenantA->id,
             'guard_name' => 'web',
             'tenant_id' => $this->tenantA->id,
         ]);

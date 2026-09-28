@@ -27,11 +27,11 @@ class VendorResource extends JsonResource
             'is_active' => $this->is_active,
             'total_purchases' => $this->when(
                 isset($this->total_purchases),
-                fn() => (float) $this->total_purchases
+                fn () => (float) $this->total_purchases
             ),
             'outstanding_balance' => $this->when(
                 isset($this->outstanding_balance),
-                fn() => (float) $this->outstanding_balance
+                fn () => (float) $this->outstanding_balance
             ),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),

@@ -9,7 +9,7 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
+     *
      * This migration updates inventory tables to support fractional quantities
      * (e.g., selling 0.5 units of an item). The decimal(15,4) type allows for
      * precise fractional values up to 4 decimal places.

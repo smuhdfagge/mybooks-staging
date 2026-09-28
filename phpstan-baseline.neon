@@ -181,12 +181,6 @@ parameters:
 			path: app/Http/Controllers/PaymentMadeController.php
 
 		-
-			message: '#^Anonymous function has an unused use \$request\.$#'
-			identifier: closure.unusedUse
-			count: 1
-			path: app/Http/Controllers/PaymentReceivedController.php
-
-		-
 			message: '#^Parameter \#2 \$amount of method App\\Services\\BankService\:\:debit\(\) expects float, string given\.$#'
 			identifier: argument.type
 			count: 1

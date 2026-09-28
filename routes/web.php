@@ -1,41 +1,41 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\DashboardController;
-use App\Mail\ContactFormMail;
-use Illuminate\Support\Facades\Mail;
-use App\Http\Controllers\ItemController;
-use App\Http\Controllers\ItemCategoryController;
-use App\Http\Controllers\InventoryController;
-use App\Http\Controllers\WarehouseController;
-use App\Http\Controllers\StockTransferController;
-use App\Http\Controllers\BillOfMaterialController;
-use App\Http\Controllers\CustomerController;
-use App\Http\Controllers\InvoiceController;
-use App\Http\Controllers\SalesOrderController;
-use App\Http\Controllers\SalesReceiptController;
-use App\Http\Controllers\PaymentReceivedController;
-use App\Http\Controllers\QuotationController;
-use App\Http\Controllers\DeliveryNoteController;
-use App\Http\Controllers\CreditNoteController;
-use App\Http\Controllers\VendorController;
-use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\AccountingPeriodController;
+use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\AllowanceController;
+use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\BankController;
 use App\Http\Controllers\BillController;
-use App\Http\Controllers\RecurrentBillController;
-use App\Http\Controllers\RecurrentExpenseController;
-use App\Http\Controllers\PaymentMadeController;
+use App\Http\Controllers\BillOfMaterialController;
+use App\Http\Controllers\BudgetController;
+use App\Http\Controllers\ChartOfAccountController;
+use App\Http\Controllers\CreditNoteController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DeductionController;
+use App\Http\Controllers\DeliveryNoteController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\EmployeeController;
-use App\Http\Controllers\LeaveTypeController;
-use App\Http\Controllers\LeaveController;
-use App\Http\Controllers\PayrollController;
-use App\Http\Controllers\AllowanceController;
-use App\Http\Controllers\DeductionController;
-use App\Http\Controllers\SalaryStructureController;
-use App\Http\Controllers\ChartOfAccountController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\ExportController;
+use App\Http\Controllers\ImportController;
+use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\InvoiceTemplateController;
+use App\Http\Controllers\ItemCategoryController;
+use App\Http\Controllers\ItemController;
 use App\Http\Controllers\JournalController;
-use App\Http\Controllers\AccountingPeriodController;
+use App\Http\Controllers\LeaveController;
+use App\Http\Controllers\LeaveTypeController;
+use App\Http\Controllers\PaymentMadeController;
+use App\Http\Controllers\PaymentReceivedController;
+use App\Http\Controllers\PayrollController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\QuotationController;
+use App\Http\Controllers\RecurrentBillController;
+use App\Http\Controllers\RecurrentExpenseController;
 use App\Http\Controllers\Reports\ComparativeReportController;
 use App\Http\Controllers\Reports\CustomReportController;
 use App\Http\Controllers\Reports\FinancialReportController;
@@ -43,17 +43,17 @@ use App\Http\Controllers\Reports\PayrollReportController;
 use App\Http\Controllers\Reports\PurchaseReportController;
 use App\Http\Controllers\Reports\SalesReportController;
 use App\Http\Controllers\Reports\TaxReportController;
-use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\SalaryStructureController;
+use App\Http\Controllers\SalesOrderController;
+use App\Http\Controllers\SalesReceiptController;
 use App\Http\Controllers\SettingsController;
-use App\Http\Controllers\ActivityLogController;
-use App\Http\Controllers\TaxRateController;
+use App\Http\Controllers\StockTransferController;
 use App\Http\Controllers\TaxGroupController;
-use App\Http\Controllers\ExportController;
-use App\Http\Controllers\ImportController;
-use App\Http\Controllers\BankController;
-use App\Http\Controllers\BudgetController;
-use App\Http\Controllers\PurchaseOrderController;
-use App\Http\Controllers\InvoiceTemplateController;
+use App\Http\Controllers\TaxRateController;
+use App\Http\Controllers\VendorController;
+use App\Http\Controllers\WarehouseController;
+use App\Mail\ContactFormMail;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -116,17 +116,17 @@ Route::get('/terms-of-service', function () {
 
 Route::get('/docs/api', function () {
     $filePath = base_path('docs/API.md');
-    
-    if (!file_exists($filePath)) {
+
+    if (! file_exists($filePath)) {
         abort(404, 'API documentation file not found');
     }
-    
+
     $markdown = file_get_contents($filePath);
-    
+
     if ($markdown === false) {
         abort(500, 'Unable to read API documentation file');
     }
-    
+
     return view('docs.api', ['content' => \Illuminate\Support\Str::markdown($markdown, [
         'html_input' => 'strip',
         'allow_unsafe_links' => false,
@@ -155,12 +155,12 @@ Route::post('/billing/paystack/webhook', [App\Http\Controllers\BillingController
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', 'tenant'])->group(function () {
-    
+
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->middleware('permission:view dashboard')
         ->name('dashboard');
-    
+
     // Profile (accessible by all authenticated users - subscription middleware allows these)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -329,7 +329,7 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     Route::delete('invoices/{invoice}', [InvoiceController::class, 'destroy'])
         ->middleware('permission:delete invoices')
         ->name('invoices.destroy');
-    
+
     // Invoice Refunds
     Route::middleware('permission:edit invoices')->group(function () {
         Route::get('invoices/{invoice}/refund', [\App\Http\Controllers\InvoiceRefundController::class, 'create'])->name('invoices.refunds.create');
@@ -338,7 +338,7 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::get('refunds/{refund}/print', [\App\Http\Controllers\InvoiceRefundController::class, 'print'])->name('invoices.refunds.print');
         Route::patch('refunds/{refund}/cancel', [\App\Http\Controllers\InvoiceRefundController::class, 'cancel'])->name('invoices.refunds.cancel');
     });
-    
+
     // Sales Orders - Create routes MUST come before wildcard routes
     Route::middleware('permission:create sales-orders')->group(function () {
         Route::get('sales-orders/create', [SalesOrderController::class, 'create'])->name('sales-orders.create');
@@ -358,7 +358,7 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     Route::delete('sales-orders/{salesOrder}', [SalesOrderController::class, 'destroy'])
         ->middleware('permission:delete sales-orders')
         ->name('sales-orders.destroy');
-    
+
     // Sales Receipts - Create routes MUST come before wildcard routes
     Route::middleware('permission:create sales-receipts')->group(function () {
         Route::get('sales-receipts/create', [SalesReceiptController::class, 'create'])->name('sales-receipts.create');
@@ -377,7 +377,7 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     Route::delete('sales-receipts/{salesReceipt}', [SalesReceiptController::class, 'destroy'])
         ->middleware('permission:delete sales-receipts')
         ->name('sales-receipts.destroy');
-    
+
     // Payments Received - Create routes MUST come before wildcard routes
     Route::middleware('permission:create payments-received')->group(function () {
         Route::get('payments-received/create', [PaymentReceivedController::class, 'create'])->name('payments-received.create');
@@ -554,7 +554,7 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     Route::delete('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'destroy'])
         ->middleware('permission:delete purchase-orders')
         ->name('purchase-orders.destroy');
-    
+
     // Recurrent Bills - Create routes MUST come before wildcard routes
     Route::middleware('permission:create recurrent-bills')->group(function () {
         Route::get('recurrent-bills/create', [RecurrentBillController::class, 'create'])->name('recurrent-bills.create');
@@ -573,7 +573,7 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     Route::delete('recurrent-bills/{recurrentBill}', [RecurrentBillController::class, 'destroy'])
         ->middleware('permission:delete recurrent-bills')
         ->name('recurrent-bills.destroy');
-    
+
     // Recurrent Expenses - Create routes MUST come before wildcard routes
     Route::middleware('permission:create recurrent-expenses')->group(function () {
         Route::get('recurrent-expenses/create', [RecurrentExpenseController::class, 'create'])->name('recurrent-expenses.create');
@@ -592,7 +592,7 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     Route::delete('recurrent-expenses/{recurrentExpense}', [RecurrentExpenseController::class, 'destroy'])
         ->middleware('permission:delete recurrent-expenses')
         ->name('recurrent-expenses.destroy');
-    
+
     // Payments Made - Create routes MUST come before wildcard routes
     Route::middleware('permission:create payments-made')->group(function () {
         Route::get('payments-made/create', [PaymentMadeController::class, 'create'])->name('payments-made.create');
@@ -687,7 +687,7 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     Route::delete('leave-types/{leaveType}', [LeaveTypeController::class, 'destroy'])
         ->middleware('permission:delete leave-types')
         ->name('leave-types.destroy');
-    
+
     // Leaves - Create routes MUST come before wildcard routes
     Route::middleware('permission:create leaves')->group(function () {
         Route::get('leaves/create', [LeaveController::class, 'create'])->name('leaves.create');
@@ -709,7 +709,7 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::post('leaves/{leave}/approve', [LeaveController::class, 'approve'])->name('leaves.approve');
         Route::post('leaves/{leave}/reject', [LeaveController::class, 'reject'])->name('leaves.reject');
     });
-    
+
     // Allowances
     Route::middleware('permission:create payroll')->group(function () {
         Route::resource('allowances', AllowanceController::class);
@@ -906,7 +906,7 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::get('/employer-contributions', [PayrollReportController::class, 'employerContributions'])->name('employer-contributions');
         Route::get('/bank-disbursement', [PayrollReportController::class, 'bankDisbursement'])->name('bank-disbursement');
         Route::get('/salary-revision-history', [PayrollReportController::class, 'salaryRevisionHistory'])->name('salary-revision-history');
-        
+
         // Comparative Reports
         Route::get('/comparative/profit-loss', [ComparativeReportController::class, 'comparativeProfitLoss'])->name('comparative.profit-loss');
         Route::get('/comparative/balance-sheet', [ComparativeReportController::class, 'comparativeBalanceSheet'])->name('comparative.balance-sheet');
@@ -989,7 +989,7 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::get('/', [SettingsController::class, 'index'])
             ->middleware('permission:view settings')
             ->name('index');
-        
+
         // Company Settings
         Route::middleware('permission:view settings')->group(function () {
             Route::get('/company', [SettingsController::class, 'company'])->name('company');
@@ -997,7 +997,7 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::post('/company', [SettingsController::class, 'updateCompany'])
             ->middleware('permission:edit settings')
             ->name('company.update');
-        
+
         // User Management - Create routes MUST come before wildcard routes
         Route::middleware('permission:create users')->group(function () {
             Route::get('/users/create', [SettingsController::class, 'createUser'])->name('users.create');
@@ -1013,7 +1013,7 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::delete('/users/{user}', [SettingsController::class, 'deleteUser'])
             ->middleware('permission:delete users')
             ->name('users.destroy');
-        
+
         // Role Management - Create routes MUST come before wildcard routes
         Route::middleware('permission:create roles')->group(function () {
             Route::get('/roles/create', [SettingsController::class, 'createRole'])->name('roles.create');

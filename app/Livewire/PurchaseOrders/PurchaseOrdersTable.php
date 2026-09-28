@@ -2,27 +2,36 @@
 
 namespace App\Livewire\PurchaseOrders;
 
-use Livewire\Component;
-use Livewire\WithPagination;
+use App\Livewire\Concerns\ChecksPermissions;
 use App\Models\PurchaseOrder;
 use App\Models\Vendor;
-use App\Livewire\Concerns\ChecksPermissions;
+use Livewire\Component;
+use Livewire\WithPagination;
 
 class PurchaseOrdersTable extends Component
 {
     use ChecksPermissions, WithPagination;
 
     public $search = '';
+
     public $status = '';
+
     public $vendor = '';
+
     public $dateFrom = '';
+
     public $dateTo = '';
+
     public $perPage = 10;
 
     public $selectedItems = [];
+
     public $selectAll = false;
+
     public $bulkAction = '';
+
     public $successMessage = '';
+
     public $errorMessage = '';
 
     protected $queryString = [
@@ -76,20 +85,20 @@ class PurchaseOrdersTable extends Component
         return PurchaseOrder::query()
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->where('order_number', 'like', '%' . $this->search . '%')
-                      ->orWhere('reference', 'like', '%' . $this->search . '%')
-                      ->orWhereHas('vendor', function ($q) {
-                          $q->where('name', 'like', '%' . $this->search . '%')
-                            ->orWhere('company_name', 'like', '%' . $this->search . '%');
-                      });
+                    $q->where('order_number', 'like', '%'.$this->search.'%')
+                        ->orWhere('reference', 'like', '%'.$this->search.'%')
+                        ->orWhereHas('vendor', function ($q) {
+                            $q->where('name', 'like', '%'.$this->search.'%')
+                                ->orWhere('company_name', 'like', '%'.$this->search.'%');
+                        });
                 });
             })
-            ->when($this->status, fn($q) => $q->where('status', $this->status))
-            ->when($this->vendor, fn($q) => $q->where('vendor_id', $this->vendor))
-            ->when($this->dateFrom, fn($q) => $q->whereDate('order_date', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn($q) => $q->whereDate('order_date', '<=', $this->dateTo))
+            ->when($this->status, fn ($q) => $q->where('status', $this->status))
+            ->when($this->vendor, fn ($q) => $q->where('vendor_id', $this->vendor))
+            ->when($this->dateFrom, fn ($q) => $q->whereDate('order_date', '>=', $this->dateFrom))
+            ->when($this->dateTo, fn ($q) => $q->whereDate('order_date', '<=', $this->dateTo))
             ->pluck('id')
-            ->map(fn($id) => (string) $id)
+            ->map(fn ($id) => (string) $id)
             ->toArray();
     }
 
@@ -112,11 +121,13 @@ class PurchaseOrdersTable extends Component
 
         if (empty($this->selectedItems)) {
             $this->errorMessage = 'Please select at least one order.';
+
             return;
         }
 
         if (empty($this->bulkAction)) {
             $this->errorMessage = 'Please select an action.';
+
             return;
         }
 
@@ -143,10 +154,13 @@ class PurchaseOrdersTable extends Component
 
                 foreach ($this->selectedItems as $orderId) {
                     $order = PurchaseOrder::find($orderId);
-                    if (!$order) continue;
+                    if (! $order) {
+                        continue;
+                    }
 
                     if ($order->bills()->exists()) {
                         $skippedCount++;
+
                         continue;
                     }
 
@@ -166,6 +180,7 @@ class PurchaseOrdersTable extends Component
 
             default:
                 $this->errorMessage = 'Invalid action selected.';
+
                 return;
         }
 
@@ -179,12 +194,12 @@ class PurchaseOrdersTable extends Component
         $orders = PurchaseOrder::with(['vendor'])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->where('order_number', 'like', '%' . $this->search . '%')
-                      ->orWhere('reference', 'like', '%' . $this->search . '%')
-                      ->orWhereHas('vendor', function ($q) {
-                          $q->where('name', 'like', '%' . $this->search . '%')
-                            ->orWhere('company_name', 'like', '%' . $this->search . '%');
-                      });
+                    $q->where('order_number', 'like', '%'.$this->search.'%')
+                        ->orWhere('reference', 'like', '%'.$this->search.'%')
+                        ->orWhereHas('vendor', function ($q) {
+                            $q->where('name', 'like', '%'.$this->search.'%')
+                                ->orWhere('company_name', 'like', '%'.$this->search.'%');
+                        });
                 });
             })
             ->when($this->status, function ($query) {

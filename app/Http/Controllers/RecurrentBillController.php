@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Item;
 use App\Models\RecurrentBill;
 use App\Models\RecurrentBillItem;
 use App\Models\Vendor;
-use App\Models\Item;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -21,6 +21,7 @@ class RecurrentBillController extends Controller
     {
         $vendors = Vendor::where('is_active', true)->get();
         $items = Item::where('is_active', true)->get();
+
         return view('recurrent-bills.create', compact('vendors', 'items'));
     }
 
@@ -93,6 +94,7 @@ class RecurrentBillController extends Controller
             return redirect()->route('recurrent-bills.show', $recurrentBill)->with('success', 'Recurrent bill profile created.');
         } catch (\Exception $e) {
             DB::rollBack();
+
             return back()->withInput()->withErrors(['error' => 'Failed to create recurrent bill profile.']);
         }
     }
@@ -100,6 +102,7 @@ class RecurrentBillController extends Controller
     public function show(RecurrentBill $recurrentBill)
     {
         $recurrentBill->load(['vendor', 'items.item', 'bills']);
+
         return view('recurrent-bills.show', compact('recurrentBill'));
     }
 
@@ -108,6 +111,7 @@ class RecurrentBillController extends Controller
         $recurrentBill->load('items');
         $vendors = Vendor::where('is_active', true)->get();
         $items = Item::where('is_active', true)->get();
+
         return view('recurrent-bills.edit', compact('recurrentBill', 'vendors', 'items'));
     }
 
@@ -176,6 +180,7 @@ class RecurrentBillController extends Controller
             return redirect()->route('recurrent-bills.show', $recurrentBill)->with('success', 'Recurrent bill profile updated.');
         } catch (\Exception $e) {
             DB::rollBack();
+
             return back()->withInput()->withErrors(['error' => 'Failed to update recurrent bill profile.']);
         }
     }
@@ -184,6 +189,7 @@ class RecurrentBillController extends Controller
     {
         $recurrentBill->items()->delete();
         $recurrentBill->delete();
+
         return redirect()->route('recurrent-bills.index')->with('success', 'Recurrent bill profile deleted.');
     }
 
@@ -192,6 +198,7 @@ class RecurrentBillController extends Controller
         $newStatus = $recurrentBill->status === 'active' ? 'paused' : 'active';
         $recurrentBill->update(['status' => $newStatus]);
         $label = $newStatus === 'active' ? 'activated' : 'paused';
+
         return redirect()->route('recurrent-bills.show', $recurrentBill)->with('success', "Profile {$label}.");
     }
 }

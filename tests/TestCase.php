@@ -15,8 +15,11 @@ abstract class TestCase extends BaseTestCase
     use RefreshDatabase;
 
     protected Tenant $tenant;
+
     protected User $user;
+
     protected Plan $plan;
+
     protected Subscription $subscription;
 
     /**
@@ -54,7 +57,7 @@ abstract class TestCase extends BaseTestCase
             'tenant_id' => $tenant->id,
         ], $userAttrs));
 
-        if (!empty($permissions)) {
+        if (! empty($permissions)) {
             foreach ($permissions as $perm) {
                 Permission::findOrCreate($perm, 'web');
             }
@@ -76,7 +79,7 @@ abstract class TestCase extends BaseTestCase
             'tenant_id' => $tenant->id,
         ], $userAttrs));
 
-        if (!empty($permissions)) {
+        if (! empty($permissions)) {
             foreach ($permissions as $perm) {
                 Permission::findOrCreate($perm, 'web');
             }
@@ -107,4 +110,3 @@ abstract class TestCase extends BaseTestCase
         return $user;
     }
 }
-

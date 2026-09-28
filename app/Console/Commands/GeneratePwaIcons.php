@@ -31,32 +31,35 @@ class GeneratePwaIcons extends Command
     public function handle()
     {
         $iconsPath = public_path('icons');
-        $svgPath = $iconsPath . '/icon.svg';
+        $svgPath = $iconsPath.'/icon.svg';
 
-        if (!file_exists($svgPath)) {
-            $this->error('Source SVG file not found at: ' . $svgPath);
+        if (! file_exists($svgPath)) {
+            $this->error('Source SVG file not found at: '.$svgPath);
+
             return 1;
         }
 
         // Check if Imagick extension is available
-        if (!extension_loaded('imagick')) {
+        if (! extension_loaded('imagick')) {
             $this->warn('Imagick extension is not installed. Using fallback method.');
             $this->generateFallbackIcons();
+
             return 0;
         }
 
         $this->info('Generating PWA icons...');
 
         foreach ($this->sizes as $size) {
-            $outputPath = $iconsPath . "/icon-{$size}x{$size}.png";
+            $outputPath = $iconsPath."/icon-{$size}x{$size}.png";
 
-            if (file_exists($outputPath) && !$this->option('force')) {
+            if (file_exists($outputPath) && ! $this->option('force')) {
                 $this->line("  Skipping {$size}x{$size} (already exists)");
+
                 continue;
             }
 
             try {
-                $imagick = new \Imagick();
+                $imagick = new \Imagick;
                 $imagick->setBackgroundColor(new \ImagickPixel('transparent'));
                 $imagick->readImage($svgPath);
                 $imagick->setImageFormat('png32');
@@ -66,7 +69,7 @@ class GeneratePwaIcons extends Command
 
                 $this->info("  Generated icon-{$size}x{$size}.png");
             } catch (\Exception $e) {
-                $this->error("  Failed to generate {$size}x{$size}: " . $e->getMessage());
+                $this->error("  Failed to generate {$size}x{$size}: ".$e->getMessage());
             }
         }
 
@@ -87,57 +90,58 @@ class GeneratePwaIcons extends Command
     protected function generateFallbackIcons()
     {
         $iconsPath = public_path('icons');
-        
+
         $this->info('Creating placeholder icons using GD library...');
         $this->line('For best results, please convert the SVG manually using an image editor.');
         $this->newLine();
 
         // Generate a simple placeholder icon using GD
         foreach ($this->sizes as $size) {
-            $outputPath = $iconsPath . "/icon-{$size}x{$size}.png";
+            $outputPath = $iconsPath."/icon-{$size}x{$size}.png";
 
-            if (file_exists($outputPath) && !$this->option('force')) {
+            if (file_exists($outputPath) && ! $this->option('force')) {
                 $this->line("  Skipping {$size}x{$size} (already exists)");
+
                 continue;
             }
 
             // Create a simple colored square with text as placeholder
             $image = imagecreatetruecolor($size, $size);
-            
+
             // Enable alpha blending
             imagealphablending($image, true);
             imagesavealpha($image, true);
-            
+
             // Colors
             $indigo = imagecolorallocate($image, 79, 70, 229); // #4f46e5
             $white = imagecolorallocate($image, 255, 255, 255);
-            
+
             // Fill with indigo
             imagefill($image, 0, 0, $indigo);
-            
+
             // Add rounded corners effect (simplified)
-            $radius = (int)($size * 0.18);
-            
+            $radius = (int) ($size * 0.18);
+
             // Draw "M" text
-            $fontSize = (int)($size * 0.5);
+            $fontSize = (int) ($size * 0.5);
             $fontPath = 5; // Built-in font
-            
+
             // Center the letter
             $textWidth = imagefontwidth($fontPath) * strlen('M');
             $textHeight = imagefontheight($fontPath);
             $x = ($size - $textWidth) / 2;
             $y = ($size - $textHeight) / 2;
-            
+
             // For larger sizes, use a bigger approach
             if ($size >= 96) {
                 // Draw a simple "M" using GD's built-in fonts
-                imagestring($image, 5, (int)($size * 0.35), (int)($size * 0.35), 'M', $white);
+                imagestring($image, 5, (int) ($size * 0.35), (int) ($size * 0.35), 'M', $white);
             }
-            
+
             // Save the image
             imagepng($image, $outputPath);
             imagedestroy($image);
-            
+
             $this->info("  Generated placeholder icon-{$size}x{$size}.png");
         }
 

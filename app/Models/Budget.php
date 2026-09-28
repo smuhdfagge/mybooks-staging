@@ -2,21 +2,23 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Budget extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
 
     // Status constants
     const STATUS_DRAFT = 'draft';
+
     const STATUS_ACTIVE = 'active';
+
     const STATUS_LOCKED = 'locked';
 
     protected $fillable = [
@@ -153,11 +155,11 @@ class Budget extends Model
     {
         $currentYear = (int) date('Y');
         $years = [];
-        
+
         for ($i = $currentYear - 2; $i <= $currentYear + 2; $i++) {
             $years[$i] = (string) $i;
         }
-        
+
         return $years;
     }
 

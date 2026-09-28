@@ -13,7 +13,7 @@ class DesignationController extends Controller
             ->withCount('employees')
             ->latest()
             ->paginate(15);
-            
+
         return view('designations.index', compact('designations'));
     }
 
@@ -30,7 +30,7 @@ class DesignationController extends Controller
         ]);
 
         $tenantId = auth()->user()->tenant_id;
-        
+
         Designation::create([
             'tenant_id' => $tenantId,
             'name' => $validated['name'],
@@ -44,6 +44,7 @@ class DesignationController extends Controller
     public function show(Designation $designation)
     {
         $designation->load('employees');
+
         return view('designations.show', compact('designation'));
     }
 
@@ -76,6 +77,7 @@ class DesignationController extends Controller
         }
 
         $designation->delete();
+
         return redirect()->route('designations.index')->with('success', 'Designation deleted.');
     }
 }

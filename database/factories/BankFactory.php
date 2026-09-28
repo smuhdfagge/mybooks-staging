@@ -14,8 +14,8 @@ class BankFactory extends Factory
     {
         return [
             'tenant_id' => Tenant::factory(),
-            'name' => fake()->company() . ' Account',
-            'bank_name' => fake()->company() . ' Bank',
+            'name' => fake()->company().' Account',
+            'bank_name' => fake()->company().' Bank',
             'account_number' => fake()->numerify('##########'),
             'account_type' => Bank::TYPE_CHECKING,
             'currency' => 'NGN',

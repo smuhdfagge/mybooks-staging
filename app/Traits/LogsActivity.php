@@ -40,12 +40,12 @@ trait LogsActivity
     protected static function logActivity(Model $model, string $action): void
     {
         // Skip if no authenticated user
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return;
         }
 
         $user = Auth::user();
-        
+
         // Get the tenant_id from the model or user
         $tenantId = $model->tenant_id ?? $user->tenant_id;
 
@@ -69,11 +69,11 @@ trait LogsActivity
         } elseif ($action === ActivityLog::ACTION_UPDATED) {
             $changes = $model->getChanges();
             $original = $model->getOriginal();
-            
+
             // Filter to only changed attributes
             $changedFields = array_keys($changes);
             $changedFields = array_diff($changedFields, ['updated_at']); // Exclude updated_at
-            
+
             if (empty($changedFields)) {
                 return; // Don't log if only updated_at changed
             }
@@ -113,7 +113,7 @@ trait LogsActivity
     {
         // Completely remove these fields from logs
         $hidden = ['password', 'remember_token', 'api_token', 'two_factor_secret', 'two_factor_recovery_codes'];
-        
+
         // Get hidden attributes from model if defined
         if (property_exists(static::class, 'hidden')) {
             $hidden = array_merge($hidden, (new static)->getHidden());
@@ -163,7 +163,8 @@ trait LogsActivity
 
         // For account/routing numbers, show last 4
         $visible = substr($value, -4);
-        return str_repeat('*', $length - 4) . $visible;
+
+        return str_repeat('*', $length - 4).$visible;
     }
 
     /**
@@ -188,12 +189,12 @@ trait LogsActivity
         ];
 
         foreach ($nameFields as $field) {
-            if (!empty($model->{$field})) {
+            if (! empty($model->{$field})) {
                 return $model->{$field};
             }
         }
 
-        return class_basename($model) . ' #' . $model->getKey();
+        return class_basename($model).' #'.$model->getKey();
     }
 
     /**
@@ -204,7 +205,7 @@ trait LogsActivity
         $modelName = class_basename($model);
         $displayName = static::getModelDisplayName($model);
 
-        return match($action) {
+        return match ($action) {
             ActivityLog::ACTION_CREATED => "{$modelName} '{$displayName}' was created",
             ActivityLog::ACTION_UPDATED => "{$modelName} '{$displayName}' was updated",
             ActivityLog::ACTION_DELETED => "{$modelName} '{$displayName}' was deleted",
@@ -228,7 +229,7 @@ trait LogsActivity
             'model_type' => get_class($this),
             'model_id' => $this->getKey(),
             'model_name' => static::getModelDisplayName($this),
-            'new_values' => !empty($properties) ? $properties : null,
+            'new_values' => ! empty($properties) ? $properties : null,
             'ip_address' => Request::ip(),
             'user_agent' => Request::userAgent(),
             'description' => $description ?? static::getActivityDescription($this, $action),

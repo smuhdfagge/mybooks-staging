@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
+use App\Models\Employee;
 use App\Models\Leave;
 use App\Models\LeaveType;
-use App\Models\Employee;
-use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -20,6 +20,7 @@ class LeaveController extends Controller
     {
         $employees = Employee::where('status', 'active')->get();
         $leaveTypes = LeaveType::where('is_active', true)->get();
+
         return view('leaves.create', compact('employees', 'leaveTypes'));
     }
 
@@ -34,12 +35,12 @@ class LeaveController extends Controller
             'end_date' => 'required|date|after_or_equal:start_date',
             'reason' => 'nullable|string',
         ]);
-        
+
         // Calculate days
         $startDate = \Carbon\Carbon::parse($validated['start_date']);
         $endDate = \Carbon\Carbon::parse($validated['end_date']);
         $days = $startDate->diffInDays($endDate) + 1;
-        
+
         $leave = Leave::create([
             'tenant_id' => $tenantId,
             'employee_id' => $validated['employee_id'],
@@ -58,6 +59,7 @@ class LeaveController extends Controller
     public function show(Leave $leave)
     {
         $leave->load(['employee', 'leaveType', 'approvedBy']);
+
         return view('leaves.show', compact('leave'));
     }
 
@@ -69,6 +71,7 @@ class LeaveController extends Controller
 
         $employees = Employee::where('status', 'active')->get();
         $leaveTypes = LeaveType::where('is_active', true)->get();
+
         return view('leaves.edit', compact('leave', 'employees', 'leaveTypes'));
     }
 
@@ -105,6 +108,7 @@ class LeaveController extends Controller
         }
 
         $leave->delete();
+
         return redirect()->route('leaves.index')->with('success', 'Leave request deleted.');
     }
 

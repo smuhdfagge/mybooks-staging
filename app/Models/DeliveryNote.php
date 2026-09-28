@@ -2,22 +2,26 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DeliveryNote extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
 
     const STATUS_DRAFT = 'draft';
+
     const STATUS_DISPATCHED = 'dispatched';
+
     const STATUS_IN_TRANSIT = 'in_transit';
+
     const STATUS_DELIVERED = 'delivered';
+
     const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [
@@ -80,7 +84,8 @@ class DeliveryNote extends Model
             ->first();
 
         $number = $last ? intval(substr($last->delivery_number, 3)) + 1 : 1;
-        return 'DN-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+        return 'DN-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -93,6 +98,7 @@ class DeliveryNote extends Model
         }
 
         $this->update(['status' => self::STATUS_DISPATCHED]);
+
         return true;
     }
 
@@ -141,12 +147,12 @@ class DeliveryNote extends Model
         $tenantId = $this->tenant_id;
 
         foreach ($this->items as $dnItem) {
-            if (!$dnItem->item_id || $dnItem->quantity_delivered <= 0) {
+            if (! $dnItem->item_id || $dnItem->quantity_delivered <= 0) {
                 continue;
             }
 
             $item = Item::find($dnItem->item_id);
-            if (!$item || !$item->track_inventory || $item->type === 'service') {
+            if (! $item || ! $item->track_inventory || $item->type === 'service') {
                 continue;
             }
 

@@ -3,8 +3,8 @@
 namespace Database\Factories;
 
 use App\Models\Bill;
-use App\Models\Vendor;
 use App\Models\Tenant;
+use App\Models\Vendor;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class BillFactory extends Factory
@@ -16,7 +16,7 @@ class BillFactory extends Factory
         return [
             'tenant_id' => Tenant::factory(),
             'vendor_id' => Vendor::factory(),
-            'bill_number' => 'BIL-' . str_pad(fake()->unique()->numberBetween(1, 999999), 6, '0', STR_PAD_LEFT),
+            'bill_number' => 'BIL-'.str_pad(fake()->unique()->numberBetween(1, 999999), 6, '0', STR_PAD_LEFT),
             'bill_date' => now(),
             'due_date' => now()->addDays(30),
             'status' => 'draft',

@@ -2,29 +2,29 @@
 
 namespace App\Services;
 
-use App\Models\Export;
-use App\Models\Customer;
-use App\Models\Vendor;
-use App\Models\Item;
-use App\Models\Invoice;
-use App\Models\Bill;
-use App\Models\Expense;
-use App\Models\Employee;
-use App\Models\Payroll;
-use App\Models\Journal;
-use App\Models\ChartOfAccount;
-use App\Models\Inventory;
 use App\Models\ActivityLog;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Collection;
+use App\Models\Bill;
+use App\Models\ChartOfAccount;
+use App\Models\Customer;
+use App\Models\Employee;
+use App\Models\Expense;
+use App\Models\Export;
+use App\Models\Invoice;
+use App\Models\Item;
+use App\Models\Journal;
+use App\Models\Payroll;
+use App\Models\Vendor;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use ZipArchive;
 
 class ExportService
 {
     protected int $tenantId;
+
     protected array $options;
+
     protected string $disk = 'exports';
 
     public function __construct()
@@ -46,6 +46,7 @@ class ExportService
     public function forTenant(int $tenantId): self
     {
         $this->tenantId = $tenantId;
+
         return $this;
     }
 
@@ -55,6 +56,7 @@ class ExportService
     public function withOptions(array $options): self
     {
         $this->options = $options;
+
         return $this;
     }
 
@@ -84,11 +86,11 @@ class ExportService
                     'completed_at' => now(),
                     'expires_at' => now()->addDays(7), // Exports expire after 7 days
                 ]);
+
                 return true;
             }
 
             throw new \Exception('Export failed to generate file');
-
         } catch (\Exception $e) {
             Log::error('Export failed', [
                 'export_id' => $export->id,
@@ -112,9 +114,9 @@ class ExportService
     protected function createFullBackup(Export $export): bool
     {
         $includedData = $export->included_data ?? [
-            'customers', 'vendors', 'items', 'invoices', 'bills', 
+            'customers', 'vendors', 'items', 'invoices', 'bills',
             'expenses', 'employees', 'payroll', 'journals', 'chart_of_accounts',
-            'activity_logs'
+            'activity_logs',
         ];
 
         $backupData = [];
@@ -135,9 +137,9 @@ class ExportService
         }
 
         // JSON format
-        $filename = 'backup_' . date('Y-m-d_His') . '.json';
-        $path = $this->tenantId . '/' . $filename;
-        
+        $filename = 'backup_'.date('Y-m-d_His').'.json';
+        $path = $this->tenantId.'/'.$filename;
+
         $content = json_encode($backupData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         $this->storage()->put($path, $content);
 
@@ -155,31 +157,31 @@ class ExportService
      */
     protected function createZipBackup(Export $export, array $backupData): bool
     {
-        $tempDir = storage_path('app/temp/' . uniqid('backup_'));
+        $tempDir = storage_path('app/temp/'.uniqid('backup_'));
         mkdir($tempDir, 0755, true);
 
         try {
             // Create JSON file
-            file_put_contents($tempDir . '/backup.json', json_encode($backupData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            file_put_contents($tempDir.'/backup.json', json_encode($backupData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
             // Create CSV files for each data type
             foreach ($backupData as $type => $data) {
                 if ($type === 'metadata' || empty($data)) {
                     continue;
                 }
-                $this->writeCsvFile($tempDir . '/' . $type . '.csv', $data);
+                $this->writeCsvFile($tempDir.'/'.$type.'.csv', $data);
             }
 
             // Create ZIP archive with password protection
-            $filename = 'backup_' . date('Y-m-d_His') . '.zip';
-            $zipPath = storage_path('app/exports/' . $this->tenantId);
-            
-            if (!is_dir($zipPath)) {
+            $filename = 'backup_'.date('Y-m-d_His').'.zip';
+            $zipPath = storage_path('app/exports/'.$this->tenantId);
+
+            if (! is_dir($zipPath)) {
                 mkdir($zipPath, 0755, true);
             }
 
-            $zipFile = $zipPath . '/' . $filename;
-            $zip = new ZipArchive();
+            $zipFile = $zipPath.'/'.$filename;
+            $zip = new ZipArchive;
 
             if ($zip->open($zipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
                 throw new \Exception('Cannot create ZIP file');
@@ -188,7 +190,7 @@ class ExportService
             // Generate a secure password for the backup
             $backupPassword = $this->generateBackupPassword();
 
-            $files = glob($tempDir . '/*');
+            $files = glob($tempDir.'/*');
             foreach ($files as $file) {
                 $zip->addFile($file, basename($file));
             }
@@ -207,7 +209,7 @@ class ExportService
             // Store the password with the export record (encrypted via Laravel's encrypt helper)
             $export->update([
                 'filename' => $filename,
-                'file_path' => $this->tenantId . '/' . $filename,
+                'file_path' => $this->tenantId.'/'.$filename,
                 'file_size' => filesize($zipFile),
                 'options' => array_merge($export->options ?? [], [
                     'encrypted' => true,
@@ -244,10 +246,10 @@ class ExportService
             $data = [];
         }
 
-        $filename = $export->type . '_' . date('Y-m-d_His');
+        $filename = $export->type.'_'.date('Y-m-d_His');
         $path = (string) $this->tenantId;
 
-        if (!$this->storage()->exists($path)) {
+        if (! $this->storage()->exists($path)) {
             $this->storage()->makeDirectory($path);
         }
 
@@ -261,7 +263,7 @@ class ExportService
             case Export::FORMAT_PDF:
                 return $this->exportToPdf($export, $data, $filename, $path);
             default:
-                throw new \Exception('Unsupported format: ' . $export->format);
+                throw new \Exception('Unsupported format: '.$export->format);
         }
     }
 
@@ -278,7 +280,7 @@ class ExportService
             case 'customers':
                 return Customer::where('tenant_id', $this->tenantId)
                     ->get()
-                    ->map(fn($c) => [
+                    ->map(fn ($c) => [
                         'id' => $c->id,
                         'name' => $c->name,
                         'company_name' => $c->company_name,
@@ -299,7 +301,7 @@ class ExportService
             case 'vendors':
                 return Vendor::where('tenant_id', $this->tenantId)
                     ->get()
-                    ->map(fn($v) => [
+                    ->map(fn ($v) => [
                         'id' => $v->id,
                         'name' => $v->name,
                         'company_name' => $v->company_name,
@@ -321,7 +323,7 @@ class ExportService
                 return Item::where('tenant_id', $this->tenantId)
                     ->with(['category', 'inventory'])
                     ->get()
-                    ->map(fn($i) => [
+                    ->map(fn ($i) => [
                         'id' => $i->id,
                         'name' => $i->name,
                         'sku' => $i->sku,
@@ -344,7 +346,7 @@ class ExportService
             case 'invoices':
                 $query = Invoice::where('tenant_id', $this->tenantId)
                     ->with(['customer', 'items']);
-                
+
                 if ($dateFrom) {
                     $query->whereDate('invoice_date', '>=', $dateFrom);
                 }
@@ -353,7 +355,7 @@ class ExportService
                 }
 
                 return $query->get()
-                    ->map(fn($inv) => [
+                    ->map(fn ($inv) => [
                         'id' => $inv->id,
                         'invoice_number' => $inv->invoice_number,
                         'customer' => $inv->customer?->name,
@@ -375,7 +377,7 @@ class ExportService
             case 'bills':
                 $query = Bill::where('tenant_id', $this->tenantId)
                     ->with(['vendor', 'items']);
-                
+
                 if ($dateFrom) {
                     $query->whereDate('bill_date', '>=', $dateFrom);
                 }
@@ -384,7 +386,7 @@ class ExportService
                 }
 
                 return $query->get()
-                    ->map(fn($bill) => [
+                    ->map(fn ($bill) => [
                         'id' => $bill->id,
                         'bill_number' => $bill->bill_number,
                         'vendor' => $bill->vendor?->name,
@@ -405,7 +407,7 @@ class ExportService
             case 'expenses':
                 $query = Expense::where('tenant_id', $this->tenantId)
                     ->with(['vendor', 'expenseAccount']);
-                
+
                 if ($dateFrom) {
                     $query->whereDate('expense_date', '>=', $dateFrom);
                 }
@@ -414,7 +416,7 @@ class ExportService
                 }
 
                 return $query->get()
-                    ->map(fn($exp) => [
+                    ->map(fn ($exp) => [
                         'id' => $exp->id,
                         'expense_date' => $exp->expense_date?->format('Y-m-d'),
                         'vendor' => $exp->vendor?->name,
@@ -435,7 +437,7 @@ class ExportService
                 return Employee::where('tenant_id', $this->tenantId)
                     ->with(['department', 'designation'])
                     ->get()
-                    ->map(fn($emp) => [
+                    ->map(fn ($emp) => [
                         'id' => $emp->id,
                         'employee_id' => $emp->employee_id,
                         'first_name' => $emp->first_name,
@@ -456,7 +458,7 @@ class ExportService
             case 'payroll':
                 $query = Payroll::where('tenant_id', $this->tenantId)
                     ->with(['employee']);
-                
+
                 if ($dateFrom) {
                     $query->whereDate('pay_date', '>=', $dateFrom);
                 }
@@ -465,9 +467,9 @@ class ExportService
                 }
 
                 return $query->get()
-                    ->map(fn($pay) => [
+                    ->map(fn ($pay) => [
                         'id' => $pay->id,
-                        'employee' => $pay->employee?->first_name . ' ' . $pay->employee?->last_name,
+                        'employee' => $pay->employee?->first_name.' '.$pay->employee?->last_name,
                         'pay_period_start' => $pay->pay_period_start?->format('Y-m-d'),
                         'pay_period_end' => $pay->pay_period_end?->format('Y-m-d'),
                         'pay_date' => $pay->pay_date?->format('Y-m-d'),
@@ -484,7 +486,7 @@ class ExportService
             case 'journals':
                 $query = Journal::where('tenant_id', $this->tenantId)
                     ->with(['entries.account']);
-                
+
                 if ($dateFrom) {
                     $query->whereDate('journal_date', '>=', $dateFrom);
                 }
@@ -493,7 +495,7 @@ class ExportService
                 }
 
                 return $query->get()
-                    ->map(fn($j) => [
+                    ->map(fn ($j) => [
                         'id' => $j->id,
                         'journal_number' => $j->journal_number,
                         'journal_date' => $j->journal_date?->format('Y-m-d'),
@@ -511,7 +513,7 @@ class ExportService
                 return ChartOfAccount::where('tenant_id', $this->tenantId)
                     ->orderBy('account_code')
                     ->get()
-                    ->map(fn($acc) => [
+                    ->map(fn ($acc) => [
                         'id' => $acc->id,
                         'account_code' => $acc->account_code,
                         'name' => $acc->name,
@@ -530,7 +532,7 @@ class ExportService
                 $query = ActivityLog::where('tenant_id', $this->tenantId)
                     ->with('user')
                     ->orderBy('created_at', 'desc');
-                
+
                 if ($dateFrom) {
                     $query->whereDate('created_at', '>=', $dateFrom);
                 }
@@ -539,7 +541,7 @@ class ExportService
                 }
 
                 return $query->get()
-                    ->map(fn($log) => [
+                    ->map(fn ($log) => [
                         'id' => $log->id,
                         'date_time' => $log->created_at?->format('Y-m-d H:i:s'),
                         'user' => $log->user_name ?? 'System',
@@ -566,9 +568,9 @@ class ExportService
      */
     protected function exportToCsv(Export $export, array $data, string $filename, string $path): bool
     {
-        $fullFilename = $filename . '.csv';
-        $fullPath = $path . '/' . $fullFilename;
-        
+        $fullFilename = $filename.'.csv';
+        $fullPath = $path.'/'.$fullFilename;
+
         $content = $this->arrayToCsv($data);
         $this->storage()->put($fullPath, $content);
 
@@ -592,9 +594,9 @@ class ExportService
         }
 
         // Fallback to CSV with .xlsx extension note
-        $fullFilename = $filename . '.csv';
-        $fullPath = $path . '/' . $fullFilename;
-        
+        $fullFilename = $filename.'.csv';
+        $fullPath = $path.'/'.$fullFilename;
+
         $content = $this->arrayToCsv($data);
         $this->storage()->put($fullPath, $content);
 
@@ -612,10 +614,10 @@ class ExportService
      */
     protected function exportToXlsxWithSpreadsheet(Export $export, array $data, string $filename, string $path): bool
     {
-        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
 
-        if (!empty($data)) {
+        if (! empty($data)) {
             // Headers
             $headers = array_keys($data[0]);
             $col = 1;
@@ -636,10 +638,10 @@ class ExportService
             }
         }
 
-        $fullFilename = $filename . '.xlsx';
-        $fullPath = storage_path('app/' . $path . '/' . $fullFilename);
+        $fullFilename = $filename.'.xlsx';
+        $fullPath = storage_path('app/'.$path.'/'.$fullFilename);
 
-        if (!is_dir(dirname($fullPath))) {
+        if (! is_dir(dirname($fullPath))) {
             mkdir(dirname($fullPath), 0755, true);
         }
 
@@ -648,7 +650,7 @@ class ExportService
 
         $export->update([
             'filename' => $fullFilename,
-            'file_path' => $path . '/' . $fullFilename,
+            'file_path' => $path.'/'.$fullFilename,
             'file_size' => filesize($fullPath),
         ]);
 
@@ -660,9 +662,9 @@ class ExportService
      */
     protected function exportToJson(Export $export, array $data, string $filename, string $path): bool
     {
-        $fullFilename = $filename . '.json';
-        $fullPath = $path . '/' . $fullFilename;
-        
+        $fullFilename = $filename.'.json';
+        $fullPath = $path.'/'.$fullFilename;
+
         $content = json_encode([
             'metadata' => [
                 'exported_at' => now()->toIso8601String(),
@@ -688,7 +690,7 @@ class ExportService
      */
     protected function exportToPdf(Export $export, array $data, string $filename, string $path): bool
     {
-        if (!class_exists('\Barryvdh\DomPDF\Facade\Pdf')) {
+        if (! class_exists('\Barryvdh\DomPDF\Facade\Pdf')) {
             throw new \Exception('DomPDF is not installed. Please install barryvdh/laravel-dompdf.');
         }
 
@@ -701,12 +703,12 @@ class ExportService
         $pdfContent = $pdf->output();
 
         // Verify the output is actual PDF binary, not raw HTML
-        if (empty($pdfContent) || !str_starts_with($pdfContent, '%PDF-')) {
+        if (empty($pdfContent) || ! str_starts_with($pdfContent, '%PDF-')) {
             throw new \Exception('PDF rendering failed: DomPDF did not produce valid PDF output.');
         }
 
-        $fullFilename = $filename . '.pdf';
-        $fullPath = $path . '/' . $fullFilename;
+        $fullFilename = $filename.'.pdf';
+        $fullPath = $path.'/'.$fullFilename;
 
         $this->storage()->put($fullPath, $pdfContent);
 
@@ -725,9 +727,9 @@ class ExportService
     protected function generateHtmlTable(string $type, array $data): string
     {
         $title = Export::getExportTypes()[$type] ?? ucwords(str_replace('_', ' ', $type));
-        
+
         $html = '<!DOCTYPE html><html><head><meta charset="UTF-8">';
-        $html .= '<title>' . $title . ' Export</title>';
+        $html .= '<title>'.$title.' Export</title>';
         $html .= '<style>
             body { font-family: Arial, sans-serif; margin: 20px; }
             h1 { color: #333; }
@@ -737,34 +739,34 @@ class ExportService
             tr:nth-child(even) { background-color: #f2f2f2; }
             .meta { color: #666; font-size: 12px; margin-bottom: 20px; }
         </style></head><body>';
-        
-        $html .= '<h1>' . $title . '</h1>';
-        $html .= '<p class="meta">Exported on: ' . now()->format('F j, Y g:i A') . ' | Total Records: ' . count($data) . '</p>';
+
+        $html .= '<h1>'.$title.'</h1>';
+        $html .= '<p class="meta">Exported on: '.now()->format('F j, Y g:i A').' | Total Records: '.count($data).'</p>';
 
         if (empty($data)) {
             $html .= '<p>No data available for export.</p>';
         } else {
             $html .= '<table><thead><tr>';
-            
+
             foreach (array_keys($data[0]) as $header) {
-                $html .= '<th>' . ucwords(str_replace('_', ' ', $header)) . '</th>';
+                $html .= '<th>'.ucwords(str_replace('_', ' ', $header)).'</th>';
             }
-            
+
             $html .= '</tr></thead><tbody>';
-            
+
             foreach ($data as $row) {
                 $html .= '<tr>';
                 foreach ($row as $value) {
-                    $html .= '<td>' . htmlspecialchars($value ?? '') . '</td>';
+                    $html .= '<td>'.htmlspecialchars($value ?? '').'</td>';
                 }
                 $html .= '</tr>';
             }
-            
+
             $html .= '</tbody></table>';
         }
 
         $html .= '</body></html>';
-        
+
         return $html;
     }
 
@@ -778,19 +780,19 @@ class ExportService
         }
 
         $output = fopen('php://temp', 'r+');
-        
+
         // Write headers
         fputcsv($output, array_keys($data[0]));
-        
+
         // Write data
         foreach ($data as $row) {
             fputcsv($output, array_values($row));
         }
-        
+
         rewind($output);
         $csv = stream_get_contents($output);
         fclose($output);
-        
+
         return $csv;
     }
 
@@ -801,19 +803,20 @@ class ExportService
     {
         if (empty($data)) {
             file_put_contents($filepath, '');
+
             return;
         }
 
         $handle = fopen($filepath, 'w');
-        
+
         // Write headers
         fputcsv($handle, array_keys($data[0]));
-        
+
         // Write data
         foreach ($data as $row) {
             fputcsv($handle, array_values($row));
         }
-        
+
         fclose($handle);
     }
 
@@ -822,17 +825,17 @@ class ExportService
      */
     protected function deleteDirectory(string $dir): void
     {
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             return;
         }
 
         $files = array_diff(scandir($dir), ['.', '..']);
-        
+
         foreach ($files as $file) {
-            $path = $dir . '/' . $file;
+            $path = $dir.'/'.$file;
             is_dir($path) ? $this->deleteDirectory($path) : unlink($path);
         }
-        
+
         rmdir($dir);
     }
 
@@ -846,7 +849,7 @@ class ExportService
             ->get();
 
         $count = 0;
-        
+
         foreach ($expiredExports as $export) {
             if ($this->storage()->exists($export->file_path)) {
                 $this->storage()->delete($export->file_path);

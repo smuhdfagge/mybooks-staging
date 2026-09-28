@@ -62,6 +62,7 @@ class PurgeRetentionData extends Command
     {
         if ($months <= 0) {
             $this->info('Employee anonymization disabled (0 months).');
+
             return 0;
         }
 
@@ -82,6 +83,7 @@ class PurgeRetentionData extends Command
 
         if ($count === 0) {
             $this->info('No terminated employees past retention period.');
+
             return 0;
         }
 
@@ -91,11 +93,13 @@ class PurgeRetentionData extends Command
             $employees->each(function ($emp) {
                 $this->line("  Would anonymize: {$emp->employee_id} (terminated {$emp->termination_date->format('Y-m-d')})");
             });
+
             return $count;
         }
 
-        if (!$this->option('force') && !$this->confirm("Anonymize PII for {$count} employee(s)?")) {
+        if (! $this->option('force') && ! $this->confirm("Anonymize PII for {$count} employee(s)?")) {
             $this->info('Skipped employee anonymization.');
+
             return 0;
         }
 
@@ -153,6 +157,7 @@ class PurgeRetentionData extends Command
     {
         if ($months <= 0) {
             $this->info('Activity log pruning disabled (0 months).');
+
             return 0;
         }
 
@@ -168,6 +173,7 @@ class PurgeRetentionData extends Command
 
         if ($count === 0) {
             $this->info('No activity logs past retention period.');
+
             return 0;
         }
 
@@ -177,8 +183,9 @@ class PurgeRetentionData extends Command
             return $count;
         }
 
-        if (!$this->option('force') && !$this->confirm("Delete {$count} old activity log(s)?")) {
+        if (! $this->option('force') && ! $this->confirm("Delete {$count} old activity log(s)?")) {
             $this->info('Skipped activity log pruning.');
+
             return 0;
         }
 
@@ -201,6 +208,7 @@ class PurgeRetentionData extends Command
     {
         if ($months <= 0) {
             $this->info('Soft-delete purging disabled (0 months).');
+
             return 0;
         }
 
@@ -218,6 +226,7 @@ class PurgeRetentionData extends Command
 
         if ($count === 0) {
             $this->info('No soft-deleted employees past purge period.');
+
             return 0;
         }
 
@@ -227,8 +236,9 @@ class PurgeRetentionData extends Command
             return $count;
         }
 
-        if (!$this->option('force') && !$this->confirm("Permanently delete {$count} soft-deleted employee(s)?")) {
+        if (! $this->option('force') && ! $this->confirm("Permanently delete {$count} soft-deleted employee(s)?")) {
             $this->info('Skipped soft-delete purging.');
+
             return 0;
         }
 

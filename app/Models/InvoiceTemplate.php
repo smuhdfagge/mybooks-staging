@@ -2,15 +2,15 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
 class InvoiceTemplate extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     protected $fillable = [
         'tenant_id',
@@ -72,6 +72,7 @@ class InvoiceTemplate extends Model
     public function getSetting(string $key, $default = null)
     {
         $settings = $this->settings ?? [];
+
         return $settings[$key] ?? self::getDefaultSettings()[$key] ?? $default;
     }
 

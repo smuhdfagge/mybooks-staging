@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SalaryStructureItem extends Model
 {
@@ -33,6 +33,7 @@ class SalaryStructureItem extends Model
         if ($this->amount_type === 'percentage') {
             return round($this->salaryStructure->basic_salary * $this->amount / 100, 2);
         }
+
         return $this->amount;
     }
 }

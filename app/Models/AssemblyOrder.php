@@ -2,20 +2,23 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\DB;
 
 class AssemblyOrder extends Model
 {
-    use HasFactory, BelongsToTenant, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity;
 
     const STATUS_DRAFT = 'draft';
+
     const STATUS_IN_PROGRESS = 'in_progress';
+
     const STATUS_COMPLETED = 'completed';
+
     const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [
@@ -64,7 +67,7 @@ class AssemblyOrder extends Model
 
         $nextNumber = $latest ? ((int) substr($latest->order_number, 4)) + 1 : 1;
 
-        return 'ASM-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+        return 'ASM-'.str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -78,7 +81,7 @@ class AssemblyOrder extends Model
 
         $bom = $this->billOfMaterial()->with('components.item')->first();
 
-        if (!$bom) {
+        if (! $bom) {
             throw new \RuntimeException('Bill of materials not found.');
         }
 
@@ -90,7 +93,7 @@ class AssemblyOrder extends Model
                 $required = $component->effective_quantity * (float) $this->quantity;
                 $item = $component->item;
 
-                if (!$item || !$item->track_inventory) {
+                if (! $item || ! $item->track_inventory) {
                     continue;
                 }
 

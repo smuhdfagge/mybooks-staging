@@ -57,11 +57,12 @@ class SvgSanitizer
         // Suppress XML errors
         $previousErrors = libxml_use_internal_errors(true);
 
-        $dom = new \DOMDocument();
+        $dom = new \DOMDocument;
         $loaded = $dom->loadXML($svg, LIBXML_NONET);
 
         if (! $loaded || ! $dom->documentElement) {
             libxml_use_internal_errors($previousErrors);
+
             return '';
         }
 
@@ -87,6 +88,7 @@ class SvgSanitizer
                 // Remove blocked elements entirely
                 if (in_array($tagName, self::BLOCKED_ELEMENTS, true)) {
                     $nodesToRemove[] = $child;
+
                     continue;
                 }
 
@@ -121,6 +123,7 @@ class SvgSanitizer
             // Remove event handlers (onclick, onerror, onload, etc.)
             if (str_starts_with($name, self::EVENT_HANDLER_PREFIX)) {
                 $attributesToRemove[] = $attr->nodeName;
+
                 continue;
             }
 
@@ -129,6 +132,7 @@ class SvgSanitizer
                 $trimmedValue = strtolower(trim($value));
                 if (static::isDangerousUri($trimmedValue)) {
                     $attributesToRemove[] = $attr->nodeName;
+
                     continue;
                 }
             }

@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\Invoice;
 use App\Models\Customer;
+use App\Models\Invoice;
 use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -16,7 +16,7 @@ class InvoiceFactory extends Factory
         return [
             'tenant_id' => Tenant::factory(),
             'customer_id' => Customer::factory(),
-            'invoice_number' => 'INV-' . str_pad(fake()->unique()->numberBetween(1, 999999), 6, '0', STR_PAD_LEFT),
+            'invoice_number' => 'INV-'.str_pad(fake()->unique()->numberBetween(1, 999999), 6, '0', STR_PAD_LEFT),
             'invoice_date' => now(),
             'due_date' => now()->addDays(30),
             'status' => 'draft',

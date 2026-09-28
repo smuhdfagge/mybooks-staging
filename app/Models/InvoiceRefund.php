@@ -2,19 +2,19 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\MorphOne;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Events\InvoiceRefundDeleting;
+use App\Services\JournalService;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
-use App\Services\JournalService;
-use App\Events\InvoiceRefundDeleting;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class InvoiceRefund extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'tenant_id',
@@ -111,9 +111,10 @@ class InvoiceRefund extends Model
             ->where('tenant_id', $tenantId)
             ->latest('id')
             ->first();
-        
+
         $number = $lastRefund ? intval(substr($lastRefund->refund_number, 4)) + 1 : 1;
-        return 'REF-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+        return 'REF-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -130,6 +131,7 @@ class InvoiceRefund extends Model
     public function createJournalEntry(): ?Journal
     {
         $journalService = app(JournalService::class);
+
         return $journalService->createRefundJournal($this);
     }
 
@@ -151,11 +153,11 @@ class InvoiceRefund extends Model
         // Update invoice total_refunded
         $invoice = $this->invoice;
         $invoice->total_refunded = ($invoice->total_refunded ?? 0) + $this->amount;
-        
+
         // Adjust amount_paid and balance_due
         $invoice->amount_paid = max(0, $invoice->amount_paid - $this->amount);
         $invoice->balance_due = $invoice->total - $invoice->amount_paid;
-        
+
         // Update status based on new balance
         if ($invoice->balance_due >= $invoice->total) {
             $invoice->status = 'unpaid';
@@ -164,7 +166,7 @@ class InvoiceRefund extends Model
         } else {
             $invoice->status = 'paid';
         }
-        
+
         $invoice->save();
 
         // Create journal entry for the refund
@@ -188,7 +190,7 @@ class InvoiceRefund extends Model
             $invoice->total_refunded = max(0, ($invoice->total_refunded ?? 0) - $this->amount);
             $invoice->amount_paid = min($invoice->total, $invoice->amount_paid + $this->amount);
             $invoice->balance_due = $invoice->total - $invoice->amount_paid;
-            
+
             if ($invoice->balance_due <= 0) {
                 $invoice->status = 'paid';
             } elseif ($invoice->amount_paid > 0) {
@@ -196,7 +198,7 @@ class InvoiceRefund extends Model
             } else {
                 $invoice->status = 'unpaid';
             }
-            
+
             $invoice->save();
 
             // Delete the journal entry

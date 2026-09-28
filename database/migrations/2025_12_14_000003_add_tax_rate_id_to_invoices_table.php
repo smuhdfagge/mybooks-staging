@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('invoices', function (Blueprint $table) {
-            if (!Schema::hasColumn('invoices', 'tax_rate_id')) {
+            if (! Schema::hasColumn('invoices', 'tax_rate_id')) {
                 $table->foreignId('tax_rate_id')->nullable()->after('subtotal')->constrained()->nullOnDelete();
             }
         });

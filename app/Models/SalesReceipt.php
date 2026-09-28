@@ -2,22 +2,22 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\MorphOne;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Events\SalesReceiptDeleting;
+use App\Events\SalesReceiptSaved;
+use App\Services\JournalService;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
-use App\Events\SalesReceiptSaved;
-use App\Events\SalesReceiptDeleting;
-use App\Services\JournalService;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SalesReceipt extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, ValidatesAccountingPeriod, \App\Traits\KeepsTotalsBalanced;
+    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     protected $fillable = [
         'tenant_id',
@@ -66,9 +66,10 @@ class SalesReceipt extends Model
             ->where('tenant_id', $tenantId)
             ->latest('id')
             ->first();
-        
+
         $number = $lastReceipt ? intval(substr($lastReceipt->receipt_number, 3)) + 1 : 1;
-        return 'SR-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+        return 'SR-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     /** @return MorphOne<Journal, $this> */
@@ -83,6 +84,7 @@ class SalesReceipt extends Model
     public function createJournalEntry(): ?Journal
     {
         $journalService = app(JournalService::class);
+
         return $journalService->createSalesReceiptJournal($this);
     }
 

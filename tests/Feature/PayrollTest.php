@@ -5,13 +5,9 @@ namespace Tests\Feature;
 use App\Models\ChartOfAccount;
 use App\Models\Employee;
 use App\Models\Journal;
-use App\Models\JournalEntry;
 use App\Models\Payroll;
 use App\Models\PayrollBatch;
-use App\Models\SalaryStructure;
-use App\Models\SalaryStructureItem;
 use App\Models\TaxBracket;
-use App\Services\JournalService;
 use App\Services\PayrollTaxService;
 use Tests\TestCase;
 
@@ -57,7 +53,7 @@ class PayrollTest extends TestCase
         return Employee::withoutEvents(function () use ($attrs) {
             return Employee::create(array_merge([
                 'tenant_id' => $this->tenant->id,
-                'employee_id' => 'EMP-' . str_pad(rand(1, 99999), 5, '0', STR_PAD_LEFT),
+                'employee_id' => 'EMP-'.str_pad(rand(1, 99999), 5, '0', STR_PAD_LEFT),
                 'first_name' => 'Test',
                 'last_name' => 'Employee',
                 'hire_date' => now()->subYear(),
@@ -72,7 +68,7 @@ class PayrollTest extends TestCase
             return Payroll::create(array_merge([
                 'tenant_id' => $this->tenant->id,
                 'employee_id' => $employee->id,
-                'payroll_number' => 'PAY-' . str_pad(rand(1, 999999), 6, '0', STR_PAD_LEFT),
+                'payroll_number' => 'PAY-'.str_pad(rand(1, 999999), 6, '0', STR_PAD_LEFT),
                 'pay_period_start' => now()->startOfMonth(),
                 'pay_period_end' => now()->endOfMonth(),
                 'pay_date' => now(),
@@ -229,7 +225,7 @@ class PayrollTest extends TestCase
 
         // Basic salary debits 6000 (Salaries & Wages) — NOT the full gross
         $salaryEntry = $journal->entries()
-            ->whereHas('account', fn($q) => $q->where('account_code', '6000'))
+            ->whereHas('account', fn ($q) => $q->where('account_code', '6000'))
             ->first();
         $this->assertEquals(5000.00, (float) $salaryEntry->debit);
     }
@@ -257,7 +253,7 @@ class PayrollTest extends TestCase
             ->where('reference_id', $payroll->id)->first();
 
         $allowanceEntry = $journal->entries()
-            ->whereHas('account', fn($q) => $q->where('account_code', '6030'))
+            ->whereHas('account', fn ($q) => $q->where('account_code', '6030'))
             ->first();
         $this->assertNotNull($allowanceEntry);
         $this->assertEquals(1200.00, (float) $allowanceEntry->debit);
@@ -288,7 +284,7 @@ class PayrollTest extends TestCase
             ->where('reference_id', $payroll->id)->first();
 
         $overtimeEntry = $journal->entries()
-            ->whereHas('account', fn($q) => $q->where('account_code', '6040'))
+            ->whereHas('account', fn ($q) => $q->where('account_code', '6040'))
             ->first();
         $this->assertNotNull($overtimeEntry);
         $this->assertEquals(400.00, (float) $overtimeEntry->debit);
@@ -330,7 +326,7 @@ class PayrollTest extends TestCase
 
         // Verify overtime is NOT counted twice
         $salaryDebit = $journal->entries()
-            ->whereHas('account', fn($q) => $q->where('account_code', '6000'))
+            ->whereHas('account', fn ($q) => $q->where('account_code', '6000'))
             ->sum('debit');
         $this->assertEquals(4000.00, round($salaryDebit, 2), 'Salary account should only have basic salary');
     }
@@ -458,7 +454,7 @@ class PayrollTest extends TestCase
     {
         $this->createAuthenticatedUser();
 
-        $taxService = new PayrollTaxService();
+        $taxService = new PayrollTaxService;
         $result = $taxService->calculateTax(10000, $this->tenant->id, 15);
 
         $this->assertEquals('flat', $result['method']);
@@ -504,7 +500,7 @@ class PayrollTest extends TestCase
             'sort_order' => 3,
         ]);
 
-        $taxService = new PayrollTaxService();
+        $taxService = new PayrollTaxService;
 
         // Income 10000 → first 5000 @ 0% = 0, next 5000 @ 10% = 500
         $result = $taxService->calculateTax(10000, $this->tenant->id, 0, 'monthly');
@@ -524,7 +520,7 @@ class PayrollTest extends TestCase
     {
         $this->createAuthenticatedUser();
 
-        $taxService = new PayrollTaxService();
+        $taxService = new PayrollTaxService;
         $result = $taxService->calculateTax(0, $this->tenant->id, 25);
 
         $this->assertEquals(0, $result['tax']);
@@ -535,7 +531,7 @@ class PayrollTest extends TestCase
 
     public function test_employer_percentage_contributions(): void
     {
-        $taxService = new PayrollTaxService();
+        $taxService = new PayrollTaxService;
 
         $result = $taxService->calculateEmployerContributions(10000, [
             ['name' => 'Pension', 'type' => 'percentage', 'rate' => 5],
@@ -550,7 +546,7 @@ class PayrollTest extends TestCase
 
     public function test_employer_fixed_contributions(): void
     {
-        $taxService = new PayrollTaxService();
+        $taxService = new PayrollTaxService;
 
         $result = $taxService->calculateEmployerContributions(10000, [
             ['name' => 'Workers Comp', 'type' => 'fixed', 'rate' => 150],
@@ -561,7 +557,7 @@ class PayrollTest extends TestCase
 
     public function test_employer_contributions_with_cap(): void
     {
-        $taxService = new PayrollTaxService();
+        $taxService = new PayrollTaxService;
 
         $result = $taxService->calculateEmployerContributions(100000, [
             ['name' => 'Social Security', 'type' => 'percentage', 'rate' => 6.2, 'cap' => 1000],
@@ -802,7 +798,7 @@ class PayrollTest extends TestCase
         $journal = Journal::where('reference_type', Payroll::class)
             ->where('reference_id', $payroll->id)->first();
 
-        $taxPayableEntry = $journal->entries()->whereHas('account', fn($q) => $q->where('account_code', '2310'))->first();
+        $taxPayableEntry = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '2310'))->first();
         $this->assertNotNull($taxPayableEntry);
         $this->assertEquals(500.00, (float) $taxPayableEntry->credit);
     }
@@ -836,23 +832,23 @@ class PayrollTest extends TestCase
             ->where('reference_id', $payroll->id)->first();
 
         // Tax → 2310
-        $taxEntry = $journal->entries()->whereHas('account', fn($q) => $q->where('account_code', '2310'))->first();
+        $taxEntry = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '2310'))->first();
         $this->assertEquals(1000.00, (float) $taxEntry->credit);
 
         // Pension → 2320
-        $pensionEntry = $journal->entries()->whereHas('account', fn($q) => $q->where('account_code', '2320'))->first();
+        $pensionEntry = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '2320'))->first();
         $this->assertEquals(300.00, (float) $pensionEntry->credit);
 
         // Insurance → 2330
-        $insuranceEntry = $journal->entries()->whereHas('account', fn($q) => $q->where('account_code', '2330'))->first();
+        $insuranceEntry = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '2330'))->first();
         $this->assertEquals(200.00, (float) $insuranceEntry->credit);
 
         // Union Dues → 2340
-        $unionEntry = $journal->entries()->whereHas('account', fn($q) => $q->where('account_code', '2340'))->first();
+        $unionEntry = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '2340'))->first();
         $this->assertEquals(150.00, (float) $unionEntry->credit);
 
         // Garnishment → 2360
-        $garnishEntry = $journal->entries()->whereHas('account', fn($q) => $q->where('account_code', '2360'))->first();
+        $garnishEntry = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '2360'))->first();
         $this->assertEquals(250.00, (float) $garnishEntry->credit);
     }
 
@@ -884,24 +880,24 @@ class PayrollTest extends TestCase
             ->where('reference_id', $payroll->id)->first();
 
         // Expense side: debits
-        $pensionExpense = $journal->entries()->whereHas('account', fn($q) => $q->where('account_code', '6050'))->first();
+        $pensionExpense = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '6050'))->first();
         $this->assertNotNull($pensionExpense);
         $this->assertEquals(500.00, (float) $pensionExpense->debit);
 
-        $healthExpense = $journal->entries()->whereHas('account', fn($q) => $q->where('account_code', '6060'))->first();
+        $healthExpense = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '6060'))->first();
         $this->assertNotNull($healthExpense);
         $this->assertEquals(700.00, (float) $healthExpense->debit);
 
-        $wcExpense = $journal->entries()->whereHas('account', fn($q) => $q->where('account_code', '6070'))->first();
+        $wcExpense = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '6070'))->first();
         $this->assertNotNull($wcExpense);
         $this->assertEquals(300.00, (float) $wcExpense->debit);
 
         // Liability side: credits
-        $pensionPayable = $journal->entries()->whereHas('account', fn($q) => $q->where('account_code', '2320'))->first();
+        $pensionPayable = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '2320'))->first();
         $this->assertNotNull($pensionPayable);
         $this->assertEquals(500.00, (float) $pensionPayable->credit);
 
-        $insurancePayable = $journal->entries()->whereHas('account', fn($q) => $q->where('account_code', '2330'))->first();
+        $insurancePayable = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '2330'))->first();
         $this->assertNotNull($insurancePayable);
         $this->assertEquals(700.00, (float) $insurancePayable->credit);
     }
@@ -932,7 +928,7 @@ class PayrollTest extends TestCase
             ->where('reference_id', $payroll->id)->first();
 
         // Unrecognized deduction falls back to 2300
-        $fallbackEntry = $journal->entries()->whereHas('account', fn($q) => $q->where('account_code', '2300'))->first();
+        $fallbackEntry = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '2300'))->first();
         $this->assertNotNull($fallbackEntry);
         $this->assertEquals(200.00, (float) $fallbackEntry->credit);
     }

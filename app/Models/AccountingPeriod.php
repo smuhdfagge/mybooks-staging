@@ -2,16 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AccountingPeriod extends Model
 {
-    use HasFactory, BelongsToTenant, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity;
 
     protected $fillable = [
         'tenant_id',
@@ -35,7 +35,9 @@ class AccountingPeriod extends Model
 
     // Period statuses
     const STATUS_OPEN = 'open';
+
     const STATUS_CLOSED = 'closed';
+
     const STATUS_LOCKED = 'locked'; // Permanently locked (year-end)
 
     /** @return BelongsTo<User, $this> */
@@ -127,6 +129,7 @@ class AccountingPeriod extends Model
     public function containsDate($date): bool
     {
         $date = Carbon::parse($date);
+
         return $date->between($this->start_date, $this->end_date);
     }
 
@@ -150,6 +153,7 @@ class AccountingPeriod extends Model
     public static function isDateInClosedPeriod($date, $tenantId = null): bool
     {
         $period = static::getPeriodForDate($date, $tenantId);
+
         return $period ? $period->isClosed() : false;
     }
 
@@ -158,7 +162,7 @@ class AccountingPeriod extends Model
      */
     public static function isDateAllowed($date, $tenantId = null): bool
     {
-        return !static::isDateInClosedPeriod($date, $tenantId);
+        return ! static::isDateInClosedPeriod($date, $tenantId);
     }
 
     /**
@@ -181,14 +185,14 @@ class AccountingPeriod extends Model
     public static function generateMonthlyPeriods(int $tenantId, int $year, int $startMonth = 1): array
     {
         $periods = [];
-        
+
         for ($month = 0; $month < 12; $month++) {
             $currentMonth = (($startMonth - 1 + $month) % 12) + 1;
             $currentYear = $year + floor(($startMonth - 1 + $month) / 12);
-            
+
             $startDate = Carbon::createFromDate($currentYear, $currentMonth, 1);
             $endDate = $startDate->copy()->endOfMonth();
-            
+
             $period = static::create([
                 'tenant_id' => $tenantId,
                 'name' => $startDate->format('F Y'),
@@ -198,10 +202,10 @@ class AccountingPeriod extends Model
                 'fiscal_year' => $year,
                 'is_year_end' => $month === 11,
             ]);
-            
+
             $periods[] = $period;
         }
-        
+
         return $periods;
     }
 
@@ -211,7 +215,7 @@ class AccountingPeriod extends Model
     public static function getPeriodsForYear(int $year, $tenantId = null)
     {
         $tenantId = $tenantId ?? auth()->user()->tenant_id;
-        
+
         return static::where('tenant_id', $tenantId)
             ->where('fiscal_year', $year)
             ->orderBy('start_date')
@@ -227,7 +231,8 @@ class AccountingPeriod extends Model
         if ($period) {
             return "The date falls within a closed accounting period ({$period->name}). Transactions cannot be created or modified in closed periods.";
         }
-        return "The date falls within a closed accounting period.";
+
+        return 'The date falls within a closed accounting period.';
     }
 
     public static function getStatuses(): array

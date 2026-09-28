@@ -2,18 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\AuditsSensitiveFields;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
-use App\Traits\AuditsSensitiveFields;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Employee extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, AuditsSensitiveFields;
+    use AuditsSensitiveFields, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
 
     protected static array $sensitiveFields = [
         'salary' => ['type' => 'monetary', 'label' => 'Base Salary'],
@@ -140,8 +140,9 @@ class Employee extends Model
             ->where('tenant_id', $tenantId)
             ->latest('id')
             ->first();
-        
+
         $number = $lastEmployee ? intval(substr($lastEmployee->employee_id, 4)) + 1 : 1;
-        return 'EMP-' . str_pad($number, 5, '0', STR_PAD_LEFT);
+
+        return 'EMP-'.str_pad($number, 5, '0', STR_PAD_LEFT);
     }
 }

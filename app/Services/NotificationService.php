@@ -32,10 +32,10 @@ class NotificationService
      * Check if a notifiable was already sent a notification of the given type
      * for the given entity within the cooldown period.
      *
-     * @param  object  $notifiable   User or Customer with Notifiable trait
-     * @param  string  $type         The 'type' value stored in the notification data JSON
-     * @param  string  $entityKey    JSON key that holds the entity ID (e.g. 'invoice_id')
-     * @param  int     $entityId     The entity ID to match
+     * @param  object  $notifiable  User or Customer with Notifiable trait
+     * @param  string  $type  The 'type' value stored in the notification data JSON
+     * @param  string  $entityKey  JSON key that holds the entity ID (e.g. 'invoice_id')
+     * @param  int  $entityId  The entity ID to match
      */
     protected function wasRecentlyNotified(
         object $notifiable,
@@ -50,10 +50,12 @@ class NotificationService
             ->get()
             ->contains(function (DatabaseNotification $n) use ($type, $entityKey, $entityId) {
                 $data = $n->data;
+
                 return ($data['type'] ?? null) === $type
                     && ($data[$entityKey] ?? null) == $entityId;
             });
     }
+
     /**
      * Send invoice to customer via email
      */
@@ -61,18 +63,21 @@ class NotificationService
     {
         try {
             $customer = $invoice->customer;
-            
-            if (!$customer || !$customer->email) {
+
+            if (! $customer || ! $customer->email) {
                 Log::warning("Cannot send invoice {$invoice->invoice_number}: Customer has no email");
+
                 return false;
             }
 
             $customer->notify(new InvoiceSentNotification($invoice, $customMessage));
-            
+
             Log::info("Invoice {$invoice->invoice_number} sent to {$customer->email}");
+
             return true;
         } catch (\Exception $e) {
-            Log::error("Failed to send invoice {$invoice->invoice_number}: " . $e->getMessage());
+            Log::error("Failed to send invoice {$invoice->invoice_number}: ".$e->getMessage());
+
             return false;
         }
     }
@@ -84,18 +89,21 @@ class NotificationService
     {
         try {
             $customer = $payment->customer ?? $payment->invoice?->customer;
-            
-            if (!$customer || !$customer->email) {
-                Log::warning("Cannot send payment confirmation: Customer has no email");
+
+            if (! $customer || ! $customer->email) {
+                Log::warning('Cannot send payment confirmation: Customer has no email');
+
                 return false;
             }
 
             $customer->notify(new PaymentReceivedNotification($payment));
-            
+
             Log::info("Payment confirmation sent to {$customer->email}");
+
             return true;
         } catch (\Exception $e) {
-            Log::error("Failed to send payment confirmation: " . $e->getMessage());
+            Log::error('Failed to send payment confirmation: '.$e->getMessage());
+
             return false;
         }
     }
@@ -106,7 +114,7 @@ class NotificationService
     public function sendOverdueReminders(int $tenantId): int
     {
         $count = 0;
-        
+
         $overdueInvoices = Invoice::where('tenant_id', $tenantId)
             ->whereIn('status', ['unpaid', 'partial'])
             ->where('due_date', '<', now())
@@ -116,8 +124,8 @@ class NotificationService
 
         foreach ($overdueInvoices as $invoice) {
             $customer = $invoice->customer;
-            
-            if (!$customer || !$customer->email) {
+
+            if (! $customer || ! $customer->email) {
                 continue;
             }
 
@@ -132,6 +140,7 @@ class NotificationService
         }
 
         Log::info("Sent {$count} overdue invoice reminders for tenant {$tenantId}");
+
         return $count;
     }
 
@@ -141,9 +150,9 @@ class NotificationService
     public function sendUpcomingPaymentReminders(int $tenantId, int $daysBefore = 3): int
     {
         $count = 0;
-        
+
         $targetDate = now()->addDays($daysBefore)->toDateString();
-        
+
         $upcomingInvoices = Invoice::where('tenant_id', $tenantId)
             ->whereIn('status', ['unpaid', 'partial'])
             ->whereDate('due_date', $targetDate)
@@ -153,8 +162,8 @@ class NotificationService
 
         foreach ($upcomingInvoices as $invoice) {
             $customer = $invoice->customer;
-            
-            if (!$customer || !$customer->email) {
+
+            if (! $customer || ! $customer->email) {
                 continue;
             }
 
@@ -168,6 +177,7 @@ class NotificationService
         }
 
         Log::info("Sent {$count} upcoming payment reminders for tenant {$tenantId}");
+
         return $count;
     }
 
@@ -177,9 +187,9 @@ class NotificationService
     public function sendBillDueReminders(int $tenantId, int $daysBefore = 3): int
     {
         $count = 0;
-        
+
         $targetDate = now()->addDays($daysBefore)->toDateString();
-        
+
         $upcomingBills = Bill::where('tenant_id', $tenantId)
             ->whereIn('status', ['unpaid', 'partial'])
             ->whereDate('due_date', $targetDate)
@@ -205,6 +215,7 @@ class NotificationService
         }
 
         Log::info("Sent {$count} bill due reminders for tenant {$tenantId}");
+
         return $count;
     }
 
@@ -246,7 +257,8 @@ class NotificationService
             $user->notify(new LowStockNotification($lowStockItems));
         }
 
-        Log::info("Sent low stock alerts for {$lowStockItems->count()} items to " . $usersToNotify->count() . " users");
+        Log::info("Sent low stock alerts for {$lowStockItems->count()} items to ".$usersToNotify->count().' users');
+
         return true;
     }
 
@@ -259,23 +271,27 @@ class NotificationService
             $employee = $payroll->employee;
             $user = $employee?->user;
 
-            if (!$user || !$user->email) {
-                Log::warning("Cannot send payroll notification: Employee has no user account");
+            if (! $user || ! $user->email) {
+                Log::warning('Cannot send payroll notification: Employee has no user account');
+
                 return false;
             }
 
             // Skip if this user already received a payroll approval notification for this payroll today
             if ($this->wasRecentlyNotified($user, 'payroll_approved', 'payroll_id', $payroll->id)) {
                 Log::info("Skipping duplicate payroll notification for payroll {$payroll->id}");
+
                 return false;
             }
 
             $user->notify(new PayrollApprovedNotification($payroll));
-            
+
             Log::info("Payroll notification sent to {$user->email}");
+
             return true;
         } catch (\Exception $e) {
-            Log::error("Failed to send payroll notification: " . $e->getMessage());
+            Log::error('Failed to send payroll notification: '.$e->getMessage());
+
             return false;
         }
     }
@@ -314,7 +330,8 @@ class NotificationService
 
             return true;
         } catch (\Exception $e) {
-            Log::error("Failed to send leave notification: " . $e->getMessage());
+            Log::error('Failed to send leave notification: '.$e->getMessage());
+
             return false;
         }
     }
@@ -327,9 +344,11 @@ class NotificationService
         try {
             $user->notify(new WelcomeUserNotification($temporaryPassword));
             Log::info("Welcome notification sent to {$user->email}");
+
             return true;
         } catch (\Exception $e) {
-            Log::error("Failed to send welcome notification: " . $e->getMessage());
+            Log::error('Failed to send welcome notification: '.$e->getMessage());
+
             return false;
         }
     }

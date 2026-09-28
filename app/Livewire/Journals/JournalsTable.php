@@ -2,27 +2,35 @@
 
 namespace App\Livewire\Journals;
 
+use App\Livewire\Concerns\ChecksPermissions;
 use App\Models\Journal;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Livewire\Concerns\ChecksPermissions;
 
 class JournalsTable extends Component
 {
     use ChecksPermissions, WithPagination;
 
     public $search = '';
+
     public $sortField = 'journal_date';
+
     public $sortDirection = 'desc';
+
     public $perPage = 10;
+
     public $statusFilter = '';
 
     // Bulk operation properties
     public $selectedItems = [];
+
     public $selectAll = false;
+
     public $bulkAction = '';
+
     public $successMessage = '';
+
     public $errorMessage = '';
 
     protected $queryString = ['search', 'sortField', 'sortDirection', 'statusFilter'];
@@ -71,14 +79,14 @@ class JournalsTable extends Component
         return Journal::query()
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->where('journal_number', 'like', '%' . $this->search . '%')
-                      ->orWhere('description', 'like', '%' . $this->search . '%')
-                      ->orWhere('reference', 'like', '%' . $this->search . '%');
+                    $q->where('journal_number', 'like', '%'.$this->search.'%')
+                        ->orWhere('description', 'like', '%'.$this->search.'%')
+                        ->orWhere('reference', 'like', '%'.$this->search.'%');
                 });
             })
-            ->when($this->statusFilter, fn($q) => $q->where('status', $this->statusFilter))
+            ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))
             ->pluck('id')
-            ->map(fn($id) => (string) $id)
+            ->map(fn ($id) => (string) $id)
             ->toArray();
     }
 
@@ -101,11 +109,13 @@ class JournalsTable extends Component
 
         if (empty($this->selectedItems)) {
             $this->errorMessage = 'Please select at least one journal.';
+
             return;
         }
 
         if (empty($this->bulkAction)) {
             $this->errorMessage = 'Please select an action.';
+
             return;
         }
 
@@ -131,7 +141,7 @@ class JournalsTable extends Component
                 }
                 $this->successMessage = "Posted {$posted} journal(s).";
                 if ($failed) {
-                    $this->errorMessage = 'Not posted (unbalanced or in a closed period): ' . implode(', ', $failed) . '.';
+                    $this->errorMessage = 'Not posted (unbalanced or in a closed period): '.implode(', ', $failed).'.';
                 }
                 break;
 
@@ -146,6 +156,7 @@ class JournalsTable extends Component
                 foreach (Journal::with('entries.account')->whereIn('id', $this->selectedItems)->where('status', 'posted')->get() as $journal) {
                     if ($journal->reference_type) {
                         $skipped[] = $journal->journal_number;
+
                         continue;
                     }
                     // Marks the original 'reversed' (the journals.status enum has no 'voided').
@@ -154,40 +165,44 @@ class JournalsTable extends Component
                 }
                 $this->successMessage = "Voided {$voided} journal(s) with reversing entries.";
                 if ($skipped) {
-                    $this->errorMessage = 'Skipped (belong to a document; change the document instead): ' . implode(', ', $skipped) . '.';
+                    $this->errorMessage = 'Skipped (belong to a document; change the document instead): '.implode(', ', $skipped).'.';
                 }
                 break;
 
             case 'delete':
                 $deletedCount = 0;
                 $skippedCount = 0;
-                
+
                 foreach ($this->selectedItems as $journalId) {
                     $journal = Journal::find($journalId);
-                    if (!$journal) continue;
-                    
+                    if (! $journal) {
+                        continue;
+                    }
+
                     // Only allow deletion of draft journals
                     if ($journal->status !== 'draft') {
                         $skippedCount++;
+
                         continue;
                     }
-                    
+
                     $journal->entries()->delete();
                     $journal->delete();
                     $deletedCount++;
                 }
-                
+
                 if ($deletedCount > 0 && $skippedCount > 0) {
                     $this->successMessage = "Deleted {$deletedCount} journal(s). Skipped {$skippedCount} non-draft journal(s).";
                 } elseif ($deletedCount > 0) {
                     $this->successMessage = "Successfully deleted {$deletedCount} journal(s).";
                 } else {
-                    $this->errorMessage = "Could not delete any journals. Only draft journals can be deleted.";
+                    $this->errorMessage = 'Could not delete any journals. Only draft journals can be deleted.';
                 }
                 break;
 
             default:
                 $this->errorMessage = 'Invalid action selected.';
+
                 return;
         }
 
@@ -201,9 +216,9 @@ class JournalsTable extends Component
         $journals = Journal::with(['entries.account', 'createdBy'])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->where('journal_number', 'like', '%' . $this->search . '%')
-                      ->orWhere('description', 'like', '%' . $this->search . '%')
-                      ->orWhere('reference', 'like', '%' . $this->search . '%');
+                    $q->where('journal_number', 'like', '%'.$this->search.'%')
+                        ->orWhere('description', 'like', '%'.$this->search.'%')
+                        ->orWhere('reference', 'like', '%'.$this->search.'%');
                 });
             })
             ->when($this->statusFilter, function ($query) {

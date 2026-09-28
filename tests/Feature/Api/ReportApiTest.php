@@ -21,6 +21,7 @@ class ReportApiTest extends TestCase
     private function createApiUser(array $permissions = []): string
     {
         $this->createAuthenticatedUser($permissions);
+
         return $this->user->createToken('test-device')->plainTextToken;
     }
 
@@ -66,7 +67,7 @@ class ReportApiTest extends TestCase
         $this->setUpReportUser();
         $this->seedAccountsAndJournals();
 
-        $response = $this->withToken($this->token)->getJson('/api/v1/reports/profit-loss?' . http_build_query([
+        $response = $this->withToken($this->token)->getJson('/api/v1/reports/profit-loss?'.http_build_query([
             'start_date' => now()->startOfYear()->format('Y-m-d'),
             'end_date' => now()->addDay()->format('Y-m-d'),
         ]));
@@ -203,7 +204,7 @@ class ReportApiTest extends TestCase
             ->where('account_code', '1000')
             ->first();
 
-        $response = $this->withToken($this->token)->getJson('/api/v1/reports/general-ledger?account_id=' . $account->id);
+        $response = $this->withToken($this->token)->getJson('/api/v1/reports/general-ledger?account_id='.$account->id);
 
         $response->assertOk()
             ->assertJsonStructure(['data']);
@@ -328,7 +329,7 @@ class ReportApiTest extends TestCase
 
         $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
 
-        $response = $this->withToken($this->token)->getJson('/api/v1/reports/customer-statement?customer_id=' . $customer->id);
+        $response = $this->withToken($this->token)->getJson('/api/v1/reports/customer-statement?customer_id='.$customer->id);
 
         $response->assertOk()
             ->assertJsonStructure(['data']);
@@ -358,7 +359,7 @@ class ReportApiTest extends TestCase
         ]));
 
         // Our P&L should not include the other tenant's 99999
-        $response = $this->withToken($this->token)->getJson('/api/v1/reports/profit-loss?' . http_build_query([
+        $response = $this->withToken($this->token)->getJson('/api/v1/reports/profit-loss?'.http_build_query([
             'start_date' => now()->startOfYear()->format('Y-m-d'),
             'end_date' => now()->addDay()->format('Y-m-d'),
         ]));

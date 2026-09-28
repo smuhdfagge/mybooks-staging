@@ -2,27 +2,36 @@
 
 namespace App\Livewire\Budgets;
 
+use App\Livewire\Concerns\ChecksPermissions;
 use App\Models\Budget;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Livewire\Concerns\ChecksPermissions;
 
 class BudgetsTable extends Component
 {
     use ChecksPermissions, WithPagination;
 
     public $search = '';
+
     public $sortField = 'fiscal_year';
+
     public $sortDirection = 'desc';
+
     public $perPage = 15;
+
     public $yearFilter = '';
+
     public $statusFilter = '';
 
     // Bulk operation properties
     public $selectedItems = [];
+
     public $selectAll = false;
+
     public $bulkAction = '';
+
     public $successMessage = '';
+
     public $errorMessage = '';
 
     protected $queryString = ['search', 'sortField', 'sortDirection', 'yearFilter', 'statusFilter'];
@@ -76,14 +85,14 @@ class BudgetsTable extends Component
         return Budget::query()
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->where('name', 'like', '%' . $this->search . '%')
-                      ->orWhere('description', 'like', '%' . $this->search . '%');
+                    $q->where('name', 'like', '%'.$this->search.'%')
+                        ->orWhere('description', 'like', '%'.$this->search.'%');
                 });
             })
-            ->when($this->yearFilter, fn($q) => $q->where('fiscal_year', $this->yearFilter))
-            ->when($this->statusFilter, fn($q) => $q->where('status', $this->statusFilter))
+            ->when($this->yearFilter, fn ($q) => $q->where('fiscal_year', $this->yearFilter))
+            ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))
             ->pluck('id')
-            ->map(fn($id) => (string) $id)
+            ->map(fn ($id) => (string) $id)
             ->toArray();
     }
 
@@ -106,11 +115,13 @@ class BudgetsTable extends Component
 
         if (empty($this->selectedItems)) {
             $this->errorMessage = 'Please select at least one budget.';
+
             return;
         }
 
         if (empty($this->bulkAction)) {
             $this->errorMessage = 'Please select an action.';
+
             return;
         }
 
@@ -155,7 +166,7 @@ class BudgetsTable extends Component
                 $deleted = 0;
                 foreach ($this->selectedItems as $id) {
                     $budget = Budget::find($id);
-                    if ($budget && !$budget->isLocked()) {
+                    if ($budget && ! $budget->isLocked()) {
                         $budget->lines()->delete();
                         $budget->delete();
                         $deleted++;
@@ -170,6 +181,7 @@ class BudgetsTable extends Component
 
             default:
                 $this->errorMessage = 'Invalid action selected.';
+
                 return;
         }
 
@@ -187,8 +199,8 @@ class BudgetsTable extends Component
         // Search
         if ($this->search) {
             $query->where(function ($q) {
-                $q->where('name', 'like', '%' . $this->search . '%')
-                  ->orWhere('description', 'like', '%' . $this->search . '%');
+                $q->where('name', 'like', '%'.$this->search.'%')
+                    ->orWhere('description', 'like', '%'.$this->search.'%');
             });
         }
 
@@ -204,7 +216,7 @@ class BudgetsTable extends Component
         $query->orderBy($this->sortField, $this->sortDirection);
 
         $budgets = $query->paginate($this->perPage);
-        
+
         // Get available years for filter
         $availableYears = Budget::distinct()->pluck('fiscal_year')->sort()->reverse()->values();
         $statuses = Budget::getStatuses();

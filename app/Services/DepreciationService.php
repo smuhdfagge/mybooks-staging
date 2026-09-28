@@ -2,14 +2,14 @@
 
 namespace App\Services;
 
+use App\Models\ChartOfAccount;
 use App\Models\FixedAsset;
 use App\Models\FixedAssetDepreciation;
 use App\Models\Journal;
 use App\Models\JournalEntry;
-use App\Models\ChartOfAccount;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 use Exception;
+use Illuminate\Support\Facades\DB;
 
 class DepreciationService
 {
@@ -18,7 +18,7 @@ class DepreciationService
      */
     public function calculateMonthlyDepreciation(FixedAsset $asset, int $periodNumber = 1): float
     {
-        if (!$asset->canDepreciate()) {
+        if (! $asset->canDepreciate()) {
             return 0;
         }
 
@@ -43,10 +43,10 @@ class DepreciationService
         }
 
         $monthlyDepreciation = $asset->depreciable_amount / $usefulLifeMonths;
-        
+
         // Don't depreciate below salvage value
         $remainingDepreciable = $asset->book_value - $asset->salvage_value;
-        
+
         return min($monthlyDepreciation, max(0, $remainingDepreciable));
     }
 
@@ -58,12 +58,12 @@ class DepreciationService
     {
         $rate = $asset->depreciation_rate ?? (1 / $asset->useful_life) * 100;
         $monthlyRate = $rate / 100 / 12;
-        
+
         $depreciation = $asset->book_value * $monthlyRate;
-        
+
         // Don't depreciate below salvage value
         $remainingDepreciable = $asset->book_value - $asset->salvage_value;
-        
+
         return min($depreciation, max(0, $remainingDepreciable));
     }
 
@@ -75,12 +75,12 @@ class DepreciationService
     {
         $yearsLife = $asset->useful_life;
         $monthlyRate = (2 / $yearsLife) / 12;
-        
+
         $depreciation = $asset->book_value * $monthlyRate;
-        
+
         // Don't depreciate below salvage value
         $remainingDepreciable = $asset->book_value - $asset->salvage_value;
-        
+
         return min($depreciation, max(0, $remainingDepreciable));
     }
 
@@ -92,18 +92,18 @@ class DepreciationService
     {
         $yearsLife = $asset->useful_life;
         $sumOfYears = ($yearsLife * ($yearsLife + 1)) / 2;
-        
+
         // Calculate which year we're in
         $currentYear = ceil($periodNumber / 12);
         $remainingYears = max(1, $yearsLife - $currentYear + 1);
-        
+
         // Annual depreciation for this year
         $annualDepreciation = $asset->depreciable_amount * ($remainingYears / $sumOfYears);
         $monthlyDepreciation = $annualDepreciation / 12;
-        
+
         // Don't depreciate below salvage value
         $remainingDepreciable = $asset->book_value - $asset->salvage_value;
-        
+
         return min($monthlyDepreciation, max(0, $remainingDepreciable));
     }
 
@@ -125,7 +125,7 @@ class DepreciationService
             $tempAsset->accumulated_depreciation = $accumulatedDepreciation;
 
             $depreciation = $this->calculateMonthlyDepreciation($tempAsset, $period);
-            
+
             if ($depreciation <= 0) {
                 break; // Stop if no more depreciation
             }
@@ -163,17 +163,17 @@ class DepreciationService
      */
     public function recordDepreciation(FixedAsset $asset, Carbon $depreciationDate, ?string $notes = null): ?FixedAssetDepreciation
     {
-        if (!$asset->canDepreciate()) {
+        if (! $asset->canDepreciate()) {
             throw new Exception('Asset cannot be depreciated.');
         }
 
         return DB::transaction(function () use ($asset, $depreciationDate, $notes) {
             // Calculate period number
             $periodNumber = $asset->depreciations()->count() + 1;
-            
+
             // Calculate depreciation amount
             $depreciationAmount = $this->calculateMonthlyDepreciation($asset, $periodNumber);
-            
+
             if ($depreciationAmount <= 0) {
                 throw new Exception('No depreciation amount to record.');
             }
@@ -210,8 +210,8 @@ class DepreciationService
             $asset->withoutPeriodValidation()->update([
                 'accumulated_depreciation' => $newAccumulated,
                 'book_value' => $newBookValue,
-                'status' => $newBookValue <= $asset->salvage_value 
-                    ? FixedAsset::STATUS_FULLY_DEPRECIATED 
+                'status' => $newBookValue <= $asset->salvage_value
+                    ? FixedAsset::STATUS_FULLY_DEPRECIATED
                     : FixedAsset::STATUS_ACTIVE,
             ]);
 
@@ -225,7 +225,7 @@ class DepreciationService
     protected function createDepreciationJournal(FixedAsset $asset, Carbon $date, float $amount): ?Journal
     {
         // Get accounts
-        $depreciationAccount = $asset->depreciation_account_id 
+        $depreciationAccount = $asset->depreciation_account_id
             ? ChartOfAccount::find($asset->depreciation_account_id)
             : ChartOfAccount::where('tenant_id', $asset->tenant_id)
                 ->where('account_code', '6800')
@@ -237,7 +237,7 @@ class DepreciationService
                 ->where('account_code', '1600')
                 ->first();
 
-        if (!$depreciationAccount || !$accumulatedAccount) {
+        if (! $depreciationAccount || ! $accumulatedAccount) {
             return null;
         }
 
@@ -280,8 +280,6 @@ class DepreciationService
         // Depreciation, an asset account, so it moved the wrong way.
         app(JournalService::class)->updateAccountBalances($journal);
 
-
-
         return $journal;
     }
 
@@ -312,6 +310,7 @@ class DepreciationService
 
                 if ($existingDepreciation) {
                     $results['skipped']++;
+
                     continue;
                 }
 
@@ -333,7 +332,7 @@ class DepreciationService
      */
     public function reverseDepreciation(FixedAssetDepreciation $depreciation): bool
     {
-        if (!$depreciation->canReverse()) {
+        if (! $depreciation->canReverse()) {
             throw new Exception('This depreciation cannot be reversed.');
         }
 
@@ -373,20 +372,20 @@ class DepreciationService
      * Dispose an asset
      */
     public function disposeAsset(
-        FixedAsset $asset, 
-        string $method, 
-        ?float $amount = null, 
-        ?Carbon $date = null, 
+        FixedAsset $asset,
+        string $method,
+        ?float $amount = null,
+        ?Carbon $date = null,
         ?string $notes = null
     ): bool {
-        if (!$asset->canDispose()) {
+        if (! $asset->canDispose()) {
             throw new Exception('Asset cannot be disposed.');
         }
 
         return DB::transaction(function () use ($asset, $method, $amount, $date, $notes) {
             $disposalDate = $date ?? now();
             $disposalAmount = $amount ?? 0;
-            
+
             // Calculate gain/loss
             $gainLoss = $disposalAmount - $asset->book_value;
 
@@ -394,8 +393,8 @@ class DepreciationService
             $this->createDisposalJournal($asset, $disposalDate, $disposalAmount, $gainLoss);
 
             // Update asset status
-            $status = $method === FixedAsset::DISPOSAL_SALE 
-                ? FixedAsset::STATUS_SOLD 
+            $status = $method === FixedAsset::DISPOSAL_SALE
+                ? FixedAsset::STATUS_SOLD
                 : FixedAsset::STATUS_DISPOSED;
 
             $asset->withoutPeriodValidation()->update([
@@ -437,7 +436,7 @@ class DepreciationService
             ? ChartOfAccount::where('tenant_id', $asset->tenant_id)->where('account_code', '4200')->first()
             : ChartOfAccount::where('tenant_id', $asset->tenant_id)->where('account_code', '6990')->first();
 
-        if (!$assetAccount || !$accumulatedAccount) {
+        if (! $assetAccount || ! $accumulatedAccount) {
             return null;
         }
 
@@ -532,6 +531,7 @@ class DepreciationService
             ->groupBy('fixed_asset_id')
             ->map(function ($depreciations) {
                 $asset = $depreciations->first()->fixedAsset;
+
                 return [
                     'asset' => $asset,
                     'total_depreciation' => $depreciations->sum('depreciation_amount'),

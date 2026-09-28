@@ -2,32 +2,12 @@
 
 namespace App\Http\Controllers\Reports;
 
-use App\Models\Bill;
-use App\Models\BillItem;
-use App\Models\ChartOfAccount;
-use App\Models\CustomReport;
-use App\Models\Customer;
 use App\Models\Department;
 use App\Models\Employee;
-use App\Models\Expense;
-use App\Models\Inventory;
-use App\Models\Invoice;
-use App\Models\InvoiceItem;
-use App\Models\Item;
-use App\Models\Journal;
-use App\Models\JournalEntry;
-use App\Models\PaymentMade;
-use App\Models\PaymentReceived;
 use App\Models\Payroll;
-use App\Models\PayrollBatch;
 use App\Models\SalaryStructureVersion;
-use App\Models\TaxRate;
-use App\Models\Vendor;
-use App\Services\ReportExportService;
 use App\Services\Reports\PayrollReportService;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Payroll reports and their exports.
@@ -64,7 +44,7 @@ class PayrollReportController extends ReportController
         })->values();
 
         return view('reports.payroll-summary', compact(
-            'payrolls', 'byEmployee', 'totalGross', 'totalDeductions', 
+            'payrolls', 'byEmployee', 'totalGross', 'totalDeductions',
             'totalNet', 'startDate', 'endDate'
         ));
     }
@@ -88,6 +68,7 @@ class PayrollReportController extends ReportController
             return $payroll->employee?->department_id ?? 0;
         })->map(function ($records) {
             $department = $records->first()->employee?->department;
+
             return [
                 'department' => $department,
                 'department_name' => $department?->name ?? 'Unassigned',
@@ -262,6 +243,7 @@ class PayrollReportController extends ReportController
 
         if ($format === 'csv') {
             $exportData = $this->exportService->payrollSummaryData($payrolls, $byEmployee);
+
             return $this->exportService
                 ->setTitle('Payroll Summary')
                 ->setFilters(['Period' => "$startDate to $endDate"])
@@ -297,6 +279,7 @@ class PayrollReportController extends ReportController
             return $payroll->employee?->department_id ?? 0;
         })->map(function ($records) {
             $department = $records->first()->employee?->department;
+
             return [
                 'department' => $department,
                 'department_name' => $department?->name ?? 'Unassigned',
@@ -315,6 +298,7 @@ class PayrollReportController extends ReportController
 
         if ($format === 'csv') {
             $exportData = $this->exportService->payrollByDepartmentData($byDepartment);
+
             return $this->exportService
                 ->setTitle('Payroll by Department')
                 ->setFilters(['Period' => "$startDate to $endDate"])
@@ -359,6 +343,7 @@ class PayrollReportController extends ReportController
 
         if ($format === 'csv') {
             $exportData = $this->exportService->employeeEarningsData($payrolls);
+
             return $this->exportService
                 ->setTitle('Employee Earnings')
                 ->setFilters(['Period' => "$startDate to $endDate"])
@@ -382,7 +367,7 @@ class PayrollReportController extends ReportController
         $departmentId = $request->get('department_id');
         $format = $request->get('format', 'pdf');
 
-        $startDate = \Carbon\Carbon::parse($month . '-01')->startOfMonth();
+        $startDate = \Carbon\Carbon::parse($month.'-01')->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
 
         $query = Payroll::where('tenant_id', $tenantId)
@@ -393,7 +378,7 @@ class PayrollReportController extends ReportController
             $query->where('status', $status);
         }
         if ($departmentId) {
-            $query->whereHas('employee', fn($q) => $q->where('department_id', $departmentId));
+            $query->whereHas('employee', fn ($q) => $q->where('department_id', $departmentId));
         }
 
         $payrolls = $query->orderBy('payroll_number')->get();
@@ -414,6 +399,7 @@ class PayrollReportController extends ReportController
 
         if ($format === 'csv') {
             $exportData = $this->exportService->payrollRegisterData($payrolls);
+
             return $this->exportService
                 ->setTitle('Payroll Register')
                 ->setFilters(['Month' => $month])
@@ -453,6 +439,7 @@ class PayrollReportController extends ReportController
 
         $byEmployee = $payrolls->groupBy('employee_id')->map(function ($records) {
             $employee = $records->first()->employee;
+
             return [
                 'employee' => $employee,
                 'ytd_basic' => (float) $records->sum('basic_salary'),
@@ -465,7 +452,7 @@ class PayrollReportController extends ReportController
                 'ytd_employer_contributions' => (float) $records->sum('employer_contributions'),
                 'pay_periods' => $records->count(),
             ];
-        })->sortBy(fn($r) => $r['employee']->first_name)->values();
+        })->sortBy(fn ($r) => $r['employee']->first_name)->values();
 
         $grandTotals = [
             'basic' => $byEmployee->sum('ytd_basic'),
@@ -482,6 +469,7 @@ class PayrollReportController extends ReportController
 
         if ($format === 'csv') {
             $exportData = $this->exportService->ytdEarningsData($byEmployee);
+
             return $this->exportService
                 ->setTitle('Year-to-Date Earnings')
                 ->setFilters(['Year' => $year])
@@ -514,6 +502,7 @@ class PayrollReportController extends ReportController
 
         $byEmployee = $payrolls->groupBy('employee_id')->map(function ($records) {
             $employee = $records->first()->employee;
+
             return [
                 'employee' => $employee,
                 'taxable_income' => (float) $records->sum('gross_salary'),
@@ -534,6 +523,7 @@ class PayrollReportController extends ReportController
 
         if ($format === 'csv') {
             $exportData = $this->exportService->taxLiabilityPayrollData($byEmployee);
+
             return $this->exportService
                 ->setTitle('Tax Liability - Payroll')
                 ->setFilters(['Period' => "$startDate to $endDate"])
@@ -564,10 +554,10 @@ class PayrollReportController extends ReportController
 
         $contributionTypes = [];
         foreach ($payrolls as $payroll) {
-            if (!empty($payroll->employer_contribution_details)) {
+            if (! empty($payroll->employer_contribution_details)) {
                 foreach ($payroll->employer_contribution_details as $detail) {
                     $name = $detail['name'] ?? 'Unknown';
-                    if (!isset($contributionTypes[$name])) {
+                    if (! isset($contributionTypes[$name])) {
                         $contributionTypes[$name] = ['name' => $name, 'total' => 0, 'count' => 0];
                     }
                     $contributionTypes[$name]['total'] += (float) ($detail['amount'] ?? 0);
@@ -579,6 +569,7 @@ class PayrollReportController extends ReportController
 
         $byEmployee = $payrolls->where('employer_contributions', '>', 0)->groupBy('employee_id')->map(function ($records) {
             $employee = $records->first()->employee;
+
             return [
                 'employee' => $employee,
                 'gross_salary' => (float) $records->sum('gross_salary'),
@@ -595,6 +586,7 @@ class PayrollReportController extends ReportController
 
         if ($format === 'csv') {
             $exportData = $this->exportService->employerContributionsData($byEmployee, $contributionTypes);
+
             return $this->exportService
                 ->setTitle('Employer Contributions')
                 ->setFilters(['Period' => "$startDate to $endDate"])
@@ -634,6 +626,7 @@ class PayrollReportController extends ReportController
 
         if ($format === 'csv') {
             $exportData = $this->exportService->bankDisbursementData($payrolls);
+
             return $this->exportService
                 ->setTitle('Bank Disbursement')
                 ->setFilters(['Period' => "$startDate to $endDate"])
@@ -665,6 +658,7 @@ class PayrollReportController extends ReportController
 
         if ($format === 'csv') {
             $exportData = $this->exportService->salaryRevisionHistoryData($versions);
+
             return $this->exportService
                 ->setTitle('Salary Revision History')
                 ->setFilters([])

@@ -3,32 +3,11 @@
 namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
-use App\Models\Bill;
-use App\Models\BillItem;
-use App\Models\ChartOfAccount;
-use App\Models\CustomReport;
-use App\Models\Customer;
-use App\Models\Department;
-use App\Models\Employee;
 use App\Models\Expense;
-use App\Models\Inventory;
-use App\Models\Invoice;
-use App\Models\InvoiceItem;
-use App\Models\Item;
 use App\Models\Journal;
 use App\Models\JournalEntry;
-use App\Models\PaymentMade;
-use App\Models\PaymentReceived;
 use App\Models\Payroll;
-use App\Models\PayrollBatch;
-use App\Models\SalaryStructureVersion;
-use App\Models\TaxRate;
-use App\Models\Vendor;
 use App\Services\ReportExportService;
-use App\Services\Reports\PayrollReportService;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Shared set-up and ledger calculations for the report controllers
@@ -45,11 +24,6 @@ abstract class ReportController extends Controller
 
     /**
      * Calculate Profit & Loss from journal entries using accrual-based accounting
-     *
-     * @param int $tenantId
-     * @param string $startDate
-     * @param string $endDate
-     * @return array
      */
     protected function calculateProfitLossFromJournals(int $tenantId, string $startDate, string $endDate): array
     {
@@ -57,10 +31,10 @@ abstract class ReportController extends Controller
         // In double-entry accounting, income accounts are credited for revenue
         // Revenue = Credits - Debits for income type accounts
         $incomeData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$startDate, $endDate])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', function ($query) {
                 $query->where('type', 'income');
             })
@@ -73,10 +47,10 @@ abstract class ReportController extends Controller
         // In double-entry accounting, expense accounts are debited
         // Expenses = Debits - Credits for expense type accounts
         $expenseData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$startDate, $endDate])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', function ($query) {
                 $query->where('type', 'expense');
             })
@@ -87,10 +61,10 @@ abstract class ReportController extends Controller
 
         // Break down expenses by sub_type for detailed reporting
         $expenseBreakdown = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$startDate, $endDate])
+                ->where('is_posted', true);
+        })
             ->join('chart_of_accounts', 'journal_entries.account_id', '=', 'chart_of_accounts.id')
             ->where('chart_of_accounts.type', 'expense')
             ->selectRaw('chart_of_accounts.sub_type, SUM(journal_entries.debit) as total_debit, SUM(journal_entries.credit) as total_credit')
@@ -108,10 +82,10 @@ abstract class ReportController extends Controller
         // Payroll is typically part of operating expenses, but we can get it separately
         // from accounts that have payroll-related names
         $payrollExpenses = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$startDate, $endDate])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', function ($query) {
                 $query->where('type', 'expense')
                     ->where(function ($q) {
@@ -152,10 +126,10 @@ abstract class ReportController extends Controller
 
         // Income (credits - debits for income accounts)
         $incomeData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $fiscalYearStart, $asOf) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$fiscalYearStart, $asOf])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$fiscalYearStart, $asOf])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', function ($query) {
                 $query->where('type', 'income');
             })
@@ -166,10 +140,10 @@ abstract class ReportController extends Controller
 
         // Expenses (debits - credits for expense accounts)
         $expenseData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $fiscalYearStart, $asOf) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$fiscalYearStart, $asOf])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$fiscalYearStart, $asOf])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', function ($query) {
                 $query->where('type', 'expense');
             })
@@ -183,21 +157,18 @@ abstract class ReportController extends Controller
 
     /**
      * Calculate cash balance as of a specific date
-     * 
-     * @param int $tenantId
-     * @param string $date
-     * @param bool $beforeDate If true, calculates balance before the date; if false, up to and including the date
-     * @return float
+     *
+     * @param  bool  $beforeDate  If true, calculates balance before the date; if false, up to and including the date
      */
     protected function calculateCashBalance(int $tenantId, string $date, bool $beforeDate = false): float
     {
         $operator = $beforeDate ? '<' : '<=';
-        
+
         $cashData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $date, $operator) {
-                $query->where('tenant_id', $tenantId)
-                    ->where('journal_date', $operator, $date)
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->where('journal_date', $operator, $date)
+                ->where('is_posted', true);
+        })
             ->whereHas('account', function ($query) {
                 $query->where('type', 'asset')
                     ->whereIn('sub_type', ['cash', 'bank']);

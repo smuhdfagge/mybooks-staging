@@ -2,28 +2,38 @@
 
 namespace App\Livewire\ChartOfAccounts;
 
+use App\Livewire\Concerns\ChecksPermissions;
 use App\Models\ChartOfAccount;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Livewire\Concerns\ChecksPermissions;
 
 class ChartOfAccountsTable extends Component
 {
     use ChecksPermissions, WithPagination;
 
     public $search = '';
+
     public $sortField = 'account_code';
+
     public $sortDirection = 'asc';
+
     public $perPage = 25;
+
     public $typeFilter = '';
+
     public $viewMode = 'tree'; // 'flat' or 'tree'
+
     public $collapsedTypes = [];
 
     // Bulk operation properties
     public $selectedItems = [];
+
     public $selectAll = false;
+
     public $bulkAction = '';
+
     public $successMessage = '';
+
     public $errorMessage = '';
 
     protected $queryString = ['search', 'sortField', 'sortDirection', 'typeFilter', 'viewMode'];
@@ -81,14 +91,14 @@ class ChartOfAccountsTable extends Component
         return ChartOfAccount::query()
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->where('account_code', 'like', '%' . $this->search . '%')
-                      ->orWhere('name', 'like', '%' . $this->search . '%')
-                      ->orWhere('description', 'like', '%' . $this->search . '%');
+                    $q->where('account_code', 'like', '%'.$this->search.'%')
+                        ->orWhere('name', 'like', '%'.$this->search.'%')
+                        ->orWhere('description', 'like', '%'.$this->search.'%');
                 });
             })
-            ->when($this->typeFilter, fn($q) => $q->where('type', $this->typeFilter))
+            ->when($this->typeFilter, fn ($q) => $q->where('type', $this->typeFilter))
             ->pluck('id')
-            ->map(fn($id) => (string) $id)
+            ->map(fn ($id) => (string) $id)
             ->toArray();
     }
 
@@ -111,11 +121,13 @@ class ChartOfAccountsTable extends Component
 
         if (empty($this->selectedItems)) {
             $this->errorMessage = 'Please select at least one account.';
+
             return;
         }
 
         if (empty($this->bulkAction)) {
             $this->errorMessage = 'Please select an action.';
+
             return;
         }
 
@@ -137,34 +149,38 @@ class ChartOfAccountsTable extends Component
             case 'delete':
                 $deletedCount = 0;
                 $skippedCount = 0;
-                
+
                 foreach ($this->selectedItems as $accountId) {
                     $account = ChartOfAccount::find($accountId);
-                    if (!$account) continue;
-                    
+                    if (! $account) {
+                        continue;
+                    }
+
                     // Check if account has related records
-                    if ($account->journalEntries()->exists() || 
+                    if ($account->journalEntries()->exists() ||
                         $account->children()->exists() ||
                         $account->is_system) {
                         $skippedCount++;
+
                         continue;
                     }
-                    
+
                     $account->delete();
                     $deletedCount++;
                 }
-                
+
                 if ($deletedCount > 0 && $skippedCount > 0) {
                     $this->successMessage = "Deleted {$deletedCount} account(s). Skipped {$skippedCount} account(s) with existing records or system accounts.";
                 } elseif ($deletedCount > 0) {
                     $this->successMessage = "Successfully deleted {$deletedCount} account(s).";
                 } else {
-                    $this->errorMessage = "Could not delete any accounts. Selected accounts have existing records or are system accounts.";
+                    $this->errorMessage = 'Could not delete any accounts. Selected accounts have existing records or are system accounts.';
                 }
                 break;
 
             default:
                 $this->errorMessage = 'Invalid action selected.';
+
                 return;
         }
 
@@ -178,9 +194,9 @@ class ChartOfAccountsTable extends Component
         $accounts = ChartOfAccount::with(['parent'])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->where('account_code', 'like', '%' . $this->search . '%')
-                      ->orWhere('name', 'like', '%' . $this->search . '%')
-                      ->orWhere('description', 'like', '%' . $this->search . '%');
+                    $q->where('account_code', 'like', '%'.$this->search.'%')
+                        ->orWhere('name', 'like', '%'.$this->search.'%')
+                        ->orWhere('description', 'like', '%'.$this->search.'%');
                 });
             })
             ->when($this->typeFilter, function ($query) {
@@ -197,9 +213,9 @@ class ChartOfAccountsTable extends Component
             $allAccounts = ChartOfAccount::with(['parent', 'children'])
                 ->when($this->search, function ($query) {
                     $query->where(function ($q) {
-                        $q->where('account_code', 'like', '%' . $this->search . '%')
-                          ->orWhere('name', 'like', '%' . $this->search . '%')
-                          ->orWhere('description', 'like', '%' . $this->search . '%');
+                        $q->where('account_code', 'like', '%'.$this->search.'%')
+                            ->orWhere('name', 'like', '%'.$this->search.'%')
+                            ->orWhere('description', 'like', '%'.$this->search.'%');
                     });
                 })
                 ->when($this->typeFilter, function ($query) {

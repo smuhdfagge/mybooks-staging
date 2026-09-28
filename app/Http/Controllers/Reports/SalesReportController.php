@@ -2,32 +2,11 @@
 
 namespace App\Http\Controllers\Reports;
 
-use App\Models\Bill;
-use App\Models\BillItem;
-use App\Models\ChartOfAccount;
-use App\Models\CustomReport;
 use App\Models\Customer;
-use App\Models\Department;
-use App\Models\Employee;
-use App\Models\Expense;
-use App\Models\Inventory;
 use App\Models\Invoice;
-use App\Models\InvoiceItem;
 use App\Models\Item;
-use App\Models\Journal;
-use App\Models\JournalEntry;
-use App\Models\PaymentMade;
 use App\Models\PaymentReceived;
-use App\Models\Payroll;
-use App\Models\PayrollBatch;
-use App\Models\SalaryStructureVersion;
-use App\Models\TaxRate;
-use App\Models\Vendor;
-use App\Services\ReportExportService;
-use App\Services\Reports\PayrollReportService;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Receivables, sales by customer and item, customer statements, with their exports.
@@ -52,12 +31,12 @@ class SalesReportController extends ReportController
 
         // Group by aging based on as_of date for proper historical accuracy
         $asOfDate = \Carbon\Carbon::parse($asOf);
-        $current = $invoices->filter(fn($inv) => $inv->due_date >= $asOfDate)->sum('balance_due');
-        $days30 = $invoices->filter(fn($inv) => $inv->due_date < $asOfDate && $inv->due_date >= $asOfDate->copy()->subDays(30))->sum('balance_due');
-        $days60 = $invoices->filter(fn($inv) => $inv->due_date < $asOfDate->copy()->subDays(30) && $inv->due_date >= $asOfDate->copy()->subDays(60))->sum('balance_due');
-        $days90 = $invoices->filter(fn($inv) => $inv->due_date < $asOfDate->copy()->subDays(60) && $inv->due_date >= $asOfDate->copy()->subDays(90))->sum('balance_due');
-        $days120 = $invoices->filter(fn($inv) => $inv->due_date < $asOfDate->copy()->subDays(90) && $inv->due_date >= $asOfDate->copy()->subDays(120))->sum('balance_due');
-        $over120 = $invoices->filter(fn($inv) => $inv->due_date < $asOfDate->copy()->subDays(120))->sum('balance_due');
+        $current = $invoices->filter(fn ($inv) => $inv->due_date >= $asOfDate)->sum('balance_due');
+        $days30 = $invoices->filter(fn ($inv) => $inv->due_date < $asOfDate && $inv->due_date >= $asOfDate->copy()->subDays(30))->sum('balance_due');
+        $days60 = $invoices->filter(fn ($inv) => $inv->due_date < $asOfDate->copy()->subDays(30) && $inv->due_date >= $asOfDate->copy()->subDays(60))->sum('balance_due');
+        $days90 = $invoices->filter(fn ($inv) => $inv->due_date < $asOfDate->copy()->subDays(60) && $inv->due_date >= $asOfDate->copy()->subDays(90))->sum('balance_due');
+        $days120 = $invoices->filter(fn ($inv) => $inv->due_date < $asOfDate->copy()->subDays(90) && $inv->due_date >= $asOfDate->copy()->subDays(120))->sum('balance_due');
+        $over120 = $invoices->filter(fn ($inv) => $inv->due_date < $asOfDate->copy()->subDays(120))->sum('balance_due');
 
         $totalReceivable = $invoices->sum('balance_due');
 
@@ -106,16 +85,17 @@ class SalesReportController extends ReportController
             ->with(['invoiceItems' => function ($q) use ($tenantId, $startDate, $endDate) {
                 $q->whereHas('invoice', function ($iq) use ($tenantId, $startDate, $endDate) {
                     $iq->where('tenant_id', $tenantId)
-                       ->whereBetween('invoice_date', [$startDate, $endDate]);
+                        ->whereBetween('invoice_date', [$startDate, $endDate]);
                 });
             }])
             ->get()
             ->map(function ($item) {
                 $item->quantity_sold = $item->invoiceItems->sum('quantity');
                 $item->total_sales = $item->invoiceItems->sum('total');
+
                 return $item;
             })
-            ->filter(fn($item) => $item->quantity_sold > 0)
+            ->filter(fn ($item) => $item->quantity_sold > 0)
             ->sortByDesc('total_sales')
             ->values();
 
@@ -139,7 +119,7 @@ class SalesReportController extends ReportController
             ->orderBy('name')
             ->get();
 
-        if (!$customerId) {
+        if (! $customerId) {
             return view('reports.customer-statement', compact('customers', 'startDate', 'endDate'));
         }
 
@@ -172,13 +152,13 @@ class SalesReportController extends ReportController
 
         // Combine and sort transactions
         $transactions = collect();
-        
+
         foreach ($invoices as $invoice) {
             $transactions->push([
                 'date' => $invoice->invoice_date,
                 'type' => 'invoice',
                 'reference' => $invoice->invoice_number,
-                'description' => 'Invoice #' . $invoice->invoice_number,
+                'description' => 'Invoice #'.$invoice->invoice_number,
                 'debit' => $invoice->total,
                 'credit' => 0,
                 'status' => $invoice->status,
@@ -192,7 +172,7 @@ class SalesReportController extends ReportController
                 'date' => $payment->payment_date,
                 'type' => 'payment',
                 'reference' => $payment->payment_number,
-                'description' => 'Payment #' . $payment->payment_number . ($payment->invoice ? ' for Invoice #' . $payment->invoice->invoice_number : ''),
+                'description' => 'Payment #'.$payment->payment_number.($payment->invoice ? ' for Invoice #'.$payment->invoice->invoice_number : ''),
                 'debit' => 0,
                 'credit' => $payment->amount,
                 'status' => 'paid',
@@ -209,6 +189,7 @@ class SalesReportController extends ReportController
         $transactions = $transactions->map(function ($transaction) use (&$runningBalance) {
             $runningBalance += $transaction['debit'] - $transaction['credit'];
             $transaction['balance'] = $runningBalance;
+
             return $transaction;
         });
 
@@ -255,12 +236,12 @@ class SalesReportController extends ReportController
             ->get();
 
         $asOfDate = \Carbon\Carbon::parse($asOf);
-        $current = $invoices->filter(fn($inv) => $inv->due_date >= $asOfDate)->sum('balance_due');
-        $days30 = $invoices->filter(fn($inv) => $inv->due_date < $asOfDate && $inv->due_date >= $asOfDate->copy()->subDays(30))->sum('balance_due');
-        $days60 = $invoices->filter(fn($inv) => $inv->due_date < $asOfDate->copy()->subDays(30) && $inv->due_date >= $asOfDate->copy()->subDays(60))->sum('balance_due');
-        $days90 = $invoices->filter(fn($inv) => $inv->due_date < $asOfDate->copy()->subDays(60) && $inv->due_date >= $asOfDate->copy()->subDays(90))->sum('balance_due');
-        $days120 = $invoices->filter(fn($inv) => $inv->due_date < $asOfDate->copy()->subDays(90) && $inv->due_date >= $asOfDate->copy()->subDays(120))->sum('balance_due');
-        $over120 = $invoices->filter(fn($inv) => $inv->due_date < $asOfDate->copy()->subDays(120))->sum('balance_due');
+        $current = $invoices->filter(fn ($inv) => $inv->due_date >= $asOfDate)->sum('balance_due');
+        $days30 = $invoices->filter(fn ($inv) => $inv->due_date < $asOfDate && $inv->due_date >= $asOfDate->copy()->subDays(30))->sum('balance_due');
+        $days60 = $invoices->filter(fn ($inv) => $inv->due_date < $asOfDate->copy()->subDays(30) && $inv->due_date >= $asOfDate->copy()->subDays(60))->sum('balance_due');
+        $days90 = $invoices->filter(fn ($inv) => $inv->due_date < $asOfDate->copy()->subDays(60) && $inv->due_date >= $asOfDate->copy()->subDays(90))->sum('balance_due');
+        $days120 = $invoices->filter(fn ($inv) => $inv->due_date < $asOfDate->copy()->subDays(90) && $inv->due_date >= $asOfDate->copy()->subDays(120))->sum('balance_due');
+        $over120 = $invoices->filter(fn ($inv) => $inv->due_date < $asOfDate->copy()->subDays(120))->sum('balance_due');
         $totalReceivable = $invoices->sum('balance_due');
 
         $data = compact('invoices', 'current', 'days30', 'days60', 'days90', 'days120', 'over120', 'totalReceivable', 'asOf');
@@ -275,6 +256,7 @@ class SalesReportController extends ReportController
                 'over120' => $over120,
                 'total' => $totalReceivable,
             ]);
+
             return $this->exportService
                 ->setTitle('Accounts Receivable Aging')
                 ->setFilters(['As of' => $asOf])
@@ -320,6 +302,7 @@ class SalesReportController extends ReportController
 
         if ($format === 'csv') {
             $exportData = $this->exportService->salesByCustomerData($customers);
+
             return $this->exportService
                 ->setTitle('Sales by Customer')
                 ->setFilters(['Period' => "$startDate to $endDate"])
@@ -346,16 +329,17 @@ class SalesReportController extends ReportController
             ->with(['invoiceItems' => function ($q) use ($tenantId, $startDate, $endDate) {
                 $q->whereHas('invoice', function ($iq) use ($tenantId, $startDate, $endDate) {
                     $iq->where('tenant_id', $tenantId)
-                       ->whereBetween('invoice_date', [$startDate, $endDate]);
+                        ->whereBetween('invoice_date', [$startDate, $endDate]);
                 });
             }])
             ->get()
             ->map(function ($item) {
                 $item->quantity_sold = $item->invoiceItems->sum('quantity');
                 $item->total_sales = $item->invoiceItems->sum('total');
+
                 return $item;
             })
-            ->filter(fn($item) => $item->quantity_sold > 0)
+            ->filter(fn ($item) => $item->quantity_sold > 0)
             ->sortByDesc('total_sales')
             ->values();
 
@@ -366,6 +350,7 @@ class SalesReportController extends ReportController
 
         if ($format === 'csv') {
             $exportData = $this->exportService->salesByItemData($items);
+
             return $this->exportService
                 ->setTitle('Sales by Item')
                 ->setFilters(['Period' => "$startDate to $endDate"])

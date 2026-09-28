@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Bill;
-use App\Models\PurchaseOrder;
-use App\Models\BillItem;
-use App\Models\Vendor;
-use App\Models\Item;
 use App\Http\Requests\StoreBillRequest;
 use App\Http\Requests\UpdateBillRequest;
+use App\Models\Bill;
+use App\Models\BillItem;
+use App\Models\Item;
+use App\Models\PurchaseOrder;
+use App\Models\Vendor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class BillController extends Controller
 {
@@ -81,7 +80,7 @@ class BillController extends Controller
                 $discount = $item['discount'] ?? 0;
                 $itemTotal -= $discount;
                 $tax = $itemTotal * (($item['tax_rate'] ?? 0) / 100);
-                
+
                 $subtotal += $item['quantity'] * $item['unit_price'];
                 $totalDiscount += $discount;
                 $totalTax += $tax;
@@ -141,6 +140,7 @@ class BillController extends Controller
             return redirect()->route('bills.show', $bill)->with('success', 'Bill created.');
         } catch (\Exception $e) {
             DB::rollBack();
+
             return back()->withInput()->withErrors(['error' => 'Failed to create bill.']);
         }
     }
@@ -148,6 +148,7 @@ class BillController extends Controller
     public function show(Bill $bill)
     {
         $bill->load(['vendor', 'items.item', 'payments.createdBy', 'createdBy', 'journal.entries.account']);
+
         return view('bills.show', compact('bill'));
     }
 
@@ -160,6 +161,7 @@ class BillController extends Controller
         $bill->load('items');
         $vendors = Vendor::where('is_active', true)->get();
         $items = Item::where('is_active', true)->get();
+
         return view('bills.edit', compact('bill', 'vendors', 'items'));
     }
 
@@ -185,7 +187,7 @@ class BillController extends Controller
                 $discount = $item['discount'] ?? 0;
                 $itemTotal -= $discount;
                 $tax = $itemTotal * (($item['tax_rate'] ?? 0) / 100);
-                
+
                 $subtotal += $item['quantity'] * $item['unit_price'];
                 $totalDiscount += $discount;
                 $totalTax += $tax;
@@ -193,7 +195,7 @@ class BillController extends Controller
 
             $totalAmount = $subtotal - $totalDiscount + $totalTax;
             $amountPaid = $bill->total - $bill->balance_due;
-            
+
             $bill->update([
                 'bill_date' => $validated['bill_date'],
                 'due_date' => $validated['due_date'],
@@ -233,6 +235,7 @@ class BillController extends Controller
             return redirect()->route('bills.show', $bill)->with('success', 'Bill updated.');
         } catch (\Exception $e) {
             DB::rollBack();
+
             return back()->withInput()->withErrors(['error' => 'Failed to update bill.']);
         }
     }
@@ -245,7 +248,7 @@ class BillController extends Controller
 
         $bill->items()->delete();
         $bill->delete();
-        
+
         return redirect()->route('bills.index')->with('success', 'Bill deleted.');
     }
 }

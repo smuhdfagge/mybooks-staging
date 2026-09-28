@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\MorphTo;
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\BelongsToTenant;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class NotificationLog extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     protected $fillable = [
         'tenant_id',
@@ -29,7 +29,9 @@ class NotificationLog extends Model
     ];
 
     const STATUS_SENT = 'sent';
+
     const STATUS_FAILED = 'failed';
+
     const STATUS_PENDING = 'pending';
 
     /**

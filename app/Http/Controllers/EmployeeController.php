@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Country;
-use App\Models\Employee;
 use App\Models\Department;
 use App\Models\Designation;
+use App\Models\Employee;
 use App\Models\SalaryStructure;
 use App\Models\State;
 use Illuminate\Http\Request;
@@ -27,7 +27,7 @@ class EmployeeController extends Controller
         $countries = Country::orderBy('name')->get();
         $states = State::orderBy('name')->get();
         $salaryStructures = SalaryStructure::where('is_active', true)->get();
-        
+
         return view('employees.create', compact('departments', 'designations', 'employeeId', 'countries', 'states', 'salaryStructures'));
     }
 
@@ -84,6 +84,7 @@ class EmployeeController extends Controller
         abort_unless($employee->tenant_id === auth()->user()->tenant_id, 403);
 
         $employee->load(['department', 'designation', 'leaves', 'payrolls', 'salaryStructure']);
+
         return view('employees.show', compact('employee'));
     }
 
@@ -96,7 +97,7 @@ class EmployeeController extends Controller
         $countries = Country::orderBy('name')->get();
         $states = State::orderBy('name')->get();
         $salaryStructures = SalaryStructure::where('is_active', true)->get();
-        
+
         return view('employees.edit', compact('employee', 'departments', 'designations', 'countries', 'states', 'salaryStructures'));
     }
 
@@ -157,6 +158,7 @@ class EmployeeController extends Controller
         abort_unless($employee->tenant_id === auth()->user()->tenant_id, 403);
 
         $employee->delete();
+
         return redirect()->route('employees.index')->with('success', 'Employee deleted successfully.');
     }
 }

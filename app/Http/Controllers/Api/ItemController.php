@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Item;
 use App\Http\Resources\ItemResource;
-use Illuminate\Http\Request;
+use App\Models\Item;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class ItemController extends BaseApiController
@@ -66,6 +66,7 @@ class ItemController extends BaseApiController
     public function show(Item $item): JsonResponse
     {
         $item->load(['category', 'inventory']);
+
         return $this->success(new ItemResource($item));
     }
 

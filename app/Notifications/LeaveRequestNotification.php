@@ -44,7 +44,7 @@ class LeaveRequestNotification extends Notification implements ShouldQueue
             ->line("**From:** {$this->leave->start_date->format('M d, Y')}")
             ->line("**To:** {$this->leave->end_date->format('M d, Y')}")
             ->line("**Days:** {$this->leave->days}")
-            ->line("**Reason:** " . ($this->leave->reason ?? 'Not specified'))
+            ->line('**Reason:** '.($this->leave->reason ?? 'Not specified'))
             ->action('Review Request', route('leaves.show', $this->leave))
             ->line('Please review and approve/reject this request.');
     }

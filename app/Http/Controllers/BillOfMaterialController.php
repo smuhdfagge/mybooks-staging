@@ -4,12 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\AssemblyOrder;
 use App\Models\BillOfMaterial;
-use App\Models\BomItem;
 use App\Models\Item;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class BillOfMaterialController extends Controller
 {

@@ -45,6 +45,7 @@ class RecalculateAccountBalances extends Command
 
         if ($accounts->isEmpty()) {
             $this->warn('No accounts found.');
+
             return 0;
         }
 
@@ -56,8 +57,8 @@ class RecalculateAccountBalances extends Command
         DB::transaction(function () use ($accounts, $bar, $dryRun, &$changes) {
             foreach ($accounts as $account) {
                 $entries = JournalEntry::whereHas('journal', function ($query) {
-                        $query->whereNull('deleted_at');
-                    })
+                    $query->whereNull('deleted_at');
+                })
                     ->where('account_id', $account->id)
                     ->get();
 

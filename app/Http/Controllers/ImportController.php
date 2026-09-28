@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Import;
-use App\Services\ImportService;
 use App\Services\ActivityLogService;
+use App\Services\ImportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -50,7 +50,7 @@ class ImportController extends Controller
     public function upload(Request $request)
     {
         $validated = $request->validate([
-            'type' => 'required|string|in:' . implode(',', array_keys(Import::getImportTypes())),
+            'type' => 'required|string|in:'.implode(',', array_keys(Import::getImportTypes())),
             'file' => [
                 'required',
                 'file',
@@ -60,18 +60,18 @@ class ImportController extends Controller
                         $fail('Excel import is not available yet. Please save the sheet as CSV and upload that instead.');
                     }
                 },
-                'mimes:' . implode(',', Import::acceptedExtensions()),
-                'max:' . config('mybooks.import_max_file_size', 10240),
+                'mimes:'.implode(',', Import::acceptedExtensions()),
+                'max:'.config('mybooks.import_max_file_size', 10240),
             ],
         ]);
 
         $file = $request->file('file');
         $format = $this->detectFormat($file);
-        
+
         // Store the file
-        $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
-        $path = auth()->user()->tenant_id . '/' . $filename;
-        
+        $filename = Str::uuid().'.'.$file->getClientOriginalExtension();
+        $path = auth()->user()->tenant_id.'/'.$filename;
+
         Storage::disk('imports')->put($path, file_get_contents($file));
 
         // Create import record
@@ -160,10 +160,11 @@ class ImportController extends Controller
             if ($import->skipped_rows > 0) {
                 $message .= " {$import->skipped_rows} records skipped (duplicates).";
             }
+
             return redirect()->route('imports.show', $import)->with('success', $message);
         }
 
-        return redirect()->route('imports.show', $import)->with('error', 'Import failed: ' . $import->error_message);
+        return redirect()->route('imports.show', $import)->with('error', 'Import failed: '.$import->error_message);
     }
 
     /**
@@ -184,22 +185,22 @@ class ImportController extends Controller
         $type = $request->get('type');
         $format = $request->get('format', 'csv');
 
-        if (!$type || !isset(Import::getImportTypes()[$type])) {
+        if (! $type || ! isset(Import::getImportTypes()[$type])) {
             return back()->with('error', 'Invalid import type');
         }
 
         $sampleData = ImportService::getSampleData($type);
-        
+
         if (empty($sampleData)) {
             return back()->with('error', 'No sample data available for this type');
         }
 
-        $filename = $type . '_template.' . $format;
+        $filename = $type.'_template.'.$format;
 
         if ($format === 'csv') {
             $headers = array_keys($sampleData[0]);
-            
-            $callback = function() use ($sampleData, $headers) {
+
+            $callback = function () use ($sampleData, $headers) {
                 $file = fopen('php://output', 'w');
                 fputcsv($file, $headers);
                 foreach ($sampleData as $row) {
@@ -210,13 +211,13 @@ class ImportController extends Controller
 
             return response()->stream($callback, 200, [
                 'Content-Type' => 'text/csv',
-                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Content-Disposition' => 'attachment; filename="'.$filename.'"',
             ]);
         }
 
         if ($format === 'json') {
             return response()->json($sampleData)
-                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+                ->header('Content-Disposition', 'attachment; filename="'.$filename.'"');
         }
 
         return back()->with('error', 'Unsupported format');
@@ -246,7 +247,7 @@ class ImportController extends Controller
     {
         $this->authorizeImport($import);
 
-        if (!$import->canRetry()) {
+        if (! $import->canRetry()) {
             return back()->with('error', 'This import cannot be retried.');
         }
 
@@ -267,7 +268,7 @@ class ImportController extends Controller
             return redirect()->route('imports.show', $import)->with('success', 'Import completed successfully.');
         }
 
-        return redirect()->route('imports.show', $import)->with('error', 'Import failed: ' . $import->error_message);
+        return redirect()->route('imports.show', $import)->with('error', 'Import failed: '.$import->error_message);
     }
 
     /**
@@ -276,7 +277,7 @@ class ImportController extends Controller
     protected function detectFormat($file): string
     {
         $extension = strtolower($file->getClientOriginalExtension());
-        
+
         return match ($extension) {
             'csv', 'txt' => Import::FORMAT_CSV,
             'xlsx', 'xls' => Import::FORMAT_XLSX,
@@ -295,10 +296,11 @@ class ImportController extends Controller
 
         foreach ($headers as $header) {
             $normalized = Str::snake(strtolower(trim($header)));
-            
+
             // Direct match
             if (in_array($normalized, $fieldKeys)) {
                 $mapping[$header] = $normalized;
+
                 continue;
             }
 

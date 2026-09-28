@@ -7,7 +7,6 @@ use App\Models\InventoryHistory;
 use App\Models\InventoryLayer;
 use App\Models\InventoryLayerConsumption;
 use App\Models\Item;
-use Illuminate\Support\Facades\DB;
 
 class StockValuationService
 {
@@ -278,6 +277,7 @@ class StockValuationService
     protected function calculateWeightedAverageCogs(Item $item, float $quantity, ?int $warehouseId): float
     {
         $unitCost = $this->getWeightedAverageCost($item, $warehouseId);
+
         return round($quantity * $unitCost, 2);
     }
 

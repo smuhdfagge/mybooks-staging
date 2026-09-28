@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Resources\JournalResource;
+use App\Models\ChartOfAccount;
 use App\Models\Journal;
 use App\Models\JournalEntry;
-use App\Models\ChartOfAccount;
-use App\Http\Resources\JournalResource;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
@@ -72,6 +72,7 @@ class JournalController extends BaseApiController
     public function show(Journal $journal): JsonResponse
     {
         $journal->load(['entries.account', 'createdBy', 'approvedBy']);
+
         return $this->success(new JournalResource($journal));
     }
 
@@ -99,7 +100,7 @@ class JournalController extends BaseApiController
 
         if (abs($totalDebit - $totalCredit) > 0.01) {
             return $this->validationError([
-                'entries' => ['Total debits must equal total credits. Debit: ' . $totalDebit . ', Credit: ' . $totalCredit],
+                'entries' => ['Total debits must equal total credits. Debit: '.$totalDebit.', Credit: '.$totalCredit],
             ]);
         }
 
@@ -155,10 +156,12 @@ class JournalController extends BaseApiController
             DB::commit();
 
             $journal->load(['entries.account', 'createdBy']);
+
             return $this->created(new JournalResource($journal), 'Journal entry created successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return $this->error('Failed to create journal entry: ' . $e->getMessage(), 500);
+
+            return $this->error('Failed to create journal entry: '.$e->getMessage(), 500);
         }
     }
 
@@ -216,13 +219,15 @@ class JournalController extends BaseApiController
                 DB::commit();
             } catch (\Exception $e) {
                 DB::rollBack();
-                return $this->error('Failed to update journal entry: ' . $e->getMessage(), 500);
+
+                return $this->error('Failed to update journal entry: '.$e->getMessage(), 500);
             }
         } else {
             $journal->update($validated);
         }
 
         $journal->load(['entries.account', 'createdBy']);
+
         return $this->success(new JournalResource($journal), 'Journal entry updated successfully');
     }
 
@@ -258,7 +263,7 @@ class JournalController extends BaseApiController
             return $this->error('Journal entry has no lines to post.', 422);
         }
 
-        if (!$journal->isBalanced()) {
+        if (! $journal->isBalanced()) {
             return $this->error('Journal entry must be balanced before posting.', 422);
         }
 
@@ -271,10 +276,12 @@ class JournalController extends BaseApiController
             DB::commit();
 
             $journal->load(['entries.account', 'createdBy']);
+
             return $this->success(new JournalResource($journal), 'Journal entry posted successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return $this->error('Failed to post journal entry: ' . $e->getMessage(), 500);
+
+            return $this->error('Failed to post journal entry: '.$e->getMessage(), 500);
         }
     }
 
@@ -283,7 +290,7 @@ class JournalController extends BaseApiController
      */
     public function reverse(Journal $journal): JsonResponse
     {
-        if (!$journal->is_posted) {
+        if (! $journal->is_posted) {
             return $this->error('Only posted journal entries can be reversed.', 422);
         }
 
@@ -333,10 +340,12 @@ class JournalController extends BaseApiController
             DB::commit();
 
             $reversingJournal->load(['entries.account', 'createdBy']);
+
             return $this->success(new JournalResource($reversingJournal), 'Reversing journal entry created successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return $this->error('Failed to create reversing entry: ' . $e->getMessage(), 500);
+
+            return $this->error('Failed to create reversing entry: '.$e->getMessage(), 500);
         }
     }
 

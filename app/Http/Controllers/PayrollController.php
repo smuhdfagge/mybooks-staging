@@ -2,20 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Payroll;
-use App\Models\PayrollBatch;
+use App\Jobs\ProcessPayrollBatch;
+use App\Models\ActivityLog;
 use App\Models\Department;
 use App\Models\Employee;
-use App\Models\SalaryStructure;
-use App\Models\ActivityLog;
-use App\Services\PayrollTaxService;
+use App\Models\Payroll;
+use App\Models\PayrollBatch;
 use App\Services\BankFileExportService;
-use App\Jobs\ProcessPayrollBatch;
+use App\Services\PayrollTaxService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class PayrollController extends Controller
 {
@@ -27,6 +26,7 @@ class PayrollController extends Controller
     public function create()
     {
         $employees = Employee::where('status', 'active')->get();
+
         return view('payroll.create', compact('employees'));
     }
 
@@ -46,14 +46,14 @@ class PayrollController extends Controller
             'other_deductions' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
         ]);
-        
-        $grossSalary = ($validated['basic_salary'] ?? 0) 
-                     + ($validated['allowances'] ?? 0) 
+
+        $grossSalary = ($validated['basic_salary'] ?? 0)
+                     + ($validated['allowances'] ?? 0)
                      + ($validated['overtime_amount'] ?? 0);
-        
+
         $totalDeductions = ($validated['tax_deduction'] ?? 0) + ($validated['other_deductions'] ?? 0);
         $netSalary = $grossSalary - $totalDeductions;
-        
+
         $payroll = Payroll::create([
             'tenant_id' => $tenantId,
             'payroll_number' => Payroll::generateNumber($tenantId),
@@ -83,6 +83,7 @@ class PayrollController extends Controller
         abort_unless($payroll->tenant_id === auth()->user()->tenant_id, 403);
 
         $payroll->load('employee.department', 'employee.designation');
+
         return view('payroll.show', compact('payroll'));
     }
 
@@ -95,6 +96,7 @@ class PayrollController extends Controller
         }
 
         $employees = Employee::where('status', 'active')->get();
+
         return view('payroll.edit', compact('payroll', 'employees'));
     }
 
@@ -118,10 +120,10 @@ class PayrollController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $grossSalary = ($validated['basic_salary'] ?? 0) 
-                     + ($validated['allowances'] ?? 0) 
+        $grossSalary = ($validated['basic_salary'] ?? 0)
+                     + ($validated['allowances'] ?? 0)
                      + ($validated['overtime_amount'] ?? 0);
-        
+
         $totalDeductions = ($validated['tax_deduction'] ?? 0) + ($validated['other_deductions'] ?? 0);
         $netSalary = $grossSalary - $totalDeductions;
 
@@ -153,6 +155,7 @@ class PayrollController extends Controller
         }
 
         $payroll->delete();
+
         return redirect()->route('payroll.index')->with('success', 'Payroll record deleted.');
     }
 
@@ -200,6 +203,7 @@ class PayrollController extends Controller
     public function bulkCreate()
     {
         $employees = Employee::where('status', 'active')->get();
+
         return view('payroll.bulk-create', compact('employees'));
     }
 
@@ -218,7 +222,7 @@ class PayrollController extends Controller
 
         try {
             $employees = Employee::whereIn('id', $validated['employee_ids'])->get();
-            
+
             foreach ($employees as $employee) {
                 $basicSalary = $employee->salary ?? 0;
                 $grossSalary = $basicSalary;
@@ -247,9 +251,10 @@ class PayrollController extends Controller
 
             DB::commit();
 
-            return redirect()->route('payroll.index')->with('success', count($employees) . ' payroll records created.');
+            return redirect()->route('payroll.index')->with('success', count($employees).' payroll records created.');
         } catch (\Exception $e) {
             DB::rollBack();
+
             return back()->withInput()->withErrors(['error' => 'Failed to create payroll records.']);
         }
     }
@@ -293,11 +298,12 @@ class PayrollController extends Controller
             ->pluck('employee_id')
             ->toArray();
 
-        if (!empty($existingPayrolls)) {
+        if (! empty($existingPayrolls)) {
             $existingNames = Employee::whereIn('id', $existingPayrolls)->get()
-                ->map(fn($e) => $e->full_name)->implode(', ');
+                ->map(fn ($e) => $e->full_name)->implode(', ');
+
             return back()->withInput()->withErrors([
-                'employee_ids' => "Payroll already exists for: {$existingNames} in this period."
+                'employee_ids' => "Payroll already exists for: {$existingNames} in this period.",
             ]);
         }
 
@@ -328,7 +334,7 @@ class PayrollController extends Controller
 
                 foreach ($employees as $employee) {
                     $structure = $employee->salaryStructure;
-                    if (!$structure) {
+                    if (! $structure) {
                         continue;
                     }
 
@@ -355,7 +361,7 @@ class PayrollController extends Controller
                     // Calculate taxable amount (exclude non-taxable allowances)
                     $taxableAmount = $grossSalary;
                     foreach ($allowanceDetails as $ad) {
-                        if (!$ad['is_taxable']) {
+                        if (! $ad['is_taxable']) {
                             $taxableAmount -= $ad['amount'];
                         }
                     }
@@ -389,7 +395,7 @@ class PayrollController extends Controller
                         $loanAmount = min((float) $loan->installment_amount, (float) $loan->outstanding_balance);
                         if ($loanAmount > 0) {
                             $deductionDetails[] = [
-                                'name' => ucfirst($loan->type) . ': ' . ($loan->description ?: $loan->loan_number),
+                                'name' => ucfirst($loan->type).': '.($loan->description ?: $loan->loan_number),
                                 'amount_type' => 'fixed',
                                 'rate' => $loanAmount,
                                 'amount' => $loanAmount,
@@ -453,10 +459,11 @@ class PayrollController extends Controller
             DB::commit();
 
             return redirect()->route('payroll-batches.show', $batch)
-                ->with('success', "{$created} payroll records generated for " . $payPeriodStart->format('F Y') . '.');
+                ->with('success', "{$created} payroll records generated for ".$payPeriodStart->format('F Y').'.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withInput()->withErrors(['error' => 'Failed to generate payroll: ' . $e->getMessage()]);
+
+            return back()->withInput()->withErrors(['error' => 'Failed to generate payroll: '.$e->getMessage()]);
         }
     }
 
@@ -474,8 +481,8 @@ class PayrollController extends Controller
         if ($search = $request->input('search')) {
             $query->whereHas('employee', function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('employee_id', 'like', "%{$search}%");
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('employee_id', 'like', "%{$search}%");
             });
         }
 
@@ -535,6 +542,7 @@ class PayrollController extends Controller
                 ->with('success', 'Payroll batch approved successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
+
             return redirect()->route('payroll-batches.show', $payrollBatch)
                 ->with('error', 'Failed to approve batch.');
         }
@@ -572,13 +580,15 @@ class PayrollController extends Controller
                     ->with('success', 'Payroll batch marked as paid.');
             } catch (\Illuminate\Validation\ValidationException $e) {
                 DB::rollBack();
+
                 return redirect()->route('payroll-batches.show', $payrollBatch)
                     ->with('error', collect($e->errors())->flatten()->first() ?? 'Validation failed while marking batch as paid.');
             } catch (\Exception $e) {
                 DB::rollBack();
                 report($e);
+
                 return redirect()->route('payroll-batches.show', $payrollBatch)
-                    ->with('error', 'Failed to mark batch as paid: ' . $e->getMessage());
+                    ->with('error', 'Failed to mark batch as paid: '.$e->getMessage());
             }
         }
 
@@ -619,6 +629,7 @@ class PayrollController extends Controller
                 ->with('success', 'Payroll batch deleted successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
+
             return redirect()->route('payroll.index')
                 ->with('error', 'Failed to delete batch.');
         }
@@ -636,7 +647,7 @@ class PayrollController extends Controller
         $pdf = Pdf::loadView('payroll.pdf.payslip', $data);
         $pdf->setPaper('a4', 'portrait');
 
-        $filename = 'payslip_' . $payroll->payroll_number . '_' . now()->format('Y-m-d') . '.pdf';
+        $filename = 'payslip_'.$payroll->payroll_number.'_'.now()->format('Y-m-d').'.pdf';
 
         return $pdf->download($filename);
     }
@@ -661,7 +672,7 @@ class PayrollController extends Controller
         $pdf = Pdf::loadView('payroll.pdf.payslip-batch', $data);
         $pdf->setPaper('a4', 'portrait');
 
-        $filename = 'payslips_batch_' . $payrollBatch->batch_number . '_' . now()->format('Y-m-d') . '.pdf';
+        $filename = 'payslips_batch_'.$payrollBatch->batch_number.'_'.now()->format('Y-m-d').'.pdf';
 
         return $pdf->download($filename);
     }
@@ -695,7 +706,7 @@ class PayrollController extends Controller
     {
         abort_unless($payrollBatch->tenant_id === auth()->user()->tenant_id, 403);
 
-        if (!in_array($payrollBatch->status, ['approved', 'paid'])) {
+        if (! in_array($payrollBatch->status, ['approved', 'paid'])) {
             return redirect()->route('payroll-batches.show', $payrollBatch)
                 ->with('error', 'Bank file can only be exported for approved or paid batches.');
         }
@@ -707,7 +718,7 @@ class PayrollController extends Controller
 
             return response($result['content'])
                 ->header('Content-Type', $result['mime_type'])
-                ->header('Content-Disposition', 'attachment; filename="' . $result['filename'] . '"');
+                ->header('Content-Disposition', 'attachment; filename="'.$result['filename'].'"');
         } catch (\InvalidArgumentException $e) {
             return redirect()->route('payroll-batches.show', $payrollBatch)
                 ->with('error', $e->getMessage());
@@ -780,7 +791,7 @@ class PayrollController extends Controller
         $adjustments = [];
         $structure = $employee->salaryStructure;
 
-        if (!$structure) {
+        if (! $structure) {
             return back()->with('error', 'Employee has no active salary structure.');
         }
 
@@ -794,7 +805,7 @@ class PayrollController extends Controller
 
             $taxableAmount = $newGross;
             foreach ($structure->allowances as $item) {
-                if (!$item->is_taxable) {
+                if (! $item->is_taxable) {
                     $calculated = $item->amount_type === 'percentage'
                         ? round($newBasic * $item->amount / 100, 2)
                         : $item->amount;
@@ -849,7 +860,7 @@ class PayrollController extends Controller
             ]);
 
             return redirect()->route('payroll.show', $payroll)
-                ->with('success', "Retroactive adjustment payroll created. Net difference: " . number_format($totalAdjustment, 2));
+                ->with('success', 'Retroactive adjustment payroll created. Net difference: '.number_format($totalAdjustment, 2));
         }
 
         return view('payroll.retroactive-preview', compact('employee', 'adjustments', 'totalAdjustment', 'effectiveFrom'));

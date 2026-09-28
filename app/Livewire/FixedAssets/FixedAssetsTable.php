@@ -2,28 +2,37 @@
 
 namespace App\Livewire\FixedAssets;
 
-use Livewire\Component;
-use Livewire\WithPagination;
+use App\Livewire\Concerns\ChecksPermissions;
 use App\Models\FixedAsset;
 use App\Models\FixedAssetCategory;
-use App\Livewire\Concerns\ChecksPermissions;
+use Livewire\Component;
+use Livewire\WithPagination;
 
 class FixedAssetsTable extends Component
 {
     use ChecksPermissions, WithPagination;
 
     public $search = '';
+
     public $categoryFilter = '';
+
     public $statusFilter = '';
+
     public $sortField = 'asset_number';
+
     public $sortDirection = 'asc';
+
     public $perPage = 10;
 
     // Bulk operation properties
     public $selectedItems = [];
+
     public $selectAll = false;
+
     public $bulkAction = '';
+
     public $successMessage = '';
+
     public $errorMessage = '';
 
     protected $queryString = [
@@ -85,16 +94,16 @@ class FixedAssetsTable extends Component
         return FixedAsset::where('tenant_id', $tenantId)
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->where('asset_number', 'like', '%' . $this->search . '%')
-                        ->orWhere('name', 'like', '%' . $this->search . '%')
-                        ->orWhere('serial_number', 'like', '%' . $this->search . '%')
-                        ->orWhere('location', 'like', '%' . $this->search . '%');
+                    $q->where('asset_number', 'like', '%'.$this->search.'%')
+                        ->orWhere('name', 'like', '%'.$this->search.'%')
+                        ->orWhere('serial_number', 'like', '%'.$this->search.'%')
+                        ->orWhere('location', 'like', '%'.$this->search.'%');
                 });
             })
-            ->when($this->categoryFilter, fn($q) => $q->where('category_id', $this->categoryFilter))
-            ->when($this->statusFilter, fn($q) => $q->where('status', $this->statusFilter))
+            ->when($this->categoryFilter, fn ($q) => $q->where('category_id', $this->categoryFilter))
+            ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))
             ->pluck('id')
-            ->map(fn($id) => (string) $id)
+            ->map(fn ($id) => (string) $id)
             ->toArray();
     }
 
@@ -117,11 +126,13 @@ class FixedAssetsTable extends Component
 
         if (empty($this->selectedItems)) {
             $this->errorMessage = 'Please select at least one asset.';
+
             return;
         }
 
         if (empty($this->bulkAction)) {
             $this->errorMessage = 'Please select an action.';
+
             return;
         }
 
@@ -139,38 +150,42 @@ class FixedAssetsTable extends Component
                 FixedAsset::whereIn('id', $this->selectedItems)
                     ->where('status', 'active')
                     ->update(['status' => 'disposed', 'disposal_date' => now()]);
-                $this->successMessage = "Successfully disposed selected asset(s).";
+                $this->successMessage = 'Successfully disposed selected asset(s).';
                 break;
 
             case 'delete':
                 $deletedCount = 0;
                 $skippedCount = 0;
-                
+
                 foreach ($this->selectedItems as $assetId) {
                     $asset = FixedAsset::find($assetId);
-                    if (!$asset) continue;
-                    
+                    if (! $asset) {
+                        continue;
+                    }
+
                     // Check if asset has depreciation records
                     if ($asset->depreciations()->exists()) {
                         $skippedCount++;
+
                         continue;
                     }
-                    
+
                     $asset->delete();
                     $deletedCount++;
                 }
-                
+
                 if ($deletedCount > 0 && $skippedCount > 0) {
                     $this->successMessage = "Deleted {$deletedCount} asset(s). Skipped {$skippedCount} asset(s) with depreciation records.";
                 } elseif ($deletedCount > 0) {
                     $this->successMessage = "Successfully deleted {$deletedCount} asset(s).";
                 } else {
-                    $this->errorMessage = "Could not delete any assets. All selected assets have depreciation records.";
+                    $this->errorMessage = 'Could not delete any assets. All selected assets have depreciation records.';
                 }
                 break;
 
             default:
                 $this->errorMessage = 'Invalid action selected.';
+
                 return;
         }
 
@@ -188,10 +203,10 @@ class FixedAssetsTable extends Component
 
         if ($this->search) {
             $query->where(function ($q) {
-                $q->where('asset_number', 'like', '%' . $this->search . '%')
-                    ->orWhere('name', 'like', '%' . $this->search . '%')
-                    ->orWhere('serial_number', 'like', '%' . $this->search . '%')
-                    ->orWhere('location', 'like', '%' . $this->search . '%');
+                $q->where('asset_number', 'like', '%'.$this->search.'%')
+                    ->orWhere('name', 'like', '%'.$this->search.'%')
+                    ->orWhere('serial_number', 'like', '%'.$this->search.'%')
+                    ->orWhere('location', 'like', '%'.$this->search.'%');
             });
         }
 

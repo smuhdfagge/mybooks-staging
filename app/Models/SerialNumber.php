@@ -2,20 +2,24 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\BelongsToTenant;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class SerialNumber extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     const STATUS_AVAILABLE = 'available';
+
     const STATUS_RESERVED = 'reserved';
+
     const STATUS_SOLD = 'sold';
+
     const STATUS_RETURNED = 'returned';
+
     const STATUS_DAMAGED = 'damaged';
 
     protected $fillable = [

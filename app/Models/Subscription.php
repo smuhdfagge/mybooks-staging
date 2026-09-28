@@ -2,15 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Subscription extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     protected $fillable = [
         'tenant_id',
@@ -41,9 +40,13 @@ class Subscription extends Model
      * Status constants
      */
     const STATUS_PENDING = 'pending'; // signed up, not yet paid
+
     const STATUS_ACTIVE = 'active';
+
     const STATUS_CANCELLED = 'cancelled';
+
     const STATUS_EXPIRED = 'expired';
+
     const STATUS_PAST_DUE = 'past_due';
     // Trial status removed - no trial for tenants
 
@@ -51,6 +54,7 @@ class Subscription extends Model
      * Billing cycle constants
      */
     const CYCLE_MONTHLY = 'monthly';
+
     const CYCLE_ANNUAL = 'annual';
 
     /**
@@ -73,6 +77,7 @@ class Subscription extends Model
 
     /**
      * Check if subscription is on trial
+     *
      * @deprecated Trials have been removed
      */
     public function onTrial(): bool
@@ -101,9 +106,10 @@ class Subscription extends Model
      */
     public function daysUntilExpiration(): ?int
     {
-        if (!$this->ends_at) {
+        if (! $this->ends_at) {
             return null;
         }
+
         return max(0, now()->diffInDays($this->ends_at, false));
     }
 
@@ -113,7 +119,7 @@ class Subscription extends Model
     public function renew(): self
     {
         $duration = $this->billing_cycle === self::CYCLE_ANNUAL ? 12 : 1;
-        
+
         $this->update([
             'starts_at' => now(),
             'ends_at' => now()->addMonths($duration),
@@ -178,6 +184,6 @@ class Subscription extends Model
     public function scopeExpiringSoon($query, int $days = 7)
     {
         return $query->where('ends_at', '<=', now()->addDays($days))
-                     ->where('ends_at', '>', now());
+            ->where('ends_at', '>', now());
     }
 }

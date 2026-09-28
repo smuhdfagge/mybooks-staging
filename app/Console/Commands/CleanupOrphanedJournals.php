@@ -2,15 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Models\ChartOfAccount;
 use App\Models\Journal;
 use App\Models\JournalEntry;
-use App\Models\ChartOfAccount;
-use App\Models\PaymentReceived;
-use App\Models\PaymentMade;
-use App\Models\Invoice;
-use App\Models\Bill;
-use App\Models\Expense;
-use App\Models\SalesReceipt;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -39,7 +33,7 @@ class CleanupOrphanedJournals extends Command
     {
         $dryRun = $this->option('dry-run');
         $resetAll = $this->option('reset-all');
-        
+
         if ($dryRun) {
             $this->info('Running in dry-run mode. No changes will be made.');
         }
@@ -50,18 +44,18 @@ class CleanupOrphanedJournals extends Command
         }
 
         $this->info('Starting cleanup of orphaned journals...');
-        
+
         // Find all journals with references to transactions
         $orphanedJournals = $this->findOrphanedJournals();
-        
+
         $this->info("Found {$orphanedJournals->count()} orphaned journal(s).");
-        
+
         if ($orphanedJournals->isEmpty()) {
             $this->info('No orphaned journals found. Chart of accounts will be recalculated.');
         } else {
             $this->table(
                 ['ID', 'Journal Number', 'Reference Type', 'Reference ID', 'Total Debit', 'Description'],
-                $orphanedJournals->map(fn($j) => [
+                $orphanedJournals->map(fn ($j) => [
                     $j->id,
                     $j->journal_number,
                     class_basename($j->reference_type),
@@ -70,26 +64,26 @@ class CleanupOrphanedJournals extends Command
                     \Str::limit($j->description, 40),
                 ])
             );
-            
-            if (!$dryRun) {
+
+            if (! $dryRun) {
                 if ($this->confirm('Do you want to delete these orphaned journals?', true)) {
                     $this->deleteOrphanedJournals($orphanedJournals);
                 }
             }
         }
-        
+
         // Recalculate all chart of account balances
-        if (!$dryRun) {
+        if (! $dryRun) {
             if ($this->confirm('Do you want to recalculate all chart of account balances from journal entries?', true)) {
                 $this->recalculateAccountBalances();
             }
         } else {
             $this->info('Would recalculate all chart of account balances.');
         }
-        
+
         $this->info('Cleanup complete!');
     }
-    
+
     /**
      * Find journals where the referenced transaction no longer exists
      */
@@ -101,20 +95,20 @@ class CleanupOrphanedJournals extends Command
             ->whereNotNull('reference_type')
             ->whereNotNull('reference_id')
             ->get();
-        
+
         $orphaned = collect();
-        
+
         foreach ($journals as $journal) {
             $exists = $this->transactionExists($journal->reference_type, $journal->reference_id);
-            
-            if (!$exists) {
+
+            if (! $exists) {
                 $orphaned->push($journal);
             }
         }
-        
+
         return $orphaned;
     }
-    
+
     /**
      * Check if a transaction exists
      */
@@ -124,65 +118,65 @@ class CleanupOrphanedJournals extends Command
             // Use withoutGlobalScopes and withTrashed to check for soft-deleted records too
             $model = new $referenceType;
             $query = $referenceType::withoutGlobalScopes()->where('id', $referenceId);
-            
+
             // Check if model uses soft deletes
             if (method_exists($model, 'withTrashed')) {
                 $query->withTrashed();
             }
-            
+
             return $query->exists();
         } catch (\Exception $e) {
             return false;
         }
     }
-    
+
     /**
      * Delete orphaned journals and their entries
      */
     protected function deleteOrphanedJournals($orphanedJournals)
     {
         $this->info('Deleting orphaned journals...');
-        
+
         DB::transaction(function () use ($orphanedJournals) {
             foreach ($orphanedJournals as $journal) {
                 // Force delete entries
                 JournalEntry::where('journal_id', $journal->id)->forceDelete();
-                
+
                 // Force delete journal
                 $journal->forceDelete();
-                
+
                 $this->line("Deleted journal #{$journal->journal_number}");
             }
         });
-        
+
         $this->info("Deleted {$orphanedJournals->count()} orphaned journal(s).");
     }
-    
+
     /**
      * Recalculate all chart of account balances from journal entries
      */
     protected function recalculateAccountBalances()
     {
         $this->info('Recalculating chart of account balances...');
-        
+
         // Get all accounts
         $accounts = ChartOfAccount::withoutGlobalScopes()->get();
-        
+
         $bar = $this->output->createProgressBar($accounts->count());
         $bar->start();
-        
+
         DB::transaction(function () use ($accounts, $bar) {
             foreach ($accounts as $account) {
                 // Calculate balance from all journal entries for this account
                 // Only consider journals that are not soft-deleted
                 $entries = JournalEntry::whereHas('journal', function ($query) {
-                        $query->whereNull('deleted_at');
-                    })
+                    $query->whereNull('deleted_at');
+                })
                     ->where('account_id', $account->id)
                     ->get();
-                
+
                 $balance = 0;
-                
+
                 foreach ($entries as $entry) {
                     if ($account->isDebitBalance()) {
                         // Assets, Expenses: Debits increase, Credits decrease
@@ -192,20 +186,20 @@ class CleanupOrphanedJournals extends Command
                         $balance += ($entry->credit - $entry->debit);
                     }
                 }
-                
+
                 // Update account balance
                 $account->current_balance = $balance;
                 $account->save();
-                
+
                 $bar->advance();
             }
         });
-        
+
         $bar->finish();
         $this->newLine();
         $this->info("Recalculated balances for {$accounts->count()} account(s).");
     }
-    
+
     /**
      * Reset ALL journals and chart of account balances to zero
      */
@@ -214,47 +208,50 @@ class CleanupOrphanedJournals extends Command
         $journalCount = Journal::withoutGlobalScopes()->withTrashed()->count();
         $entryCount = JournalEntry::count();
         $accountCount = ChartOfAccount::withoutGlobalScopes()->where('current_balance', '!=', 0)->count();
-        
+
         $this->warn('⚠️  RESET ALL MODE');
-        $this->info("This will permanently delete:");
+        $this->info('This will permanently delete:');
         $this->line("  - {$journalCount} journal(s) (including soft-deleted)");
         $this->line("  - {$entryCount} journal entries");
         $this->line("  - Reset {$accountCount} chart of account balances to zero");
-        
+
         if ($dryRun) {
             $this->info('Dry-run mode: No changes made.');
+
             return 0;
         }
-        
-        if (!$this->confirm('⚠️  Are you SURE you want to delete ALL journals and reset ALL balances? This cannot be undone!', false)) {
+
+        if (! $this->confirm('⚠️  Are you SURE you want to delete ALL journals and reset ALL balances? This cannot be undone!', false)) {
             $this->info('Operation cancelled.');
+
             return 0;
         }
-        
-        if (!$this->confirm('⚠️  FINAL WARNING: Type YES to confirm complete reset', false)) {
+
+        if (! $this->confirm('⚠️  FINAL WARNING: Type YES to confirm complete reset', false)) {
             $this->info('Operation cancelled.');
+
             return 0;
         }
-        
+
         $this->info('Resetting all journals and balances...');
-        
+
         DB::transaction(function () {
             // Delete all journal entries first
             $deletedEntries = JournalEntry::query()->delete();
             $this->line("Deleted {$deletedEntries} journal entries.");
-            
+
             // Force delete all journals (including soft-deleted)
             $deletedJournals = Journal::withoutGlobalScopes()->withTrashed()->forceDelete();
-            $this->line("Deleted all journals.");
-            
+            $this->line('Deleted all journals.');
+
             // Reset all chart of account balances to zero
             $updatedAccounts = ChartOfAccount::withoutGlobalScopes()->update(['current_balance' => 0]);
             $this->line("Reset {$updatedAccounts} account balances to zero.");
         });
-        
+
         $this->info('✅ Complete reset finished!');
         $this->warn('Note: You may need to recreate journal entries for existing transactions.');
-        
+
         return 0;
     }
 }

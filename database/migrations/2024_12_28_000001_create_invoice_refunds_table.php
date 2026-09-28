@@ -29,7 +29,7 @@ return new class extends Migration
             $table->timestamp('approved_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
-            
+
             $table->index(['tenant_id', 'refund_date']);
             $table->index(['invoice_id', 'status']);
         });
@@ -48,7 +48,7 @@ return new class extends Migration
         Schema::table('invoices', function (Blueprint $table) {
             $table->dropColumn('total_refunded');
         });
-        
+
         Schema::dropIfExists('invoice_refunds');
     }
 };

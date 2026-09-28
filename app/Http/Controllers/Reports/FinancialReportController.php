@@ -2,32 +2,14 @@
 
 namespace App\Http\Controllers\Reports;
 
-use App\Models\Bill;
-use App\Models\BillItem;
 use App\Models\ChartOfAccount;
-use App\Models\CustomReport;
-use App\Models\Customer;
-use App\Models\Department;
-use App\Models\Employee;
 use App\Models\Expense;
-use App\Models\Inventory;
-use App\Models\Invoice;
-use App\Models\InvoiceItem;
-use App\Models\Item;
 use App\Models\Journal;
 use App\Models\JournalEntry;
 use App\Models\PaymentMade;
 use App\Models\PaymentReceived;
 use App\Models\Payroll;
-use App\Models\PayrollBatch;
-use App\Models\SalaryStructureVersion;
-use App\Models\TaxRate;
-use App\Models\Vendor;
-use App\Services\ReportExportService;
-use App\Services\Reports\PayrollReportService;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Profit and loss, balance sheet, cash flow, trial balance and general ledger, with their exports.
@@ -60,7 +42,7 @@ class FinancialReportController extends ReportController
         $netProfit = $plData['netProfit'];
 
         return view('reports.profit-loss', compact(
-            'revenue', 'costOfGoodsSold', 'grossProfit', 'operatingExpenses', 'payroll', 
+            'revenue', 'costOfGoodsSold', 'grossProfit', 'operatingExpenses', 'payroll',
             'totalExpenses', 'netProfit', 'startDate', 'endDate'
         ));
     }
@@ -82,7 +64,7 @@ class FinancialReportController extends ReportController
         $accountsReceivableAccounts = $accounts->where('type', 'asset')->where('sub_type', 'accounts_receivable');
         $inventoryAccounts = $accounts->where('type', 'asset')->where('sub_type', 'inventory');
         $otherCurrentAssetAccounts = $accounts->where('type', 'asset')->where('sub_type', 'other_current_asset');
-        
+
         // Fixed Assets
         $fixedAssetAccounts = $accounts->where('type', 'asset')->where('sub_type', 'fixed_asset');
 
@@ -101,7 +83,7 @@ class FinancialReportController extends ReportController
         $accountsPayableAccounts = $accounts->where('type', 'liability')->where('sub_type', 'accounts_payable');
         $creditCardAccounts = $accounts->where('type', 'liability')->where('sub_type', 'credit_card');
         $otherCurrentLiabilityAccounts = $accounts->where('type', 'liability')->where('sub_type', 'other_current_liability');
-        
+
         // Long-term Liabilities
         $longTermLiabilityAccounts = $accounts->where('type', 'liability')->where('sub_type', 'long_term_liability');
 
@@ -208,10 +190,10 @@ class FinancialReportController extends ReportController
         // ========== INVESTING ACTIVITIES ==========
         // Cash spent on fixed assets (from journal entries debiting fixed asset accounts)
         $fixedAssetPurchases = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$startDate, $endDate])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', function ($query) {
                 $query->where('type', 'asset')
                     ->where('sub_type', 'fixed_asset');
@@ -220,10 +202,10 @@ class FinancialReportController extends ReportController
 
         // Cash received from sale of assets (credits to fixed asset accounts)
         $fixedAssetSales = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$startDate, $endDate])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', function ($query) {
                 $query->where('type', 'asset')
                     ->where('sub_type', 'fixed_asset');
@@ -235,10 +217,10 @@ class FinancialReportController extends ReportController
         // ========== FINANCING ACTIVITIES ==========
         // Long-term borrowings received (credits to long-term liability accounts)
         $borrowingsReceived = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$startDate, $endDate])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', function ($query) {
                 $query->where('type', 'liability')
                     ->where('sub_type', 'long_term_liability');
@@ -247,10 +229,10 @@ class FinancialReportController extends ReportController
 
         // Loan repayments (debits to long-term liability accounts)
         $loanRepayments = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$startDate, $endDate])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', function ($query) {
                 $query->where('type', 'liability')
                     ->where('sub_type', 'long_term_liability');
@@ -259,10 +241,10 @@ class FinancialReportController extends ReportController
 
         // Owner's capital contributions (credits to equity accounts)
         $capitalContributions = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$startDate, $endDate])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', function ($query) {
                 $query->where('type', 'equity')
                     ->where('sub_type', 'equity');
@@ -271,10 +253,10 @@ class FinancialReportController extends ReportController
 
         // Owner's drawings/dividends (debits to equity accounts)
         $drawings = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$startDate, $endDate])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', function ($query) {
                 $query->where('type', 'equity')
                     ->where('sub_type', 'equity');
@@ -316,12 +298,13 @@ class FinancialReportController extends ReportController
             ->map(function ($account) use ($tenantId, $asOf) {
                 $entries = JournalEntry::whereHas('journal', function ($q) use ($tenantId, $asOf) {
                     $q->where('tenant_id', $tenantId)
-                      ->where('journal_date', '<=', $asOf)
-                      ->where('is_posted', true);
+                        ->where('journal_date', '<=', $asOf)
+                        ->where('is_posted', true);
                 })->where('account_id', $account->id)->get();
 
                 $account->total_debit = $entries->sum('debit');
                 $account->total_credit = $entries->sum('credit');
+
                 return $account;
             })
             ->filter(function ($account) {
@@ -352,41 +335,41 @@ class FinancialReportController extends ReportController
 
         if ($accountId) {
             $selectedAccount = ChartOfAccount::where('tenant_id', $tenantId)->find($accountId);
-            
-            if (!$selectedAccount) {
+
+            if (! $selectedAccount) {
                 return back()->with('error', 'Account not found.');
             }
-            
+
             // Calculate opening balance (all entries before start date)
             $openingEntries = JournalEntry::whereHas('journal', function ($q) use ($tenantId, $startDate) {
                 $q->where('tenant_id', $tenantId)
-                  ->where('journal_date', '<', $startDate)
-                  ->where('is_posted', true);
+                    ->where('journal_date', '<', $startDate)
+                    ->where('is_posted', true);
             })
-            ->where('account_id', $accountId)
-            ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
-            ->first();
-            
+                ->where('account_id', $accountId)
+                ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
+                ->first();
+
             // Opening balance calculation based on account type
             // Assets & Expenses have debit balances, Liabilities, Equity & Income have credit balances
             $totalDebit = $openingEntries->total_debit ?? 0;
             $totalCredit = $openingEntries->total_credit ?? 0;
-            
+
             if ($selectedAccount->isDebitBalance()) {
                 $openingBalance = $totalDebit - $totalCredit;
             } else {
                 $openingBalance = $totalCredit - $totalDebit;
             }
-            
+
             // Get entries within the selected period
             $entries = JournalEntry::whereHas('journal', function ($q) use ($tenantId, $startDate, $endDate) {
                 $q->where('tenant_id', $tenantId)
-                  ->whereBetween('journal_date', [$startDate, $endDate])
-                  ->where('is_posted', true);
+                    ->whereBetween('journal_date', [$startDate, $endDate])
+                    ->where('is_posted', true);
             })
-            ->where('account_id', $accountId)
-            ->with(['journal'])
-            ->get();
+                ->where('account_id', $accountId)
+                ->with(['journal'])
+                ->get();
         }
 
         return view('reports.general-ledger', compact(
@@ -419,6 +402,7 @@ class FinancialReportController extends ReportController
 
         if ($format === 'csv') {
             $exportData = $this->exportService->profitLossData($data);
+
             return $this->exportService
                 ->setTitle('Profit & Loss Statement')
                 ->setFilters(['Period' => "$startDate to $endDate"])
@@ -485,6 +469,7 @@ class FinancialReportController extends ReportController
 
         if ($format === 'csv') {
             $exportData = $this->exportService->balanceSheetData($data);
+
             return $this->exportService
                 ->setTitle('Balance Sheet')
                 ->setFilters(['As of' => $asOf])
@@ -531,20 +516,20 @@ class FinancialReportController extends ReportController
 
         // Investing Activities
         $fixedAssetPurchases = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$startDate, $endDate])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', function ($query) {
                 $query->where('type', 'asset')->where('sub_type', 'fixed_asset');
             })
             ->sum('debit');
 
         $fixedAssetSales = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$startDate, $endDate])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', function ($query) {
                 $query->where('type', 'asset')->where('sub_type', 'fixed_asset');
             })
@@ -554,40 +539,40 @@ class FinancialReportController extends ReportController
 
         // Financing Activities
         $borrowingsReceived = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$startDate, $endDate])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', function ($query) {
                 $query->where('type', 'liability')->where('sub_type', 'long_term_liability');
             })
             ->sum('credit');
 
         $loanRepayments = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$startDate, $endDate])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', function ($query) {
                 $query->where('type', 'liability')->where('sub_type', 'long_term_liability');
             })
             ->sum('debit');
 
         $capitalContributions = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$startDate, $endDate])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', function ($query) {
                 $query->where('type', 'equity')->where('sub_type', 'equity');
             })
             ->sum('credit');
 
         $drawings = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$startDate, $endDate])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', function ($query) {
                 $query->where('type', 'equity')->where('sub_type', 'equity');
             })
@@ -614,6 +599,7 @@ class FinancialReportController extends ReportController
 
         if ($format === 'csv') {
             $exportData = $this->exportService->cashFlowData($data);
+
             return $this->exportService
                 ->setTitle('Cash Flow Statement')
                 ->setFilters(['Period' => "$startDate to $endDate"])
@@ -642,12 +628,13 @@ class FinancialReportController extends ReportController
             ->map(function ($account) use ($tenantId, $asOf) {
                 $entries = JournalEntry::whereHas('journal', function ($q) use ($tenantId, $asOf) {
                     $q->where('tenant_id', $tenantId)
-                      ->where('journal_date', '<=', $asOf)
-                      ->where('is_posted', true);
+                        ->where('journal_date', '<=', $asOf)
+                        ->where('is_posted', true);
                 })->where('account_id', $account->id)->get();
 
                 $account->total_debit = $entries->sum('debit');
                 $account->total_credit = $entries->sum('credit');
+
                 return $account;
             })
             ->filter(function ($account) {
@@ -661,6 +648,7 @@ class FinancialReportController extends ReportController
 
         if ($format === 'csv') {
             $exportData = $this->exportService->trialBalanceData($accounts, $totalDebits, $totalCredits);
+
             return $this->exportService
                 ->setTitle('Trial Balance')
                 ->setFilters(['As of' => $asOf])
@@ -696,26 +684,27 @@ class FinancialReportController extends ReportController
             $selectedAccount = ChartOfAccount::where('tenant_id', $tenantId)->find($accountId);
             $entries = JournalEntry::whereHas('journal', function ($q) use ($tenantId, $startDate, $endDate) {
                 $q->where('tenant_id', $tenantId)
-                  ->whereBetween('journal_date', [$startDate, $endDate])
-                  ->where('is_posted', true);
+                    ->whereBetween('journal_date', [$startDate, $endDate])
+                    ->where('is_posted', true);
             })
-            ->where('account_id', $accountId)
-            ->with(['journal'])
-            ->get();
+                ->where('account_id', $accountId)
+                ->with(['journal'])
+                ->get();
         }
 
         $data = compact('accounts', 'entries', 'selectedAccount', 'startDate', 'endDate', 'accountId');
 
         if ($format === 'csv') {
             $exportData = $this->exportService->generalLedgerData($entries, $selectedAccount);
+
             return $this->exportService
-                ->setTitle('General Ledger' . ($selectedAccount ? ' - ' . $selectedAccount->name : ''))
+                ->setTitle('General Ledger'.($selectedAccount ? ' - '.$selectedAccount->name : ''))
                 ->setFilters(['Period' => "$startDate to $endDate", 'Account' => $selectedAccount?->name ?? 'All'])
                 ->exportToCsv($exportData['rows'], $exportData['headers']);
         }
 
         return $this->exportService
-            ->setTitle('General Ledger' . ($selectedAccount ? ' - ' . $selectedAccount->name : ''))
+            ->setTitle('General Ledger'.($selectedAccount ? ' - '.$selectedAccount->name : ''))
             ->setFilters(['Period' => "$startDate to $endDate", 'Account' => $selectedAccount?->name ?? 'All'])
             ->exportToPdf('reports.pdf.general-ledger', $data);
     }

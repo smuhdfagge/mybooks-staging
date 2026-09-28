@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Quotation;
-use App\Models\QuotationItem;
 use App\Models\Customer;
 use App\Models\Item;
+use App\Models\Quotation;
+use App\Models\QuotationItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -106,6 +106,7 @@ class QuotationController extends Controller
     public function show(Quotation $quotation)
     {
         $quotation->load(['customer', 'items.item', 'createdBy', 'salesOrder']);
+
         return view('quotations.show', compact('quotation'));
     }
 
@@ -225,27 +226,29 @@ class QuotationController extends Controller
 
     public function accept(Quotation $quotation)
     {
-        if (!in_array($quotation->status, ['draft', 'sent'])) {
+        if (! in_array($quotation->status, ['draft', 'sent'])) {
             return redirect()->back()->with('error', 'Only draft or sent quotations can be accepted.');
         }
 
         $quotation->update(['status' => 'accepted']);
+
         return redirect()->back()->with('success', 'Quotation accepted.');
     }
 
     public function reject(Quotation $quotation)
     {
-        if (!in_array($quotation->status, ['draft', 'sent'])) {
+        if (! in_array($quotation->status, ['draft', 'sent'])) {
             return redirect()->back()->with('error', 'Only draft or sent quotations can be rejected.');
         }
 
         $quotation->update(['status' => 'rejected']);
+
         return redirect()->back()->with('success', 'Quotation rejected.');
     }
 
     public function convertToSalesOrder(Quotation $quotation)
     {
-        if (!in_array($quotation->status, ['accepted', 'draft', 'sent'])) {
+        if (! in_array($quotation->status, ['accepted', 'draft', 'sent'])) {
             return redirect()->back()->with('error', 'This quotation cannot be converted.');
         }
 

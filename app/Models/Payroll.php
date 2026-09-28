@@ -2,27 +2,31 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\MorphOne;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Events\PayrollDeleting;
+use App\Events\PayrollPaid;
+use App\Services\JournalService;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
-use App\Events\PayrollPaid;
-use App\Events\PayrollDeleting;
-use App\Services\JournalService;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Payroll extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, ValidatesAccountingPeriod;
+    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     // Status constants
     const STATUS_DRAFT = 'draft';
+
     const STATUS_PENDING = 'pending';
+
     const STATUS_APPROVED = 'approved';
+
     const STATUS_PAID = 'paid';
+
     const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [
@@ -114,9 +118,10 @@ class Payroll extends Model
             ->where('tenant_id', $tenantId)
             ->latest('id')
             ->first();
-        
+
         $number = $lastPayroll ? intval(substr($lastPayroll->payroll_number, 4)) + 1 : 1;
-        return 'PAY-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+        return 'PAY-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     public function calculateTotals()
@@ -138,6 +143,7 @@ class Payroll extends Model
     public function createJournalEntry(): ?Journal
     {
         $journalService = app(JournalService::class);
+
         return $journalService->createPayrollJournal($this);
     }
 

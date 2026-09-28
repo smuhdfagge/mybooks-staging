@@ -5,11 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ExtendSubscriptionRequest;
 use App\Http\Requests\Admin\UpdateSubscriptionRequest;
-use App\Models\Tenant;
 use App\Models\Plan;
 use App\Models\Subscription;
-use Illuminate\Http\Request;
+use App\Models\Tenant;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class AdminTenantController extends Controller
 {
@@ -33,7 +33,7 @@ class AdminTenantController extends Controller
                 ->where('billing_cycle', 'monthly')
                 ->with('plan')
                 ->get()
-                ->sum(fn($s) => $s->plan?->monthly_price ?? 0),
+                ->sum(fn ($s) => $s->plan?->monthly_price ?? 0),
         ];
 
         $recentTenants = Tenant::with(['activeSubscription.plan'])
@@ -68,9 +68,9 @@ class AdminTenantController extends Controller
                 case 'active':
                     $query->whereHas('subscriptions', function ($q) {
                         $q->where('status', 'active')
-                          ->where(function ($q2) {
-                              $q2->whereNull('ends_at')->orWhere('ends_at', '>', now());
-                          });
+                            ->where(function ($q2) {
+                                $q2->whereNull('ends_at')->orWhere('ends_at', '>', now());
+                            });
                     });
                     break;
                 case 'trial':
@@ -106,7 +106,7 @@ class AdminTenantController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -135,13 +135,13 @@ class AdminTenantController extends Controller
         $validated = $request->validated();
 
         $subscription = $tenant->activeSubscription;
-        
+
         if ($subscription) {
             $subscription->update($validated);
         } else {
             $plan = Plan::findOrFail($validated['plan_id']);
-            $endDate = $validated['billing_cycle'] === 'monthly' 
-                ? now()->addMonth() 
+            $endDate = $validated['billing_cycle'] === 'monthly'
+                ? now()->addMonth()
                 : now()->addYear();
 
             Subscription::create([
@@ -168,7 +168,7 @@ class AdminTenantController extends Controller
         // days then count from today and it becomes active again.
         $subscription = $tenant->activeSubscription ?? $tenant->latestSubscription;
 
-        if (!$subscription) {
+        if (! $subscription) {
             return back()->with('error', 'This tenant has no subscription to extend.');
         }
 
@@ -186,10 +186,11 @@ class AdminTenantController extends Controller
      */
     public function toggleStatus(Tenant $tenant)
     {
-        $tenant->is_active = !$tenant->is_active;
+        $tenant->is_active = ! $tenant->is_active;
         $tenant->save();
 
         $status = $tenant->is_active ? 'activated' : 'deactivated';
+
         return back()->with('success', "Tenant {$status} successfully.");
     }
 
@@ -199,8 +200,8 @@ class AdminTenantController extends Controller
     public function cancelSubscription(Tenant $tenant)
     {
         $subscription = $tenant->activeSubscription;
-        
-        if (!$subscription) {
+
+        if (! $subscription) {
             return back()->with('error', 'No active subscription to cancel.');
         }
 

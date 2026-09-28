@@ -34,7 +34,7 @@ class InvoiceSentNotification extends Notification implements ShouldQueue
             ->line("**Invoice Number:** {$this->invoice->invoice_number}")
             ->line("**Invoice Date:** {$this->invoice->invoice_date->format('M d, Y')}")
             ->line("**Due Date:** {$this->invoice->due_date->format('M d, Y')}")
-            ->line("**Amount Due:** " . number_format($this->invoice->balance_due, 2) . " {$tenant->currency}");
+            ->line('**Amount Due:** '.number_format($this->invoice->balance_due, 2)." {$tenant->currency}");
 
         if ($this->customMessage) {
             $message->line('---')

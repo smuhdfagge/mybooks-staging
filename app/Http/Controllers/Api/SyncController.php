@@ -2,35 +2,35 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Customer;
-use App\Models\Vendor;
-use App\Models\Item;
-use App\Models\Invoice;
-use App\Models\Bill;
-use App\Models\Expense;
-use App\Models\ChartOfAccount;
-use App\Models\TaxRate;
-use App\Models\PaymentReceived;
-use App\Models\PaymentMade;
-use App\Http\Resources\CustomerResource;
-use App\Http\Resources\VendorResource;
-use App\Http\Resources\ItemResource;
-use App\Http\Resources\InvoiceResource;
 use App\Http\Resources\BillResource;
-use App\Http\Resources\ExpenseResource;
 use App\Http\Resources\ChartOfAccountResource;
-use App\Http\Resources\TaxRateResource;
-use App\Http\Resources\PaymentReceivedResource;
+use App\Http\Resources\CustomerResource;
+use App\Http\Resources\ExpenseResource;
+use App\Http\Resources\InvoiceResource;
+use App\Http\Resources\ItemResource;
 use App\Http\Resources\PaymentMadeResource;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
+use App\Http\Resources\PaymentReceivedResource;
+use App\Http\Resources\TaxRateResource;
+use App\Http\Resources\VendorResource;
+use App\Models\Bill;
+use App\Models\ChartOfAccount;
+use App\Models\Customer;
+use App\Models\Expense;
+use App\Models\Invoice;
+use App\Models\Item;
+use App\Models\PaymentMade;
+use App\Models\PaymentReceived;
+use App\Models\TaxRate;
+use App\Models\Vendor;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class SyncController extends BaseApiController
 {
     /**
      * Get all data modified since a given timestamp for offline sync
-     * 
+     *
      * Usage: GET /api/v1/sync?updated_since=2026-01-10T00:00:00Z
      * First sync (no timestamp): returns all active data
      * Subsequent syncs: returns only modified records
@@ -43,12 +43,12 @@ class SyncController extends BaseApiController
         ]);
 
         $tenantId = $this->getTenantId();
-        $updatedSince = $request->get('updated_since') 
-            ? Carbon::parse($request->get('updated_since')) 
+        $updatedSince = $request->get('updated_since')
+            ? Carbon::parse($request->get('updated_since'))
             : null;
 
         // Parse requested entities (default: all)
-        $requestedEntities = $request->get('entities') 
+        $requestedEntities = $request->get('entities')
             ? explode(',', $request->get('entities'))
             : ['customers', 'vendors', 'items', 'accounts', 'tax_rates', 'invoices', 'bills', 'expenses', 'payments_received', 'payments_made'];
 
@@ -58,9 +58,9 @@ class SyncController extends BaseApiController
         // Customers
         if (in_array('customers', $requestedEntities)) {
             $data['customers'] = $this->getSyncData(
-                Customer::class, 
+                Customer::class,
                 CustomerResource::class,
-                $tenantId, 
+                $tenantId,
                 $updatedSince
             );
         }
@@ -68,9 +68,9 @@ class SyncController extends BaseApiController
         // Vendors
         if (in_array('vendors', $requestedEntities)) {
             $data['vendors'] = $this->getSyncData(
-                Vendor::class, 
+                Vendor::class,
                 VendorResource::class,
-                $tenantId, 
+                $tenantId,
                 $updatedSince
             );
         }
@@ -78,9 +78,9 @@ class SyncController extends BaseApiController
         // Items
         if (in_array('items', $requestedEntities)) {
             $data['items'] = $this->getSyncData(
-                Item::class, 
+                Item::class,
                 ItemResource::class,
-                $tenantId, 
+                $tenantId,
                 $updatedSince,
                 ['category', 'inventory']
             );
@@ -89,9 +89,9 @@ class SyncController extends BaseApiController
         // Chart of Accounts
         if (in_array('accounts', $requestedEntities)) {
             $data['accounts'] = $this->getSyncData(
-                ChartOfAccount::class, 
+                ChartOfAccount::class,
                 ChartOfAccountResource::class,
-                $tenantId, 
+                $tenantId,
                 $updatedSince
             );
         }
@@ -99,9 +99,9 @@ class SyncController extends BaseApiController
         // Tax Rates
         if (in_array('tax_rates', $requestedEntities)) {
             $data['tax_rates'] = $this->getSyncData(
-                TaxRate::class, 
+                TaxRate::class,
                 TaxRateResource::class,
-                $tenantId, 
+                $tenantId,
                 $updatedSince
             );
         }
@@ -109,9 +109,9 @@ class SyncController extends BaseApiController
         // Invoices (with items and customer)
         if (in_array('invoices', $requestedEntities)) {
             $data['invoices'] = $this->getSyncData(
-                Invoice::class, 
+                Invoice::class,
                 InvoiceResource::class,
-                $tenantId, 
+                $tenantId,
                 $updatedSince,
                 ['customer', 'items.item']
             );
@@ -120,9 +120,9 @@ class SyncController extends BaseApiController
         // Bills (with items and vendor)
         if (in_array('bills', $requestedEntities)) {
             $data['bills'] = $this->getSyncData(
-                Bill::class, 
+                Bill::class,
                 BillResource::class,
-                $tenantId, 
+                $tenantId,
                 $updatedSince,
                 ['vendor', 'items.item']
             );
@@ -131,9 +131,9 @@ class SyncController extends BaseApiController
         // Expenses
         if (in_array('expenses', $requestedEntities)) {
             $data['expenses'] = $this->getSyncData(
-                Expense::class, 
+                Expense::class,
                 ExpenseResource::class,
-                $tenantId, 
+                $tenantId,
                 $updatedSince,
                 ['vendor', 'expenseAccount']
             );
@@ -142,9 +142,9 @@ class SyncController extends BaseApiController
         // Payments Received
         if (in_array('payments_received', $requestedEntities)) {
             $data['payments_received'] = $this->getSyncData(
-                PaymentReceived::class, 
+                PaymentReceived::class,
                 PaymentReceivedResource::class,
-                $tenantId, 
+                $tenantId,
                 $updatedSince,
                 ['customer', 'invoice']
             );
@@ -153,9 +153,9 @@ class SyncController extends BaseApiController
         // Payments Made
         if (in_array('payments_made', $requestedEntities)) {
             $data['payments_made'] = $this->getSyncData(
-                PaymentMade::class, 
+                PaymentMade::class,
                 PaymentMadeResource::class,
-                $tenantId, 
+                $tenantId,
                 $updatedSince,
                 ['vendor', 'bill']
             );
@@ -178,13 +178,13 @@ class SyncController extends BaseApiController
         ]);
 
         $tenantId = $this->getTenantId();
-        $updatedSince = $request->get('updated_since') 
-            ? Carbon::parse($request->get('updated_since')) 
+        $updatedSince = $request->get('updated_since')
+            ? Carbon::parse($request->get('updated_since'))
             : null;
 
         $entityConfig = $this->getEntityConfig($entity);
 
-        if (!$entityConfig) {
+        if (! $entityConfig) {
             return $this->notFound("Entity '{$entity}' not found");
         }
 
@@ -218,7 +218,7 @@ class SyncController extends BaseApiController
 
         $tenantId = $this->getTenantId();
         $deletedSince = Carbon::parse($request->get('deleted_since'));
-        
+
         $requestedEntities = $request->get('entities')
             ? explode(',', $request->get('entities'))
             : ['customers', 'vendors', 'items', 'invoices', 'bills', 'expenses'];
@@ -234,7 +234,7 @@ class SyncController extends BaseApiController
                     ->pluck('id')
                     ->toArray();
 
-                if (!empty($ids)) {
+                if (! empty($ids)) {
                     $deleted[$entity] = $ids;
                 }
             }
@@ -285,9 +285,9 @@ class SyncController extends BaseApiController
      * Helper: Get sync data for a model
      */
     private function getSyncData(
-        string $modelClass, 
+        string $modelClass,
         string $resourceClass,
-        int $tenantId, 
+        int $tenantId,
         ?Carbon $updatedSince,
         array $relations = []
     ): array {
@@ -297,7 +297,7 @@ class SyncController extends BaseApiController
             $query->where('updated_at', '>=', $updatedSince);
         }
 
-        if (!empty($relations)) {
+        if (! empty($relations)) {
             $query->with($relations);
         }
 

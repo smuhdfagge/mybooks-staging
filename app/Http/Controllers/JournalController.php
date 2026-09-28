@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ChartOfAccount;
 use App\Models\Journal;
 use App\Models\JournalEntry;
-use App\Models\ChartOfAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -20,6 +20,7 @@ class JournalController extends Controller
     {
         $accounts = ChartOfAccount::where('is_active', true)->orderBy('account_code')->get();
         $journalNumber = Journal::generateNumber(auth()->user()->tenant_id);
+
         return view('journals.create', compact('accounts', 'journalNumber'));
     }
 
@@ -82,6 +83,7 @@ class JournalController extends Controller
     public function show(Journal $journal)
     {
         $journal->load(['entries.account', 'createdBy', 'approvedBy']);
+
         return view('journals.show', compact('journal'));
     }
 
@@ -93,7 +95,7 @@ class JournalController extends Controller
 
         $accounts = ChartOfAccount::where('is_active', true)->orderBy('account_code')->get();
         $journal->load('entries');
-        
+
         return view('journals.edit', compact('journal', 'accounts'));
     }
 
@@ -177,6 +179,7 @@ class JournalController extends Controller
 
         try {
             $journal->post();
+
             return redirect()->back()->with('success', 'Journal posted successfully.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());

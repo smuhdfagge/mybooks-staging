@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Item;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\Vendor;
-use App\Models\Item;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -103,12 +103,13 @@ class PurchaseOrderController extends Controller
     public function show(PurchaseOrder $purchaseOrder)
     {
         $purchaseOrder->load(['vendor', 'items.item', 'createdBy']);
+
         return view('purchase-orders.show', compact('purchaseOrder'));
     }
 
     public function edit(PurchaseOrder $purchaseOrder)
     {
-        if (!in_array($purchaseOrder->status, ['draft'])) {
+        if (! in_array($purchaseOrder->status, ['draft'])) {
             return redirect()->route('purchase-orders.show', $purchaseOrder)
                 ->with('error', 'Only draft purchase orders can be edited.');
         }
@@ -222,7 +223,7 @@ class PurchaseOrderController extends Controller
 
     public function cancel(PurchaseOrder $purchaseOrder)
     {
-        if (!in_array($purchaseOrder->status, ['draft', 'confirmed'])) {
+        if (! in_array($purchaseOrder->status, ['draft', 'confirmed'])) {
             return redirect()->route('purchase-orders.show', $purchaseOrder)
                 ->with('error', 'This purchase order cannot be cancelled.');
         }
@@ -240,7 +241,7 @@ class PurchaseOrderController extends Controller
                 ->with('error', 'This purchase order has already been billed.');
         }
 
-        if (!in_array($purchaseOrder->status, PurchaseOrder::BILLABLE, true)) {
+        if (! in_array($purchaseOrder->status, PurchaseOrder::BILLABLE, true)) {
             return redirect()->route('purchase-orders.show', $purchaseOrder)
                 ->with('error', 'Only confirmed or received purchase orders can be converted to bills.');
         }

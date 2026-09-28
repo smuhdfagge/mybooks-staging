@@ -17,6 +17,7 @@ class ChartOfAccountController extends Controller
     {
         $accounts = ChartOfAccount::where('is_active', true)->get();
         $types = ChartOfAccount::getTypes();
+
         return view('chart-of-accounts.create', compact('accounts', 'types'));
     }
 
@@ -45,6 +46,7 @@ class ChartOfAccountController extends Controller
     public function show(ChartOfAccount $chartOfAccount)
     {
         $chartOfAccount->load(['parent', 'children', 'journalEntries.journal']);
+
         return view('chart-of-accounts.show', compact('chartOfAccount'));
     }
 
@@ -58,7 +60,7 @@ class ChartOfAccountController extends Controller
             ->where('id', '!=', $chartOfAccount->id)
             ->get();
         $types = ChartOfAccount::getTypes();
-        
+
         return view('chart-of-accounts.edit', compact('chartOfAccount', 'accounts', 'types'));
     }
 
@@ -96,6 +98,7 @@ class ChartOfAccountController extends Controller
         }
 
         $chartOfAccount->delete();
+
         return redirect()->route('chart-of-accounts.index')->with('success', 'Account deleted successfully.');
     }
 }

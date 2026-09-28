@@ -31,7 +31,7 @@ class CustomerResource extends JsonResource
             'total_invoices' => $this->whenCounted('invoices'),
             'total_outstanding' => $this->when(
                 isset($this->outstanding_balance),
-                fn() => (float) $this->outstanding_balance
+                fn () => (float) $this->outstanding_balance
             ),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),

@@ -21,57 +21,57 @@ class AccountCodeService
      */
     protected static array $defaults = [
         // Assets
-        'cash'                     => '1000',
-        'checking'                 => '1100',
-        'accounts_receivable'      => '1200',
-        'employee_advances'        => '1250',
-        'inventory'                => '1300',
-        'prepaid_expenses'         => '1400',
+        'cash' => '1000',
+        'checking' => '1100',
+        'accounts_receivable' => '1200',
+        'employee_advances' => '1250',
+        'inventory' => '1300',
+        'prepaid_expenses' => '1400',
 
         // Liabilities
-        'accounts_payable'         => '2000',
-        'credit_card_payable'      => '2100',
-        'accrued_salaries'         => '2210',
-        'payroll_liabilities'      => '2300',
-        'tax_payable'              => '2310',
-        'pension_payable'          => '2320',
-        'insurance_payable'        => '2330',
-        'union_dues_payable'       => '2340',
-        'customer_deposits'        => '2350',
-        'garnishments_payable'     => '2360',
-        'sales_tax_payable'        => '2400',
+        'accounts_payable' => '2000',
+        'credit_card_payable' => '2100',
+        'accrued_salaries' => '2210',
+        'payroll_liabilities' => '2300',
+        'tax_payable' => '2310',
+        'pension_payable' => '2320',
+        'insurance_payable' => '2330',
+        'union_dues_payable' => '2340',
+        'customer_deposits' => '2350',
+        'garnishments_payable' => '2360',
+        'sales_tax_payable' => '2400',
 
         // Income
-        'sales_revenue'            => '4000',
+        'sales_revenue' => '4000',
 
         // COGS
-        'cost_of_goods_sold'       => '5000',
+        'cost_of_goods_sold' => '5000',
 
         // Expenses
-        'salaries_wages'           => '6000',
-        'payroll_taxes'            => '6020',
-        'allowances_expense'       => '6030',
-        'overtime_expense'         => '6040',
-        'employer_pension'         => '6050',
-        'employer_health_insurance'=> '6060',
-        'workers_comp'             => '6070',
-        'miscellaneous_expense'    => '6990',
+        'salaries_wages' => '6000',
+        'payroll_taxes' => '6020',
+        'allowances_expense' => '6030',
+        'overtime_expense' => '6040',
+        'employer_pension' => '6050',
+        'employer_health_insurance' => '6060',
+        'workers_comp' => '6070',
+        'miscellaneous_expense' => '6990',
     ];
 
     /**
      * Payment-method → logical account name mapping.
      */
     protected static array $paymentMethodMap = [
-        'cash'           => 'cash',
-        'check'          => 'checking',
-        'cheque'         => 'checking',
-        'bank_transfer'  => 'checking',
-        'credit_card'    => 'credit_card_payable',
-        'debit_card'     => 'checking',
-        'online'         => 'checking',
-        'mobile_money'   => 'cash',
-        'deposit'        => 'customer_deposits',
-        'other'          => 'cash',
+        'cash' => 'cash',
+        'check' => 'checking',
+        'cheque' => 'checking',
+        'bank_transfer' => 'checking',
+        'credit_card' => 'credit_card_payable',
+        'debit_card' => 'checking',
+        'online' => 'checking',
+        'mobile_money' => 'cash',
+        'deposit' => 'customer_deposits',
+        'other' => 'cash',
     ];
 
     /**

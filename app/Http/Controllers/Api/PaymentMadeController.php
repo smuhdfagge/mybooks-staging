@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\PaymentMade;
-use App\Models\Bill;
 use App\Http\Resources\PaymentMadeResource;
-use Illuminate\Http\Request;
+use App\Models\Bill;
+use App\Models\PaymentMade;
 use App\Services\PaymentValidation;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
@@ -74,6 +74,7 @@ class PaymentMadeController extends BaseApiController
     public function show(PaymentMade $paymentMade): JsonResponse
     {
         $paymentMade->load(['vendor', 'bill', 'bank', 'createdBy']);
+
         return $this->success(new PaymentMadeResource($paymentMade));
     }
 
@@ -97,7 +98,7 @@ class PaymentMadeController extends BaseApiController
 
         // Same checks as the web form (M5). The old strict !== comparison
         // failed whenever the vendor ID arrived as a string.
-        if (!empty($validated['bill_id'])) {
+        if (! empty($validated['bill_id'])) {
             $errors = PaymentValidation::forBill(Bill::find($validated['bill_id']), $validated['vendor_id'], (float) $validated['amount']);
             if ($errors) {
                 return $this->validationError(array_map(fn ($message) => [$message], $errors));
@@ -113,17 +114,19 @@ class PaymentMadeController extends BaseApiController
             $payment = PaymentMade::create($validated);
 
             // Update bill if linked
-            if (!empty($validated['bill_id'])) {
+            if (! empty($validated['bill_id'])) {
                 $payment->bill?->updateBalances();
             }
 
             DB::commit();
 
             $payment->load(['vendor', 'bill', 'bank']);
+
             return $this->created(new PaymentMadeResource($payment), 'Payment recorded successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return $this->error('Failed to record payment: ' . $e->getMessage(), 500);
+
+            return $this->error('Failed to record payment: '.$e->getMessage(), 500);
         }
     }
 
@@ -144,10 +147,12 @@ class PaymentMadeController extends BaseApiController
             }
 
             DB::commit();
+
             return $this->success(null, 'Payment deleted successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return $this->error('Failed to delete payment: ' . $e->getMessage(), 500);
+
+            return $this->error('Failed to delete payment: '.$e->getMessage(), 500);
         }
     }
 

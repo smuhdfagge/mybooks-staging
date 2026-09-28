@@ -2,15 +2,14 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
-use App\Models\ChartOfAccount;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
+     *
      * This migration adds support for customer deposits:
      * - Customers can deposit money in advance
      * - Deposits can be applied to invoices
@@ -26,8 +25,8 @@ return new class extends Migration
                 ->where('tenant_id', $tenantId)
                 ->where('account_code', '2350')
                 ->exists();
-            
-            if (!$exists) {
+
+            if (! $exists) {
                 DB::table('chart_of_accounts')->insert([
                     'tenant_id' => $tenantId,
                     'account_code' => '2350',

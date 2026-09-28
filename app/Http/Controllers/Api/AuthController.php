@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\User;
 use App\Http\Resources\UserResource;
+use App\Models\User;
 use App\Services\ActivityLogService;
 use Illuminate\Auth\Events\PasswordReset;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
@@ -30,29 +29,29 @@ class AuthController extends BaseApiController
 
         $user = User::where('email', $request->email)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (! $user || ! Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
         }
 
-        if (!$user->is_active) {
+        if (! $user->is_active) {
             return $this->error('Your account has been deactivated. Please contact support.', 403);
         }
 
-        if (!$user->hasVerifiedEmail()) {
+        if (! $user->hasVerifiedEmail()) {
             return $this->error('Please verify your email address before logging in.', 403);
         }
 
         // Check if tenant is active
-        if ($user->tenant && !$user->tenant->is_active) {
+        if ($user->tenant && ! $user->tenant->is_active) {
             return $this->error('Your organization account has been deactivated. Please contact support.', 403);
         }
 
         // Check if 2FA is enabled
         if ($user->two_factor_confirmed_at) {
             // If 2FA code is not provided, return a challenge response
-            if (!$request->filled('two_factor_code')) {
+            if (! $request->filled('two_factor_code')) {
                 return $this->success([
                     'two_factor_required' => true,
                     'message' => 'Two-factor authentication code required.',
@@ -63,7 +62,7 @@ class AuthController extends BaseApiController
             $twoFactor = app(\App\Services\TwoFactorService::class);
             $secret = $twoFactor->getDecryptedSecret($user);
 
-            if (!$secret || !$twoFactor->verify($secret, $request->two_factor_code)) {
+            if (! $secret || ! $twoFactor->verify($secret, $request->two_factor_code)) {
                 return $this->error('Invalid two-factor authentication code.', 422);
             }
         }
@@ -176,7 +175,7 @@ class AuthController extends BaseApiController
 
         $user = $request->user();
 
-        if (!Hash::check($request->current_password, $user->password)) {
+        if (! Hash::check($request->current_password, $user->password)) {
             return $this->validationError([
                 'current_password' => ['The current password is incorrect.'],
             ]);
@@ -337,7 +336,7 @@ class AuthController extends BaseApiController
         $user = User::where('email', $request->email)->first();
 
         // Use the same error message whether user doesn't exist or token is invalid
-        if (!$user || !Password::tokenExists($user, $request->token)) {
+        if (! $user || ! Password::tokenExists($user, $request->token)) {
             return $this->error('Invalid or expired reset token', 400);
         }
 

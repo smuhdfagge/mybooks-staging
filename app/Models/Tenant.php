@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Services\ChartOfAccountService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Tenant extends Model
@@ -188,12 +188,13 @@ class Tenant extends Model
     public function canAddUsers(int $count = 1): bool
     {
         $subscription = $this->activeSubscription;
-        
-        if (!$subscription || !$subscription->plan) {
+
+        if (! $subscription || ! $subscription->plan) {
             return false;
         }
 
         $currentUsers = $this->users()->count();
+
         return ($currentUsers + $count) <= $subscription->plan->max_users;
     }
 
@@ -203,8 +204,8 @@ class Tenant extends Model
     public function remainingUserSlots(): int
     {
         $subscription = $this->activeSubscription;
-        
-        if (!$subscription || !$subscription->plan) {
+
+        if (! $subscription || ! $subscription->plan) {
             return 0;
         }
 
@@ -217,12 +218,12 @@ class Tenant extends Model
     public function getSubscriptionStatusAttribute(): string
     {
         $subscription = $this->activeSubscription;
-        
-        if (!$subscription) {
+
+        if (! $subscription) {
             return 'No Subscription';
         }
 
-        return match($subscription->status) {
+        return match ($subscription->status) {
             Subscription::STATUS_ACTIVE => 'Active',
             Subscription::STATUS_CANCELLED => 'Cancelled',
             Subscription::STATUS_EXPIRED => 'Expired',

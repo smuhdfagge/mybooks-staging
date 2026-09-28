@@ -2,33 +2,45 @@
 
 namespace App\Livewire\PaymentsReceived;
 
-use App\Models\PaymentReceived;
+use App\Livewire\Concerns\ChecksPermissions;
 use App\Models\Customer;
+use App\Models\PaymentReceived;
 use App\Services\BankService;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Livewire\Concerns\ChecksPermissions;
 
 class PaymentsReceivedTable extends Component
 {
     use ChecksPermissions, WithPagination;
 
     public $search = '';
+
     public $customer = '';
+
     public $paymentMethod = '';
+
     public $paymentType = ''; // '', 'regular', 'deposit'
+
     public $dateFrom = '';
+
     public $dateTo = '';
+
     public $sortField = 'payment_date';
+
     public $sortDirection = 'desc';
+
     public $perPage = 10;
 
     // Bulk operation properties
     public $selectedItems = [];
+
     public $selectAll = false;
+
     public $bulkAction = '';
+
     public $successMessage = '';
+
     public $errorMessage = '';
 
     protected $queryString = [
@@ -80,19 +92,19 @@ class PaymentsReceivedTable extends Component
     private function getFilteredPaymentIds()
     {
         return PaymentReceived::query()
-            ->when($this->search, fn($q) => $q->where(function($query) {
+            ->when($this->search, fn ($q) => $q->where(function ($query) {
                 $query->where('payment_number', 'like', "%{$this->search}%")
                     ->orWhere('reference', 'like', "%{$this->search}%")
-                    ->orWhereHas('customer', fn($q2) => $q2->where('name', 'like', "%{$this->search}%"));
+                    ->orWhereHas('customer', fn ($q2) => $q2->where('name', 'like', "%{$this->search}%"));
             }))
-            ->when($this->customer, fn($q) => $q->where('customer_id', $this->customer))
-            ->when($this->paymentMethod, fn($q) => $q->where('payment_method', $this->paymentMethod))
-            ->when($this->paymentType === 'deposit', fn($q) => $q->where('is_deposit', true))
-            ->when($this->paymentType === 'regular', fn($q) => $q->where('is_deposit', false))
-            ->when($this->dateFrom, fn($q) => $q->whereDate('payment_date', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn($q) => $q->whereDate('payment_date', '<=', $this->dateTo))
+            ->when($this->customer, fn ($q) => $q->where('customer_id', $this->customer))
+            ->when($this->paymentMethod, fn ($q) => $q->where('payment_method', $this->paymentMethod))
+            ->when($this->paymentType === 'deposit', fn ($q) => $q->where('is_deposit', true))
+            ->when($this->paymentType === 'regular', fn ($q) => $q->where('is_deposit', false))
+            ->when($this->dateFrom, fn ($q) => $q->whereDate('payment_date', '>=', $this->dateFrom))
+            ->when($this->dateTo, fn ($q) => $q->whereDate('payment_date', '<=', $this->dateTo))
             ->pluck('id')
-            ->map(fn($id) => (string) $id)
+            ->map(fn ($id) => (string) $id)
             ->toArray();
     }
 
@@ -113,11 +125,13 @@ class PaymentsReceivedTable extends Component
 
         if (empty($this->selectedItems)) {
             $this->errorMessage = 'Please select at least one payment.';
+
             return;
         }
 
         if (empty($this->bulkAction)) {
             $this->errorMessage = 'Please select an action.';
+
             return;
         }
 
@@ -129,18 +143,21 @@ class PaymentsReceivedTable extends Component
             case 'delete':
                 $deletedCount = 0;
                 $skippedCount = 0;
-                
+
                 DB::transaction(function () use (&$deletedCount, &$skippedCount) {
                     foreach ($this->selectedItems as $paymentId) {
                         $payment = PaymentReceived::find($paymentId);
-                        if (!$payment) continue;
-                        
+                        if (! $payment) {
+                            continue;
+                        }
+
                         // Check if deposit has been applied to invoices
                         if ($payment->is_deposit && $payment->depositApplications()->exists()) {
                             $skippedCount++;
+
                             continue;
                         }
-                        
+
                         // Reverse bank balance
                         app(BankService::class)->debit(
                             $payment->bank_id,
@@ -153,7 +170,7 @@ class PaymentsReceivedTable extends Component
                             $invoice = $payment->invoice;
                             $invoice->amount_paid -= $payment->amount;
                             $invoice->balance_due += $payment->amount;
-                            
+
                             // Update invoice status
                             if ($invoice->balance_due >= $invoice->total) {
                                 $invoice->status = 'sent';
@@ -162,25 +179,26 @@ class PaymentsReceivedTable extends Component
                             }
                             $invoice->save();
                         }
-                        
+
                         // The model's deleting event will handle journal entry cleanup
                         // The model's deleted event will handle updating invoice/deposit balances
                         $payment->delete();
                         $deletedCount++;
                     }
                 });
-                
+
                 if ($deletedCount > 0 && $skippedCount > 0) {
                     $this->successMessage = "Deleted {$deletedCount} payment(s). Skipped {$skippedCount} deposit(s) with applied amounts. Journal entries and chart of account balances have been updated.";
                 } elseif ($deletedCount > 0) {
                     $this->successMessage = "Successfully deleted {$deletedCount} payment(s). Journal entries and chart of account balances have been updated.";
                 } else {
-                    $this->errorMessage = "Could not delete any payments. Selected deposits have been applied to invoices.";
+                    $this->errorMessage = 'Could not delete any payments. Selected deposits have been applied to invoices.';
                 }
                 break;
 
             default:
                 $this->errorMessage = 'Invalid action selected.';
+
                 return;
         }
 
@@ -203,17 +221,17 @@ class PaymentsReceivedTable extends Component
     {
         $payments = PaymentReceived::query()
             ->with(['customer', 'invoice'])
-            ->when($this->search, fn($q) => $q->where(function($query) {
+            ->when($this->search, fn ($q) => $q->where(function ($query) {
                 $query->where('payment_number', 'like', "%{$this->search}%")
                     ->orWhere('reference', 'like', "%{$this->search}%")
-                    ->orWhereHas('customer', fn($q2) => $q2->where('name', 'like', "%{$this->search}%"));
+                    ->orWhereHas('customer', fn ($q2) => $q2->where('name', 'like', "%{$this->search}%"));
             }))
-            ->when($this->customer, fn($q) => $q->where('customer_id', $this->customer))
-            ->when($this->paymentMethod, fn($q) => $q->where('payment_method', $this->paymentMethod))
-            ->when($this->paymentType === 'deposit', fn($q) => $q->where('is_deposit', true))
-            ->when($this->paymentType === 'regular', fn($q) => $q->where('is_deposit', false))
-            ->when($this->dateFrom, fn($q) => $q->whereDate('payment_date', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn($q) => $q->whereDate('payment_date', '<=', $this->dateTo))
+            ->when($this->customer, fn ($q) => $q->where('customer_id', $this->customer))
+            ->when($this->paymentMethod, fn ($q) => $q->where('payment_method', $this->paymentMethod))
+            ->when($this->paymentType === 'deposit', fn ($q) => $q->where('is_deposit', true))
+            ->when($this->paymentType === 'regular', fn ($q) => $q->where('is_deposit', false))
+            ->when($this->dateFrom, fn ($q) => $q->whereDate('payment_date', '>=', $this->dateFrom))
+            ->when($this->dateTo, fn ($q) => $q->whereDate('payment_date', '<=', $this->dateTo))
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
 

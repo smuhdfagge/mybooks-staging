@@ -2,23 +2,23 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\MorphOne;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Events\BillDeleting;
+use App\Events\BillSaved;
+use App\Services\JournalService;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
-use App\Events\BillSaved;
-use App\Events\BillDeleting;
-use App\Services\JournalService;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 
 class Bill extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, ValidatesAccountingPeriod, \App\Traits\KeepsTotalsBalanced;
+    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     protected $fillable = [
         'tenant_id',
@@ -94,6 +94,7 @@ class Bill extends Model
     public function createJournalEntry(): ?Journal
     {
         $journalService = app(JournalService::class);
+
         return $journalService->createBillJournal($this);
     }
 
@@ -116,22 +117,23 @@ class Bill extends Model
             ->where('tenant_id', $tenantId)
             ->latest('id')
             ->first();
-        
+
         $number = $lastBill ? intval(substr($lastBill->bill_number, 5)) + 1 : 1;
-        return 'BILL-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+        return 'BILL-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     public function updateBalances()
     {
         $previousStatus = $this->status;
-        
+
         $this->amount_paid = $this->payments()->sum('amount');
         $this->balance_due = $this->total - $this->amount_paid;
         $this->status = $this->balance_due <= 0 ? 'paid' : ($this->amount_paid > 0 ? 'partial' : 'unpaid');
         $this->withoutPeriodValidation()->save();
-        
+
         // Update inventory when bill becomes paid (and hasn't been updated yet)
-        if ($this->status === 'paid' && $previousStatus !== 'paid' && !$this->inventory_updated_at) {
+        if ($this->status === 'paid' && $previousStatus !== 'paid' && ! $this->inventory_updated_at) {
             $this->updateInventory();
         }
     }
@@ -155,7 +157,7 @@ class Bill extends Model
                                 'reserved_quantity' => 0,
                             ]
                         );
-                        
+
                         // Update weighted average cost
                         // Cost per unit excludes VAT: the tax goes to input tax in the
                         // journal, so including it here would put VAT into COGS.
@@ -183,7 +185,7 @@ class Bill extends Model
                             'reference_id' => $this->id,
                             'received_date' => now()->toDateString(),
                         ]);
-                        
+
                         // Record inventory history
                         InventoryHistory::create([
                             'tenant_id' => $this->tenant_id,
@@ -198,11 +200,11 @@ class Bill extends Model
                     }
                 }
             }
-            
+
             // Mark inventory as updated
             $this->inventory_updated_at = now();
             $this->withoutPeriodValidation()->save();
-            
+
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();

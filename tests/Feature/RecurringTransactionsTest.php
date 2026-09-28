@@ -2,12 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\Customer;
 use App\Models\RecurrentBill;
 use App\Models\RecurrentExpense;
 use App\Models\RecurrentInvoice;
-use App\Models\Customer;
 use App\Models\Vendor;
-use App\Models\Tenant;
 use Carbon\Carbon;
 use Tests\TestCase;
 
@@ -19,7 +18,7 @@ class RecurringTransactionsTest extends TestCase
     {
         $this->createAuthenticatedUser();
 
-        $customer = Customer::withoutEvents(fn() => Customer::factory()->create(['tenant_id' => $this->tenant->id]));
+        $customer = Customer::withoutEvents(fn () => Customer::factory()->create(['tenant_id' => $this->tenant->id]));
 
         $profile = RecurrentInvoice::withoutEvents(function () use ($customer) {
             return RecurrentInvoice::create([
@@ -44,7 +43,7 @@ class RecurringTransactionsTest extends TestCase
     {
         $this->createAuthenticatedUser();
 
-        $customer = Customer::withoutEvents(fn() => Customer::factory()->create(['tenant_id' => $this->tenant->id]));
+        $customer = Customer::withoutEvents(fn () => Customer::factory()->create(['tenant_id' => $this->tenant->id]));
 
         $profile = RecurrentInvoice::withoutEvents(function () use ($customer) {
             return RecurrentInvoice::create([
@@ -69,7 +68,7 @@ class RecurringTransactionsTest extends TestCase
     {
         $this->createAuthenticatedUser();
 
-        $customer = Customer::withoutEvents(fn() => Customer::factory()->create(['tenant_id' => $this->tenant->id]));
+        $customer = Customer::withoutEvents(fn () => Customer::factory()->create(['tenant_id' => $this->tenant->id]));
 
         $profile = RecurrentInvoice::withoutEvents(function () use ($customer) {
             return RecurrentInvoice::create([
@@ -94,7 +93,7 @@ class RecurringTransactionsTest extends TestCase
     {
         $this->createAuthenticatedUser();
 
-        $customer = Customer::withoutEvents(fn() => Customer::factory()->create(['tenant_id' => $this->tenant->id]));
+        $customer = Customer::withoutEvents(fn () => Customer::factory()->create(['tenant_id' => $this->tenant->id]));
 
         $profile = RecurrentInvoice::withoutEvents(function () use ($customer) {
             return RecurrentInvoice::create([
@@ -120,7 +119,7 @@ class RecurringTransactionsTest extends TestCase
     {
         $this->createAuthenticatedUser();
 
-        $customer = Customer::withoutEvents(fn() => Customer::factory()->create(['tenant_id' => $this->tenant->id]));
+        $customer = Customer::withoutEvents(fn () => Customer::factory()->create(['tenant_id' => $this->tenant->id]));
 
         $baseDate = Carbon::parse('2025-06-01');
 
@@ -149,7 +148,7 @@ class RecurringTransactionsTest extends TestCase
     {
         $this->createAuthenticatedUser();
 
-        $customer = Customer::withoutEvents(fn() => Customer::factory()->create(['tenant_id' => $this->tenant->id]));
+        $customer = Customer::withoutEvents(fn () => Customer::factory()->create(['tenant_id' => $this->tenant->id]));
 
         $profile = RecurrentInvoice::withoutEvents(function () use ($customer) {
             return RecurrentInvoice::create([
@@ -180,7 +179,7 @@ class RecurringTransactionsTest extends TestCase
     {
         $this->createAuthenticatedUser();
 
-        $vendor = Vendor::withoutEvents(fn() => Vendor::factory()->create(['tenant_id' => $this->tenant->id]));
+        $vendor = Vendor::withoutEvents(fn () => Vendor::factory()->create(['tenant_id' => $this->tenant->id]));
 
         $profile = RecurrentBill::withoutEvents(function () use ($vendor) {
             return RecurrentBill::create([
@@ -205,7 +204,7 @@ class RecurringTransactionsTest extends TestCase
     {
         $this->createAuthenticatedUser();
 
-        $vendor = Vendor::withoutEvents(fn() => Vendor::factory()->create(['tenant_id' => $this->tenant->id]));
+        $vendor = Vendor::withoutEvents(fn () => Vendor::factory()->create(['tenant_id' => $this->tenant->id]));
 
         $baseDate = Carbon::parse('2025-03-01');
 

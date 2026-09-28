@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('exports')) {
+        if (! Schema::hasTable('exports')) {
             Schema::create('exports', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
@@ -29,7 +29,7 @@ return new class extends Migration
                 $table->timestamp('completed_at')->nullable();
                 $table->timestamp('expires_at')->nullable();
                 $table->timestamps();
-                
+
                 $table->index(['tenant_id', 'status']);
                 $table->index(['tenant_id', 'type']);
             });

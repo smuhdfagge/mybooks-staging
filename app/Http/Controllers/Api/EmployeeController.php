@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Employee;
 use App\Http\Resources\EmployeeResource;
-use Illuminate\Http\Request;
+use App\Models\Employee;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class EmployeeController extends BaseApiController
@@ -62,6 +62,7 @@ class EmployeeController extends BaseApiController
     public function show(Employee $employee): JsonResponse
     {
         $employee->load(['department', 'designation']);
+
         return $this->success(new EmployeeResource($employee));
     }
 

@@ -2,18 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Invoice;
-use App\Models\InvoiceItem;
+use App\Http\Requests\StoreInvoiceRequest;
+use App\Models\ActivityLog;
 use App\Models\Customer;
-use App\Models\Item;
 use App\Models\Inventory;
 use App\Models\InventoryHistory;
-use App\Models\ActivityLog;
-use App\Http\Requests\StoreInvoiceRequest;
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
+use App\Models\Item;
 use App\Services\NotificationService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class InvoiceController extends Controller
 {
@@ -37,7 +35,7 @@ class InvoiceController extends Controller
             })
             ->get();
         $invoiceNumber = Invoice::generateNumber(auth()->user()->tenant_id);
-        
+
         return view('invoices.create', compact('customers', 'items', 'invoiceNumber'));
     }
 
@@ -59,16 +57,16 @@ class InvoiceController extends Controller
         $stockErrors = [];
         $stockErrorDetails = [];
         foreach ($validated['items'] as $index => $itemData) {
-            if (!empty($itemData['item_id'])) {
+            if (! empty($itemData['item_id'])) {
                 $item = Item::with('inventory')->find($itemData['item_id']);
                 if ($item && $item->track_inventory) {
                     $inventory = Inventory::where('item_id', $item->id)
                         ->where('tenant_id', $tenantId)
                         ->lockForUpdate()
                         ->first();
-                    
+
                     $availableQty = $inventory ? $inventory->available_quantity : 0;
-                    
+
                     if ($itemData['quantity'] > $availableQty) {
                         $stockErrors["items.{$index}.quantity"] = "Insufficient stock for '{$item->name}'. Available: {$availableQty}, Requested: {$itemData['quantity']}";
                         $stockErrorDetails[] = "{$item->name} (Available: {$availableQty})";
@@ -77,14 +75,15 @@ class InvoiceController extends Controller
             }
         }
 
-        if (!empty($stockErrors)) {
-            $errorMessage = 'Insufficient stock for: ' . implode(', ', $stockErrorDetails);
+        if (! empty($stockErrors)) {
+            $errorMessage = 'Insufficient stock for: '.implode(', ', $stockErrorDetails);
+
             return redirect()->back()
                 ->withErrors($stockErrors)
                 ->withInput()
                 ->with('error', $errorMessage);
         }
-        
+
         $invoice = Invoice::create([
             'tenant_id' => $tenantId,
             'customer_id' => $validated['customer_id'],
@@ -147,6 +146,7 @@ class InvoiceController extends Controller
     public function show(Invoice $invoice)
     {
         $invoice->load(['customer', 'items.item', 'payments.createdBy', 'createdBy', 'journal.entries.account', 'refunds']);
+
         return view('invoices.show', compact('invoice'));
     }
 
@@ -154,10 +154,10 @@ class InvoiceController extends Controller
     {
         $invoice->load(['customer', 'items.item', 'tenant']);
         $tenant = $invoice->tenant ?? auth()->user()->tenant;
-        
+
         // Load the active invoice template settings
         $template = $tenant->invoiceTemplate;
-        if (!$template) {
+        if (! $template) {
             $template = \App\Models\InvoiceTemplate::where('tenant_id', $tenant->id)
                 ->where('is_default', true)
                 ->first();
@@ -168,6 +168,7 @@ class InvoiceController extends Controller
                 \App\Models\InvoiceTemplate::getDefaultSettings(),
                 $template->settings ?? []
             );
+
             return view('invoices.templates.print-templated', compact('invoice', 'tenant', 'templateSettings'));
         }
 
@@ -187,7 +188,7 @@ class InvoiceController extends Controller
             ->with(['taxRate', 'taxGroup.taxRates'])
             ->get();
         $invoice->load('items');
-        
+
         return view('invoices.edit', compact('invoice', 'customers', 'items'));
     }
 
@@ -207,7 +208,7 @@ class InvoiceController extends Controller
         $validated = $request->validated();
 
         // Check stock availability for each item (only if not released)
-        if (!$invoice->isReleased()) {
+        if (! $invoice->isReleased()) {
             // Get currently reserved quantities from this invoice (which will be released)
             $currentReservations = [];
             foreach ($invoice->items as $existingItem) {
@@ -219,18 +220,18 @@ class InvoiceController extends Controller
             $stockErrors = [];
             $stockErrorDetails = [];
             foreach ($validated['items'] as $index => $itemData) {
-                if (!empty($itemData['item_id'])) {
+                if (! empty($itemData['item_id'])) {
                     $item = Item::with('inventory')->find($itemData['item_id']);
                     if ($item && $item->track_inventory) {
                         $inventory = Inventory::where('item_id', $item->id)
                             ->where('tenant_id', $tenantId)
                             ->lockForUpdate()
                             ->first();
-                        
+
                         // Available = current available + what will be released from this invoice
                         $currentlyReservedForThisInvoice = $currentReservations[$item->id] ?? 0;
                         $availableQty = ($inventory ? $inventory->available_quantity : 0) + $currentlyReservedForThisInvoice;
-                        
+
                         if ($itemData['quantity'] > $availableQty) {
                             $stockErrors["items.{$index}.quantity"] = "Insufficient stock for '{$item->name}'. Available: {$availableQty}, Requested: {$itemData['quantity']}";
                             $stockErrorDetails[] = "{$item->name} (Available: {$availableQty})";
@@ -239,8 +240,9 @@ class InvoiceController extends Controller
                 }
             }
 
-            if (!empty($stockErrors)) {
-                $errorMessage = 'Insufficient stock for: ' . implode(', ', $stockErrorDetails);
+            if (! empty($stockErrors)) {
+                $errorMessage = 'Insufficient stock for: '.implode(', ', $stockErrorDetails);
+
                 return redirect()->back()
                     ->withErrors($stockErrors)
                     ->withInput()
@@ -250,7 +252,7 @@ class InvoiceController extends Controller
 
         // Load items fresh to ensure we have the current items for releasing reservations
         $invoice->load('items');
-        
+
         // Release existing inventory reservations before updating
         $invoice->releaseInventoryReservation();
 
@@ -307,9 +309,9 @@ class InvoiceController extends Controller
 
         // Refresh items relationship to get newly created items for reserving
         $invoice->load('items');
-        
+
         // Reserve inventory for updated items (only if not released)
-        if (!$invoice->isReleased()) {
+        if (! $invoice->isReleased()) {
             $this->reserveInventoryForInvoice($invoice);
         }
 
@@ -324,7 +326,7 @@ class InvoiceController extends Controller
 
         // Load items to ensure we can release their reservations
         $invoice->load('items');
-        
+
         // Release inventory reservations before deleting
         $invoice->releaseInventoryReservation();
 
@@ -337,19 +339,19 @@ class InvoiceController extends Controller
     public function send(Invoice $invoice, NotificationService $notificationService)
     {
         // Check if customer has email
-        if (!$invoice->customer || !$invoice->customer->email) {
+        if (! $invoice->customer || ! $invoice->customer->email) {
             return redirect()->back()->with('error', 'Customer does not have an email address.');
         }
 
         // Send the invoice email
         $sent = $notificationService->sendInvoice($invoice);
-        
+
         if ($sent) {
             $invoice->update(['status' => 'sent']);
-            
+
             // Log the activity
             $invoice->logCustomActivity(ActivityLog::ACTION_SENT, "Invoice '{$invoice->invoice_number}' was sent to {$invoice->customer->email}");
-            
+
             return redirect()->back()->with('success', "Invoice sent to {$invoice->customer->email}");
         }
 
@@ -359,10 +361,11 @@ class InvoiceController extends Controller
     public function release(Invoice $invoice)
     {
         // Check if invoice can be released
-        if (!$invoice->canBeReleased()) {
+        if (! $invoice->canBeReleased()) {
             if ($invoice->isReleased()) {
                 return redirect()->back()->with('error', 'Invoice has already been released.');
             }
+
             return redirect()->back()->with('error', 'Only paid invoices can be released.');
         }
 
@@ -370,7 +373,7 @@ class InvoiceController extends Controller
         try {
             // Generate waybill number
             $waybillNumber = Invoice::generateWaybillNumber(auth()->user()->tenant_id);
-            
+
             // Deduct inventory for each item (move from reserved to sold)
             foreach ($invoice->items as $invoiceItem) {
                 if ($invoiceItem->item_id) {
@@ -378,7 +381,7 @@ class InvoiceController extends Controller
                         ->where('tenant_id', auth()->user()->tenant_id)
                         ->lockForUpdate()
                         ->first();
-                    
+
                     if ($inventory) {
                         // Deduct from both quantity and reserved_quantity
                         $previousQty = $inventory->quantity;
@@ -389,7 +392,7 @@ class InvoiceController extends Controller
                         $inventory->quantity = $inventory->quantity - $invoiceItem->quantity;
                         $inventory->reserved_quantity = max(0, $inventory->reserved_quantity - $invoiceItem->quantity);
                         $inventory->save();
-                        
+
                         // Record inventory history
                         InventoryHistory::create([
                             'tenant_id' => auth()->user()->tenant_id,
@@ -404,34 +407,35 @@ class InvoiceController extends Controller
                     }
                 }
             }
-            
+
             // Update invoice with release info
             $invoice->update([
                 'released_at' => now(),
                 'waybill_number' => $waybillNumber,
             ]);
-            
+
             // Log the activity
             $invoice->logCustomActivity(ActivityLog::ACTION_RELEASED, "Invoice '{$invoice->invoice_number}' was released with Waybill #{$waybillNumber}");
-            
+
             DB::commit();
-            
+
             return redirect()->back()->with('success', "Invoice released successfully. Waybill Number: {$waybillNumber}");
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Failed to release invoice: ' . $e->getMessage());
+
+            return redirect()->back()->with('error', 'Failed to release invoice: '.$e->getMessage());
         }
     }
 
     public function waybill(Invoice $invoice)
     {
-        if (!$invoice->isReleased()) {
+        if (! $invoice->isReleased()) {
             return redirect()->back()->with('error', 'Invoice has not been released yet.');
         }
-        
+
         $invoice->load(['customer', 'items.item', 'tenant']);
         $tenant = $invoice->tenant ?? auth()->user()->tenant;
-        
+
         return view('invoices.waybill', compact('invoice', 'tenant'));
     }
 

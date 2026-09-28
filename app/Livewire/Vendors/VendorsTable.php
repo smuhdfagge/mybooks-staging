@@ -2,26 +2,34 @@
 
 namespace App\Livewire\Vendors;
 
+use App\Livewire\Concerns\ChecksPermissions;
 use App\Models\Vendor;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Livewire\Concerns\ChecksPermissions;
 
 class VendorsTable extends Component
 {
     use ChecksPermissions, WithPagination;
 
     public $search = '';
+
     public $status = '';
+
     public $sortField = 'company_name';
+
     public $sortDirection = 'asc';
+
     public $perPage = 10;
 
     // Bulk operation properties
     public $selectedItems = [];
+
     public $selectAll = false;
+
     public $bulkAction = '';
+
     public $successMessage = '';
+
     public $errorMessage = '';
 
     protected $queryString = [
@@ -71,14 +79,14 @@ class VendorsTable extends Component
     private function getFilteredVendorIds()
     {
         return Vendor::query()
-            ->when($this->search, fn($q) => $q->where(function($query) {
+            ->when($this->search, fn ($q) => $q->where(function ($query) {
                 $query->where('company_name', 'like', "%{$this->search}%")
                     ->orWhere('contact_name', 'like', "%{$this->search}%")
                     ->orWhere('email', 'like', "%{$this->search}%");
             }))
-            ->when($this->status !== '', fn($q) => $q->where('is_active', $this->status === 'active'))
+            ->when($this->status !== '', fn ($q) => $q->where('is_active', $this->status === 'active'))
             ->pluck('id')
-            ->map(fn($id) => (string) $id)
+            ->map(fn ($id) => (string) $id)
             ->toArray();
     }
 
@@ -101,11 +109,13 @@ class VendorsTable extends Component
 
         if (empty($this->selectedItems)) {
             $this->errorMessage = 'Please select at least one vendor.';
+
             return;
         }
 
         if (empty($this->bulkAction)) {
             $this->errorMessage = 'Please select an action.';
+
             return;
         }
 
@@ -127,33 +137,37 @@ class VendorsTable extends Component
             case 'delete':
                 $deletedCount = 0;
                 $skippedCount = 0;
-                
+
                 foreach ($this->selectedItems as $vendorId) {
                     $vendor = Vendor::find($vendorId);
-                    if (!$vendor) continue;
-                    
-                    // Check if vendor has related records
-                    if ($vendor->bills()->exists() || 
-                        $vendor->expenses()->exists()) {
-                        $skippedCount++;
+                    if (! $vendor) {
                         continue;
                     }
-                    
+
+                    // Check if vendor has related records
+                    if ($vendor->bills()->exists() ||
+                        $vendor->expenses()->exists()) {
+                        $skippedCount++;
+
+                        continue;
+                    }
+
                     $vendor->delete();
                     $deletedCount++;
                 }
-                
+
                 if ($deletedCount > 0 && $skippedCount > 0) {
                     $this->successMessage = "Deleted {$deletedCount} vendor(s). Skipped {$skippedCount} vendor(s) with existing records.";
                 } elseif ($deletedCount > 0) {
                     $this->successMessage = "Successfully deleted {$deletedCount} vendor(s).";
                 } else {
-                    $this->errorMessage = "Could not delete any vendors. All selected vendors have existing records.";
+                    $this->errorMessage = 'Could not delete any vendors. All selected vendors have existing records.';
                 }
                 break;
 
             default:
                 $this->errorMessage = 'Invalid action selected.';
+
                 return;
         }
 
@@ -165,12 +179,12 @@ class VendorsTable extends Component
     public function render()
     {
         $vendors = Vendor::query()
-            ->when($this->search, fn($q) => $q->where(function($query) {
+            ->when($this->search, fn ($q) => $q->where(function ($query) {
                 $query->where('company_name', 'like', "%{$this->search}%")
                     ->orWhere('contact_name', 'like', "%{$this->search}%")
                     ->orWhere('email', 'like', "%{$this->search}%");
             }))
-            ->when($this->status !== '', fn($q) => $q->where('is_active', $this->status === 'active'))
+            ->when($this->status !== '', fn ($q) => $q->where('is_active', $this->status === 'active'))
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
 

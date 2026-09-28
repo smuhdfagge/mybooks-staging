@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\BelongsToTenant;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Import extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     protected $fillable = [
         'tenant_id',
@@ -51,28 +51,45 @@ class Import extends Model
 
     // Status constants
     const STATUS_PENDING = 'pending';
+
     const STATUS_VALIDATING = 'validating';
+
     const STATUS_MAPPING = 'mapping';
+
     const STATUS_PROCESSING = 'processing';
+
     const STATUS_COMPLETED = 'completed';
+
     const STATUS_FAILED = 'failed';
 
     // Type constants
     const TYPE_CUSTOMERS = 'customers';
+
     const TYPE_VENDORS = 'vendors';
+
     const TYPE_ITEMS = 'items';
+
     const TYPE_CHART_OF_ACCOUNTS = 'chart_of_accounts';
+
     const TYPE_INVOICES = 'invoices';
+
     const TYPE_BILLS = 'bills';
+
     const TYPE_EXPENSES = 'expenses';
+
     const TYPE_EMPLOYEES = 'employees';
+
     const TYPE_JOURNALS = 'journals';
+
     const TYPE_OPENING_BALANCES = 'opening_balances';
+
     const TYPE_BUDGET_LINES = 'budget_lines';
 
     // Format constants
     const FORMAT_CSV = 'csv';
+
     const FORMAT_XLSX = 'xlsx';
+
     const FORMAT_JSON = 'json';
 
     /** @return BelongsTo<User, $this> */
@@ -372,6 +389,7 @@ class Import extends Model
         if ($this->total_rows === 0) {
             return 0;
         }
+
         return (int) round(($this->processed_rows / $this->total_rows) * 100);
     }
 

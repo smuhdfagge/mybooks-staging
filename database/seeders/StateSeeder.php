@@ -15,8 +15,9 @@ class StateSeeder extends Seeder
     {
         $nigeria = Country::where('code', 'NG')->first();
 
-        if (!$nigeria) {
+        if (! $nigeria) {
             $this->command->warn('Nigeria country not found. Please run CountrySeeder first.');
+
             return;
         }
 

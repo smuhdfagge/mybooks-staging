@@ -25,7 +25,7 @@ class CheckSubscription
     public function handle(Request $request, Closure $next): Response
     {
         // Skip for guests
-        if (!$request->user()) {
+        if (! $request->user()) {
             return $next($request);
         }
 
@@ -37,14 +37,14 @@ class CheckSubscription
         $tenant = $request->user()->tenant;
 
         // Check if tenant exists
-        if (!$tenant) {
+        if (! $tenant) {
             return $this->redirectWithError($request, 'No organization associated with your account.');
         }
 
         // Check if tenant has an active subscription (not trial, not cancelled, not expired)
-        if (!$tenant->hasActiveSubscription()) {
+        if (! $tenant->hasActiveSubscription()) {
             return $this->redirectWithError(
-                $request, 
+                $request,
                 'You need an active subscription to access this feature. Please subscribe to a plan to continue.'
             );
         }
@@ -59,12 +59,12 @@ class CheckSubscription
     {
         $routeName = $request->route()?->getName();
 
-        if (!$routeName) {
+        if (! $routeName) {
             return false;
         }
 
         foreach ($this->except as $except) {
-            if ($routeName === $except || str_starts_with($routeName, $except . '.')) {
+            if ($routeName === $except || str_starts_with($routeName, $except.'.')) {
                 return true;
             }
         }

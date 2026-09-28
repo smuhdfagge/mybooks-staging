@@ -2,18 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\AuditsSensitiveFields;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
-use App\Traits\AuditsSensitiveFields;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SalaryStructure extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, AuditsSensitiveFields;
+    use AuditsSensitiveFields, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
 
     protected static array $sensitiveFields = [
         'basic_salary' => ['type' => 'monetary', 'label' => 'Basic Salary'],
@@ -103,6 +103,7 @@ class SalaryStructure extends Model
                 ? ($this->basic_salary * $item->amount / 100)
                 : $item->amount;
         }
+
         return round($total, 2);
     }
 
@@ -115,6 +116,7 @@ class SalaryStructure extends Model
                 ? ($grossSalary * $item->amount / 100)
                 : $item->amount;
         }
+
         return round($total, 2);
     }
 
@@ -126,6 +128,7 @@ class SalaryStructure extends Model
     public static function getActiveForEmployee($employeeId)
     {
         $employee = Employee::find($employeeId);
+
         return $employee?->salaryStructure;
     }
 

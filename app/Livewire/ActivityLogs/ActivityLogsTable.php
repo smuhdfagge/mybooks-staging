@@ -2,24 +2,30 @@
 
 namespace App\Livewire\ActivityLogs;
 
+use App\Livewire\Concerns\ChecksPermissions;
 use App\Models\ActivityLog;
 use App\Models\Export;
 use App\Models\User;
 use App\Services\ExportService;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Livewire\Concerns\ChecksPermissions;
 
 class ActivityLogsTable extends Component
 {
     use ChecksPermissions, WithPagination;
 
     public $search = '';
+
     public $userId = '';
+
     public $action = '';
+
     public $modelType = '';
+
     public $startDate = '';
+
     public $endDate = '';
+
     public $perPage = 25;
 
     protected $queryString = [
@@ -78,15 +84,16 @@ class ActivityLogsTable extends Component
             ],
         ]);
 
-        $exportService = new ExportService();
+        $exportService = new ExportService;
         $exportService->processExport($export);
 
         if ($export->status === Export::STATUS_COMPLETED) {
             session()->flash('success', 'Activity logs exported successfully. Check the Exports page to download.');
+
             return redirect()->route('exports.index');
         }
 
-        session()->flash('error', 'Export failed: ' . ($export->error_message ?? 'Unknown error'));
+        session()->flash('error', 'Export failed: '.($export->error_message ?? 'Unknown error'));
     }
 
     public function render()
@@ -114,7 +121,7 @@ class ActivityLogsTable extends Component
         }
 
         if ($this->modelType) {
-            $query->where('model_type', 'like', '%' . $this->modelType);
+            $query->where('model_type', 'like', '%'.$this->modelType);
         }
 
         if ($this->startDate) {
@@ -129,18 +136,18 @@ class ActivityLogsTable extends Component
 
         // Get filter options
         $users = User::where('tenant_id', $tenantId)->orderBy('name')->get();
-        
+
         $actions = ActivityLog::where('tenant_id', $tenantId)
             ->distinct()
             ->pluck('action')
             ->sort()
             ->values();
-        
+
         $modelTypes = ActivityLog::where('tenant_id', $tenantId)
             ->whereNotNull('model_type')
             ->distinct()
             ->pluck('model_type')
-            ->map(fn($type) => class_basename($type))
+            ->map(fn ($type) => class_basename($type))
             ->unique()
             ->sort()
             ->values();

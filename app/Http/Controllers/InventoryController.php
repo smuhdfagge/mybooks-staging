@@ -21,6 +21,7 @@ class InventoryController extends Controller
     {
         $inventory = $item->inventory;
         $history = $item->inventoryHistory()->latest()->paginate(20);
+
         return view('inventory.show', compact('item', 'inventory', 'history'));
     }
 
@@ -113,6 +114,7 @@ class InventoryController extends Controller
     public function history(Item $item)
     {
         $history = $item->inventoryHistory()->with('createdBy')->latest()->paginate(50);
+
         return view('inventory.history', compact('item', 'history'));
     }
 

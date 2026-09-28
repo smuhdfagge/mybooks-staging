@@ -2,19 +2,19 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SalesOrder extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, ValidatesAccountingPeriod;
+    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     protected $fillable = [
         'tenant_id',
@@ -87,9 +87,10 @@ class SalesOrder extends Model
             ->where('tenant_id', $tenantId)
             ->latest('id')
             ->first();
-        
+
         $number = $lastOrder ? intval(substr($lastOrder->order_number, 3)) + 1 : 1;
-        return 'SO-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+        return 'SO-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -121,6 +122,7 @@ class SalesOrder extends Model
         // Calculate fulfilled amount
         $fulfilledAmount = $this->items->sum(function ($item) {
             $ratio = $item->quantity > 0 ? $item->quantity_fulfilled / $item->quantity : 0;
+
             return $item->total * min($ratio, 1);
         });
         $this->total_fulfilled_amount = $fulfilledAmount;

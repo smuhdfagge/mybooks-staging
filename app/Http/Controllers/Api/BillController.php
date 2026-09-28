@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Bill;
 use App\Http\Resources\BillResource;
-use Illuminate\Http\Request;
+use App\Models\Bill;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class BillController extends BaseApiController
@@ -72,6 +72,7 @@ class BillController extends BaseApiController
     public function show(Bill $bill): JsonResponse
     {
         $bill->load(['vendor', 'items.item', 'payments', 'createdBy']);
+
         return $this->success(new BillResource($bill));
     }
 
@@ -111,12 +112,12 @@ class BillController extends BaseApiController
         foreach ($validated['items'] as &$item) {
             $itemSubtotal = $item['quantity'] * $item['unit_price'];
 
-            if (!empty($item['discount'])) {
+            if (! empty($item['discount'])) {
                 $itemSubtotal -= $item['discount'];
             }
 
             $itemTax = 0;
-            if (!empty($item['tax_rate'])) {
+            if (! empty($item['tax_rate'])) {
                 $itemTax = $itemSubtotal * ($item['tax_rate'] / 100);
             }
 
@@ -180,12 +181,12 @@ class BillController extends BaseApiController
             foreach ($validated['items'] as &$item) {
                 $itemSubtotal = $item['quantity'] * $item['unit_price'];
 
-                if (!empty($item['discount'])) {
+                if (! empty($item['discount'])) {
                     $itemSubtotal -= $item['discount'];
                 }
 
                 $itemTax = 0;
-                if (!empty($item['tax_rate'])) {
+                if (! empty($item['tax_rate'])) {
                     $itemTax = $itemSubtotal * ($item['tax_rate'] / 100);
                 }
 

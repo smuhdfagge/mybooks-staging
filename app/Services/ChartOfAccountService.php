@@ -9,8 +9,6 @@ class ChartOfAccountService
 {
     /**
      * Get the default chart of accounts structure
-     *
-     * @return array
      */
     public static function getDefaultAccounts(): array
     {
@@ -28,7 +26,7 @@ class ChartOfAccountService
             ['account_code' => '1510', 'name' => 'Furniture & Fixtures', 'type' => 'asset', 'sub_type' => 'fixed_asset'],
             ['account_code' => '1520', 'name' => 'Vehicles', 'type' => 'asset', 'sub_type' => 'fixed_asset'],
             ['account_code' => '1600', 'name' => 'Accumulated Depreciation', 'type' => 'asset', 'sub_type' => 'fixed_asset'],
-            
+
             // Liabilities (2000-2999)
             ['account_code' => '2000', 'name' => 'Accounts Payable', 'type' => 'liability', 'sub_type' => 'accounts_payable'],
             ['account_code' => '2100', 'name' => 'Credit Card Payable', 'type' => 'liability', 'sub_type' => 'credit_card'],
@@ -44,19 +42,19 @@ class ChartOfAccountService
             ['account_code' => '2400', 'name' => 'Sales Tax Payable', 'type' => 'liability', 'sub_type' => 'other_current_liability'],
             ['account_code' => '2500', 'name' => 'Short-term Loans', 'type' => 'liability', 'sub_type' => 'other_current_liability'],
             ['account_code' => '2600', 'name' => 'Long-term Loans', 'type' => 'liability', 'sub_type' => 'long_term_liability'],
-            
+
             // Equity (3000-3999)
             ['account_code' => '3000', 'name' => 'Owner\'s Capital', 'type' => 'equity', 'sub_type' => 'equity'],
             ['account_code' => '3100', 'name' => 'Owner\'s Draw', 'type' => 'equity', 'sub_type' => 'equity'],
             ['account_code' => '3200', 'name' => 'Retained Earnings', 'type' => 'equity', 'sub_type' => 'retained_earnings'],
-            
+
             // Revenue (4000-4999)
             ['account_code' => '4000', 'name' => 'Sales Revenue', 'type' => 'income', 'sub_type' => 'income'],
             ['account_code' => '4100', 'name' => 'Service Revenue', 'type' => 'income', 'sub_type' => 'income'],
             ['account_code' => '4200', 'name' => 'Other Income', 'type' => 'income', 'sub_type' => 'other_income'],
             ['account_code' => '4300', 'name' => 'Interest Income', 'type' => 'income', 'sub_type' => 'other_income'],
             ['account_code' => '4400', 'name' => 'Discount Received', 'type' => 'income', 'sub_type' => 'other_income'],
-            
+
             // Cost of Goods Sold (5000-5999)
             ['account_code' => '5000', 'name' => 'Cost of Goods Sold', 'type' => 'expense', 'sub_type' => 'cost_of_goods_sold'],
             ['account_code' => '5100', 'name' => 'Purchases', 'type' => 'expense', 'sub_type' => 'cost_of_goods_sold'],
@@ -89,7 +87,6 @@ class ChartOfAccountService
     /**
      * Create default chart of accounts for a tenant
      *
-     * @param int $tenantId
      * @return int Number of accounts created
      */
     public static function createDefaultAccounts(int $tenantId): int
@@ -118,7 +115,6 @@ class ChartOfAccountService
     /**
      * Create default chart of accounts for a tenant instance
      *
-     * @param Tenant $tenant
      * @return int Number of accounts created
      */
     public static function createDefaultAccountsForTenant(Tenant $tenant): int
@@ -128,9 +124,6 @@ class ChartOfAccountService
 
     /**
      * Check if a tenant has any chart of accounts
-     *
-     * @param int $tenantId
-     * @return bool
      */
     public static function tenantHasAccounts(int $tenantId): bool
     {
@@ -153,7 +146,7 @@ class ChartOfAccountService
         ];
 
         foreach ($tenants as $tenant) {
-            if (!self::tenantHasAccounts($tenant->id)) {
+            if (! self::tenantHasAccounts($tenant->id)) {
                 $accountsCreated = self::createDefaultAccounts($tenant->id);
                 $summary['tenants_seeded']++;
                 $summary['total_accounts_created'] += $accountsCreated;

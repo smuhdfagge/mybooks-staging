@@ -2,28 +2,37 @@
 
 namespace App\Livewire\SalesReceipts;
 
+use App\Livewire\Concerns\ChecksPermissions;
+use App\Models\Customer;
+use App\Models\SalesReceipt;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\SalesReceipt;
-use App\Models\Customer;
-use App\Livewire\Concerns\ChecksPermissions;
 
 class SalesReceiptsTable extends Component
 {
     use ChecksPermissions, WithPagination;
 
     public $search = '';
+
     public $paymentMethod = '';
+
     public $customer = '';
+
     public $dateFrom = '';
+
     public $dateTo = '';
+
     public $perPage = 10;
 
     // Bulk operation properties
     public $selectedItems = [];
+
     public $selectAll = false;
+
     public $bulkAction = '';
+
     public $successMessage = '';
+
     public $errorMessage = '';
 
     protected $queryString = [
@@ -77,20 +86,20 @@ class SalesReceiptsTable extends Component
         return SalesReceipt::query()
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->where('receipt_number', 'like', '%' . $this->search . '%')
-                      ->orWhere('reference', 'like', '%' . $this->search . '%')
-                      ->orWhereHas('customer', function ($q) {
-                          $q->where('name', 'like', '%' . $this->search . '%')
-                            ->orWhere('company_name', 'like', '%' . $this->search . '%');
-                      });
+                    $q->where('receipt_number', 'like', '%'.$this->search.'%')
+                        ->orWhere('reference', 'like', '%'.$this->search.'%')
+                        ->orWhereHas('customer', function ($q) {
+                            $q->where('name', 'like', '%'.$this->search.'%')
+                                ->orWhere('company_name', 'like', '%'.$this->search.'%');
+                        });
                 });
             })
-            ->when($this->paymentMethod, fn($q) => $q->where('payment_method', $this->paymentMethod))
-            ->when($this->customer, fn($q) => $q->where('customer_id', $this->customer))
-            ->when($this->dateFrom, fn($q) => $q->whereDate('receipt_date', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn($q) => $q->whereDate('receipt_date', '<=', $this->dateTo))
+            ->when($this->paymentMethod, fn ($q) => $q->where('payment_method', $this->paymentMethod))
+            ->when($this->customer, fn ($q) => $q->where('customer_id', $this->customer))
+            ->when($this->dateFrom, fn ($q) => $q->whereDate('receipt_date', '>=', $this->dateFrom))
+            ->when($this->dateTo, fn ($q) => $q->whereDate('receipt_date', '<=', $this->dateTo))
             ->pluck('id')
-            ->map(fn($id) => (string) $id)
+            ->map(fn ($id) => (string) $id)
             ->toArray();
     }
 
@@ -111,11 +120,13 @@ class SalesReceiptsTable extends Component
 
         if (empty($this->selectedItems)) {
             $this->errorMessage = 'Please select at least one receipt.';
+
             return;
         }
 
         if (empty($this->bulkAction)) {
             $this->errorMessage = 'Please select an action.';
+
             return;
         }
 
@@ -134,6 +145,7 @@ class SalesReceiptsTable extends Component
 
             default:
                 $this->errorMessage = 'Invalid action selected.';
+
                 return;
         }
 
@@ -147,12 +159,12 @@ class SalesReceiptsTable extends Component
         $receipts = SalesReceipt::with(['customer'])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->where('receipt_number', 'like', '%' . $this->search . '%')
-                      ->orWhere('reference', 'like', '%' . $this->search . '%')
-                      ->orWhereHas('customer', function ($q) {
-                          $q->where('name', 'like', '%' . $this->search . '%')
-                            ->orWhere('company_name', 'like', '%' . $this->search . '%');
-                      });
+                    $q->where('receipt_number', 'like', '%'.$this->search.'%')
+                        ->orWhere('reference', 'like', '%'.$this->search.'%')
+                        ->orWhereHas('customer', function ($q) {
+                            $q->where('name', 'like', '%'.$this->search.'%')
+                                ->orWhere('company_name', 'like', '%'.$this->search.'%');
+                        });
                 });
             })
             ->when($this->paymentMethod, function ($query) {

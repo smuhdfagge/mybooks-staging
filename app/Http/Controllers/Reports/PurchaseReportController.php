@@ -3,31 +3,10 @@
 namespace App\Http\Controllers\Reports;
 
 use App\Models\Bill;
-use App\Models\BillItem;
-use App\Models\ChartOfAccount;
-use App\Models\CustomReport;
-use App\Models\Customer;
-use App\Models\Department;
-use App\Models\Employee;
-use App\Models\Expense;
 use App\Models\Inventory;
-use App\Models\Invoice;
-use App\Models\InvoiceItem;
 use App\Models\Item;
-use App\Models\Journal;
-use App\Models\JournalEntry;
-use App\Models\PaymentMade;
-use App\Models\PaymentReceived;
-use App\Models\Payroll;
-use App\Models\PayrollBatch;
-use App\Models\SalaryStructureVersion;
-use App\Models\TaxRate;
 use App\Models\Vendor;
-use App\Services\ReportExportService;
-use App\Services\Reports\PayrollReportService;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Payables, purchases by vendor and inventory summary, with their exports.
@@ -52,12 +31,12 @@ class PurchaseReportController extends ReportController
 
         // Group by aging based on as_of date for proper historical accuracy
         $asOfDate = \Carbon\Carbon::parse($asOf);
-        $current = $bills->filter(fn($bill) => $bill->due_date >= $asOfDate)->sum('balance_due');
-        $days30 = $bills->filter(fn($bill) => $bill->due_date < $asOfDate && $bill->due_date >= $asOfDate->copy()->subDays(30))->sum('balance_due');
-        $days60 = $bills->filter(fn($bill) => $bill->due_date < $asOfDate->copy()->subDays(30) && $bill->due_date >= $asOfDate->copy()->subDays(60))->sum('balance_due');
-        $days90 = $bills->filter(fn($bill) => $bill->due_date < $asOfDate->copy()->subDays(60) && $bill->due_date >= $asOfDate->copy()->subDays(90))->sum('balance_due');
-        $days120 = $bills->filter(fn($bill) => $bill->due_date < $asOfDate->copy()->subDays(90) && $bill->due_date >= $asOfDate->copy()->subDays(120))->sum('balance_due');
-        $over120 = $bills->filter(fn($bill) => $bill->due_date < $asOfDate->copy()->subDays(120))->sum('balance_due');
+        $current = $bills->filter(fn ($bill) => $bill->due_date >= $asOfDate)->sum('balance_due');
+        $days30 = $bills->filter(fn ($bill) => $bill->due_date < $asOfDate && $bill->due_date >= $asOfDate->copy()->subDays(30))->sum('balance_due');
+        $days60 = $bills->filter(fn ($bill) => $bill->due_date < $asOfDate->copy()->subDays(30) && $bill->due_date >= $asOfDate->copy()->subDays(60))->sum('balance_due');
+        $days90 = $bills->filter(fn ($bill) => $bill->due_date < $asOfDate->copy()->subDays(60) && $bill->due_date >= $asOfDate->copy()->subDays(90))->sum('balance_due');
+        $days120 = $bills->filter(fn ($bill) => $bill->due_date < $asOfDate->copy()->subDays(90) && $bill->due_date >= $asOfDate->copy()->subDays(120))->sum('balance_due');
+        $over120 = $bills->filter(fn ($bill) => $bill->due_date < $asOfDate->copy()->subDays(120))->sum('balance_due');
 
         $totalPayable = $bills->sum('balance_due');
 
@@ -108,6 +87,7 @@ class PurchaseReportController extends ReportController
                 $item->stock_quantity = $item->inventory->quantity ?? 0;
                 $item->stock_value = $item->stock_quantity * $item->cost_price;
                 $item->is_low_stock = $item->stock_quantity <= $item->reorder_level;
+
                 return $item;
             });
 
@@ -138,12 +118,12 @@ class PurchaseReportController extends ReportController
             ->get();
 
         $asOfDate = \Carbon\Carbon::parse($asOf);
-        $current = $bills->filter(fn($bill) => $bill->due_date >= $asOfDate)->sum('balance_due');
-        $days30 = $bills->filter(fn($bill) => $bill->due_date < $asOfDate && $bill->due_date >= $asOfDate->copy()->subDays(30))->sum('balance_due');
-        $days60 = $bills->filter(fn($bill) => $bill->due_date < $asOfDate->copy()->subDays(30) && $bill->due_date >= $asOfDate->copy()->subDays(60))->sum('balance_due');
-        $days90 = $bills->filter(fn($bill) => $bill->due_date < $asOfDate->copy()->subDays(60) && $bill->due_date >= $asOfDate->copy()->subDays(90))->sum('balance_due');
-        $days120 = $bills->filter(fn($bill) => $bill->due_date < $asOfDate->copy()->subDays(90) && $bill->due_date >= $asOfDate->copy()->subDays(120))->sum('balance_due');
-        $over120 = $bills->filter(fn($bill) => $bill->due_date < $asOfDate->copy()->subDays(120))->sum('balance_due');
+        $current = $bills->filter(fn ($bill) => $bill->due_date >= $asOfDate)->sum('balance_due');
+        $days30 = $bills->filter(fn ($bill) => $bill->due_date < $asOfDate && $bill->due_date >= $asOfDate->copy()->subDays(30))->sum('balance_due');
+        $days60 = $bills->filter(fn ($bill) => $bill->due_date < $asOfDate->copy()->subDays(30) && $bill->due_date >= $asOfDate->copy()->subDays(60))->sum('balance_due');
+        $days90 = $bills->filter(fn ($bill) => $bill->due_date < $asOfDate->copy()->subDays(60) && $bill->due_date >= $asOfDate->copy()->subDays(90))->sum('balance_due');
+        $days120 = $bills->filter(fn ($bill) => $bill->due_date < $asOfDate->copy()->subDays(90) && $bill->due_date >= $asOfDate->copy()->subDays(120))->sum('balance_due');
+        $over120 = $bills->filter(fn ($bill) => $bill->due_date < $asOfDate->copy()->subDays(120))->sum('balance_due');
         $totalPayable = $bills->sum('balance_due');
 
         $data = compact('bills', 'current', 'days30', 'days60', 'days90', 'days120', 'over120', 'totalPayable', 'asOf');
@@ -158,6 +138,7 @@ class PurchaseReportController extends ReportController
                 'over120' => $over120,
                 'total' => $totalPayable,
             ]);
+
             return $this->exportService
                 ->setTitle('Accounts Payable Aging')
                 ->setFilters(['As of' => $asOf])
@@ -203,6 +184,7 @@ class PurchaseReportController extends ReportController
 
         if ($format === 'csv') {
             $exportData = $this->exportService->purchaseByVendorData($vendors);
+
             return $this->exportService
                 ->setTitle('Purchase by Vendor')
                 ->setFilters(['Period' => "$startDate to $endDate"])
@@ -231,6 +213,7 @@ class PurchaseReportController extends ReportController
                 $item->stock_quantity = $item->inventory->quantity ?? 0;
                 $item->stock_value = $item->stock_quantity * $item->cost_price;
                 $item->is_low_stock = $item->stock_quantity <= $item->reorder_level;
+
                 return $item;
             });
 
@@ -242,6 +225,7 @@ class PurchaseReportController extends ReportController
 
         if ($format === 'csv') {
             $exportData = $this->exportService->inventorySummaryData($items);
+
             return $this->exportService
                 ->setTitle('Inventory Summary')
                 ->setFilters(['Generated' => now()->format('Y-m-d')])

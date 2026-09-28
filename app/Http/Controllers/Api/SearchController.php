@@ -2,24 +2,20 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Customer;
-use App\Models\Vendor;
-use App\Models\Item;
-use App\Models\Invoice;
-use App\Models\Bill;
-use App\Models\Expense;
-use App\Models\Employee;
-use App\Models\ChartOfAccount;
-use App\Http\Resources\CustomerResource;
-use App\Http\Resources\VendorResource;
-use App\Http\Resources\ItemResource;
-use App\Http\Resources\InvoiceResource;
 use App\Http\Resources\BillResource;
-use App\Http\Resources\ExpenseResource;
-use App\Http\Resources\EmployeeResource;
-use App\Http\Resources\ChartOfAccountResource;
-use Illuminate\Http\Request;
+use App\Http\Resources\CustomerResource;
+use App\Http\Resources\InvoiceResource;
+use App\Http\Resources\ItemResource;
+use App\Http\Resources\VendorResource;
+use App\Models\Bill;
+use App\Models\ChartOfAccount;
+use App\Models\Customer;
+use App\Models\Expense;
+use App\Models\Invoice;
+use App\Models\Item;
+use App\Models\Vendor;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class SearchController extends BaseApiController
 {

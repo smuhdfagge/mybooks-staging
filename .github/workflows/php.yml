@@ -53,5 +53,8 @@ jobs:
     - name: Run tests
       run: php artisan test
 
+    - name: Code style (Pint)
+      run: vendor/bin/pint --test
+
     - name: Static analysis (PHPStan)
       run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress

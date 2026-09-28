@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Resources\InventoryResource;
 use App\Models\Inventory;
 use App\Models\InventoryHistory;
-use App\Http\Resources\InventoryResource;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use App\Services\StockValuationService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class InventoryController extends BaseApiController
@@ -45,7 +45,7 @@ class InventoryController extends BaseApiController
         // Sorting
         $sortBy = $request->input('sort_by', 'quantity');
         $sortOrder = $request->input('sort_order', 'asc');
-        
+
         if (in_array($sortBy, ['quantity', 'reserved_quantity', 'unit_cost'])) {
             $query->orderBy($sortBy, $sortOrder);
         }
@@ -62,6 +62,7 @@ class InventoryController extends BaseApiController
     public function show(Inventory $inventory): JsonResponse
     {
         $inventory->load(['item.category']);
+
         return $this->success(new InventoryResource($inventory));
     }
 
@@ -126,6 +127,7 @@ class InventoryController extends BaseApiController
         $inventory = $result;
 
         $inventory->load(['item']);
+
         return $this->success(new InventoryResource($inventory), 'Inventory adjusted successfully');
     }
 

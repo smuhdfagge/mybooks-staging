@@ -2,8 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Bank;
-use App\Models\ChartOfAccount;
 use App\Models\Customer;
 use App\Models\Tenant;
 use App\Models\User;

@@ -13,6 +13,7 @@ use Livewire\Component;
 class GlobalSearch extends Component
 {
     public $query = '';
+
     public $isOpen = false;
 
     public function updatedQuery()

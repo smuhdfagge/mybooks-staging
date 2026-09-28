@@ -2,39 +2,38 @@
 
 namespace App\Services;
 
-use App\Models\Import;
-use App\Models\Customer;
-use App\Models\Vendor;
-use App\Models\Item;
-use App\Models\ItemCategory;
-use App\Models\Inventory;
-use App\Models\InventoryHistory;
-use App\Models\ChartOfAccount;
-use App\Models\Invoice;
-use App\Models\InvoiceItem;
-use App\Models\Bill;
-use App\Models\BillItem;
-use App\Models\Expense;
-use App\Models\Employee;
-use App\Models\Department;
-use App\Models\Designation;
-use App\Models\Journal;
-use App\Models\JournalEntry;
 use App\Models\Budget;
 use App\Models\BudgetLine;
+use App\Models\ChartOfAccount;
+use App\Models\Customer;
+use App\Models\Department;
+use App\Models\Designation;
+use App\Models\Employee;
+use App\Models\Expense;
+use App\Models\Import;
+use App\Models\Inventory;
+use App\Models\InventoryHistory;
+use App\Models\Item;
+use App\Models\ItemCategory;
+use App\Models\Journal;
+use App\Models\JournalEntry;
+use App\Models\Vendor;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Reader\Csv as CsvReader;
 
 class ImportService
 {
     protected int $tenantId;
+
     protected array $options;
+
     protected array $errors = [];
+
     protected array $warnings = [];
+
     protected string $disk = 'imports';
 
     public function __construct()
@@ -68,7 +67,7 @@ class ImportService
 
             // Read the file
             $data = $this->readFile($import);
-            
+
             if (empty($data)) {
                 throw new \Exception('No data found in the file');
             }
@@ -85,14 +84,14 @@ class ImportService
                 Import::TYPE_EMPLOYEES => $this->importEmployees($import, $data),
                 Import::TYPE_OPENING_BALANCES => $this->importOpeningBalances($import, $data),
                 Import::TYPE_BUDGET_LINES => $this->importBudgetLines($import, $data),
-                default => throw new \Exception('Unsupported import type: ' . $import->type),
+                default => throw new \Exception('Unsupported import type: '.$import->type),
             };
 
             $import->update([
                 'status' => Import::STATUS_COMPLETED,
                 'completed_at' => now(),
-                'errors' => !empty($this->errors) ? $this->errors : null,
-                'warnings' => !empty($this->warnings) ? $this->warnings : null,
+                'errors' => ! empty($this->errors) ? $this->errors : null,
+                'warnings' => ! empty($this->warnings) ? $this->warnings : null,
             ]);
 
             return true;
@@ -108,7 +107,7 @@ class ImportService
                 'status' => Import::STATUS_FAILED,
                 'error_message' => $e->getMessage(),
                 'completed_at' => now(),
-                'errors' => !empty($this->errors) ? $this->errors : null,
+                'errors' => ! empty($this->errors) ? $this->errors : null,
             ]);
 
             return false;
@@ -121,8 +120,8 @@ class ImportService
     protected function readFile(Import $import): array
     {
         $path = Storage::disk($this->disk)->path($import->file_path);
-        
-        if (!file_exists($path)) {
+
+        if (! file_exists($path)) {
             throw new \Exception('Import file not found');
         }
 
@@ -141,24 +140,25 @@ class ImportService
     {
         $data = [];
         $headers = [];
-        
+
         if (($handle = fopen($path, 'r')) !== false) {
             $rowNum = 0;
             while (($row = fgetcsv($handle)) !== false) {
                 $rowNum++;
                 if ($rowNum === 1) {
                     // First row is headers
-                    $headers = array_map(fn($h) => Str::snake(trim($h)), $row);
+                    $headers = array_map(fn ($h) => Str::snake(trim($h)), $row);
+
                     continue;
                 }
-                
+
                 if (count($row) === count($headers)) {
                     $data[] = array_combine($headers, $row);
                 }
             }
             fclose($handle);
         }
-        
+
         return $data;
     }
 
@@ -174,12 +174,12 @@ class ImportService
         $spreadsheet = IOFactory::load($path);
         $worksheet = $spreadsheet->getActiveSheet();
         $rows = $worksheet->toArray();
-        
+
         if (empty($rows)) {
             return [];
         }
 
-        $headers = array_map(fn($h) => Str::snake(trim($h ?? '')), array_shift($rows));
+        $headers = array_map(fn ($h) => Str::snake(trim($h ?? '')), array_shift($rows));
         $data = [];
 
         foreach ($rows as $row) {
@@ -202,9 +202,9 @@ class ImportService
     {
         $content = file_get_contents($path);
         $data = json_decode($content, true);
-        
+
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \Exception('Invalid JSON format: ' . json_last_error_msg());
+            throw new \Exception('Invalid JSON format: '.json_last_error_msg());
         }
 
         // If it's a keyed array (from backup), extract the data
@@ -222,10 +222,11 @@ class ImportService
     {
         $mapped = [];
         foreach ($mapping as $fileColumn => $dbField) {
-            if (!empty($dbField) && isset($row[$fileColumn])) {
+            if (! empty($dbField) && isset($row[$fileColumn])) {
                 $mapped[$dbField] = trim($row[$fileColumn]);
             }
         }
+
         return $mapped;
     }
 
@@ -237,21 +238,22 @@ class ImportService
         $mapping = $import->column_mapping ?? [];
         $skipDuplicates = $this->options['skip_duplicates'] ?? true;
         $updateExisting = $this->options['update_existing'] ?? false;
-        
+
         $successful = 0;
         $failed = 0;
         $skipped = 0;
 
         foreach ($data as $index => $row) {
             $rowNum = $index + 2; // +2 for header row and 0-indexing
-            
+
             try {
-                $mapped = !empty($mapping) ? $this->mapRow($row, $mapping) : $row;
-                
+                $mapped = ! empty($mapping) ? $this->mapRow($row, $mapping) : $row;
+
                 // Validate required fields
                 if (empty($mapped['name'])) {
                     $this->errors[] = "Row {$rowNum}: Name is required";
                     $failed++;
+
                     continue;
                 }
 
@@ -259,7 +261,7 @@ class ImportService
                 $existing = Customer::where('tenant_id', $this->tenantId)
                     ->where(function ($q) use ($mapped) {
                         $q->where('email', $mapped['email'] ?? null);
-                        if (!empty($mapped['name'])) {
+                        if (! empty($mapped['name'])) {
                             $q->orWhere('name', $mapped['name']);
                         }
                     })
@@ -276,6 +278,7 @@ class ImportService
                         $this->errors[] = "Row {$rowNum}: Customer '{$mapped['name']}' already exists";
                         $failed++;
                     }
+
                     continue;
                 }
 
@@ -286,7 +289,7 @@ class ImportService
                 $successful++;
 
             } catch (\Exception $e) {
-                $this->errors[] = "Row {$rowNum}: " . $e->getMessage();
+                $this->errors[] = "Row {$rowNum}: ".$e->getMessage();
                 $failed++;
             }
 
@@ -338,20 +341,21 @@ class ImportService
         $mapping = $import->column_mapping ?? [];
         $skipDuplicates = $this->options['skip_duplicates'] ?? true;
         $updateExisting = $this->options['update_existing'] ?? false;
-        
+
         $successful = 0;
         $failed = 0;
         $skipped = 0;
 
         foreach ($data as $index => $row) {
             $rowNum = $index + 2;
-            
+
             try {
-                $mapped = !empty($mapping) ? $this->mapRow($row, $mapping) : $row;
-                
+                $mapped = ! empty($mapping) ? $this->mapRow($row, $mapping) : $row;
+
                 if (empty($mapped['name'])) {
                     $this->errors[] = "Row {$rowNum}: Name is required";
                     $failed++;
+
                     continue;
                 }
 
@@ -369,6 +373,7 @@ class ImportService
                         $this->errors[] = "Row {$rowNum}: Vendor '{$mapped['name']}' already exists";
                         $failed++;
                     }
+
                     continue;
                 }
 
@@ -379,7 +384,7 @@ class ImportService
                 $successful++;
 
             } catch (\Exception $e) {
-                $this->errors[] = "Row {$rowNum}: " . $e->getMessage();
+                $this->errors[] = "Row {$rowNum}: ".$e->getMessage();
                 $failed++;
             }
 
@@ -426,7 +431,7 @@ class ImportService
         $mapping = $import->column_mapping ?? [];
         $skipDuplicates = $this->options['skip_duplicates'] ?? true;
         $updateExisting = $this->options['update_existing'] ?? false;
-        
+
         $successful = 0;
         $failed = 0;
         $skipped = 0;
@@ -437,26 +442,27 @@ class ImportService
 
         foreach ($data as $index => $row) {
             $rowNum = $index + 2;
-            
+
             try {
-                $mapped = !empty($mapping) ? $this->mapRow($row, $mapping) : $row;
-                
+                $mapped = ! empty($mapping) ? $this->mapRow($row, $mapping) : $row;
+
                 if (empty($mapped['name'])) {
                     $this->errors[] = "Row {$rowNum}: Name is required";
                     $failed++;
+
                     continue;
                 }
 
                 // Determine item type
                 $type = strtolower($mapped['type'] ?? 'product');
-                if (!in_array($type, ['product', 'service'])) {
+                if (! in_array($type, ['product', 'service'])) {
                     $type = 'product';
                 }
 
                 $existing = Item::where('tenant_id', $this->tenantId)
                     ->where(function ($q) use ($mapped) {
                         $q->where('name', $mapped['name']);
-                        if (!empty($mapped['sku'])) {
+                        if (! empty($mapped['sku'])) {
                             $q->orWhere('sku', $mapped['sku']);
                         }
                     })
@@ -465,11 +471,11 @@ class ImportService
                 if ($existing) {
                     if ($updateExisting) {
                         $existing->update($this->prepareItemData($mapped, $type, $categories, $accounts));
-                        
+
                         // Create inventory record if doesn't exist and tracking is enabled
-                        if ($existing->track_inventory && !$existing->inventory) {
+                        if ($existing->track_inventory && ! $existing->inventory) {
                             $initialStock = isset($mapped['initial_stock']) && $mapped['initial_stock'] !== '' ? (int) $mapped['initial_stock'] : 0;
-                            
+
                             Inventory::create([
                                 'tenant_id' => $this->tenantId,
                                 'item_id' => $existing->id,
@@ -477,7 +483,7 @@ class ImportService
                                 'reserved_quantity' => 0,
                                 'unit_cost' => $existing->cost_price ?? 0,
                             ]);
-                            
+
                             if ($initialStock > 0) {
                                 InventoryHistory::create([
                                     'tenant_id' => $this->tenantId,
@@ -492,9 +498,9 @@ class ImportService
                         $successful++;
                     } elseif ($skipDuplicates) {
                         // Still create inventory record if missing for skipped duplicates
-                        if ($existing->track_inventory && !$existing->inventory) {
+                        if ($existing->track_inventory && ! $existing->inventory) {
                             $initialStock = isset($mapped['initial_stock']) && $mapped['initial_stock'] !== '' ? (int) $mapped['initial_stock'] : 0;
-                            
+
                             Inventory::create([
                                 'tenant_id' => $this->tenantId,
                                 'item_id' => $existing->id,
@@ -502,7 +508,7 @@ class ImportService
                                 'reserved_quantity' => 0,
                                 'unit_cost' => $existing->cost_price ?? 0,
                             ]);
-                            
+
                             if ($initialStock > 0) {
                                 InventoryHistory::create([
                                     'tenant_id' => $this->tenantId,
@@ -519,12 +525,13 @@ class ImportService
                         $this->errors[] = "Row {$rowNum}: Item '{$mapped['name']}' already exists";
                         $failed++;
                     }
+
                     continue;
                 }
 
                 // Create or get category
                 $categoryId = null;
-                if (!empty($mapped['category'])) {
+                if (! empty($mapped['category'])) {
                     if (isset($categories[$mapped['category']])) {
                         $categoryId = $categories[$mapped['category']];
                     } else {
@@ -547,7 +554,7 @@ class ImportService
                 // Create inventory record if tracking inventory
                 if ($item->track_inventory) {
                     $initialStock = isset($mapped['initial_stock']) && $mapped['initial_stock'] !== '' ? (int) $mapped['initial_stock'] : 0;
-                    
+
                     Inventory::create([
                         'tenant_id' => $this->tenantId,
                         'item_id' => $item->id,
@@ -572,7 +579,7 @@ class ImportService
                 $successful++;
 
             } catch (\Exception $e) {
-                $this->errors[] = "Row {$rowNum}: " . $e->getMessage();
+                $this->errors[] = "Row {$rowNum}: ".$e->getMessage();
                 $failed++;
             }
 
@@ -593,10 +600,10 @@ class ImportService
      */
     protected function prepareItemData(array $data, string $type, $categories, $accounts): array
     {
-        $isTaxable = isset($data['is_taxable']) 
-            ? in_array(strtolower($data['is_taxable']), ['yes', 'true', '1']) 
+        $isTaxable = isset($data['is_taxable'])
+            ? in_array(strtolower($data['is_taxable']), ['yes', 'true', '1'])
             : true;
-        
+
         $trackInventory = isset($data['track_inventory'])
             ? in_array(strtolower($data['track_inventory']), ['yes', 'true', '1'])
             : ($type === 'product');
@@ -627,7 +634,7 @@ class ImportService
         $mapping = $import->column_mapping ?? [];
         $skipDuplicates = $this->options['skip_duplicates'] ?? true;
         $updateExisting = $this->options['update_existing'] ?? false;
-        
+
         $successful = 0;
         $failed = 0;
         $skipped = 0;
@@ -639,20 +646,22 @@ class ImportService
         $createdAccounts = [];
         foreach ($data as $index => $row) {
             $rowNum = $index + 2;
-            
+
             try {
-                $mapped = !empty($mapping) ? $this->mapRow($row, $mapping) : $row;
-                
+                $mapped = ! empty($mapping) ? $this->mapRow($row, $mapping) : $row;
+
                 if (empty($mapped['code']) || empty($mapped['name']) || empty($mapped['type'])) {
                     $this->errors[] = "Row {$rowNum}: Code, Name, and Type are required";
                     $failed++;
+
                     continue;
                 }
 
                 $type = strtolower($mapped['type']);
-                if (!in_array($type, $validTypes)) {
-                    $this->errors[] = "Row {$rowNum}: Invalid account type '{$mapped['type']}'. Must be one of: " . implode(', ', $validTypes);
+                if (! in_array($type, $validTypes)) {
+                    $this->errors[] = "Row {$rowNum}: Invalid account type '{$mapped['type']}'. Must be one of: ".implode(', ', $validTypes);
                     $failed++;
+
                     continue;
                 }
 
@@ -666,7 +675,7 @@ class ImportService
                             'name' => $mapped['name'],
                             'type' => $type,
                             'description' => $mapped['description'] ?? null,
-                            'is_active' => !isset($mapped['is_active']) || in_array(strtolower($mapped['is_active']), ['yes', 'true', '1']),
+                            'is_active' => ! isset($mapped['is_active']) || in_array(strtolower($mapped['is_active']), ['yes', 'true', '1']),
                         ]);
                         $createdAccounts[$mapped['code']] = $existing->id;
                         $successful++;
@@ -677,6 +686,7 @@ class ImportService
                         $this->errors[] = "Row {$rowNum}: Account with code '{$mapped['code']}' already exists";
                         $failed++;
                     }
+
                     continue;
                 }
 
@@ -686,13 +696,13 @@ class ImportService
                     'name' => $mapped['name'],
                     'type' => $type,
                     'description' => $mapped['description'] ?? null,
-                    'is_active' => !isset($mapped['is_active']) || in_array(strtolower($mapped['is_active']), ['yes', 'true', '1']),
+                    'is_active' => ! isset($mapped['is_active']) || in_array(strtolower($mapped['is_active']), ['yes', 'true', '1']),
                 ]);
                 $createdAccounts[$mapped['code']] = $account->id;
                 $successful++;
 
             } catch (\Exception $e) {
-                $this->errors[] = "Row {$rowNum}: " . $e->getMessage();
+                $this->errors[] = "Row {$rowNum}: ".$e->getMessage();
                 $failed++;
             }
 
@@ -701,9 +711,9 @@ class ImportService
 
         // Second pass: update parent relationships
         foreach ($data as $index => $row) {
-            $mapped = !empty($mapping) ? $this->mapRow($row, $mapping) : $row;
-            
-            if (!empty($mapped['parent_code']) && isset($createdAccounts[$mapped['code']])) {
+            $mapped = ! empty($mapping) ? $this->mapRow($row, $mapping) : $row;
+
+            if (! empty($mapped['parent_code']) && isset($createdAccounts[$mapped['code']])) {
                 $parentId = $createdAccounts[$mapped['parent_code']] ?? null;
                 if ($parentId) {
                     ChartOfAccount::where('id', $createdAccounts[$mapped['code']])
@@ -727,7 +737,7 @@ class ImportService
     protected function importExpenses(Import $import, array $data): bool
     {
         $mapping = $import->column_mapping ?? [];
-        
+
         $successful = 0;
         $failed = 0;
         $skipped = 0;
@@ -750,31 +760,33 @@ class ImportService
 
         foreach ($data as $index => $row) {
             $rowNum = $index + 2;
-            
+
             try {
-                $mapped = !empty($mapping) ? $this->mapRow($row, $mapping) : $row;
-                
+                $mapped = ! empty($mapping) ? $this->mapRow($row, $mapping) : $row;
+
                 if (empty($mapped['date']) || empty($mapped['account']) || empty($mapped['amount'])) {
                     $this->errors[] = "Row {$rowNum}: Date, Account, and Amount are required";
                     $failed++;
+
                     continue;
                 }
 
                 // Find expense account
                 $accountKey = strtolower($mapped['account']);
                 $expenseAccount = $accounts[$accountKey] ?? null;
-                
-                if (!$expenseAccount) {
+
+                if (! $expenseAccount) {
                     $this->errors[] = "Row {$rowNum}: Expense account '{$mapped['account']}' not found";
                     $failed++;
+
                     continue;
                 }
 
                 // Find vendor if specified
                 $vendorId = null;
-                if (!empty($mapped['vendor'])) {
+                if (! empty($mapped['vendor'])) {
                     $vendorId = $vendors[$mapped['vendor']] ?? null;
-                    if (!$vendorId) {
+                    if (! $vendorId) {
                         // Create vendor
                         $vendor = Vendor::create([
                             'tenant_id' => $this->tenantId,
@@ -787,7 +799,7 @@ class ImportService
 
                 // Find payment account if specified
                 $paymentAccountId = null;
-                if (!empty($mapped['payment_account'])) {
+                if (! empty($mapped['payment_account'])) {
                     $paymentAccountId = $paymentAccounts[$mapped['payment_account']]->id ?? null;
                 }
 
@@ -816,7 +828,7 @@ class ImportService
                 $successful++;
 
             } catch (\Exception $e) {
-                $this->errors[] = "Row {$rowNum}: " . $e->getMessage();
+                $this->errors[] = "Row {$rowNum}: ".$e->getMessage();
                 $failed++;
             }
 
@@ -840,7 +852,7 @@ class ImportService
         $mapping = $import->column_mapping ?? [];
         $skipDuplicates = $this->options['skip_duplicates'] ?? true;
         $updateExisting = $this->options['update_existing'] ?? false;
-        
+
         $successful = 0;
         $failed = 0;
         $skipped = 0;
@@ -851,13 +863,14 @@ class ImportService
 
         foreach ($data as $index => $row) {
             $rowNum = $index + 2;
-            
+
             try {
-                $mapped = !empty($mapping) ? $this->mapRow($row, $mapping) : $row;
-                
+                $mapped = ! empty($mapping) ? $this->mapRow($row, $mapping) : $row;
+
                 if (empty($mapped['name']) || empty($mapped['email'])) {
                     $this->errors[] = "Row {$rowNum}: Name and Email are required";
                     $failed++;
+
                     continue;
                 }
 
@@ -875,14 +888,15 @@ class ImportService
                         $this->errors[] = "Row {$rowNum}: Employee with email '{$mapped['email']}' already exists";
                         $failed++;
                     }
+
                     continue;
                 }
 
                 // Create or get department
                 $departmentId = null;
-                if (!empty($mapped['department'])) {
+                if (! empty($mapped['department'])) {
                     $departmentId = $departments[$mapped['department']] ?? null;
-                    if (!$departmentId) {
+                    if (! $departmentId) {
                         $dept = Department::create([
                             'tenant_id' => $this->tenantId,
                             'name' => $mapped['department'],
@@ -894,9 +908,9 @@ class ImportService
 
                 // Create or get designation
                 $designationId = null;
-                if (!empty($mapped['designation'])) {
+                if (! empty($mapped['designation'])) {
                     $designationId = $designations[$mapped['designation']] ?? null;
-                    if (!$designationId) {
+                    if (! $designationId) {
                         $desig = Designation::create([
                             'tenant_id' => $this->tenantId,
                             'name' => $mapped['designation'],
@@ -917,7 +931,7 @@ class ImportService
                 $successful++;
 
             } catch (\Exception $e) {
-                $this->errors[] = "Row {$rowNum}: " . $e->getMessage();
+                $this->errors[] = "Row {$rowNum}: ".$e->getMessage();
                 $failed++;
             }
 
@@ -947,8 +961,8 @@ class ImportService
             'city' => $data['city'] ?? null,
             'state' => $data['state'] ?? null,
             'postal_code' => $data['postal_code'] ?? null,
-            'date_of_birth' => !empty($data['date_of_birth']) ? $this->parseDate($data['date_of_birth']) : null,
-            'hire_date' => !empty($data['hire_date']) ? $this->parseDate($data['hire_date']) : null,
+            'date_of_birth' => ! empty($data['date_of_birth']) ? $this->parseDate($data['date_of_birth']) : null,
+            'hire_date' => ! empty($data['hire_date']) ? $this->parseDate($data['hire_date']) : null,
             'basic_salary' => isset($data['salary']) ? (float) $data['salary'] : 0,
             'pay_frequency' => $data['pay_frequency'] ?? 'monthly',
             'bank_name' => $data['bank_name'] ?? null,
@@ -963,7 +977,7 @@ class ImportService
     protected function importOpeningBalances(Import $import, array $data): bool
     {
         $mapping = $import->column_mapping ?? [];
-        
+
         $successful = 0;
         $failed = 0;
         $skipped = 0;
@@ -980,20 +994,22 @@ class ImportService
 
         foreach ($data as $index => $row) {
             $rowNum = $index + 2;
-            
+
             try {
-                $mapped = !empty($mapping) ? $this->mapRow($row, $mapping) : $row;
-                
+                $mapped = ! empty($mapping) ? $this->mapRow($row, $mapping) : $row;
+
                 if (empty($mapped['account_code'])) {
                     $this->errors[] = "Row {$rowNum}: Account Code is required";
                     $failed++;
+
                     continue;
                 }
 
                 $account = $accounts[$mapped['account_code']] ?? null;
-                if (!$account) {
+                if (! $account) {
                     $this->errors[] = "Row {$rowNum}: Account '{$mapped['account_code']}' not found";
                     $failed++;
+
                     continue;
                 }
 
@@ -1002,10 +1018,11 @@ class ImportService
 
                 if ($debit == 0 && $credit == 0) {
                     $skipped++;
+
                     continue;
                 }
 
-                if (!$asOfDate && !empty($mapped['as_of_date'])) {
+                if (! $asOfDate && ! empty($mapped['as_of_date'])) {
                     $asOfDate = $this->parseDate($mapped['as_of_date']);
                 }
 
@@ -1021,7 +1038,7 @@ class ImportService
                 $successful++;
 
             } catch (\Exception $e) {
-                $this->errors[] = "Row {$rowNum}: " . $e->getMessage();
+                $this->errors[] = "Row {$rowNum}: ".$e->getMessage();
                 $failed++;
             }
 
@@ -1034,22 +1051,22 @@ class ImportService
         $totalDebit = round($totalDebit, 2);
         $totalCredit = round($totalCredit, 2);
 
-        if (!empty($journalEntries) && abs($totalDebit - $totalCredit) >= 0.005) {
-            $this->errors[] = 'Total debits (' . number_format($totalDebit, 2) . ') do not equal total credits ('
-                . number_format($totalCredit, 2) . '), a difference of ' . number_format(abs($totalDebit - $totalCredit), 2)
-                . '. Nothing was imported. Correct the file and import it again.';
+        if (! empty($journalEntries) && abs($totalDebit - $totalCredit) >= 0.005) {
+            $this->errors[] = 'Total debits ('.number_format($totalDebit, 2).') do not equal total credits ('
+                .number_format($totalCredit, 2).'), a difference of '.number_format(abs($totalDebit - $totalCredit), 2)
+                .'. Nothing was imported. Correct the file and import it again.';
             $failed += $successful;
             $successful = 0;
             $journalEntries = [];
         }
 
-        if (!empty($journalEntries)) {
+        if (! empty($journalEntries)) {
             DB::transaction(function () use ($journalEntries, $asOfDate) {
                 $journal = Journal::create([
                     'tenant_id' => $this->tenantId,
                     'journal_number' => Journal::generateNumber($this->tenantId),
                     'journal_date' => $asOfDate ?? now(),
-                    'reference' => 'OB-' . date('Ymd'),
+                    'reference' => 'OB-'.date('Ymd'),
                     'description' => 'Opening Balances Import',
                     'status' => 'posted',
                     'is_posted' => true,
@@ -1093,11 +1110,11 @@ class ImportService
         $updateExisting = $this->options['update_existing'] ?? false;
         $budgetId = $this->options['budget_id'] ?? null;
 
-        if (!$budget && $budgetId) {
+        if (! $budget && $budgetId) {
             $budget = Budget::where('tenant_id', $this->tenantId)->find($budgetId);
         }
 
-        if (!$budget) {
+        if (! $budget) {
             throw new \Exception('Budget not found or not specified');
         }
 
@@ -1114,12 +1131,13 @@ class ImportService
             $rowNum = $index + 2;
 
             try {
-                $mapped = !empty($mapping) ? $this->mapRow($row, $mapping) : $row;
+                $mapped = ! empty($mapping) ? $this->mapRow($row, $mapping) : $row;
 
                 // Validate required field
                 if (empty($mapped['account_code'])) {
                     $this->errors[] = "Row {$rowNum}: Account Code is required";
                     $failed++;
+
                     continue;
                 }
 
@@ -1128,16 +1146,18 @@ class ImportService
                     ->where('account_code', $mapped['account_code'])
                     ->first();
 
-                if (!$account) {
+                if (! $account) {
                     $this->errors[] = "Row {$rowNum}: Account with code '{$mapped['account_code']}' not found";
                     $failed++;
+
                     continue;
                 }
 
                 // Only allow income and expense accounts
-                if (!in_array($account->type, ['income', 'expense'])) {
+                if (! in_array($account->type, ['income', 'expense'])) {
                     $this->errors[] = "Row {$rowNum}: Account '{$mapped['account_code']}' is not an income or expense account";
                     $failed++;
+
                     continue;
                 }
 
@@ -1166,6 +1186,7 @@ class ImportService
                         $this->errors[] = "Row {$rowNum}: Budget line for account '{$mapped['account_code']}' already exists";
                         $failed++;
                     }
+
                     continue;
                 }
 
@@ -1176,7 +1197,7 @@ class ImportService
                 $successful++;
 
             } catch (\Exception $e) {
-                $this->errors[] = "Row {$rowNum}: " . $e->getMessage();
+                $this->errors[] = "Row {$rowNum}: ".$e->getMessage();
                 $failed++;
             }
 
@@ -1199,7 +1220,7 @@ class ImportService
     {
         // Try common formats
         $formats = ['Y-m-d', 'm/d/Y', 'd/m/Y', 'Y/m/d', 'd-m-Y', 'm-d-Y'];
-        
+
         foreach ($formats as $format) {
             $parsed = \DateTime::createFromFormat($format, $date);
             if ($parsed !== false) {
@@ -1222,7 +1243,7 @@ class ImportService
     public function previewFile(string $path, string $format, int $rows = 5): array
     {
         $fullPath = Storage::disk($this->disk)->path($path);
-        
+
         $data = match ($format) {
             Import::FORMAT_CSV => $this->readCsv($fullPath),
             Import::FORMAT_XLSX => $this->readXlsx($fullPath),
@@ -1231,7 +1252,7 @@ class ImportService
         };
 
         return [
-            'headers' => !empty($data) ? array_keys($data[0]) : [],
+            'headers' => ! empty($data) ? array_keys($data[0]) : [],
             'rows' => array_slice($data, 0, $rows),
             'total_rows' => count($data),
         ];

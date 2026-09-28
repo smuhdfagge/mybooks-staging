@@ -2,24 +2,24 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphOne;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Events\PaymentReceivedCreated;
+use App\Events\PaymentReceivedDeleted;
+use App\Events\PaymentReceivedDeleting;
+use App\Events\PaymentReceivedUpdated;
+use App\Services\JournalService;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
-use App\Events\PaymentReceivedCreated;
-use App\Events\PaymentReceivedUpdated;
-use App\Events\PaymentReceivedDeleting;
-use App\Events\PaymentReceivedDeleted;
-use App\Services\JournalService;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PaymentReceived extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, ValidatesAccountingPeriod;
+    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     protected $table = 'payments_received';
 
@@ -76,9 +76,10 @@ class PaymentReceived extends Model
             ->where('tenant_id', $tenantId)
             ->latest('id')
             ->first();
-        
+
         $number = $lastPayment ? intval(substr($lastPayment->payment_number, 4)) + 1 : 1;
-        return 'PAY-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+        return 'PAY-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     /** @return MorphOne<Journal, $this> */
@@ -126,7 +127,7 @@ class PaymentReceived extends Model
      */
     public function applyToInvoice(Invoice $invoice, float $amount, ?string $notes = null): ?CustomerDepositApplication
     {
-        if (!$this->is_deposit) {
+        if (! $this->is_deposit) {
             throw new \InvalidArgumentException('This payment is not a deposit');
         }
 
@@ -187,6 +188,7 @@ class PaymentReceived extends Model
     public function createJournalEntry(): ?Journal
     {
         $journalService = app(JournalService::class);
+
         return $journalService->createPaymentReceivedJournal($this);
     }
 

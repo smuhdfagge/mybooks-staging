@@ -21,13 +21,13 @@ class VerifyTenantOwnership
         $user = $request->user();
 
         // Skip for unauthenticated requests or super admins
-        if (!$user || $user->isSuperAdmin()) {
+        if (! $user || $user->isSuperAdmin()) {
             return $next($request);
         }
 
         $userTenantId = $user->tenant_id;
 
-        if (!$userTenantId) {
+        if (! $userTenantId) {
             return $next($request);
         }
 

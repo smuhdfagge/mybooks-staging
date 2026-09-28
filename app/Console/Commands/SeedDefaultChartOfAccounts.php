@@ -46,16 +46,18 @@ class SeedDefaultChartOfAccounts extends Command
     {
         $tenant = Tenant::find($tenantId);
 
-        if (!$tenant) {
+        if (! $tenant) {
             $this->error("Tenant with ID {$tenantId} not found.");
+
             return Command::FAILURE;
         }
 
         $hasAccounts = ChartOfAccountService::tenantHasAccounts($tenantId);
 
-        if ($hasAccounts && !$force) {
+        if ($hasAccounts && ! $force) {
             $this->warn("Tenant '{$tenant->name}' already has chart of accounts.");
-            $this->info("Use --force to add any missing default accounts.");
+            $this->info('Use --force to add any missing default accounts.');
+
             return Command::SUCCESS;
         }
 

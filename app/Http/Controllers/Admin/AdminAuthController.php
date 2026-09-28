@@ -27,8 +27,8 @@ class AdminAuthController extends Controller
 
         if (Auth::guard('admin')->attempt($credentials, $request->boolean('remember'))) {
             $user = Auth::guard('admin')->user();
-            
-            if (!$user->is_active) {
+
+            if (! $user->is_active) {
                 Auth::guard('admin')->logout();
                 throw ValidationException::withMessages([
                     'email' => 'Your account has been deactivated.',
@@ -36,6 +36,7 @@ class AdminAuthController extends Controller
             }
 
             $request->session()->regenerate();
+
             return redirect()->intended(route('admin.tenants.index'));
         }
 

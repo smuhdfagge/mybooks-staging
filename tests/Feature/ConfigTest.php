@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Tenant;
 use Tests\TestCase;
 
 class ConfigTest extends TestCase

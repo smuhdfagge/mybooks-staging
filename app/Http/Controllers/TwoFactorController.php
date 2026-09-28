@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Services\ActivityLogService;
 use App\Services\TwoFactorService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
 
 class TwoFactorController extends Controller
 {
@@ -31,7 +31,7 @@ class TwoFactorController extends Controller
         return view('auth.two-factor.setup', [
             'qrCodeSvg' => $qrCodeSvg,
             'secret' => $secret,
-            'isEnabled' => !is_null($user->two_factor_confirmed_at),
+            'isEnabled' => ! is_null($user->two_factor_confirmed_at),
         ]);
     }
 
@@ -46,12 +46,12 @@ class TwoFactorController extends Controller
 
         $secret = session('two_factor_secret');
 
-        if (!$secret) {
+        if (! $secret) {
             return redirect()->route('two-factor.setup')
                 ->with('error', 'Session expired. Please try setting up 2FA again.');
         }
 
-        if (!$this->twoFactor->verify($secret, $request->code)) {
+        if (! $this->twoFactor->verify($secret, $request->code)) {
             return back()->with('error', 'Invalid verification code. Please try again.');
         }
 
@@ -81,7 +81,7 @@ class TwoFactorController extends Controller
             'password' => 'required|string',
         ]);
 
-        if (!\Hash::check($request->password, $request->user()->password)) {
+        if (! \Hash::check($request->password, $request->user()->password)) {
             return back()->with('error', 'Invalid password.');
         }
 
@@ -145,7 +145,7 @@ class TwoFactorController extends Controller
         $userId = session('two_factor:user_id');
         $remember = session('two_factor:remember', false);
 
-        if (!$userId) {
+        if (! $userId) {
             return redirect()->route('login')
                 ->with('error', 'Session expired. Please login again.');
         }
@@ -156,7 +156,7 @@ class TwoFactorController extends Controller
         if ($request->filled('code')) {
             $secret = $this->twoFactor->getDecryptedSecret($user);
 
-            if (!$secret || !$this->twoFactor->verify($secret, $request->code)) {
+            if (! $secret || ! $this->twoFactor->verify($secret, $request->code)) {
                 return back()->with('error', 'Invalid authentication code.');
             }
         }
@@ -164,7 +164,7 @@ class TwoFactorController extends Controller
         elseif ($request->filled('recovery_code')) {
             $recoveryCodes = $this->twoFactor->getRecoveryCodes($user);
 
-            if (!in_array($request->recovery_code, $recoveryCodes)) {
+            if (! in_array($request->recovery_code, $recoveryCodes)) {
                 return back()->with('error', 'Invalid recovery code.');
             }
 

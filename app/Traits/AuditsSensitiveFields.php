@@ -28,7 +28,7 @@ trait AuditsSensitiveFields
     protected static function bootAuditsSensitiveFields(): void
     {
         static::updating(function (Model $model) {
-            if (!Auth::check()) {
+            if (! Auth::check()) {
                 return;
             }
 
@@ -36,7 +36,7 @@ trait AuditsSensitiveFields
             $changes = [];
 
             foreach ($fields as $field => $config) {
-                if (!$model->isDirty($field)) {
+                if (! $model->isDirty($field)) {
                     continue;
                 }
 
@@ -138,7 +138,7 @@ trait AuditsSensitiveFields
             return str_repeat('*', $len);
         }
 
-        return str_repeat('*', $len - 4) . substr($str, -4);
+        return str_repeat('*', $len - 4).substr($str, -4);
     }
 
     protected static function resolveReference(array $config, mixed $value): string
@@ -150,6 +150,7 @@ trait AuditsSensitiveFields
         if (isset($config['model'])) {
             $model = app($config['model'])->find($value);
             $nameField = $config['name_field'] ?? 'name';
+
             return $model ? $model->{$nameField} : "(ID: {$value})";
         }
 
@@ -159,12 +160,12 @@ trait AuditsSensitiveFields
     protected static function getSensitiveAuditDisplayName(Model $model): string
     {
         foreach (['employee_id', 'name', 'payroll_number'] as $field) {
-            if (!empty($model->{$field})) {
+            if (! empty($model->{$field})) {
                 return $model->{$field};
             }
         }
 
-        return class_basename($model) . ' #' . $model->getKey();
+        return class_basename($model).' #'.$model->getKey();
     }
 
     protected static function buildSensitiveChangeDescription(Model $model, array $changes): string

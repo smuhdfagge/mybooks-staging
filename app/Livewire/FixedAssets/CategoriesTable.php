@@ -2,25 +2,32 @@
 
 namespace App\Livewire\FixedAssets;
 
+use App\Livewire\Concerns\ChecksPermissions;
+use App\Models\FixedAssetCategory;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\FixedAssetCategory;
-use App\Livewire\Concerns\ChecksPermissions;
 
 class CategoriesTable extends Component
 {
     use ChecksPermissions, WithPagination;
 
     public $search = '';
+
     public $sortField = 'name';
+
     public $sortDirection = 'asc';
+
     public $perPage = 10;
 
     // Bulk operation properties
     public $selectedItems = [];
+
     public $selectAll = false;
+
     public $bulkAction = '';
+
     public $successMessage = '';
+
     public $errorMessage = '';
 
     protected $queryString = [
@@ -71,13 +78,13 @@ class CategoriesTable extends Component
 
         if ($this->search) {
             $query->where(function ($q) {
-                $q->where('name', 'like', '%' . $this->search . '%')
-                    ->orWhere('description', 'like', '%' . $this->search . '%');
+                $q->where('name', 'like', '%'.$this->search.'%')
+                    ->orWhere('description', 'like', '%'.$this->search.'%');
             });
         }
 
         return $query->pluck('id')
-            ->map(fn($id) => (string) $id)
+            ->map(fn ($id) => (string) $id)
             ->toArray();
     }
 
@@ -98,11 +105,13 @@ class CategoriesTable extends Component
 
         if (empty($this->selectedItems)) {
             $this->errorMessage = 'Please select at least one category.';
+
             return;
         }
 
         if (empty($this->bulkAction)) {
             $this->errorMessage = 'Please select an action.';
+
             return;
         }
 
@@ -114,32 +123,36 @@ class CategoriesTable extends Component
             case 'delete':
                 $deletedCount = 0;
                 $skippedCount = 0;
-                
+
                 foreach ($this->selectedItems as $categoryId) {
                     $category = FixedAssetCategory::find($categoryId);
-                    if (!$category) continue;
-                    
+                    if (! $category) {
+                        continue;
+                    }
+
                     // Check if category has assets
                     if ($category->assets()->exists()) {
                         $skippedCount++;
+
                         continue;
                     }
-                    
+
                     $category->delete();
                     $deletedCount++;
                 }
-                
+
                 if ($deletedCount > 0 && $skippedCount > 0) {
                     $this->successMessage = "Deleted {$deletedCount} category(ies). Skipped {$skippedCount} category(ies) with existing assets.";
                 } elseif ($deletedCount > 0) {
                     $this->successMessage = "Successfully deleted {$deletedCount} category(ies).";
                 } else {
-                    $this->errorMessage = "Could not delete any categories. All selected categories have existing assets.";
+                    $this->errorMessage = 'Could not delete any categories. All selected categories have existing assets.';
                 }
                 break;
 
             default:
                 $this->errorMessage = 'Invalid action selected.';
+
                 return;
         }
 
@@ -157,8 +170,8 @@ class CategoriesTable extends Component
 
         if ($this->search) {
             $query->where(function ($q) {
-                $q->where('name', 'like', '%' . $this->search . '%')
-                    ->orWhere('description', 'like', '%' . $this->search . '%');
+                $q->where('name', 'like', '%'.$this->search.'%')
+                    ->orWhere('description', 'like', '%'.$this->search.'%');
             });
         }
 

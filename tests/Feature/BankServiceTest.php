@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Bank;
-use App\Models\Tenant;
 use App\Services\BankService;
 use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
@@ -11,6 +10,7 @@ use Tests\TestCase;
 class BankServiceTest extends TestCase
 {
     private BankService $bankService;
+
     private Bank $bank;
 
     protected function setUp(): void

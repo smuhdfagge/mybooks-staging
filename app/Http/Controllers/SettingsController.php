@@ -10,10 +10,10 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\TestEmailNotification;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
-use Spatie\Permission\Exceptions\RoleAlreadyExists;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\Rule;
+use Spatie\Permission\Exceptions\RoleAlreadyExists;
 use Spatie\Permission\Models\Permission;
 
 class SettingsController extends Controller
@@ -47,6 +47,7 @@ class SettingsController extends Controller
         $tenant = auth()->user()->tenant;
         $countries = Country::orderBy('name')->get();
         $states = State::orderBy('name')->get();
+
         return view('settings.company', compact('tenant', 'countries', 'states'));
     }
 
@@ -115,27 +116,30 @@ class SettingsController extends Controller
     public function createUser()
     {
         $tenant = auth()->user()->tenant;
-        
+
         // Check if tenant can add more users
-        if (!$tenant->canAddUsers()) {
+        if (! $tenant->canAddUsers()) {
             $plan = $tenant->currentPlan();
             $planName = $plan ? $plan->name : 'current';
+
             return redirect()->route('settings.users')
                 ->with('error', "You have reached the maximum number of users allowed on the {$planName} plan. Please upgrade your subscription to add more users.");
         }
 
         $roles = $this->assignableRoles()->get();
+
         return view('settings.users.create', compact('roles'));
     }
 
     public function storeUser(Request $request)
     {
         $tenant = auth()->user()->tenant;
-        
+
         // Check if tenant can add more users
-        if (!$tenant->canAddUsers()) {
+        if (! $tenant->canAddUsers()) {
             $plan = $tenant->currentPlan();
             $planName = $plan ? $plan->name : 'current';
+
             return redirect()->route('settings.users')
                 ->with('error', "You have reached the maximum number of users allowed on the {$planName} plan. Please upgrade your subscription to add more users.");
         }
@@ -156,7 +160,7 @@ class SettingsController extends Controller
             'phone' => $validated['phone'] ?? null,
         ]);
 
-        if (!empty($validated['roles'])) {
+        if (! empty($validated['roles'])) {
             $user->syncRoles($this->rolesFromIds($validated['roles']));
         }
 
@@ -171,6 +175,7 @@ class SettingsController extends Controller
 
         $roles = $this->assignableRoles()->get();
         $isSelf = $user->id === auth()->id() && ! auth()->user()->isSuperAdmin();
+
         return view('settings.users.edit', compact('user', 'roles', 'isSelf'));
     }
 
@@ -182,7 +187,7 @@ class SettingsController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'email' => 'required|email|max:255|unique:users,email,'.$user->id,
             'password' => ['nullable', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
             'phone' => 'nullable|string|max:50',
             'is_active' => 'boolean',
@@ -199,7 +204,7 @@ class SettingsController extends Controller
             'is_active' => $isSelf ? $user->is_active : ($validated['is_active'] ?? true),
         ]);
 
-        if (!empty($validated['password'])) {
+        if (! empty($validated['password'])) {
             $user->update(['password' => Hash::make($validated['password'])]);
         }
 
@@ -223,6 +228,7 @@ class SettingsController extends Controller
         }
 
         $user->delete();
+
         return redirect()->route('settings.users')->with('success', 'User deleted successfully.');
     }
 
@@ -236,15 +242,17 @@ class SettingsController extends Controller
         $permissions = Permission::all()->groupBy(function ($permission) {
             // Group by resource (second part of permission name, e.g., "invoices" from "view invoices")
             $parts = explode(' ', $permission->name, 2);
+
             return $parts[1] ?? $parts[0];
         });
+
         return view('settings.roles.create', compact('permissions'));
     }
 
     public function storeRole(Request $request)
     {
         $tenantId = auth()->user()->tenant_id;
-        
+
         $validated = $request->validate([
             'name' => [
                 'required',
@@ -274,8 +282,8 @@ class SettingsController extends Controller
         } catch (RoleAlreadyExists) {
             return back()->withInput()->withErrors(['name' => self::ROLE_NAME_TAKEN]);
         }
-        
-        if (!empty($validated['permissions'])) {
+
+        if (! empty($validated['permissions'])) {
             $role->syncPermissions($validated['permissions']);
         }
 
@@ -291,7 +299,7 @@ class SettingsController extends Controller
             $tenantRole = Role::where('name', $role->name)
                 ->where('tenant_id', $tenantId)
                 ->first();
-            
+
             if ($tenantRole) {
                 // Redirect to edit the existing tenant-specific version
                 return redirect()->route('settings.roles.edit', $tenantRole);
@@ -301,11 +309,12 @@ class SettingsController extends Controller
         $permissions = Permission::all()->groupBy(function ($permission) {
             // Group by resource (second part of permission name)
             $parts = explode(' ', $permission->name, 2);
+
             return $parts[1] ?? $parts[0];
         });
         $rolePermissions = $role->permissions->pluck('name')->toArray();
         $isCustomizing = $role->isGlobal();
-        
+
         return view('settings.roles.edit', compact('role', 'permissions', 'rolePermissions', 'isCustomizing'));
     }
 
@@ -344,12 +353,12 @@ class SettingsController extends Controller
             } catch (RoleAlreadyExists) {
                 return back()->withInput()->withErrors(['name' => self::ROLE_NAME_TAKEN]);
             }
-            
+
             $newRole->syncPermissions($validated['permissions'] ?? []);
 
             return redirect()->route('settings.roles')->with('success', 'Custom role created successfully based on system role.');
         }
-        
+
         $validated = $request->validate([
             'name' => [
                 'required',
@@ -388,6 +397,7 @@ class SettingsController extends Controller
         }
 
         $role->delete();
+
         return redirect()->route('settings.roles')->with('success', 'Role deleted successfully.');
     }
 
@@ -397,6 +407,7 @@ class SettingsController extends Controller
     public function notifications()
     {
         $settings = NotificationSetting::getForTenant(auth()->user()->tenant_id);
+
         return view('settings.notifications', compact('settings'));
     }
 
@@ -450,13 +461,14 @@ class SettingsController extends Controller
 
         try {
             $tenant = auth()->user()->tenant;
-            
+
             // Create an anonymous notifiable for the test email
-            $notifiable = new class($request->test_email) {
+            $notifiable = new class($request->test_email)
+            {
                 use \Illuminate\Notifications\Notifiable;
-                
+
                 public function __construct(public string $email) {}
-                
+
                 public function routeNotificationForMail(): string
                 {
                     return $this->email;
@@ -467,7 +479,7 @@ class SettingsController extends Controller
 
             return redirect()->back()->with('success', "Test email sent to {$request->test_email}");
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to send test email: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to send test email: '.$e->getMessage());
         }
     }
 }
