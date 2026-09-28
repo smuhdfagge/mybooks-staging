@@ -10,13 +10,37 @@ class StatutoryTaxTemplateSeeder extends Seeder
     public function run(): void
     {
         $templates = [
-            // Nigeria PAYE (Personal Income Tax Act) - 2024 rates
+            // Nigeria PAYE from 1 January 2026 (Nigeria Tax Act 2025). Also added by
+            // migration 2026_10_01_000002 for existing installs; keep the two in step.
+            [
+                'country_code' => 'NGA',
+                'name' => 'Nigeria PAYE 2026 (Nigeria Tax Act 2025)',
+                'tax_year' => 2026,
+                'period' => 'annual',
+                'is_current' => true,
+                'description' => 'Annual bands from the Nigeria Tax Act 2025, in force from 1 January 2026. The consolidated relief allowance is abolished. Pension, NHF and health insurance deductions marked "pre-tax" are taken off pay before these bands are applied. Confirm with your tax adviser.',
+                'brackets' => [
+                    ['name' => 'First ₦800,000', 'min' => 0, 'max' => 800000, 'rate' => 0, 'fixed_amount' => 0],
+                    ['name' => 'Next ₦2,200,000', 'min' => 800000, 'max' => 3000000, 'rate' => 15, 'fixed_amount' => 0],
+                    ['name' => 'Next ₦9,000,000', 'min' => 3000000, 'max' => 12000000, 'rate' => 18, 'fixed_amount' => 0],
+                    ['name' => 'Next ₦13,000,000', 'min' => 12000000, 'max' => 25000000, 'rate' => 21, 'fixed_amount' => 0],
+                    ['name' => 'Next ₦25,000,000', 'min' => 25000000, 'max' => 50000000, 'rate' => 23, 'fixed_amount' => 0],
+                    ['name' => 'Above ₦50,000,000', 'min' => 50000000, 'max' => null, 'rate' => 25, 'fixed_amount' => 0],
+                ],
+                'employer_contributions' => [
+                    ['name' => 'Pension (Employer)', 'type' => 'percentage', 'rate' => 10, 'cap' => null],
+                    ['name' => 'NSITF (Employee Compensation)', 'type' => 'percentage', 'rate' => 1, 'cap' => null],
+                    ['name' => 'ITF (Industrial Training Fund)', 'type' => 'percentage', 'rate' => 1, 'cap' => null],
+                ],
+            ],
+
+            // Nigeria PAYE (Personal Income Tax Act) - 2024 rates, for payroll before 2026
             [
                 'country_code' => 'NGA',
                 'name' => 'Nigeria PAYE 2024',
                 'tax_year' => 2024,
                 'period' => 'annual',
-                'is_current' => true,
+                'is_current' => false,
                 'description' => 'Nigeria Personal Income Tax (PAYE) - Personal Income Tax Act rates. Consolidated relief allowance of ₦200,000 or 1% of gross income (whichever is higher) + 20% of gross income should be applied before these brackets.',
                 'brackets' => [
                     ['name' => 'First ₦300,000', 'min' => 0, 'max' => 300000, 'rate' => 7, 'fixed_amount' => 0],

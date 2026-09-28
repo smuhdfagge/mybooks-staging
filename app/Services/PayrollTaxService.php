@@ -23,13 +23,24 @@ class PayrollTaxService
             return ['tax' => 0, 'breakdown' => [], 'method' => 'none'];
         }
 
-        $brackets = TaxBracket::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->where('is_active', true)
-            ->where('period', $period)
-            ->orderBy('sort_order')
-            ->orderBy('min_amount')
-            ->get();
+        $brackets = $this->activeBrackets($tenantId, $period);
+
+        // Most statutory tables are annual (Nigeria, South Africa, UK) while
+        // payroll runs monthly. Use the other period's brackets and convert:
+        // annualise the pay, apply the bands, then take the monthly share.
+        if ($brackets->isEmpty()) {
+            $otherPeriod = $period === 'monthly' ? 'annual' : 'monthly';
+            $brackets = $this->activeBrackets($tenantId, $otherPeriod);
+
+            if ($brackets->isNotEmpty()) {
+                $factor = $period === 'monthly' ? 12 : 1 / 12;
+                $result = $this->calculateProgressiveTax($taxableIncome * $factor, $brackets);
+                $result['tax'] = round($result['tax'] / $factor, 2);
+                $result['period_converted_from'] = $otherPeriod;
+
+                return $result;
+            }
+        }
 
         if ($brackets->isEmpty()) {
             // Fallback: use flat rate
@@ -43,6 +54,18 @@ class PayrollTaxService
         }
 
         return $this->calculateProgressiveTax($taxableIncome, $brackets);
+    }
+
+    /** @return \Illuminate\Support\Collection<int, TaxBracket> */
+    protected function activeBrackets(int $tenantId, string $period)
+    {
+        return TaxBracket::withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->where('period', $period)
+            ->orderBy('sort_order')
+            ->orderBy('min_amount')
+            ->get();
     }
 
     /**

@@ -28,6 +28,20 @@ class SalaryStructureItem extends Model
         return $this->belongsTo(SalaryStructure::class);
     }
 
+    /**
+     * is_taxable means "taxable" on an allowance and "pre-tax" on a
+     * deduction. The column defaults to true (right for allowances), so a
+     * deduction created without the flag must not silently become a tax relief.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (self $item) {
+            if ($item->type === 'deduction' && ! array_key_exists('is_taxable', $item->getAttributes())) {
+                $item->is_taxable = false;
+            }
+        });
+    }
+
     public function getCalculatedAmountAttribute()
     {
         if ($this->amount_type === 'percentage') {
