@@ -120,4 +120,15 @@ class Phase7RegressionTest extends TestCase
         $this->assertStringNotContainsString('{!!', file_get_contents(resource_path('views/payroll/salary-structures/create.blade.php')));
         $this->assertStringNotContainsString('{!!', file_get_contents(resource_path('views/payroll/salary-structures/edit.blade.php')));
     }
+
+    public function test_l1_salary_structure_edit_form_renders(): void
+    {
+        $this->createAuthenticatedUser(['create payroll', 'edit payroll', 'view payroll']);
+        $structure = \App\Models\SalaryStructure::withoutEvents(fn () => \App\Models\SalaryStructure::create([
+            'tenant_id' => $this->tenant->id, 'name' => 'Standard', 'basic_salary' => 5000, 'is_active' => true,
+            'effective_from' => now()->startOfYear(), 'version' => 1, 'created_by' => $this->user->id,
+        ]));
+
+        $this->get(route('salary-structures.edit', $structure))->assertOk()->assertSee('basicSalary: ', false);
+    }
 }
