@@ -65,11 +65,14 @@ class DepartmentController extends Controller
             'name' => 'required|string|max:255',
             'code' => 'nullable|string|max:50',
             'description' => 'nullable|string',
-            'parent_id' => ['nullable', Rule::exists('departments', 'id')->where('tenant_id', $tenantId)],
+            'parent_id' => ['nullable', Rule::exists('departments', 'id')->where('tenant_id', $tenantId), Rule::notIn($this->selfAndDescendants($department))],
             'manager_id' => ['nullable', Rule::exists('employees', 'id')->where('tenant_id', $tenantId)],
             'is_active' => 'boolean',
+        ], [
+            'parent_id.not_in' => 'A department cannot sit under itself or one of its own sub-departments.',
         ]);
 
+        $validated['is_active'] = $request->boolean('is_active', $department->is_active);
         $department->update($validated);
 
         return redirect()->route('departments.index')->with('success', 'Department updated successfully.');
@@ -83,5 +86,18 @@ class DepartmentController extends Controller
 
         $department->delete();
         return redirect()->route('departments.index')->with('success', 'Department deleted successfully.');
+    }
+
+    /** IDs of $department and everything below it, to stop parent loops. */
+    private function selfAndDescendants(Department $department): array
+    {
+        $ids = [$department->id];
+        $level = [$department->id];
+        while ($level) {
+            $level = Department::whereIn('parent_id', $level)->whereNotIn('id', $ids)->pluck('id')->all();
+            $ids = array_merge($ids, $level);
+        }
+
+        return $ids;
     }
 }

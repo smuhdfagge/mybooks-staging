@@ -79,4 +79,23 @@ class Phase6RegressionTest extends TestCase
         $response = $this->actingAs($this->user, 'sanctum')->get("/api/v1/invoices/{$invoice->id}/pdf")->assertOk();
         $this->assertStringStartsWith('%PDF', $response->getContent());
     }
+
+    public function test_n9_department_show_and_edit_pages_work(): void
+    {
+        $this->createAuthenticatedUser(['view departments', 'edit departments', 'view employees']);
+        $parent = \App\Models\Department::create(['tenant_id' => $this->tenant->id, 'name' => 'Operations', 'code' => 'OPS', 'is_active' => true]);
+        $child = \App\Models\Department::create(['tenant_id' => $this->tenant->id, 'name' => 'Farm', 'code' => 'FRM', 'parent_id' => $parent->id, 'is_active' => true]);
+
+        $this->get(route('departments.show', $parent))->assertOk()->assertSee('Operations')->assertSee('Farm');
+        $this->get(route('departments.edit', $child))->assertOk()->assertSee('value="Farm"', false);
+
+        $this->put(route('departments.update', $child), ['name' => 'Farm Ops', 'parent_id' => $parent->id, 'is_active' => '0'])
+            ->assertRedirect(route('departments.index'));
+        $this->assertSame('Farm Ops', $child->fresh()->name);
+        $this->assertFalse($child->fresh()->is_active);
+
+        // A department can't be put under its own sub-department
+        $this->put(route('departments.update', $parent), ['name' => 'Operations', 'parent_id' => $child->id])
+            ->assertSessionHasErrors('parent_id');
+    }
 }
