@@ -121,4 +121,15 @@ class Phase6RegressionTest extends TestCase
         $this->assertFalse($type->fresh()->is_active);
         $this->assertFalse($type->fresh()->is_paid);
     }
+
+    public function test_n9_export_details_page_works(): void
+    {
+        $this->createAuthenticatedUser(['export reports']);
+        $export = \App\Models\Export::create([
+            'tenant_id' => $this->tenant->id, 'user_id' => $this->user->id, 'type' => 'customers', 'format' => 'csv',
+            'status' => 'failed', 'error_message' => 'Disk full', 'expires_at' => now()->addDays(7),
+        ]);
+
+        $this->get(route('exports.show', $export))->assertOk()->assertSee('Disk full')->assertSee('Customers');
+    }
 }
