@@ -57,3 +57,19 @@ Schedule::command('retention:purge --force')
     ->withoutOverlapping()
     ->onOneServer()
     ->appendOutputTo(storage_path('logs/retention-purge.log'));
+
+/*
+|--------------------------------------------------------------------------
+| Queue worker for shared hosting
+|--------------------------------------------------------------------------
+| Large payroll batches, imports and exports run on the queue. If the server
+| can't keep "php artisan queue:work" running (shared hosting), set
+| QUEUE_WORK_FROM_SCHEDULER=true and the scheduler empties the queue every
+| minute instead.
+*/
+if (config('mybooks.queue_work_from_scheduler')) {
+    Schedule::command('queue:work --stop-when-empty --max-time=55 --tries=1')
+        ->everyMinute()
+        ->withoutOverlapping()
+        ->onOneServer();
+}

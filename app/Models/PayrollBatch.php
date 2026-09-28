@@ -13,6 +13,8 @@ class PayrollBatch extends Model
 
     const STATUS_DRAFT = 'draft';
     const STATUS_APPROVED = 'approved';
+    const STATUS_PROCESSING = 'processing'; // queued to be paid (N7)
+    const STATUS_FAILED = 'failed';         // the queued job failed; can be retried
     const STATUS_PAID = 'paid';
     const STATUS_CANCELLED = 'cancelled';
 
@@ -27,6 +29,7 @@ class PayrollBatch extends Model
         'employee_count',
         'tax_rate',
         'status',
+        'failure_reason',
         'notes',
         'created_by',
         'approved_by',

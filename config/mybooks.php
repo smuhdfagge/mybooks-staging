@@ -100,4 +100,16 @@ return [
         'inventory_valuation' => (bool) env('MYBOOKS_FEATURE_INVENTORY_VALUATION', false),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Queue worker from the scheduler (finding N7)
+    |--------------------------------------------------------------------------
+    |
+    | On hosting that can't keep "php artisan queue:work" running, set this
+    | to true and the scheduler empties the queue every minute.
+    |
+    */
+
+    'queue_work_from_scheduler' => (bool) env('QUEUE_WORK_FROM_SCHEDULER', false),
+
 ];

@@ -259,4 +259,79 @@ class Phase6RegressionTest extends TestCase
 
         $this->assertSame('received', $po->fresh()->status);
     }
+
+    /** An approved batch with $count approved payrolls. */
+    private function approvedBatch(int $count): \App\Models\PayrollBatch
+    {
+        $batch = \App\Models\PayrollBatch::create([
+            'tenant_id' => $this->tenant->id, 'batch_number' => 'PB-000001',
+            'pay_period_start' => now()->startOfMonth(), 'pay_period_end' => now()->endOfMonth(),
+            'status' => 'approved', 'created_by' => $this->user->id,
+        ]);
+
+        for ($i = 1; $i <= $count; $i++) {
+            $employee = \App\Models\Employee::withoutEvents(fn () => \App\Models\Employee::create([
+                'tenant_id' => $this->tenant->id, 'employee_id' => "EMP-{$i}", 'first_name' => "Staff{$i}", 'last_name' => 'Test',
+                'email' => "staff{$i}@example.com", 'hire_date' => now()->subYear(), 'status' => 'active',
+            ]));
+            \App\Models\Payroll::withoutEvents(fn () => \App\Models\Payroll::create([
+                'tenant_id' => $this->tenant->id, 'employee_id' => $employee->id, 'payroll_batch_id' => $batch->id,
+                'payroll_number' => sprintf('PAY-%06d', $i), 'pay_period_start' => now()->startOfMonth(),
+                'pay_period_end' => now()->endOfMonth(), 'pay_date' => now(), 'basic_salary' => 1000, 'gross_salary' => 1000,
+                'total_deductions' => 0, 'net_salary' => 1000, 'status' => 'approved', 'created_by' => $this->user->id,
+            ]));
+        }
+
+        return $batch;
+    }
+
+    public function test_n7_queued_batch_is_processing_until_the_job_finishes(): void
+    {
+        $this->createAuthenticatedUser(['view payroll', 'edit payroll', 'approve payroll']);
+        \Illuminate\Support\Facades\Queue::fake();
+        $batch = $this->approvedBatch(11);
+
+        $this->post(route('payroll-batches.mark-paid', $batch))->assertSessionHas('success');
+
+        $this->assertSame('processing', $batch->fresh()->status);
+        $this->assertNull($batch->fresh()->paid_at);
+        $this->assertSame(11, $batch->payrolls()->where('status', 'approved')->count());
+        \Illuminate\Support\Facades\Queue::assertPushed(\App\Jobs\ProcessPayrollBatch::class);
+        $this->get(route('payroll-batches.show', $batch))->assertOk()->assertSee('Being paid in the background');
+
+        \Illuminate\Support\Facades\Event::fake([\App\Events\PayrollPaid::class]);
+        (new \App\Jobs\ProcessPayrollBatch($batch))->handle();
+
+        $this->assertSame('paid', $batch->fresh()->status);
+        $this->assertNotNull($batch->fresh()->paid_at);
+        $this->assertSame(11, $batch->payrolls()->where('status', 'paid')->count());
+    }
+
+    public function test_n7_failed_job_leaves_the_batch_failed_and_nothing_paid(): void
+    {
+        $this->createAuthenticatedUser(['view payroll', 'edit payroll', 'approve payroll']);
+        $batch = $this->approvedBatch(11);
+        $batch->update(['status' => 'processing']);
+
+        // The 6th payroll's journal fails
+        $n = 0;
+        \Illuminate\Support\Facades\Event::listen(\App\Events\PayrollPaid::class, function () use (&$n) {
+            if (++$n === 6) {
+                throw new \RuntimeException('Salaries payable account is missing');
+            }
+        });
+
+        try {
+            \App\Jobs\ProcessPayrollBatch::dispatchSync($batch);
+        } catch (\RuntimeException) {
+        }
+
+        $batch->refresh();
+        $this->assertSame('failed', $batch->status);
+        $this->assertStringContainsString('Salaries payable account is missing', $batch->failure_reason);
+        $this->assertSame(0, $batch->payrolls()->where('status', 'paid')->count());   // rolled back
+
+        // It can be tried again from the page
+        $this->get(route('payroll-batches.show', $batch))->assertOk()->assertSee('Try Again');
+    }
 }

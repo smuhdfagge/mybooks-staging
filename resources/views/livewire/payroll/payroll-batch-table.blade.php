@@ -82,6 +82,8 @@
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                                     {{ $batch->status === 'draft' ? 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100' : '' }}
                                     {{ $batch->status === 'approved' ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100' : '' }}
+                                    {{ $batch->status === 'processing' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100' : '' }}
+                                    {{ $batch->status === 'failed' ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100' : '' }}
                                     {{ $batch->status === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' : '' }}
                                     {{ $batch->status === 'cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100' : '' }}">
                                     {{ ucfirst($batch->status) }}
