@@ -1415,6 +1415,11 @@ class JournalService implements JournalServiceInterface
      */
     public function updateAccountBalances(Journal $journal): void
     {
+        // Always read the journal's lines as they are now. The update paths
+        // load the old lines (to reverse them), delete them and create new
+        // ones; without a reload this re-applied the old amounts (C4).
+        $journal->load('entries.account');
+
         foreach ($journal->entries as $entry) {
             $account = $entry->account;
             
@@ -1436,6 +1441,8 @@ class JournalService implements JournalServiceInterface
      */
     protected function reverseAccountBalances(Journal $journal): void
     {
+        $journal->load('entries.account');
+
         foreach ($journal->entries as $entry) {
             $account = $entry->account;
             
