@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -76,27 +78,32 @@ class Payroll extends Model
         'net_salary' => 'decimal:2',
     ];
 
-    public function employee()
+    /** @return BelongsTo<Employee, $this> */
+    public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
     }
 
-    public function payrollBatch()
+    /** @return BelongsTo<PayrollBatch, $this> */
+    public function payrollBatch(): BelongsTo
     {
         return $this->belongsTo(PayrollBatch::class);
     }
 
-    public function salaryStructure()
+    /** @return BelongsTo<SalaryStructure, $this> */
+    public function salaryStructure(): BelongsTo
     {
         return $this->belongsTo(SalaryStructure::class);
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function approvedBy()
+    /** @return BelongsTo<User, $this> */
+    public function approvedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
@@ -119,7 +126,8 @@ class Payroll extends Model
         $this->net_salary = $this->gross_salary - $this->total_deductions;
     }
 
-    public function journal()
+    /** @return MorphOne<Journal, $this> */
+    public function journal(): MorphOne
     {
         return $this->morphOne(Journal::class, 'reference');
     }

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -45,27 +47,32 @@ class FixedAssetCategory extends Model
         ];
     }
 
-    public function assets()
+    /** @return HasMany<FixedAsset, $this> */
+    public function assets(): HasMany
     {
         return $this->hasMany(FixedAsset::class, 'category_id');
     }
 
-    public function assetAccount()
+    /** @return BelongsTo<ChartOfAccount, $this> */
+    public function assetAccount(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class, 'asset_account_id');
     }
 
-    public function accumulatedDepreciationAccount()
+    /** @return BelongsTo<ChartOfAccount, $this> */
+    public function accumulatedDepreciationAccount(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class, 'accumulated_depreciation_account_id');
     }
 
-    public function depreciationExpenseAccount()
+    /** @return BelongsTo<ChartOfAccount, $this> */
+    public function depreciationExpenseAccount(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class, 'depreciation_expense_account_id');
     }
 
-    public function gainLossAccount()
+    /** @return BelongsTo<ChartOfAccount, $this> */
+    public function gainLossAccount(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class, 'gain_loss_account_id');
     }

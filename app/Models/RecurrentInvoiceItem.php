@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -30,12 +31,14 @@ class RecurrentInvoiceItem extends Model
         'total' => 'decimal:2',
     ];
 
-    public function recurrentInvoice()
+    /** @return BelongsTo<RecurrentInvoice, $this> */
+    public function recurrentInvoice(): BelongsTo
     {
         return $this->belongsTo(RecurrentInvoice::class);
     }
 
-    public function item()
+    /** @return BelongsTo<Item, $this> */
+    public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class);
     }

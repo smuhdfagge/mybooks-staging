@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -40,17 +42,20 @@ class ChartOfAccount extends Model
     const TYPE_INCOME = 'income';
     const TYPE_EXPENSE = 'expense';
 
-    public function parent()
+    /** @return BelongsTo<ChartOfAccount, $this> */
+    public function parent(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class, 'parent_id');
     }
 
-    public function children()
+    /** @return HasMany<ChartOfAccount, $this> */
+    public function children(): HasMany
     {
         return $this->hasMany(ChartOfAccount::class, 'parent_id');
     }
 
-    public function journalEntries()
+    /** @return HasMany<JournalEntry, $this> */
+    public function journalEntries(): HasMany
     {
         return $this->hasMany(JournalEntry::class, 'account_id');
     }

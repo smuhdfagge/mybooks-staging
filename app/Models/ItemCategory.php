@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenant;
@@ -23,17 +25,20 @@ class ItemCategory extends Model
         'is_active' => 'boolean',
     ];
 
-    public function parent()
+    /** @return BelongsTo<ItemCategory, $this> */
+    public function parent(): BelongsTo
     {
         return $this->belongsTo(ItemCategory::class, 'parent_id');
     }
 
-    public function children()
+    /** @return HasMany<ItemCategory, $this> */
+    public function children(): HasMany
     {
         return $this->hasMany(ItemCategory::class, 'parent_id');
     }
 
-    public function items()
+    /** @return HasMany<Item, $this> */
+    public function items(): HasMany
     {
         return $this->hasMany(Item::class, 'category_id');
     }

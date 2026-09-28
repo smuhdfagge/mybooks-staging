@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
@@ -48,22 +50,26 @@ class PurchaseOrder extends Model
         'total_received_amount' => 'decimal:2',
     ];
 
-    public function vendor()
+    /** @return BelongsTo<Vendor, $this> */
+    public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class);
     }
 
-    public function items()
+    /** @return HasMany<PurchaseOrderItem, $this> */
+    public function items(): HasMany
     {
         return $this->hasMany(PurchaseOrderItem::class);
     }
 
-    public function bills()
+    /** @return HasMany<Bill, $this> */
+    public function bills(): HasMany
     {
         return $this->hasMany(Bill::class);
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }

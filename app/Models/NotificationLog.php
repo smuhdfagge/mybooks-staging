@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenant;
@@ -34,7 +35,7 @@ class NotificationLog extends Model
     /**
      * Get the notifiable entity
      */
-    public function notifiable()
+    public function notifiable(): MorphTo
     {
         return $this->morphTo();
     }
@@ -42,7 +43,7 @@ class NotificationLog extends Model
     /**
      * Get the reference entity (Invoice, Bill, etc.)
      */
-    public function reference()
+    public function reference(): MorphTo
     {
         return $this->morphTo();
     }

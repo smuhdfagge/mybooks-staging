@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Services\ChartOfAccountService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -54,70 +57,84 @@ class Tenant extends Model
         'tax_per_line_item' => 'boolean',
     ];
 
-    public function defaultSalesTax()
+    /** @return BelongsTo<TaxRate, $this> */
+    public function defaultSalesTax(): BelongsTo
     {
         return $this->belongsTo(TaxRate::class, 'default_sales_tax_id');
     }
 
-    public function defaultPurchaseTax()
+    /** @return BelongsTo<TaxRate, $this> */
+    public function defaultPurchaseTax(): BelongsTo
     {
         return $this->belongsTo(TaxRate::class, 'default_purchase_tax_id');
     }
 
-    public function invoiceTemplate()
+    /** @return BelongsTo<InvoiceTemplate, $this> */
+    public function invoiceTemplate(): BelongsTo
     {
         return $this->belongsTo(InvoiceTemplate::class);
     }
 
-    public function invoiceTemplates()
+    /** @return HasMany<InvoiceTemplate, $this> */
+    public function invoiceTemplates(): HasMany
     {
         return $this->hasMany(InvoiceTemplate::class);
     }
 
-    public function users()
+    /** @return HasMany<User, $this> */
+    public function users(): HasMany
     {
         return $this->hasMany(User::class);
     }
 
-    public function customers()
+    /** @return HasMany<Customer, $this> */
+    public function customers(): HasMany
     {
         return $this->hasMany(Customer::class);
     }
 
-    public function vendors()
+    /** @return HasMany<Vendor, $this> */
+    public function vendors(): HasMany
     {
         return $this->hasMany(Vendor::class);
     }
 
-    public function items()
+    /** @return HasMany<Item, $this> */
+    public function items(): HasMany
     {
         return $this->hasMany(Item::class);
     }
 
-    public function invoices()
+    /** @return HasMany<Invoice, $this> */
+    public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
     }
 
-    public function employees()
+    /** @return HasMany<Employee, $this> */
+    public function employees(): HasMany
     {
         return $this->hasMany(Employee::class);
     }
 
-    public function departments()
+    /** @return HasMany<Department, $this> */
+    public function departments(): HasMany
     {
         return $this->hasMany(Department::class);
     }
 
-    public function accounts()
+    /** @return HasMany<ChartOfAccount, $this> */
+    public function accounts(): HasMany
     {
         return $this->hasMany(ChartOfAccount::class);
     }
 
     /**
      * Get all subscriptions for this tenant
+     *
+     * @return HasMany<Subscription, $this>
      */
-    public function subscriptions()
+    public function subscriptions(): HasMany
     {
         return $this->hasMany(Subscription::class);
     }
@@ -126,8 +143,10 @@ class Tenant extends Model
      * The subscription that currently gives access: status active and the
      * paid period not yet over (finding C1). One with no end date was
      * granted open-ended by an admin.
+     *
+     * @return HasOne<Subscription, $this>
      */
-    public function activeSubscription()
+    public function activeSubscription(): HasOne
     {
         return $this->hasOne(Subscription::class)
             ->where('status', Subscription::STATUS_ACTIVE)
@@ -139,8 +158,10 @@ class Tenant extends Model
     /**
      * The most recent subscription of any status (for renewing one that has
      * run out, or paying for one started at sign-up).
+     *
+     * @return HasOne<Subscription, $this>
      */
-    public function latestSubscription()
+    public function latestSubscription(): HasOne
     {
         return $this->hasOne(Subscription::class)->latestOfMany();
     }

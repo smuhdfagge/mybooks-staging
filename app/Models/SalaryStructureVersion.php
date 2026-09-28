@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
 
 class SalaryStructureVersion extends Model
@@ -29,12 +30,14 @@ class SalaryStructureVersion extends Model
         'created_at' => 'datetime',
     ];
 
-    public function salaryStructure()
+    /** @return BelongsTo<SalaryStructure, $this> */
+    public function salaryStructure(): BelongsTo
     {
         return $this->belongsTo(SalaryStructure::class);
     }
 
-    public function changedByUser()
+    /** @return BelongsTo<User, $this> */
+    public function changedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'changed_by');
     }

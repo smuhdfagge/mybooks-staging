@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -22,12 +23,14 @@ class JournalEntry extends Model
         'credit' => 'decimal:2',
     ];
 
-    public function journal()
+    /** @return BelongsTo<Journal, $this> */
+    public function journal(): BelongsTo
     {
         return $this->belongsTo(Journal::class);
     }
 
-    public function account()
+    /** @return BelongsTo<ChartOfAccount, $this> */
+    public function account(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class, 'account_id');
     }

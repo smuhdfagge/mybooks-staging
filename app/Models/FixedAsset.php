@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -119,27 +121,32 @@ class FixedAsset extends Model
         ];
     }
 
-    public function category()
+    /** @return BelongsTo<FixedAssetCategory, $this> */
+    public function category(): BelongsTo
     {
         return $this->belongsTo(FixedAssetCategory::class, 'category_id');
     }
 
-    public function vendor()
+    /** @return BelongsTo<Vendor, $this> */
+    public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class);
     }
 
-    public function assignedUser()
+    /** @return BelongsTo<User, $this> */
+    public function assignedUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_to');
     }
 
-    public function depreciations()
+    /** @return HasMany<FixedAssetDepreciation, $this> */
+    public function depreciations(): HasMany
     {
         return $this->hasMany(FixedAssetDepreciation::class);
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }

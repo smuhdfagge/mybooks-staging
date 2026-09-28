@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenant;
@@ -23,12 +24,14 @@ class UnitOfMeasure extends Model
         'is_active' => 'boolean',
     ];
 
-    public function conversionsFrom()
+    /** @return HasMany<UomConversion, $this> */
+    public function conversionsFrom(): HasMany
     {
         return $this->hasMany(UomConversion::class, 'from_uom_id');
     }
 
-    public function conversionsTo()
+    /** @return HasMany<UomConversion, $this> */
+    public function conversionsTo(): HasMany
     {
         return $this->hasMany(UomConversion::class, 'to_uom_id');
     }

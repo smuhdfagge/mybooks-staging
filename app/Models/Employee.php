@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -68,47 +70,56 @@ class Employee extends Model
         'tax_id' => 'encrypted',
     ];
 
-    public function user()
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function department()
+    /** @return BelongsTo<Department, $this> */
+    public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
     }
 
-    public function designation()
+    /** @return BelongsTo<Designation, $this> */
+    public function designation(): BelongsTo
     {
         return $this->belongsTo(Designation::class);
     }
 
-    public function leaves()
+    /** @return HasMany<Leave, $this> */
+    public function leaves(): HasMany
     {
         return $this->hasMany(Leave::class);
     }
 
-    public function payrolls()
+    /** @return HasMany<Payroll, $this> */
+    public function payrolls(): HasMany
     {
         return $this->hasMany(Payroll::class);
     }
 
-    public function loans()
+    /** @return HasMany<EmployeeLoan, $this> */
+    public function loans(): HasMany
     {
         return $this->hasMany(EmployeeLoan::class);
     }
 
-    public function activeLoans()
+    /** @return HasMany<EmployeeLoan, $this> */
+    public function activeLoans(): HasMany
     {
         return $this->hasMany(EmployeeLoan::class)->where('status', EmployeeLoan::STATUS_ACTIVE);
     }
 
-    public function salaryStructure()
+    /** @return BelongsTo<SalaryStructure, $this> */
+    public function salaryStructure(): BelongsTo
     {
         return $this->belongsTo(SalaryStructure::class);
     }
 
-    public function managedDepartments()
+    /** @return HasMany<Department, $this> */
+    public function managedDepartments(): HasMany
     {
         return $this->hasMany(Department::class, 'manager_id');
     }

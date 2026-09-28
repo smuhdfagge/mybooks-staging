@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 
@@ -31,12 +32,14 @@ class SubscriptionPayment extends Model
         'gateway_response' => 'array',
     ];
 
-    public function plan()
+    /** @return BelongsTo<Plan, $this> */
+    public function plan(): BelongsTo
     {
         return $this->belongsTo(Plan::class);
     }
 
-    public function subscription()
+    /** @return BelongsTo<Subscription, $this> */
+    public function subscription(): BelongsTo
     {
         return $this->belongsTo(Subscription::class);
     }

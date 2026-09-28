@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenant;
@@ -47,17 +48,20 @@ class FixedAssetDepreciation extends Model
         ];
     }
 
-    public function fixedAsset()
+    /** @return BelongsTo<FixedAsset, $this> */
+    public function fixedAsset(): BelongsTo
     {
         return $this->belongsTo(FixedAsset::class);
     }
 
-    public function journal()
+    /** @return BelongsTo<Journal, $this> */
+    public function journal(): BelongsTo
     {
         return $this->belongsTo(Journal::class);
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }

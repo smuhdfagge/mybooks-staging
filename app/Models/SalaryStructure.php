@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -37,32 +39,38 @@ class SalaryStructure extends Model
         'version' => 'integer',
     ];
 
-    public function employees()
+    /** @return HasMany<Employee, $this> */
+    public function employees(): HasMany
     {
         return $this->hasMany(Employee::class);
     }
 
-    public function items()
+    /** @return HasMany<SalaryStructureItem, $this> */
+    public function items(): HasMany
     {
         return $this->hasMany(SalaryStructureItem::class)->orderBy('sort_order');
     }
 
-    public function allowances()
+    /** @return HasMany<SalaryStructureItem, $this> */
+    public function allowances(): HasMany
     {
         return $this->hasMany(SalaryStructureItem::class)->where('type', 'allowance')->orderBy('sort_order');
     }
 
-    public function deductions()
+    /** @return HasMany<SalaryStructureItem, $this> */
+    public function deductions(): HasMany
     {
         return $this->hasMany(SalaryStructureItem::class)->where('type', 'deduction')->orderBy('sort_order');
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function payrolls()
+    /** @return HasMany<Payroll, $this> */
+    public function payrolls(): HasMany
     {
         return $this->hasMany(Payroll::class);
     }
@@ -121,7 +129,8 @@ class SalaryStructure extends Model
         return $employee?->salaryStructure;
     }
 
-    public function versions()
+    /** @return HasMany<SalaryStructureVersion, $this> */
+    public function versions(): HasMany
     {
         return $this->hasMany(SalaryStructureVersion::class)->orderByDesc('version');
     }

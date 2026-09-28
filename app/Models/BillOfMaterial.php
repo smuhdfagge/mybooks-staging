@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenant;
@@ -27,17 +29,20 @@ class BillOfMaterial extends Model
         'is_active' => 'boolean',
     ];
 
-    public function item()
+    /** @return BelongsTo<Item, $this> */
+    public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class);
     }
 
-    public function components()
+    /** @return HasMany<BomItem, $this> */
+    public function components(): HasMany
     {
         return $this->hasMany(BomItem::class, 'bill_of_materials_id');
     }
 
-    public function assemblyOrders()
+    /** @return HasMany<AssemblyOrder, $this> */
+    public function assemblyOrders(): HasMany
     {
         return $this->hasMany(AssemblyOrder::class);
     }

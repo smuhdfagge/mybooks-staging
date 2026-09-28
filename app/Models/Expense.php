@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -62,42 +64,50 @@ class Expense extends Model
         'submitted_at' => 'datetime',
     ];
 
-    public function vendor()
+    /** @return BelongsTo<Vendor, $this> */
+    public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class);
     }
 
-    public function bank()
+    /** @return BelongsTo<Bank, $this> */
+    public function bank(): BelongsTo
     {
         return $this->belongsTo(Bank::class);
     }
 
-    public function expenseAccount()
+    /** @return BelongsTo<ChartOfAccount, $this> */
+    public function expenseAccount(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class, 'expense_account_id');
     }
 
-    public function paidThroughAccount()
+    /** @return BelongsTo<ChartOfAccount, $this> */
+    public function paidThroughAccount(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class, 'paid_through_id');
     }
 
-    public function customer()
+    /** @return BelongsTo<Customer, $this> */
+    public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function approvedByUser()
+    /** @return BelongsTo<User, $this> */
+    public function approvedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
 
-    public function rejectedByUser()
+    /** @return BelongsTo<User, $this> */
+    public function rejectedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'rejected_by');
     }
@@ -113,7 +123,8 @@ class Expense extends Model
         return 'EXP-' . str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
-    public function journal()
+    /** @return MorphOne<Journal, $this> */
+    public function journal(): MorphOne
     {
         return $this->morphOne(Journal::class, 'reference');
     }

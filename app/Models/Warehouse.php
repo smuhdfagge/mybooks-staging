@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenant;
@@ -28,32 +29,38 @@ class Warehouse extends Model
         'is_active' => 'boolean',
     ];
 
-    public function inventories()
+    /** @return HasMany<Inventory, $this> */
+    public function inventories(): HasMany
     {
         return $this->hasMany(Inventory::class);
     }
 
-    public function inventoryLayers()
+    /** @return HasMany<InventoryLayer, $this> */
+    public function inventoryLayers(): HasMany
     {
         return $this->hasMany(InventoryLayer::class);
     }
 
-    public function incomingTransfers()
+    /** @return HasMany<StockTransfer, $this> */
+    public function incomingTransfers(): HasMany
     {
         return $this->hasMany(StockTransfer::class, 'to_warehouse_id');
     }
 
-    public function outgoingTransfers()
+    /** @return HasMany<StockTransfer, $this> */
+    public function outgoingTransfers(): HasMany
     {
         return $this->hasMany(StockTransfer::class, 'from_warehouse_id');
     }
 
-    public function batches()
+    /** @return HasMany<InventoryBatch, $this> */
+    public function batches(): HasMany
     {
         return $this->hasMany(InventoryBatch::class);
     }
 
-    public function serialNumbers()
+    /** @return HasMany<SerialNumber, $this> */
+    public function serialNumbers(): HasMany
     {
         return $this->hasMany(SerialNumber::class);
     }

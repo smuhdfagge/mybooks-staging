@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -42,32 +45,38 @@ class SalesOrder extends Model
         'total_fulfilled_amount' => 'decimal:2',
     ];
 
-    public function customer()
+    /** @return BelongsTo<Customer, $this> */
+    public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
 
-    public function items()
+    /** @return HasMany<SalesOrderItem, $this> */
+    public function items(): HasMany
     {
         return $this->hasMany(SalesOrderItem::class);
     }
 
-    public function invoices()
+    /** @return HasMany<Invoice, $this> */
+    public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
     }
 
-    public function deliveryNotes()
+    /** @return HasMany<DeliveryNote, $this> */
+    public function deliveryNotes(): HasMany
     {
         return $this->hasMany(DeliveryNote::class);
     }
 
-    public function quotation()
+    /** @return HasOne<Quotation, $this> */
+    public function quotation(): HasOne
     {
         return $this->hasOne(Quotation::class, 'converted_to_so_id');
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }

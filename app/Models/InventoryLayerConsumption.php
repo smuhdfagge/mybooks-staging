@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 
@@ -30,7 +31,8 @@ class InventoryLayerConsumption extends Model
         'reduced_on_hand' => 'boolean',
     ];
 
-    public function layer()
+    /** @return BelongsTo<InventoryLayer, $this> */
+    public function layer(): BelongsTo
     {
         return $this->belongsTo(InventoryLayer::class, 'inventory_layer_id');
     }

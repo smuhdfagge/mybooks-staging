@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenant;
@@ -37,7 +38,8 @@ class AccountingPeriod extends Model
     const STATUS_CLOSED = 'closed';
     const STATUS_LOCKED = 'locked'; // Permanently locked (year-end)
 
-    public function closedBy()
+    /** @return BelongsTo<User, $this> */
+    public function closedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'closed_by');
     }

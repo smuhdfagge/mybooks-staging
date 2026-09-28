@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenant;
@@ -36,17 +37,20 @@ class AssemblyOrder extends Model
         'completed_at' => 'datetime',
     ];
 
-    public function billOfMaterial()
+    /** @return BelongsTo<BillOfMaterial, $this> */
+    public function billOfMaterial(): BelongsTo
     {
         return $this->belongsTo(BillOfMaterial::class);
     }
 
-    public function warehouse()
+    /** @return BelongsTo<Warehouse, $this> */
+    public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class);
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }

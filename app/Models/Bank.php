@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -63,12 +65,14 @@ class Bank extends Model
         ];
     }
 
-    public function chartOfAccount()
+    /** @return BelongsTo<ChartOfAccount, $this> */
+    public function chartOfAccount(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class);
     }
 
-    public function transactions()
+    /** @return HasMany<BankTransaction, $this> */
+    public function transactions(): HasMany
     {
         return $this->hasMany(BankTransaction::class);
     }

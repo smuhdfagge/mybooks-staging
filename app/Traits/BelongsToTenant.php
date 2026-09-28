@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -53,7 +54,8 @@ trait BelongsToTenant
         });
     }
 
-    public function tenant()
+    /** @return BelongsTo<Tenant, $this> */
+    public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
     }

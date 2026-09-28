@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -22,12 +23,14 @@ class DeliveryNoteItem extends Model
         'quantity_delivered' => 'decimal:2',
     ];
 
-    public function deliveryNote()
+    /** @return BelongsTo<DeliveryNote, $this> */
+    public function deliveryNote(): BelongsTo
     {
         return $this->belongsTo(DeliveryNote::class);
     }
 
-    public function item()
+    /** @return BelongsTo<Item, $this> */
+    public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class);
     }

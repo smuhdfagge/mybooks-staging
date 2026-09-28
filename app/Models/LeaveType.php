@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenant;
@@ -31,7 +32,8 @@ class LeaveType extends Model
         'is_active' => 'boolean',
     ];
 
-    public function leaves()
+    /** @return HasMany<Leave, $this> */
+    public function leaves(): HasMany
     {
         return $this->hasMany(Leave::class);
     }

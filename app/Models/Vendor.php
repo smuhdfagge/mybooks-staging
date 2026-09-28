@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -34,17 +35,20 @@ class Vendor extends Model
         'tax_number' => 'encrypted',
     ];
 
-    public function bills()
+    /** @return HasMany<Bill, $this> */
+    public function bills(): HasMany
     {
         return $this->hasMany(Bill::class);
     }
 
-    public function expenses()
+    /** @return HasMany<Expense, $this> */
+    public function expenses(): HasMany
     {
         return $this->hasMany(Expense::class);
     }
 
-    public function payments()
+    /** @return HasMany<PaymentMade, $this> */
+    public function payments(): HasMany
     {
         return $this->hasMany(PaymentMade::class);
     }

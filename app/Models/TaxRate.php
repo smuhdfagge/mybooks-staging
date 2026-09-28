@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -43,19 +46,22 @@ class TaxRate extends Model
     const APPLIES_TO_PURCHASES = 'purchases';
     const APPLIES_TO_BOTH = 'both';
 
-    public function tenant()
+    /** @return BelongsTo<Tenant, $this> */
+    public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
     }
 
-    public function taxGroups()
+    /** @return BelongsToMany<TaxGroup, $this> */
+    public function taxGroups(): BelongsToMany
     {
         return $this->belongsToMany(TaxGroup::class, 'tax_group_rates')
             ->withPivot('sort_order')
             ->withTimestamps();
     }
 
-    public function items()
+    /** @return HasMany<Item, $this> */
+    public function items(): HasMany
     {
         return $this->hasMany(Item::class);
     }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -46,16 +47,20 @@ class BudgetLine extends Model
 
     /**
      * Get the budget for this line
+     *
+     * @return BelongsTo<Budget, $this>
      */
-    public function budget()
+    public function budget(): BelongsTo
     {
         return $this->belongsTo(Budget::class);
     }
 
     /**
      * Get the account for this line
+     *
+     * @return BelongsTo<ChartOfAccount, $this>
      */
-    public function account()
+    public function account(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class, 'account_id');
     }

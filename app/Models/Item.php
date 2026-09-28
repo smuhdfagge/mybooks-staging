@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -51,17 +54,20 @@ class Item extends Model
         'reorder_level' => 'integer',
     ];
 
-    public function category()
+    /** @return BelongsTo<ItemCategory, $this> */
+    public function category(): BelongsTo
     {
         return $this->belongsTo(ItemCategory::class, 'category_id');
     }
 
-    public function taxRate()
+    /** @return BelongsTo<TaxRate, $this> */
+    public function taxRate(): BelongsTo
     {
         return $this->belongsTo(TaxRate::class);
     }
 
-    public function taxGroup()
+    /** @return BelongsTo<TaxGroup, $this> */
+    public function taxGroup(): BelongsTo
     {
         return $this->belongsTo(TaxGroup::class);
     }
@@ -134,52 +140,62 @@ class Item extends Model
         return $amount * (($this->tax_rate ?? 0) / 100);
     }
 
-    public function inventory()
+    /** @return HasOne<Inventory, $this> */
+    public function inventory(): HasOne
     {
         return $this->hasOne(Inventory::class);
     }
 
-    public function inventoryHistory()
+    /** @return HasMany<InventoryHistory, $this> */
+    public function inventoryHistory(): HasMany
     {
         return $this->hasMany(InventoryHistory::class);
     }
 
-    public function invoiceItems()
+    /** @return HasMany<InvoiceItem, $this> */
+    public function invoiceItems(): HasMany
     {
         return $this->hasMany(InvoiceItem::class);
     }
 
-    public function billItems()
+    /** @return HasMany<BillItem, $this> */
+    public function billItems(): HasMany
     {
         return $this->hasMany(BillItem::class);
     }
 
-    public function inventoryLayers()
+    /** @return HasMany<InventoryLayer, $this> */
+    public function inventoryLayers(): HasMany
     {
         return $this->hasMany(InventoryLayer::class);
     }
 
-    public function batches()
+    /** @return HasMany<InventoryBatch, $this> */
+    public function batches(): HasMany
     {
         return $this->hasMany(InventoryBatch::class);
     }
 
-    public function serialNumbers()
+    /** @return HasMany<SerialNumber, $this> */
+    public function serialNumbers(): HasMany
     {
         return $this->hasMany(SerialNumber::class);
     }
 
-    public function billOfMaterial()
+    /** @return HasOne<BillOfMaterial, $this> */
+    public function billOfMaterial(): HasOne
     {
         return $this->hasOne(BillOfMaterial::class);
     }
 
-    public function purchaseUom()
+    /** @return BelongsTo<UnitOfMeasure, $this> */
+    public function purchaseUom(): BelongsTo
     {
         return $this->belongsTo(UnitOfMeasure::class, 'purchase_uom_id');
     }
 
-    public function salesUom()
+    /** @return BelongsTo<UnitOfMeasure, $this> */
+    public function salesUom(): BelongsTo
     {
         return $this->belongsTo(UnitOfMeasure::class, 'sales_uom_id');
     }

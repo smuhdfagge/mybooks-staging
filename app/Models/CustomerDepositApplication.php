@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenant;
@@ -30,40 +31,50 @@ class CustomerDepositApplication extends Model
 
     /**
      * Get the customer this application belongs to
+     *
+     * @return BelongsTo<Customer, $this>
      */
-    public function customer()
+    public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
 
     /**
      * Get the original deposit payment
+     *
+     * @return BelongsTo<PaymentReceived, $this>
      */
-    public function depositPayment()
+    public function depositPayment(): BelongsTo
     {
         return $this->belongsTo(PaymentReceived::class, 'deposit_payment_id');
     }
 
     /**
      * Get the invoice this deposit was applied to
+     *
+     * @return BelongsTo<Invoice, $this>
      */
-    public function invoice()
+    public function invoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class);
     }
 
     /**
      * Get the payment record created when applying the deposit
+     *
+     * @return BelongsTo<PaymentReceived, $this>
      */
-    public function appliedPayment()
+    public function appliedPayment(): BelongsTo
     {
         return $this->belongsTo(PaymentReceived::class, 'applied_payment_id');
     }
 
     /**
      * Get the user who created this application
+     *
+     * @return BelongsTo<User, $this>
      */
-    public function createdBy()
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }

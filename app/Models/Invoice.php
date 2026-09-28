@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -53,57 +56,68 @@ class Invoice extends Model
         'total_refunded' => 'decimal:2',
     ];
 
-    public function tenant()
+    /** @return BelongsTo<Tenant, $this> */
+    public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
     }
 
-    public function customer()
+    /** @return BelongsTo<Customer, $this> */
+    public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
 
-    public function salesOrder()
+    /** @return BelongsTo<SalesOrder, $this> */
+    public function salesOrder(): BelongsTo
     {
         return $this->belongsTo(SalesOrder::class);
     }
 
-    public function items()
+    /** @return HasMany<InvoiceItem, $this> */
+    public function items(): HasMany
     {
         return $this->hasMany(InvoiceItem::class);
     }
 
-    public function payments()
+    /** @return HasMany<PaymentReceived, $this> */
+    public function payments(): HasMany
     {
         return $this->hasMany(PaymentReceived::class);
     }
 
-    public function refunds()
+    /** @return HasMany<InvoiceRefund, $this> */
+    public function refunds(): HasMany
     {
         return $this->hasMany(InvoiceRefund::class);
     }
 
-    public function creditNotes()
+    /** @return HasMany<CreditNote, $this> */
+    public function creditNotes(): HasMany
     {
         return $this->hasMany(CreditNote::class);
     }
 
-    public function creditNoteApplications()
+    /** @return HasMany<CreditNoteApplication, $this> */
+    public function creditNoteApplications(): HasMany
     {
         return $this->hasMany(CreditNoteApplication::class);
     }
 
-    public function deliveryNotes()
+    /** @return HasMany<DeliveryNote, $this> */
+    public function deliveryNotes(): HasMany
     {
         return $this->hasMany(DeliveryNote::class);
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function journal()
+    /** @return MorphOne<Journal, $this> */
+    public function journal(): MorphOne
     {
         return $this->morphOne(Journal::class, 'reference');
     }

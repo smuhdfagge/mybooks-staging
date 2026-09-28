@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenant;
@@ -22,17 +23,20 @@ class UomConversion extends Model
         'conversion_factor' => 'decimal:6',
     ];
 
-    public function item()
+    /** @return BelongsTo<Item, $this> */
+    public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class);
     }
 
-    public function fromUom()
+    /** @return BelongsTo<UnitOfMeasure, $this> */
+    public function fromUom(): BelongsTo
     {
         return $this->belongsTo(UnitOfMeasure::class, 'from_uom_id');
     }
 
-    public function toUom()
+    /** @return BelongsTo<UnitOfMeasure, $this> */
+    public function toUom(): BelongsTo
     {
         return $this->belongsTo(UnitOfMeasure::class, 'to_uom_id');
     }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -29,17 +30,20 @@ class BillItem extends Model
         'total' => 'decimal:2',
     ];
 
-    public function bill()
+    /** @return BelongsTo<Bill, $this> */
+    public function bill(): BelongsTo
     {
         return $this->belongsTo(Bill::class);
     }
 
-    public function item()
+    /** @return BelongsTo<Item, $this> */
+    public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class);
     }
 
-    public function account()
+    /** @return BelongsTo<ChartOfAccount, $this> */
+    public function account(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class, 'account_id');
     }

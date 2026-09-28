@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -22,12 +23,14 @@ class BomItem extends Model
         'waste_percentage' => 'decimal:2',
     ];
 
-    public function billOfMaterial()
+    /** @return BelongsTo<BillOfMaterial, $this> */
+    public function billOfMaterial(): BelongsTo
     {
         return $this->belongsTo(BillOfMaterial::class, 'bill_of_materials_id');
     }
 
-    public function item()
+    /** @return BelongsTo<Item, $this> */
+    public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class);
     }

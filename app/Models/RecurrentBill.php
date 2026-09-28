@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -36,22 +38,26 @@ class RecurrentBill extends Model
         'total' => 'decimal:2',
     ];
 
-    public function vendor()
+    /** @return BelongsTo<Vendor, $this> */
+    public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class);
     }
 
-    public function items()
+    /** @return HasMany<RecurrentBillItem, $this> */
+    public function items(): HasMany
     {
         return $this->hasMany(RecurrentBillItem::class);
     }
 
-    public function bills()
+    /** @return HasMany<Bill, $this> */
+    public function bills(): HasMany
     {
         return $this->hasMany(Bill::class, 'recurrent_bill_id');
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
