@@ -633,4 +633,80 @@ class Phase3RegressionTest extends TestCase
 
         $this->assertSame(1075.0, $this->accountBalance($this->tenant->id, '1100'));
     }
+
+    // ── M4: invoice saving, stock and tax ───────────────────────
+
+    private function invoiceForm(int $customerId, array $lines): array
+    {
+        return [
+            'customer_id' => $customerId, 'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(), 'items' => $lines,
+        ];
+    }
+
+    public function test_m4_a_failure_while_saving_leaves_no_half_made_invoice(): void
+    {
+        $this->createAuthenticatedUser(['create invoices']);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        \App\Models\InvoiceItem::creating(function ($line) {
+            if ($line->description === 'Second line') {
+                throw new \RuntimeException('Simulated failure');
+            }
+        });
+
+        $this->withoutExceptionHandling();
+        try {
+            $this->post(route('invoices.store'), $this->invoiceForm($customer->id, [
+                ['description' => 'First line', 'quantity' => 1, 'unit_price' => 100],
+                ['description' => 'Second line', 'quantity' => 1, 'unit_price' => 100],
+            ]));
+            $this->fail('Expected the simulated failure');
+        } catch (\RuntimeException $e) {
+            $this->assertSame('Simulated failure', $e->getMessage());
+        }
+
+        $this->assertSame(0, Invoice::count());
+        $this->assertSame(0, \App\Models\InvoiceItem::count());
+    }
+
+    public function test_m4_tax_rate_must_be_one_of_the_organisations_rates(): void
+    {
+        $this->createAuthenticatedUser(['create invoices']);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        \App\Models\TaxRate::create(['tenant_id' => $this->tenant->id, 'name' => 'VAT', 'code' => 'VAT', 'rate' => 7.5, 'type' => 'exclusive', 'is_active' => true]);
+        $line = fn ($rate) => [['description' => 'Service', 'quantity' => 1, 'unit_price' => 100, 'tax_rate' => $rate]];
+
+        $this->post(route('invoices.store'), $this->invoiceForm($customer->id, $line(5)))
+            ->assertSessionHasErrors('items.0.tax_rate');
+        $this->post(route('invoices.store'), $this->invoiceForm($customer->id, $line(7.5)))
+            ->assertSessionHasNoErrors();
+        $this->post(route('invoices.store'), $this->invoiceForm($customer->id, $line(0)))
+            ->assertSessionHasNoErrors();
+    }
+
+    public function test_m4_organisation_without_tax_rates_keeps_free_entry(): void
+    {
+        $this->createAuthenticatedUser(['create invoices']);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $this->post(route('invoices.store'), $this->invoiceForm($customer->id, [
+            ['description' => 'Service', 'quantity' => 1, 'unit_price' => 100, 'tax_rate' => 5],
+        ]))->assertSessionHasNoErrors();
+    }
+
+    public function test_m4_release_refuses_to_hand_out_more_stock_than_exists(): void
+    {
+        $this->createAuthenticatedUser(['edit invoices']);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $item = \App\Models\Item::factory()->create(['tenant_id' => $this->tenant->id, 'type' => 'product', 'track_inventory' => true]);
+        $stock = \App\Models\Inventory::create(['tenant_id' => $this->tenant->id, 'item_id' => $item->id, 'quantity' => 2, 'reserved_quantity' => 5]);
+        $invoice = Invoice::factory()->paid()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000050']);
+        $invoice->items()->create(['item_id' => $item->id, 'description' => $item->name, 'quantity' => 5, 'unit_price' => 10, 'tax_rate' => 0, 'tax_amount' => 0, 'total' => 50]);
+
+        $this->post(route('invoices.release', $invoice))
+            ->assertSessionHas('error', fn ($message) => str_contains($message, 'Not enough stock to release'));
+
+        $this->assertEquals(2, (float) $stock->fresh()->quantity);
+        $this->assertNull($invoice->fresh()->released_at);
+    }
 }

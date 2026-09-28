@@ -160,13 +160,16 @@ class InvoiceController extends BaseApiController
         $validated['balance_due'] = $validated['total'];
         $validated['amount_paid'] = 0;
 
-        // Create invoice
-        $invoice = Invoice::create(collect($validated)->except('items')->toArray());
+        // Invoice and its lines are saved together (M4)
+        $invoice = DB::transaction(function () use ($validated) {
+            $invoice = Invoice::create(collect($validated)->except('items')->toArray());
 
-        // Create invoice items
-        foreach ($validated['items'] as $item) {
-            $invoice->items()->create($item);
-        }
+            foreach ($validated['items'] as $item) {
+                $invoice->items()->create($item);
+            }
+
+            return $invoice;
+        });
 
         $invoice->load(['customer', 'items.item']);
 
@@ -358,10 +361,15 @@ class InvoiceController extends BaseApiController
                 if ($invoiceItem->item_id) {
                     $inventory = Inventory::where('item_id', $invoiceItem->item_id)
                         ->where('tenant_id', $invoice->tenant_id)
+                        ->lockForUpdate()
                         ->first();
 
                     if ($inventory) {
-                        $inventory->quantity = max(0, $inventory->quantity - $invoiceItem->quantity);
+                        // Refuse rather than silently clamping stock at zero (M4)
+                        if ((float) $inventory->quantity < (float) $invoiceItem->quantity) {
+                            throw new \RuntimeException("Not enough stock to release {$invoiceItem->description}: {$inventory->quantity} on hand, {$invoiceItem->quantity} needed.");
+                        }
+                        $inventory->quantity = $inventory->quantity - $invoiceItem->quantity;
                         $inventory->reserved_quantity = max(0, $inventory->reserved_quantity - $invoiceItem->quantity);
                         $inventory->save();
 
