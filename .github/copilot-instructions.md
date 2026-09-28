@@ -99,8 +99,12 @@ Permissions follow `{action} {resource}` pattern:
 ### Inventory Management
 
 -   `track_inventory` flag on Items determines if stock is tracked
--   `reserved_quantity` holds stock for draft invoices
--   Release invoice → deduct from inventory, create COGS journal entry
+-   Creating or editing an invoice checks free stock and reserves it (`Invoice::stockShortages()`, `Invoice::reserveInventory()`); web and API both use these
+-   COGS is posted when the invoice is first posted (not on release). `StockValuationService::issue()` takes cost from the FIFO lots or the weighted average, and the cost is stored on each line as `unit_cost`, so later price changes don't rewrite past COGS
+-   Lots used by a sale are recorded in `inventory_layer_consumptions`; cancelling, deleting or editing the document gives them back (`returnStock()`)
+-   Release invoice → deducts the reserved quantity from on-hand stock (no new journal)
+-   Cash sales (sales receipts) check stock and reduce on-hand at once
+-   Bill lots are costed net of VAT
 
 ### Document Number Generation
 

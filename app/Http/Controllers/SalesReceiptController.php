@@ -44,6 +44,8 @@ class SalesReceiptController extends Controller
         ]);
         
         $receipt = DB::transaction(function () use ($tenantId, $validated) {
+            $this->assertStockAvailable($validated['items']);
+
             $receipt = SalesReceipt::create([
                 'tenant_id' => $tenantId,
                 'customer_id' => $validated['customer_id'] ?? null,
@@ -114,6 +116,8 @@ class SalesReceiptController extends Controller
         ]);
 
         DB::transaction(function () use ($salesReceipt, $validated) {
+            $this->assertStockAvailable($validated['items'], $salesReceipt);
+
             $salesReceipt->update([
                 'customer_id' => $validated['customer_id'] ?? null,
                 'receipt_date' => $validated['receipt_date'],
@@ -149,6 +153,46 @@ class SalesReceiptController extends Controller
         });
 
         return redirect()->route('sales-receipts.show', $salesReceipt)->with('success', 'Sales receipt updated successfully.');
+    }
+
+    /**
+     * A cash sale hands the goods over at once, so there must be enough
+     * unreserved stock. Stock this receipt already took (when editing) counts
+     * as available again. Rows are locked until the receipt is saved.
+     */
+    private function assertStockAvailable(array $lines, ?SalesReceipt $receipt = null): void
+    {
+        $tenantId = auth()->user()->tenant_id;
+        $needed = [];
+        foreach ($lines as $index => $line) {
+            if (! empty($line['item_id'])) {
+                $needed[$line['item_id']][] = [$index, (float) $line['quantity']];
+            }
+        }
+
+        $errors = [];
+        foreach ($needed as $itemId => $uses) {
+            $item = Item::find($itemId);
+            if (! $item || ! $item->track_inventory || $item->type === 'service') {
+                continue;
+            }
+
+            $inventory = \App\Models\Inventory::where('tenant_id', $tenantId)->where('item_id', $itemId)->lockForUpdate()->first();
+            $available = $inventory ? (float) $inventory->available_quantity : 0.0;
+            if ($receipt) {
+                $available += (float) \App\Models\InventoryLayerConsumption::where('source_type', SalesReceipt::class)
+                    ->where('source_id', $receipt->id)->where('item_id', $itemId)->where('reduced_on_hand', true)->sum('quantity');
+            }
+
+            $total = array_sum(array_column($uses, 1));
+            if ($total - $available > 0.00001) {
+                $errors["items.{$uses[0][0]}.quantity"] = "Not enough stock for '{$item->name}'. Available: ".rtrim(rtrim(number_format($available, 4, '.', ''), '0'), '.').", requested: {$total}.";
+            }
+        }
+
+        if ($errors) {
+            throw \Illuminate\Validation\ValidationException::withMessages($errors);
+        }
     }
 
     public function destroy(SalesReceipt $salesReceipt)

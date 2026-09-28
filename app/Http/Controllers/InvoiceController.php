@@ -442,39 +442,6 @@ class InvoiceController extends Controller
      */
     private function reserveInventoryForInvoice(Invoice $invoice): void
     {
-        $tenantId = auth()->user()->tenant_id;
-        
-        foreach ($invoice->items as $invoiceItem) {
-            if ($invoiceItem->item_id) {
-                // Get the item to check if it tracks inventory
-                $item = Item::find($invoiceItem->item_id);
-                
-                // Skip reservation for services or items that don't track inventory
-                if (!$item || !$item->track_inventory || $item->type === 'service') {
-                    continue;
-                }
-                
-                $inventory = Inventory::where('item_id', $invoiceItem->item_id)
-                    ->where('tenant_id', $tenantId)
-                    ->first();
-                
-                if ($inventory) {
-                    $inventory->reserved_quantity = ($inventory->reserved_quantity ?? 0) + $invoiceItem->quantity;
-                    $inventory->save();
-                    
-                    // Record inventory history
-                    InventoryHistory::create([
-                        'tenant_id' => $tenantId,
-                        'item_id' => $invoiceItem->item_id,
-                        'type' => 'reserved',
-                        'quantity' => $invoiceItem->quantity,
-                        'reference_type' => 'invoice',
-                        'reference_id' => $invoice->id,
-                        'notes' => "Reserved for Invoice #{$invoice->invoice_number}",
-                        'created_by' => auth()->id(),
-                    ]);
-                }
-            }
-        }
+        $invoice->reserveInventory();
     }
 }

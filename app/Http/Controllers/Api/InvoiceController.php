@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class InvoiceController extends BaseApiController
@@ -160,13 +161,21 @@ class InvoiceController extends BaseApiController
         $validated['balance_due'] = $validated['total'];
         $validated['amount_paid'] = 0;
 
-        // Invoice and its lines are saved together (M4)
-        $invoice = DB::transaction(function () use ($validated) {
+        // Invoice and its lines are saved together (M4), after checking there
+        // is enough stock, and the stock is reserved as the web form does.
+        $invoice = DB::transaction(function () use ($validated, $tenantId) {
+            $shortages = Invoice::stockShortages($validated['items'], $tenantId);
+            if ($shortages) {
+                throw ValidationException::withMessages($shortages);
+            }
+
             $invoice = Invoice::create(collect($validated)->except('items')->toArray());
 
             foreach ($validated['items'] as $item) {
                 $invoice->items()->create($item);
             }
+
+            $invoice->reserveInventory();
 
             return $invoice;
         });
@@ -251,14 +260,33 @@ class InvoiceController extends BaseApiController
             $validated['total'] = $subtotal + $taxAmount - $discountAmount;
             $validated['balance_due'] = $validated['total'] - $invoice->amount_paid;
 
-            // Update items
-            $invoice->items()->delete();
-            foreach ($validated['items'] as $item) {
-                $invoice->items()->create($item);
-            }
         }
 
-        $invoice->update(collect($validated)->except('items')->toArray());
+        DB::transaction(function () use ($validated, $invoice, $tenantId) {
+            if (isset($validated['items'])) {
+                // Same stock rules as the web form: this invoice's own
+                // reservation is given back, then the new lines are reserved.
+                if (! $invoice->isReleased()) {
+                    $shortages = Invoice::stockShortages($validated['items'], $tenantId, $invoice);
+                    if ($shortages) {
+                        throw ValidationException::withMessages($shortages);
+                    }
+                    $invoice->load('items');
+                    $invoice->releaseInventoryReservation();
+                }
+
+                $invoice->items()->delete();
+                foreach ($validated['items'] as $item) {
+                    $invoice->items()->create($item);
+                }
+            }
+
+            $invoice->update(collect($validated)->except('items')->toArray());
+
+            if (isset($validated['items'])) {
+                $invoice->reserveInventory();
+            }
+        });
         $invoice->load(['customer', 'items.item']);
 
         return $this->success(new InvoiceResource($invoice), 'Invoice updated successfully');
@@ -273,8 +301,14 @@ class InvoiceController extends BaseApiController
             return $this->error('Cannot delete invoice with payments', 422);
         }
 
-        $invoice->items()->delete();
-        $invoice->delete();
+        DB::transaction(function () use ($invoice) {
+            // Give the reserved stock back, as the web delete does
+            $invoice->load('items');
+            $invoice->releaseInventoryReservation();
+
+            $invoice->items()->delete();
+            $invoice->delete();
+        });
 
         return $this->success(null, 'Invoice deleted successfully');
     }

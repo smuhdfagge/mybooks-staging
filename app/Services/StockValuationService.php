@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Models\Inventory;
+use App\Models\InventoryHistory;
 use App\Models\InventoryLayer;
+use App\Models\InventoryLayerConsumption;
 use App\Models\Item;
 use Illuminate\Support\Facades\DB;
 
@@ -62,6 +64,149 @@ class StockValuationService
             'fifo' => $this->consumeFifo($item, $quantity, $warehouseId),
             default => $this->consumeWeightedAverage($item, $quantity, $warehouseId),
         };
+    }
+
+    /**
+     * Take stock out for a sales document and return its cost (findings M3, N6).
+     *
+     * The cost is decided here, once: FIFO uses the oldest cost layers first;
+     * weighted average uses the current average cost and takes the quantity
+     * from the layers in proportion. Stock beyond the recorded layers is costed
+     * at the item's cost price (FIFO) or the average (weighted average).
+     *
+     * Every piece taken is recorded against the document, so returnStock()
+     * can put back exactly what was taken if it is edited, cancelled or deleted.
+     *
+     * $reduceOnHand also lowers the quantity on hand (cash sales). Invoices
+     * leave it alone: their quantity is reserved when created and reduced
+     * when released.
+     */
+    public function issue(Item $item, float $quantity, string $sourceType, int $sourceId, bool $reduceOnHand = false, ?int $warehouseId = null): float
+    {
+        if ($quantity <= 0) {
+            return 0.0;
+        }
+
+        $layers = InventoryLayer::where('tenant_id', $item->tenant_id)
+            ->forItem($item->id, $warehouseId)
+            ->withStock()
+            ->lockForUpdate()
+            ->get();
+
+        $pieces = [];
+        $remaining = $quantity;
+
+        if (($item->valuation_method ?? 'weighted_average') === 'fifo') {
+            foreach ($layers as $layer) {
+                if ($remaining <= 0.00001) {
+                    break;
+                }
+                $take = min($remaining, (float) $layer->remaining_quantity);
+                $pieces[] = [$layer, $take, (float) $layer->unit_cost];
+                $remaining -= $take;
+            }
+            $fallbackCost = (float) ($item->cost_price ?? 0);
+        } else {
+            $average = $this->getWeightedAverageCost($item, $warehouseId);
+            $total = (float) $layers->sum('remaining_quantity');
+            foreach ($layers->values() as $index => $layer) {
+                if ($remaining <= 0.00001 || $total <= 0) {
+                    break;
+                }
+                $share = $index === $layers->count() - 1
+                    ? $remaining
+                    : round($quantity * (float) $layer->remaining_quantity / $total, 4);
+                $take = min($share, (float) $layer->remaining_quantity, $remaining);
+                if ($take > 0) {
+                    $pieces[] = [$layer, $take, $average];
+                    $remaining -= $take;
+                }
+            }
+            $fallbackCost = $average;
+        }
+
+        if ($remaining > 0.00001) {
+            $pieces[] = [null, $remaining, $fallbackCost];
+        }
+
+        $cost = 0.0;
+        foreach ($pieces as [$layer, $taken, $unitCost]) {
+            if ($layer) {
+                $layer->remaining_quantity = round((float) $layer->remaining_quantity - $taken, 4);
+                $layer->save();
+            }
+
+            InventoryLayerConsumption::create([
+                'tenant_id' => $item->tenant_id,
+                'item_id' => $item->id,
+                'inventory_layer_id' => $layer?->id,
+                'source_type' => $sourceType,
+                'source_id' => $sourceId,
+                'quantity' => round($taken, 4),
+                'unit_cost' => round($unitCost, 4),
+                'reduced_on_hand' => $reduceOnHand,
+            ]);
+
+            $cost += $taken * $unitCost;
+        }
+
+        if ($reduceOnHand) {
+            $this->adjustOnHand($item->tenant_id, $item->id, -$quantity, $sourceType, $sourceId, 'out');
+        }
+
+        return round($cost, 2);
+    }
+
+    /**
+     * Put back everything a document took with issue(). Safe to call when it
+     * took nothing.
+     */
+    public function returnStock(string $sourceType, int $sourceId): void
+    {
+        $taken = InventoryLayerConsumption::where('source_type', $sourceType)
+            ->where('source_id', $sourceId)
+            ->lockForUpdate()
+            ->get();
+
+        $onHand = [];
+        foreach ($taken as $row) {
+            if ($row->inventory_layer_id) {
+                InventoryLayer::whereKey($row->inventory_layer_id)
+                    ->increment('remaining_quantity', (float) $row->quantity);
+            }
+            if ($row->reduced_on_hand) {
+                $key = $row->tenant_id.':'.$row->item_id;
+                $onHand[$key] = ($onHand[$key] ?? 0) + (float) $row->quantity;
+            }
+            $row->delete();
+        }
+
+        foreach ($onHand as $key => $quantity) {
+            [$tenantId, $itemId] = array_map('intval', explode(':', $key));
+            $this->adjustOnHand($tenantId, $itemId, $quantity, $sourceType, $sourceId, 'in');
+        }
+    }
+
+    protected function adjustOnHand(int $tenantId, int $itemId, float $delta, string $sourceType, int $sourceId, string $type): void
+    {
+        $inventory = Inventory::where('tenant_id', $tenantId)->where('item_id', $itemId)->lockForUpdate()->first();
+        if (! $inventory) {
+            return;
+        }
+
+        $inventory->quantity = round((float) $inventory->quantity + $delta, 4);
+        $inventory->save();
+
+        InventoryHistory::create([
+            'tenant_id' => $tenantId,
+            'item_id' => $itemId,
+            'type' => $type,
+            'quantity' => $delta,
+            'reference_type' => strtolower(class_basename($sourceType)),
+            'reference_id' => $sourceId,
+            'notes' => ($delta < 0 ? 'Sold via ' : 'Returned from ').class_basename($sourceType)." #{$sourceId}",
+            'created_by' => auth()->id(),
+        ]);
     }
 
     /**

@@ -172,6 +172,106 @@ class Invoice extends Model
     }
 
     /**
+     * Check there is enough free stock for the given invoice lines.
+     *
+     * Lines for the same item are added together. When $existing is given
+     * (editing an invoice), the stock that invoice already holds counts as
+     * available, because it is released before the new lines are reserved.
+     * Inventory rows are locked, so call this inside a transaction.
+     *
+     * @param  array<int, array{item_id?: mixed, quantity: mixed}>  $lines
+     * @return array<string, string> validation errors keyed by field
+     */
+    public static function stockShortages(array $lines, int $tenantId, ?self $existing = null): array
+    {
+        $requested = [];
+        $firstLine = [];
+        foreach ($lines as $index => $line) {
+            if (empty($line['item_id'])) {
+                continue;
+            }
+            $id = (int) $line['item_id'];
+            $requested[$id] = ($requested[$id] ?? 0) + (float) $line['quantity'];
+            $firstLine[$id] ??= $index;
+        }
+
+        $heldByThisInvoice = [];
+        if ($existing && ! $existing->isReleased()) {
+            foreach ($existing->items()->get() as $line) {
+                if ($line->item_id) {
+                    $heldByThisInvoice[$line->item_id] = ($heldByThisInvoice[$line->item_id] ?? 0) + (float) $line->quantity;
+                }
+            }
+        }
+
+        $errors = [];
+        foreach ($requested as $itemId => $quantity) {
+            $item = Item::find($itemId);
+            if (! $item || ! $item->track_inventory || $item->type === 'service') {
+                continue;
+            }
+
+            $inventory = Inventory::where('item_id', $itemId)
+                ->where('tenant_id', $tenantId)
+                ->lockForUpdate()
+                ->first();
+
+            $available = ($inventory ? (float) $inventory->available_quantity : 0) + ($heldByThisInvoice[$itemId] ?? 0);
+
+            if ($quantity - $available > 0.00001) {
+                $errors["items.{$firstLine[$itemId]}.quantity"] =
+                    "Insufficient stock for '{$item->name}'. Available: {$available}, Requested: {$quantity}";
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Reserve stock for this invoice's lines (moves it from available to
+     * reserved). Services and items that don't track stock are skipped.
+     */
+    public function reserveInventory(): void
+    {
+        if ($this->isReleased()) {
+            return;
+        }
+
+        foreach ($this->items()->get() as $invoiceItem) {
+            if (! $invoiceItem->item_id) {
+                continue;
+            }
+
+            $item = Item::find($invoiceItem->item_id);
+            if (! $item || ! $item->track_inventory || $item->type === 'service') {
+                continue;
+            }
+
+            $inventory = Inventory::where('item_id', $invoiceItem->item_id)
+                ->where('tenant_id', $this->tenant_id)
+                ->first();
+
+            if (! $inventory) {
+                continue;
+            }
+
+            $inventory->reserved_quantity = ($inventory->reserved_quantity ?? 0) + $invoiceItem->quantity;
+            $inventory->save();
+
+            InventoryHistory::create([
+                'tenant_id' => $this->tenant_id,
+                'item_id' => $invoiceItem->item_id,
+                'type' => 'reserved',
+                'quantity' => $invoiceItem->quantity,
+                'reference_type' => 'invoice',
+                'reference_id' => $this->id,
+                'notes' => "Reserved for Invoice #{$this->invoice_number}",
+                'created_by' => auth()->id(),
+            ]);
+        }
+    }
+
+    /**
      * Release inventory reservation for invoice items
      * This moves quantity from reserved back to available
      * Only releases for items that track inventory (products, not services)
