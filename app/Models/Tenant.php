@@ -123,13 +123,26 @@ class Tenant extends Model
     }
 
     /**
-     * Get the active subscription
+     * The subscription that currently gives access: status active and the
+     * paid period not yet over (finding C1). One with no end date was
+     * granted open-ended by an admin.
      */
     public function activeSubscription()
     {
         return $this->hasOne(Subscription::class)
-                    ->where('status', Subscription::STATUS_ACTIVE)
-                    ->latest();
+            ->where('status', Subscription::STATUS_ACTIVE)
+            ->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>', now()))
+            ->latest('ends_at')
+            ->latest('id');
+    }
+
+    /**
+     * The most recent subscription of any status (for renewing one that has
+     * run out, or paying for one started at sign-up).
+     */
+    public function latestSubscription()
+    {
+        return $this->hasOne(Subscription::class)->latestOfMany();
     }
 
     /**

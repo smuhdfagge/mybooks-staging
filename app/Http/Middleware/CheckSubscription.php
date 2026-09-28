@@ -77,7 +77,9 @@ class CheckSubscription
      */
     protected function redirectWithError(Request $request, string $message): Response
     {
-        if ($request->expectsJson()) {
+        // Livewire updates ask for JSON but act on redirects, so send them
+        // to the subscription page like a normal page load.
+        if ($request->expectsJson() && ! $request->hasHeader('X-Livewire')) {
             return response()->json([
                 'message' => $message,
                 'subscription_required' => true,

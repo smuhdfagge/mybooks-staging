@@ -87,9 +87,11 @@ class AppServiceProvider extends ServiceProvider
 
         // Livewire component actions are sent to /livewire/update, not to the
         // page's route, so page middleware does not run on them unless it is
-        // marked persistent. Keep deactivated users out of open pages (H1).
+        // marked persistent. Keep deactivated users (H1) and tenants whose
+        // subscription has ended (C1) out of pages they already have open.
         \Livewire\Livewire::addPersistentMiddleware([
             \App\Http\Middleware\EnsureAccountActive::class,
+            \App\Http\Middleware\CheckSubscription::class,
         ]);
 
         // Implicitly grant "Super Admin" role all permissions

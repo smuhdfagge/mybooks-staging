@@ -184,24 +184,10 @@ class RegisterWizard extends Component
                 'is_active' => true,
             ]);
 
-            // Create subscription
-            $amount = $plan->getPriceForCycle($this->billing_cycle);
-            $startsAt = now();
-            $endsAt = $this->billing_cycle === Subscription::CYCLE_MONTHLY 
-                ? $startsAt->copy()->addMonth() 
-                : $startsAt->copy()->addYear();
-
-            Subscription::create([
-                'tenant_id' => $tenant->id,
-                'plan_id' => $plan->id,
-                'billing_cycle' => $this->billing_cycle,
-                'status' => Subscription::STATUS_ACTIVE,
-                'amount' => $amount,
-                'currency' => $this->currency,
-                'trial_ends_at' => null,
-                'starts_at' => $startsAt,
-                'ends_at' => $endsAt,
-            ]);
+            // The subscription waits for payment (finding C1). A free plan
+            // is switched on straight away.
+            app(\App\Services\Billing\SubscriptionBilling::class)
+                ->startPendingSubscription($tenant, $plan, $this->billing_cycle);
 
             // Create the admin user
             $user = User::create([

@@ -39,6 +39,7 @@ class Subscription extends Model
     /**
      * Status constants
      */
+    const STATUS_PENDING = 'pending'; // signed up, not yet paid
     const STATUS_ACTIVE = 'active';
     const STATUS_CANCELLED = 'cancelled';
     const STATUS_EXPIRED = 'expired';
@@ -120,17 +121,44 @@ class Subscription extends Model
     }
 
     /**
-     * Cancel the subscription
+     * Cancel the subscription (finding M1).
+     *
+     * The tenant has paid for the current period, so the subscription stays
+     * active with cancelled_at set and access continues until ends_at. The
+     * daily subscriptions:expire command closes it after that.
      */
     public function cancel(?string $reason = null): self
     {
         $this->update([
-            'status' => self::STATUS_CANCELLED,
             'cancelled_at' => now(),
             'cancellation_reason' => $reason,
         ]);
 
         return $this;
+    }
+
+    /**
+     * Undo a cancellation. Only possible while the paid period is still
+     * running; after that the tenant has to pay again.
+     */
+    public function reactivate(): bool
+    {
+        if ($this->status !== self::STATUS_ACTIVE || $this->hasExpired()) {
+            return false;
+        }
+
+        $this->update(['cancelled_at' => null, 'cancellation_reason' => null]);
+
+        return true;
+    }
+
+    /**
+     * Active, and the paid period has not ended. A subscription with no end
+     * date (granted by an admin) counts as running.
+     */
+    public function isRunning(): bool
+    {
+        return $this->isActive() && ! $this->hasExpired();
     }
 
     /**

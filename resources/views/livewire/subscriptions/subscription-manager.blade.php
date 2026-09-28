@@ -16,6 +16,12 @@
             </div>
         @endif
 
+        @if (session()->has('error'))
+            <div class="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                <p class="text-sm text-red-800 dark:text-red-200">{{ session('error') }}</p>
+            </div>
+        @endif
+
         <!-- Current Subscription Card -->
         <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden mb-8">
             <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
@@ -36,12 +42,13 @@
                                 <h4 class="text-xl font-bold text-gray-900 dark:text-white">{{ $currentPlan->name }} Plan</h4>
                                 <div class="flex items-center mt-1">
                                     <span class="px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                        @if($currentSubscription->status === 'active') bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
+                                        @if($currentSubscription->isCancelled()) bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
+                                        @elseif($currentSubscription->status === 'active') bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
                                         @elseif($currentSubscription->status === 'cancelled') bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
                                         @elseif($currentSubscription->status === 'past_due') bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
                                         @else bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200
                                         @endif">
-                                        {{ ucfirst(str_replace('_', ' ', $currentSubscription->status)) }}
+                                        {{ $currentSubscription->isCancelled() ? 'Cancelled' : ucfirst(str_replace('_', ' ', $currentSubscription->status)) }}
                                     </span>
                                     <span class="mx-2 text-gray-400">•</span>
                                     <span class="text-sm text-gray-600 dark:text-gray-400">{{ ucfirst($currentSubscription->billing_cycle) }} billing</span>
@@ -72,17 +79,22 @@
                                         Next Billing Date
                                     @endif
                                 </div>
-                                <div class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{{ $currentSubscription->ends_at->format('M d, Y') }}</div>
+                                <div class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{{ $currentSubscription->ends_at?->format('M d, Y') ?? 'No end date' }}</div>
                             </div>
                             <div>
                                 <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Days Remaining</div>
-                                <div class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{{ $currentSubscription->daysUntilExpiration() }} days</div>
+                                <div class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{{ $currentSubscription->daysUntilExpiration() ?? '—' }} days</div>
                             </div>
                         </div>
                     </div>
 
                     @if($canManage)
                     <div class="mt-6 flex flex-wrap gap-3">
+                        @if($currentSubscription->ends_at && (float) $currentSubscription->amount > 0)
+                        <button wire:click="renew" wire:loading.attr="disabled" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition">
+                            Pay for another {{ $currentSubscription->billing_cycle === 'annual' ? 'year' : 'month' }}
+                        </button>
+                        @endif
                         <button wire:click="openUpgradeModal" class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
@@ -113,15 +125,37 @@
                         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
-                        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No active subscription</h3>
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by choosing a plan below.</p>
-                        <div class="mt-6">
+                        @if($pendingSubscription)
+                            <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Finish setting up your subscription</h3>
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                You chose the {{ $pendingSubscription->plan?->name }} plan, billed {{ $pendingSubscription->billing_cycle === 'annual' ? 'yearly' : 'monthly' }}
+                                (₦{{ number_format((float) $pendingSubscription->amount, 2) }}). Pay to start using MyBooks.
+                            </p>
+                        @elseif($lapsedSubscription)
+                            <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Your subscription has ended</h3>
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                Your {{ $lapsedSubscription->plan?->name }} plan ended{{ $lapsedSubscription->ends_at ? ' on '.$lapsedSubscription->ends_at->format('M d, Y') : '' }}. Your data is safe; renew to get back in.
+                            </p>
+                        @else
+                            <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No active subscription</h3>
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by choosing a plan below.</p>
+                        @endif
+                        <div class="mt-6 flex flex-wrap justify-center gap-3">
+                            @if($canManage && $pendingSubscription)
+                            <button wire:click="payPending" wire:loading.attr="disabled" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition">
+                                Pay now
+                            </button>
+                            @elseif($canManage && $lapsedSubscription?->plan?->is_active)
+                            <button wire:click="renew" wire:loading.attr="disabled" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition">
+                                Renew {{ $lapsedSubscription->plan->name }}
+                            </button>
+                            @endif
                             @if($canManage)
                             <button wire:click="openUpgradeModal" class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                                 </svg>
-                                Choose a Plan
+                                {{ $pendingSubscription || $lapsedSubscription ? 'Choose a different plan' : 'Choose a Plan' }}
                             </button>
                             @else
                             <p class="text-sm text-gray-500 dark:text-gray-400">Ask an administrator to choose a plan.</p>
@@ -255,7 +289,7 @@
                     </div>
                     <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                         <button wire:click="changePlan" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
-                            Confirm Change
+                            Continue to payment
                         </button>
                         <button wire:click="closeUpgradeModal" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-600 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                             Cancel
