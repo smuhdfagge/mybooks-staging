@@ -22,6 +22,7 @@ class SalesReceiptItem extends Model
     ];
 
     protected $casts = [
+        'unit_cost' => 'decimal:4',
         'quantity' => 'decimal:2',
         'unit_price' => 'decimal:2',
         'discount' => 'decimal:2',

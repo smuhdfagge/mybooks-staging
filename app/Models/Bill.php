@@ -142,8 +142,12 @@ class Bill extends Model
                         );
                         
                         // Update weighted average cost
+                        // Cost per unit excludes VAT: the tax goes to input tax in the
+                        // journal, so including it here would put VAT into COGS.
+                        $netLine = ($billItem->total ?? ($billItem->unit_price * $billItem->quantity))
+                            - (float) ($billItem->tax_amount ?? 0);
                         $unitCost = $billItem->quantity > 0
-                            ? ($billItem->total ?? ($billItem->unit_price * $billItem->quantity)) / $billItem->quantity
+                            ? round($netLine / $billItem->quantity, 4)
                             : ($item->cost_price ?? 0);
                         $valuationService = app(\App\Services\StockValuationService::class);
                         $valuationService->updateWeightedAverageCost($inventory, $billItem->quantity, $unitCost);

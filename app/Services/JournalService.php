@@ -156,8 +156,10 @@ class JournalService implements JournalServiceInterface
     public function createInvoiceJournal(Invoice $invoice): ?Journal
     {
         if ($invoice->status === 'cancelled') {
-            // A cancelled invoice keeps its original journal plus a reversal (C5).
+            // A cancelled invoice keeps its original journal plus a reversal (C5),
+            // and the stock it took goes back into its cost layers.
             $this->reverseDocumentJournal(Invoice::class, $invoice->id, 'Invoice cancelled');
+            $this->returnDocumentStock(Invoice::class, $invoice->id);
 
             return null;
         }
@@ -235,19 +237,7 @@ class JournalService implements JournalServiceInterface
      */
     protected function calculateCOGS(Invoice $invoice): float
     {
-        $cogs = 0;
-        $valuationService = app(StockValuationService::class);
-
-        foreach ($invoice->items as $invoiceItem) {
-            if ($invoiceItem->item && $invoiceItem->item->track_inventory) {
-                $cogs += $valuationService->calculateCogs(
-                    $invoiceItem->item,
-                    $invoiceItem->quantity
-                );
-            }
-        }
-
-        return $cogs;
+        return $this->documentCogs($invoice, Invoice::class, false);
     }
 
     /**
@@ -980,19 +970,53 @@ class JournalService implements JournalServiceInterface
      */
     protected function calculateSalesReceiptCOGS(SalesReceipt $receipt): float
     {
-        $cogs = 0;
-        $valuationService = app(StockValuationService::class);
+        // A cash sale hands the goods over now, so it also lowers stock on hand.
+        return $this->documentCogs($receipt, SalesReceipt::class, true);
+    }
 
-        foreach ($receipt->items as $receiptItem) {
-            if ($receiptItem->item && $receiptItem->item->track_inventory) {
-                $cogs += $valuationService->calculateCogs(
-                    $receiptItem->item,
-                    $receiptItem->quantity
-                );
+    /**
+     * Cost of goods sold for an invoice or sales receipt (findings M3, N6).
+     *
+     * Each stock line's cost is decided once, when the document is first
+     * posted, and stored on the line (unit_cost). Later rebuilds of the
+     * journal (payments, status changes) reuse the stored cost, so changing
+     * an item's cost price no longer rewrites past COGS.
+     *
+     * If a line has no stored cost (first posting, or the lines were
+     * replaced by an edit), everything the document took is put back and all
+     * its lines are costed again.
+     */
+    protected function documentCogs($document, string $documentType, bool $reduceOnHand): float
+    {
+        $lines = $document->items()->with('item')->get();
+        $stockLines = $lines->filter(fn ($line) => $line->item && $line->item->track_inventory && (float) $line->quantity > 0);
+
+        if ($stockLines->contains(fn ($line) => $line->unit_cost === null)) {
+            $valuation = app(StockValuationService::class);
+            $valuation->returnStock($documentType, $document->id);
+
+            foreach ($stockLines as $line) {
+                $cost = $valuation->issue($line->item, (float) $line->quantity, $documentType, $document->id, $reduceOnHand);
+                $line->forceFill(['unit_cost' => round($cost / (float) $line->quantity, 4)])->saveQuietly();
             }
         }
 
-        return $cogs;
+        $cogs = 0.0;
+        foreach ($stockLines as $line) {
+            $cogs += round((float) $line->unit_cost * (float) $line->quantity, 2);
+        }
+
+        return round($cogs, 2);
+    }
+
+    /**
+     * Put back the stock a sales document took (when it is cancelled or deleted).
+     */
+    protected function returnDocumentStock(string $referenceType, int $referenceId): void
+    {
+        if (in_array($referenceType, [Invoice::class, SalesReceipt::class], true)) {
+            app(StockValuationService::class)->returnStock($referenceType, $referenceId);
+        }
     }
 
     /**
@@ -1365,6 +1389,8 @@ class JournalService implements JournalServiceInterface
      */
     public function deleteJournalForTransaction(string $referenceType, int $referenceId, ?int $tenantId = null): void
     {
+        $this->returnDocumentStock($referenceType, $referenceId);
+
         foreach ($this->journalsForTransaction($referenceType, $referenceId, $tenantId) as $journal) {
             if ($journal->status === 'posted' && ! str_starts_with((string) $journal->reference, 'REV-')) {
                 $this->reverseJournal($journal, class_basename($referenceType).' deleted');
