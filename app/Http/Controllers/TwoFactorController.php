@@ -43,7 +43,7 @@ class TwoFactorController extends Controller
         return view('auth.two-factor.setup', [
             'qrCodeSvg' => $qrCodeSvg,
             'secret' => $secret,
-            'isEnabled' => ! is_null($user->two_factor_confirmed_at),
+            'isEnabled' => false,
         ]);
     }
 

@@ -76,8 +76,8 @@ class ErrorAlerter
             $lines[] = 'Page:     console / queue';
         }
 
-        $lines[] = 'User ID:  '.($user?->id ?? '-');
-        $lines[] = 'Business: '.($user?->tenant_id ?? '-');
+        $lines[] = 'User ID:  '.($user ? $user->id : '-');
+        $lines[] = 'Business: '.($user ? $user->tenant_id : '-');
         $lines[] = '';
         $lines[] = 'The full stack trace is in storage/logs on the server. This error';
         $lines[] = 'will not be emailed again for an hour.';
