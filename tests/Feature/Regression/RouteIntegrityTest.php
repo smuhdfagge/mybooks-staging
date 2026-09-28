@@ -22,8 +22,6 @@ class RouteIntegrityTest extends TestCase
     ];
 
     private const KNOWN_MISSING_VIEWS = [
-        // Unrouted TenantManagementController (L3, to be deleted)
-        'tenants.index', 'tenants.list', 'tenants.show',
     ];
 
     /**
