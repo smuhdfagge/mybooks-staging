@@ -414,7 +414,8 @@ class InvoiceController extends BaseApiController
         $invoice->load(['customer', 'items.item', 'tenant']);
         $tenant = $invoice->tenant ?? auth()->user()->tenant;
 
-        $pdf = Pdf::loadView('invoices.pdf', compact('invoice', 'tenant'));
+        // Same layout as the web print page ('invoices.pdf' never existed, N9)
+        $pdf = Pdf::loadView('invoices.print', compact('invoice', 'tenant'));
 
         return $pdf->download("invoice-{$invoice->invoice_number}.pdf");
     }

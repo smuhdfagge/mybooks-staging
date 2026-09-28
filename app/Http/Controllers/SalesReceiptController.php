@@ -89,6 +89,18 @@ class SalesReceiptController extends Controller
         return view('sales-receipts.show', compact('salesReceipt'));
     }
 
+    /**
+     * Download the receipt as a PDF (the route existed without a method, N9).
+     */
+    public function pdf(SalesReceipt $salesReceipt)
+    {
+        $salesReceipt->load(['customer', 'items.item', 'tenant']);
+        $tenant = $salesReceipt->tenant ?? auth()->user()->tenant;
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('sales-receipts.print', compact('salesReceipt', 'tenant'))
+            ->download("sales-receipt-{$salesReceipt->receipt_number}.pdf");
+    }
+
     public function edit(SalesReceipt $salesReceipt)
     {
         $customers = Customer::where('is_active', true)->get();

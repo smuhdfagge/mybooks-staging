@@ -54,4 +54,29 @@ class Phase6RegressionTest extends TestCase
     {
         $this->assertFalse(Route::has('invoices.mark-paid'));
     }
+
+    public function test_n9_sales_receipt_downloads_as_pdf(): void
+    {
+        $this->createAuthenticatedUser(['view sales-receipts']);
+        $customer = \App\Models\Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $receipt = \App\Models\SalesReceipt::create([
+            'tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'receipt_number' => 'SR-000001',
+            'receipt_date' => now(), 'payment_method' => 'cash', 'subtotal' => 100, 'tax_amount' => 0, 'total' => 100,
+        ]);
+        $receipt->items()->create(['description' => 'Rice', 'quantity' => 2, 'unit_price' => 50, 'tax_rate' => 0, 'tax_amount' => 0, 'total' => 100]);
+
+        $response = $this->get(route('sales-receipts.pdf', $receipt))->assertOk();
+        $this->assertSame('application/pdf', $response->headers->get('content-type'));
+        $this->assertStringStartsWith('%PDF', $response->getContent());
+    }
+
+    public function test_n9_api_invoice_downloads_as_pdf(): void
+    {
+        $this->createAuthenticatedUser(['view invoices']);
+        $customer = \App\Models\Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $invoice = \App\Models\Invoice::factory()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000777']);
+
+        $response = $this->actingAs($this->user, 'sanctum')->get("/api/v1/invoices/{$invoice->id}/pdf")->assertOk();
+        $this->assertStringStartsWith('%PDF', $response->getContent());
+    }
 }

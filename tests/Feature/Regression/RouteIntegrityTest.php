@@ -25,7 +25,6 @@ class RouteIntegrityTest extends TestCase
         'App\Http\Controllers\Api\ReportController@employerContributions',
         'App\Http\Controllers\Api\ReportController@bankDisbursement',
         'App\Http\Controllers\Api\ReportController@salaryRevisionHistory',
-        'App\Http\Controllers\SalesReceiptController@pdf',
     ];
 
     private const KNOWN_MISSING_VIEWS = [
@@ -97,7 +96,8 @@ class RouteIntegrityTest extends TestCase
 
         $files = (new Finder)->files()->in(app_path())->name('*.php');
         foreach ($files as $file) {
-            preg_match_all("/\\bview\\(\\s*['\"]([a-z0-9_.\\-]+)['\"]/i", $file->getContents(), $m);
+            // view('x'), View::make('x') and Pdf::loadView('x')
+            preg_match_all("/\\b(?:view|make|loadView)\\(\\s*['\"]([a-z0-9_.\\-]+)['\"]/i", $file->getContents(), $m);
             foreach ($m[1] as $name) {
                 if (! View::exists($name)) {
                     $missing[] = $name;
