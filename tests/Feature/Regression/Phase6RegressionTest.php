@@ -10,6 +10,8 @@ use Tests\TestCase;
  */
 class Phase6RegressionTest extends TestCase
 {
+    use \Tests\Support\AssertsLedger;
+
     public function test_n4_unfinished_modules_are_off_by_default(): void
     {
         foreach (config('mybooks.features') as $feature => $on) {
@@ -333,5 +335,92 @@ class Phase6RegressionTest extends TestCase
 
         // It can be tried again from the page
         $this->get(route('payroll-batches.show', $batch))->assertOk()->assertSee('Try Again');
+    }
+
+    /** A 500 credit note (465.12 + 7.5% VAT) for $customerId, created through the page. */
+    private function creditNote(int $customerId): \App\Models\CreditNote
+    {
+        $this->post(route('credit-notes.store'), [
+            'customer_id' => $customerId, 'credit_note_date' => now()->toDateString(), 'reason' => 'product_return',
+            'items' => [['description' => 'Returned goods', 'quantity' => 1, 'unit_price' => 465.12, 'tax_rate' => 7.5]],
+        ])->assertSessionHasNoErrors();
+
+        return \App\Models\CreditNote::latest('id')->firstOrFail();
+    }
+
+    public function test_n5_credit_note_posts_to_the_ledger_and_survives_a_payment(): void
+    {
+        config(['mybooks.features.credit_notes' => true]);
+        $this->createAuthenticatedUser(['create invoices', 'edit invoices', 'view invoices', 'create payments-received']);
+        $t = $this->tenant->id;
+        $customer = \App\Models\Customer::factory()->create(['tenant_id' => $t]);
+        $invoice = \App\Models\Invoice::factory()->sent()->create(['tenant_id' => $t, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000500']);
+        $this->assertSame(1075.0, $this->accountBalance($t, '1200'));
+
+        $cn = $this->creditNote($customer->id);
+        $this->assertSame(500.0, (float) $cn->total);
+        $this->assertSame(1075.0, $this->accountBalance($t, '1200'), 'a draft posts nothing');
+
+        $this->post(route('credit-notes.open', $cn))->assertSessionHas('success');
+        $this->assertSame(575.0, $this->accountBalance($t, '1200'));
+        $this->assertSame(round(1000 - 465.12, 2), $this->accountBalance($t, '4000'));
+        $this->assertSame(round(75 - 34.88, 2), $this->accountBalance($t, '2400'));
+
+        $this->post(route('credit-notes.apply.store', $cn), ['invoice_id' => $invoice->id, 'amount' => 500])->assertSessionHas('success');
+        $this->assertSame(575.0, (float) $invoice->fresh()->balance_due);
+
+        // The probe from the plan: 1,075 invoice, 500 credit, 100 payment -> 475
+        $this->post(route('payments-received.store'), [
+            'customer_id' => $customer->id, 'invoice_id' => $invoice->id, 'payment_date' => now()->toDateString(),
+            'amount' => 100, 'payment_method' => 'cash',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame(475.0, (float) $invoice->fresh()->balance_due);
+        $this->assertSame('partial', $invoice->fresh()->status);
+        $this->assertSame(475.0, $this->accountBalance($t, '1200'));
+        $this->assertStoredBalancesMatchLedger($t);
+    }
+
+    public function test_n5_credit_note_cannot_be_applied_to_another_customers_invoice(): void
+    {
+        config(['mybooks.features.credit_notes' => true]);
+        $this->createAuthenticatedUser(['create invoices', 'edit invoices', 'view invoices']);
+        $t = $this->tenant->id;
+        $mine = \App\Models\Customer::factory()->create(['tenant_id' => $t]);
+        $other = \App\Models\Customer::factory()->create(['tenant_id' => $t]);
+        $theirInvoice = \App\Models\Invoice::factory()->sent()->create(['tenant_id' => $t, 'customer_id' => $other->id, 'invoice_number' => 'INV-000501']);
+
+        $cn = $this->creditNote($mine->id);
+        $this->post(route('credit-notes.open', $cn));
+
+        $this->post(route('credit-notes.apply.store', $cn), ['invoice_id' => $theirInvoice->id, 'amount' => 100])
+            ->assertSessionHas('error', 'The invoice belongs to a different customer.');
+        $this->assertSame(1075.0, (float) $theirInvoice->fresh()->balance_due);
+        $this->assertSame(500.0, (float) $cn->fresh()->balance);
+
+        // Nor be raised against another customer's invoice
+        $this->post(route('credit-notes.store'), [
+            'customer_id' => $mine->id, 'invoice_id' => $theirInvoice->id, 'credit_note_date' => now()->toDateString(),
+            'items' => [['description' => 'x', 'quantity' => 1, 'unit_price' => 10]],
+        ])->assertSessionHasErrors('invoice_id');
+    }
+
+    public function test_n5_voiding_an_open_credit_note_reverses_its_journal(): void
+    {
+        config(['mybooks.features.credit_notes' => true]);
+        $this->createAuthenticatedUser(['create invoices', 'edit invoices', 'view invoices']);
+        $t = $this->tenant->id;
+        $customer = \App\Models\Customer::factory()->create(['tenant_id' => $t]);
+        \App\Models\Invoice::factory()->sent()->create(['tenant_id' => $t, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000502']);
+
+        $cn = $this->creditNote($customer->id);
+        $this->post(route('credit-notes.open', $cn));
+        $this->assertSame(575.0, $this->accountBalance($t, '1200'));
+
+        $this->post(route('credit-notes.void', $cn))->assertSessionHas('success');
+
+        $this->assertSame('void', $cn->fresh()->status);
+        $this->assertSame(1075.0, $this->accountBalance($t, '1200'));
+        $this->assertStoredBalancesMatchLedger($t);
     }
 }

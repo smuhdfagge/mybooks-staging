@@ -88,15 +88,26 @@ class CreditNote extends Model
     }
 
     /**
-     * Apply this credit note (or partial amount) to an invoice.
+     * Apply this credit note (or part of it) to one of the same customer's
+     * invoices. Call inside a transaction.
      */
     public function applyToInvoice(Invoice $invoice, float $amount): CreditNoteApplication
     {
-        if ($amount > $this->balance) {
+        $amount = round($amount, 2);
+
+        if ($this->status !== self::STATUS_OPEN) {
+            throw new \InvalidArgumentException('Only an open credit note can be applied.');
+        }
+        if ((int) $invoice->customer_id !== (int) $this->customer_id) {
+            throw new \InvalidArgumentException('The invoice belongs to a different customer.');
+        }
+        if (in_array($invoice->status, ['draft', 'cancelled', 'void'], true)) {
+            throw new \InvalidArgumentException("Invoice {$invoice->invoice_number} is {$invoice->status}.");
+        }
+        if ($amount <= 0 || $amount - (float) $this->balance > 0.005) {
             throw new \InvalidArgumentException('Amount exceeds credit note balance.');
         }
-
-        if ($amount > $invoice->balance_due) {
+        if ($amount - (float) $invoice->balance_due > 0.005) {
             throw new \InvalidArgumentException('Amount exceeds invoice balance due.');
         }
 
@@ -108,22 +119,14 @@ class CreditNote extends Model
             'applied_by' => auth()->id(),
         ]);
 
-        // Reduce credit note balance
-        $this->balance = $this->balance - $amount;
+        $this->balance = round((float) $this->balance - $amount, 2);
         if ($this->balance <= 0) {
             $this->status = self::STATUS_CLOSED;
         }
         $this->save();
 
-        // Update invoice
-        $invoice->amount_paid = $invoice->amount_paid + $amount;
-        $invoice->balance_due = $invoice->total - $invoice->amount_paid;
-        if ($invoice->balance_due <= 0) {
-            $invoice->status = 'paid';
-        } elseif ($invoice->amount_paid > 0) {
-            $invoice->status = 'partial';
-        }
-        $invoice->save();
+        // Recompute from payments + credits, rather than adding on (N5)
+        $invoice->updateBalances();
 
         return $application;
     }
@@ -137,7 +140,8 @@ class CreditNote extends Model
     }
 
     /**
-     * Open the credit note (make it available for application).
+     * Open the credit note: it can now be applied to invoices, and the
+     * ledger is credited (finding N5 - it used to post nothing).
      */
     public function open(): bool
     {
@@ -145,10 +149,33 @@ class CreditNote extends Model
             return false;
         }
 
-        $this->update([
-            'status' => self::STATUS_OPEN,
-            'balance' => $this->total,
-        ]);
+        \Illuminate\Support\Facades\DB::transaction(function () {
+            $this->update([
+                'status' => self::STATUS_OPEN,
+                'balance' => $this->total,
+            ]);
+            app(\App\Services\JournalService::class)->createCreditNoteJournal($this);
+        });
+
+        return true;
+    }
+
+    /**
+     * Void an unused credit note, reversing its journal if it was opened.
+     */
+    public function void(): bool
+    {
+        if ($this->status === self::STATUS_VOID || $this->total_applied > 0) {
+            return false;
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function () {
+            if ($this->status !== self::STATUS_DRAFT) {
+                app(\App\Services\JournalService::class)
+                    ->reverseDocumentJournal(self::class, $this->id, 'Credit note voided');
+            }
+            $this->update(['status' => self::STATUS_VOID, 'balance' => 0]);
+        });
 
         return true;
     }

@@ -1297,6 +1297,70 @@ class JournalService implements JournalServiceInterface
     }
 
     /**
+     * Opening a credit note reduces what the customer owes (finding N5):
+     *   Dr Sales revenue      subtotal
+     *   Dr Sales tax payable  tax
+     *   Cr Accounts receivable total
+     * Applying it to an invoice later is only an allocation within
+     * receivables, so it posts nothing.
+     */
+    public function createCreditNoteJournal(\App\Models\CreditNote $creditNote): ?Journal
+    {
+        if ((float) $creditNote->total <= 0) {
+            return null;
+        }
+
+        return DB::transaction(function () use ($creditNote) {
+            $t = $creditNote->tenant_id;
+
+            $existing = Journal::where('reference_type', \App\Models\CreditNote::class)
+                ->where('reference_id', $creditNote->id)
+                ->where('status', 'posted')
+                ->first();
+            if ($existing) {
+                return $existing;
+            }
+
+            $customer = $creditNote->customer?->name ?? 'Customer';
+            $journal = Journal::create([
+                'tenant_id' => $t,
+                'journal_number' => Journal::generateNumber($t),
+                'journal_date' => $creditNote->credit_note_date,
+                'reference' => $creditNote->credit_note_number,
+                'description' => "Credit note {$creditNote->credit_note_number} - {$customer}",
+                'reference_type' => \App\Models\CreditNote::class,
+                'reference_id' => $creditNote->id,
+                'status' => 'posted',
+                'is_posted' => true,
+                'posted_at' => now(),
+                'created_by' => $creditNote->created_by ?? auth()->id(),
+            ]);
+
+            $tax = round((float) $creditNote->tax_amount, 2);
+            $total = round((float) $creditNote->total, 2);
+            $revenue = round($total - $tax, 2);
+
+            if ($revenue > 0) {
+                $this->createEntry($journal, $this->acct($t, 'sales_revenue'), $revenue, 0,
+                    "Sales returns/allowances - {$creditNote->credit_note_number}");
+            }
+            if ($tax > 0) {
+                $this->createEntry($journal, $this->acct($t, 'sales_tax_payable'), $tax, 0,
+                    "Tax on credit note - {$creditNote->credit_note_number}");
+            }
+            $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), 0, $total,
+                "Credit to {$customer} - {$creditNote->credit_note_number}");
+
+            $journal->updateTotals();
+            $journal->save();
+
+            $this->updateAccountBalances($journal);
+
+            return $journal;
+        });
+    }
+
+    /**
      * Reverse/void a journal entry
      */
     public function reverseJournal(Journal $journal, string $reason = 'Reversed'): Journal
