@@ -1102,7 +1102,7 @@ class JournalService implements JournalServiceInterface
                 'journal_number' => Journal::generateNumber($payroll->tenant_id),
                 'journal_date' => $payroll->pay_date ?? now(),
                 'reference' => $payroll->payroll_number,
-                'description' => "Payroll {$payroll->payroll_number} - {$payroll->employee->name}",
+                'description' => "Payroll {$payroll->payroll_number} - {$payroll->employee?->full_name}",
                 'reference_type' => Payroll::class,
                 'reference_id' => $payroll->id,
                 'status' => 'posted',
@@ -1115,19 +1115,19 @@ class JournalService implements JournalServiceInterface
             // Debit: Salaries & Wages (basic salary only)
             if ($payroll->basic_salary > 0) {
                 $this->createEntry($journal, $this->acct($t, 'salaries_wages'), $payroll->basic_salary, 0,
-                    "Basic Salary - {$payroll->employee->name} ({$payroll->payroll_number})");
+                    "Basic Salary - {$payroll->employee?->full_name} ({$payroll->payroll_number})");
             }
 
             // Debit: Allowances Expense
             if ($payroll->allowances > 0) {
                 $this->createEntry($journal, $this->acct($t, 'allowances_expense'), $payroll->allowances, 0,
-                    "Allowances - {$payroll->employee->name} ({$payroll->payroll_number})");
+                    "Allowances - {$payroll->employee?->full_name} ({$payroll->payroll_number})");
             }
 
             // Debit: Overtime Expense
             if ($payroll->overtime_amount > 0) {
                 $this->createEntry($journal, $this->acct($t, 'overtime_expense'), $payroll->overtime_amount, 0,
-                    "Overtime - {$payroll->employee->name} ({$payroll->payroll_number})");
+                    "Overtime - {$payroll->employee?->full_name} ({$payroll->payroll_number})");
             }
 
             // Debit: Employer Contributions (split by type using contribution details)
@@ -1223,26 +1223,26 @@ class JournalService implements JournalServiceInterface
         $journal->fill([
             'journal_date' => $payroll->pay_date ?? now(),
             'reference' => $payroll->payroll_number,
-            'description' => "Payroll {$payroll->payroll_number} - {$payroll->employee->name}",
+            'description' => "Payroll {$payroll->payroll_number} - {$payroll->employee?->full_name}",
         ]);
         $journal->withoutPeriodValidation()->save();
 
         // Debit: Basic Salary
         if ($payroll->basic_salary > 0) {
             $this->createEntry($journal, $this->acct($t, 'salaries_wages'), $payroll->basic_salary, 0,
-                "Basic Salary - {$payroll->employee->name} ({$payroll->payroll_number})");
+                "Basic Salary - {$payroll->employee?->full_name} ({$payroll->payroll_number})");
         }
 
         // Debit: Allowances
         if ($payroll->allowances > 0) {
             $this->createEntry($journal, $this->acct($t, 'allowances_expense'), $payroll->allowances, 0,
-                "Allowances - {$payroll->employee->name} ({$payroll->payroll_number})");
+                "Allowances - {$payroll->employee?->full_name} ({$payroll->payroll_number})");
         }
 
         // Debit: Overtime
         if ($payroll->overtime_amount > 0) {
             $this->createEntry($journal, $this->acct($t, 'overtime_expense'), $payroll->overtime_amount, 0,
-                "Overtime - {$payroll->employee->name} ({$payroll->payroll_number})");
+                "Overtime - {$payroll->employee?->full_name} ({$payroll->payroll_number})");
         }
 
         // Debit: Employer Contributions (split by type)

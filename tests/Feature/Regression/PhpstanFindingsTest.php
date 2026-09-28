@@ -45,4 +45,45 @@ class PhpstanFindingsTest extends TestCase
 
         $api->getJson("/api/v1/inventory/{$inventory->id}/history")->assertOk()->assertJsonCount(2, 'data');
     }
+
+    public function test_expense_import_finds_accounts_by_code(): void
+    {
+        $this->createAuthenticatedUser();
+        $account = \App\Models\ChartOfAccount::where('tenant_id', $this->tenant->id)->where('type', 'expense')->firstOrFail();
+        $import = \App\Models\Import::create([
+            'tenant_id' => $this->tenant->id, 'user_id' => $this->user->id, 'type' => 'expenses', 'format' => 'csv',
+            'status' => 'processing', 'original_filename' => 'x.csv', 'file_path' => 'x.csv',
+        ]);
+
+        $service = new \App\Services\ImportService;
+        $tenant = new \ReflectionProperty($service, 'tenantId');
+        $tenant->setValue($service, $this->tenant->id);
+        $method = new \ReflectionMethod($service, 'importExpenses');
+        $method->invoke($service, $import, [
+            ['date' => now()->toDateString(), 'account' => $account->account_code, 'amount' => 1500, 'description' => 'Diesel'],
+        ]);
+
+        $errors = (new \ReflectionProperty($service, 'errors'))->getValue($service);
+        $this->assertSame(1, $import->fresh()->successful_rows, json_encode($errors));
+        $this->assertSame($account->id, \App\Models\Expense::sole()->expense_account_id);
+    }
+
+    public function test_payroll_journal_names_the_employee(): void
+    {
+        $this->createAuthenticatedUser();
+        $employee = \App\Models\Employee::withoutEvents(fn () => \App\Models\Employee::create([
+            'tenant_id' => $this->tenant->id, 'employee_id' => 'EMP-001', 'first_name' => 'Hauwa', 'last_name' => 'Musa',
+            'email' => 'hauwa@example.com', 'hire_date' => now()->subYear(), 'status' => 'active',
+        ]));
+        $payroll = \App\Models\Payroll::withoutEvents(fn () => \App\Models\Payroll::create([
+            'tenant_id' => $this->tenant->id, 'employee_id' => $employee->id, 'payroll_number' => 'PAY-000001',
+            'pay_period_start' => now()->startOfMonth(), 'pay_period_end' => now()->endOfMonth(), 'pay_date' => now(),
+            'basic_salary' => 1000, 'gross_salary' => 1000, 'total_deductions' => 0, 'net_salary' => 1000,
+            'status' => 'paid', 'created_by' => $this->user->id,
+        ]));
+
+        $journal = app(\App\Services\JournalService::class)->createPayrollJournal($payroll);
+
+        $this->assertStringContainsString('Hauwa Musa', $journal->description);
+    }
 }

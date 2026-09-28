@@ -733,17 +733,15 @@ class ImportService
         $skipped = 0;
 
         // Cache accounts and vendors
-        $accounts = ChartOfAccount::where('tenant_id', $this->tenantId)
-            ->where('type', 'expense')
-            ->get()
-            ->keyBy(fn($a) => strtolower($a->code))
-            ->merge(
-                ChartOfAccount::where('tenant_id', $this->tenantId)
-                    ->where('type', 'expense')
-                    ->get()
-                    ->keyBy(fn($a) => strtolower($a->name))
-            );
-        
+        // Accounts can be given by code or by name. The codes used to be read
+        // from a column that doesn't exist, and merge() renumbers numeric keys
+        // like "5000" anyway, so only names ever matched (found by PHPStan).
+        $accounts = [];
+        foreach (ChartOfAccount::where('tenant_id', $this->tenantId)->where('type', 'expense')->get() as $a) {
+            $accounts[strtolower((string) $a->name)] = $a;
+            $accounts[strtolower((string) $a->account_code)] = $a;
+        }
+
         $vendors = Vendor::where('tenant_id', $this->tenantId)->pluck('id', 'name');
         $paymentAccounts = ChartOfAccount::where('tenant_id', $this->tenantId)
             ->whereIn('type', ['asset'])
@@ -793,17 +791,27 @@ class ImportService
                     $paymentAccountId = $paymentAccounts[$mapped['payment_account']]->id ?? null;
                 }
 
+                // Imported expenses start as drafts and go through the normal
+                // approve-and-pay flow, like ones entered on the form. The old
+                // call used columns expenses doesn't have and no expense
+                // number, so every row failed.
+                $amount = round((float) $mapped['amount'], 2);
                 Expense::create([
                     'tenant_id' => $this->tenantId,
+                    'expense_number' => Expense::generateNumber($this->tenantId),
+                    'name' => $mapped['description'] ?? $expenseAccount->name,
                     'expense_account_id' => $expenseAccount->id,
                     'vendor_id' => $vendorId,
-                    'payment_account_id' => $paymentAccountId,
+                    'paid_through_id' => $paymentAccountId,
                     'expense_date' => $this->parseDate($mapped['date']),
-                    'amount' => (float) $mapped['amount'],
+                    'amount' => $amount,
+                    'tax_amount' => 0,
+                    'total' => $amount,
                     'description' => $mapped['description'] ?? null,
-                    'reference_number' => $mapped['reference'] ?? null,
+                    'reference' => $mapped['reference'] ?? null,
                     'payment_method' => $mapped['payment_method'] ?? null,
-                    'status' => 'recorded',
+                    'status' => Expense::STATUS_DRAFT,
+                    'created_by' => $import->user_id,
                 ]);
                 $successful++;
 
