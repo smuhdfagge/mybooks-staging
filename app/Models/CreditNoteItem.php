@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CreditNoteItem extends Model
 {
@@ -28,12 +29,14 @@ class CreditNoteItem extends Model
         'total' => 'decimal:2',
     ];
 
-    public function creditNote()
+    /** @return BelongsTo<CreditNote, $this> */
+    public function creditNote(): BelongsTo
     {
         return $this->belongsTo(CreditNote::class);
     }
 
-    public function item()
+    /** @return BelongsTo<Item, $this> */
+    public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class);
     }

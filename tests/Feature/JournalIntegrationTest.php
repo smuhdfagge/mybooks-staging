@@ -5,10 +5,8 @@ namespace Tests\Feature;
 use App\Models\ChartOfAccount;
 use App\Models\Employee;
 use App\Models\Journal;
-use App\Models\JournalEntry;
 use App\Models\Payroll;
 use App\Models\SalesReceipt;
-use App\Models\Tenant;
 use App\Services\JournalService;
 use Tests\TestCase;
 
@@ -80,14 +78,14 @@ class JournalIntegrationTest extends TestCase
         $this->assertEquals($receipt->id, $journal->reference_id);
 
         // Verify debit entries (Cash = 1050)
-        $cashEntry = $journal->entries()->whereHas('account', fn($q) => $q->where('account_code', '1000'))->first();
+        $cashEntry = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '1000'))->first();
         $this->assertEquals(1050.00, (float) $cashEntry->debit);
 
         // Verify credit entries (Revenue = 1000, Sales Tax = 50)
-        $revenueEntry = $journal->entries()->whereHas('account', fn($q) => $q->where('account_code', '4000'))->first();
+        $revenueEntry = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '4000'))->first();
         $this->assertEquals(1000.00, (float) $revenueEntry->credit);
 
-        $taxEntry = $journal->entries()->whereHas('account', fn($q) => $q->where('account_code', '2400'))->first();
+        $taxEntry = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '2400'))->first();
         $this->assertEquals(50.00, (float) $taxEntry->credit);
     }
 
@@ -199,21 +197,21 @@ class JournalIntegrationTest extends TestCase
         $this->assertEquals('posted', $journal->status);
 
         // Verify entries: DR Salaries 5000, DR Allowances 500, CR Cash 4850, CR Payroll Liabilities 550 + 100
-        $salaryEntry = $journal->entries()->whereHas('account', fn($q) => $q->where('account_code', '6000'))->first();
+        $salaryEntry = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '6000'))->first();
         $this->assertEquals(5000.00, (float) $salaryEntry->debit);
 
-        $allowanceEntry = $journal->entries()->whereHas('account', fn($q) => $q->where('account_code', '6030'))->first();
+        $allowanceEntry = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '6030'))->first();
         $this->assertEquals(500.00, (float) $allowanceEntry->debit);
 
-        $cashEntry = $journal->entries()->whereHas('account', fn($q) => $q->where('account_code', '1100'))->first();
+        $cashEntry = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '1100'))->first();
         $this->assertEquals(4850.00, (float) $cashEntry->credit);
 
         // Tax withheld goes to 2310 (Tax Payable)
-        $taxPayableEntries = $journal->entries()->whereHas('account', fn($q) => $q->where('account_code', '2310'))->get();
+        $taxPayableEntries = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '2310'))->get();
         $this->assertEquals(550.00, (float) $taxPayableEntries->sum('credit'));
 
         // Other deductions (no detail breakdown) go to 2300 (Payroll Liabilities)
-        $liabilityEntries = $journal->entries()->whereHas('account', fn($q) => $q->where('account_code', '2300'))->get();
+        $liabilityEntries = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '2300'))->get();
         $this->assertEquals(100.00, (float) $liabilityEntries->sum('credit'));
     }
 
@@ -313,7 +311,7 @@ class JournalIntegrationTest extends TestCase
         // Create a draft bill — journal should NOT be created
         $bill = \App\Models\Bill::create([
             'tenant_id' => $this->tenant->id,
-            'vendor_id' => \App\Models\Vendor::withoutEvents(fn() => \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]))->id,
+            'vendor_id' => \App\Models\Vendor::withoutEvents(fn () => \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]))->id,
             'bill_number' => 'BIL-000001',
             'bill_date' => now(),
             'due_date' => now()->addDays(30),

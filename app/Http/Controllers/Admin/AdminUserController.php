@@ -6,10 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreAdminUserRequest;
 use App\Http\Requests\Admin\UpdateAdminUserRequest;
 use App\Models\AdminUser;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 class AdminUserController extends Controller
 {
@@ -19,6 +16,7 @@ class AdminUserController extends Controller
     public function index()
     {
         $adminUsers = AdminUser::orderBy('name')->paginate(15);
+
         return view('admin.users.index', compact('adminUsers'));
     }
 
@@ -72,11 +70,11 @@ class AdminUserController extends Controller
         $adminUser->name = $validated['name'];
         $adminUser->email = $validated['email'];
         $adminUser->role = $validated['role'];
-        
-        if (!empty($validated['password'])) {
+
+        if (! empty($validated['password'])) {
             $adminUser->password = Hash::make($validated['password']);
         }
-        
+
         $adminUser->save();
 
         return redirect()->route('admin.users.index')
@@ -93,10 +91,11 @@ class AdminUserController extends Controller
             return back()->with('error', 'You cannot deactivate your own account.');
         }
 
-        $adminUser->is_active = !$adminUser->is_active;
+        $adminUser->is_active = ! $adminUser->is_active;
         $adminUser->save();
 
         $status = $adminUser->is_active ? 'activated' : 'deactivated';
+
         return back()->with('success', "Admin user {$status} successfully.");
     }
 
@@ -116,6 +115,7 @@ class AdminUserController extends Controller
         }
 
         $adminUser->delete();
+
         return redirect()->route('admin.users.index')
             ->with('success', 'Admin user deleted successfully.');
     }

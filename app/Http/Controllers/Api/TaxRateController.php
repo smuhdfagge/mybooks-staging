@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\TaxRate;
 use App\Http\Resources\TaxRateResource;
-use Illuminate\Http\Request;
+use App\Models\TaxRate;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class TaxRateController extends BaseApiController
 {
@@ -113,7 +113,7 @@ class TaxRateController extends BaseApiController
         ]);
 
         // If this is set as default, unset other defaults
-        if (($validated['is_default'] ?? false) && !$taxRate->is_default) {
+        if (($validated['is_default'] ?? false) && ! $taxRate->is_default) {
             $appliesTo = $validated['applies_to'] ?? $taxRate->applies_to;
             TaxRate::where('tenant_id', $taxRate->tenant_id)
                 ->where('id', '!=', $taxRate->id)

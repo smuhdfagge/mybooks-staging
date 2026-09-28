@@ -23,7 +23,7 @@ return new class extends Migration
             $table->decimal('current_balance', 15, 2)->default(0);
             $table->timestamps();
             $table->softDeletes();
-            
+
             $table->unique(['tenant_id', 'account_code']);
             $table->index(['tenant_id', 'type']);
         });
@@ -46,7 +46,7 @@ return new class extends Migration
             $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
-            
+
             $table->index(['tenant_id', 'journal_number']);
             $table->index(['tenant_id', 'journal_date']);
             $table->index(['tenant_id', 'status']);
@@ -61,7 +61,7 @@ return new class extends Migration
             $table->decimal('debit', 15, 2)->default(0);
             $table->decimal('credit', 15, 2)->default(0);
             $table->timestamps();
-            
+
             $table->index(['journal_id', 'account_id']);
         });
 

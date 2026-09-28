@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\AuditsSensitiveFields;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
-use App\Traits\AuditsSensitiveFields;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SalaryStructure extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, AuditsSensitiveFields;
+    use AuditsSensitiveFields, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
 
     protected static array $sensitiveFields = [
         'basic_salary' => ['type' => 'monetary', 'label' => 'Basic Salary'],
@@ -37,32 +39,38 @@ class SalaryStructure extends Model
         'version' => 'integer',
     ];
 
-    public function employees()
+    /** @return HasMany<Employee, $this> */
+    public function employees(): HasMany
     {
         return $this->hasMany(Employee::class);
     }
 
-    public function items()
+    /** @return HasMany<SalaryStructureItem, $this> */
+    public function items(): HasMany
     {
         return $this->hasMany(SalaryStructureItem::class)->orderBy('sort_order');
     }
 
-    public function allowances()
+    /** @return HasMany<SalaryStructureItem, $this> */
+    public function allowances(): HasMany
     {
         return $this->hasMany(SalaryStructureItem::class)->where('type', 'allowance')->orderBy('sort_order');
     }
 
-    public function deductions()
+    /** @return HasMany<SalaryStructureItem, $this> */
+    public function deductions(): HasMany
     {
         return $this->hasMany(SalaryStructureItem::class)->where('type', 'deduction')->orderBy('sort_order');
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function payrolls()
+    /** @return HasMany<Payroll, $this> */
+    public function payrolls(): HasMany
     {
         return $this->hasMany(Payroll::class);
     }
@@ -95,6 +103,7 @@ class SalaryStructure extends Model
                 ? ($this->basic_salary * $item->amount / 100)
                 : $item->amount;
         }
+
         return round($total, 2);
     }
 
@@ -107,6 +116,7 @@ class SalaryStructure extends Model
                 ? ($grossSalary * $item->amount / 100)
                 : $item->amount;
         }
+
         return round($total, 2);
     }
 
@@ -118,10 +128,12 @@ class SalaryStructure extends Model
     public static function getActiveForEmployee($employeeId)
     {
         $employee = Employee::find($employeeId);
+
         return $employee?->salaryStructure;
     }
 
-    public function versions()
+    /** @return HasMany<SalaryStructureVersion, $this> */
+    public function versions(): HasMany
     {
         return $this->hasMany(SalaryStructureVersion::class)->orderByDesc('version');
     }

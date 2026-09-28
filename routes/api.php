@@ -1,27 +1,26 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\DashboardController;
-use App\Http\Controllers\Api\CustomerController;
-use App\Http\Controllers\Api\VendorController;
-use App\Http\Controllers\Api\ItemController;
-use App\Http\Controllers\Api\InvoiceController;
-use App\Http\Controllers\Api\BillController;
-use App\Http\Controllers\Api\ExpenseController;
-use App\Http\Controllers\Api\PaymentReceivedController;
-use App\Http\Controllers\Api\PaymentMadeController;
-use App\Http\Controllers\Api\InventoryController;
-use App\Http\Controllers\Api\ChartOfAccountController;
 use App\Http\Controllers\Api\BankController;
-use App\Http\Controllers\Api\SalesOrderController;
+use App\Http\Controllers\Api\BillController;
+use App\Http\Controllers\Api\ChartOfAccountController;
+use App\Http\Controllers\Api\CustomerController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EmployeeController;
-use App\Http\Controllers\Api\TaxRateController;
-use App\Http\Controllers\Api\ReportController;
-use App\Http\Controllers\Api\SearchController;
+use App\Http\Controllers\Api\ExpenseController;
+use App\Http\Controllers\Api\InventoryController;
+use App\Http\Controllers\Api\InvoiceController;
+use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\JournalController;
+use App\Http\Controllers\Api\PaymentMadeController;
+use App\Http\Controllers\Api\PaymentReceivedController;
+use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\SalesOrderController;
+use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\SyncController;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\TaxRateController;
+use App\Http\Controllers\Api\VendorController;
 use Illuminate\Support\Facades\Route;
 
 /*

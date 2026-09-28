@@ -2,14 +2,15 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FixedAssetDepreciation extends Model
 {
-    use HasFactory, BelongsToTenant, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity;
 
     protected $fillable = [
         'tenant_id',
@@ -35,7 +36,9 @@ class FixedAssetDepreciation extends Model
 
     // Status Constants
     const STATUS_SCHEDULED = 'scheduled';
+
     const STATUS_POSTED = 'posted';
+
     const STATUS_REVERSED = 'reversed';
 
     public static function getStatuses(): array
@@ -47,17 +50,20 @@ class FixedAssetDepreciation extends Model
         ];
     }
 
-    public function fixedAsset()
+    /** @return BelongsTo<FixedAsset, $this> */
+    public function fixedAsset(): BelongsTo
     {
         return $this->belongsTo(FixedAsset::class);
     }
 
-    public function journal()
+    /** @return BelongsTo<Journal, $this> */
+    public function journal(): BelongsTo
     {
         return $this->belongsTo(Journal::class);
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }

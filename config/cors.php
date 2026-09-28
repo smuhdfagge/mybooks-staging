@@ -26,13 +26,13 @@ return [
 
     /*
     | Origins that are allowed to make requests.
-    | 
+    |
     | For development: Use '*' or specific localhost URLs
     | For production: Replace with your mobile app's origins
     |
     | Mobile apps using capacitor/cordova may use:
     | - capacitor://localhost
-    | - ionic://localhost  
+    | - ionic://localhost
     | - http://localhost (for web preview)
     |
     | React Native and Flutter don't typically need CORS as they
@@ -61,7 +61,7 @@ return [
     */
     'exposed_headers' => [
         'X-RateLimit-Limit',
-        'X-RateLimit-Remaining', 
+        'X-RateLimit-Remaining',
         'X-RateLimit-Reset',
         'X-API-Version',
         'X-API-Deprecated',

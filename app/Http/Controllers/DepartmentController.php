@@ -15,7 +15,7 @@ class DepartmentController extends Controller
             ->withCount('employees')
             ->latest()
             ->paginate(15);
-            
+
         return view('departments.index', compact('departments'));
     }
 
@@ -23,6 +23,7 @@ class DepartmentController extends Controller
     {
         $departments = Department::where('is_active', true)->get();
         $employees = Employee::where('status', 'active')->get();
+
         return view('departments.create', compact('departments', 'employees'));
     }
 
@@ -47,6 +48,7 @@ class DepartmentController extends Controller
     public function show(Department $department)
     {
         $department->load(['parent', 'children', 'manager', 'employees', 'designations']);
+
         return view('departments.show', compact('department'));
     }
 
@@ -54,6 +56,7 @@ class DepartmentController extends Controller
     {
         $departments = Department::where('is_active', true)->where('id', '!=', $department->id)->get();
         $employees = Employee::where('status', 'active')->get();
+
         return view('departments.edit', compact('department', 'departments', 'employees'));
     }
 
@@ -85,6 +88,7 @@ class DepartmentController extends Controller
         }
 
         $department->delete();
+
         return redirect()->route('departments.index')->with('success', 'Department deleted successfully.');
     }
 

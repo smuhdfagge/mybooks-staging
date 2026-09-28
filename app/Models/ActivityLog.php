@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use App\Services\LogIntegrityService;
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\BelongsToTenant;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ActivityLog extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     protected $fillable = [
         'tenant_id',
@@ -47,41 +48,68 @@ class ActivityLog extends Model
 
     // Action constants
     const ACTION_CREATED = 'created';
+
     const ACTION_UPDATED = 'updated';
+
     const ACTION_DELETED = 'deleted';
+
     const ACTION_RESTORED = 'restored';
+
     const ACTION_LOGIN = 'login';
+
     const ACTION_LOGOUT = 'logout';
+
     const ACTION_LOGIN_FAILED = 'login_failed';
+
     const ACTION_PASSWORD_RESET = 'password_reset';
+
     const ACTION_EXPORTED = 'exported';
+
     const ACTION_IMPORTED = 'imported';
+
     const ACTION_APPROVED = 'approved';
+
     const ACTION_REJECTED = 'rejected';
+
     const ACTION_POSTED = 'posted';
+
     const ACTION_SENT = 'sent';
+
     const ACTION_PAID = 'paid';
+
     const ACTION_RELEASED = 'released';
+
     const ACTION_BACKUP = 'backup';
 
     // Security events
     const ACTION_2FA_ENABLED = '2fa_enabled';
+
     const ACTION_2FA_DISABLED = '2fa_disabled';
+
     const ACTION_PASSWORD_CHANGED = 'password_changed';
+
     const ACTION_ROLE_CHANGED = 'role_changed';
+
     const ACTION_PERMISSION_CHANGED = 'permission_changed';
+
     const ACTION_ACCOUNT_LOCKED = 'account_locked';
+
     const ACTION_ACCOUNT_UNLOCKED = 'account_unlocked';
+
     const ACTION_API_TOKEN_CREATED = 'api_token_created';
+
     const ACTION_API_TOKEN_REVOKED = 'api_token_revoked';
+
     const ACTION_SUSPICIOUS_ACTIVITY = 'suspicious_activity';
 
-    public function user()
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function tenant()
+    /** @return BelongsTo<Tenant, $this> */
+    public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
     }
@@ -94,6 +122,7 @@ class ActivityLog extends Model
         if ($this->model_type && $this->model_id) {
             return $this->model_type::withTrashed()->find($this->model_id);
         }
+
         return null;
     }
 
@@ -102,7 +131,7 @@ class ActivityLog extends Model
      */
     public function getActionLabelAttribute(): string
     {
-        return match($this->action) {
+        return match ($this->action) {
             self::ACTION_CREATED => 'Created',
             self::ACTION_UPDATED => 'Updated',
             self::ACTION_DELETED => 'Deleted',
@@ -139,7 +168,7 @@ class ActivityLog extends Model
      */
     public function getActionColorAttribute(): string
     {
-        return match($this->action) {
+        return match ($this->action) {
             self::ACTION_CREATED => 'green',
             self::ACTION_UPDATED => 'blue',
             self::ACTION_DELETED => 'red',
@@ -171,9 +200,10 @@ class ActivityLog extends Model
      */
     public function getModelTypeShortAttribute(): string
     {
-        if (!$this->model_type) {
+        if (! $this->model_type) {
             return '';
         }
+
         return class_basename($this->model_type);
     }
 

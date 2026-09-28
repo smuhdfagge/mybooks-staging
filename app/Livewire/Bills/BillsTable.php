@@ -2,31 +2,42 @@
 
 namespace App\Livewire\Bills;
 
+use App\Livewire\Concerns\ChecksPermissions;
 use App\Models\Bill;
 use App\Models\Vendor;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Livewire\Concerns\ChecksPermissions;
 
 class BillsTable extends Component
 {
     use ChecksPermissions, WithPagination;
 
     public $search = '';
+
     public $status = '';
+
     public $vendor_id = '';
+
     public $sortField = 'created_at';
+
     public $sortDirection = 'desc';
+
     public $perPage = 10;
+
     public $dateFrom = '';
+
     public $dateTo = '';
 
     // Bulk operation properties
     public $selectedItems = [];
+
     public $selectAll = false;
+
     public $bulkAction = '';
+
     public $successMessage = '';
+
     public $errorMessage = '';
 
     protected $queryString = [
@@ -92,20 +103,20 @@ class BillsTable extends Component
         return Bill::query()
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->where('bill_number', 'like', '%' . $this->search . '%')
-                      ->orWhere('vendor_bill_number', 'like', '%' . $this->search . '%')
-                      ->orWhereHas('vendor', function ($vq) {
-                          $vq->where('name', 'like', '%' . $this->search . '%')
-                             ->orWhere('company_name', 'like', '%' . $this->search . '%');
-                      });
+                    $q->where('bill_number', 'like', '%'.$this->search.'%')
+                        ->orWhere('vendor_bill_number', 'like', '%'.$this->search.'%')
+                        ->orWhereHas('vendor', function ($vq) {
+                            $vq->where('name', 'like', '%'.$this->search.'%')
+                                ->orWhere('company_name', 'like', '%'.$this->search.'%');
+                        });
                 });
             })
-            ->when($this->status, fn($q) => $q->where('status', $this->status))
-            ->when($this->vendor_id, fn($q) => $q->where('vendor_id', $this->vendor_id))
-            ->when($this->dateFrom, fn($q) => $q->whereDate('bill_date', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn($q) => $q->whereDate('bill_date', '<=', $this->dateTo))
+            ->when($this->status, fn ($q) => $q->where('status', $this->status))
+            ->when($this->vendor_id, fn ($q) => $q->where('vendor_id', $this->vendor_id))
+            ->when($this->dateFrom, fn ($q) => $q->whereDate('bill_date', '>=', $this->dateFrom))
+            ->when($this->dateTo, fn ($q) => $q->whereDate('bill_date', '<=', $this->dateTo))
             ->pluck('id')
-            ->map(fn($id) => (string) $id)
+            ->map(fn ($id) => (string) $id)
             ->toArray();
     }
 
@@ -127,11 +138,13 @@ class BillsTable extends Component
 
         if (empty($this->selectedItems)) {
             $this->errorMessage = 'Please select at least one bill.';
+
             return;
         }
 
         if (empty($this->bulkAction)) {
             $this->errorMessage = 'Please select an action.';
+
             return;
         }
 
@@ -152,6 +165,7 @@ class BillsTable extends Component
                 foreach ($bills as $bill) {
                     if ((float) $bill->amount_paid > 0) {
                         $skipped++;
+
                         continue;
                     }
                     try {
@@ -162,44 +176,48 @@ class BillsTable extends Component
                         $failed[] = $bill->bill_number;
                     }
                 }
-                $this->successMessage = "Cancelled {$cancelled} bill(s)." . ($skipped ? " Skipped {$skipped} with payments." : '');
+                $this->successMessage = "Cancelled {$cancelled} bill(s).".($skipped ? " Skipped {$skipped} with payments." : '');
                 if ($failed) {
-                    $this->errorMessage = 'Not cancelled (closed period or invalid totals): ' . implode(', ', $failed) . '.';
+                    $this->errorMessage = 'Not cancelled (closed period or invalid totals): '.implode(', ', $failed).'.';
                 }
                 break;
 
             case 'delete':
                 $deletedCount = 0;
                 $skippedCount = 0;
-                
+
                 DB::transaction(function () use (&$deletedCount, &$skippedCount) {
                     foreach ($this->selectedItems as $billId) {
                         $bill = Bill::find($billId);
-                        if (!$bill) continue;
-                        
+                        if (! $bill) {
+                            continue;
+                        }
+
                         // Check if bill has payments
                         if ($bill->amount_paid > 0) {
                             $skippedCount++;
+
                             continue;
                         }
-                        
+
                         $bill->items()->delete();
                         $bill->delete();
                         $deletedCount++;
                     }
                 });
-                
+
                 if ($deletedCount > 0 && $skippedCount > 0) {
                     $this->successMessage = "Deleted {$deletedCount} bill(s). Skipped {$skippedCount} bill(s) with recorded payments. Journal entries and chart of account balances have been updated.";
                 } elseif ($deletedCount > 0) {
                     $this->successMessage = "Successfully deleted {$deletedCount} bill(s). Journal entries and chart of account balances have been updated.";
                 } else {
-                    $this->errorMessage = "Could not delete any bills. All selected bills have recorded payments.";
+                    $this->errorMessage = 'Could not delete any bills. All selected bills have recorded payments.';
                 }
                 break;
 
             default:
                 $this->errorMessage = 'Invalid action selected.';
+
                 return;
         }
 
@@ -213,16 +231,17 @@ class BillsTable extends Component
         $this->requirePermission('delete bills');
 
         $bill = Bill::findOrFail($id);
-        
+
         // Check if bill has payments
         if ($bill->amount_paid > 0) {
             session()->flash('error', 'Cannot delete a bill with recorded payments.');
+
             return;
         }
 
         $bill->items()->delete();
         $bill->delete();
-        
+
         session()->flash('success', 'Bill deleted successfully.');
     }
 
@@ -232,12 +251,12 @@ class BillsTable extends Component
             ->with(['vendor'])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->where('bill_number', 'like', '%' . $this->search . '%')
-                      ->orWhere('vendor_bill_number', 'like', '%' . $this->search . '%')
-                      ->orWhereHas('vendor', function ($vq) {
-                          $vq->where('name', 'like', '%' . $this->search . '%')
-                             ->orWhere('company_name', 'like', '%' . $this->search . '%');
-                      });
+                    $q->where('bill_number', 'like', '%'.$this->search.'%')
+                        ->orWhere('vendor_bill_number', 'like', '%'.$this->search.'%')
+                        ->orWhereHas('vendor', function ($vq) {
+                            $vq->where('name', 'like', '%'.$this->search.'%')
+                                ->orWhere('company_name', 'like', '%'.$this->search.'%');
+                        });
                 });
             })
             ->when($this->status, function ($query) {

@@ -11,9 +11,13 @@ class PayrollBatchTable extends Component
     use WithPagination;
 
     public $search = '';
+
     public $status = '';
+
     public $sortField = 'created_at';
+
     public $sortDirection = 'desc';
+
     public $perPage = 10;
 
     protected $queryString = [
@@ -49,10 +53,10 @@ class PayrollBatchTable extends Component
     public function render()
     {
         $batches = PayrollBatch::query()
-            ->when($this->search, fn($q) => $q->where(function($query) {
+            ->when($this->search, fn ($q) => $q->where(function ($query) {
                 $query->where('batch_number', 'like', "%{$this->search}%");
             }))
-            ->when($this->status, fn($q) => $q->where('status', $this->status))
+            ->when($this->status, fn ($q) => $q->where('status', $this->status))
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
 

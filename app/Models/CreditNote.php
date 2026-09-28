@@ -2,19 +2,24 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CreditNote extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
 
     const STATUS_DRAFT = 'draft';
+
     const STATUS_OPEN = 'open';
+
     const STATUS_CLOSED = 'closed';
+
     const STATUS_VOID = 'void';
 
     const REASONS = [
@@ -51,27 +56,32 @@ class CreditNote extends Model
         'balance' => 'decimal:2',
     ];
 
-    public function customer()
+    /** @return BelongsTo<Customer, $this> */
+    public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
 
-    public function invoice()
+    /** @return BelongsTo<Invoice, $this> */
+    public function invoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class);
     }
 
-    public function items()
+    /** @return HasMany<CreditNoteItem, $this> */
+    public function items(): HasMany
     {
         return $this->hasMany(CreditNoteItem::class);
     }
 
-    public function applications()
+    /** @return HasMany<CreditNoteApplication, $this> */
+    public function applications(): HasMany
     {
         return $this->hasMany(CreditNoteApplication::class);
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
@@ -84,7 +94,8 @@ class CreditNote extends Model
             ->first();
 
         $number = $last ? intval(substr($last->credit_note_number, 3)) + 1 : 1;
-        return 'CN-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+        return 'CN-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     /**

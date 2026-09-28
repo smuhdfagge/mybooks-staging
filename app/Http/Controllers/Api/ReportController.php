@@ -2,21 +2,20 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Invoice;
 use App\Models\Bill;
-use App\Models\Expense;
-use App\Models\Customer;
-use App\Models\Vendor;
-use App\Models\Payroll;
-use App\Models\Item;
 use App\Models\ChartOfAccount;
+use App\Models\Customer;
+use App\Models\Expense;
+use App\Models\Invoice;
+use App\Models\Item;
 use App\Models\JournalEntry;
-use App\Models\PaymentReceived;
 use App\Models\PaymentMade;
-use App\Models\TaxRate;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
+use App\Models\PaymentReceived;
+use App\Models\Payroll;
+use App\Models\Vendor;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ReportController extends BaseApiController
 {
@@ -237,7 +236,7 @@ class ReportController extends BaseApiController
             $balance = (float) $invoice->balance_due;
 
             $customerId = $invoice->customer_id;
-            if (!isset($customerAging[$customerId])) {
+            if (! isset($customerAging[$customerId])) {
                 $customerAging[$customerId] = [
                     'customer' => [
                         'id' => $invoice->customer->id,
@@ -327,7 +326,7 @@ class ReportController extends BaseApiController
             $balance = (float) $bill->balance_due;
 
             $vendorId = $bill->vendor_id;
-            if (!isset($vendorAging[$vendorId])) {
+            if (! isset($vendorAging[$vendorId])) {
                 $vendorAging[$vendorId] = [
                     'vendor' => [
                         'id' => $bill->vendor->id,
@@ -412,14 +411,14 @@ class ReportController extends BaseApiController
         $salesByPeriod = [];
         foreach ($invoices as $invoice) {
             $date = Carbon::parse($invoice->invoice_date);
-            
+
             $key = match ($groupBy) {
                 'week' => $date->startOfWeek()->format('Y-m-d'),
                 'month' => $date->format('Y-m'),
                 default => $date->format('Y-m-d'),
             };
 
-            if (!isset($salesByPeriod[$key])) {
+            if (! isset($salesByPeriod[$key])) {
                 $salesByPeriod[$key] = [
                     'period' => $key,
                     'total' => 0,
@@ -523,8 +522,8 @@ class ReportController extends BaseApiController
             ->map(function ($account) use ($tenantId, $asOf) {
                 $entries = JournalEntry::whereHas('journal', function ($q) use ($tenantId, $asOf) {
                     $q->where('tenant_id', $tenantId)
-                      ->where('journal_date', '<=', $asOf)
-                      ->where('is_posted', true);
+                        ->where('journal_date', '<=', $asOf)
+                        ->where('is_posted', true);
                 })->where('account_id', $account->id)->get();
 
                 $totalDebit = $entries->sum('debit');
@@ -571,7 +570,7 @@ class ReportController extends BaseApiController
             ->orderBy('account_code')
             ->get(['id', 'account_code', 'name', 'type', 'sub_type']);
 
-        if (!$accountId) {
+        if (! $accountId) {
             return $this->success([
                 'accounts' => $accounts,
                 'message' => 'Select an account_id to view ledger entries.',
@@ -580,19 +579,19 @@ class ReportController extends BaseApiController
 
         $selectedAccount = ChartOfAccount::where('tenant_id', $tenantId)->find($accountId);
 
-        if (!$selectedAccount) {
+        if (! $selectedAccount) {
             return $this->error('Account not found.', 404);
         }
 
         // Opening balance (all entries before start date)
         $openingEntries = JournalEntry::whereHas('journal', function ($q) use ($tenantId, $startDate) {
             $q->where('tenant_id', $tenantId)
-              ->where('journal_date', '<', $startDate)
-              ->where('is_posted', true);
+                ->where('journal_date', '<', $startDate)
+                ->where('is_posted', true);
         })
-        ->where('account_id', $accountId)
-        ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
-        ->first();
+            ->where('account_id', $accountId)
+            ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->first();
 
         $totalDebit = $openingEntries->total_debit ?? 0;
         $totalCredit = $openingEntries->total_credit ?? 0;
@@ -603,21 +602,21 @@ class ReportController extends BaseApiController
         // Entries within the selected period
         $entries = JournalEntry::whereHas('journal', function ($q) use ($tenantId, $startDate, $endDate) {
             $q->where('tenant_id', $tenantId)
-              ->whereBetween('journal_date', [$startDate, $endDate])
-              ->where('is_posted', true);
+                ->whereBetween('journal_date', [$startDate, $endDate])
+                ->where('is_posted', true);
         })
-        ->where('account_id', $accountId)
-        ->with(['journal:id,journal_number,journal_date,description'])
-        ->get()
-        ->sortBy('journal.journal_date')
-        ->values()
-        ->map(fn ($entry) => [
-            'date' => $entry->journal->journal_date?->format('Y-m-d'),
-            'journal_number' => $entry->journal->journal_number,
-            'description' => $entry->description ?? $entry->journal->description,
-            'debit' => (float) $entry->debit,
-            'credit' => (float) $entry->credit,
-        ]);
+            ->where('account_id', $accountId)
+            ->with(['journal:id,journal_number,journal_date,description'])
+            ->get()
+            ->sortBy('journal.journal_date')
+            ->values()
+            ->map(fn ($entry) => [
+                'date' => $entry->journal->journal_date?->format('Y-m-d'),
+                'journal_number' => $entry->journal->journal_number,
+                'description' => $entry->description ?? $entry->journal->description,
+                'debit' => (float) $entry->debit,
+                'credit' => (float) $entry->credit,
+            ]);
 
         $closingBalance = $selectedAccount->isDebitBalance()
             ? $openingBalance + $entries->sum('debit') - $entries->sum('credit')
@@ -686,7 +685,7 @@ class ReportController extends BaseApiController
             ->with(['invoiceItems' => function ($q) use ($tenantId, $startDate, $endDate) {
                 $q->whereHas('invoice', function ($iq) use ($tenantId, $startDate, $endDate) {
                     $iq->where('tenant_id', $tenantId)
-                       ->whereBetween('invoice_date', [$startDate, $endDate]);
+                        ->whereBetween('invoice_date', [$startDate, $endDate]);
                 });
             }])
             ->get()
@@ -795,9 +794,10 @@ class ReportController extends BaseApiController
 
         $byEmployee = $payrolls->groupBy('employee_id')->map(function ($records) {
             $employee = $records->first()->employee;
+
             return [
                 'employee_id' => $records->first()->employee_id,
-                'employee_name' => $employee ? ($employee->first_name . ' ' . $employee->last_name) : 'N/A',
+                'employee_name' => $employee ? ($employee->first_name.' '.$employee->last_name) : 'N/A',
                 'gross_salary' => (float) $records->sum('gross_salary'),
                 'total_deductions' => (float) $records->sum('total_deductions'),
                 'net_salary' => (float) $records->sum('net_salary'),
@@ -1001,8 +1001,9 @@ class ReportController extends BaseApiController
         $startDate = $request->get('start_date', now()->startOfYear()->format('Y-m-d'));
         $endDate = $request->get('end_date', now()->format('Y-m-d'));
 
-        if (!$customerId) {
+        if (! $customerId) {
             $customers = Customer::where('tenant_id', $tenantId)->orderBy('name')->get(['id', 'name', 'email']);
+
             return $this->success([
                 'customers' => $customers,
                 'message' => 'Provide customer_id to view statement.',
@@ -1011,7 +1012,7 @@ class ReportController extends BaseApiController
 
         $customer = Customer::where('tenant_id', $tenantId)->where('id', $customerId)->first();
 
-        if (!$customer) {
+        if (! $customer) {
             return $this->error('Customer not found.', 404);
         }
 
@@ -1044,7 +1045,7 @@ class ReportController extends BaseApiController
                 'date' => $inv->invoice_date?->format('Y-m-d'),
                 'type' => 'invoice',
                 'reference' => $inv->invoice_number,
-                'description' => 'Invoice #' . $inv->invoice_number,
+                'description' => 'Invoice #'.$inv->invoice_number,
                 'debit' => (float) $inv->total,
                 'credit' => 0,
             ]);
@@ -1055,7 +1056,7 @@ class ReportController extends BaseApiController
                 'date' => $pmt->payment_date?->format('Y-m-d'),
                 'type' => 'payment',
                 'reference' => $pmt->payment_number,
-                'description' => 'Payment #' . $pmt->payment_number,
+                'description' => 'Payment #'.$pmt->payment_number,
                 'debit' => 0,
                 'credit' => (float) $pmt->amount,
             ]);
@@ -1068,6 +1069,7 @@ class ReportController extends BaseApiController
         $transactions = $transactions->map(function ($t) use (&$runningBalance) {
             $runningBalance += $t['debit'] - $t['credit'];
             $t['balance'] = $runningBalance;
+
             return $t;
         });
 
@@ -1094,10 +1096,10 @@ class ReportController extends BaseApiController
     protected function calculateProfitLossFromJournals(int $tenantId, string $startDate, string $endDate): array
     {
         $incomeData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$startDate, $endDate])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', fn ($q) => $q->where('type', 'income'))
             ->selectRaw('SUM(credit) as total_credit, SUM(debit) as total_debit')
             ->first();
@@ -1105,10 +1107,10 @@ class ReportController extends BaseApiController
         $revenue = ($incomeData->total_credit ?? 0) - ($incomeData->total_debit ?? 0);
 
         $expenseData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$startDate, $endDate])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', fn ($q) => $q->where('type', 'expense'))
             ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
             ->first();
@@ -1117,10 +1119,10 @@ class ReportController extends BaseApiController
 
         // COGS breakdown
         $cogsData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$startDate, $endDate])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', fn ($q) => $q->where('type', 'expense')->where('sub_type', 'cost_of_goods_sold'))
             ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
             ->first();
@@ -1130,10 +1132,10 @@ class ReportController extends BaseApiController
 
         // Payroll expenses
         $payrollData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$startDate, $endDate])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', function ($q) {
                 $q->where('type', 'expense')
                     ->where(function ($q2) {
@@ -1166,10 +1168,10 @@ class ReportController extends BaseApiController
         $fiscalYearStart = Carbon::parse($asOf)->startOfYear()->format('Y-m-d');
 
         $incomeData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $fiscalYearStart, $asOf) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$fiscalYearStart, $asOf])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$fiscalYearStart, $asOf])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', fn ($q) => $q->where('type', 'income'))
             ->selectRaw('SUM(credit) as total_credit, SUM(debit) as total_debit')
             ->first();
@@ -1177,10 +1179,10 @@ class ReportController extends BaseApiController
         $totalIncome = ($incomeData->total_credit ?? 0) - ($incomeData->total_debit ?? 0);
 
         $expenseData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $fiscalYearStart, $asOf) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$fiscalYearStart, $asOf])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$fiscalYearStart, $asOf])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', fn ($q) => $q->where('type', 'expense'))
             ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
             ->first();
@@ -1198,10 +1200,10 @@ class ReportController extends BaseApiController
         $operator = $beforeDate ? '<' : '<=';
 
         $cashData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $date, $operator) {
-                $query->where('tenant_id', $tenantId)
-                    ->where('journal_date', $operator, $date)
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->where('journal_date', $operator, $date)
+                ->where('is_posted', true);
+        })
             ->whereHas('account', fn ($q) => $q->where('type', 'asset')->whereIn('sub_type', ['cash', 'bank']))
             ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
             ->first();
@@ -1215,10 +1217,10 @@ class ReportController extends BaseApiController
     protected function getJournalSum(int $tenantId, string $startDate, string $endDate, string $type, string $subType, string $column): float
     {
         return JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
+            $query->where('tenant_id', $tenantId)
+                ->whereBetween('journal_date', [$startDate, $endDate])
+                ->where('is_posted', true);
+        })
             ->whereHas('account', fn ($q) => $q->where('type', $type)->where('sub_type', $subType))
             ->sum($column);
     }

@@ -8,12 +8,10 @@ use App\Models\Customer;
 use App\Models\Expense;
 use App\Models\Inventory;
 use App\Models\Invoice;
-use App\Models\InvoiceItem;
 use App\Models\Item;
 use App\Models\Journal;
 use App\Models\JournalEntry;
 use App\Models\Payroll;
-use App\Models\PaymentReceived;
 use App\Models\Vendor;
 use Tests\TestCase;
 

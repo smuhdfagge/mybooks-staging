@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\InvoiceTemplate;
-use Illuminate\Http\Request;
 
 class InvoiceTemplateController extends Controller
 {

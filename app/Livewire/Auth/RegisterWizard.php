@@ -18,28 +18,42 @@ class RegisterWizard extends Component
 {
     // Current step (1 = Plan, 2 = Company, 3 = User)
     public int $currentStep = 1;
+
     public int $totalSteps = 3;
 
     // Step 1: Plan Selection
     public ?int $plan_id = null;
+
     public string $billing_cycle = 'monthly';
 
     // Step 2: Company Information
     public string $company_name = '';
+
     public string $company_email = '';
+
     public string $company_phone = '';
+
     public string $company_address = '';
+
     public string $company_city = '';
+
     public string $company_state = '';
+
     public string $company_country = '';
+
     public string $company_postal_code = '';
+
     public string $currency = 'NGN';
 
     // Step 3: User Information
     public string $name = '';
+
     public string $email = '';
+
     public string $phone = '';
+
     public string $password = '';
+
     public string $password_confirmation = '';
 
     // Plans collection
@@ -48,11 +62,11 @@ class RegisterWizard extends Component
     public function mount()
     {
         $this->plans = Plan::active()->ordered()->get();
-        
+
         // Set default plan from query string or first plan
         $selectedPlanSlug = request('plan');
         $selectedPlan = $this->plans->firstWhere('slug', $selectedPlanSlug) ?? $this->plans->first();
-        
+
         if ($selectedPlan) {
             $this->plan_id = $selectedPlan->id;
         }
@@ -61,7 +75,7 @@ class RegisterWizard extends Component
     // Validation rules for each step
     protected function rulesForStep(int $step): array
     {
-        return match($step) {
+        return match ($step) {
             1 => [
                 'plan_id' => ['required', 'exists:plans,id'],
                 'billing_cycle' => ['required', 'in:monthly,annual'],
@@ -104,7 +118,7 @@ class RegisterWizard extends Component
         // Reset billing cycle when plan changes to ensure valid selection
         $plan = $this->plans->find($value);
         if ($plan) {
-            if (!$plan->allowsBillingCycle($this->billing_cycle)) {
+            if (! $plan->allowsBillingCycle($this->billing_cycle)) {
                 $this->billing_cycle = $plan->allow_monthly_billing ? 'monthly' : 'annual';
             }
         }
@@ -130,8 +144,9 @@ class RegisterWizard extends Component
         // Additional validation for step 1 - check billing cycle is allowed
         if ($this->currentStep === 1) {
             $plan = Plan::find($this->plan_id);
-            if (!$plan->allowsBillingCycle($this->billing_cycle)) {
+            if (! $plan->allowsBillingCycle($this->billing_cycle)) {
                 $this->addError('billing_cycle', "The selected plan does not support {$this->billing_cycle} billing.");
+
                 return;
             }
         }
@@ -172,7 +187,7 @@ class RegisterWizard extends Component
             // Create the tenant
             $tenant = Tenant::create([
                 'name' => $this->company_name,
-                'slug' => Str::slug($this->company_name) . '-' . Str::random(6),
+                'slug' => Str::slug($this->company_name).'-'.Str::random(6),
                 'email' => strtolower($this->company_email),
                 'phone' => $this->company_phone,
                 'address' => $this->company_address,

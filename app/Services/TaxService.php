@@ -2,19 +2,19 @@
 
 namespace App\Services;
 
-use App\Models\TaxRate;
-use App\Models\TaxGroup;
 use App\Models\Item;
+use App\Models\TaxGroup;
+use App\Models\TaxRate;
 
 class TaxService
 {
     /**
      * Calculate tax for a line item
-     * 
-     * @param float $amount The taxable amount (quantity * unit price)
-     * @param Item|null $item Optional item to get tax configuration from
-     * @param TaxRate|TaxGroup|int|null $tax Tax rate, tax group, or ID
-     * @param string $taxType 'rate' or 'group'
+     *
+     * @param  float  $amount  The taxable amount (quantity * unit price)
+     * @param  Item|null  $item  Optional item to get tax configuration from
+     * @param  TaxRate|TaxGroup|int|null  $tax  Tax rate, tax group, or ID
+     * @param  string  $taxType  'rate' or 'group'
      * @return array ['tax_amount' => float, 'taxes' => array]
      */
     public function calculateTax(
@@ -25,7 +25,7 @@ class TaxService
     ): array {
         // If item is provided and taxable, use its tax configuration
         if ($item) {
-            if (!$item->is_taxable) {
+            if (! $item->is_taxable) {
                 return ['tax_amount' => 0, 'taxes' => []];
             }
 
@@ -117,8 +117,8 @@ class TaxService
 
     /**
      * Calculate total tax for multiple line items
-     * 
-     * @param array $lineItems Array of ['amount' => float, 'item' => Item|null, 'tax' => mixed, 'tax_type' => string]
+     *
+     * @param  array  $lineItems  Array of ['amount' => float, 'item' => Item|null, 'tax' => mixed, 'tax_type' => string]
      * @return array ['total_tax' => float, 'tax_breakdown' => array]
      */
     public function calculateTotalTax(array $lineItems): array
@@ -139,7 +139,7 @@ class TaxService
             // Aggregate tax breakdown by tax rate
             foreach ($result['taxes'] as $tax) {
                 $key = $tax['tax_rate_id'] ?? $tax['name'];
-                if (!isset($taxBreakdown[$key])) {
+                if (! isset($taxBreakdown[$key])) {
                     $taxBreakdown[$key] = [
                         'name' => $tax['name'],
                         'rate' => $tax['rate'],
@@ -158,8 +158,8 @@ class TaxService
 
     /**
      * Get available tax rates for selection (dropdowns)
-     * 
-     * @param string $type 'sales', 'purchases', or 'both'
+     *
+     * @param  string  $type  'sales', 'purchases', or 'both'
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getAvailableTaxRates(string $type = 'both')
@@ -180,7 +180,7 @@ class TaxService
 
     /**
      * Get available tax groups for selection (dropdowns)
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getAvailableTaxGroups()
@@ -193,9 +193,8 @@ class TaxService
 
     /**
      * Get the default tax rate for a tenant
-     * 
-     * @param string $type 'sales' or 'purchases'
-     * @return TaxRate|null
+     *
+     * @param  string  $type  'sales' or 'purchases'
      */
     public function getDefaultTaxRate(string $type = 'sales'): ?TaxRate
     {
@@ -210,10 +209,8 @@ class TaxService
 
     /**
      * Extract net amount from gross (tax-inclusive) amount
-     * 
-     * @param float $grossAmount
-     * @param TaxRate|TaxGroup $tax
-     * @return float
+     *
+     * @param  TaxRate|TaxGroup  $tax
      */
     public function extractNetAmount(float $grossAmount, $tax): float
     {
@@ -223,6 +220,7 @@ class TaxService
 
         if ($tax instanceof TaxGroup) {
             $rate = $tax->combined_rate;
+
             return $grossAmount / (1 + ($rate / 100));
         }
 
@@ -231,9 +229,8 @@ class TaxService
 
     /**
      * Format tax for display on invoices/receipts
-     * 
-     * @param array $taxes Array from calculateTax result
-     * @return string
+     *
+     * @param  array  $taxes  Array from calculateTax result
      */
     public function formatTaxSummary(array $taxes): string
     {

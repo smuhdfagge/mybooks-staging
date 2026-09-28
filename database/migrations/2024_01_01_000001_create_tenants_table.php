@@ -47,7 +47,7 @@ return new class extends Migration
             $table->dropForeign(['tenant_id']);
             $table->dropColumn(['tenant_id', 'phone', 'avatar', 'is_active', 'is_super_admin']);
         });
-        
+
         Schema::dropIfExists('tenants');
     }
 };

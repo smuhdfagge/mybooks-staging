@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Invoice;
 use App\Models\Bill;
-use App\Models\Expense;
 use App\Models\Customer;
 use App\Models\Employee;
+use App\Models\Expense;
 use App\Models\Inventory;
+use App\Models\Invoice;
 use App\Models\PaymentReceived;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class DashboardController extends BaseApiController
 {

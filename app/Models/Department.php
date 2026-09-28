@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Department extends Model
 {
-    use HasFactory, BelongsToTenant, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity;
 
     protected $fillable = [
         'tenant_id',
@@ -25,27 +27,32 @@ class Department extends Model
         'is_active' => 'boolean',
     ];
 
-    public function parent()
+    /** @return BelongsTo<Department, $this> */
+    public function parent(): BelongsTo
     {
         return $this->belongsTo(Department::class, 'parent_id');
     }
 
-    public function children()
+    /** @return HasMany<Department, $this> */
+    public function children(): HasMany
     {
         return $this->hasMany(Department::class, 'parent_id');
     }
 
-    public function manager()
+    /** @return BelongsTo<Employee, $this> */
+    public function manager(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'manager_id');
     }
 
-    public function employees()
+    /** @return HasMany<Employee, $this> */
+    public function employees(): HasMany
     {
         return $this->hasMany(Employee::class);
     }
 
-    public function designations()
+    /** @return HasMany<Designation, $this> */
+    public function designations(): HasMany
     {
         return $this->hasMany(Designation::class);
     }

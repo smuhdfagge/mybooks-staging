@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Invoice;
+use App\Http\Resources\InvoiceResource;
+use App\Models\ActivityLog;
 use App\Models\Inventory;
 use App\Models\InventoryHistory;
-use App\Models\ActivityLog;
-use App\Http\Resources\InvoiceResource;
+use App\Models\Invoice;
 use App\Services\NotificationService;
-use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class InvoiceController extends BaseApiController
 {
@@ -79,6 +79,7 @@ class InvoiceController extends BaseApiController
     public function show(Invoice $invoice): JsonResponse
     {
         $invoice->load(['customer', 'items.item', 'payments', 'createdBy']);
+
         return $this->success(new InvoiceResource($invoice));
     }
 
@@ -123,7 +124,7 @@ class InvoiceController extends BaseApiController
             $itemSubtotal = $item['quantity'] * $item['unit_price'];
 
             // Apply item discount
-            if (!empty($item['discount'])) {
+            if (! empty($item['discount'])) {
                 if (($item['discount_type'] ?? 'fixed') === 'percentage') {
                     $itemSubtotal -= $itemSubtotal * ($item['discount'] / 100);
                 } else {
@@ -133,7 +134,7 @@ class InvoiceController extends BaseApiController
 
             // Calculate tax
             $itemTax = 0;
-            if (!empty($item['tax_rate'])) {
+            if (! empty($item['tax_rate'])) {
                 $itemTax = $itemSubtotal * ($item['tax_rate'] / 100);
             }
 
@@ -146,7 +147,7 @@ class InvoiceController extends BaseApiController
 
         // Apply invoice-level discount
         $discountAmount = 0;
-        if (!empty($validated['discount_amount'])) {
+        if (! empty($validated['discount_amount'])) {
             if (($validated['discount_type'] ?? 'fixed') === 'percentage') {
                 $discountAmount = $subtotal * ($validated['discount_amount'] / 100);
             } else {
@@ -191,7 +192,7 @@ class InvoiceController extends BaseApiController
     public function update(Request $request, Invoice $invoice): JsonResponse
     {
         // Only allow updates on draft invoices
-        if ($invoice->status !== 'draft' && !$request->user()->can('edit invoices')) {
+        if ($invoice->status !== 'draft' && ! $request->user()->can('edit invoices')) {
             return $this->forbidden('Cannot modify a non-draft invoice');
         }
 
@@ -225,7 +226,7 @@ class InvoiceController extends BaseApiController
             foreach ($validated['items'] as &$item) {
                 $itemSubtotal = $item['quantity'] * $item['unit_price'];
 
-                if (!empty($item['discount'])) {
+                if (! empty($item['discount'])) {
                     if (($item['discount_type'] ?? 'fixed') === 'percentage') {
                         $itemSubtotal -= $itemSubtotal * ($item['discount'] / 100);
                     } else {
@@ -234,7 +235,7 @@ class InvoiceController extends BaseApiController
                 }
 
                 $itemTax = 0;
-                if (!empty($item['tax_rate'])) {
+                if (! empty($item['tax_rate'])) {
                     $itemTax = $itemSubtotal * ($item['tax_rate'] / 100);
                 }
 
@@ -246,7 +247,7 @@ class InvoiceController extends BaseApiController
             }
 
             $discountAmount = 0;
-            if (!empty($validated['discount_amount'])) {
+            if (! empty($validated['discount_amount'])) {
                 if (($validated['discount_type'] ?? 'fixed') === 'percentage') {
                     $discountAmount = $subtotal * ($validated['discount_amount'] / 100);
                 } else {
@@ -352,7 +353,7 @@ class InvoiceController extends BaseApiController
      */
     public function send(Invoice $invoice, NotificationService $notificationService): JsonResponse
     {
-        if (!$invoice->customer || !$invoice->customer->email) {
+        if (! $invoice->customer || ! $invoice->customer->email) {
             return $this->error('Customer does not have an email address.', 422);
         }
 
@@ -383,7 +384,7 @@ class InvoiceController extends BaseApiController
             return $this->error('Invoice has already been released.', 422);
         }
 
-        if (!$invoice->canBeReleased()) {
+        if (! $invoice->canBeReleased()) {
             return $this->error('Only paid invoices can be released.', 422);
         }
 
@@ -436,7 +437,8 @@ class InvoiceController extends BaseApiController
             ], 'Invoice released successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return $this->error('Failed to release invoice: ' . $e->getMessage(), 500);
+
+            return $this->error('Failed to release invoice: '.$e->getMessage(), 500);
         }
     }
 

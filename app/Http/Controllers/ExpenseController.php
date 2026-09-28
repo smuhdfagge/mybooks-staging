@@ -2,21 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreExpenseRequest;
+use App\Models\Bank;
+use App\Models\ChartOfAccount;
 use App\Models\Expense;
 use App\Models\Vendor;
-use App\Models\ChartOfAccount;
-use App\Models\Bank;
-use App\Http\Requests\StoreExpenseRequest;
 use App\Services\BankService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class ExpenseController extends Controller
 {
     public function __construct(
         protected BankService $bankService
     ) {}
+
     public function index()
     {
         return view('expenses.index');
@@ -29,7 +29,7 @@ class ExpenseController extends Controller
         $paymentAccounts = ChartOfAccount::where('is_active', true)->orderBy('account_code')->get();
         $expenseNumber = Expense::generateNumber(auth()->user()->tenant_id);
         $banks = Bank::where('is_active', true)->orderBy('name')->get();
-        
+
         return view('expenses.create', compact('vendors', 'expenseAccounts', 'paymentAccounts', 'expenseNumber', 'banks'));
     }
 
@@ -38,11 +38,11 @@ class ExpenseController extends Controller
         $tenantId = auth()->user()->tenant_id;
 
         $validated = $request->validated();
-        
+
         $amount = $validated['amount'];
         $taxAmount = 0; // Can be added to form if needed
         $total = $amount + $taxAmount;
-        
+
         $expense = Expense::create([
             'tenant_id' => $tenantId,
             'expense_number' => Expense::generateNumber($tenantId),
@@ -70,13 +70,14 @@ class ExpenseController extends Controller
     public function show(Expense $expense)
     {
         $expense->load(['vendor', 'expenseAccount', 'paidThroughAccount', 'journal.entries.account', 'approvedByUser', 'rejectedByUser', 'createdBy']);
+
         return view('expenses.show', compact('expense'));
     }
 
     public function edit(Expense $expense)
     {
         // Only allow editing if expense is in draft or rejected status
-        if (!$expense->canBeEdited()) {
+        if (! $expense->canBeEdited()) {
             return redirect()->route('expenses.show', $expense)
                 ->with('error', 'This expense cannot be edited in its current status.');
         }
@@ -85,13 +86,14 @@ class ExpenseController extends Controller
         $expenseAccounts = ChartOfAccount::where('type', 'expense')->where('is_active', true)->get();
         $paymentAccounts = ChartOfAccount::where('is_active', true)->orderBy('account_code')->get();
         $banks = Bank::where('is_active', true)->orderBy('name')->get();
+
         return view('expenses.edit', compact('expense', 'vendors', 'expenseAccounts', 'paymentAccounts', 'banks'));
     }
 
     public function update(StoreExpenseRequest $request, Expense $expense)
     {
         // Only allow updating if expense is in draft or rejected status
-        if (!$expense->canBeEdited()) {
+        if (! $expense->canBeEdited()) {
             return redirect()->route('expenses.show', $expense)
                 ->with('error', 'This expense cannot be updated in its current status.');
         }
@@ -120,7 +122,7 @@ class ExpenseController extends Controller
      */
     public function submit(Expense $expense)
     {
-        if (!$expense->canBeSubmitted()) {
+        if (! $expense->canBeSubmitted()) {
             return redirect()->route('expenses.show', $expense)
                 ->with('error', 'This expense cannot be submitted for approval in its current status.');
         }
@@ -137,12 +139,12 @@ class ExpenseController extends Controller
     public function approve(Expense $expense)
     {
         // Check if user has admin role or is super admin
-        if (!auth()->user()->hasRole('admin') && !auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->hasRole('admin') && ! auth()->user()->isSuperAdmin()) {
             return redirect()->route('expenses.show', $expense)
                 ->with('error', 'You do not have permission to approve expenses.');
         }
 
-        if (!$expense->canBeApproved()) {
+        if (! $expense->canBeApproved()) {
             return redirect()->route('expenses.show', $expense)
                 ->with('error', 'This expense cannot be approved in its current status.');
         }
@@ -159,12 +161,12 @@ class ExpenseController extends Controller
     public function reject(Request $request, Expense $expense)
     {
         // Check if user has admin role or is super admin
-        if (!auth()->user()->hasRole('admin') && !auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->hasRole('admin') && ! auth()->user()->isSuperAdmin()) {
             return redirect()->route('expenses.show', $expense)
                 ->with('error', 'You do not have permission to reject expenses.');
         }
 
-        if (!$expense->canBeRejected()) {
+        if (! $expense->canBeRejected()) {
             return redirect()->route('expenses.show', $expense)
                 ->with('error', 'This expense cannot be rejected in its current status.');
         }
@@ -185,12 +187,12 @@ class ExpenseController extends Controller
     public function markAsPaid(Expense $expense)
     {
         // Check if user has admin role or is super admin
-        if (!auth()->user()->hasRole('admin') && !auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->hasRole('admin') && ! auth()->user()->isSuperAdmin()) {
             return redirect()->route('expenses.show', $expense)
                 ->with('error', 'You do not have permission to mark expenses as paid.');
         }
 
-        if (!$expense->canBeMarkedAsPaid()) {
+        if (! $expense->canBeMarkedAsPaid()) {
             return redirect()->route('expenses.show', $expense)
                 ->with('error', 'This expense must be approved before it can be marked as paid.');
         }
@@ -206,7 +208,7 @@ class ExpenseController extends Controller
     public function destroy(Expense $expense)
     {
         // Only allow deletion if expense is draft or rejected
-        if (!in_array($expense->status, [Expense::STATUS_DRAFT, Expense::STATUS_REJECTED])) {
+        if (! in_array($expense->status, [Expense::STATUS_DRAFT, Expense::STATUS_REJECTED])) {
             return redirect()->route('expenses.show', $expense)
                 ->with('error', 'Only draft or rejected expenses can be deleted.');
         }

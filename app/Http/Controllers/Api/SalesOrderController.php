@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\SalesOrder;
 use App\Http\Resources\SalesOrderResource;
-use Illuminate\Http\Request;
+use App\Models\SalesOrder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class SalesOrderController extends BaseApiController
@@ -66,6 +66,7 @@ class SalesOrderController extends BaseApiController
     public function show(SalesOrder $salesOrder): JsonResponse
     {
         $salesOrder->load(['customer', 'items.item', 'invoices', 'createdBy']);
+
         return $this->success(new SalesOrderResource($salesOrder));
     }
 
@@ -107,7 +108,7 @@ class SalesOrderController extends BaseApiController
         foreach ($validated['items'] as &$item) {
             $itemSubtotal = $item['quantity'] * $item['unit_price'];
 
-            if (!empty($item['discount'])) {
+            if (! empty($item['discount'])) {
                 if (($item['discount_type'] ?? 'fixed') === 'percentage') {
                     $itemSubtotal -= $itemSubtotal * ($item['discount'] / 100);
                 } else {
@@ -116,7 +117,7 @@ class SalesOrderController extends BaseApiController
             }
 
             $itemTax = 0;
-            if (!empty($item['tax_rate'])) {
+            if (! empty($item['tax_rate'])) {
                 $itemTax = $itemSubtotal * ($item['tax_rate'] / 100);
             }
 
@@ -128,7 +129,7 @@ class SalesOrderController extends BaseApiController
         }
 
         $discountAmount = 0;
-        if (!empty($validated['discount_amount'])) {
+        if (! empty($validated['discount_amount'])) {
             if (($validated['discount_type'] ?? 'fixed') === 'percentage') {
                 $discountAmount = $subtotal * ($validated['discount_amount'] / 100);
             } else {
@@ -191,7 +192,7 @@ class SalesOrderController extends BaseApiController
             foreach ($validated['items'] as &$item) {
                 $itemSubtotal = $item['quantity'] * $item['unit_price'];
 
-                if (!empty($item['discount'])) {
+                if (! empty($item['discount'])) {
                     if (($item['discount_type'] ?? 'fixed') === 'percentage') {
                         $itemSubtotal -= $itemSubtotal * ($item['discount'] / 100);
                     } else {
@@ -200,7 +201,7 @@ class SalesOrderController extends BaseApiController
                 }
 
                 $itemTax = 0;
-                if (!empty($item['tax_rate'])) {
+                if (! empty($item['tax_rate'])) {
                     $itemTax = $itemSubtotal * ($item['tax_rate'] / 100);
                 }
 
@@ -212,7 +213,7 @@ class SalesOrderController extends BaseApiController
             }
 
             $discountAmount = 0;
-            if (!empty($validated['discount_amount'])) {
+            if (! empty($validated['discount_amount'])) {
                 if (($validated['discount_type'] ?? 'fixed') === 'percentage') {
                     $discountAmount = $subtotal * ($validated['discount_amount'] / 100);
                 } else {

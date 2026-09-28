@@ -21,20 +21,21 @@ class BankService
      */
     public function credit(?int $bankId, float $amount, string $reason = ''): void
     {
-        if (!$bankId || $amount <= 0) {
+        if (! $bankId || $amount <= 0) {
             return;
         }
 
         $bank = Bank::find($bankId);
 
-        if (!$bank) {
+        if (! $bank) {
             Log::warning("BankService::credit — Bank #{$bankId} not found. Reason: {$reason}");
+
             return;
         }
 
         $bank->increment('current_balance', $amount);
 
-        Log::info("BankService::credit", [
+        Log::info('BankService::credit', [
             'bank_id' => $bankId,
             'amount' => $amount,
             'new_balance' => $bank->fresh()->current_balance,
@@ -49,20 +50,21 @@ class BankService
      */
     public function debit(?int $bankId, float $amount, string $reason = ''): void
     {
-        if (!$bankId || $amount <= 0) {
+        if (! $bankId || $amount <= 0) {
             return;
         }
 
         $bank = Bank::find($bankId);
 
-        if (!$bank) {
+        if (! $bank) {
             Log::warning("BankService::debit — Bank #{$bankId} not found. Reason: {$reason}");
+
             return;
         }
 
         $bank->decrement('current_balance', $amount);
 
-        Log::info("BankService::debit", [
+        Log::info('BankService::debit', [
             'bank_id' => $bankId,
             'amount' => $amount,
             'new_balance' => $bank->fresh()->current_balance,

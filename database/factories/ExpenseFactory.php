@@ -14,7 +14,7 @@ class ExpenseFactory extends Factory
     {
         return [
             'tenant_id' => Tenant::factory(),
-            'expense_number' => 'EXP-' . str_pad(fake()->unique()->numberBetween(1, 999999), 6, '0', STR_PAD_LEFT),
+            'expense_number' => 'EXP-'.str_pad(fake()->unique()->numberBetween(1, 999999), 6, '0', STR_PAD_LEFT),
             'name' => fake()->words(3, true),
             'expense_date' => now(),
             'amount' => fake()->randomFloat(2, 50, 5000),

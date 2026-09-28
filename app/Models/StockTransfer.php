@@ -2,18 +2,23 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class StockTransfer extends Model
 {
-    use HasFactory, BelongsToTenant, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity;
 
     const STATUS_DRAFT = 'draft';
+
     const STATUS_IN_TRANSIT = 'in_transit';
+
     const STATUS_COMPLETED = 'completed';
+
     const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [
@@ -33,22 +38,26 @@ class StockTransfer extends Model
         'received_at' => 'datetime',
     ];
 
-    public function fromWarehouse()
+    /** @return BelongsTo<Warehouse, $this> */
+    public function fromWarehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class, 'from_warehouse_id');
     }
 
-    public function toWarehouse()
+    /** @return BelongsTo<Warehouse, $this> */
+    public function toWarehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class, 'to_warehouse_id');
     }
 
-    public function items()
+    /** @return HasMany<StockTransferItem, $this> */
+    public function items(): HasMany
     {
         return $this->hasMany(StockTransferItem::class);
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
@@ -62,7 +71,7 @@ class StockTransfer extends Model
 
         $nextNumber = $latest ? ((int) substr($latest->transfer_number, 3)) + 1 : 1;
 
-        return 'ST-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+        return 'ST-'.str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -76,7 +85,7 @@ class StockTransfer extends Model
 
         foreach ($this->items as $transferItem) {
             $item = $transferItem->item;
-            if (!$item || !$item->track_inventory) {
+            if (! $item || ! $item->track_inventory) {
                 continue;
             }
 
@@ -121,7 +130,7 @@ class StockTransfer extends Model
 
         foreach ($this->items as $transferItem) {
             $item = $transferItem->item;
-            if (!$item || !$item->track_inventory) {
+            if (! $item || ! $item->track_inventory) {
                 continue;
             }
 

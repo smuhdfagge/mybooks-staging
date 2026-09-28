@@ -4,18 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use App\Models\Invoice;
-use App\Models\InvoiceItem;
 use App\Models\Item;
-use App\Models\Bill;
-use App\Models\Expense;
 use App\Models\PaymentReceived;
-use App\Models\PaymentMade;
 use App\Models\SalesOrder;
-use App\Models\SalesReceipt;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class AnalyticsController extends Controller
 {
@@ -25,7 +20,7 @@ class AnalyticsController extends Controller
     public function index(Request $request)
     {
         $tenantId = auth()->user()->tenant_id;
-        
+
         // Date range handling
         $period = $request->get('period', 'this_month');
         $dates = $this->getDateRange($period, $request);
@@ -71,7 +66,7 @@ class AnalyticsController extends Controller
     private function getDateRange(string $period, Request $request): array
     {
         $now = Carbon::now();
-        
+
         switch ($period) {
             case 'today':
                 $start = $now->copy()->startOfDay();
@@ -204,10 +199,10 @@ class AnalyticsController extends Controller
 
         // Calculate averages and rates
         $avgOrderValue = $currentInvoiceCount > 0 ? $currentInvoiceTotal / $currentInvoiceCount : 0;
-        $previousAvgOrderValue = $previousInvoiceCount > 0 
+        $previousAvgOrderValue = $previousInvoiceCount > 0
             ? Invoice::where('tenant_id', $tenantId)
                 ->whereBetween('invoice_date', [$previousStartDate, $previousEndDate])
-                ->sum('total') / $previousInvoiceCount 
+                ->sum('total') / $previousInvoiceCount
             : 0;
 
         // Collection rate
@@ -264,7 +259,7 @@ class AnalyticsController extends Controller
     {
         $start = Carbon::parse($startDate);
         $end = Carbon::parse($endDate);
-        
+
         // Determine grouping based on period
         if (in_array($period, ['today', 'yesterday'])) {
             $groupBy = 'hour';
@@ -293,18 +288,18 @@ class AnalyticsController extends Controller
             for ($hour = 0; $hour < 24; $hour++) {
                 $hourStart = $start->copy()->hour($hour)->startOfHour();
                 $hourEnd = $start->copy()->hour($hour)->endOfHour();
-                
+
                 $labels[] = sprintf('%02d:00', $hour);
-                
+
                 $revenueData[] = (float) Invoice::where('tenant_id', $tenantId)
                     ->whereBetween('invoice_date', [$hourStart, $hourEnd])
                     ->whereIn('status', ['paid', 'partial'])
                     ->sum('amount_paid');
-                
+
                 $invoiceCountData[] = Invoice::where('tenant_id', $tenantId)
                     ->whereBetween('invoice_date', [$hourStart, $hourEnd])
                     ->count();
-                
+
                 $paymentsData[] = (float) PaymentReceived::where('tenant_id', $tenantId)
                     ->whereBetween('payment_date', [$hourStart, $hourEnd])
                     ->sum('amount');
@@ -313,16 +308,16 @@ class AnalyticsController extends Controller
             $period = CarbonPeriod::create($start, $end);
             foreach ($period as $date) {
                 $labels[] = $date->format($format);
-                
+
                 $revenueData[] = (float) Invoice::where('tenant_id', $tenantId)
                     ->whereDate('invoice_date', $date)
                     ->whereIn('status', ['paid', 'partial'])
                     ->sum('amount_paid');
-                
+
                 $invoiceCountData[] = Invoice::where('tenant_id', $tenantId)
                     ->whereDate('invoice_date', $date)
                     ->count();
-                
+
                 $paymentsData[] = (float) PaymentReceived::where('tenant_id', $tenantId)
                     ->whereDate('payment_date', $date)
                     ->sum('amount');
@@ -331,21 +326,21 @@ class AnalyticsController extends Controller
             $current = $start->copy()->startOfWeek();
             while ($current <= $end) {
                 $weekEnd = $current->copy()->endOfWeek();
-                $labels[] = 'W' . $current->weekOfYear;
-                
+                $labels[] = 'W'.$current->weekOfYear;
+
                 $revenueData[] = (float) Invoice::where('tenant_id', $tenantId)
                     ->whereBetween('invoice_date', [$current, $weekEnd])
                     ->whereIn('status', ['paid', 'partial'])
                     ->sum('amount_paid');
-                
+
                 $invoiceCountData[] = Invoice::where('tenant_id', $tenantId)
                     ->whereBetween('invoice_date', [$current, $weekEnd])
                     ->count();
-                
+
                 $paymentsData[] = (float) PaymentReceived::where('tenant_id', $tenantId)
                     ->whereBetween('payment_date', [$current, $weekEnd])
                     ->sum('amount');
-                
+
                 $current->addWeek();
             }
         } else {
@@ -354,20 +349,20 @@ class AnalyticsController extends Controller
             while ($current <= $end) {
                 $monthEnd = $current->copy()->endOfMonth();
                 $labels[] = $current->format('M Y');
-                
+
                 $revenueData[] = (float) Invoice::where('tenant_id', $tenantId)
                     ->whereBetween('invoice_date', [$current, $monthEnd])
                     ->whereIn('status', ['paid', 'partial'])
                     ->sum('amount_paid');
-                
+
                 $invoiceCountData[] = Invoice::where('tenant_id', $tenantId)
                     ->whereBetween('invoice_date', [$current, $monthEnd])
                     ->count();
-                
+
                 $paymentsData[] = (float) PaymentReceived::where('tenant_id', $tenantId)
                     ->whereBetween('payment_date', [$current, $monthEnd])
                     ->sum('amount');
-                
+
                 $current->addMonth();
             }
         }
@@ -545,17 +540,17 @@ class AnalyticsController extends Controller
     {
         $start = Carbon::parse($startDate);
         $end = Carbon::parse($endDate);
-        
+
         $data = [];
         $current = $start->copy()->startOfMonth();
-        
+
         while ($current <= $end) {
             $monthEnd = $current->copy()->endOfMonth();
-            
+
             $newCustomers = Customer::where('tenant_id', $tenantId)
                 ->whereBetween('created_at', [$current, $monthEnd])
                 ->count();
-            
+
             // Customers who made their first purchase this month
             $firstTimeBuyers = Customer::where('tenant_id', $tenantId)
                 ->whereHas('invoices', function ($q) use ($current, $monthEnd) {
@@ -565,13 +560,13 @@ class AnalyticsController extends Controller
                     $q->where('invoice_date', '<', $current);
                 })
                 ->count();
-            
+
             $data[] = [
                 'month' => $current->format('M Y'),
                 'new_customers' => $newCustomers,
                 'first_time_buyers' => $firstTimeBuyers,
             ];
-            
+
             $current->addMonth();
         }
 
@@ -585,27 +580,27 @@ class AnalyticsController extends Controller
     {
         $start = Carbon::parse($startDate);
         $end = Carbon::parse($endDate);
-        
+
         $data = [];
         $current = $start->copy()->startOfMonth();
-        
+
         while ($current <= $end) {
             $monthEnd = $current->copy()->endOfMonth();
-            
+
             $invoices = Invoice::where('tenant_id', $tenantId)
                 ->whereBetween('invoice_date', [$current, $monthEnd]);
-            
+
             $count = $invoices->count();
             $total = $invoices->sum('total');
             $avgValue = $count > 0 ? $total / $count : 0;
-            
+
             $data[] = [
                 'month' => $current->format('M Y'),
                 'avg_value' => round($avgValue, 2),
                 'invoice_count' => $count,
                 'total_value' => (float) $total,
             ];
-            
+
             $current->addMonth();
         }
 
@@ -621,14 +616,14 @@ class AnalyticsController extends Controller
         $avgReceivables = Invoice::where('tenant_id', $tenantId)
             ->whereIn('status', ['unpaid', 'partial', 'overdue'])
             ->avg('balance_due') ?? 0;
-        
+
         $dailySales = Invoice::where('tenant_id', $tenantId)
             ->whereBetween('invoice_date', [$startDate, $endDate])
             ->sum('total');
-        
+
         $daysDiff = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) ?: 1;
         $avgDailySales = $dailySales / $daysDiff;
-        
+
         $dso = $avgDailySales > 0 ? round($avgReceivables / $avgDailySales, 1) : 0;
 
         // Collection by aging bucket
@@ -664,7 +659,7 @@ class AnalyticsController extends Controller
             ->where('status', 'paid')
             ->whereNotNull('updated_at')
             ->get();
-        
+
         $avgDaysToPayment = 0;
         if ($paidInvoices->count() > 0) {
             $totalDays = $paidInvoices->sum(function ($invoice) {
@@ -690,7 +685,7 @@ class AnalyticsController extends Controller
         $salesOrders = SalesOrder::where('tenant_id', $tenantId)
             ->whereBetween('order_date', [$startDate, $endDate])
             ->count();
-        
+
         $salesOrdersValue = SalesOrder::where('tenant_id', $tenantId)
             ->whereBetween('order_date', [$startDate, $endDate])
             ->sum('total');
@@ -699,7 +694,7 @@ class AnalyticsController extends Controller
         $invoicesCreated = Invoice::where('tenant_id', $tenantId)
             ->whereBetween('invoice_date', [$startDate, $endDate])
             ->count();
-        
+
         $invoicesValue = Invoice::where('tenant_id', $tenantId)
             ->whereBetween('invoice_date', [$startDate, $endDate])
             ->sum('total');
@@ -715,7 +710,7 @@ class AnalyticsController extends Controller
             ->whereBetween('invoice_date', [$startDate, $endDate])
             ->where('status', 'paid')
             ->count();
-        
+
         $paidValue = Invoice::where('tenant_id', $tenantId)
             ->whereBetween('invoice_date', [$startDate, $endDate])
             ->where('status', 'paid')
@@ -762,7 +757,7 @@ class AnalyticsController extends Controller
     {
         $start = Carbon::parse($startDate);
         $end = Carbon::parse($endDate);
-        
+
         // Total active customers (made a purchase in the period)
         $activeCustomers = Customer::where('tenant_id', $tenantId)
             ->whereHas('invoices', function ($q) use ($startDate, $endDate) {
@@ -777,7 +772,7 @@ class AnalyticsController extends Controller
             })
             ->withCount('invoices')
             ->get()
-            ->filter(fn($c) => $c->invoices_count > 1)
+            ->filter(fn ($c) => $c->invoices_count > 1)
             ->count();
 
         // Customer lifetime value (average)
@@ -800,7 +795,7 @@ class AnalyticsController extends Controller
             ->has('invoices')
             ->count();
 
-        $retentionRate = $totalCustomersWithPurchases > 0 
+        $retentionRate = $totalCustomersWithPurchases > 0
             ? round((($totalCustomersWithPurchases - $churnedCustomers) / $totalCustomersWithPurchases) * 100, 1)
             : 0;
 
@@ -833,7 +828,7 @@ class AnalyticsController extends Controller
         // Transform to heatmap format
         $heatmap = [];
         $days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        
+
         foreach ($salesByDayHour as $sale) {
             $heatmap[] = [
                 'day' => $days[$sale->day_of_week - 1] ?? 'Unknown',
@@ -854,7 +849,7 @@ class AnalyticsController extends Controller
         if ($previous == 0) {
             return $current > 0 ? 100 : 0;
         }
-        
+
         return round((($current - $previous) / $previous) * 100, 1);
     }
 

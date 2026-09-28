@@ -17,6 +17,7 @@ class TaxGroupController extends Controller
     public function create()
     {
         $taxRates = TaxRate::where('is_active', true)->orderBy('name')->get();
+
         return view('tax-groups.create', compact('taxRates'));
     }
 
@@ -35,7 +36,7 @@ class TaxGroupController extends Controller
         ]);
 
         // Check for unique code within tenant
-        if (!empty($validated['code'])) {
+        if (! empty($validated['code'])) {
             $exists = TaxGroup::where('tenant_id', $tenantId)
                 ->where('code', $validated['code'])
                 ->exists();
@@ -66,6 +67,7 @@ class TaxGroupController extends Controller
     public function show(TaxGroup $taxGroup)
     {
         $taxGroup->load('taxRates');
+
         return view('tax-groups.show', compact('taxGroup'));
     }
 
@@ -73,6 +75,7 @@ class TaxGroupController extends Controller
     {
         $taxRates = TaxRate::where('is_active', true)->orderBy('name')->get();
         $taxGroup->load('taxRates');
+
         return view('tax-groups.edit', compact('taxGroup', 'taxRates'));
     }
 
@@ -91,7 +94,7 @@ class TaxGroupController extends Controller
         ]);
 
         // Check for unique code within tenant (excluding current)
-        if (!empty($validated['code'])) {
+        if (! empty($validated['code'])) {
             $exists = TaxGroup::where('tenant_id', $tenantId)
                 ->where('code', $validated['code'])
                 ->where('id', '!=', $taxGroup->id)

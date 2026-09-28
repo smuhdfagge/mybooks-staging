@@ -35,7 +35,7 @@ class BudgetController extends Controller
             ->orderBy('account_code')
             ->get()
             ->groupBy('type');
-        
+
         $fiscalYears = Budget::getFiscalYears();
         $existingBudgets = Budget::select('id', 'name', 'fiscal_year')
             ->orderBy('fiscal_year', 'desc')
@@ -74,21 +74,21 @@ class BudgetController extends Controller
         $exists = Budget::where('fiscal_year', $validated['fiscal_year'])
             ->where('name', $validated['name'])
             ->exists();
-        
+
         if ($exists) {
             return back()->withErrors(['name' => 'A budget with this name already exists for the selected fiscal year.'])->withInput();
         }
 
         // If copying from existing budget
-        if (!empty($validated['copy_from'])) {
+        if (! empty($validated['copy_from'])) {
             $sourceBudget = Budget::findOrFail($validated['copy_from']);
             $budget = $this->budgetService->copyFromPreviousYear(
                 $sourceBudget,
                 $validated['fiscal_year'],
                 $validated['name']
             );
-            
-            if (!empty($validated['description'])) {
+
+            if (! empty($validated['description'])) {
                 $budget->update(['description' => $validated['description']]);
             }
 
@@ -106,7 +106,7 @@ class BudgetController extends Controller
                 'created_by' => auth()->id(),
             ]);
 
-            if (!empty($validated['lines'])) {
+            if (! empty($validated['lines'])) {
                 foreach ($validated['lines'] as $lineData) {
                     $line = new BudgetLine([
                         'budget_id' => $budget->id,
@@ -159,23 +159,23 @@ class BudgetController extends Controller
         }
 
         $budget->load('lines.account');
-        
+
         $accounts = ChartOfAccount::where('is_active', true)
             ->whereIn('type', ['income', 'expense'])
             ->orderBy('account_code')
             ->get()
             ->groupBy('type');
-        
+
         $fiscalYears = Budget::getFiscalYears();
         $months = Budget::getMonthColumns();
-        
+
         // Get existing line account IDs for the form
         $existingAccountIds = $budget->lines->pluck('account_id')->toArray();
-        
+
         // Pre-format budget lines for Alpine.js
-        $budgetLinesJson = $budget->lines->map(function($line) {
+        $budgetLinesJson = $budget->lines->map(function ($line) {
             return [
-                'key' => 'line_' . $line->id,
+                'key' => 'line_'.$line->id,
                 'id' => $line->id,
                 'account_id' => $line->account_id,
                 'account_code' => $line->account->account_code,
@@ -238,7 +238,7 @@ class BudgetController extends Controller
             $existingLineIds = $budget->lines->pluck('id')->toArray();
             $updatedLineIds = [];
 
-            if (!empty($validated['lines'])) {
+            if (! empty($validated['lines'])) {
                 foreach ($validated['lines'] as $lineData) {
                     $lineAttributes = [
                         'account_id' => $lineData['account_id'],
@@ -257,7 +257,7 @@ class BudgetController extends Controller
                         'notes' => $lineData['notes'] ?? null,
                     ];
 
-                    if (!empty($lineData['id'])) {
+                    if (! empty($lineData['id'])) {
                         // Update existing line
                         $line = BudgetLine::find($lineData['id']);
                         if ($line && $line->budget_id === $budget->id) {
@@ -279,7 +279,7 @@ class BudgetController extends Controller
 
             // Delete removed lines
             $linesToDelete = array_diff($existingLineIds, $updatedLineIds);
-            if (!empty($linesToDelete)) {
+            if (! empty($linesToDelete)) {
                 BudgetLine::whereIn('id', $linesToDelete)->delete();
             }
         });
@@ -316,7 +316,7 @@ class BudgetController extends Controller
 
     public function lock(Budget $budget)
     {
-        if (!$budget->isActive()) {
+        if (! $budget->isActive()) {
             return back()->with('error', 'Only active budgets can be locked.');
         }
 
@@ -329,7 +329,7 @@ class BudgetController extends Controller
     {
         $budget->load(['lines.account']);
         $months = Budget::getMonthColumns();
-        
+
         $comparison = $this->budgetService->getBudgetVsActual($budget);
         $ytdUtilization = $this->budgetService->getYTDUtilization($budget);
         $summary = $this->budgetService->getBudgetSummary($budget);
@@ -347,7 +347,7 @@ class BudgetController extends Controller
         }
 
         $request->validate([
-            'file' => 'required|file|mimes:csv,txt,xlsx,xls|max:' . config('mybooks.import_max_file_size', 10240),
+            'file' => 'required|file|mimes:csv,txt,xlsx,xls|max:'.config('mybooks.import_max_file_size', 10240),
             'update_existing' => 'nullable|boolean',
         ]);
 
@@ -356,8 +356,8 @@ class BudgetController extends Controller
         $format = in_array($extension, ['xlsx', 'xls']) ? Import::FORMAT_XLSX : Import::FORMAT_CSV;
 
         // Store the file
-        $filename = Str::uuid() . '.' . $extension;
-        $path = auth()->user()->tenant_id . '/' . $filename;
+        $filename = Str::uuid().'.'.$extension;
+        $path = auth()->user()->tenant_id.'/'.$filename;
         Storage::disk('imports')->put($path, file_get_contents($file));
 
         // Create import record
@@ -372,7 +372,7 @@ class BudgetController extends Controller
             'file_size' => $file->getSize(),
             'options' => [
                 'budget_id' => $budget->id,
-                'skip_duplicates' => !$request->boolean('update_existing'),
+                'skip_duplicates' => ! $request->boolean('update_existing'),
                 'update_existing' => $request->boolean('update_existing'),
             ],
         ]);
@@ -392,13 +392,14 @@ class BudgetController extends Controller
             if ($import->skipped_rows > 0) {
                 $message .= " {$import->skipped_rows} skipped (duplicates).";
             }
-            if (!empty($import->warnings)) {
-                $message .= ' ' . implode(' ', $import->warnings);
+            if (! empty($import->warnings)) {
+                $message .= ' '.implode(' ', $import->warnings);
             }
+
             return redirect()->route('budgets.edit', $budget)->with('success', $message);
         }
 
-        return redirect()->route('budgets.edit', $budget)->with('error', 'Import failed: ' . $import->error_message);
+        return redirect()->route('budgets.edit', $budget)->with('error', 'Import failed: '.$import->error_message);
     }
 
     /**
@@ -421,7 +422,7 @@ class BudgetController extends Controller
 
         return response()->stream($callback, 200, [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
 }

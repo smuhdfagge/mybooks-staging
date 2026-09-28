@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SalesReceipt;
-use App\Models\SalesReceiptItem;
 use App\Models\Customer;
 use App\Models\Item;
+use App\Models\SalesReceipt;
+use App\Models\SalesReceiptItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -22,7 +22,7 @@ class SalesReceiptController extends Controller
         $customers = Customer::where('is_active', true)->get();
         $items = Item::where('is_active', true)->get();
         $receiptNumber = SalesReceipt::generateNumber(auth()->user()->tenant_id);
-        
+
         return view('sales-receipts.create', compact('customers', 'items', 'receiptNumber'));
     }
 
@@ -42,7 +42,7 @@ class SalesReceiptController extends Controller
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0',
         ]);
-        
+
         $receipt = DB::transaction(function () use ($tenantId, $validated) {
             $this->assertStockAvailable($validated['items']);
 
@@ -88,6 +88,7 @@ class SalesReceiptController extends Controller
     public function show(SalesReceipt $salesReceipt)
     {
         $salesReceipt->load(['customer', 'items.item']);
+
         return view('sales-receipts.show', compact('salesReceipt'));
     }
 
@@ -107,6 +108,7 @@ class SalesReceiptController extends Controller
     {
         $customers = Customer::where('is_active', true)->get();
         $items = Item::where('is_active', true)->get();
+
         return view('sales-receipts.edit', compact('salesReceipt', 'customers', 'items'));
     }
 

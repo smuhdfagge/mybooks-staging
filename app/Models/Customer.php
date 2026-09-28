@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Notifications\Notifiable;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Notifications\Notifiable;
 
 class Customer extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, Notifiable;
+    use BelongsToTenant, HasFactory, LogsActivity, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'tenant_id',
@@ -40,43 +42,52 @@ class Customer extends Model
         'tax_number' => 'encrypted',
     ];
 
-    public function tenant()
+    /** @return BelongsTo<Tenant, $this> */
+    public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
     }
 
-    public function invoices()
+    /** @return HasMany<Invoice, $this> */
+    public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
     }
 
-    public function salesOrders()
+    /** @return HasMany<SalesOrder, $this> */
+    public function salesOrders(): HasMany
     {
         return $this->hasMany(SalesOrder::class);
     }
 
-    public function salesReceipts()
+    /** @return HasMany<SalesReceipt, $this> */
+    public function salesReceipts(): HasMany
     {
         return $this->hasMany(SalesReceipt::class);
     }
 
-    public function payments()
+    /** @return HasMany<PaymentReceived, $this> */
+    public function payments(): HasMany
     {
         return $this->hasMany(PaymentReceived::class);
     }
 
     /**
      * Get all deposits made by this customer
+     *
+     * @return HasMany<PaymentReceived, $this>
      */
-    public function deposits()
+    public function deposits(): HasMany
     {
         return $this->hasMany(PaymentReceived::class)->where('is_deposit', true);
     }
 
     /**
      * Get all deposits with unused balance
+     *
+     * @return HasMany<PaymentReceived, $this>
      */
-    public function availableDeposits()
+    public function availableDeposits(): HasMany
     {
         return $this->hasMany(PaymentReceived::class)
             ->where('is_deposit', true)
@@ -85,8 +96,10 @@ class Customer extends Model
 
     /**
      * Get all deposit applications for this customer
+     *
+     * @return HasMany<CustomerDepositApplication, $this>
      */
-    public function depositApplications()
+    public function depositApplications(): HasMany
     {
         return $this->hasMany(CustomerDepositApplication::class);
     }

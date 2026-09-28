@@ -5,9 +5,13 @@ namespace App\Livewire\Traits;
 trait WithBulkOperations
 {
     public $selectedItems = [];
+
     public $selectAll = false;
+
     public $bulkAction = '';
+
     public $bulkSuccessMessage = '';
+
     public $bulkErrorMessage = '';
 
     public function updatedSelectAll($value)

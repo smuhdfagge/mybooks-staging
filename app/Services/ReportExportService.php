@@ -2,16 +2,18 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Collection;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportExportService
 {
     protected string $reportTitle;
+
     protected array $reportData;
+
     protected array $filters;
+
     protected string $orientation = 'portrait';
 
     /**
@@ -20,6 +22,7 @@ class ReportExportService
     public function setTitle(string $title): self
     {
         $this->reportTitle = $title;
+
         return $this;
     }
 
@@ -29,6 +32,7 @@ class ReportExportService
     public function setData(array $data): self
     {
         $this->reportData = $data;
+
         return $this;
     }
 
@@ -38,6 +42,7 @@ class ReportExportService
     public function setFilters(array $filters): self
     {
         $this->filters = $filters;
+
         return $this;
     }
 
@@ -47,6 +52,7 @@ class ReportExportService
     public function setOrientation(string $orientation): self
     {
         $this->orientation = $orientation;
+
         return $this;
     }
 
@@ -64,7 +70,7 @@ class ReportExportService
         $data['companyPhone'] = $tenant->phone ?? '';
         $data['companyAddress'] = $tenant->address ?? '';
         $data['companyLogo'] = null;
-        
+
         // Get logo as base64 for PDF embedding
         if ($tenant->logo && Storage::disk('public')->exists($tenant->logo)) {
             $logoPath = Storage::disk('public')->path($tenant->logo);
@@ -76,7 +82,7 @@ class ReportExportService
         $pdf = Pdf::loadView($view, $data);
         $pdf->setPaper('a4', $this->orientation);
 
-        $filename = str_replace(' ', '_', strtolower($this->reportTitle ?? 'report')) . '_' . now()->format('Y-m-d') . '.pdf';
+        $filename = str_replace(' ', '_', strtolower($this->reportTitle ?? 'report')).'_'.now()->format('Y-m-d').'.pdf';
 
         return $pdf->download($filename);
     }
@@ -86,16 +92,16 @@ class ReportExportService
      */
     public function exportToCsv(array $rows, array $headers = [])
     {
-        $filename = str_replace(' ', '_', strtolower($this->reportTitle ?? 'report')) . '_' . now()->format('Y-m-d') . '.csv';
+        $filename = str_replace(' ', '_', strtolower($this->reportTitle ?? 'report')).'_'.now()->format('Y-m-d').'.csv';
 
         $callback = function () use ($rows, $headers) {
             $file = fopen('php://output', 'w');
 
             // Add BOM for Excel UTF-8 compatibility
-            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
 
             // Write headers
-            if (!empty($headers)) {
+            if (! empty($headers)) {
                 fputcsv($file, $headers);
             }
 
@@ -109,7 +115,7 @@ class ReportExportService
 
         return Response::stream($callback, 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
 
@@ -122,12 +128,12 @@ class ReportExportService
             'headers' => ['Category', 'Amount'],
             'rows' => [
                 ['Revenue', number_format($data['revenue'], 2)],
-                ['Less: Cost of Goods Sold', '(' . number_format($data['costOfGoodsSold'], 2) . ')'],
+                ['Less: Cost of Goods Sold', '('.number_format($data['costOfGoodsSold'], 2).')'],
                 ['Gross Profit', number_format($data['grossProfit'], 2)],
-                ['Less: Operating Expenses', '(' . number_format($data['operatingExpenses'], 2) . ')'],
-                ['Less: Salaries & Wages', '(' . number_format($data['payroll'], 2) . ')'],
-                ['Total Expenses', '(' . number_format($data['totalExpenses'], 2) . ')'],
-                ['Net ' . ($data['netProfit'] >= 0 ? 'Profit' : 'Loss'), number_format($data['netProfit'], 2)],
+                ['Less: Operating Expenses', '('.number_format($data['operatingExpenses'], 2).')'],
+                ['Less: Salaries & Wages', '('.number_format($data['payroll'], 2).')'],
+                ['Total Expenses', '('.number_format($data['totalExpenses'], 2).')'],
+                ['Net '.($data['netProfit'] >= 0 ? 'Profit' : 'Loss'), number_format($data['netProfit'], 2)],
             ],
         ];
     }
@@ -138,7 +144,7 @@ class ReportExportService
     public function balanceSheetData(array $data): array
     {
         $equity = $data['accountsReceivable'] - $data['accountsPayable'];
-        
+
         return [
             'headers' => ['Category', 'Item', 'Amount'],
             'rows' => [
@@ -396,7 +402,7 @@ class ReportExportService
 
         foreach ($byEmployee as $record) {
             $rows[] = [
-                $record['employee']->first_name . ' ' . $record['employee']->last_name,
+                $record['employee']->first_name.' '.$record['employee']->last_name,
                 $record['employee']->employee_id ?? '',
                 $record['count'],
                 number_format($record['gross'], 2),
@@ -446,7 +452,7 @@ class ReportExportService
 
         foreach ($payrolls as $payroll) {
             $rows[] = [
-                ($payroll->employee->first_name ?? '') . ' ' . ($payroll->employee->last_name ?? ''),
+                ($payroll->employee->first_name ?? '').' '.($payroll->employee->last_name ?? ''),
                 $payroll->employee->department->name ?? 'N/A',
                 $payroll->pay_date->format('Y-m-d'),
                 number_format($payroll->basic_salary, 2),
@@ -475,7 +481,7 @@ class ReportExportService
         foreach ($payrolls as $payroll) {
             $rows[] = [
                 $payroll->payroll_number,
-                ($payroll->employee->first_name ?? '') . ' ' . ($payroll->employee->last_name ?? ''),
+                ($payroll->employee->first_name ?? '').' '.($payroll->employee->last_name ?? ''),
                 $payroll->employee->department->name ?? 'N/A',
                 number_format($payroll->basic_salary, 2),
                 number_format($payroll->allowances, 2),
@@ -505,7 +511,7 @@ class ReportExportService
 
         foreach ($byEmployee as $record) {
             $rows[] = [
-                $record['employee']->first_name . ' ' . $record['employee']->last_name,
+                $record['employee']->first_name.' '.$record['employee']->last_name,
                 $record['employee']->department->name ?? 'N/A',
                 $record['pay_periods'],
                 number_format($record['ytd_basic'], 2),
@@ -534,12 +540,12 @@ class ReportExportService
 
         foreach ($byEmployee as $record) {
             $rows[] = [
-                $record['employee']->first_name . ' ' . $record['employee']->last_name,
+                $record['employee']->first_name.' '.$record['employee']->last_name,
                 $record['employee']->department->name ?? 'N/A',
                 $record['pay_periods'],
                 number_format($record['taxable_income'], 2),
                 number_format($record['tax_deducted'], 2),
-                $record['effective_rate'] . '%',
+                $record['effective_rate'].'%',
             ];
         }
 
@@ -558,11 +564,11 @@ class ReportExportService
 
         foreach ($byEmployee as $record) {
             $rows[] = [
-                $record['employee']->first_name . ' ' . $record['employee']->last_name,
+                $record['employee']->first_name.' '.$record['employee']->last_name,
                 $record['employee']->department->name ?? 'N/A',
                 number_format($record['gross_salary'], 2),
                 number_format($record['employer_contributions'], 2),
-                ($record['cost_ratio'] ?? 0) . '%',
+                ($record['cost_ratio'] ?? 0).'%',
             ];
         }
 
@@ -582,9 +588,9 @@ class ReportExportService
         foreach ($payrolls as $payroll) {
             $rows[] = [
                 $payroll->payroll_number,
-                ($payroll->employee->first_name ?? '') . ' ' . ($payroll->employee->last_name ?? ''),
+                ($payroll->employee->first_name ?? '').' '.($payroll->employee->last_name ?? ''),
                 $payroll->employee->employee_id ?? '',
-                '****' . substr($payroll->employee->bank_account_number ?? '0000', -4),
+                '****'.substr($payroll->employee->bank_account_number ?? '0000', -4),
                 $payroll->employee->bank_name ?? 'N/A',
                 ucfirst(str_replace('_', ' ', $payroll->payment_method ?? 'N/A')),
                 number_format($payroll->net_salary, 2),
@@ -608,9 +614,9 @@ class ReportExportService
         foreach ($versions as $version) {
             $rows[] = [
                 $version->salaryStructure->name ?? 'N/A',
-                'v' . $version->version_number,
+                'v'.$version->version_number,
                 $version->effective_date ? \Carbon\Carbon::parse($version->effective_date)->format('Y-m-d') : 'N/A',
-                $version->changedByUser ? ($version->changedByUser->first_name . ' ' . $version->changedByUser->last_name) : 'System',
+                $version->changedByUser ? ($version->changedByUser->first_name.' '.$version->changedByUser->last_name) : 'System',
                 $version->change_reason ?? '-',
                 $version->created_at->format('Y-m-d'),
             ];

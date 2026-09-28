@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\BelongsToTenant;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UomConversion extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     protected $fillable = [
         'tenant_id',
@@ -22,17 +23,20 @@ class UomConversion extends Model
         'conversion_factor' => 'decimal:6',
     ];
 
-    public function item()
+    /** @return BelongsTo<Item, $this> */
+    public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class);
     }
 
-    public function fromUom()
+    /** @return BelongsTo<UnitOfMeasure, $this> */
+    public function fromUom(): BelongsTo
     {
         return $this->belongsTo(UnitOfMeasure::class, 'from_uom_id');
     }
 
-    public function toUom()
+    /** @return BelongsTo<UnitOfMeasure, $this> */
+    public function toUom(): BelongsTo
     {
         return $this->belongsTo(UnitOfMeasure::class, 'to_uom_id');
     }

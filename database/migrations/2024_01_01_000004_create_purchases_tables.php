@@ -26,7 +26,7 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();
-            
+
             $table->index(['tenant_id', 'name']);
         });
 
@@ -50,7 +50,7 @@ return new class extends Migration
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
-            
+
             $table->index(['tenant_id', 'bill_number']);
             $table->index(['tenant_id', 'status']);
         });
@@ -89,7 +89,7 @@ return new class extends Migration
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
-            
+
             $table->index(['tenant_id', 'expense_number']);
             $table->index(['tenant_id', 'expense_date']);
         });
@@ -111,7 +111,7 @@ return new class extends Migration
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
-            
+
             $table->index(['tenant_id', 'status']);
         });
 
@@ -149,7 +149,7 @@ return new class extends Migration
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
-            
+
             $table->index(['tenant_id', 'status']);
         });
 
@@ -166,7 +166,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
-            
+
             $table->index(['tenant_id', 'payment_number']);
             $table->index(['tenant_id', 'payment_date']);
         });

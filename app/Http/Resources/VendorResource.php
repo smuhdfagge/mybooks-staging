@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/** @mixin \App\Models\Vendor */
 class VendorResource extends JsonResource
 {
     public function toArray(Request $request): array
@@ -26,11 +27,11 @@ class VendorResource extends JsonResource
             'is_active' => $this->is_active,
             'total_purchases' => $this->when(
                 isset($this->total_purchases),
-                fn() => (float) $this->total_purchases
+                fn () => (float) $this->total_purchases
             ),
             'outstanding_balance' => $this->when(
                 isset($this->outstanding_balance),
-                fn() => (float) $this->outstanding_balance
+                fn () => (float) $this->outstanding_balance
             ),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),

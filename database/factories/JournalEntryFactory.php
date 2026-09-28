@@ -2,9 +2,9 @@
 
 namespace Database\Factories;
 
-use App\Models\JournalEntry;
-use App\Models\Journal;
 use App\Models\ChartOfAccount;
+use App\Models\Journal;
+use App\Models\JournalEntry;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class JournalEntryFactory extends Factory

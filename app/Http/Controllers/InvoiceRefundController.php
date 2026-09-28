@@ -23,7 +23,7 @@ class InvoiceRefundController extends Controller
 
         // Calculate maximum refundable amount
         $maxRefundable = $invoice->amount_paid - ($invoice->total_refunded ?? 0);
-        
+
         if ($maxRefundable <= 0) {
             return redirect()->route('invoices.show', $invoice)
                 ->with('error', 'This invoice has already been fully refunded.');
@@ -43,7 +43,7 @@ class InvoiceRefundController extends Controller
         $maxRefundable = $invoice->amount_paid - ($invoice->total_refunded ?? 0);
 
         $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'min:0.01', 'max:' . $maxRefundable],
+            'amount' => ['required', 'numeric', 'min:0.01', 'max:'.$maxRefundable],
             'refund_date' => ['required', 'date', 'before_or_equal:today'],
             'refund_method' => ['required', Rule::in(array_keys(InvoiceRefund::METHODS))],
             'reason' => ['nullable', Rule::in(array_keys(InvoiceRefund::REASONS))],
@@ -79,8 +79,9 @@ class InvoiceRefundController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return back()->withInput()
-                ->with('error', 'Failed to process refund: ' . $e->getMessage());
+                ->with('error', 'Failed to process refund: '.$e->getMessage());
         }
     }
 
@@ -90,6 +91,7 @@ class InvoiceRefundController extends Controller
     public function show(InvoiceRefund $refund)
     {
         $refund->load(['invoice', 'customer', 'createdBy', 'approvedBy', 'journal.entries.account']);
+
         return view('invoices.refunds.show', compact('refund'));
     }
 
@@ -104,9 +106,9 @@ class InvoiceRefundController extends Controller
 
         try {
             DB::beginTransaction();
-            
+
             $refund->cancel();
-            
+
             DB::commit();
 
             return redirect()->route('invoices.show', $refund->invoice)
@@ -114,7 +116,8 @@ class InvoiceRefundController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Failed to cancel refund: ' . $e->getMessage());
+
+            return back()->with('error', 'Failed to cancel refund: '.$e->getMessage());
         }
     }
 
@@ -125,7 +128,7 @@ class InvoiceRefundController extends Controller
     {
         $refund->load(['invoice', 'customer', 'createdBy']);
         $tenant = auth()->user()->tenant;
-        
+
         return view('invoices.refunds.print', compact('refund', 'tenant'));
     }
 }

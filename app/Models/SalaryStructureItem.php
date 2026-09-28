@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SalaryStructureItem extends Model
 {
@@ -21,7 +22,8 @@ class SalaryStructureItem extends Model
         'is_taxable' => 'boolean',
     ];
 
-    public function salaryStructure()
+    /** @return BelongsTo<SalaryStructure, $this> */
+    public function salaryStructure(): BelongsTo
     {
         return $this->belongsTo(SalaryStructure::class);
     }
@@ -31,6 +33,7 @@ class SalaryStructureItem extends Model
         if ($this->amount_type === 'percentage') {
             return round($this->salaryStructure->basic_salary * $this->amount / 100, 2);
         }
+
         return $this->amount;
     }
 }

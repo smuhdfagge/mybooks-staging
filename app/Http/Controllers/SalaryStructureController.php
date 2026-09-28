@@ -5,10 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Allowance;
 use App\Models\Deduction;
 use App\Models\SalaryStructure;
-use App\Models\SalaryStructureItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class SalaryStructureController extends Controller
 {
@@ -62,9 +60,9 @@ class SalaryStructureController extends Controller
             ]);
 
             // Create allowance items
-            if (!empty($validated['allowances'])) {
+            if (! empty($validated['allowances'])) {
                 foreach ($validated['allowances'] as $index => $allowance) {
-                    if (!empty($allowance['name']) && isset($allowance['amount'])) {
+                    if (! empty($allowance['name']) && isset($allowance['amount'])) {
                         $structure->items()->create([
                             'type' => 'allowance',
                             'name' => $allowance['name'],
@@ -78,9 +76,9 @@ class SalaryStructureController extends Controller
             }
 
             // Create deduction items
-            if (!empty($validated['deductions'])) {
+            if (! empty($validated['deductions'])) {
                 foreach ($validated['deductions'] as $index => $deduction) {
-                    if (!empty($deduction['name']) && isset($deduction['amount'])) {
+                    if (! empty($deduction['name']) && isset($deduction['amount'])) {
                         $structure->items()->create([
                             'type' => 'deduction',
                             'name' => $deduction['name'],
@@ -99,6 +97,7 @@ class SalaryStructureController extends Controller
                 ->with('success', 'Salary structure created successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
+
             return back()->withInput()->withErrors(['error' => 'Failed to create salary structure.']);
         }
     }
@@ -169,9 +168,9 @@ class SalaryStructureController extends Controller
             // Delete existing items and recreate
             $salaryStructure->items()->delete();
 
-            if (!empty($validated['allowances'])) {
+            if (! empty($validated['allowances'])) {
                 foreach ($validated['allowances'] as $index => $allowance) {
-                    if (!empty($allowance['name']) && isset($allowance['amount'])) {
+                    if (! empty($allowance['name']) && isset($allowance['amount'])) {
                         $salaryStructure->items()->create([
                             'type' => 'allowance',
                             'name' => $allowance['name'],
@@ -184,9 +183,9 @@ class SalaryStructureController extends Controller
                 }
             }
 
-            if (!empty($validated['deductions'])) {
+            if (! empty($validated['deductions'])) {
                 foreach ($validated['deductions'] as $index => $deduction) {
-                    if (!empty($deduction['name']) && isset($deduction['amount'])) {
+                    if (! empty($deduction['name']) && isset($deduction['amount'])) {
                         $salaryStructure->items()->create([
                             'type' => 'deduction',
                             'name' => $deduction['name'],
@@ -205,6 +204,7 @@ class SalaryStructureController extends Controller
                 ->with('success', 'Salary structure updated successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
+
             return back()->withInput()->withErrors(['error' => 'Failed to update salary structure.']);
         }
     }

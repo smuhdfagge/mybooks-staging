@@ -35,7 +35,7 @@ class TaxRateController extends Controller
         $tenantId = auth()->user()->tenant_id;
 
         // Check for unique code within tenant
-        if (!empty($validated['code'])) {
+        if (! empty($validated['code'])) {
             $exists = TaxRate::where('tenant_id', $tenantId)
                 ->where('code', $validated['code'])
                 ->exists();
@@ -93,7 +93,7 @@ class TaxRateController extends Controller
         $tenantId = auth()->user()->tenant_id;
 
         // Check for unique code within tenant (excluding current)
-        if (!empty($validated['code'])) {
+        if (! empty($validated['code'])) {
             $exists = TaxRate::where('tenant_id', $tenantId)
                 ->where('code', $validated['code'])
                 ->where('id', '!=', $taxRate->id)
@@ -138,6 +138,7 @@ class TaxRateController extends Controller
     public function setDefault(TaxRate $taxRate)
     {
         $taxRate->setAsDefault();
+
         return redirect()->back()->with('success', 'Default tax rate updated.');
     }
 }

@@ -2,15 +2,15 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\AdminUser;
-use App\Models\Tenant;
 use App\Models\LeaveType;
+use App\Models\Tenant;
+use App\Models\User;
 use App\Services\ChartOfAccountService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
 {
@@ -21,10 +21,10 @@ class DatabaseSeeder extends Seeder
     {
         // Create subscription plans first (required for registration)
         $this->call(PlanSeeder::class);
-        
+
         // Create permissions
         $this->createPermissions();
-        
+
         // Create roles
         $this->createRoles();
 
@@ -53,7 +53,7 @@ class DatabaseSeeder extends Seeder
         $permissions = [
             // Dashboard
             'view dashboard',
-            
+
             // Dashboard Widgets
             'total-revenue dashboard-widgets',
             'outstanding-receivables dashboard-widgets',
@@ -64,18 +64,18 @@ class DatabaseSeeder extends Seeder
             'recent-invoices dashboard-widgets',
             'pending-bills dashboard-widgets',
             'low-stock dashboard-widgets',
-            
+
             // Items
             'view items', 'create items', 'edit items', 'delete items',
             'view inventory', 'adjust inventory',
-            
+
             // Sales
             'view customers', 'create customers', 'edit customers', 'delete customers',
             'view invoices', 'create invoices', 'edit invoices', 'delete invoices', 'send invoices',
             'view sales-orders', 'create sales-orders', 'edit sales-orders', 'delete sales-orders',
             'view sales-receipts', 'create sales-receipts', 'edit sales-receipts', 'delete sales-receipts',
             'view payments-received', 'create payments-received', 'edit payments-received', 'delete payments-received',
-            
+
             // Purchases
             'view vendors', 'create vendors', 'edit vendors', 'delete vendors',
             'view expenses', 'create expenses', 'edit expenses', 'delete expenses',
@@ -84,7 +84,7 @@ class DatabaseSeeder extends Seeder
             'view recurrent-bills', 'create recurrent-bills', 'edit recurrent-bills', 'delete recurrent-bills',
             'view recurrent-expenses', 'create recurrent-expenses', 'edit recurrent-expenses', 'delete recurrent-expenses',
             'view payments-made', 'create payments-made', 'edit payments-made', 'delete payments-made',
-            
+
             // HR
             'view departments', 'create departments', 'edit departments', 'delete departments',
             'view designations', 'create designations', 'edit designations', 'delete designations',
@@ -92,39 +92,39 @@ class DatabaseSeeder extends Seeder
             'view leave-types', 'create leave-types', 'edit leave-types', 'delete leave-types',
             'view leaves', 'create leaves', 'edit leaves', 'delete leaves', 'approve leaves',
             'view payroll', 'create payroll', 'edit payroll', 'delete payroll', 'approve payroll',
-            
+
             // Accountant
             'view chart-of-accounts', 'create chart-of-accounts', 'edit chart-of-accounts', 'delete chart-of-accounts',
             'view journals', 'create journals', 'edit journals', 'delete journals', 'post journals',
             'view banks', 'create banks', 'edit banks', 'delete banks', 'reconcile banks',
-            
+
             // Budgets
             'view budgets', 'create budgets', 'edit budgets', 'delete budgets',
-            
+
             // Fixed Assets
             'view fixed-assets', 'create fixed-assets', 'edit fixed-assets', 'delete fixed-assets',
             'depreciate fixed-assets', 'dispose fixed-assets',
             'view fixed-asset-categories', 'create fixed-asset-categories', 'edit fixed-asset-categories', 'delete fixed-asset-categories',
-            
+
             // Reports
             'view reports', 'export reports',
-            
+
             // Settings
             'view settings', 'edit settings',
             'manage subscription',
             'view users', 'create users', 'edit users', 'delete users',
             'view roles', 'create roles', 'edit roles', 'delete roles',
-            
+
             // Activity Logs
             'view activity-logs',
-            
+
             // Tax Configuration
             'view tax-rates', 'create tax-rates', 'edit tax-rates', 'delete tax-rates',
-            
+
             // Data Export & Import
             'export data',
             'import data',
-            
+
             // Tenant Management (Super Admin only)
             'manage tenants',
         ];
@@ -139,12 +139,12 @@ class DatabaseSeeder extends Seeder
         // Super Admin - has all permissions including tenant management
         $superAdmin = Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web', 'tenant_id' => null]);
         $superAdmin->syncPermissions(Permission::all());
-        
+
         // Admin - full access within tenant (excluding tenant management)
         $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => null]);
         $adminPermissions = Permission::where('name', '!=', 'manage tenants')->pluck('name')->toArray();
         $admin->syncPermissions($adminPermissions);
-        
+
         // Accountant
         $accountant = Role::firstOrCreate(['name' => 'accountant', 'guard_name' => 'web', 'tenant_id' => null]);
         $accountant->syncPermissions([
@@ -168,7 +168,7 @@ class DatabaseSeeder extends Seeder
             'view reports', 'export reports',
             'export data', 'import data',
         ]);
-        
+
         // Sales
         $sales = Role::firstOrCreate(['name' => 'sales', 'guard_name' => 'web', 'tenant_id' => null]);
         $sales->syncPermissions([
@@ -183,7 +183,7 @@ class DatabaseSeeder extends Seeder
             'view payments-received', 'create payments-received',
             'view reports',
         ]);
-        
+
         // HR Manager
         $hr = Role::firstOrCreate(['name' => 'hr-manager', 'guard_name' => 'web', 'tenant_id' => null]);
         $hr->syncPermissions([
@@ -197,7 +197,7 @@ class DatabaseSeeder extends Seeder
             'view payroll', 'create payroll', 'edit payroll', 'approve payroll',
             'view reports',
         ]);
-        
+
         // Viewer
         $viewer = Role::firstOrCreate(['name' => 'viewer', 'guard_name' => 'web', 'tenant_id' => null]);
         $viewer->syncPermissions([
@@ -228,7 +228,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
         $user->forceFill(['is_super_admin' => true])->save();
-        
+
         $user->assignRole('super-admin');
 
         // Tenant Manager Account
@@ -241,7 +241,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
         $tenantManager->forceFill(['is_super_admin' => true])->save();
-        
+
         $tenantManager->assignRole('super-admin');
     }
 
@@ -275,7 +275,7 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
             ]
         );
-        
+
         // Create tenant admin
         $tenantAdmin = User::firstOrCreate(
             ['email' => 'demo@mybooks.local'],
@@ -286,13 +286,13 @@ class DatabaseSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
-        
+
         $tenantAdmin->assignRole('admin');
-        
+
         // Default chart of accounts are now automatically created via Tenant model's booted method
         // For existing tenants or if the tenant was created with firstOrCreate, ensure accounts exist
         ChartOfAccountService::createDefaultAccounts($tenant->id);
-        
+
         // Create default leave types
         $this->createLeaveTypes($tenant->id);
     }

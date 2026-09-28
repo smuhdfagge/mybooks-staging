@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ChartOfAccount;
 use App\Models\RecurrentExpense;
 use App\Models\Vendor;
-use App\Models\ChartOfAccount;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -20,7 +20,7 @@ class RecurrentExpenseController extends Controller
         $vendors = Vendor::where('is_active', true)->get();
         $expenseAccounts = ChartOfAccount::where('type', 'expense')->where('is_active', true)->get();
         $paymentAccounts = ChartOfAccount::whereIn('sub_type', ['bank', 'cash'])->where('is_active', true)->get();
-        
+
         return view('recurrent-expenses.create', compact('vendors', 'expenseAccounts', 'paymentAccounts'));
     }
 
@@ -39,7 +39,7 @@ class RecurrentExpenseController extends Controller
             'end_date' => 'nullable|date|after:start_date',
             'description' => 'nullable|string',
         ]);
-        
+
         $recurrentExpense = RecurrentExpense::create([
             'tenant_id' => $tenantId,
             'profile_name' => $validated['profile_name'],
@@ -62,6 +62,7 @@ class RecurrentExpenseController extends Controller
     public function show(RecurrentExpense $recurrentExpense)
     {
         $recurrentExpense->load(['vendor', 'expenseAccount', 'paidThroughAccount', 'expenses']);
+
         return view('recurrent-expenses.show', compact('recurrentExpense'));
     }
 
@@ -70,7 +71,7 @@ class RecurrentExpenseController extends Controller
         $vendors = Vendor::where('is_active', true)->get();
         $expenseAccounts = ChartOfAccount::where('type', 'expense')->where('is_active', true)->get();
         $paymentAccounts = ChartOfAccount::whereIn('sub_type', ['bank', 'cash'])->where('is_active', true)->get();
-        
+
         return view('recurrent-expenses.edit', compact('recurrentExpense', 'vendors', 'expenseAccounts', 'paymentAccounts'));
     }
 
@@ -108,6 +109,7 @@ class RecurrentExpenseController extends Controller
     public function destroy(RecurrentExpense $recurrentExpense)
     {
         $recurrentExpense->delete();
+
         return redirect()->route('recurrent-expenses.index')->with('success', 'Recurrent expense profile deleted.');
     }
 
@@ -116,6 +118,7 @@ class RecurrentExpenseController extends Controller
         $newStatus = $recurrentExpense->status === 'active' ? 'paused' : 'active';
         $recurrentExpense->update(['status' => $newStatus]);
         $label = $newStatus === 'active' ? 'activated' : 'paused';
+
         return redirect()->route('recurrent-expenses.show', $recurrentExpense)->with('success', "Profile {$label}.");
     }
 }

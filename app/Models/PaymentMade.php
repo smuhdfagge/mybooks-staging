@@ -2,21 +2,23 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Events\PaymentMadeCreated;
+use App\Events\PaymentMadeDeleted;
+use App\Events\PaymentMadeDeleting;
+use App\Events\PaymentMadeUpdated;
+use App\Services\JournalService;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
-use App\Events\PaymentMadeCreated;
-use App\Events\PaymentMadeUpdated;
-use App\Events\PaymentMadeDeleting;
-use App\Events\PaymentMadeDeleted;
-use App\Services\JournalService;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PaymentMade extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, ValidatesAccountingPeriod;
+    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     protected $table = 'payments_made';
 
@@ -39,22 +41,26 @@ class PaymentMade extends Model
         'amount' => 'decimal:2',
     ];
 
-    public function vendor()
+    /** @return BelongsTo<Vendor, $this> */
+    public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class);
     }
 
-    public function bill()
+    /** @return BelongsTo<Bill, $this> */
+    public function bill(): BelongsTo
     {
         return $this->belongsTo(Bill::class);
     }
 
-    public function bank()
+    /** @return BelongsTo<Bank, $this> */
+    public function bank(): BelongsTo
     {
         return $this->belongsTo(Bank::class);
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
@@ -65,12 +71,14 @@ class PaymentMade extends Model
             ->where('tenant_id', $tenantId)
             ->latest('id')
             ->first();
-        
+
         $number = $lastPayment ? intval(substr($lastPayment->payment_number, 3)) + 1 : 1;
-        return 'PM-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+        return 'PM-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
-    public function journal()
+    /** @return MorphOne<Journal, $this> */
+    public function journal(): MorphOne
     {
         return $this->morphOne(Journal::class, 'reference');
     }
@@ -81,6 +89,7 @@ class PaymentMade extends Model
     public function createJournalEntry(): ?Journal
     {
         $journalService = app(JournalService::class);
+
         return $journalService->createPaymentMadeJournal($this);
     }
 

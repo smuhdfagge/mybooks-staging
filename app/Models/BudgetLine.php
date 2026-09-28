@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BudgetLine extends Model
 {
@@ -46,16 +47,20 @@ class BudgetLine extends Model
 
     /**
      * Get the budget for this line
+     *
+     * @return BelongsTo<Budget, $this>
      */
-    public function budget()
+    public function budget(): BelongsTo
     {
         return $this->belongsTo(Budget::class);
     }
 
     /**
      * Get the account for this line
+     *
+     * @return BelongsTo<ChartOfAccount, $this>
      */
-    public function account()
+    public function account(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class, 'account_id');
     }
@@ -68,9 +73,9 @@ class BudgetLine extends Model
         $total = $this->jan + $this->feb + $this->mar + $this->apr +
                  $this->may + $this->jun + $this->jul + $this->aug +
                  $this->sep + $this->oct + $this->nov + $this->dec;
-        
+
         $this->annual_total = $total;
-        
+
         return $total;
     }
 
@@ -80,6 +85,7 @@ class BudgetLine extends Model
     public function getMonthAmount(string $month): float
     {
         $month = strtolower(substr($month, 0, 3));
+
         return $this->{$month} ?? 0;
     }
 
@@ -119,6 +125,7 @@ class BudgetLine extends Model
         foreach (Budget::getMonthColumns() as $col => $name) {
             $amounts[$col] = $this->{$col};
         }
+
         return $amounts;
     }
 }

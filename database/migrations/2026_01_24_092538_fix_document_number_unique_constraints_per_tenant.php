@@ -8,7 +8,7 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
+     *
      * Fix unique constraints on document numbers to be tenant-scoped.
      * Document numbers should be unique per tenant, not globally unique.
      */

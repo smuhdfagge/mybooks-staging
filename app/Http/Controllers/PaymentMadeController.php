@@ -2,22 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PaymentMade;
-use App\Models\Bill;
-use App\Models\Vendor;
 use App\Models\Bank;
+use App\Models\Bill;
+use App\Models\PaymentMade;
+use App\Models\Vendor;
 use App\Services\BankService;
-use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 use App\Services\PaymentValidation;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class PaymentMadeController extends Controller
 {
     public function __construct(
         protected BankService $bankService
     ) {}
+
     public function index()
     {
         return view('payments-made.index');
@@ -30,7 +31,7 @@ class PaymentMadeController extends Controller
         $bill = $billId ? Bill::find($billId) : null;
         $paymentNumber = PaymentMade::generateNumber(auth()->user()->tenant_id);
         $banks = Bank::where('is_active', true)->orderBy('name')->get();
-        
+
         return view('payments-made.create', compact('vendors', 'bill', 'paymentNumber', 'banks'));
     }
 
@@ -85,6 +86,7 @@ class PaymentMadeController extends Controller
     public function show(PaymentMade $paymentMade)
     {
         $paymentMade->load(['vendor', 'bill', 'journal.entries.account']);
+
         return view('payments-made.show', compact('paymentMade'));
     }
 
@@ -95,6 +97,7 @@ class PaymentMadeController extends Controller
             ->whereIn('status', ['unpaid', 'partial'])
             ->get();
         $banks = Bank::where('is_active', true)->orderBy('name')->get();
+
         return view('payments-made.edit', compact('paymentMade', 'vendors', 'bills', 'banks'));
     }
 

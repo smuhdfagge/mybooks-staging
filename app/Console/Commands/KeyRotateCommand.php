@@ -29,6 +29,7 @@ class KeyRotateCommand extends Command
         if (! $this->option('force') && app()->environment('production')) {
             if (! $this->confirm('⚠️ You are in PRODUCTION. Rotating the key will invalidate all encrypted data not using previous_keys support. Continue?')) {
                 $this->info('Aborted.');
+
                 return self::SUCCESS;
             }
         }
@@ -38,10 +39,11 @@ class KeyRotateCommand extends Command
 
         if (empty($currentKey)) {
             $this->error('No APP_KEY found. Run php artisan key:generate first.');
+
             return self::FAILURE;
         }
 
-        $this->info('Current APP_KEY: ' . Str::mask($currentKey, '*', 12));
+        $this->info('Current APP_KEY: '.Str::mask($currentKey, '*', 12));
 
         // Read current previous keys
         $previousKeys = config('app.previous_keys', []);
@@ -57,14 +59,14 @@ class KeyRotateCommand extends Command
         if (preg_match('/^APP_PREVIOUS_KEYS=.*$/m', $envContent)) {
             $envContent = preg_replace(
                 '/^APP_PREVIOUS_KEYS=.*$/m',
-                'APP_PREVIOUS_KEYS="' . $previousKeysValue . '"',
+                'APP_PREVIOUS_KEYS="'.$previousKeysValue.'"',
                 $envContent
             );
         } else {
             // Insert after APP_KEY line
             $envContent = preg_replace(
                 '/^(APP_KEY=.*)$/m',
-                '$1' . PHP_EOL . 'APP_PREVIOUS_KEYS="' . $previousKeysValue . '"',
+                '$1'.PHP_EOL.'APP_PREVIOUS_KEYS="'.$previousKeysValue.'"',
                 $envContent
             );
         }
@@ -93,6 +95,7 @@ class KeyRotateCommand extends Command
     {
         if (! \Schema::hasTable('personal_access_tokens')) {
             $this->warn('personal_access_tokens table not found — skipping token revocation.');
+
             return;
         }
 
@@ -100,6 +103,7 @@ class KeyRotateCommand extends Command
 
         if ($count === 0) {
             $this->info('No Sanctum tokens to revoke.');
+
             return;
         }
 

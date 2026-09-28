@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreVendorRequest;
+use App\Http\Requests\UpdateVendorRequest;
 use App\Models\Country;
 use App\Models\State;
 use App\Models\Vendor;
-use App\Http\Requests\StoreVendorRequest;
-use App\Http\Requests\UpdateVendorRequest;
-use Illuminate\Http\Request;
 
 class VendorController extends Controller
 {
@@ -20,6 +19,7 @@ class VendorController extends Controller
     {
         $countries = Country::orderBy('name')->get();
         $states = State::orderBy('name')->get();
+
         return view('vendors.create', compact('countries', 'states'));
     }
 
@@ -36,6 +36,7 @@ class VendorController extends Controller
     public function show(Vendor $vendor)
     {
         $vendor->load(['bills', 'expenses', 'payments']);
+
         return view('vendors.show', compact('vendor'));
     }
 
@@ -43,6 +44,7 @@ class VendorController extends Controller
     {
         $countries = Country::orderBy('name')->get();
         $states = State::orderBy('name')->get();
+
         return view('vendors.edit', compact('vendor', 'countries', 'states'));
     }
 
@@ -58,6 +60,7 @@ class VendorController extends Controller
     public function destroy(Vendor $vendor)
     {
         $vendor->delete();
+
         return redirect()->route('vendors.index')->with('success', 'Vendor deleted successfully.');
     }
 }

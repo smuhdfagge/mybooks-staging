@@ -18,12 +18,13 @@ class CheckSubscriptionTest extends TestCase
         $route = new \Illuminate\Routing\Route('GET', '/dashboard', []);
         $route->name($routeName);
         $request->setRouteResolver(fn () => $route);
+
         return $request;
     }
 
     public function test_guest_passes_through(): void
     {
-        $middleware = new CheckSubscription();
+        $middleware = new CheckSubscription;
         $request = $this->makeRequest();
 
         $response = $middleware->handle($request, fn () => new Response('OK'));
@@ -35,7 +36,7 @@ class CheckSubscriptionTest extends TestCase
         $user = User::factory()->create(['tenant_id' => null]);
         $this->actingAs($user);
 
-        $middleware = new CheckSubscription();
+        $middleware = new CheckSubscription;
         $request = $this->makeRequest();
         $request->setUserResolver(fn () => $user);
 
@@ -49,7 +50,7 @@ class CheckSubscriptionTest extends TestCase
         $user = User::factory()->create(['tenant_id' => $tenant->id]);
         $this->actingAs($user);
 
-        $middleware = new CheckSubscription();
+        $middleware = new CheckSubscription;
         $request = $this->makeRequest();
         $request->setUserResolver(fn () => $user);
 
@@ -61,7 +62,7 @@ class CheckSubscriptionTest extends TestCase
     {
         $this->createAuthenticatedUser();
 
-        $middleware = new CheckSubscription();
+        $middleware = new CheckSubscription;
         $request = $this->makeRequest();
         $request->setUserResolver(fn () => $this->user);
 
@@ -74,7 +75,7 @@ class CheckSubscriptionTest extends TestCase
         $this->createAuthenticatedUser();
         $this->subscription->update(['status' => Subscription::STATUS_CANCELLED]);
 
-        $middleware = new CheckSubscription();
+        $middleware = new CheckSubscription;
         $request = $this->makeRequest();
         $request->setUserResolver(fn () => $this->user->fresh());
 
@@ -88,7 +89,7 @@ class CheckSubscriptionTest extends TestCase
         $user = User::factory()->create(['tenant_id' => $tenant->id]);
         $this->actingAs($user);
 
-        $middleware = new CheckSubscription();
+        $middleware = new CheckSubscription;
 
         $exemptRoutes = ['profile.edit', 'profile.update', 'profile.destroy', 'settings.subscription', 'logout'];
 
@@ -111,7 +112,7 @@ class CheckSubscriptionTest extends TestCase
         $user = User::factory()->create(['tenant_id' => $tenant->id]);
         $this->actingAs($user);
 
-        $middleware = new CheckSubscription();
+        $middleware = new CheckSubscription;
         $request = Request::create('/api/invoices', 'GET');
         $request->headers->set('Accept', 'application/json');
         $route = new \Illuminate\Routing\Route('GET', '/api/invoices', []);

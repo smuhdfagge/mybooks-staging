@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\Permission\Contracts\Role as RoleContract;
 use Spatie\Permission\Exceptions\RoleAlreadyExists;
 use Spatie\Permission\Guard;
@@ -79,6 +80,7 @@ class Role extends SpatieRole
         if (auth()->check() && auth()->user()->tenant_id) {
             return $query->where('tenant_id', auth()->user()->tenant_id);
         }
+
         return $query;
     }
 
@@ -89,7 +91,7 @@ class Role extends SpatieRole
     {
         return $query->where(function ($q) use ($tenantId) {
             $q->where('tenant_id', $tenantId)
-              ->orWhereNull('tenant_id');
+                ->orWhereNull('tenant_id');
         });
     }
 
@@ -111,8 +113,10 @@ class Role extends SpatieRole
 
     /**
      * Get the tenant that owns the role.
+     *
+     * @return BelongsTo<Tenant, $this>
      */
-    public function tenant()
+    public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
     }

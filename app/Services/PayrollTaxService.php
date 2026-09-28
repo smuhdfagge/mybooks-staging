@@ -12,9 +12,9 @@ class PayrollTaxService
      * Falls back to flat rate if no brackets are configured.
      *
      * @param  float  $taxableIncome  The taxable income amount
-     * @param  int    $tenantId       The tenant ID for bracket lookup
-     * @param  float  $flatRate       Fallback flat tax rate (percentage) when no brackets exist
-     * @param  string $period         'monthly' or 'annual'
+     * @param  int  $tenantId  The tenant ID for bracket lookup
+     * @param  float  $flatRate  Fallback flat tax rate (percentage) when no brackets exist
+     * @param  string  $period  'monthly' or 'annual'
      * @return array{tax: float, breakdown: array, method: string}
      */
     public function calculateTax(float $taxableIncome, int $tenantId, float $flatRate = 0, string $period = 'monthly'): array
@@ -113,10 +113,10 @@ class PayrollTaxService
      *
      * @param  float  $grossSalary  The employee's gross salary
      * @param  array  $contributions  Array of contribution rules, each with:
-     *   - name:   string  Label (e.g. "Employer Social Security")
-     *   - type:   string  'fixed' or 'percentage'
-     *   - rate:   float   Fixed amount or percentage
-     *   - cap:    float|null  Maximum contribution amount (null = no cap)
+     *                                - name:   string  Label (e.g. "Employer Social Security")
+     *                                - type:   string  'fixed' or 'percentage'
+     *                                - rate:   float   Fixed amount or percentage
+     *                                - cap:    float|null  Maximum contribution amount (null = no cap)
      * @return array{total: float, details: array}
      */
     public function calculateEmployerContributions(float $grossSalary, array $contributions): array

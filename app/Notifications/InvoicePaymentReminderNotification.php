@@ -30,10 +30,10 @@ class InvoicePaymentReminderNotification extends Notification implements ShouldQ
         return (new MailMessage)
             ->subject("Upcoming Payment Due: Invoice #{$this->invoice->invoice_number}")
             ->greeting("Hello {$notifiable->name},")
-            ->line("This is a friendly reminder that payment for the following invoice is due soon:")
+            ->line('This is a friendly reminder that payment for the following invoice is due soon:')
             ->line("**Invoice Number:** {$this->invoice->invoice_number}")
             ->line("**Due Date:** {$this->invoice->due_date->format('M d, Y')} ({$this->daysBefore} days from now)")
-            ->line("**Amount Due:** " . number_format($this->invoice->balance_due, 2) . " {$tenant->currency}")
+            ->line('**Amount Due:** '.number_format($this->invoice->balance_due, 2)." {$tenant->currency}")
             ->action('View Invoice', $url)
             ->line('Thank you for your business!')
             ->salutation("Best regards,\n{$tenant->name}");

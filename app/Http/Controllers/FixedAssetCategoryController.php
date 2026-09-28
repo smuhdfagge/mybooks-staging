@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\FixedAssetCategory;
 use App\Models\ChartOfAccount;
+use App\Models\FixedAssetCategory;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -70,11 +70,11 @@ class FixedAssetCategoryController extends Controller
     public function show(FixedAssetCategory $fixedAssetCategory)
     {
         $fixedAssetCategory->load([
-            'assetAccount', 
-            'accumulatedDepreciationAccount', 
+            'assetAccount',
+            'accumulatedDepreciationAccount',
             'depreciationExpenseAccount',
             'gainLossAccount',
-            'assets'
+            'assets',
         ]);
 
         return view('categories.show', ['category' => $fixedAssetCategory]);

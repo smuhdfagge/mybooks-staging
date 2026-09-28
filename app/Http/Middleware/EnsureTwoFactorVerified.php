@@ -29,7 +29,7 @@ class EnsureTwoFactorVerified
         $user = $request->user();
 
         // No user = no 2FA check needed
-        if (!$user) {
+        if (! $user) {
             return $next($request);
         }
 
@@ -63,7 +63,7 @@ class EnsureTwoFactorVerified
     {
         $routeName = $request->route()?->getName();
 
-        if (!$routeName) {
+        if (! $routeName) {
             return false;
         }
 

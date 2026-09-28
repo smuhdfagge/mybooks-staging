@@ -2,25 +2,31 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Events\PayrollDeleting;
+use App\Events\PayrollPaid;
+use App\Services\JournalService;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
-use App\Events\PayrollPaid;
-use App\Events\PayrollDeleting;
-use App\Services\JournalService;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Payroll extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, ValidatesAccountingPeriod;
+    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     // Status constants
     const STATUS_DRAFT = 'draft';
+
     const STATUS_PENDING = 'pending';
+
     const STATUS_APPROVED = 'approved';
+
     const STATUS_PAID = 'paid';
+
     const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [
@@ -76,27 +82,32 @@ class Payroll extends Model
         'net_salary' => 'decimal:2',
     ];
 
-    public function employee()
+    /** @return BelongsTo<Employee, $this> */
+    public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
     }
 
-    public function payrollBatch()
+    /** @return BelongsTo<PayrollBatch, $this> */
+    public function payrollBatch(): BelongsTo
     {
         return $this->belongsTo(PayrollBatch::class);
     }
 
-    public function salaryStructure()
+    /** @return BelongsTo<SalaryStructure, $this> */
+    public function salaryStructure(): BelongsTo
     {
         return $this->belongsTo(SalaryStructure::class);
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function approvedBy()
+    /** @return BelongsTo<User, $this> */
+    public function approvedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
@@ -107,9 +118,10 @@ class Payroll extends Model
             ->where('tenant_id', $tenantId)
             ->latest('id')
             ->first();
-        
+
         $number = $lastPayroll ? intval(substr($lastPayroll->payroll_number, 4)) + 1 : 1;
-        return 'PAY-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+        return 'PAY-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     public function calculateTotals()
@@ -119,7 +131,8 @@ class Payroll extends Model
         $this->net_salary = $this->gross_salary - $this->total_deductions;
     }
 
-    public function journal()
+    /** @return MorphOne<Journal, $this> */
+    public function journal(): MorphOne
     {
         return $this->morphOne(Journal::class, 'reference');
     }
@@ -130,6 +143,7 @@ class Payroll extends Model
     public function createJournalEntry(): ?Journal
     {
         $journalService = app(JournalService::class);
+
         return $journalService->createPayrollJournal($this);
     }
 

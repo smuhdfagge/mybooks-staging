@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\AccountingPeriod;
 use App\Models\ChartOfAccount;
 use App\Models\Journal;
-use App\Models\JournalEntry;
 use App\Services\JournalService;
 use App\Services\YearEndCloseService;
 use Tests\TestCase;
@@ -112,7 +111,7 @@ class YearEndCloseTest extends TestCase
         // Period should be locked
         $this->assertTrue($period->fresh()->isLocked());
 
-        // Income Summary account should exist  
+        // Income Summary account should exist
         $incomeSummary = ChartOfAccount::where('tenant_id', $this->tenant->id)
             ->where('account_code', '3300')
             ->first();

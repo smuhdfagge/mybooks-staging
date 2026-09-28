@@ -18,6 +18,7 @@ class ItemController extends Controller
     public function create()
     {
         $categories = ItemCategory::where('is_active', true)->get();
+
         return view('items.create', compact('categories'));
     }
 
@@ -61,6 +62,7 @@ class ItemController extends Controller
     public function edit(Item $item)
     {
         $categories = ItemCategory::where('is_active', true)->get();
+
         return view('items.edit', compact('item', 'categories'));
     }
 
@@ -100,6 +102,7 @@ class ItemController extends Controller
     public function destroy(Item $item)
     {
         $item->delete();
+
         return redirect()->route('items.index')->with('success', 'Item deleted successfully.');
     }
 }

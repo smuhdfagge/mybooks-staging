@@ -2,20 +2,27 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PayrollBatch extends Model
 {
-    use SoftDeletes, BelongsToTenant, LogsActivity;
+    use BelongsToTenant, LogsActivity, SoftDeletes;
 
     const STATUS_DRAFT = 'draft';
+
     const STATUS_APPROVED = 'approved';
+
     const STATUS_PROCESSING = 'processing'; // queued to be paid (N7)
+
     const STATUS_FAILED = 'failed';         // the queued job failed; can be retried
+
     const STATUS_PAID = 'paid';
+
     const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [
@@ -48,17 +55,20 @@ class PayrollBatch extends Model
         'paid_at' => 'datetime',
     ];
 
-    public function payrolls()
+    /** @return HasMany<Payroll, $this> */
+    public function payrolls(): HasMany
     {
         return $this->hasMany(Payroll::class);
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function approvedBy()
+    /** @return BelongsTo<User, $this> */
+    public function approvedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
@@ -71,7 +81,8 @@ class PayrollBatch extends Model
             ->first();
 
         $number = $last ? intval(substr($last->batch_number, 4)) + 1 : 1;
-        return 'PBN-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+        return 'PBN-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     public function recalculateTotals()

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CreditNoteApplication extends Model
 {
@@ -22,17 +23,20 @@ class CreditNoteApplication extends Model
         'applied_date' => 'date',
     ];
 
-    public function creditNote()
+    /** @return BelongsTo<CreditNote, $this> */
+    public function creditNote(): BelongsTo
     {
         return $this->belongsTo(CreditNote::class);
     }
 
-    public function invoice()
+    /** @return BelongsTo<Invoice, $this> */
+    public function invoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class);
     }
 
-    public function appliedBy()
+    /** @return BelongsTo<User, $this> */
+    public function appliedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'applied_by');
     }

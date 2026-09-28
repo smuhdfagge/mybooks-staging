@@ -56,6 +56,7 @@ class RegenerateInvoiceJournals extends Command
 
         if ($invoices->isEmpty()) {
             $this->warn('No invoices found to process.');
+
             return Command::SUCCESS;
         }
 
@@ -81,11 +82,11 @@ class RegenerateInvoiceJournals extends Command
                         })
                         ->exists();
 
-                    if (!$hasCogs) {
+                    if (! $hasCogs) {
                         // Regenerate the journal to include COGS
                         $existingJournal->entries()->delete();
                         $existingJournal->delete();
-                        
+
                         $this->journalService->createInvoiceJournal($invoice);
                         $updated++;
 
@@ -93,14 +94,14 @@ class RegenerateInvoiceJournals extends Command
                         $newJournal = Journal::where('reference_type', Invoice::class)
                             ->where('reference_id', $invoice->id)
                             ->first();
-                        
+
                         if ($newJournal) {
                             $newHasCogs = $newJournal->entries()
                                 ->whereHas('account', function ($q) {
                                     $q->where('account_code', '5000');
                                 })
                                 ->exists();
-                            
+
                             if ($newHasCogs) {
                                 $cogsAdded++;
                             }
@@ -122,7 +123,7 @@ class RegenerateInvoiceJournals extends Command
         $bar->finish();
         $this->newLine(2);
 
-        $this->info("Journal regeneration completed!");
+        $this->info('Journal regeneration completed!');
         $this->table(
             ['Metric', 'Count'],
             [

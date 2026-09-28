@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Customer;
 use App\Models\DeliveryNote;
 use App\Models\DeliveryNoteItem;
 use App\Models\SalesOrder;
-use App\Models\Invoice;
-use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -88,12 +87,13 @@ class DeliveryNoteController extends Controller
     public function show(DeliveryNote $deliveryNote)
     {
         $deliveryNote->load(['customer', 'salesOrder', 'invoice', 'items.item', 'createdBy']);
+
         return view('delivery-notes.show', compact('deliveryNote'));
     }
 
     public function dispatch(DeliveryNote $deliveryNote)
     {
-        if (!$deliveryNote->dispatch()) {
+        if (! $deliveryNote->dispatch()) {
             return redirect()->back()->with('error', 'Only draft delivery notes can be dispatched.');
         }
 
@@ -110,7 +110,7 @@ class DeliveryNoteController extends Controller
             return $deliveryNote->confirmDelivery($validated['received_by']);
         });
 
-        if (!$result) {
+        if (! $result) {
             return redirect()->back()->with('error', 'This delivery note cannot be confirmed.');
         }
 

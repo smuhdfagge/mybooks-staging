@@ -2,23 +2,29 @@
 
 namespace App\Livewire\SalaryStructures;
 
+use App\Livewire\Concerns\ChecksPermissions;
 use App\Models\SalaryStructure;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Livewire\Concerns\ChecksPermissions;
 
 class SalaryStructuresTable extends Component
 {
     use ChecksPermissions, WithPagination;
 
     public $search = '';
+
     public $status = '';
+
     public $perPage = 15;
 
     public $selectedItems = [];
+
     public $selectAll = false;
+
     public $bulkAction = '';
+
     public $successMessage = '';
+
     public $errorMessage = '';
 
     protected $queryString = [
@@ -26,9 +32,20 @@ class SalaryStructuresTable extends Component
         'status' => ['except' => ''],
     ];
 
-    public function updatingSearch() { $this->resetPage(); }
-    public function updatingStatus() { $this->resetPage(); }
-    public function updatingPerPage() { $this->resetPage(); }
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingStatus()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingPerPage()
+    {
+        $this->resetPage();
+    }
 
     public function clearFilters()
     {
@@ -42,7 +59,7 @@ class SalaryStructuresTable extends Component
 
         abort_unless($salaryStructure->tenant_id === auth()->user()->tenant_id, 403);
 
-        $salaryStructure->update(['is_active' => !$salaryStructure->is_active]);
+        $salaryStructure->update(['is_active' => ! $salaryStructure->is_active]);
         $this->successMessage = 'Salary structure status updated.';
     }
 
@@ -58,7 +75,7 @@ class SalaryStructuresTable extends Component
 
     private function getFilteredIds()
     {
-        return $this->buildQuery()->pluck('id')->map(fn($id) => (string) $id)->toArray();
+        return $this->buildQuery()->pluck('id')->map(fn ($id) => (string) $id)->toArray();
     }
 
     /**
@@ -80,11 +97,13 @@ class SalaryStructuresTable extends Component
 
         if (empty($this->selectedItems)) {
             $this->errorMessage = 'Please select at least one salary structure.';
+
             return;
         }
 
         if (empty($this->bulkAction)) {
             $this->errorMessage = 'Please select an action.';
+
             return;
         }
 
@@ -113,10 +132,13 @@ class SalaryStructuresTable extends Component
 
                 foreach ($this->selectedItems as $id) {
                     $structure = SalaryStructure::find($id);
-                    if (!$structure) continue;
+                    if (! $structure) {
+                        continue;
+                    }
 
                     if ($structure->payrolls()->exists() || $structure->employees()->exists()) {
                         $skippedCount++;
+
                         continue;
                     }
 
@@ -129,12 +151,13 @@ class SalaryStructuresTable extends Component
                 } elseif ($deletedCount > 0) {
                     $this->successMessage = "Successfully deleted {$deletedCount} salary structure(s).";
                 } else {
-                    $this->errorMessage = "Could not delete any structures. All selected are in use.";
+                    $this->errorMessage = 'Could not delete any structures. All selected are in use.';
                 }
                 break;
 
             default:
                 $this->errorMessage = 'Invalid action selected.';
+
                 return;
         }
 

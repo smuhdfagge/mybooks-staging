@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SalesOrder;
-use App\Models\SalesOrderItem;
 use App\Models\Customer;
-use App\Models\Item;
+use App\Models\Inventory;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
-use App\Models\Inventory;
+use App\Models\Item;
+use App\Models\SalesOrder;
+use App\Models\SalesOrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -25,7 +25,7 @@ class SalesOrderController extends Controller
         $customers = Customer::where('is_active', true)->get();
         $items = Item::where('is_active', true)->get();
         $orderNumber = SalesOrder::generateNumber(auth()->user()->tenant_id);
-        
+
         return view('sales-orders.create', compact('customers', 'items', 'orderNumber'));
     }
 
@@ -46,7 +46,7 @@ class SalesOrderController extends Controller
             'items.*.unit_price' => 'required|numeric|min:0',
             'items.*.tax_rate' => 'nullable|numeric|min:0|max:100',
         ]);
-        
+
         $order = DB::transaction(function () use ($tenantId, $validated) {
             $order = SalesOrder::create([
                 'tenant_id' => $tenantId,
@@ -98,6 +98,7 @@ class SalesOrderController extends Controller
     public function show(SalesOrder $salesOrder)
     {
         $salesOrder->load(['customer', 'items.item']);
+
         return view('sales-orders.show', compact('salesOrder'));
     }
 
@@ -106,7 +107,7 @@ class SalesOrderController extends Controller
         $customers = Customer::where('is_active', true)->get();
         $items = Item::where('is_active', true)->get();
         $salesOrder->load('items');
-        
+
         return view('sales-orders.edit', compact('salesOrder', 'customers', 'items'));
     }
 
@@ -134,14 +135,14 @@ class SalesOrderController extends Controller
         }
 
         $salesOrder->update(['status' => 'confirmed']);
-        
+
         return redirect()->route('sales-orders.show', $salesOrder)
             ->with('success', 'Sales order confirmed successfully.');
     }
 
     public function convertToInvoice(SalesOrder $salesOrder)
     {
-        if (!in_array($salesOrder->status, ['confirmed', 'processing'])) {
+        if (! in_array($salesOrder->status, ['confirmed', 'processing'])) {
             return redirect()->back()->with('error', 'Only confirmed or processing orders can be converted to invoices.');
         }
 
@@ -196,6 +197,7 @@ class SalesOrderController extends Controller
 
             if ($subtotal === 0) {
                 DB::rollBack();
+
                 return redirect()->back()->with('error', 'All items have already been fulfilled. Nothing to invoice.');
             }
 
@@ -239,13 +241,14 @@ class SalesOrderController extends Controller
                 ->with('success', "Invoice {$invoice->invoice_number} created from Sales Order {$salesOrder->order_number}.");
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Failed to convert sales order: ' . $e->getMessage());
+
+            return redirect()->back()->with('error', 'Failed to convert sales order: '.$e->getMessage());
         }
     }
 
     public function createDeliveryNote(SalesOrder $salesOrder)
     {
-        if (!in_array($salesOrder->status, ['confirmed', 'processing'])) {
+        if (! in_array($salesOrder->status, ['confirmed', 'processing'])) {
             return redirect()->back()->with('error', 'Only confirmed or processing orders can have delivery notes.');
         }
 

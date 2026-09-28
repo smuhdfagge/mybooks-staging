@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\ChartOfAccount;
 use App\Http\Resources\ChartOfAccountResource;
-use Illuminate\Http\Request;
+use App\Models\ChartOfAccount;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class ChartOfAccountController extends BaseApiController
@@ -65,6 +65,7 @@ class ChartOfAccountController extends BaseApiController
     public function show(ChartOfAccount $chartOfAccount): JsonResponse
     {
         $chartOfAccount->load(['parent', 'children']);
+
         return $this->success(new ChartOfAccountResource($chartOfAccount));
     }
 
@@ -163,7 +164,7 @@ class ChartOfAccountController extends BaseApiController
             $balance = ChartOfAccount::where('tenant_id', $tenantId)
                 ->where('type', $type)
                 ->sum('current_balance');
-            
+
             $summary[$type] = [
                 'label' => $label,
                 'balance' => (float) $balance,

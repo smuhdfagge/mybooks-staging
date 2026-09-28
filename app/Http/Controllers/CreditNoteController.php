@@ -110,12 +110,13 @@ class CreditNoteController extends Controller
     public function show(CreditNote $creditNote)
     {
         $creditNote->load(['customer', 'invoice', 'items.item', 'applications.invoice', 'createdBy']);
+
         return view('credit-notes.show', compact('creditNote'));
     }
 
     public function open(CreditNote $creditNote)
     {
-        if (!$creditNote->open()) {
+        if (! $creditNote->open()) {
             return redirect()->back()->with('error', 'Only draft credit notes can be opened.');
         }
 
@@ -127,6 +128,7 @@ class CreditNoteController extends Controller
         if (! $creditNote->void()) {
             return redirect()->back()->with('error', 'Cannot void a credit note that has been applied, or is already void.');
         }
+
         return redirect()->back()->with('success', 'Credit note voided.');
     }
 
@@ -154,7 +156,7 @@ class CreditNoteController extends Controller
     {
         $validated = $request->validate([
             'invoice_id' => ['required', Rule::exists('invoices', 'id')->where('tenant_id', auth()->user()->tenant_id)],
-            'amount' => 'required|numeric|min:0.01|max:' . $creditNote->balance,
+            'amount' => 'required|numeric|min:0.01|max:'.$creditNote->balance,
         ]);
 
         try {

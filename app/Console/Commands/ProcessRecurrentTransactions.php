@@ -21,8 +21,11 @@ class ProcessRecurrentTransactions extends Command
     protected $description = 'Process due recurring invoices, bills, and expenses and generate the actual transactions';
 
     protected int $invoicesCreated = 0;
+
     protected int $billsCreated = 0;
+
     protected int $expensesCreated = 0;
+
     protected int $errors = 0;
 
     public function handle(): int
@@ -62,7 +65,7 @@ class ProcessRecurrentTransactions extends Command
             ->where('next_invoice_date', '<=', now()->toDateString())
             ->where(function ($q) {
                 $q->whereNull('end_date')
-                  ->orWhere('next_invoice_date', '<=', DB::raw('end_date'));
+                    ->orWhere('next_invoice_date', '<=', DB::raw('end_date'));
             })
             ->with(['customer', 'items'])
             ->get();
@@ -71,6 +74,7 @@ class ProcessRecurrentTransactions extends Command
             if ($dryRun) {
                 $this->line("  [DRY RUN] Invoice for {$profile->customer->name} from profile \"{$profile->profile_name}\" (Tenant #{$profile->tenant_id})");
                 $this->invoicesCreated++;
+
                 continue;
             }
 
@@ -140,7 +144,7 @@ class ProcessRecurrentTransactions extends Command
             ->where('next_bill_date', '<=', now()->toDateString())
             ->where(function ($q) {
                 $q->whereNull('end_date')
-                  ->orWhere('next_bill_date', '<=', DB::raw('end_date'));
+                    ->orWhere('next_bill_date', '<=', DB::raw('end_date'));
             })
             ->with(['vendor', 'items'])
             ->get();
@@ -149,6 +153,7 @@ class ProcessRecurrentTransactions extends Command
             if ($dryRun) {
                 $this->line("  [DRY RUN] Bill for {$profile->vendor->name} from profile \"{$profile->profile_name}\" (Tenant #{$profile->tenant_id})");
                 $this->billsCreated++;
+
                 continue;
             }
 
@@ -215,7 +220,7 @@ class ProcessRecurrentTransactions extends Command
             ->where('next_expense_date', '<=', now()->toDateString())
             ->where(function ($q) {
                 $q->whereNull('end_date')
-                  ->orWhere('next_expense_date', '<=', DB::raw('end_date'));
+                    ->orWhere('next_expense_date', '<=', DB::raw('end_date'));
             })
             ->with(['vendor', 'expenseAccount'])
             ->get();
@@ -225,6 +230,7 @@ class ProcessRecurrentTransactions extends Command
                 $vendorName = $profile->vendor ? $profile->vendor->name : 'N/A';
                 $this->line("  [DRY RUN] Expense \"{$profile->profile_name}\" for {$vendorName} (Tenant #{$profile->tenant_id})");
                 $this->expensesCreated++;
+
                 continue;
             }
 

@@ -4,6 +4,7 @@ namespace App\Traits;
 
 use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 trait BelongsToTenant
 {
@@ -27,8 +28,8 @@ trait BelongsToTenant
             // Ensure tenant_id is present before persisting
             if (empty($model->tenant_id)) {
                 throw new \RuntimeException(
-                    'Cannot create ' . class_basename($model) . ' without a tenant_id. '
-                    . 'Set tenant_id explicitly or authenticate a user with a tenant.'
+                    'Cannot create '.class_basename($model).' without a tenant_id. '
+                    .'Set tenant_id explicitly or authenticate a user with a tenant.'
                 );
             }
         });
@@ -37,7 +38,7 @@ trait BelongsToTenant
         static::updating(function ($model) {
             if ($model->isDirty('tenant_id') && $model->getOriginal('tenant_id') !== null) {
                 throw new \RuntimeException(
-                    'Cannot change tenant_id on an existing ' . class_basename($model) . '.'
+                    'Cannot change tenant_id on an existing '.class_basename($model).'.'
                 );
             }
         });
@@ -46,14 +47,15 @@ trait BelongsToTenant
         static::addGlobalScope('tenant', function (Builder $builder) {
             if (auth()->check() && auth()->user()?->tenant_id) {
                 $builder->where(
-                    $builder->getModel()->getTable() . '.tenant_id',
+                    $builder->getModel()->getTable().'.tenant_id',
                     auth()->user()->tenant_id
                 );
             }
         });
     }
 
-    public function tenant()
+    /** @return BelongsTo<Tenant, $this> */
+    public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
     }

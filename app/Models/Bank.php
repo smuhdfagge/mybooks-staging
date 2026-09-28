@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Bank extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'tenant_id',
@@ -47,9 +49,13 @@ class Bank extends Model
 
     // Account Types
     const TYPE_CHECKING = 'checking';
+
     const TYPE_SAVINGS = 'savings';
+
     const TYPE_CREDIT_CARD = 'credit_card';
+
     const TYPE_CASH = 'cash';
+
     const TYPE_OTHER = 'other';
 
     public static function getAccountTypes(): array
@@ -63,12 +69,14 @@ class Bank extends Model
         ];
     }
 
-    public function chartOfAccount()
+    /** @return BelongsTo<ChartOfAccount, $this> */
+    public function chartOfAccount(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class);
     }
 
-    public function transactions()
+    /** @return HasMany<BankTransaction, $this> */
+    public function transactions(): HasMany
     {
         return $this->hasMany(BankTransaction::class);
     }
@@ -78,13 +86,13 @@ class Bank extends Model
         if (empty($this->account_number)) {
             return '';
         }
-        
+
         $length = strlen($this->account_number);
         if ($length <= 4) {
             return $this->account_number;
         }
-        
-        return str_repeat('•', $length - 4) . substr($this->account_number, -4);
+
+        return str_repeat('•', $length - 4).substr($this->account_number, -4);
     }
 
     public function getFormattedBalanceAttribute(): string
@@ -97,11 +105,11 @@ class Bank extends Model
         $deposits = $this->transactions()
             ->whereIn('type', ['deposit', 'interest'])
             ->sum('amount');
-            
+
         $withdrawals = $this->transactions()
             ->whereIn('type', ['withdrawal', 'fee', 'transfer_out'])
             ->sum('amount');
-            
+
         $this->current_balance = $this->opening_balance + $deposits - $withdrawals;
         $this->save();
     }

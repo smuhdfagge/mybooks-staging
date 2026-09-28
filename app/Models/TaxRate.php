@@ -2,15 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TaxRate extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'tenant_id',
@@ -36,26 +39,32 @@ class TaxRate extends Model
 
     // Type constants
     const TYPE_INCLUSIVE = 'inclusive';
+
     const TYPE_EXCLUSIVE = 'exclusive';
 
     // Applies to constants
     const APPLIES_TO_SALES = 'sales';
+
     const APPLIES_TO_PURCHASES = 'purchases';
+
     const APPLIES_TO_BOTH = 'both';
 
-    public function tenant()
+    /** @return BelongsTo<Tenant, $this> */
+    public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
     }
 
-    public function taxGroups()
+    /** @return BelongsToMany<TaxGroup, $this> */
+    public function taxGroups(): BelongsToMany
     {
         return $this->belongsToMany(TaxGroup::class, 'tax_group_rates')
             ->withPivot('sort_order')
             ->withTimestamps();
     }
 
-    public function items()
+    /** @return HasMany<Item, $this> */
+    public function items(): HasMany
     {
         return $this->hasMany(Item::class);
     }
@@ -69,7 +78,7 @@ class TaxRate extends Model
             // Tax is included in the amount, extract it
             return $amount - ($amount / (1 + ($this->rate / 100)));
         }
-        
+
         // Tax is exclusive, add it
         return $amount * ($this->rate / 100);
     }
@@ -82,6 +91,7 @@ class TaxRate extends Model
         if ($this->type === self::TYPE_INCLUSIVE) {
             return $grossAmount / (1 + ($this->rate / 100));
         }
+
         return $grossAmount;
     }
 
@@ -93,6 +103,7 @@ class TaxRate extends Model
         if ($this->type === self::TYPE_EXCLUSIVE) {
             return $netAmount * (1 + ($this->rate / 100));
         }
+
         return $netAmount;
     }
 
@@ -101,7 +112,7 @@ class TaxRate extends Model
      */
     public function getFormattedRateAttribute(): string
     {
-        return rtrim(rtrim(number_format($this->rate, 4), '0'), '.') . '%';
+        return rtrim(rtrim(number_format($this->rate, 4), '0'), '.').'%';
     }
 
     /**
@@ -144,8 +155,8 @@ class TaxRate extends Model
         return static::where('tenant_id', $tenantId)
             ->where('is_default', true)
             ->where('is_active', true)
-            ->when($type === 'sales', fn($q) => $q->forSales())
-            ->when($type === 'purchases', fn($q) => $q->forPurchases())
+            ->when($type === 'sales', fn ($q) => $q->forSales())
+            ->when($type === 'purchases', fn ($q) => $q->forPurchases())
             ->first();
     }
 

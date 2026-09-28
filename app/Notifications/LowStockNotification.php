@@ -2,7 +2,6 @@
 
 namespace App\Notifications;
 
-use App\Models\Item;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -25,11 +24,11 @@ class LowStockNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $itemCount = count($this->items);
-        
+
         $message = (new MailMessage)
             ->subject("Low Stock Alert: {$itemCount} item(s) need attention")
             ->greeting("Hello {$notifiable->name},")
-            ->line("The following items are running low on stock and may need to be reordered:");
+            ->line('The following items are running low on stock and may need to be reordered:');
 
         foreach ($this->items as $item) {
             $currentStock = $item->inventory?->quantity ?? 0;
@@ -44,12 +43,12 @@ class LowStockNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         $itemIds = collect($this->items)->pluck('id')->toArray();
-        
+
         return [
             'type' => 'low_stock',
             'item_count' => count($this->items),
             'item_ids' => $itemIds,
-            'message' => count($this->items) . " item(s) are low on stock",
+            'message' => count($this->items).' item(s) are low on stock',
         ];
     }
 }

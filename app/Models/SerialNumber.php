@@ -2,18 +2,24 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\BelongsToTenant;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class SerialNumber extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     const STATUS_AVAILABLE = 'available';
+
     const STATUS_RESERVED = 'reserved';
+
     const STATUS_SOLD = 'sold';
+
     const STATUS_RETURNED = 'returned';
+
     const STATUS_DAMAGED = 'damaged';
 
     protected $fillable = [
@@ -27,22 +33,25 @@ class SerialNumber extends Model
         'reference_id',
     ];
 
-    public function item()
+    /** @return BelongsTo<Item, $this> */
+    public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class);
     }
 
-    public function warehouse()
+    /** @return BelongsTo<Warehouse, $this> */
+    public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class);
     }
 
-    public function batch()
+    /** @return BelongsTo<InventoryBatch, $this> */
+    public function batch(): BelongsTo
     {
         return $this->belongsTo(InventoryBatch::class, 'inventory_batch_id');
     }
 
-    public function reference()
+    public function reference(): MorphTo
     {
         return $this->morphTo();
     }

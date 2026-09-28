@@ -50,7 +50,7 @@ class StatutoryTaxTemplate extends Model
         foreach ($this->brackets as $index => $bracket) {
             \App\Models\TaxBracket::create([
                 'tenant_id' => $tenantId,
-                'name' => $bracket['name'] ?? "{$this->name} Bracket " . ($index + 1),
+                'name' => $bracket['name'] ?? "{$this->name} Bracket ".($index + 1),
                 'min_amount' => $bracket['min'] ?? $bracket['min_amount'] ?? 0,
                 'max_amount' => $bracket['max'] ?? $bracket['max_amount'] ?? null,
                 'rate' => $bracket['rate'],

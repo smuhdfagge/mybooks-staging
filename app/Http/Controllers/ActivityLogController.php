@@ -28,7 +28,7 @@ class ActivityLogController extends Controller
 
         // Filter by model type
         if ($request->filled('model_type')) {
-            $query->where('model_type', 'like', '%' . $request->model_type . '%');
+            $query->where('model_type', 'like', '%'.$request->model_type.'%');
         }
 
         // Filter by date range
@@ -58,12 +58,12 @@ class ActivityLogController extends Controller
             ->pluck('action')
             ->sort()
             ->values();
-        
+
         $modelTypes = ActivityLog::where('tenant_id', $tenantId)
             ->whereNotNull('model_type')
             ->distinct()
             ->pluck('model_type')
-            ->map(fn($type) => class_basename($type))
+            ->map(fn ($type) => class_basename($type))
             ->unique()
             ->sort()
             ->values();
@@ -87,7 +87,7 @@ class ActivityLogController extends Controller
     public function forModel(Request $request, string $modelType, int $modelId)
     {
         $tenantId = auth()->user()->tenant_id;
-        
+
         // Build the full model class name
         $fullModelType = "App\\Models\\{$modelType}";
 

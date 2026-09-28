@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Traits\BelongsToTenant;
 
 class RecurrentExpense extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant;
+    use BelongsToTenant, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'tenant_id',
@@ -40,27 +42,32 @@ class RecurrentExpense extends Model
         'total' => 'decimal:2',
     ];
 
-    public function vendor()
+    /** @return BelongsTo<Vendor, $this> */
+    public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class);
     }
 
-    public function expenseAccount()
+    /** @return BelongsTo<ChartOfAccount, $this> */
+    public function expenseAccount(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class, 'expense_account_id');
     }
 
-    public function paidThroughAccount()
+    /** @return BelongsTo<ChartOfAccount, $this> */
+    public function paidThroughAccount(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class, 'paid_through_id');
     }
 
-    public function expenses()
+    /** @return HasMany<Expense, $this> */
+    public function expenses(): HasMany
     {
         return $this->hasMany(Expense::class, 'recurrent_expense_id');
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }

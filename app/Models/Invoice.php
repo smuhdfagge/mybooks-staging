@@ -2,19 +2,22 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Events\InvoiceDeleting;
+use App\Events\InvoiceSaved;
+use App\Services\JournalService;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
-use App\Events\InvoiceSaved;
-use App\Events\InvoiceDeleting;
-use App\Services\JournalService;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Invoice extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, ValidatesAccountingPeriod, \App\Traits\KeepsTotalsBalanced;
+    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     protected $fillable = [
         'tenant_id',
@@ -53,57 +56,68 @@ class Invoice extends Model
         'total_refunded' => 'decimal:2',
     ];
 
-    public function tenant()
+    /** @return BelongsTo<Tenant, $this> */
+    public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
     }
 
-    public function customer()
+    /** @return BelongsTo<Customer, $this> */
+    public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
 
-    public function salesOrder()
+    /** @return BelongsTo<SalesOrder, $this> */
+    public function salesOrder(): BelongsTo
     {
         return $this->belongsTo(SalesOrder::class);
     }
 
-    public function items()
+    /** @return HasMany<InvoiceItem, $this> */
+    public function items(): HasMany
     {
         return $this->hasMany(InvoiceItem::class);
     }
 
-    public function payments()
+    /** @return HasMany<PaymentReceived, $this> */
+    public function payments(): HasMany
     {
         return $this->hasMany(PaymentReceived::class);
     }
 
-    public function refunds()
+    /** @return HasMany<InvoiceRefund, $this> */
+    public function refunds(): HasMany
     {
         return $this->hasMany(InvoiceRefund::class);
     }
 
-    public function creditNotes()
+    /** @return HasMany<CreditNote, $this> */
+    public function creditNotes(): HasMany
     {
         return $this->hasMany(CreditNote::class);
     }
 
-    public function creditNoteApplications()
+    /** @return HasMany<CreditNoteApplication, $this> */
+    public function creditNoteApplications(): HasMany
     {
         return $this->hasMany(CreditNoteApplication::class);
     }
 
-    public function deliveryNotes()
+    /** @return HasMany<DeliveryNote, $this> */
+    public function deliveryNotes(): HasMany
     {
         return $this->hasMany(DeliveryNote::class);
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function journal()
+    /** @return MorphOne<Journal, $this> */
+    public function journal(): MorphOne
     {
         return $this->morphOne(Journal::class, 'reference');
     }
@@ -114,6 +128,7 @@ class Invoice extends Model
     public function createJournalEntry(): ?Journal
     {
         $journalService = app(JournalService::class);
+
         return $journalService->createInvoiceJournal($this);
     }
 
@@ -136,9 +151,10 @@ class Invoice extends Model
             ->where('tenant_id', $tenantId)
             ->latest('id')
             ->first();
-        
+
         $number = $lastInvoice ? intval(substr($lastInvoice->invoice_number, 4)) + 1 : 1;
-        return 'INV-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+        return 'INV-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -161,9 +177,10 @@ class Invoice extends Model
             ->whereNotNull('waybill_number')
             ->latest('id')
             ->first();
-        
+
         $number = $lastWaybill ? intval(substr($lastWaybill->waybill_number, 3)) + 1 : 1;
-        return 'WB-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+        return 'WB-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     public function isReleased()
@@ -173,7 +190,7 @@ class Invoice extends Model
 
     public function canBeReleased()
     {
-        return $this->status === 'paid' && !$this->isReleased();
+        return $this->status === 'paid' && ! $this->isReleased();
     }
 
     /**
@@ -296,7 +313,7 @@ class Invoice extends Model
                 $item = Item::find($invoiceItem->item_id);
 
                 // Skip for services or items that don't track inventory
-                if (!$item || !$item->track_inventory || $item->type === 'service') {
+                if (! $item || ! $item->track_inventory || $item->type === 'service') {
                     continue;
                 }
 

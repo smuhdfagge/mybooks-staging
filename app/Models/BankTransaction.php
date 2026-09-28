@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\ValidatesAccountingPeriod;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class BankTransaction extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, ValidatesAccountingPeriod;
+    use BelongsToTenant, HasFactory, SoftDeletes, ValidatesAccountingPeriod;
 
     protected $fillable = [
         'tenant_id',
@@ -40,10 +42,15 @@ class BankTransaction extends Model
 
     // Transaction Types
     const TYPE_DEPOSIT = 'deposit';
+
     const TYPE_WITHDRAWAL = 'withdrawal';
+
     const TYPE_TRANSFER_IN = 'transfer_in';
+
     const TYPE_TRANSFER_OUT = 'transfer_out';
+
     const TYPE_FEE = 'fee';
+
     const TYPE_INTEREST = 'interest';
 
     public static function getTypes(): array
@@ -58,17 +65,19 @@ class BankTransaction extends Model
         ];
     }
 
-    public function bank()
+    /** @return BelongsTo<Bank, $this> */
+    public function bank(): BelongsTo
     {
         return $this->belongsTo(Bank::class);
     }
 
-    public function transactionable()
+    public function transactionable(): MorphTo
     {
         return $this->morphTo();
     }
 
-    public function reconciledBy()
+    /** @return BelongsTo<User, $this> */
+    public function reconciledBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reconciled_by');
     }
@@ -76,7 +85,8 @@ class BankTransaction extends Model
     public function getFormattedAmountAttribute(): string
     {
         $prefix = in_array($this->type, [self::TYPE_DEPOSIT, self::TYPE_TRANSFER_IN, self::TYPE_INTEREST]) ? '+' : '-';
-        return $prefix . number_format($this->amount, 2);
+
+        return $prefix.number_format($this->amount, 2);
     }
 
     public function isInflow(): bool

@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ItemCategory extends Model
 {
-    use HasFactory, BelongsToTenant, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity;
 
     protected $fillable = [
         'tenant_id',
@@ -23,17 +25,20 @@ class ItemCategory extends Model
         'is_active' => 'boolean',
     ];
 
-    public function parent()
+    /** @return BelongsTo<ItemCategory, $this> */
+    public function parent(): BelongsTo
     {
         return $this->belongsTo(ItemCategory::class, 'parent_id');
     }
 
-    public function children()
+    /** @return HasMany<ItemCategory, $this> */
+    public function children(): HasMany
     {
         return $this->hasMany(ItemCategory::class, 'parent_id');
     }
 
-    public function items()
+    /** @return HasMany<Item, $this> */
+    public function items(): HasMany
     {
         return $this->hasMany(Item::class, 'category_id');
     }

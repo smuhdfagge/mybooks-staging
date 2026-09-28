@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ChartOfAccount;
 use App\Models\FixedAsset;
 use App\Models\FixedAssetCategory;
 use App\Models\FixedAssetDepreciation;
-use App\Models\ChartOfAccount;
 use App\Models\Vendor;
 use App\Services\DepreciationService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class FixedAssetController extends Controller
 {
@@ -30,7 +29,7 @@ class FixedAssetController extends Controller
     public function create()
     {
         $tenantId = auth()->user()->tenant_id;
-        
+
         $categories = FixedAssetCategory::where('tenant_id', $tenantId)
             ->orderBy('name')
             ->get();
@@ -84,10 +83,10 @@ class FixedAssetController extends Controller
         if ($request->category_id) {
             $category = FixedAssetCategory::find($request->category_id);
             if ($category) {
-                if (!isset($validated['depreciation_method']) && $category->default_depreciation_method) {
+                if (! isset($validated['depreciation_method']) && $category->default_depreciation_method) {
                     $validated['depreciation_method'] = $category->default_depreciation_method;
                 }
-                if (!isset($validated['useful_life']) && $category->default_useful_life) {
+                if (! isset($validated['useful_life']) && $category->default_useful_life) {
                     $validated['useful_life'] = $category->default_useful_life;
                 }
             }
@@ -121,7 +120,7 @@ class FixedAssetController extends Controller
     public function edit(FixedAsset $fixedAsset)
     {
         $categories = FixedAssetCategory::all();
-        
+
         return view('fixed-assets.edit', [
             'asset' => $fixedAsset,
             'categories' => $categories,
@@ -145,7 +144,7 @@ class FixedAssetController extends Controller
             'assigned_to' => ['nullable', Rule::exists('users', 'id')->where('tenant_id', auth()->user()->tenant_id)],
         ];
 
-        if (!$hasDepreciation) {
+        if (! $hasDepreciation) {
             $rules = array_merge($rules, [
                 'category_id' => ['nullable', Rule::exists('fixed_asset_categories', 'id')->where('tenant_id', auth()->user()->tenant_id)],
             ]);
@@ -209,9 +208,9 @@ class FixedAssetController extends Controller
         );
 
         $message = "Depreciation run completed. Processed: {$results['processed']}, Skipped: {$results['skipped']}";
-        
-        if (!empty($results['errors'])) {
-            $message .= ". Errors: " . count($results['errors']);
+
+        if (! empty($results['errors'])) {
+            $message .= '. Errors: '.count($results['errors']);
         }
 
         return back()->with('success', $message);
@@ -302,7 +301,7 @@ class FixedAssetController extends Controller
             $yearSchedule = collect($assetSchedule)->filter(function ($item) use ($year) {
                 return date('Y', strtotime($item['date'])) == $year;
             })->values();
-            
+
             if ($yearSchedule->count() > 0) {
                 $scheduleData[] = [
                     'asset' => $asset,
@@ -353,10 +352,10 @@ class FixedAssetController extends Controller
         $totalBookValue = $assets->sum('book_value');
 
         return view('fixed-assets.register', compact(
-            'assets', 
-            'categories', 
-            'asOf', 
-            'categoryId', 
+            'assets',
+            'categories',
+            'asOf',
+            'categoryId',
             'status',
             'totalAssets',
             'totalCost',
@@ -380,7 +379,7 @@ class FixedAssetController extends Controller
             ->where('account_code', '1000')
             ->first();
 
-        if (!$assetAccount || !$cashAccount) {
+        if (! $assetAccount || ! $cashAccount) {
             return;
         }
 

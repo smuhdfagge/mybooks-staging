@@ -2,24 +2,30 @@
 
 namespace App\Livewire\TaxGroups;
 
+use App\Livewire\Concerns\ChecksPermissions;
 use App\Models\TaxGroup;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Livewire\Concerns\ChecksPermissions;
 
 class TaxGroupsTable extends Component
 {
     use ChecksPermissions, WithPagination;
 
     public $search = '';
+
     public $showInactive = false;
+
     public $perPage = 15;
 
     // Bulk operation properties
     public $selectedItems = [];
+
     public $selectAll = false;
+
     public $bulkAction = '';
+
     public $successMessage = '';
+
     public $errorMessage = '';
 
     protected $queryString = [
@@ -52,7 +58,7 @@ class TaxGroupsTable extends Component
     {
         $this->requirePermission('edit tax-rates');
 
-        $taxGroup->update(['is_active' => !$taxGroup->is_active]);
+        $taxGroup->update(['is_active' => ! $taxGroup->is_active]);
         session()->flash('message', 'Tax group status updated.');
     }
 
@@ -81,12 +87,12 @@ class TaxGroupsTable extends Component
             });
         }
 
-        if (!$this->showInactive) {
+        if (! $this->showInactive) {
             $query->where('is_active', true);
         }
 
         return $query->pluck('id')
-            ->map(fn($id) => (string) $id)
+            ->map(fn ($id) => (string) $id)
             ->toArray();
     }
 
@@ -109,11 +115,13 @@ class TaxGroupsTable extends Component
 
         if (empty($this->selectedItems)) {
             $this->errorMessage = 'Please select at least one tax group.';
+
             return;
         }
 
         if (empty($this->bulkAction)) {
             $this->errorMessage = 'Please select an action.';
+
             return;
         }
 
@@ -134,21 +142,24 @@ class TaxGroupsTable extends Component
 
             case 'delete':
                 $deletedCount = 0;
-                
+
                 foreach ($this->selectedItems as $taxGroupId) {
                     $taxGroup = TaxGroup::find($taxGroupId);
-                    if (!$taxGroup) continue;
-                    
+                    if (! $taxGroup) {
+                        continue;
+                    }
+
                     $taxGroup->taxRates()->detach();
                     $taxGroup->delete();
                     $deletedCount++;
                 }
-                
+
                 $this->successMessage = "Successfully deleted {$deletedCount} tax group(s).";
                 break;
 
             default:
                 $this->errorMessage = 'Invalid action selected.';
+
                 return;
         }
 
@@ -169,7 +180,7 @@ class TaxGroupsTable extends Component
             });
         }
 
-        if (!$this->showInactive) {
+        if (! $this->showInactive) {
             $query->where('is_active', true);
         }
 

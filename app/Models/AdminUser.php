@@ -14,7 +14,9 @@ class AdminUser extends Authenticatable
 
     // Admin roles from most to least privileged
     const ROLE_SUPER_ADMIN = 'super_admin';
+
     const ROLE_ADMIN = 'admin';
+
     const ROLE_VIEWER = 'viewer';
 
     const ROLES = [
@@ -88,6 +90,7 @@ class AdminUser extends Authenticatable
     public function hasAbility(string $ability): bool
     {
         $abilities = self::ROLE_ABILITIES[$this->role] ?? [];
+
         return in_array($ability, $abilities);
     }
 

@@ -2,21 +2,28 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Quotation extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
 
     const STATUS_DRAFT = 'draft';
+
     const STATUS_SENT = 'sent';
+
     const STATUS_ACCEPTED = 'accepted';
+
     const STATUS_REJECTED = 'rejected';
+
     const STATUS_EXPIRED = 'expired';
+
     const STATUS_CONVERTED = 'converted';
 
     protected $fillable = [
@@ -47,22 +54,26 @@ class Quotation extends Model
         'total' => 'decimal:2',
     ];
 
-    public function customer()
+    /** @return BelongsTo<Customer, $this> */
+    public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
 
-    public function items()
+    /** @return HasMany<QuotationItem, $this> */
+    public function items(): HasMany
     {
         return $this->hasMany(QuotationItem::class);
     }
 
-    public function salesOrder()
+    /** @return BelongsTo<SalesOrder, $this> */
+    public function salesOrder(): BelongsTo
     {
         return $this->belongsTo(SalesOrder::class, 'converted_to_so_id');
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
@@ -75,12 +86,13 @@ class Quotation extends Model
             ->first();
 
         $number = $last ? intval(substr($last->quotation_number, 4)) + 1 : 1;
-        return 'QTN-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+        return 'QTN-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     public function isExpired(): bool
     {
-        return $this->expiry_date && $this->expiry_date->isPast() && !in_array($this->status, ['accepted', 'converted']);
+        return $this->expiry_date && $this->expiry_date->isPast() && ! in_array($this->status, ['accepted', 'converted']);
     }
 
     /**

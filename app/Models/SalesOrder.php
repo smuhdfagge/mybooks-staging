@@ -2,16 +2,19 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SalesOrder extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, ValidatesAccountingPeriod;
+    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     protected $fillable = [
         'tenant_id',
@@ -42,32 +45,38 @@ class SalesOrder extends Model
         'total_fulfilled_amount' => 'decimal:2',
     ];
 
-    public function customer()
+    /** @return BelongsTo<Customer, $this> */
+    public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
 
-    public function items()
+    /** @return HasMany<SalesOrderItem, $this> */
+    public function items(): HasMany
     {
         return $this->hasMany(SalesOrderItem::class);
     }
 
-    public function invoices()
+    /** @return HasMany<Invoice, $this> */
+    public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
     }
 
-    public function deliveryNotes()
+    /** @return HasMany<DeliveryNote, $this> */
+    public function deliveryNotes(): HasMany
     {
         return $this->hasMany(DeliveryNote::class);
     }
 
-    public function quotation()
+    /** @return HasOne<Quotation, $this> */
+    public function quotation(): HasOne
     {
         return $this->hasOne(Quotation::class, 'converted_to_so_id');
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
@@ -78,9 +87,10 @@ class SalesOrder extends Model
             ->where('tenant_id', $tenantId)
             ->latest('id')
             ->first();
-        
+
         $number = $lastOrder ? intval(substr($lastOrder->order_number, 3)) + 1 : 1;
-        return 'SO-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+        return 'SO-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -112,6 +122,7 @@ class SalesOrder extends Model
         // Calculate fulfilled amount
         $fulfilledAmount = $this->items->sum(function ($item) {
             $ratio = $item->quantity > 0 ? $item->quantity_fulfilled / $item->quantity : 0;
+
             return $item->total * min($ratio, 1);
         });
         $this->total_fulfilled_amount = $fulfilledAmount;

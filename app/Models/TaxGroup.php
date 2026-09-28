@@ -2,15 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TaxGroup extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'tenant_id',
@@ -26,12 +29,14 @@ class TaxGroup extends Model
         'is_active' => 'boolean',
     ];
 
-    public function tenant()
+    /** @return BelongsTo<Tenant, $this> */
+    public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
     }
 
-    public function taxRates()
+    /** @return BelongsToMany<TaxRate, $this> */
+    public function taxRates(): BelongsToMany
     {
         return $this->belongsToMany(TaxRate::class, 'tax_group_rates')
             ->withPivot('sort_order')
@@ -39,7 +44,8 @@ class TaxGroup extends Model
             ->withTimestamps();
     }
 
-    public function items()
+    /** @return HasMany<Item, $this> */
+    public function items(): HasMany
     {
         return $this->hasMany(Item::class);
     }
@@ -71,7 +77,7 @@ class TaxGroup extends Model
      */
     public function getFormattedRateAttribute(): string
     {
-        return rtrim(rtrim(number_format($this->combined_rate, 4), '0'), '.') . '%';
+        return rtrim(rtrim(number_format($this->combined_rate, 4), '0'), '.').'%';
     }
 
     /**
@@ -122,6 +128,7 @@ class TaxGroup extends Model
     public function calculateTotalTax(float $amount): float
     {
         $taxes = $this->calculateTaxes($amount);
+
         return array_sum(array_column($taxes, 'amount'));
     }
 

@@ -7,11 +7,13 @@ use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PurchaseOrder extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, ValidatesAccountingPeriod;
+    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     /** A bill has been raised for this order (finding N8). */
     public const STATUS_BILLED = 'billed';
@@ -48,22 +50,26 @@ class PurchaseOrder extends Model
         'total_received_amount' => 'decimal:2',
     ];
 
-    public function vendor()
+    /** @return BelongsTo<Vendor, $this> */
+    public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class);
     }
 
-    public function items()
+    /** @return HasMany<PurchaseOrderItem, $this> */
+    public function items(): HasMany
     {
         return $this->hasMany(PurchaseOrderItem::class);
     }
 
-    public function bills()
+    /** @return HasMany<Bill, $this> */
+    public function bills(): HasMany
     {
         return $this->hasMany(Bill::class);
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
@@ -77,7 +83,7 @@ class PurchaseOrder extends Model
 
         $number = $last ? (int) substr($last->order_number, 3) + 1 : 1;
 
-        return 'PO-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+        return 'PO-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     public function hasUnreceivedItems(): bool

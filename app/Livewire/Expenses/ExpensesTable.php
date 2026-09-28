@@ -2,32 +2,42 @@
 
 namespace App\Livewire\Expenses;
 
+use App\Livewire\Concerns\ChecksPermissions;
 use App\Models\Expense;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Livewire\Concerns\ChecksPermissions;
 
 class ExpensesTable extends Component
 {
     use ChecksPermissions, WithPagination;
 
     public $search = '';
+
     public $sortField = 'expense_date';
+
     public $sortDirection = 'desc';
+
     public $perPage = 10;
+
     public $statusFilter = '';
 
     // Bulk operation properties
     public $selectedItems = [];
+
     public $selectAll = false;
+
     public $bulkAction = '';
+
     public $successMessage = '';
+
     public $errorMessage = '';
 
     // Rejection modal properties
     public $showRejectionModal = false;
+
     public $rejectionExpenseId = null;
+
     public $rejectionReason = '';
 
     protected $queryString = ['search', 'sortField', 'sortDirection', 'statusFilter'];
@@ -76,23 +86,24 @@ class ExpensesTable extends Component
         return Expense::query()
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->where('expense_number', 'like', '%' . $this->search . '%')
-                      ->orWhere('description', 'like', '%' . $this->search . '%')
-                      ->orWhere('reference', 'like', '%' . $this->search . '%')
-                      ->orWhereHas('vendor', function ($vq) {
-                          $vq->where('name', 'like', '%' . $this->search . '%');
-                      });
+                    $q->where('expense_number', 'like', '%'.$this->search.'%')
+                        ->orWhere('description', 'like', '%'.$this->search.'%')
+                        ->orWhere('reference', 'like', '%'.$this->search.'%')
+                        ->orWhereHas('vendor', function ($vq) {
+                            $vq->where('name', 'like', '%'.$this->search.'%');
+                        });
                 });
             })
             ->when($this->statusFilter, function ($query) {
                 $query->where('status', $this->statusFilter);
             })
             ->pluck('id')
-            ->map(fn($id) => (string) $id)
+            ->map(fn ($id) => (string) $id)
             ->toArray();
     }
 
     public $confirmingDeletion = false;
+
     public $expenseToDelete = null;
 
     public function confirmDelete($expenseId)
@@ -100,8 +111,9 @@ class ExpensesTable extends Component
         $this->requirePermission('delete expenses');
 
         $expense = Expense::find($expenseId);
-        if ($expense && !in_array($expense->status, [Expense::STATUS_DRAFT, Expense::STATUS_REJECTED])) {
+        if ($expense && ! in_array($expense->status, [Expense::STATUS_DRAFT, Expense::STATUS_REJECTED])) {
             $this->errorMessage = 'Only draft or rejected expenses can be deleted.';
+
             return;
         }
         $this->expenseToDelete = $expenseId;
@@ -115,17 +127,18 @@ class ExpensesTable extends Component
         $this->successMessage = '';
         $this->errorMessage = '';
 
-        if (!$this->expenseToDelete) {
+        if (! $this->expenseToDelete) {
             return;
         }
 
         $expense = Expense::find($this->expenseToDelete);
-        
+
         if ($expense) {
-            if (!in_array($expense->status, [Expense::STATUS_DRAFT, Expense::STATUS_REJECTED])) {
+            if (! in_array($expense->status, [Expense::STATUS_DRAFT, Expense::STATUS_REJECTED])) {
                 $this->errorMessage = 'Only draft or rejected expenses can be deleted.';
                 $this->confirmingDeletion = false;
                 $this->expenseToDelete = null;
+
                 return;
             }
 
@@ -158,13 +171,15 @@ class ExpensesTable extends Component
         $this->errorMessage = '';
 
         $expense = Expense::find($expenseId);
-        if (!$expense) {
+        if (! $expense) {
             $this->errorMessage = 'Expense not found.';
+
             return;
         }
 
-        if (!$expense->canBeSubmitted()) {
+        if (! $expense->canBeSubmitted()) {
             $this->errorMessage = 'This expense cannot be submitted for approval.';
+
             return;
         }
 
@@ -182,19 +197,22 @@ class ExpensesTable extends Component
         $this->successMessage = '';
         $this->errorMessage = '';
 
-        if (!auth()->user()->hasRole('admin') && !auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->hasRole('admin') && ! auth()->user()->isSuperAdmin()) {
             $this->errorMessage = 'You do not have permission to approve expenses.';
+
             return;
         }
 
         $expense = Expense::find($expenseId);
-        if (!$expense) {
+        if (! $expense) {
             $this->errorMessage = 'Expense not found.';
+
             return;
         }
 
-        if (!$expense->canBeApproved()) {
+        if (! $expense->canBeApproved()) {
             $this->errorMessage = 'This expense cannot be approved.';
+
             return;
         }
 
@@ -209,8 +227,9 @@ class ExpensesTable extends Component
     {
         $this->requireAdmin();
 
-        if (!auth()->user()->hasRole('admin') && !auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->hasRole('admin') && ! auth()->user()->isSuperAdmin()) {
             $this->errorMessage = 'You do not have permission to reject expenses.';
+
             return;
         }
 
@@ -229,21 +248,24 @@ class ExpensesTable extends Component
         $this->successMessage = '';
         $this->errorMessage = '';
 
-        if (!auth()->user()->hasRole('admin') && !auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->hasRole('admin') && ! auth()->user()->isSuperAdmin()) {
             $this->errorMessage = 'You do not have permission to reject expenses.';
+
             return;
         }
 
         $expense = Expense::find($this->rejectionExpenseId);
-        if (!$expense) {
+        if (! $expense) {
             $this->errorMessage = 'Expense not found.';
             $this->closeRejectModal();
+
             return;
         }
 
-        if (!$expense->canBeRejected()) {
+        if (! $expense->canBeRejected()) {
             $this->errorMessage = 'This expense cannot be rejected.';
             $this->closeRejectModal();
+
             return;
         }
 
@@ -272,19 +294,22 @@ class ExpensesTable extends Component
         $this->successMessage = '';
         $this->errorMessage = '';
 
-        if (!auth()->user()->hasRole('admin') && !auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->hasRole('admin') && ! auth()->user()->isSuperAdmin()) {
             $this->errorMessage = 'You do not have permission to mark expenses as paid.';
+
             return;
         }
 
         $expense = Expense::find($expenseId);
-        if (!$expense) {
+        if (! $expense) {
             $this->errorMessage = 'Expense not found.';
+
             return;
         }
 
-        if (!$expense->canBeMarkedAsPaid()) {
+        if (! $expense->canBeMarkedAsPaid()) {
             $this->errorMessage = 'This expense must be approved before marking as paid.';
+
             return;
         }
 
@@ -315,11 +340,13 @@ class ExpensesTable extends Component
 
         if (empty($this->selectedItems)) {
             $this->errorMessage = 'Please select at least one expense.';
+
             return;
         }
 
         if (empty($this->bulkAction)) {
             $this->errorMessage = 'Please select an action.';
+
             return;
         }
 
@@ -358,8 +385,9 @@ class ExpensesTable extends Component
                 break;
 
             case 'approve':
-                if (!$isAdmin) {
+                if (! $isAdmin) {
                     $this->errorMessage = 'You do not have permission to approve expenses.';
+
                     return;
                 }
                 $approvedCount = 0;
@@ -376,8 +404,9 @@ class ExpensesTable extends Component
                 break;
 
             case 'mark_paid':
-                if (!$isAdmin) {
+                if (! $isAdmin) {
                     $this->errorMessage = 'You do not have permission to mark expenses as paid.';
+
                     return;
                 }
                 $paidCount = 0;
@@ -395,6 +424,7 @@ class ExpensesTable extends Component
 
             default:
                 $this->errorMessage = 'Invalid action selected.';
+
                 return;
         }
 
@@ -408,12 +438,12 @@ class ExpensesTable extends Component
         $expenses = Expense::with(['vendor', 'expenseAccount', 'createdBy'])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->where('expense_number', 'like', '%' . $this->search . '%')
-                      ->orWhere('description', 'like', '%' . $this->search . '%')
-                      ->orWhere('reference', 'like', '%' . $this->search . '%')
-                      ->orWhereHas('vendor', function ($vq) {
-                          $vq->where('name', 'like', '%' . $this->search . '%');
-                      });
+                    $q->where('expense_number', 'like', '%'.$this->search.'%')
+                        ->orWhere('description', 'like', '%'.$this->search.'%')
+                        ->orWhere('reference', 'like', '%'.$this->search.'%')
+                        ->orWhereHas('vendor', function ($vq) {
+                            $vq->where('name', 'like', '%'.$this->search.'%');
+                        });
                 });
             })
             ->when($this->statusFilter, function ($query) {
@@ -429,7 +459,7 @@ class ExpensesTable extends Component
             'delete' => 'Delete (Draft/Rejected only)',
             'submit' => 'Submit for Approval',
         ];
-        
+
         if ($isAdmin) {
             $bulkActions['approve'] = 'Approve';
             $bulkActions['mark_paid'] = 'Mark as Paid';

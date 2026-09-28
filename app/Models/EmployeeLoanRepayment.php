@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class EmployeeLoanRepayment extends Model
 {
@@ -25,12 +26,14 @@ class EmployeeLoanRepayment extends Model
         'deduction_date' => 'date',
     ];
 
-    public function loan()
+    /** @return BelongsTo<EmployeeLoan, $this> */
+    public function loan(): BelongsTo
     {
         return $this->belongsTo(EmployeeLoan::class, 'employee_loan_id');
     }
 
-    public function payroll()
+    /** @return BelongsTo<Payroll, $this> */
+    public function payroll(): BelongsTo
     {
         return $this->belongsTo(Payroll::class);
     }

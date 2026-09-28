@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Services\LogIntegrityService;
 use App\Models\Tenant;
+use App\Services\LogIntegrityService;
 use Illuminate\Console\Command;
 
 /**
@@ -51,10 +51,11 @@ class VerifyLogIntegrityCommand extends Command
 
         if ($result['valid']) {
             $this->info("  ✓ {$result['checked']} entries verified — no tampering detected.");
+
             return self::SUCCESS;
         }
 
-        $this->error("  ✗ Integrity violations found:");
+        $this->error('  ✗ Integrity violations found:');
         foreach ($result['errors'] as $error) {
             $this->line("    - {$error}");
         }

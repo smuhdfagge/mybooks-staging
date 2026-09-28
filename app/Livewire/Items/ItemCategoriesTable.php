@@ -2,25 +2,30 @@
 
 namespace App\Livewire\Items;
 
+use App\Livewire\Concerns\ChecksPermissions;
 use App\Models\ItemCategory;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Livewire\Concerns\ChecksPermissions;
 
 class ItemCategoriesTable extends Component
 {
     use ChecksPermissions, WithPagination;
 
     public $search = '';
+
     public $showInactive = false;
+
     public $perPage = 15;
-    
+
     public $successMessage = '';
+
     public $errorMessage = '';
 
     // Bulk operation properties
     public $selectedItems = [];
+
     public $selectAll = false;
+
     public $bulkAction = '';
 
     protected $queryString = [
@@ -53,7 +58,7 @@ class ItemCategoriesTable extends Component
     {
         $this->requirePermission('edit items');
 
-        $category->update(['is_active' => !$category->is_active]);
+        $category->update(['is_active' => ! $category->is_active]);
         $this->successMessage = 'Category status updated.';
     }
 
@@ -82,12 +87,12 @@ class ItemCategoriesTable extends Component
             });
         }
 
-        if (!$this->showInactive) {
+        if (! $this->showInactive) {
             $query->where('is_active', true);
         }
 
         return $query->pluck('id')
-            ->map(fn($id) => (string) $id)
+            ->map(fn ($id) => (string) $id)
             ->toArray();
     }
 
@@ -110,11 +115,13 @@ class ItemCategoriesTable extends Component
 
         if (empty($this->selectedItems)) {
             $this->errorMessage = 'Please select at least one category.';
+
             return;
         }
 
         if (empty($this->bulkAction)) {
             $this->errorMessage = 'Please select an action.';
+
             return;
         }
 
@@ -136,32 +143,36 @@ class ItemCategoriesTable extends Component
             case 'delete':
                 $deletedCount = 0;
                 $skippedCount = 0;
-                
+
                 foreach ($this->selectedItems as $categoryId) {
                     $category = ItemCategory::find($categoryId);
-                    if (!$category) continue;
-                    
+                    if (! $category) {
+                        continue;
+                    }
+
                     // Check if category has related records
                     if ($category->items()->exists() || $category->children()->exists()) {
                         $skippedCount++;
+
                         continue;
                     }
-                    
+
                     $category->delete();
                     $deletedCount++;
                 }
-                
+
                 if ($deletedCount > 0 && $skippedCount > 0) {
                     $this->successMessage = "Deleted {$deletedCount} category(ies). Skipped {$skippedCount} category(ies) with existing items or subcategories.";
                 } elseif ($deletedCount > 0) {
                     $this->successMessage = "Successfully deleted {$deletedCount} category(ies).";
                 } else {
-                    $this->errorMessage = "Could not delete any categories. All selected categories have existing items or subcategories.";
+                    $this->errorMessage = 'Could not delete any categories. All selected categories have existing items or subcategories.';
                 }
                 break;
 
             default:
                 $this->errorMessage = 'Invalid action selected.';
+
                 return;
         }
 
@@ -176,19 +187,21 @@ class ItemCategoriesTable extends Component
 
         $this->successMessage = '';
         $this->errorMessage = '';
-        
+
         $category = ItemCategory::findOrFail($categoryId);
-        
+
         if ($category->items()->exists()) {
             $this->errorMessage = 'Cannot delete category with existing items.';
+
             return;
         }
-        
+
         if ($category->children()->exists()) {
             $this->errorMessage = 'Cannot delete category with subcategories.';
+
             return;
         }
-        
+
         $category->delete();
         $this->successMessage = 'Category deleted successfully.';
     }
@@ -206,7 +219,7 @@ class ItemCategoriesTable extends Component
             });
         }
 
-        if (!$this->showInactive) {
+        if (! $this->showInactive) {
             $query->where('is_active', true);
         }
 

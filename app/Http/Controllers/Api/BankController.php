@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Bank;
 use App\Http\Resources\BankResource;
-use Illuminate\Http\Request;
+use App\Models\Bank;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class BankController extends BaseApiController
 {
@@ -121,7 +121,7 @@ class BankController extends BaseApiController
         ]);
 
         // If this is set as primary, unset other primary accounts
-        if (($validated['is_primary'] ?? false) && !$bank->is_primary) {
+        if (($validated['is_primary'] ?? false) && ! $bank->is_primary) {
             Bank::where('tenant_id', $bank->tenant_id)
                 ->where('id', '!=', $bank->id)
                 ->where('is_primary', true)

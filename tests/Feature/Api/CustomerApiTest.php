@@ -16,6 +16,7 @@ class CustomerApiTest extends TestCase
     private function createApiUser(array $permissions = []): string
     {
         $this->createAuthenticatedUser($permissions);
+
         return $this->user->createToken('test-device')->plainTextToken;
     }
 

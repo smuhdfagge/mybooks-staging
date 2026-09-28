@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Expense;
 use App\Http\Resources\ExpenseResource;
-use Illuminate\Http\Request;
+use App\Models\Expense;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class ExpenseController extends BaseApiController
@@ -72,6 +72,7 @@ class ExpenseController extends BaseApiController
     public function show(Expense $expense): JsonResponse
     {
         $expense->load(['vendor', 'expenseAccount', 'bank', 'customer', 'createdBy', 'approvedByUser']);
+
         return $this->success(new ExpenseResource($expense));
     }
 

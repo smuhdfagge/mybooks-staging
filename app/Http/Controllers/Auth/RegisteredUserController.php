@@ -60,9 +60,9 @@ class RegisteredUserController extends Controller
         $billingCycle = $request->billing_cycle;
 
         // Validate that the plan allows the selected billing cycle
-        if (!$plan->allowsBillingCycle($billingCycle)) {
+        if (! $plan->allowsBillingCycle($billingCycle)) {
             return back()->withErrors([
-                'billing_cycle' => "The selected plan does not support {$billingCycle} billing."
+                'billing_cycle' => "The selected plan does not support {$billingCycle} billing.",
             ])->withInput();
         }
 
@@ -70,7 +70,7 @@ class RegisteredUserController extends Controller
             // Create the tenant first
             $tenant = Tenant::create([
                 'name' => $request->company_name,
-                'slug' => Str::slug($request->company_name) . '-' . Str::random(6),
+                'slug' => Str::slug($request->company_name).'-'.Str::random(6),
                 'email' => $request->company_email,
                 'phone' => $request->company_phone,
                 'address' => $request->company_address,

@@ -2,21 +2,26 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Traits\BelongsToTenant;
 
 class DiscountRule extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant;
+    use BelongsToTenant, HasFactory, SoftDeletes;
 
     const TYPE_PERCENTAGE = 'percentage';
+
     const TYPE_FIXED = 'fixed';
 
     const SCOPE_ORDER = 'order';
+
     const SCOPE_LINE_ITEM = 'line_item';
+
     const SCOPE_CUSTOMER = 'customer';
+
     const SCOPE_ITEM = 'item';
 
     protected $fillable = [
@@ -45,12 +50,14 @@ class DiscountRule extends Model
         'is_active' => 'boolean',
     ];
 
-    public function customer()
+    /** @return BelongsTo<Customer, $this> */
+    public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
 
-    public function item()
+    /** @return BelongsTo<Item, $this> */
+    public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class);
     }

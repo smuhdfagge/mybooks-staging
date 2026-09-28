@@ -24,7 +24,7 @@ class SendBillReminders extends Command
     {
         $tenantId = $this->option('tenant');
 
-        $tenants = $tenantId 
+        $tenants = $tenantId
             ? Tenant::where('id', $tenantId)->get()
             : Tenant::where('is_active', true)->get();
 

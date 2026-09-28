@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ChartOfAccount extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'tenant_id',
@@ -35,22 +37,29 @@ class ChartOfAccount extends Model
 
     // Account Types
     const TYPE_ASSET = 'asset';
+
     const TYPE_LIABILITY = 'liability';
+
     const TYPE_EQUITY = 'equity';
+
     const TYPE_INCOME = 'income';
+
     const TYPE_EXPENSE = 'expense';
 
-    public function parent()
+    /** @return BelongsTo<ChartOfAccount, $this> */
+    public function parent(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class, 'parent_id');
     }
 
-    public function children()
+    /** @return HasMany<ChartOfAccount, $this> */
+    public function children(): HasMany
     {
         return $this->hasMany(ChartOfAccount::class, 'parent_id');
     }
 
-    public function journalEntries()
+    /** @return HasMany<JournalEntry, $this> */
+    public function journalEntries(): HasMany
     {
         return $this->hasMany(JournalEntry::class, 'account_id');
     }

@@ -2,27 +2,36 @@
 
 namespace App\Livewire\Banks;
 
+use App\Livewire\Concerns\ChecksPermissions;
 use App\Models\Bank;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Livewire\Concerns\ChecksPermissions;
 
 class BanksTable extends Component
 {
     use ChecksPermissions, WithPagination;
 
     public $search = '';
+
     public $sortField = 'name';
+
     public $sortDirection = 'asc';
+
     public $perPage = 15;
+
     public $typeFilter = '';
+
     public $statusFilter = '';
 
     // Bulk operation properties
     public $selectedItems = [];
+
     public $selectAll = false;
+
     public $bulkAction = '';
+
     public $successMessage = '';
+
     public $errorMessage = '';
 
     protected $queryString = ['search', 'sortField', 'sortDirection', 'typeFilter', 'statusFilter'];
@@ -76,16 +85,16 @@ class BanksTable extends Component
         return Bank::query()
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->where('name', 'like', '%' . $this->search . '%')
-                      ->orWhere('bank_name', 'like', '%' . $this->search . '%');
+                    $q->where('name', 'like', '%'.$this->search.'%')
+                        ->orWhere('bank_name', 'like', '%'.$this->search.'%');
                 });
             })
-            ->when($this->typeFilter, fn($q) => $q->where('account_type', $this->typeFilter))
+            ->when($this->typeFilter, fn ($q) => $q->where('account_type', $this->typeFilter))
             ->when($this->statusFilter !== '', function ($q) {
                 $q->where('is_active', $this->statusFilter === 'active');
             })
             ->pluck('id')
-            ->map(fn($id) => (string) $id)
+            ->map(fn ($id) => (string) $id)
             ->toArray();
     }
 
@@ -108,11 +117,13 @@ class BanksTable extends Component
 
         if (empty($this->selectedItems)) {
             $this->errorMessage = 'Please select at least one bank account.';
+
             return;
         }
 
         if (empty($this->bulkAction)) {
             $this->errorMessage = 'Please select an action.';
+
             return;
         }
 
@@ -149,6 +160,7 @@ class BanksTable extends Component
 
             default:
                 $this->errorMessage = 'Invalid action selected.';
+
                 return;
         }
 
@@ -164,8 +176,8 @@ class BanksTable extends Component
 
         if ($this->search) {
             $query->where(function ($q) {
-                $q->where('name', 'like', '%' . $this->search . '%')
-                  ->orWhere('bank_name', 'like', '%' . $this->search . '%');
+                $q->where('name', 'like', '%'.$this->search.'%')
+                    ->orWhere('bank_name', 'like', '%'.$this->search.'%');
             });
         }
 

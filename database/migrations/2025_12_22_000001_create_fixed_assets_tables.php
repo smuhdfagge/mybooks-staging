@@ -17,13 +17,13 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->decimal('default_useful_life', 8, 2)->nullable();
             $table->string('default_depreciation_method')->nullable();
-            
+
             // Chart of Accounts with shorter foreign key names
             $table->foreignId('asset_account_id')->nullable()->constrained('chart_of_accounts', 'id', 'fac_asset_acc')->nullOnDelete();
             $table->foreignId('accumulated_depreciation_account_id')->nullable()->constrained('chart_of_accounts', 'id', 'fac_accum_depr_acc')->nullOnDelete();
             $table->foreignId('depreciation_expense_account_id')->nullable()->constrained('chart_of_accounts', 'id', 'fac_depr_exp_acc')->nullOnDelete();
             $table->foreignId('gain_loss_account_id')->nullable()->constrained('chart_of_accounts', 'id', 'fac_gain_loss_acc')->nullOnDelete();
-            
+
             $table->timestamps();
             $table->softDeletes();
 

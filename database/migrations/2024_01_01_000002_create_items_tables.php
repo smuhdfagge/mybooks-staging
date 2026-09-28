@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('parent_id')->nullable()->constrained('item_categories')->nullOnDelete();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
+
             $table->index(['tenant_id', 'name']);
         });
 
@@ -38,7 +38,7 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();
-            
+
             $table->index(['tenant_id', 'sku']);
             $table->index(['tenant_id', 'name']);
         });
@@ -52,7 +52,7 @@ return new class extends Migration
             $table->integer('reserved_quantity')->default(0);
             $table->decimal('unit_cost', 15, 2)->default(0);
             $table->timestamps();
-            
+
             $table->unique(['tenant_id', 'item_id', 'warehouse_id']);
         });
 
@@ -67,7 +67,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
-            
+
             $table->index(['tenant_id', 'item_id']);
             $table->index(['reference_type', 'reference_id']);
         });

@@ -16,6 +16,7 @@ class ItemCategoryController extends Controller
     public function create()
     {
         $parentCategories = ItemCategory::whereNull('parent_id')->where('is_active', true)->get();
+
         return view('item-categories.create', compact('parentCategories'));
     }
 
@@ -28,7 +29,7 @@ class ItemCategoryController extends Controller
             'parent_id' => ['nullable', Rule::exists('item_categories', 'id')->where('tenant_id', $tenantId)],
             'description' => 'nullable|string',
         ]);
-        
+
         ItemCategory::create([
             'tenant_id' => $tenantId,
             'name' => $validated['name'],
@@ -43,6 +44,7 @@ class ItemCategoryController extends Controller
     public function show(ItemCategory $itemCategory)
     {
         $itemCategory->load(['parent', 'children', 'items']);
+
         return view('item-categories.show', compact('itemCategory'));
     }
 
@@ -52,6 +54,7 @@ class ItemCategoryController extends Controller
             ->where('id', '!=', $itemCategory->id)
             ->where('is_active', true)
             ->get();
+
         return view('item-categories.edit', compact('itemCategory', 'parentCategories'));
     }
 
@@ -92,6 +95,7 @@ class ItemCategoryController extends Controller
         }
 
         $itemCategory->delete();
+
         return redirect()->route('item-categories.index')->with('success', 'Category deleted.');
     }
 }

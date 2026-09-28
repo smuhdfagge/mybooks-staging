@@ -26,6 +26,7 @@ class BankFileExportService
     {
         return collect($this->exporters)->map(function ($class) {
             $exporter = new $class;
+
             return [
                 'key' => array_search($class, $this->exporters),
                 'name' => $exporter->formatName(),
@@ -55,6 +56,7 @@ class BankFileExportService
     {
         return $payrolls->map(function (Payroll $payroll) {
             $employee = $payroll->employee;
+
             return [
                 'employee_id' => $employee->employee_id ?? '',
                 'employee_name' => $employee->full_name,
@@ -112,8 +114,8 @@ class BankFileExportService
     {
         $class = $this->exporters[$format] ?? null;
 
-        if (!$class) {
-            throw new \InvalidArgumentException("Unknown bank file format: {$format}. Available: " . implode(', ', array_keys($this->exporters)));
+        if (! $class) {
+            throw new \InvalidArgumentException("Unknown bank file format: {$format}. Available: ".implode(', ', array_keys($this->exporters)));
         }
 
         return new $class;

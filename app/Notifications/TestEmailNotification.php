@@ -3,7 +3,6 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -24,12 +23,12 @@ class TestEmailNotification extends Notification
     {
         return (new MailMessage)
             ->subject("Test Email from {$this->tenantName}")
-            ->greeting("Hello!")
-            ->line("This is a test email from your accounting software.")
-            ->line("If you received this email, your email configuration is working correctly.")
+            ->greeting('Hello!')
+            ->line('This is a test email from your accounting software.')
+            ->line('If you received this email, your email configuration is working correctly.')
             ->line('---')
             ->line("**Sent from:** {$this->tenantName}")
-            ->line("**Sent at:** " . now()->format('F j, Y g:i A'))
+            ->line('**Sent at:** '.now()->format('F j, Y g:i A'))
             ->line('---')
             ->line('You can now configure and send automated notifications to your customers and team members.')
             ->salutation("Best regards,\n{$this->tenantName}");

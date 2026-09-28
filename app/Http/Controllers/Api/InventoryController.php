@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Resources\InventoryResource;
 use App\Models\Inventory;
 use App\Models\InventoryHistory;
-use App\Http\Resources\InventoryResource;
-use Illuminate\Http\Request;
+use App\Services\StockValuationService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class InventoryController extends BaseApiController
 {
@@ -43,7 +45,7 @@ class InventoryController extends BaseApiController
         // Sorting
         $sortBy = $request->input('sort_by', 'quantity');
         $sortOrder = $request->input('sort_order', 'asc');
-        
+
         if (in_array($sortBy, ['quantity', 'reserved_quantity', 'unit_cost'])) {
             $query->orderBy($sortBy, $sortOrder);
         }
@@ -60,6 +62,7 @@ class InventoryController extends BaseApiController
     public function show(Inventory $inventory): JsonResponse
     {
         $inventory->load(['item.category']);
+
         return $this->success(new InventoryResource($inventory));
     }
 
@@ -75,42 +78,56 @@ class InventoryController extends BaseApiController
             'reference' => 'nullable|string|max:100',
         ]);
 
-        $previousQuantity = $inventory->quantity;
+        // The history row used columns inventory_histories doesn't have, so
+        // every API adjustment failed; cost layers weren't kept either. Now
+        // mirrors the web adjustment (found by PHPStan, L5).
+        $result = DB::transaction(function () use ($validated, $inventory) {
+            $inventory = Inventory::whereKey($inventory->id)->lockForUpdate()->firstOrFail();
+            $item = $inventory->item;
+            $previous = (float) $inventory->quantity;
+            $quantity = (float) $validated['quantity'];
 
-        switch ($validated['type']) {
-            case 'add':
-                $newQuantity = $previousQuantity + $validated['quantity'];
-                break;
-            case 'subtract':
-                $newQuantity = $previousQuantity - $validated['quantity'];
-                if ($newQuantity < 0) {
-                    return $this->validationError([
-                        'quantity' => ['Insufficient inventory quantity'],
-                    ]);
-                }
-                break;
-            case 'set':
-                $newQuantity = $validated['quantity'];
-                break;
+            $new = match ($validated['type']) {
+                'add' => $previous + $quantity,
+                'subtract' => $previous - $quantity,
+                'set' => $quantity,
+            };
+
+            if ($new < 0) {
+                return null;
+            }
+
+            $change = round($new - $previous, 4);
+            $valuation = app(StockValuationService::class);
+            if ($change > 0) {
+                $valuation->addLayer($inventory->tenant_id, $item->id, $change, (float) ($item->cost_price ?? 0),
+                    $inventory->warehouse_id, 'adjustment');
+            } elseif ($change < 0) {
+                $valuation->consumeStock($item, abs($change), $inventory->warehouse_id);
+            }
+
+            $inventory->update(['quantity' => $new]);
+
+            InventoryHistory::create([
+                'tenant_id' => $inventory->tenant_id,
+                'item_id' => $inventory->item_id,
+                'type' => 'adjustment',
+                'quantity' => $change,
+                'reference_type' => 'api_adjustment',
+                'notes' => trim($validated['reason'].(! empty($validated['reference']) ? " (ref {$validated['reference']})" : '')),
+                'created_by' => auth()->id(),
+            ]);
+
+            return $inventory;
+        });
+
+        if (! $result) {
+            return $this->validationError(['quantity' => ['Insufficient inventory quantity']]);
         }
-
-        $inventory->update(['quantity' => $newQuantity]);
-
-        // Create history record
-        InventoryHistory::create([
-            'tenant_id' => $this->getTenantId(),
-            'inventory_id' => $inventory->id,
-            'item_id' => $inventory->item_id,
-            'type' => 'adjustment',
-            'quantity_change' => $newQuantity - $previousQuantity,
-            'quantity_before' => $previousQuantity,
-            'quantity_after' => $newQuantity,
-            'reference' => $validated['reference'],
-            'notes' => $validated['reason'],
-            'created_by' => auth()->id(),
-        ]);
+        $inventory = $result;
 
         $inventory->load(['item']);
+
         return $this->success(new InventoryResource($inventory), 'Inventory adjusted successfully');
     }
 
@@ -119,8 +136,10 @@ class InventoryController extends BaseApiController
      */
     public function history(Request $request, Inventory $inventory): JsonResponse
     {
-        $query = InventoryHistory::where('inventory_id', $inventory->id)
-            ->with('createdByUser');
+        // inventory_histories is kept per item, not per inventory row
+        $query = InventoryHistory::where('tenant_id', $inventory->tenant_id)
+            ->where('item_id', $inventory->item_id)
+            ->with('createdBy');
 
         // Filter by type
         if ($type = $request->input('type')) {

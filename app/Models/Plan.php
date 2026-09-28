@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Plan extends Model
 {
@@ -35,8 +36,10 @@ class Plan extends Model
 
     /**
      * Get subscriptions for this plan
+     *
+     * @return HasMany<Subscription, $this>
      */
-    public function subscriptions()
+    public function subscriptions(): HasMany
     {
         return $this->hasMany(Subscription::class);
     }
@@ -89,6 +92,7 @@ class Plan extends Model
         if ($this->monthly_price <= 0) {
             return 0;
         }
+
         return round((($this->monthly_price * 12 - $this->annual_price) / ($this->monthly_price * 12)) * 100, 1);
     }
 }

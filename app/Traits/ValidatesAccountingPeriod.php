@@ -41,13 +41,13 @@ trait ValidatesAccountingPeriod
     {
         // Override this in models if the date field is different
         $possibleFields = ['invoice_date', 'bill_date', 'expense_date', 'payment_date', 'journal_date', 'transaction_date', 'date'];
-        
+
         foreach ($possibleFields as $field) {
             if (isset($this->attributes[$field])) {
                 return $field;
             }
         }
-        
+
         return 'created_at';
     }
 
@@ -57,6 +57,7 @@ trait ValidatesAccountingPeriod
     protected function getTransactionDate()
     {
         $field = $this->getPeriodDateField();
+
         return $this->attributes[$field] ?? $this->{$field} ?? now();
     }
 
@@ -65,20 +66,20 @@ trait ValidatesAccountingPeriod
      */
     protected function validateAccountingPeriod(): void
     {
-        if (!$this->shouldValidatePeriod()) {
+        if (! $this->shouldValidatePeriod()) {
             return;
         }
 
         $date = $this->getTransactionDate();
         $tenantId = $this->tenant_id ?? auth()->user()?->tenant_id;
 
-        if (!$tenantId) {
+        if (! $tenantId) {
             return;
         }
 
         if (AccountingPeriod::isDateInClosedPeriod($date, $tenantId)) {
             throw ValidationException::withMessages([
-                $this->getPeriodDateField() => [AccountingPeriod::getClosedPeriodMessage($date)]
+                $this->getPeriodDateField() => [AccountingPeriod::getClosedPeriodMessage($date)],
             ]);
         }
     }
@@ -88,13 +89,13 @@ trait ValidatesAccountingPeriod
      */
     protected function validateAccountingPeriodOnUpdate(): void
     {
-        if (!$this->shouldValidatePeriod()) {
+        if (! $this->shouldValidatePeriod()) {
             return;
         }
 
         $tenantId = $this->tenant_id ?? auth()->user()?->tenant_id;
 
-        if (!$tenantId) {
+        if (! $tenantId) {
             return;
         }
 
@@ -102,7 +103,7 @@ trait ValidatesAccountingPeriod
         $originalDate = $this->getOriginal($this->getPeriodDateField());
         if ($originalDate && AccountingPeriod::isDateInClosedPeriod($originalDate, $tenantId)) {
             throw ValidationException::withMessages([
-                $this->getPeriodDateField() => ["This record belongs to a closed accounting period and cannot be modified."]
+                $this->getPeriodDateField() => ['This record belongs to a closed accounting period and cannot be modified.'],
             ]);
         }
 
@@ -110,7 +111,7 @@ trait ValidatesAccountingPeriod
         $newDate = $this->getTransactionDate();
         if (AccountingPeriod::isDateInClosedPeriod($newDate, $tenantId)) {
             throw ValidationException::withMessages([
-                $this->getPeriodDateField() => [AccountingPeriod::getClosedPeriodMessage($newDate)]
+                $this->getPeriodDateField() => [AccountingPeriod::getClosedPeriodMessage($newDate)],
             ]);
         }
     }
@@ -120,20 +121,20 @@ trait ValidatesAccountingPeriod
      */
     protected function validateAccountingPeriodOnDelete(): void
     {
-        if (!$this->shouldValidatePeriod()) {
+        if (! $this->shouldValidatePeriod()) {
             return;
         }
 
         $date = $this->getTransactionDate();
         $tenantId = $this->tenant_id ?? auth()->user()?->tenant_id;
 
-        if (!$tenantId) {
+        if (! $tenantId) {
             return;
         }
 
         if (AccountingPeriod::isDateInClosedPeriod($date, $tenantId)) {
             throw ValidationException::withMessages([
-                'period' => ["This record belongs to a closed accounting period and cannot be deleted."]
+                'period' => ['This record belongs to a closed accounting period and cannot be deleted.'],
             ]);
         }
     }
@@ -157,6 +158,7 @@ trait ValidatesAccountingPeriod
     public function withoutPeriodValidation(): self
     {
         $this->skipPeriodValidation = true;
+
         return $this;
     }
 
@@ -166,6 +168,7 @@ trait ValidatesAccountingPeriod
     public function withPeriodValidation(): self
     {
         $this->skipPeriodValidation = false;
+
         return $this;
     }
 }

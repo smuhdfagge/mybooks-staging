@@ -2,9 +2,9 @@
 
 namespace App\Livewire\Subscriptions;
 
+use App\Livewire\Concerns\ChecksPermissions;
 use App\Models\Plan;
 use App\Models\Subscription;
-use App\Livewire\Concerns\ChecksPermissions;
 use App\Services\Billing\PaystackGateway;
 use App\Services\Billing\SubscriptionBilling;
 use Illuminate\Support\Facades\Auth;
@@ -15,25 +15,35 @@ class SubscriptionManager extends Component
     use ChecksPermissions;
 
     public $currentSubscription;
+
     public $pendingSubscription;   // signed up, waiting for payment
+
     public $lapsedSubscription;    // ended, can be renewed
+
     public $currentPlan;
+
     public $plans;
+
     public $selectedPlanId;
+
     public $selectedBillingCycle;
+
     public $showUpgradeModal = false;
+
     public $showCancelModal = false;
+
     public $cancellationReason = '';
 
     public function mount()
     {
         $tenant = Auth::user()->tenant;
-        
-        if (!$tenant) {
+
+        if (! $tenant) {
             $this->plans = Plan::active()->ordered()->get();
+
             return;
         }
-        
+
         $this->currentSubscription = $tenant->activeSubscription;
         $this->currentPlan = $tenant->currentPlan();
         $this->plans = Plan::active()->ordered()->get();
@@ -156,7 +166,7 @@ class SubscriptionManager extends Component
         if ($this->currentSubscription) {
             $this->currentSubscription->cancel($this->cancellationReason);
             $this->currentSubscription->refresh();
-            session()->flash('success', 'Your subscription has been cancelled. You will have access until ' . $this->currentSubscription->ends_at->format('M d, Y') . '.');
+            session()->flash('success', 'Your subscription has been cancelled. You will have access until '.$this->currentSubscription->ends_at->format('M d, Y').'.');
         }
 
         $this->closeCancelModal();

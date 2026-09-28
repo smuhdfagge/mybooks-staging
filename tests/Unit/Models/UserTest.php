@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Models;
 
-use App\Models\User;
 use App\Models\Tenant;
+use App\Models\User;
 use Tests\TestCase;
 
 class UserTest extends TestCase

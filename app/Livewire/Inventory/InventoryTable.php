@@ -2,29 +2,38 @@
 
 namespace App\Livewire\Inventory;
 
+use App\Livewire\Concerns\ChecksPermissions;
+use App\Models\Inventory;
 use App\Models\Item;
 use App\Models\ItemCategory;
-use App\Models\Inventory;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Livewire\Concerns\ChecksPermissions;
 
 class InventoryTable extends Component
 {
     use ChecksPermissions, WithPagination;
 
     public $search = '';
+
     public $categoryFilter = '';
+
     public $stockFilter = '';
+
     public $sortField = 'name';
+
     public $sortDirection = 'asc';
+
     public $perPage = 15;
 
     // Bulk operation properties
     public $selectedItems = [];
+
     public $selectAll = false;
+
     public $bulkAction = '';
+
     public $successMessage = '';
+
     public $errorMessage = '';
 
     protected $queryString = [
@@ -83,8 +92,8 @@ class InventoryTable extends Component
 
         if ($this->search) {
             $query->where(function ($q) {
-                $q->where('name', 'like', '%' . $this->search . '%')
-                  ->orWhere('sku', 'like', '%' . $this->search . '%');
+                $q->where('name', 'like', '%'.$this->search.'%')
+                    ->orWhere('sku', 'like', '%'.$this->search.'%');
             });
         }
 
@@ -95,23 +104,23 @@ class InventoryTable extends Component
         if ($this->stockFilter) {
             switch ($this->stockFilter) {
                 case 'in_stock':
-                    $query->whereHas('inventory', fn($q) => $q->where('quantity', '>', 0));
+                    $query->whereHas('inventory', fn ($q) => $q->where('quantity', '>', 0));
                     break;
                 case 'low_stock':
                     $query->where('reorder_level', '>', 0)
-                          ->whereHas('inventory', fn($q) => $q->whereColumn('quantity', '<=', 'items.reorder_level'));
+                        ->whereHas('inventory', fn ($q) => $q->whereColumn('quantity', '<=', 'items.reorder_level'));
                     break;
                 case 'out_of_stock':
-                    $query->where(function($q) {
-                        $q->whereHas('inventory', fn($iq) => $iq->where('quantity', '<=', 0))
-                          ->orWhereDoesntHave('inventory');
+                    $query->where(function ($q) {
+                        $q->whereHas('inventory', fn ($iq) => $iq->where('quantity', '<=', 0))
+                            ->orWhereDoesntHave('inventory');
                     });
                     break;
             }
         }
 
         return $query->pluck('id')
-            ->map(fn($id) => (string) $id)
+            ->map(fn ($id) => (string) $id)
             ->toArray();
     }
 
@@ -133,11 +142,13 @@ class InventoryTable extends Component
 
         if (empty($this->selectedItems)) {
             $this->errorMessage = 'Please select at least one item.';
+
             return;
         }
 
         if (empty($this->bulkAction)) {
             $this->errorMessage = 'Please select an action.';
+
             return;
         }
 
@@ -163,6 +174,7 @@ class InventoryTable extends Component
 
             default:
                 $this->errorMessage = 'Invalid action selected.';
+
                 return;
         }
 
@@ -179,8 +191,8 @@ class InventoryTable extends Component
 
         if ($this->search) {
             $query->where(function ($q) {
-                $q->where('name', 'like', '%' . $this->search . '%')
-                  ->orWhere('sku', 'like', '%' . $this->search . '%');
+                $q->where('name', 'like', '%'.$this->search.'%')
+                    ->orWhere('sku', 'like', '%'.$this->search.'%');
             });
         }
 
@@ -191,16 +203,16 @@ class InventoryTable extends Component
         if ($this->stockFilter) {
             switch ($this->stockFilter) {
                 case 'in_stock':
-                    $query->whereHas('inventory', fn($q) => $q->where('quantity', '>', 0));
+                    $query->whereHas('inventory', fn ($q) => $q->where('quantity', '>', 0));
                     break;
                 case 'low_stock':
                     $query->where('reorder_level', '>', 0)
-                          ->whereHas('inventory', fn($q) => $q->whereColumn('quantity', '<=', 'items.reorder_level'));
+                        ->whereHas('inventory', fn ($q) => $q->whereColumn('quantity', '<=', 'items.reorder_level'));
                     break;
                 case 'out_of_stock':
-                    $query->where(function($q) {
-                        $q->whereHas('inventory', fn($iq) => $iq->where('quantity', '<=', 0))
-                          ->orWhereDoesntHave('inventory');
+                    $query->where(function ($q) {
+                        $q->whereHas('inventory', fn ($iq) => $iq->where('quantity', '<=', 0))
+                            ->orWhereDoesntHave('inventory');
                     });
                     break;
             }

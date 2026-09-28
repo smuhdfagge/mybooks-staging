@@ -2,33 +2,43 @@
 
 namespace App\Livewire\Invoices;
 
-use App\Models\Invoice;
+use App\Livewire\Concerns\ChecksPermissions;
 use App\Models\Customer;
+use App\Models\Invoice;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Livewire\Concerns\ChecksPermissions;
 
 class InvoicesTable extends Component
 {
     use ChecksPermissions, WithPagination;
 
     public $search = '';
+
     public $status = '';
+
     public $customer = '';
+
     public $dateFrom = '';
+
     public $dateTo = '';
+
     public $sortField = 'invoice_date';
+
     public $sortDirection = 'desc';
+
     public $perPage = 10;
 
     // Bulk operation properties
     public $selectedItems = [];
+
     public $selectAll = false;
+
     public $bulkAction = '';
 
     // Flash message properties
     public $successMessage = '';
+
     public $errorMessage = '';
 
     protected $queryString = [
@@ -74,16 +84,16 @@ class InvoicesTable extends Component
     private function getFilteredInvoiceIds()
     {
         return Invoice::query()
-            ->when($this->search, fn($q) => $q->where(function($query) {
+            ->when($this->search, fn ($q) => $q->where(function ($query) {
                 $query->where('invoice_number', 'like', "%{$this->search}%")
-                    ->orWhereHas('customer', fn($q2) => $q2->where('name', 'like', "%{$this->search}%"));
+                    ->orWhereHas('customer', fn ($q2) => $q2->where('name', 'like', "%{$this->search}%"));
             }))
-            ->when($this->status, fn($q) => $q->where('status', $this->status))
-            ->when($this->customer, fn($q) => $q->where('customer_id', $this->customer))
-            ->when($this->dateFrom, fn($q) => $q->whereDate('invoice_date', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn($q) => $q->whereDate('invoice_date', '<=', $this->dateTo))
+            ->when($this->status, fn ($q) => $q->where('status', $this->status))
+            ->when($this->customer, fn ($q) => $q->where('customer_id', $this->customer))
+            ->when($this->dateFrom, fn ($q) => $q->whereDate('invoice_date', '>=', $this->dateFrom))
+            ->when($this->dateTo, fn ($q) => $q->whereDate('invoice_date', '<=', $this->dateTo))
             ->pluck('id')
-            ->map(fn($id) => (string) $id)
+            ->map(fn ($id) => (string) $id)
             ->toArray();
     }
 
@@ -103,11 +113,13 @@ class InvoicesTable extends Component
     {
         if (empty($this->selectedItems)) {
             $this->errorMessage = 'Please select at least one invoice.';
+
             return;
         }
 
         if (empty($this->bulkAction)) {
             $this->errorMessage = 'Please select an action.';
+
             return;
         }
 
@@ -132,7 +144,7 @@ class InvoicesTable extends Component
                 }
                 $this->successMessage = "Marked {$sent} invoice(s) as sent.";
                 if ($failed) {
-                    $this->errorMessage = 'Not changed (closed period or invalid totals): ' . implode(', ', $failed) . '.';
+                    $this->errorMessage = 'Not changed (closed period or invalid totals): '.implode(', ', $failed).'.';
                 }
                 break;
 
@@ -148,6 +160,7 @@ class InvoicesTable extends Component
                 foreach ($invoices as $invoice) {
                     if ((float) $invoice->amount_paid > 0) {
                         $skipped++;
+
                         continue;
                     }
                     try {
@@ -161,9 +174,9 @@ class InvoicesTable extends Component
                         $failed[] = $invoice->invoice_number;
                     }
                 }
-                $this->successMessage = "Cancelled {$cancelled} invoice(s)." . ($skipped ? " Skipped {$skipped} with payments." : '');
+                $this->successMessage = "Cancelled {$cancelled} invoice(s).".($skipped ? " Skipped {$skipped} with payments." : '');
                 if ($failed) {
-                    $this->errorMessage = 'Not cancelled (closed period or invalid totals): ' . implode(', ', $failed) . '.';
+                    $this->errorMessage = 'Not cancelled (closed period or invalid totals): '.implode(', ', $failed).'.';
                 }
                 break;
 
@@ -192,6 +205,7 @@ class InvoicesTable extends Component
 
             default:
                 $this->errorMessage = 'Invalid action selected.';
+
                 return;
         }
 
@@ -214,14 +228,14 @@ class InvoicesTable extends Component
     {
         $invoices = Invoice::query()
             ->with('customer')
-            ->when($this->search, fn($q) => $q->where(function($query) {
+            ->when($this->search, fn ($q) => $q->where(function ($query) {
                 $query->where('invoice_number', 'like', "%{$this->search}%")
-                    ->orWhereHas('customer', fn($q2) => $q2->where('name', 'like', "%{$this->search}%"));
+                    ->orWhereHas('customer', fn ($q2) => $q2->where('name', 'like', "%{$this->search}%"));
             }))
-            ->when($this->status, fn($q) => $q->where('status', $this->status))
-            ->when($this->customer, fn($q) => $q->where('customer_id', $this->customer))
-            ->when($this->dateFrom, fn($q) => $q->whereDate('invoice_date', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn($q) => $q->whereDate('invoice_date', '<=', $this->dateTo))
+            ->when($this->status, fn ($q) => $q->where('status', $this->status))
+            ->when($this->customer, fn ($q) => $q->where('customer_id', $this->customer))
+            ->when($this->dateFrom, fn ($q) => $q->whereDate('invoice_date', '>=', $this->dateFrom))
+            ->when($this->dateTo, fn ($q) => $q->whereDate('invoice_date', '<=', $this->dateTo))
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
 

@@ -77,7 +77,7 @@ return new class extends Migration
         }
 
         // Note: We don't delete the permissions themselves as they may be used by other roles
-        
+
         // Clear permission cache
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
     }

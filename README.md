@@ -46,6 +46,13 @@ The suite runs on SQLite in memory. To run it against MySQL or MariaDB:
 DB_CONNECTION=mariadb DB_HOST=127.0.0.1 DB_DATABASE=mybooks_test DB_USERNAME=... DB_PASSWORD=... php artisan test
 ```
 
+Before pushing, also run:
+
+```bash
+vendor/bin/pint            # formats the code (CI runs pint --test)
+composer analyse           # PHPStan; new code must not add to phpstan-baseline.neon
+```
+
 `tests/Feature/Regression` holds a test for each fixed finding from the September 2026 review, named after the finding (C1, H4, M7 and so on). GitHub Actions runs the whole suite on every pull request.
 
 ## Deploying
@@ -101,3 +108,9 @@ Other settings in `config/mybooks.php` include support email, import size limit,
 - `docs/API.md`: the mobile API.
 - `docs/fix.md` and `docs/fixui.md`: earlier review notes. Where they disagree with this README, the README is current.
 - `.github/copilot-instructions.md`: conventions for contributors and coding assistants (tenancy, journals, permissions).
+
+## Contributing
+
+- One change per commit. Start the message with the finding ID where there is one ("Fix M7: ..."), say what was wrong and what changed, in plain words.
+- Every bug fix comes with a test that fails without the fix.
+- Open a pull request; GitHub Actions runs the tests, Pint and PHPStan on it.

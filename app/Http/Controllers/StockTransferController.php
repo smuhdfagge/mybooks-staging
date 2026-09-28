@@ -7,8 +7,8 @@ use App\Models\StockTransfer;
 use App\Models\StockTransferItem;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class StockTransferController extends Controller
 {
@@ -91,7 +91,7 @@ class StockTransferController extends Controller
 
         DB::transaction(function () use ($stockTransfer, $validated) {
             // Update received quantities if provided
-            if (!empty($validated['items'])) {
+            if (! empty($validated['items'])) {
                 foreach ($validated['items'] as $itemData) {
                     StockTransferItem::where('id', $itemData['id'])
                         ->where('stock_transfer_id', $stockTransfer->id)

@@ -9,11 +9,8 @@ class DiscountService
     /**
      * Calculate applicable discounts for a set of line items.
      *
-     * @param int        $tenantId
-     * @param int|null   $customerId
-     * @param array      $lineItems  Each item: ['item_id' => ?, 'quantity' => ?, 'amount' => ?]
-     * @param float      $orderTotal
-     * @return array     ['line_discounts' => [...], 'order_discount' => float, 'total_discount' => float]
+     * @param  array  $lineItems  Each item: ['item_id' => ?, 'quantity' => ?, 'amount' => ?]
+     * @return array ['line_discounts' => [...], 'order_discount' => float, 'total_discount' => float]
      */
     public function calculateDiscounts(int $tenantId, ?int $customerId, array $lineItems, float $orderTotal): array
     {

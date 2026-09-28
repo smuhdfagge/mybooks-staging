@@ -14,7 +14,7 @@ class JournalFactory extends Factory
     {
         return [
             'tenant_id' => Tenant::factory(),
-            'journal_number' => 'JE-' . str_pad(fake()->unique()->numberBetween(1, 999999), 6, '0', STR_PAD_LEFT),
+            'journal_number' => 'JE-'.str_pad(fake()->unique()->numberBetween(1, 999999), 6, '0', STR_PAD_LEFT),
             'journal_date' => now(),
             'reference' => fake()->optional()->bothify('REF-####'),
             'description' => fake()->sentence(),

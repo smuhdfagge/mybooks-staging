@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class StockTransferItem extends Model
 {
@@ -22,12 +23,14 @@ class StockTransferItem extends Model
         'quantity_received' => 'decimal:4',
     ];
 
-    public function stockTransfer()
+    /** @return BelongsTo<StockTransfer, $this> */
+    public function stockTransfer(): BelongsTo
     {
         return $this->belongsTo(StockTransfer::class);
     }
 
-    public function item()
+    /** @return BelongsTo<Item, $this> */
+    public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class);
     }

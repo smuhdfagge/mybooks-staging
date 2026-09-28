@@ -2,18 +2,20 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Services\DepreciationService;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
-use App\Services\DepreciationService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class FixedAsset extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, ValidatesAccountingPeriod;
+    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     protected $fillable = [
         'tenant_id',
@@ -67,23 +69,35 @@ class FixedAsset extends Model
 
     // Status Constants
     const STATUS_ACTIVE = 'active';
+
     const STATUS_UNDER_MAINTENANCE = 'under_maintenance';
+
     const STATUS_IDLE = 'idle';
+
     const STATUS_FULLY_DEPRECIATED = 'fully_depreciated';
+
     const STATUS_DISPOSED = 'disposed';
+
     const STATUS_SOLD = 'sold';
 
     // Depreciation Methods
     const METHOD_STRAIGHT_LINE = 'straight_line';
+
     const METHOD_DECLINING_BALANCE = 'declining_balance';
+
     const METHOD_DOUBLE_DECLINING = 'double_declining';
+
     const METHOD_SUM_OF_YEARS = 'sum_of_years';
 
     // Disposal Methods
     const DISPOSAL_SALE = 'sale';
+
     const DISPOSAL_SCRAPPED = 'scrapped';
+
     const DISPOSAL_DONATED = 'donated';
+
     const DISPOSAL_LOST = 'lost';
+
     const DISPOSAL_OTHER = 'other';
 
     public static function getStatuses(): array
@@ -119,27 +133,32 @@ class FixedAsset extends Model
         ];
     }
 
-    public function category()
+    /** @return BelongsTo<FixedAssetCategory, $this> */
+    public function category(): BelongsTo
     {
         return $this->belongsTo(FixedAssetCategory::class, 'category_id');
     }
 
-    public function vendor()
+    /** @return BelongsTo<Vendor, $this> */
+    public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class);
     }
 
-    public function assignedUser()
+    /** @return BelongsTo<User, $this> */
+    public function assignedUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_to');
     }
 
-    public function depreciations()
+    /** @return HasMany<FixedAssetDepreciation, $this> */
+    public function depreciations(): HasMany
     {
         return $this->hasMany(FixedAssetDepreciation::class);
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
@@ -150,9 +169,10 @@ class FixedAsset extends Model
             ->where('tenant_id', $tenantId)
             ->latest('id')
             ->first();
-        
+
         $number = $lastAsset ? intval(substr($lastAsset->asset_number, 3)) + 1 : 1;
-        return 'FA-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+        return 'FA-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -176,11 +196,12 @@ class FixedAsset extends Model
      */
     public function getRemainingUsefulLifeMonthsAttribute(): int
     {
-        if (!$this->in_service_date) {
+        if (! $this->in_service_date) {
             return $this->useful_life_months;
         }
 
         $monthsInService = $this->in_service_date->diffInMonths(now());
+
         return max(0, $this->useful_life_months - $monthsInService);
     }
 
@@ -192,6 +213,7 @@ class FixedAsset extends Model
         if ($this->depreciable_amount <= 0) {
             return 100;
         }
+
         return min(100, ($this->accumulated_depreciation / $this->depreciable_amount) * 100);
     }
 
@@ -208,7 +230,7 @@ class FixedAsset extends Model
      */
     public function canDepreciate(): bool
     {
-        return $this->status === self::STATUS_ACTIVE && !$this->isFullyDepreciated();
+        return $this->status === self::STATUS_ACTIVE && ! $this->isFullyDepreciated();
     }
 
     /**
@@ -224,12 +246,12 @@ class FixedAsset extends Model
      */
     public function getNextDepreciationDateAttribute(): ?Carbon
     {
-        if (!$this->canDepreciate()) {
+        if (! $this->canDepreciate()) {
             return null;
         }
 
         $lastDepreciation = $this->depreciations()->latest('depreciation_date')->first();
-        
+
         if ($lastDepreciation) {
             return $lastDepreciation->depreciation_date->copy()->addMonth()->endOfMonth();
         }
@@ -243,6 +265,7 @@ class FixedAsset extends Model
     public function calculateMonthlyDepreciation(int $periodNumber = 1): float
     {
         $service = app(DepreciationService::class);
+
         return $service->calculateMonthlyDepreciation($this, $periodNumber);
     }
 
@@ -252,6 +275,7 @@ class FixedAsset extends Model
     public function generateDepreciationSchedule(): array
     {
         $service = app(DepreciationService::class);
+
         return $service->generateSchedule($this);
     }
 
@@ -261,6 +285,7 @@ class FixedAsset extends Model
     public function recordDepreciation(Carbon $depreciationDate, ?string $notes = null): ?FixedAssetDepreciation
     {
         $service = app(DepreciationService::class);
+
         return $service->recordDepreciation($this, $depreciationDate, $notes);
     }
 
@@ -270,6 +295,7 @@ class FixedAsset extends Model
     public function dispose(string $method, ?float $amount = null, ?Carbon $date = null, ?string $notes = null): bool
     {
         $service = app(DepreciationService::class);
+
         return $service->disposeAsset($this, $method, $amount, $date, $notes);
     }
 
@@ -296,10 +322,10 @@ class FixedAsset extends Model
             if (empty($asset->asset_number)) {
                 $asset->asset_number = static::generateNumber($asset->tenant_id);
             }
-            
+
             // Calculate depreciable amount
             $asset->depreciable_amount = $asset->purchase_cost - $asset->salvage_value;
-            
+
             // Set initial book value
             if (empty($asset->book_value)) {
                 $asset->book_value = $asset->purchase_cost;
@@ -309,8 +335,8 @@ class FixedAsset extends Model
             if (in_array($asset->depreciation_method, [self::METHOD_DECLINING_BALANCE, self::METHOD_DOUBLE_DECLINING])) {
                 if (empty($asset->depreciation_rate)) {
                     $yearsLife = $asset->useful_life;
-                    $asset->depreciation_rate = $asset->depreciation_method === self::METHOD_DOUBLE_DECLINING 
-                        ? (2 / $yearsLife) * 100 
+                    $asset->depreciation_rate = $asset->depreciation_method === self::METHOD_DOUBLE_DECLINING
+                        ? (2 / $yearsLife) * 100
                         : (1 / $yearsLife) * 100;
                 }
             }

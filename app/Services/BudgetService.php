@@ -19,7 +19,7 @@ class BudgetService
     {
         $year = $budget->fiscal_year;
         $months = Budget::getMonthColumns();
-        
+
         // Determine which months to include
         if ($throughMonth) {
             $monthIndex = array_search($throughMonth, array_keys($months));
@@ -73,8 +73,8 @@ class BudgetService
     protected function getAccountActual(int $accountId, Carbon $startDate, Carbon $endDate, string $accountType): float
     {
         $data = JournalEntry::whereHas('journal', function ($query) use ($startDate, $endDate) {
-                $query->whereBetween('journal_date', [$startDate, $endDate]);
-            })
+            $query->whereBetween('journal_date', [$startDate, $endDate]);
+        })
             ->where('account_id', $accountId)
             ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
             ->first();
@@ -84,7 +84,7 @@ class BudgetService
         if (in_array($accountType, ['asset', 'expense'])) {
             return ($data->total_debit ?? 0) - ($data->total_credit ?? 0);
         }
-        
+
         return ($data->total_credit ?? 0) - ($data->total_debit ?? 0);
     }
 
@@ -98,6 +98,7 @@ class BudgetService
             'may' => 5, 'jun' => 6, 'jul' => 7, 'aug' => 8,
             'sep' => 9, 'oct' => 10, 'nov' => 11, 'dec' => 12,
         ];
+
         return $months[$monthKey] ?? 1;
     }
 
@@ -163,7 +164,7 @@ class BudgetService
     public function getBudgetSummary(Budget $budget): array
     {
         $lines = $budget->lines()->with('account')->get();
-        
+
         $summary = [
             'total_budget' => 0,
             'income_budget' => 0,
@@ -178,8 +179,8 @@ class BudgetService
             $amount = $line->annual_total;
 
             $summary['total_budget'] += abs($amount);
-            
-            if (!isset($summary['by_type'][$type])) {
+
+            if (! isset($summary['by_type'][$type])) {
                 $summary['by_type'][$type] = 0;
             }
             $summary['by_type'][$type] += $amount;
@@ -208,7 +209,7 @@ class BudgetService
         $totalActual = $comparison->sum('actual');
         $utilizationPercent = $totalBudget != 0 ? ($totalActual / $totalBudget) * 100 : 0;
 
-        $overBudgetAccounts = $comparison->filter(fn($item) => $item['is_over_budget']);
+        $overBudgetAccounts = $comparison->filter(fn ($item) => $item['is_over_budget']);
 
         return [
             'total_budget_ytd' => $totalBudget,
@@ -242,12 +243,12 @@ class BudgetService
 
             foreach ($accounts as $account) {
                 $monthlyActuals = [];
-                
+
                 foreach (Budget::getMonthColumns() as $monthKey => $monthName) {
                     $monthNum = $this->getMonthNumber($monthKey);
                     $startDate = Carbon::create($sourceYear, $monthNum, 1)->startOfMonth();
                     $endDate = $startDate->copy()->endOfMonth();
-                    
+
                     $monthlyActuals[$monthKey] = abs($this->getAccountActual($account->id, $startDate, $endDate, $account->type));
                 }
 
