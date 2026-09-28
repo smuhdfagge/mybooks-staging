@@ -132,4 +132,27 @@ return [
 
     'queue_work_from_scheduler' => (bool) env('QUEUE_WORK_FROM_SCHEDULER', true),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Backups (finding O1)
+    |--------------------------------------------------------------------------
+    |
+    | "php artisan mybooks:backup" runs daily at 01:30 from the scheduler. It
+    | writes one zip (database dump + uploaded files) to every disk listed in
+    | BACKUP_DISKS. "backups" is a folder on this server (storage/app/backups):
+    | add an off-site disk too, or a server failure loses the backups with
+    | the data. BACKUP_ARCHIVE_PASSWORD encrypts the zip (AES-256); keep the
+    | password somewhere other than this server.
+    |
+    */
+
+    'backup' => [
+        'disks' => explode(',', (string) env('BACKUP_DISKS', 'backups')),
+        'keep_days' => (int) env('BACKUP_KEEP_DAYS', 30),
+        'password' => env('BACKUP_ARCHIVE_PASSWORD'),
+        'notify' => env('BACKUP_NOTIFY_EMAIL', env('MYBOOKS_SUPPORT_EMAIL')),
+        'mysqldump' => env('BACKUP_MYSQLDUMP_PATH', 'mysqldump'),
+        'enabled' => (bool) env('BACKUP_ENABLED', true),
+    ],
+
 ];

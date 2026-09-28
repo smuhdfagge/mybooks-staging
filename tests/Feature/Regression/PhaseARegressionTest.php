@@ -406,4 +406,86 @@ class PhaseARegressionTest extends TestCase
 
         $this->assertCount(1, $commands);
     }
+
+    // ── O1: backups ─────────────────────────────────────────────
+
+    private function fakeDump(): void
+    {
+        $this->partialMock(\App\Services\BackupService::class, function ($mock) {
+            $mock->shouldReceive('dumpDatabase')->andReturnUsing(function (string $path) {
+                file_put_contents($path, "-- MariaDB dump\nCREATE TABLE invoices (id int);\n");
+            });
+        });
+    }
+
+    public function test_o1_backup_writes_database_and_files_to_every_disk(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('backups');
+        \Illuminate\Support\Facades\Storage::fake('offsite');
+        config(['mybooks.backup.disks' => ['backups', 'offsite']]);
+        $this->fakeDump();
+
+        $upload = storage_path('app/private/o1-test/receipt.txt');
+        \Illuminate\Support\Facades\File::ensureDirectoryExists(dirname($upload));
+        file_put_contents($upload, 'receipt');
+
+        try {
+            $this->artisan('mybooks:backup')->assertSuccessful();
+        } finally {
+            \Illuminate\Support\Facades\File::deleteDirectory(dirname($upload));
+        }
+
+        foreach (['backups', 'offsite'] as $disk) {
+            $files = \Illuminate\Support\Facades\Storage::disk($disk)->files('mybooks-backups');
+            $this->assertCount(1, $files, "one backup on {$disk}");
+        }
+
+        $zipPath = \Illuminate\Support\Facades\Storage::disk('offsite')->path($files[0]);
+        $zip = new \ZipArchive;
+        $this->assertTrue($zip->open($zipPath) === true);
+        $this->assertStringContainsString('CREATE TABLE invoices', $zip->getFromName('database.sql'));
+        $this->assertSame('receipt', $zip->getFromName('files/private/o1-test/receipt.txt'));
+        $zip->close();
+
+        $this->assertNotNull(app(\App\Services\BackupService::class)->lastSuccess());
+    }
+
+    public function test_o1_old_backups_are_removed_but_the_newest_is_always_kept(): void
+    {
+        $disk = \Illuminate\Support\Facades\Storage::fake('backups');
+        config(['mybooks.backup.disks' => ['backups'], 'mybooks.backup.keep_days' => 30]);
+
+        foreach (['old-1.zip' => 60, 'old-2.zip' => 45, 'recent.zip' => 3] as $name => $daysAgo) {
+            $disk->put("mybooks-backups/{$name}", 'x');
+            touch($disk->path("mybooks-backups/{$name}"), now()->subDays($daysAgo)->getTimestamp());
+        }
+
+        $this->assertSame(2, app(\App\Services\BackupService::class)->cleanup());
+        $this->assertSame(['mybooks-backups/recent.zip'], $disk->files('mybooks-backups'));
+
+        // If every backup is old (e.g. backups stopped), the newest stays.
+        touch($disk->path('mybooks-backups/recent.zip'), now()->subDays(90)->getTimestamp());
+        $this->assertSame(0, app(\App\Services\BackupService::class)->cleanup());
+    }
+
+    public function test_o1_a_failed_backup_fails_the_command(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('backups');
+        config(['mybooks.backup.disks' => ['backups']]);
+        $this->partialMock(\App\Services\BackupService::class, function ($mock) {
+            $mock->shouldReceive('dumpDatabase')->andThrow(new \RuntimeException('mysqldump: Access denied'));
+        });
+
+        $this->artisan('mybooks:backup')->assertFailed();
+        $this->assertSame([], \Illuminate\Support\Facades\Storage::disk('backups')->allFiles());
+    }
+
+    public function test_o1_backup_is_scheduled_daily(): void
+    {
+        $events = collect(app(\Illuminate\Console\Scheduling\Schedule::class)->events())
+            ->filter(fn ($e) => str_contains($e->command ?? '', 'mybooks:backup'));
+
+        $this->assertCount(1, $events);
+        $this->assertSame('30 1 * * *', $events->first()->expression);
+    }
 }

@@ -85,3 +85,16 @@ Schedule::command('subscriptions:expire')
     ->dailyAt('00:10')
     ->withoutOverlapping()
     ->onOneServer();
+
+/*
+|--------------------------------------------------------------------------
+| Backups (finding O1)
+|--------------------------------------------------------------------------
+| Database and uploaded files, daily, to the disks in BACKUP_DISKS.
+*/
+if (config('mybooks.backup.enabled')) {
+    Schedule::command('mybooks:backup')
+        ->dailyAt('01:30')
+        ->withoutOverlapping(120)
+        ->onOneServer();
+}
