@@ -5,10 +5,11 @@ namespace App\Livewire\Banks;
 use App\Models\Bank;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class BanksTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $sortField = 'name';
@@ -88,6 +89,18 @@ class BanksTable extends Component
             ->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'activate' => 'edit banks',
+            'deactivate' => 'edit banks',
+            'delete' => 'delete banks',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -104,6 +117,8 @@ class BanksTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'activate':

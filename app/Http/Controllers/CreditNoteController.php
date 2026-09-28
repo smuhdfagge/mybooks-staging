@@ -150,7 +150,7 @@ class CreditNoteController extends Controller
     public function apply(Request $request, CreditNote $creditNote)
     {
         $validated = $request->validate([
-            'invoice_id' => 'required|exists:invoices,id',
+            'invoice_id' => ['required', Rule::exists('invoices', 'id')->where('tenant_id', auth()->user()->tenant_id)],
             'amount' => 'required|numeric|min:0.01|max:' . $creditNote->balance,
         ]);
 

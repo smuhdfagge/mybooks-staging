@@ -6,10 +6,11 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\FixedAsset;
 use App\Models\FixedAssetCategory;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class FixedAssetsTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $categoryFilter = '';
@@ -97,6 +98,18 @@ class FixedAssetsTable extends Component
             ->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'activate' => 'edit fixed-assets',
+            'dispose' => 'edit fixed-assets',
+            'delete' => 'delete fixed-assets',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -113,6 +126,8 @@ class FixedAssetsTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'activate':

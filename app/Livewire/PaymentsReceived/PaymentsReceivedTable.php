@@ -8,10 +8,11 @@ use App\Services\BankService;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class PaymentsReceivedTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $customer = '';
@@ -95,6 +96,16 @@ class PaymentsReceivedTable extends Component
             ->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'delete' => 'delete payments-received',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -111,6 +122,8 @@ class PaymentsReceivedTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'delete':

@@ -7,10 +7,11 @@ use App\Models\LeaveType;
 use App\Models\Employee;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class LeavesTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $status = '';
@@ -99,6 +100,18 @@ class LeavesTable extends Component
             ->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'approve' => 'approve leaves',
+            'reject' => 'approve leaves',
+            'delete' => 'delete leaves',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -115,6 +128,8 @@ class LeavesTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'approve':

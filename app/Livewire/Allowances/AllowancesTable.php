@@ -5,10 +5,11 @@ namespace App\Livewire\Allowances;
 use App\Models\Allowance;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class AllowancesTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $amountType = '';
@@ -40,6 +41,8 @@ class AllowancesTable extends Component
 
     public function toggleActive(Allowance $allowance)
     {
+        $this->requirePermission('create payroll');
+
         abort_unless($allowance->tenant_id === auth()->user()->tenant_id, 403);
 
         $allowance->update(['is_active' => !$allowance->is_active]);
@@ -61,6 +64,18 @@ class AllowancesTable extends Component
         return $this->buildQuery()->pluck('id')->map(fn($id) => (string) $id)->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'activate' => 'create payroll',
+            'deactivate' => 'create payroll',
+            'delete' => 'create payroll',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -77,6 +92,8 @@ class AllowancesTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'activate':

@@ -5,10 +5,11 @@ namespace App\Livewire\SalaryStructures;
 use App\Models\SalaryStructure;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class SalaryStructuresTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $status = '';
@@ -37,6 +38,8 @@ class SalaryStructuresTable extends Component
 
     public function toggleActive(SalaryStructure $salaryStructure)
     {
+        $this->requirePermission('create payroll');
+
         abort_unless($salaryStructure->tenant_id === auth()->user()->tenant_id, 403);
 
         $salaryStructure->update(['is_active' => !$salaryStructure->is_active]);
@@ -58,6 +61,18 @@ class SalaryStructuresTable extends Component
         return $this->buildQuery()->pluck('id')->map(fn($id) => (string) $id)->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'activate' => 'create payroll',
+            'deactivate' => 'create payroll',
+            'delete' => 'create payroll',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -74,6 +89,8 @@ class SalaryStructuresTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'activate':

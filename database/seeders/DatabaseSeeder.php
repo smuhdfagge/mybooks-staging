@@ -111,6 +111,7 @@ class DatabaseSeeder extends Seeder
             
             // Settings
             'view settings', 'edit settings',
+            'manage subscription',
             'view users', 'create users', 'edit users', 'delete users',
             'view roles', 'create roles', 'edit roles', 'delete roles',
             

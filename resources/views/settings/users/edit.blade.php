@@ -57,7 +57,7 @@
                         <!-- Status -->
                         <div>
                             <label for="is_active" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
-                            <select name="is_active" id="is_active"
+                            <select name="is_active" id="is_active" {{ $isSelf ? 'disabled' : '' }}
                                 class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="1" {{ old('is_active', $user->is_active ?? true) ? 'selected' : '' }}>Active</option>
                                 <option value="0" {{ !old('is_active', $user->is_active ?? true) ? 'selected' : '' }}>Inactive</option>
@@ -86,12 +86,16 @@
                     <!-- Roles -->
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Roles</label>
+                        @if($isSelf)
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">You can't change your own roles or status. Ask another administrator.</p>
+                        @endif
                         <div class="flex flex-wrap gap-4">
                             @foreach($roles as $role)
                                 <label class="flex items-center">
-                                    <input type="checkbox" name="roles[]" value="{{ $role->name }}"
+                                    <input type="checkbox" name="roles[]" value="{{ $role->id }}"
                                         class="rounded border-gray-300 dark:border-gray-600 text-indigo-600 shadow-sm focus:ring-indigo-500"
-                                        {{ in_array($role->name, old('roles', $user->roles->pluck('name')->toArray())) ? 'checked' : '' }}>
+                                        {{ in_array($role->id, array_map('intval', old('roles', $user->roles->pluck('id')->toArray()))) ? 'checked' : '' }}
+                                        {{ $isSelf ? 'disabled' : '' }}>
                                     <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">{{ $role->name }}</span>
                                 </label>
                             @endforeach

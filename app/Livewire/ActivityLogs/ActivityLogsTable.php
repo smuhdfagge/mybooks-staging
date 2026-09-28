@@ -8,10 +8,11 @@ use App\Models\User;
 use App\Services\ExportService;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class ActivityLogsTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $userId = '';
@@ -63,6 +64,8 @@ class ActivityLogsTable extends Component
 
     public function export($format = 'csv')
     {
+        $this->requirePermission('view settings');
+
         $export = Export::create([
             'tenant_id' => auth()->user()->tenant_id,
             'user_id' => auth()->id(),

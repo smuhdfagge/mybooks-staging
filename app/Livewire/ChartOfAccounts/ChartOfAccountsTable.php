@@ -5,10 +5,11 @@ namespace App\Livewire\ChartOfAccounts;
 use App\Models\ChartOfAccount;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class ChartOfAccountsTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $sortField = 'account_code';
@@ -91,6 +92,18 @@ class ChartOfAccountsTable extends Component
             ->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'activate' => 'edit chart-of-accounts',
+            'deactivate' => 'edit chart-of-accounts',
+            'delete' => 'delete chart-of-accounts',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -107,6 +120,8 @@ class ChartOfAccountsTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'activate':

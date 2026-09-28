@@ -3,10 +3,14 @@
 namespace App\Livewire\Settings;
 
 use App\Models\InvoiceTemplate;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class InvoiceTemplateEditor extends Component
 {
+    use ChecksPermissions;
+
     public ?InvoiceTemplate $template = null;
     public string $name = '';
     public array $settings = [];
@@ -37,25 +41,32 @@ class InvoiceTemplateEditor extends Component
     public string $border_style = 'solid';
     public string $border_width = '3';
 
-    protected $rules = [
-        'name' => 'required|string|max:255',
-        'primary_color' => 'required|string|max:7',
-        'secondary_color' => 'required|string|max:7',
-        'accent_color' => 'required|string|max:7',
-        'font_family' => 'required|string',
-        'font_size' => 'required|numeric|min:8|max:20',
-        'header_bg_color' => 'required|string|max:7',
-        'header_text_color' => 'required|string|max:7',
-        'table_header_bg' => 'required|string|max:7',
-        'table_header_text' => 'required|string|max:7',
-        'table_border_color' => 'required|string|max:7',
-        'footer_bg_color' => 'required|string|max:7',
-        'footer_text_color' => 'required|string|max:7',
-        'footer_text' => 'nullable|string|max:255',
-        'layout' => 'required|string|in:classic,modern,minimal,compact',
-        'border_style' => 'required|string|in:solid,dashed,dotted,none',
-        'border_width' => 'required|numeric|min:0|max:10',
-    ];
+    /**
+     * Colours must be #RRGGBB and the font must come from the list offered
+     * in the editor, because both are written into the invoice's CSS (L13).
+     */
+    protected function rules(): array
+    {
+        return [
+            'name' => 'required|string|max:255',
+            'primary_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'secondary_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'accent_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'font_family' => ['required', Rule::in(array_keys(InvoiceTemplate::getFontOptions()))],
+            'font_size' => 'required|numeric|min:8|max:20',
+            'header_bg_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'header_text_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'table_header_bg' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'table_header_text' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'table_border_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'footer_bg_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'footer_text_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'footer_text' => 'nullable|string|max:255',
+            'layout' => 'required|string|in:classic,modern,minimal,compact',
+            'border_style' => 'required|string|in:solid,dashed,dotted,none',
+            'border_width' => 'required|numeric|min:0|max:10',
+        ];
+    }
 
     public function mount(?InvoiceTemplate $template = null)
     {
@@ -124,6 +135,8 @@ class InvoiceTemplateEditor extends Component
 
     public function save()
     {
+        $this->requirePermission('edit settings');
+
         $this->validate();
 
         $tenantId = auth()->user()->tenant_id;
@@ -151,6 +164,8 @@ class InvoiceTemplateEditor extends Component
 
     public function setAsDefault()
     {
+        $this->requirePermission('edit settings');
+
         if (!$this->template) {
             return;
         }

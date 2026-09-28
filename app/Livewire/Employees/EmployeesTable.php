@@ -6,10 +6,11 @@ use App\Models\Employee;
 use App\Models\Department;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Livewire\Concerns\ChecksPermissions;
 
 class EmployeesTable extends Component
 {
-    use WithPagination;
+    use ChecksPermissions, WithPagination;
 
     public $search = '';
     public $status = '';
@@ -91,6 +92,18 @@ class EmployeesTable extends Component
             ->toArray();
     }
 
+    /**
+     * Permission required for each bulk action (see ChecksPermissions).
+     */
+    protected function bulkActionPermissions(): array
+    {
+        return [
+            'activate' => 'edit employees',
+            'deactivate' => 'edit employees',
+            'delete' => 'delete employees',
+        ];
+    }
+
     public function applyBulkAction()
     {
         $this->successMessage = '';
@@ -107,6 +120,8 @@ class EmployeesTable extends Component
         }
 
         $count = count($this->selectedItems);
+
+        $this->authorizeBulkAction();
 
         switch ($this->bulkAction) {
             case 'activate':
