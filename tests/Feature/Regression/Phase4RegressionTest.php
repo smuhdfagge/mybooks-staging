@@ -285,4 +285,22 @@ class Phase4RegressionTest extends TestCase
         $this->assertSame(110.0, $this->cogs());   // 5 @ 10 + 3 @ 20
         $this->assertStoredBalancesMatchLedger($this->tenant->id);
     }
+
+    public function test_status_values_added_for_mysql_also_exist_on_other_drivers(): void
+    {
+        $item = $this->stockItem('fifo');
+        foreach (['reserved', 'unreserved'] as $type) {
+            \App\Models\InventoryHistory::create([
+                'tenant_id' => $this->tenant->id, 'item_id' => $item->id, 'type' => $type, 'quantity' => 1,
+            ]);
+        }
+
+        \Illuminate\Support\Facades\DB::table('sales_orders')->insert([
+            'tenant_id' => $this->tenant->id, 'customer_id' => $this->customer->id, 'order_number' => 'SO-000001',
+            'order_date' => now()->toDateString(), 'status' => 'invoiced', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $this->assertSame(2, \App\Models\InventoryHistory::whereIn('type', ['reserved', 'unreserved'])->count());
+        $this->assertSame(1, \Illuminate\Support\Facades\DB::table('sales_orders')->where('status', 'invoiced')->count());
+    }
 }
