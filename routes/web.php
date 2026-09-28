@@ -36,7 +36,13 @@ use App\Http\Controllers\SalaryStructureController;
 use App\Http\Controllers\ChartOfAccountController;
 use App\Http\Controllers\JournalController;
 use App\Http\Controllers\AccountingPeriodController;
-use App\Http\Controllers\ReportController;
+use App\Http\Controllers\Reports\ComparativeReportController;
+use App\Http\Controllers\Reports\CustomReportController;
+use App\Http\Controllers\Reports\FinancialReportController;
+use App\Http\Controllers\Reports\PayrollReportController;
+use App\Http\Controllers\Reports\PurchaseReportController;
+use App\Http\Controllers\Reports\SalesReportController;
+use App\Http\Controllers\Reports\TaxReportController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\ActivityLogController;
@@ -878,70 +884,70 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     |--------------------------------------------------------------------------
     */
     Route::middleware('permission:view reports')->prefix('reports')->name('reports.')->group(function () {
-        Route::get('/', [ReportController::class, 'index'])->name('index');
-        Route::get('/profit-loss', [ReportController::class, 'profitLoss'])->name('profit-loss');
-        Route::get('/balance-sheet', [ReportController::class, 'balanceSheet'])->name('balance-sheet');
-        Route::get('/cash-flow', [ReportController::class, 'cashFlow'])->name('cash-flow');
-        Route::get('/trial-balance', [ReportController::class, 'trialBalance'])->name('trial-balance');
-        Route::get('/general-ledger', [ReportController::class, 'generalLedger'])->name('general-ledger');
-        Route::get('/accounts-receivable', [ReportController::class, 'accountsReceivable'])->name('accounts-receivable');
-        Route::get('/accounts-payable', [ReportController::class, 'accountsPayable'])->name('accounts-payable');
-        Route::get('/sales-by-customer', [ReportController::class, 'salesByCustomer'])->name('sales-by-customer');
-        Route::get('/sales-by-item', [ReportController::class, 'salesByItem'])->name('sales-by-item');
-        Route::get('/purchase-by-vendor', [ReportController::class, 'purchaseByVendor'])->name('purchase-by-vendor');
-        Route::get('/customer-statement', [ReportController::class, 'customerStatement'])->name('customer-statement');
-        Route::get('/inventory-summary', [ReportController::class, 'inventorySummary'])->name('inventory-summary');
-        Route::get('/payroll-summary', [ReportController::class, 'payrollSummary'])->name('payroll-summary');
-        Route::get('/payroll-by-department', [ReportController::class, 'payrollByDepartment'])->name('payroll-by-department');
-        Route::get('/employee-earnings', [ReportController::class, 'employeeEarnings'])->name('employee-earnings');
-        Route::get('/payroll-register', [ReportController::class, 'payrollRegister'])->name('payroll-register');
-        Route::get('/ytd-earnings', [ReportController::class, 'ytdEarnings'])->name('ytd-earnings');
-        Route::get('/tax-liability-payroll', [ReportController::class, 'taxLiabilityPayroll'])->name('tax-liability-payroll');
-        Route::get('/employer-contributions', [ReportController::class, 'employerContributions'])->name('employer-contributions');
-        Route::get('/bank-disbursement', [ReportController::class, 'bankDisbursement'])->name('bank-disbursement');
-        Route::get('/salary-revision-history', [ReportController::class, 'salaryRevisionHistory'])->name('salary-revision-history');
+        Route::get('/', [FinancialReportController::class, 'index'])->name('index');
+        Route::get('/profit-loss', [FinancialReportController::class, 'profitLoss'])->name('profit-loss');
+        Route::get('/balance-sheet', [FinancialReportController::class, 'balanceSheet'])->name('balance-sheet');
+        Route::get('/cash-flow', [FinancialReportController::class, 'cashFlow'])->name('cash-flow');
+        Route::get('/trial-balance', [FinancialReportController::class, 'trialBalance'])->name('trial-balance');
+        Route::get('/general-ledger', [FinancialReportController::class, 'generalLedger'])->name('general-ledger');
+        Route::get('/accounts-receivable', [SalesReportController::class, 'accountsReceivable'])->name('accounts-receivable');
+        Route::get('/accounts-payable', [PurchaseReportController::class, 'accountsPayable'])->name('accounts-payable');
+        Route::get('/sales-by-customer', [SalesReportController::class, 'salesByCustomer'])->name('sales-by-customer');
+        Route::get('/sales-by-item', [SalesReportController::class, 'salesByItem'])->name('sales-by-item');
+        Route::get('/purchase-by-vendor', [PurchaseReportController::class, 'purchaseByVendor'])->name('purchase-by-vendor');
+        Route::get('/customer-statement', [SalesReportController::class, 'customerStatement'])->name('customer-statement');
+        Route::get('/inventory-summary', [PurchaseReportController::class, 'inventorySummary'])->name('inventory-summary');
+        Route::get('/payroll-summary', [PayrollReportController::class, 'payrollSummary'])->name('payroll-summary');
+        Route::get('/payroll-by-department', [PayrollReportController::class, 'payrollByDepartment'])->name('payroll-by-department');
+        Route::get('/employee-earnings', [PayrollReportController::class, 'employeeEarnings'])->name('employee-earnings');
+        Route::get('/payroll-register', [PayrollReportController::class, 'payrollRegister'])->name('payroll-register');
+        Route::get('/ytd-earnings', [PayrollReportController::class, 'ytdEarnings'])->name('ytd-earnings');
+        Route::get('/tax-liability-payroll', [PayrollReportController::class, 'taxLiabilityPayroll'])->name('tax-liability-payroll');
+        Route::get('/employer-contributions', [PayrollReportController::class, 'employerContributions'])->name('employer-contributions');
+        Route::get('/bank-disbursement', [PayrollReportController::class, 'bankDisbursement'])->name('bank-disbursement');
+        Route::get('/salary-revision-history', [PayrollReportController::class, 'salaryRevisionHistory'])->name('salary-revision-history');
         
         // Comparative Reports
-        Route::get('/comparative/profit-loss', [ReportController::class, 'comparativeProfitLoss'])->name('comparative.profit-loss');
-        Route::get('/comparative/balance-sheet', [ReportController::class, 'comparativeBalanceSheet'])->name('comparative.balance-sheet');
-        Route::get('/comparative/cash-flow', [ReportController::class, 'comparativeCashFlow'])->name('comparative.cash-flow');
+        Route::get('/comparative/profit-loss', [ComparativeReportController::class, 'comparativeProfitLoss'])->name('comparative.profit-loss');
+        Route::get('/comparative/balance-sheet', [ComparativeReportController::class, 'comparativeBalanceSheet'])->name('comparative.balance-sheet');
+        Route::get('/comparative/cash-flow', [ComparativeReportController::class, 'comparativeCashFlow'])->name('comparative.cash-flow');
 
         // Tax Reports
-        Route::get('/vat-gst-return', [ReportController::class, 'vatGstReturn'])->name('vat-gst-return');
-        Route::get('/tax-liability', [ReportController::class, 'taxLiability'])->name('tax-liability');
+        Route::get('/vat-gst-return', [TaxReportController::class, 'vatGstReturn'])->name('vat-gst-return');
+        Route::get('/tax-liability', [TaxReportController::class, 'taxLiability'])->name('tax-liability');
 
         // Custom Report Builder
-        Route::get('/custom', [ReportController::class, 'customReportIndex'])->name('custom.index');
-        Route::get('/custom/create', [ReportController::class, 'customReportCreate'])->name('custom.create');
-        Route::post('/custom', [ReportController::class, 'customReportStore'])->name('custom.store');
-        Route::get('/custom/{customReport}/edit', [ReportController::class, 'customReportEdit'])->name('custom.edit');
-        Route::put('/custom/{customReport}', [ReportController::class, 'customReportUpdate'])->name('custom.update');
-        Route::delete('/custom/{customReport}', [ReportController::class, 'customReportDestroy'])->name('custom.destroy');
-        Route::get('/custom/{customReport}/run', [ReportController::class, 'customReportRun'])->name('custom.run');
-        Route::post('/custom/{customReport}/toggle-favorite', [ReportController::class, 'customReportToggleFavorite'])->name('custom.toggle-favorite');
-        Route::get('/custom/get-columns', [ReportController::class, 'customReportGetColumns'])->name('custom.get-columns');
+        Route::get('/custom', [CustomReportController::class, 'customReportIndex'])->name('custom.index');
+        Route::get('/custom/create', [CustomReportController::class, 'customReportCreate'])->name('custom.create');
+        Route::post('/custom', [CustomReportController::class, 'customReportStore'])->name('custom.store');
+        Route::get('/custom/{customReport}/edit', [CustomReportController::class, 'customReportEdit'])->name('custom.edit');
+        Route::put('/custom/{customReport}', [CustomReportController::class, 'customReportUpdate'])->name('custom.update');
+        Route::delete('/custom/{customReport}', [CustomReportController::class, 'customReportDestroy'])->name('custom.destroy');
+        Route::get('/custom/{customReport}/run', [CustomReportController::class, 'customReportRun'])->name('custom.run');
+        Route::post('/custom/{customReport}/toggle-favorite', [CustomReportController::class, 'customReportToggleFavorite'])->name('custom.toggle-favorite');
+        Route::get('/custom/get-columns', [CustomReportController::class, 'customReportGetColumns'])->name('custom.get-columns');
 
         // Export Routes
-        Route::get('/export/profit-loss', [ReportController::class, 'exportProfitLoss'])->name('export.profit-loss');
-        Route::get('/export/balance-sheet', [ReportController::class, 'exportBalanceSheet'])->name('export.balance-sheet');
-        Route::get('/export/cash-flow', [ReportController::class, 'exportCashFlow'])->name('export.cash-flow');
-        Route::get('/export/trial-balance', [ReportController::class, 'exportTrialBalance'])->name('export.trial-balance');
-        Route::get('/export/general-ledger', [ReportController::class, 'exportGeneralLedger'])->name('export.general-ledger');
-        Route::get('/export/accounts-receivable', [ReportController::class, 'exportAccountsReceivable'])->name('export.accounts-receivable');
-        Route::get('/export/accounts-payable', [ReportController::class, 'exportAccountsPayable'])->name('export.accounts-payable');
-        Route::get('/export/sales-by-customer', [ReportController::class, 'exportSalesByCustomer'])->name('export.sales-by-customer');
-        Route::get('/export/sales-by-item', [ReportController::class, 'exportSalesByItem'])->name('export.sales-by-item');
-        Route::get('/export/purchase-by-vendor', [ReportController::class, 'exportPurchaseByVendor'])->name('export.purchase-by-vendor');
-        Route::get('/export/inventory-summary', [ReportController::class, 'exportInventorySummary'])->name('export.inventory-summary');
-        Route::get('/export/payroll-summary', [ReportController::class, 'exportPayrollSummary'])->name('export.payroll-summary');
-        Route::get('/export/payroll-by-department', [ReportController::class, 'exportPayrollByDepartment'])->name('export.payroll-by-department');
-        Route::get('/export/employee-earnings', [ReportController::class, 'exportEmployeeEarnings'])->name('export.employee-earnings');
-        Route::get('/export/payroll-register', [ReportController::class, 'exportPayrollRegister'])->name('export.payroll-register');
-        Route::get('/export/ytd-earnings', [ReportController::class, 'exportYtdEarnings'])->name('export.ytd-earnings');
-        Route::get('/export/tax-liability-payroll', [ReportController::class, 'exportTaxLiabilityPayroll'])->name('export.tax-liability-payroll');
-        Route::get('/export/employer-contributions', [ReportController::class, 'exportEmployerContributions'])->name('export.employer-contributions');
-        Route::get('/export/bank-disbursement', [ReportController::class, 'exportBankDisbursement'])->name('export.bank-disbursement');
-        Route::get('/export/salary-revision-history', [ReportController::class, 'exportSalaryRevisionHistory'])->name('export.salary-revision-history');
+        Route::get('/export/profit-loss', [FinancialReportController::class, 'exportProfitLoss'])->name('export.profit-loss');
+        Route::get('/export/balance-sheet', [FinancialReportController::class, 'exportBalanceSheet'])->name('export.balance-sheet');
+        Route::get('/export/cash-flow', [FinancialReportController::class, 'exportCashFlow'])->name('export.cash-flow');
+        Route::get('/export/trial-balance', [FinancialReportController::class, 'exportTrialBalance'])->name('export.trial-balance');
+        Route::get('/export/general-ledger', [FinancialReportController::class, 'exportGeneralLedger'])->name('export.general-ledger');
+        Route::get('/export/accounts-receivable', [SalesReportController::class, 'exportAccountsReceivable'])->name('export.accounts-receivable');
+        Route::get('/export/accounts-payable', [PurchaseReportController::class, 'exportAccountsPayable'])->name('export.accounts-payable');
+        Route::get('/export/sales-by-customer', [SalesReportController::class, 'exportSalesByCustomer'])->name('export.sales-by-customer');
+        Route::get('/export/sales-by-item', [SalesReportController::class, 'exportSalesByItem'])->name('export.sales-by-item');
+        Route::get('/export/purchase-by-vendor', [PurchaseReportController::class, 'exportPurchaseByVendor'])->name('export.purchase-by-vendor');
+        Route::get('/export/inventory-summary', [PurchaseReportController::class, 'exportInventorySummary'])->name('export.inventory-summary');
+        Route::get('/export/payroll-summary', [PayrollReportController::class, 'exportPayrollSummary'])->name('export.payroll-summary');
+        Route::get('/export/payroll-by-department', [PayrollReportController::class, 'exportPayrollByDepartment'])->name('export.payroll-by-department');
+        Route::get('/export/employee-earnings', [PayrollReportController::class, 'exportEmployeeEarnings'])->name('export.employee-earnings');
+        Route::get('/export/payroll-register', [PayrollReportController::class, 'exportPayrollRegister'])->name('export.payroll-register');
+        Route::get('/export/ytd-earnings', [PayrollReportController::class, 'exportYtdEarnings'])->name('export.ytd-earnings');
+        Route::get('/export/tax-liability-payroll', [PayrollReportController::class, 'exportTaxLiabilityPayroll'])->name('export.tax-liability-payroll');
+        Route::get('/export/employer-contributions', [PayrollReportController::class, 'exportEmployerContributions'])->name('export.employer-contributions');
+        Route::get('/export/bank-disbursement', [PayrollReportController::class, 'exportBankDisbursement'])->name('export.bank-disbursement');
+        Route::get('/export/salary-revision-history', [PayrollReportController::class, 'exportSalaryRevisionHistory'])->name('export.salary-revision-history');
     });
 
     /*
