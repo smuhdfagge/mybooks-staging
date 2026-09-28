@@ -25,16 +25,13 @@ class RouteIntegrityTest extends TestCase
         'App\Http\Controllers\Api\ReportController@employerContributions',
         'App\Http\Controllers\Api\ReportController@bankDisbursement',
         'App\Http\Controllers\Api\ReportController@salaryRevisionHistory',
-        'App\Http\Controllers\InvoiceController@markAsPaid',
         'App\Http\Controllers\SalesReceiptController@pdf',
-        'App\Http\Controllers\SettingsController@index',
     ];
 
     private const KNOWN_MISSING_VIEWS = [
         // Older gaps (N9)
         'departments.edit', 'departments.show',
         'exports.show',
-        'invoices.refunds.index',
         'leave-types.create', 'leave-types.edit', 'leave-types.index', 'leave-types.show',
         // Unrouted TenantManagementController (L3, to be deleted)
         'tenants.index', 'tenants.list', 'tenants.show',

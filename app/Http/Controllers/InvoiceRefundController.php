@@ -11,14 +11,6 @@ use Illuminate\Validation\Rule;
 class InvoiceRefundController extends Controller
 {
     /**
-     * Display a listing of refunds.
-     */
-    public function index()
-    {
-        return view('invoices.refunds.index');
-    }
-
-    /**
      * Show the form for creating a new refund.
      */
     public function create(Invoice $invoice)

@@ -24,6 +24,14 @@ class SettingsController extends Controller
      */
     private const ROLE_NAME_TAKEN = 'That role name is already in use. Please choose a different name.';
 
+    /**
+     * /settings has no page of its own; company settings is the first one.
+     */
+    public function index()
+    {
+        return redirect()->route('settings.company');
+    }
+
     public function company()
     {
         $tenant = auth()->user()->tenant;

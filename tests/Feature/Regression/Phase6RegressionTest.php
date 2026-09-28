@@ -42,4 +42,16 @@ class Phase6RegressionTest extends TestCase
 
         $this->assertNotSame(404, $this->get('/warehouses/create')->getStatusCode());
     }
+
+    public function test_n9_settings_opens_company_settings(): void
+    {
+        $this->createAuthenticatedUser(['view settings']);
+
+        $this->get('/settings')->assertRedirect(route('settings.company'));
+    }
+
+    public function test_n9_there_is_no_mark_paid_shortcut_for_invoices(): void
+    {
+        $this->assertFalse(Route::has('invoices.mark-paid'));
+    }
 }

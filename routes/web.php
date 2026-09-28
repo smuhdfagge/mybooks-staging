@@ -297,7 +297,8 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::get('invoices/{invoice}/edit', [InvoiceController::class, 'edit'])->name('invoices.edit');
         Route::put('invoices/{invoice}', [InvoiceController::class, 'update'])->name('invoices.update');
         Route::patch('invoices/{invoice}', [InvoiceController::class, 'update']);
-        Route::post('invoices/{invoice}/mark-paid', [InvoiceController::class, 'markAsPaid'])->name('invoices.mark-paid');
+        // No "mark paid" shortcut: an invoice is paid by recording a payment,
+        // which posts the cash entry (C5). The old route had no method (N9).
         Route::post('invoices/{invoice}/release', [InvoiceController::class, 'release'])->name('invoices.release');
     });
     Route::post('invoices/{invoice}/send', [InvoiceController::class, 'send'])
