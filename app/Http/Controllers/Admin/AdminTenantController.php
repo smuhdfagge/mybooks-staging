@@ -164,14 +164,18 @@ class AdminTenantController extends Controller
     {
         $validated = $request->validated();
 
-        $subscription = $tenant->activeSubscription;
-        
+        // A subscription that has run out can be extended too: the extra
+        // days then count from today and it becomes active again.
+        $subscription = $tenant->activeSubscription ?? $tenant->latestSubscription;
+
         if (!$subscription) {
-            return back()->with('error', 'No active subscription to extend.');
+            return back()->with('error', 'This tenant has no subscription to extend.');
         }
 
-        $currentEndDate = $subscription->ends_at ?? now();
-        $subscription->ends_at = Carbon::parse($currentEndDate)->addDays($validated['extension_days']);
+        $from = $subscription->ends_at && $subscription->ends_at->isFuture() ? $subscription->ends_at : now();
+        $subscription->ends_at = Carbon::parse($from)->addDays($validated['extension_days']);
+        $subscription->status = Subscription::STATUS_ACTIVE;
+        $subscription->starts_at ??= now();
         $subscription->save();
 
         return back()->with('success', "Subscription extended by {$validated['extension_days']} days.");

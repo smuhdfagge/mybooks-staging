@@ -129,6 +129,22 @@ Route::get('/docs/api', function () {
 
 /*
 |--------------------------------------------------------------------------
+| Subscription payments (finding C1)
+|--------------------------------------------------------------------------
+| The callback is where the customer's browser lands after paying; it
+| checks with Paystack itself. The webhook is Paystack's server calling us;
+| it needs no login or CSRF token but must carry a valid signature.
+*/
+Route::get('/billing/callback', [App\Http\Controllers\BillingController::class, 'callback'])
+    ->middleware('throttle:30,1')
+    ->name('billing.callback');
+Route::post('/billing/paystack/webhook', [App\Http\Controllers\BillingController::class, 'webhook'])
+    ->middleware('throttle:120,1')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class])
+    ->name('billing.webhook');
+
+/*
+|--------------------------------------------------------------------------
 | Authenticated Routes
 |--------------------------------------------------------------------------
 */

@@ -39,6 +39,7 @@ class Subscription extends Model
     /**
      * Status constants
      */
+    const STATUS_PENDING = 'pending'; // signed up, not yet paid
     const STATUS_ACTIVE = 'active';
     const STATUS_CANCELLED = 'cancelled';
     const STATUS_EXPIRED = 'expired';

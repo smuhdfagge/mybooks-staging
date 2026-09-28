@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    // Subscription payments (finding C1). Plan prices are charged in this
+    // currency; Paystack takes amounts in the smallest unit (kobo).
+    'paystack' => [
+        'public_key' => env('PAYSTACK_PUBLIC_KEY'),
+        'secret_key' => env('PAYSTACK_SECRET_KEY'),
+        'base_url' => env('PAYSTACK_BASE_URL', 'https://api.paystack.co'),
+        'currency' => env('PAYSTACK_CURRENCY', 'NGN'),
+    ],
+
 ];

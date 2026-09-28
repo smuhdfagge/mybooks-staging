@@ -5,6 +5,8 @@ namespace App\Livewire\Subscriptions;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Services\Billing\PaystackGateway;
+use App\Services\Billing\SubscriptionBilling;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -13,6 +15,8 @@ class SubscriptionManager extends Component
     use ChecksPermissions;
 
     public $currentSubscription;
+    public $pendingSubscription;   // signed up, waiting for payment
+    public $lapsedSubscription;    // ended, can be renewed
     public $currentPlan;
     public $plans;
     public $selectedPlanId;
@@ -33,6 +37,12 @@ class SubscriptionManager extends Component
         $this->currentSubscription = $tenant->activeSubscription;
         $this->currentPlan = $tenant->currentPlan();
         $this->plans = Plan::active()->ordered()->get();
+
+        if (! $this->currentSubscription) {
+            $latest = $tenant->subscriptions()->with('plan')->latest('id')->first();
+            $this->pendingSubscription = $latest?->status === Subscription::STATUS_PENDING ? $latest : null;
+            $this->lapsedSubscription = $latest && $latest->status !== Subscription::STATUS_PENDING ? $latest : null;
+        }
     }
 
     public function openUpgradeModal($planId = null)
@@ -48,6 +58,10 @@ class SubscriptionManager extends Component
         $this->reset(['selectedPlanId', 'selectedBillingCycle']);
     }
 
+    /**
+     * Pay for the plan chosen in the modal (finding C1). Nothing changes
+     * until Paystack confirms the payment.
+     */
     public function changePlan()
     {
         $this->requirePermission('manage subscription');
@@ -57,44 +71,67 @@ class SubscriptionManager extends Component
             'selectedBillingCycle' => 'required|in:monthly,annual',
         ]);
 
-        $tenant = Auth::user()->tenant;
         $newPlan = Plan::findOrFail($this->selectedPlanId);
 
-        // Validate billing cycle is allowed
-        if (!$newPlan->allowsBillingCycle($this->selectedBillingCycle)) {
+        if (! $newPlan->allowsBillingCycle($this->selectedBillingCycle)) {
             session()->flash('error', "The {$newPlan->name} plan does not support {$this->selectedBillingCycle} billing.");
+
             return;
         }
 
-        // Get the price for the selected cycle
-        $amount = $newPlan->getPriceForCycle($this->selectedBillingCycle);
-        $startsAt = now();
-        $endsAt = $this->selectedBillingCycle === Subscription::CYCLE_MONTHLY 
-            ? $startsAt->copy()->addMonth() 
-            : $startsAt->copy()->addYear();
+        return $this->checkout($newPlan, $this->selectedBillingCycle, $this->pendingSubscription);
+    }
 
-        // Cancel current subscription if exists
-        if ($this->currentSubscription) {
-            $this->currentSubscription->cancel('Upgraded to ' . $newPlan->name);
+    /** Pay for the plan chosen at sign-up. */
+    public function payPending()
+    {
+        $this->requirePermission('manage subscription');
+
+        $pending = $this->pendingSubscription?->fresh();
+        if (! $pending || $pending->status !== Subscription::STATUS_PENDING || ! $pending->plan) {
+            return;
         }
 
-        // Create new subscription
-        $subscription = Subscription::create([
-            'tenant_id' => $tenant->id,
-            'plan_id' => $newPlan->id,
-            'billing_cycle' => $this->selectedBillingCycle,
-            'status' => Subscription::STATUS_ACTIVE,
-            'amount' => $amount,
-            'currency' => $tenant->currency ?? 'NGN',
-            'starts_at' => $startsAt,
-            'ends_at' => $endsAt,
-        ]);
+        return $this->checkout($pending->plan, $pending->billing_cycle, $pending);
+    }
 
-        $this->currentSubscription = $subscription;
-        $this->currentPlan = $newPlan;
-        $this->closeUpgradeModal();
+    /** Pay for another period of the current (or last) plan. */
+    public function renew()
+    {
+        $this->requirePermission('manage subscription');
 
-        session()->flash('success', "Successfully changed to {$newPlan->name} plan!");
+        $subscription = ($this->currentSubscription ?? $this->lapsedSubscription)?->fresh();
+        if (! $subscription || ! $subscription->plan) {
+            return;
+        }
+
+        return $this->checkout($subscription->plan, $subscription->billing_cycle, $subscription);
+    }
+
+    private function checkout(Plan $plan, string $cycle, ?Subscription $subscription)
+    {
+        $billing = app(SubscriptionBilling::class);
+
+        try {
+            $url = $billing->startCheckout(Auth::user()->tenant, Auth::user(), $plan, $cycle, $subscription);
+        } catch (\Throwable $e) {
+            report($e);
+            session()->flash('error', app(PaystackGateway::class)->isConfigured()
+                ? "We couldn't reach the payment page. Please try again in a moment."
+                : 'Online payment is not set up yet. Please contact support to activate your subscription.');
+            $this->closeUpgradeModal();
+
+            return;
+        }
+
+        if ($url === null) {
+            // Free plan: already switched on
+            session()->flash('success', "You are now on the {$plan->name} plan.");
+
+            return redirect()->route('settings.subscription');
+        }
+
+        return redirect()->away($url);
     }
 
     public function openCancelModal()

@@ -41,13 +41,19 @@ class Phase2RegressionTest extends TestCase
         $this->createAuthenticatedUser(['manage subscription']);
         $other = Plan::factory()->create(['slug' => 'enterprise-test']);
 
+        // Since Phase 5 the change goes through payment (see Phase5RegressionTest)
+        config(['services.paystack.secret_key' => 'sk_test']);
+        \Illuminate\Support\Facades\Http::fake([
+            'api.paystack.co/*' => \Illuminate\Support\Facades\Http::response(['status' => true, 'data' => ['authorization_url' => 'https://checkout.paystack.com/x']]),
+        ]);
+
         Livewire::test(SubscriptionManager::class)
             ->set('selectedPlanId', $other->id)
             ->set('selectedBillingCycle', 'monthly')
             ->call('changePlan')
-            ->assertStatus(200);
+            ->assertRedirect('https://checkout.paystack.com/x');
 
-        $this->assertSame($other->id, $this->tenant->fresh()->activeSubscription->plan_id);
+        $this->assertSame($other->id, \App\Models\SubscriptionPayment::sole()->plan_id);
     }
 
     public function test_c1_page_hides_plan_buttons_from_non_admins(): void

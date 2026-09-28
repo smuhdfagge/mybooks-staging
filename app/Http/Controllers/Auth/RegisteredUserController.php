@@ -82,27 +82,10 @@ class RegisteredUserController extends Controller
                 'is_active' => true,
             ]);
 
-            // Create subscription for the tenant (no trial - requires payment)
-            $amount = $plan->getPriceForCycle($billingCycle);
-            $startsAt = now();
-            $endsAt = $billingCycle === Subscription::CYCLE_MONTHLY 
-                ? $startsAt->copy()->addMonth() 
-                : $startsAt->copy()->addYear();
-
-            // Note: In production, this should only create the subscription
-            // after successful payment processing. For now, we create an active
-            // subscription that requires payment verification.
-            Subscription::create([
-                'tenant_id' => $tenant->id,
-                'plan_id' => $plan->id,
-                'billing_cycle' => $billingCycle,
-                'status' => Subscription::STATUS_ACTIVE, // Active subscription required
-                'amount' => $amount,
-                'currency' => $request->currency,
-                'trial_ends_at' => null, // No trial
-                'starts_at' => $startsAt,
-                'ends_at' => $endsAt,
-            ]);
+            // The subscription waits for payment (finding C1). A free plan
+            // is switched on straight away.
+            app(\App\Services\Billing\SubscriptionBilling::class)
+                ->startPendingSubscription($tenant, $plan, $billingCycle);
 
             // Create the admin user for this tenant
             $user = User::create([
