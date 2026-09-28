@@ -100,7 +100,7 @@
                                             </svg>
                                         </a>
                                         
-                                        <form action="{{ route('reports.custom.destroy', $report) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this report?')">
+                                        <form action="{{ route('reports.custom.destroy', $report) }}" method="POST" class="inline" data-confirm="Are you sure you want to delete this report?">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400" title="Delete">

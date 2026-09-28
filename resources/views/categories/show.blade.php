@@ -11,7 +11,7 @@
                 </a>
                 @endcan
                 @can('delete fixed-asset-categories')
-                <form method="POST" action="{{ route('fixed-asset-categories.destroy', $category) }}" class="inline" onsubmit="return confirm('Are you sure you want to delete this category?');">
+                <form method="POST" action="{{ route('fixed-asset-categories.destroy', $category) }}" class="inline" data-confirm="Are you sure you want to delete this category?">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">

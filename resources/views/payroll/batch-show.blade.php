@@ -13,7 +13,7 @@
             <div class="flex flex-wrap gap-2">
                 @if($payrollBatch->status === 'draft')
                     <form action="{{ route('payroll-batches.approve', $payrollBatch) }}" method="POST" class="inline"
-                        onsubmit="return confirm('Approve all payroll records in this batch?')">
+                        data-confirm="Approve all payroll records in this batch?">
                         @csrf
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -25,7 +25,7 @@
                 @endif
                 @if(in_array($payrollBatch->status, ['approved', 'failed']))
                     <form action="{{ route('payroll-batches.mark-paid', $payrollBatch) }}" method="POST" class="inline"
-                        onsubmit="return confirm('Mark all payroll records as paid?')">
+                        data-confirm="Mark all payroll records as paid?">
                         @csrf
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -37,7 +37,7 @@
                 @endif
                 @if($payrollBatch->status === 'draft')
                     <form action="{{ route('payroll-batches.destroy', $payrollBatch) }}" method="POST" class="inline"
-                        onsubmit="return confirm('Are you sure you want to delete this batch and all its payroll records?')">
+                        data-confirm="Are you sure you want to delete this batch and all its payroll records?">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">

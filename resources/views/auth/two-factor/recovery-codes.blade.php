@@ -51,7 +51,7 @@
                             @csrf
                             <button type="submit"
                                 class="inline-flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition"
-                                onclick="return confirm('This will invalidate your existing recovery codes. Continue?')">
+                                data-confirm="This will invalidate your existing recovery codes. Continue?">
                                 Regenerate Codes
                             </button>
                         </form>

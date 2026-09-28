@@ -212,7 +212,7 @@
                                         </form>
                                     @endcan
                                     @can('delete leaves')
-                                        <form action="{{ route('leaves.destroy', $leave) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this leave request?');">
+                                        <form action="{{ route('leaves.destroy', $leave) }}" method="POST" data-confirm="Are you sure you want to delete this leave request?">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">

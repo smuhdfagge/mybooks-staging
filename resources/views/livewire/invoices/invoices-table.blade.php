@@ -138,7 +138,7 @@
                                     </button>
                                     @endif
                                     @if($invoice->status === 'paid' && !$invoice->released_at)
-                                    <form action="{{ route('invoices.release', $invoice) }}" method="POST" class="inline" onsubmit="return confirm('Release this invoice and deduct inventory?');">
+                                    <form action="{{ route('invoices.release', $invoice) }}" method="POST" class="inline" data-confirm="Release this invoice and deduct inventory?">
                                         @csrf
                                         <button type="submit" class="p-1 text-purple-600 hover:text-purple-900 dark:text-purple-400" title="Release & Deduct Inventory" aria-label="Release & Deduct Inventory">
                                             <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>

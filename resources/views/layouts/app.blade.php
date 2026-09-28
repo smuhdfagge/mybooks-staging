@@ -281,5 +281,6 @@
     </script>
     
     @include('partials.tawk-to')
+    @include('partials.dom-actions')
 </body>
 </html>

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Regression;
 
 use App\Models\Employee;
+use App\Models\Item;
 use App\Models\Payroll;
 use App\Models\SalaryStructure;
 use App\Models\StatutoryTaxTemplate;
@@ -141,5 +142,60 @@ class PhaseARegressionTest extends TestCase
         // 500,000 - 40,000 pension - 12,500 NHF = 447,500 taxable (the cooperative deduction is not a relief).
         $this->assertEqualsWithDelta(63050.00, (float) $payroll->tax_deduction, 0.01);
         $this->assertEqualsWithDelta(500000 - 40000 - 12500 - 10000 - 63050, (float) $payroll->net_salary, 0.01);
+    }
+
+    // ── U1, U2: broken screens ──────────────────────────────────
+
+    /** @return array<string, string> view path => contents */
+    private function bladeViews(): array
+    {
+        $views = [];
+        $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(resource_path('views')));
+        foreach ($it as $file) {
+            if ($file->isFile() && str_ends_with($file->getFilename(), '.blade.php')) {
+                $views[str_replace(resource_path('views').'/', '', $file->getPathname())] = file_get_contents($file->getPathname());
+            }
+        }
+
+        return $views;
+    }
+
+    public function test_u1_views_have_no_inline_event_handlers(): void
+    {
+        $offenders = [];
+        foreach ($this->bladeViews() as $path => $html) {
+            // Strip Blade comments, which may mention the old attributes.
+            $html = preg_replace('/\{\{--.*?--\}\}/s', '', $html);
+            if (preg_match_all('/<[^>]*\son(click|submit|change|input|load|error)\s*=/i', $html, $m)) {
+                $offenders[] = $path.' ('.count($m[0]).')';
+            }
+        }
+
+        $this->assertSame([], $offenders, 'Inline handlers are blocked by the CSP; use data-confirm, data-print, data-call etc.');
+    }
+
+    public function test_u1_every_inline_script_carries_the_csp_nonce(): void
+    {
+        $offenders = [];
+        foreach ($this->bladeViews() as $path => $html) {
+            // Livewire's @script blocks are handled by Livewire.
+            $html = preg_replace('/@script.*?@endscript/s', '', $html);
+            if (preg_match_all('/<script(?![^>]*\b(nonce|src|type="application\/(ld\+)?json")\b)[^>]*>/i', $html, $m)) {
+                $offenders[] = $path;
+            }
+        }
+
+        $this->assertSame([], $offenders);
+    }
+
+    public function test_u1_the_page_includes_the_confirm_handler(): void
+    {
+        $this->createAuthenticatedUser(['view items']);
+        $item = Item::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $this->get(route('items.show', $item))
+            ->assertOk()
+            ->assertSee('window.__mbDomActions', false)
+            ->assertDontSee('onsubmit=', false);
     }
 }

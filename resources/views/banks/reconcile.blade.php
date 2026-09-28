@@ -217,7 +217,7 @@
     </div>
 
     @push('scripts')
-    <script>
+    <script nonce="{{ app('csp-nonce') }}">
         function reconciliationForm() {
             return {
                 selectedDeposits: 0,

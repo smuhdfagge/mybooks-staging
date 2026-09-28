@@ -146,7 +146,7 @@
                                                             </button>
                                                         </form>
                                                     @endif
-                                                    <form action="{{ route('imports.destroy', $import) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this import?')">
+                                                    <form action="{{ route('imports.destroy', $import) }}" method="POST" class="inline" data-confirm="Are you sure you want to delete this import?">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">

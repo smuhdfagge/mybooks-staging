@@ -181,7 +181,7 @@
                                         @endcan
                                         @can('delete budgets')
                                         @if(!$budget->isLocked())
-                                        <form action="{{ route('budgets.destroy', $budget) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this budget?')">
+                                        <form action="{{ route('budgets.destroy', $budget) }}" method="POST" class="inline" data-confirm="Are you sure you want to delete this budget?">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300" title="Delete" aria-label="Delete">

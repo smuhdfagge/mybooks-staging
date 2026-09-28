@@ -32,7 +32,7 @@
 
                             <div>
                                 <label for="category_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
-                                <select name="category_id" id="category_id" onchange="applyCategoryDefaults()"
+                                <select name="category_id" id="category_id" data-call="applyCategoryDefaults"
                                     class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                     <option value="">Select Category</option>
                                     @foreach($categories as $category)
@@ -126,7 +126,7 @@
 
                             <div>
                                 <label for="purchase_cost" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Purchase Cost *</label>
-                                <input type="number" name="purchase_cost" id="purchase_cost" value="{{ old('purchase_cost') }}" step="0.01" min="0" required onchange="calculateSalvage()"
+                                <input type="number" name="purchase_cost" id="purchase_cost" value="{{ old('purchase_cost') }}" step="0.01" min="0" required data-call="calculateSalvage"
                                     class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 @error('purchase_cost') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                             </div>
@@ -146,7 +146,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label for="depreciation_method" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Depreciation Method *</label>
-                                <select name="depreciation_method" id="depreciation_method" required onchange="toggleDepreciationRate()"
+                                <select name="depreciation_method" id="depreciation_method" required data-call="toggleDepreciationRate"
                                     class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                     @foreach($depreciationMethods as $method => $label)
                                         <option value="{{ $method }}" {{ old('depreciation_method', 'straight_line') == $method ? 'selected' : '' }}>

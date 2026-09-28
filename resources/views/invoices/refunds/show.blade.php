@@ -19,7 +19,7 @@
                 </a>
                 @if($refund->status !== 'cancelled')
                 <form action="{{ route('invoices.refunds.cancel', $refund) }}" method="POST" class="inline"
-                      onsubmit="return confirm('Are you sure you want to cancel this refund? This will reverse the refund amount back to the invoice.')">
+                      data-confirm="Are you sure you want to cancel this refund? This will reverse the refund amount back to the invoice.">
                     @csrf
                     @method('PATCH')
                     <button type="submit" 

@@ -193,7 +193,7 @@
                             Edit Journal
                         </a>
 
-                        <form action="{{ route('journals.post', $journal) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to post this journal? This action cannot be undone.');">
+                        <form action="{{ route('journals.post', $journal) }}" method="POST" class="inline" data-confirm="Are you sure you want to post this journal? This action cannot be undone.">
                             @csrf
                             <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -203,7 +203,7 @@
                             </button>
                         </form>
 
-                        <form action="{{ route('journals.destroy', $journal) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this journal?');">
+                        <form action="{{ route('journals.destroy', $journal) }}" method="POST" class="inline" data-confirm="Are you sure you want to delete this journal?">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">

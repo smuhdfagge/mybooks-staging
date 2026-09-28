@@ -190,7 +190,7 @@
                                 <a href="{{ route('payments-made.show', $payment) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">View</a>
                                 <a href="{{ route('payments-made.edit', $payment) }}" class="text-yellow-600 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-300">Edit</a>
                                 <form action="{{ route('payments-made.destroy', $payment) }}" method="POST" class="inline"
-                                    onsubmit="return confirm('Are you sure you want to delete this payment?')">
+                                    data-confirm="Are you sure you want to delete this payment?">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">Delete</button>

@@ -65,7 +65,7 @@
                                     </h4>
                                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ $template->description }}</p>
                                 </div>
-                                <form action="{{ route('payroll.apply-tax-template') }}" method="POST" onsubmit="return confirm('This will replace your current tax brackets. Continue?')">
+                                <form action="{{ route('payroll.apply-tax-template') }}" method="POST" data-confirm="This will replace your current tax brackets. Continue?">
                                     @csrf
                                     <input type="hidden" name="template_id" value="{{ $template->id }}">
                                     <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">

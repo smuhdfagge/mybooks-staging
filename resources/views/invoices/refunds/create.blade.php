@@ -168,18 +168,18 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quick Amount</label>
                                 <div class="flex flex-wrap gap-2">
                                     <button type="button" 
-                                            onclick="document.getElementById('amount').value = {{ $maxRefundable }}"
+                                            data-set-value="amount" data-value="{{ $maxRefundable }}"
                                             class="px-3 py-1 text-sm bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-md hover:bg-indigo-200 dark:hover:bg-indigo-800 transition">
                                         Full Refund ({{ number_format($maxRefundable, 2) }})
                                     </button>
                                     @if($maxRefundable > 0)
                                         <button type="button" 
-                                                onclick="document.getElementById('amount').value = {{ round($maxRefundable / 2, 2) }}"
+                                                data-set-value="amount" data-value="{{ round($maxRefundable / 2, 2) }}"
                                                 class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition">
                                             50% ({{ number_format($maxRefundable / 2, 2) }})
                                         </button>
                                         <button type="button" 
-                                                onclick="document.getElementById('amount').value = {{ round($maxRefundable * 0.25, 2) }}"
+                                                data-set-value="amount" data-value="{{ round($maxRefundable * 0.25, 2) }}"
                                                 class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition">
                                             25% ({{ number_format($maxRefundable * 0.25, 2) }})
                                         </button>

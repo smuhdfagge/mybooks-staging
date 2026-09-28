@@ -242,7 +242,7 @@
     </style>
 </head>
 <body>
-    <button class="print-button no-print" onclick="window.print()">Print Refund</button>
+    <button class="print-button no-print" data-print>Print Refund</button>
     
     <div class="container">
         <!-- Header -->
@@ -361,5 +361,6 @@
             @endif
         </div>
     </div>
+    @include('partials.dom-actions')
 </body>
 </html>

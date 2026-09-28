@@ -179,7 +179,7 @@
                     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg border border-red-200 dark:border-red-800">
                         <div class="p-6">
                             <h3 class="text-lg font-medium text-red-600 dark:text-red-400 mb-4">Danger Zone</h3>
-                            <form action="{{ route('recurrent-expenses.destroy', $recurrentExpense) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this profile? This action cannot be undone.');">
+                            <form action="{{ route('recurrent-expenses.destroy', $recurrentExpense) }}" method="POST" data-confirm="Are you sure you want to delete this profile? This action cannot be undone.">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
