@@ -18,7 +18,10 @@ class EnsureTwoFactorVerified
      * Routes that are exempt from 2FA verification.
      */
     protected array $exempt = [
-        'two-factor.*',
+        // Only the login challenge itself. The 2FA settings pages must not be
+        // exempt, or a remember-me cookie alone could open them (S1).
+        'two-factor.challenge',
+        'two-factor.verify',
         'logout',
         'login',
         'register',

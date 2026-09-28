@@ -218,4 +218,59 @@ class PhaseARegressionTest extends TestCase
         $this->assertStringNotContainsString('O&#039;Brien', $html);
         $this->assertStringNotContainsString('Nuts &amp;amp; Bolts', $html);
     }
+
+    // ── S1: 2FA settings pages ──────────────────────────────────
+
+    private function userWithTwoFactor(): \App\Models\User
+    {
+        $user = $this->createAuthenticatedUser();
+        $user->forceFill([
+            'two_factor_secret' => \Illuminate\Support\Facades\Crypt::encryptString('JBSWY3DPEHPK3PXP'),
+            'two_factor_recovery_codes' => \Illuminate\Support\Facades\Crypt::encryptString(json_encode(['aaaa-bbbb'])),
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        return $user;
+    }
+
+    public function test_s1_signed_in_without_finishing_2fa_cannot_open_recovery_codes_or_setup(): void
+    {
+        $this->userWithTwoFactor(); // signed in (e.g. remember-me cookie), 2FA not completed this session
+
+        $this->get(route('two-factor.recovery-codes'))->assertRedirect(route('two-factor.challenge'));
+        $this->assertGuest();
+
+        $this->actingAs($this->user);
+        $this->get(route('two-factor.setup'))->assertRedirect(route('two-factor.challenge'));
+    }
+
+    public function test_s1_recovery_codes_need_the_password_again(): void
+    {
+        $this->userWithTwoFactor();
+
+        $this->withSession(['two_factor_verified' => true])
+            ->get(route('two-factor.recovery-codes'))
+            ->assertRedirect(route('password.confirm'));
+
+        $this->withSession(['two_factor_verified' => true, 'auth.password_confirmed_at' => time()])
+            ->get(route('two-factor.recovery-codes'))
+            ->assertOk();
+    }
+
+    public function test_s1_an_active_2fa_secret_cannot_be_replaced_through_setup(): void
+    {
+        $user = $this->userWithTwoFactor();
+        $before = $user->fresh()->two_factor_secret;
+
+        $newSecret = app(\App\Services\TwoFactorService::class)->generateSecret();
+        $code = (new \PragmaRX\Google2FA\Google2FA)->getCurrentOtp($newSecret);
+
+        $this->withSession([
+            'two_factor_verified' => true,
+            'auth.password_confirmed_at' => time(),
+            'two_factor_secret' => $newSecret,
+        ])->post(route('two-factor.confirm'), ['code' => $code]);
+
+        $this->assertSame($before, $user->fresh()->two_factor_secret);
+    }
 }

@@ -81,8 +81,10 @@ Route::middleware('guest')->group(function () {
         ->name('two-factor.verify');
 });
 
-// 2FA management (requires full auth)
-Route::middleware(['auth', 'active'])->group(function () {
+// 2FA management: needs a completed 2FA check this session (when 2FA is on)
+// and the password again, so a stolen remember-me cookie can't read the
+// recovery codes or move 2FA to another phone (finding S1).
+Route::middleware(['auth', 'active', 'two-factor', 'password.confirm'])->group(function () {
     Route::get('two-factor/setup', [TwoFactorController::class, 'setup'])
         ->name('two-factor.setup');
     Route::post('two-factor/confirm', [TwoFactorController::class, 'confirm'])
