@@ -286,6 +286,86 @@ class Phase4RegressionTest extends TestCase
         $this->assertStoredBalancesMatchLedger($this->tenant->id);
     }
 
+    /** Payload for an API invoice selling $quantity of $item. */
+    private function apiInvoice(Item $item, float $quantity): array
+    {
+        return [
+            'customer_id' => $this->customer->id,
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'items' => [[
+                'item_id' => $item->id, 'description' => $item->name,
+                'quantity' => $quantity, 'unit_price' => 50,
+            ]],
+        ];
+    }
+
+    private function apiUser(): void
+    {
+        foreach (['create invoices', 'edit invoices', 'delete invoices'] as $permission) {
+            \Spatie\Permission\Models\Permission::findOrCreate($permission, 'web');
+            $this->user->givePermissionTo($permission);
+        }
+    }
+
+    private function reserved(Item $item): float
+    {
+        return (float) Inventory::where('item_id', $item->id)->value('reserved_quantity');
+    }
+
+    public function test_api_invoice_is_refused_when_stock_is_short(): void
+    {
+        $this->apiUser();
+        $item = $this->stockItem('fifo');
+
+        $this->actingAs($this->user, 'sanctum')
+            ->postJson('/api/v1/invoices', $this->apiInvoice($item, 11))
+            ->assertJsonValidationErrors('items.0.quantity');
+
+        $this->assertSame(0, Invoice::count());
+        $this->assertSame(0.0, $this->reserved($item));
+    }
+
+    public function test_api_invoice_counts_repeated_lines_of_one_item_together(): void
+    {
+        $this->apiUser();
+        $item = $this->stockItem('fifo');
+        $payload = $this->apiInvoice($item, 6);
+        $payload['items'][] = $payload['items'][0];   // 6 + 6 = 12, only 10 on hand
+
+        $this->actingAs($this->user, 'sanctum')
+            ->postJson('/api/v1/invoices', $payload)
+            ->assertJsonValidationErrors('items.0.quantity');
+    }
+
+    public function test_api_invoice_reserves_stock_and_update_and_delete_give_it_back(): void
+    {
+        $this->apiUser();
+        $item = $this->stockItem('fifo');
+
+        $id = $this->actingAs($this->user, 'sanctum')
+            ->postJson('/api/v1/invoices', $this->apiInvoice($item, 4))
+            ->assertCreated()
+            ->json('data.id');
+        $this->assertSame(4.0, $this->reserved($item));
+
+        // A second invoice can only have what is left
+        $this->postJson('/api/v1/invoices', $this->apiInvoice($item, 7))
+            ->assertJsonValidationErrors('items.0.quantity');
+
+        // Editing: this invoice's own 4 count as available, so 10 is fine
+        $this->putJson("/api/v1/invoices/{$id}", ['items' => $this->apiInvoice($item, 10)['items']])
+            ->assertOk();
+        $this->assertSame(10.0, $this->reserved($item));
+
+        $this->putJson("/api/v1/invoices/{$id}", ['items' => $this->apiInvoice($item, 11)['items']])
+            ->assertJsonValidationErrors('items.0.quantity');
+        $this->assertSame(10.0, $this->reserved($item));
+
+        $this->deleteJson("/api/v1/invoices/{$id}")->assertOk();
+        $this->assertSame(0.0, $this->reserved($item));
+    }
+
     public function test_status_values_added_for_mysql_also_exist_on_other_drivers(): void
     {
         $item = $this->stockItem('fifo');
