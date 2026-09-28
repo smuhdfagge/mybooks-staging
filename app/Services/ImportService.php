@@ -880,7 +880,11 @@ class ImportService
 
                 if ($existing) {
                     if ($updateExisting) {
-                        $existing->update($this->prepareEmployeeData($mapped, $departments, $designations));
+                        $updates = $this->prepareEmployeeData($mapped, $departments, $designations);
+                        if (empty($updates['employee_id'])) {
+                            unset($updates['employee_id']); // keep the employee's current ID
+                        }
+                        $existing->update($updates);
                         $successful++;
                     } elseif ($skipDuplicates) {
                         $skipped++;
@@ -920,13 +924,23 @@ class ImportService
                     }
                 }
 
+                $employeeData = $this->prepareEmployeeData($mapped, $departments, $designations);
+                if (empty($employeeData['employee_id'])) {
+                    $employeeData['employee_id'] = Employee::generateEmployeeId($this->tenantId);
+                } elseif (Employee::withoutGlobalScopes()->where('tenant_id', $this->tenantId)->where('employee_id', $employeeData['employee_id'])->exists()) {
+                    $this->errors[] = "Row {$rowNum}: employee ID {$employeeData['employee_id']} already exists";
+                    $failed++;
+
+                    continue;
+                }
+
                 Employee::create(array_merge(
                     [
                         'tenant_id' => $this->tenantId,
                         'department_id' => $departmentId,
                         'designation_id' => $designationId,
                     ],
-                    $this->prepareEmployeeData($mapped, $departments, $designations)
+                    $employeeData
                 ));
                 $successful++;
 
