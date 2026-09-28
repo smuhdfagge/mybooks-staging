@@ -37,4 +37,22 @@ class RerunnableMigrationTest extends TestCase
         $this->assertTrue(Schema::hasTable('uom_conversions'));
         $this->assertTrue(Schema::hasTable('serial_numbers'));
     }
+
+    public function test_zero_dates_are_repaired_so_tables_can_be_altered(): void
+    {
+        if (! in_array(\DB::getDriverName(), ['mysql', 'mariadb'], true)) {
+            $this->markTestSkipped('Zero dates only exist on MySQL/MariaDB.');
+        }
+
+        $this->createAuthenticatedUser();
+        $item = \App\Models\Item::factory()->create(['tenant_id' => $this->tenant->id]);
+        \DB::statement("SET SESSION sql_mode = ''");
+        \DB::update("UPDATE items SET created_at = '0000-00-00 00:00:00' WHERE id = ?", [$item->id]);
+        \DB::statement("SET SESSION sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO'");
+
+        (require database_path('migrations/2026_04_06_000003a_repair_zero_dates.php'))->up();
+
+        $this->assertNotNull($item->fresh()->created_at);
+        $this->assertGreaterThan(1000, $item->fresh()->created_at->year);
+    }
 }

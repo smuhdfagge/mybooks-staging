@@ -217,15 +217,23 @@ return new class extends Migration
                 // none, batch, serial
             });
         }
-        if (! Schema::hasColumn('items', 'purchase_uom_id')) {
-            Schema::table('items', function (Blueprint $table) {
-                $table->foreignId('purchase_uom_id')->nullable()->after('unit')->constrained('unit_of_measures')->nullOnDelete();
-            });
-        }
-        if (! Schema::hasColumn('items', 'sales_uom_id')) {
-            Schema::table('items', function (Blueprint $table) {
-                $table->foreignId('sales_uom_id')->nullable()->after('purchase_uom_id')->constrained('unit_of_measures')->nullOnDelete();
-            });
+        // The unit-of-measure columns and their foreign keys are checked
+        // separately: MySQL adds the column and the key in two statements, so
+        // a failed run can leave the column without its key.
+        foreach (['purchase_uom_id' => 'unit', 'sales_uom_id' => 'purchase_uom_id'] as $column => $after) {
+            if (! Schema::hasColumn('items', $column)) {
+                Schema::table('items', function (Blueprint $table) use ($column, $after) {
+                    $table->unsignedBigInteger($column)->nullable()->after($after);
+                });
+            }
+
+            $hasKey = collect(Schema::getForeignKeys('items'))
+                ->contains(fn ($key) => $key['columns'] === [$column]);
+            if (! $hasKey) {
+                Schema::table('items', function (Blueprint $table) use ($column) {
+                    $table->foreign($column)->references('id')->on('unit_of_measures')->nullOnDelete();
+                });
+            }
         }
 
         // 9. Add warehouse reference to inventory table (was unused nullable field, now with FK)
