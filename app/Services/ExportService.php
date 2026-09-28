@@ -395,7 +395,7 @@ class ExportService
                         'total' => $bill->total,
                         'balance_due' => $bill->balance_due,
                         'status' => $bill->status,
-                        'reference' => $bill->reference,
+                        'reference' => $bill->vendor_bill_number,
                         'notes' => $bill->notes,
                         'created_at' => $bill->created_at?->format('Y-m-d H:i:s'),
                     ])

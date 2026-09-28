@@ -99,7 +99,9 @@ class BillController extends Controller
                 'discount_amount' => $totalDiscount,
                 'total' => $subtotal - $totalDiscount + $totalTax,
                 'balance_due' => $subtotal - $totalDiscount + $totalTax,
-                'reference' => $validated['reference'] ?? null,
+                // The form's 'Vendor Bill Number / Reference' field. Bills have no
+                // 'reference' column, so it used to be silently dropped.
+                'vendor_bill_number' => $validated['reference'] ?? null,
                 'notes' => $validated['notes'] ?? null,
                 'status' => 'unpaid',
                 'created_by' => auth()->id(),
@@ -200,7 +202,9 @@ class BillController extends Controller
                 'discount_amount' => $totalDiscount,
                 'total' => $totalAmount,
                 'balance_due' => max(0, $totalAmount - $amountPaid),
-                'reference' => $validated['reference'] ?? null,
+                // The form's 'Vendor Bill Number / Reference' field. Bills have no
+                // 'reference' column, so it used to be silently dropped.
+                'vendor_bill_number' => $validated['reference'] ?? null,
                 'notes' => $validated['notes'] ?? null,
             ]);
 
