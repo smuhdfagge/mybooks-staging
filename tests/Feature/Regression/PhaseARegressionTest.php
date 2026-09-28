@@ -198,4 +198,24 @@ class PhaseARegressionTest extends TestCase
             ->assertSee('window.__mbDomActions', false)
             ->assertDontSee('onsubmit=', false);
     }
+
+    public function test_u2_create_bill_survives_item_text_with_line_breaks_and_quotes(): void
+    {
+        $this->createAuthenticatedUser(['create bills']);
+        Item::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'name' => "O'Brien's Nuts & Bolts",
+            'description' => "Line one\nLine two",
+            'is_active' => true,
+        ]);
+
+        $html = $this->get(route('bills.create'))->assertOk()->getContent();
+
+        // A raw line break inside a JavaScript string is a syntax error that
+        // stops the whole form working.
+        $this->assertStringNotContainsString("Line one\nLine two", $html);
+        // And the names must not reach the page as HTML entities inside JS.
+        $this->assertStringNotContainsString('O&#039;Brien', $html);
+        $this->assertStringNotContainsString('Nuts &amp;amp; Bolts', $html);
+    }
 }

@@ -43,11 +43,7 @@
 
                         <!-- Vendor -->
                         <div x-data="searchableSelect({
-                            items: [
-                                @foreach($vendors as $vendor)
-                                { id: '{{ $vendor->id }}', name: '{{ addslashes($vendor->name) }}' },
-                                @endforeach
-                            ],
+                            items: @js($vendors->map(fn ($vendor) => ['id' => (string) $vendor->id, 'name' => (string) $vendor->name])->values()),
                             selectedId: '{{ old('vendor_id', $bill?->vendor_id) }}',
                             onSelect: (id) => { selectedVendor = id; filterBills(); }
                         })" class="relative">

@@ -78,11 +78,7 @@
                             </div>
 
                             <div x-data="searchableSelect({
-                                items: [
-                                    @foreach($vendors as $vendor)
-                                    { id: '{{ $vendor->id }}', name: '{{ addslashes($vendor->name) }}{{ $vendor->company_name ? " (" . addslashes($vendor->company_name) . ")" : "" }}' },
-                                    @endforeach
-                                ],
+                                items: @js($vendors->map(fn ($vendor) => ['id' => (string) $vendor->id, 'name' => $vendor->name . ($vendor->company_name ? " (" . ($vendor->company_name) . ")" : "")])->values()),
                                 selectedId: '{{ old('vendor_id', request('vendor_id')) }}'
                             })" class="relative">
                                 <label for="vendor_search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor</label>

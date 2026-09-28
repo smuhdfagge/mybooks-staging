@@ -35,11 +35,7 @@
                             </div>
 
                             <div x-data="searchableSelect({
-                                items: [
-                                    @foreach($customers as $customer)
-                                    { id: '{{ $customer->id }}', name: '{{ addslashes($customer->name) }}{{ $customer->company_name ? " (" . addslashes($customer->company_name) . ")" : "" }}' },
-                                    @endforeach
-                                ],
+                                items: @js($customers->map(fn ($customer) => ['id' => (string) $customer->id, 'name' => $customer->name . ($customer->company_name ? " (" . ($customer->company_name) . ")" : "")])->values()),
                                 selectedId: '{{ old('customer_id') }}'
                             })" class="relative">
                                 <label for="customer_search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Customer <span class="text-red-500">*</span></label>
@@ -351,11 +347,7 @@
         function salesOrderForm() {
             return {
                 items: [{ item_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 }],
-                availableProducts: [
-                    @foreach($items as $item)
-                    { id: '{{ $item->id }}', name: '{{ addslashes($item->name) }}', price: {{ $item->selling_price }}, desc: '{{ addslashes($item->description ?? $item->name) }}', tax: {{ $item->tax_rate ?? 0 }} },
-                    @endforeach
-                ],
+                availableProducts: @js($items->map(fn ($item) => ['id' => (string) $item->id, 'name' => (string) $item->name, 'price' => (float) $item->selling_price, 'desc' => (string) ($item->description ?? $item->name), 'tax' => (float) ($item->tax_rate ?? 0)])->values()),
                 subtotal: 0,
                 totalTax: 0,
                 total: 0,

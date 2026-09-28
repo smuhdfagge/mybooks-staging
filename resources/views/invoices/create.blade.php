@@ -36,11 +36,7 @@
                             </div>
 
                             <div x-data="searchableSelect({
-                                items: [
-                                    @foreach($customers as $customer)
-                                    { id: '{{ $customer->id }}', name: '{{ addslashes($customer->name) }}{{ $customer->company_name ? " (" . addslashes($customer->company_name) . ")" : "" }}' },
-                                    @endforeach
-                                ],
+                                items: @js($customers->map(fn ($customer) => ['id' => (string) $customer->id, 'name' => $customer->name . ($customer->company_name ? " (" . ($customer->company_name) . ")" : "")])->values()),
                                 selectedId: '{{ old('customer_id', request('customer_id')) }}'
                             })" class="relative">
                                 <label for="customer_search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Customer <span class="text-red-500">*</span></label>
@@ -385,11 +381,7 @@
         function invoiceForm() {
             return {
                 items: [{ item_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0, is_taxable: false, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 }],
-                availableProducts: [
-                    @foreach($items as $item)
-                    { id: '{{ $item->id }}', name: '{{ addslashes($item->name) }}{{ $item->is_taxable ? " (Taxable)" : "" }}', price: {{ $item->selling_price }}, desc: '{{ addslashes($item->description ?? $item->name) }}', taxable: {{ $item->is_taxable ? 'true' : 'false' }}, tax: {{ $item->effective_tax_rate ?? 0 }} },
-                    @endforeach
-                ],
+                availableProducts: @js($items->map(fn ($item) => ['id' => (string) $item->id, 'name' => $item->name . ($item->is_taxable ? " (Taxable)" : ""), 'price' => (float) $item->selling_price, 'desc' => (string) ($item->description ?? $item->name), 'taxable' => (bool) $item->is_taxable, 'tax' => (float) ($item->effective_tax_rate ?? 0)])->values()),
                 discountType: '',
                 discountValue: 0,
                 subtotal: 0,
