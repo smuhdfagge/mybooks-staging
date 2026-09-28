@@ -15,6 +15,7 @@ use App\Models\Payroll;
 use App\Contracts\JournalServiceInterface;
 use App\Services\AccountCodeService;
 use Illuminate\Support\Facades\DB;
+use App\Exceptions\UnbalancedJournalException;
 use InvalidArgumentException;
 
 class JournalService implements JournalServiceInterface
@@ -330,16 +331,7 @@ class JournalService implements JournalServiceInterface
             ]);
 
             // Debit: Inventory (for items that track inventory) or General Expense
-            $inventoryAmount = 0;
-            $expenseAmount = 0;
-
-            foreach ($bill->items as $item) {
-                if ($item->item && $item->item->track_inventory) {
-                    $inventoryAmount += $item->total;
-                } else {
-                    $expenseAmount += $item->total;
-                }
-            }
+            [$inventoryAmount, $expenseAmount] = $this->billDebitSplit($bill);
 
             if ($inventoryAmount > 0) {
                 $this->createEntry($journal, $this->acct($t, 'inventory'), $inventoryAmount, 0,
@@ -354,7 +346,7 @@ class JournalService implements JournalServiceInterface
 
             // If no items or all have zero totals, debit inventory by default
             if ($inventoryAmount == 0 && $expenseAmount == 0 && $bill->subtotal > 0) {
-                $this->createEntry($journal, $this->acct($t, 'inventory'), $bill->subtotal, 0,
+                $this->createEntry($journal, $this->acct($t, 'inventory'), round((float) $bill->subtotal - (float) ($bill->discount_amount ?? 0), 2), 0,
                     "Purchase - Bill {$bill->bill_number}");
             }
 
@@ -393,16 +385,7 @@ class JournalService implements JournalServiceInterface
             'description' => "Bill {$bill->bill_number} - {$bill->vendor->name}",
         ]);
 
-        $inventoryAmount = 0;
-        $expenseAmount = 0;
-
-        foreach ($bill->items as $item) {
-            if ($item->item && $item->item->track_inventory) {
-                $inventoryAmount += $item->total;
-            } else {
-                $expenseAmount += $item->total;
-            }
-        }
+        [$inventoryAmount, $expenseAmount] = $this->billDebitSplit($bill);
 
         if ($inventoryAmount > 0) {
             $this->createEntry($journal, $this->acct($t, 'inventory'), $inventoryAmount, 0,
@@ -415,7 +398,7 @@ class JournalService implements JournalServiceInterface
         }
 
         if ($inventoryAmount == 0 && $expenseAmount == 0 && $bill->subtotal > 0) {
-            $this->createEntry($journal, $this->acct($t, 'inventory'), $bill->subtotal, 0,
+            $this->createEntry($journal, $this->acct($t, 'inventory'), round((float) $bill->subtotal - (float) ($bill->discount_amount ?? 0), 2), 0,
                 "Purchase - Bill {$bill->bill_number}");
         }
 
@@ -1387,8 +1370,8 @@ class JournalService implements JournalServiceInterface
             'journal_id' => $journal->id,
             'account_id' => $account->id,
             'description' => $description,
-            'debit' => $debit,
-            'credit' => $credit,
+            'debit' => round($debit, 2),
+            'credit' => round($credit, 2),
         ]);
     }
 
@@ -1419,6 +1402,10 @@ class JournalService implements JournalServiceInterface
         // load the old lines (to reverse them), delete them and create new
         // ones; without a reload this re-applied the old amounts (C4).
         $journal->load('entries.account');
+
+        // Never let an unbalanced journal reach the account balances (M2).
+        // Callers run inside DB::transaction, so this rolls the posting back.
+        $this->assertBalanced($journal);
 
         foreach ($journal->entries as $entry) {
             $account = $entry->account;
@@ -1469,13 +1456,72 @@ class JournalService implements JournalServiceInterface
     }
 
     /**
+     * Split a bill's cost (net of tax) between inventory and expense.
+     *
+     * Line totals include their tax, and the tax is debited separately to
+     * input tax, so each line is taken net of tax. Previously the full line
+     * total was used, so a taxed bill's journal was out by the tax amount as
+     * soon as it was rebuilt with its lines (e.g. on payment).
+     *
+     * Any rounding difference against subtotal - discount goes to the larger
+     * side, so debits always equal the bill total.
+     *
+     * @return array{0: float, 1: float} [inventory, expense]
+     */
+    protected function billDebitSplit(Bill $bill): array
+    {
+        $inventory = 0.0;
+        $expense = 0.0;
+
+        foreach ($bill->items as $item) {
+            $net = (float) $item->total - (float) ($item->tax_amount ?? 0);
+            if ($item->item && $item->item->track_inventory) {
+                $inventory += $net;
+            } else {
+                $expense += $net;
+            }
+        }
+
+        $inventory = round($inventory, 2);
+        $expense = round($expense, 2);
+
+        if ($inventory == 0.0 && $expense == 0.0) {
+            return [0.0, 0.0];
+        }
+
+        $target = round((float) $bill->subtotal - (float) ($bill->discount_amount ?? 0), 2);
+        $difference = round($target - ($inventory + $expense), 2);
+
+        if ($difference != 0.0 && abs($difference) <= 0.05) {
+            if ($inventory >= $expense) {
+                $inventory = round($inventory + $difference, 2);
+            } else {
+                $expense = round($expense + $difference, 2);
+            }
+        }
+
+        return [$inventory, $expense];
+    }
+
+    /**
      * Check if a journal is balanced
      */
     public function isJournalBalanced(Journal $journal): bool
     {
-        $totalDebit = $journal->entries()->sum('debit');
-        $totalCredit = $journal->entries()->sum('credit');
-        
-        return abs($totalDebit - $totalCredit) < 0.01; // Allow for small floating point differences
+        $totalDebit = round((float) $journal->entries()->sum('debit'), 2);
+        $totalCredit = round((float) $journal->entries()->sum('credit'), 2);
+
+        // Amounts are stored to the kobo, so after rounding they must match exactly.
+        return abs($totalDebit - $totalCredit) < 0.005;
+    }
+
+    /**
+     * @throws UnbalancedJournalException
+     */
+    public function assertBalanced(Journal $journal): void
+    {
+        if (! $this->isJournalBalanced($journal)) {
+            throw UnbalancedJournalException::for($journal);
+        }
     }
 }

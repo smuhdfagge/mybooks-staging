@@ -14,7 +14,7 @@ use App\Services\JournalService;
 
 class SalesReceipt extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, ValidatesAccountingPeriod;
+    use HasFactory, SoftDeletes, BelongsToTenant, LogsActivity, ValidatesAccountingPeriod, \App\Traits\KeepsTotalsBalanced;
 
     protected $fillable = [
         'tenant_id',
@@ -90,5 +90,13 @@ class SalesReceipt extends Model
         static::deleting(function ($receipt) {
             SalesReceiptDeleting::dispatch($receipt);
         });
+    }
+
+    /**
+     * total = subtotal + tax_amount - discount_amount (see KeepsTotalsBalanced).
+     */
+    protected function documentTotalParts(): array
+    {
+        return [['subtotal', 'tax_amount'], ['discount_amount']];
     }
 }
