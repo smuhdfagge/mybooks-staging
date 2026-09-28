@@ -408,4 +408,101 @@ class Phase3RegressionTest extends TestCase
         $this->assertSame('sent', $current->fresh()->status);
         $this->assertStoredBalancesMatchLedger($this->tenant->id);
     }
+
+    // ── M6: deleting a posted document reverses its journal ─────
+
+    public function test_m6_deleting_a_sent_invoice_keeps_the_journal_and_reverses_it(): void
+    {
+        $this->createAuthenticatedUser();
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $invoice = Invoice::factory()->sent()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000030']);
+        $this->assertSame(1075.0, $this->accountBalance($this->tenant->id, '1200'));
+
+        $invoice->delete();
+
+        $journals = \App\Models\Journal::where('reference_type', Invoice::class)->where('reference_id', $invoice->id)->orderBy('id')->get();
+        $this->assertCount(2, $journals);
+        $this->assertSame('reversed', $journals[0]->status);
+        $this->assertSame('REV-'.$journals[0]->journal_number, $journals[1]->reference);
+        $this->assertSame(0.0, $this->accountBalance($this->tenant->id, '1200'));
+        $this->assertStoredBalancesMatchLedger($this->tenant->id);
+        $this->assertAllJournalsBalance($this->tenant->id);
+    }
+
+    public function test_m6_deleting_a_payment_reverses_it_and_reopens_the_invoice(): void
+    {
+        $this->createAuthenticatedUser();
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $invoice = Invoice::factory()->sent()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000031']);
+        $payment = PaymentReceived::create([
+            'tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_id' => $invoice->id,
+            'payment_number' => 'PR-000031', 'payment_date' => now(), 'amount' => 1075, 'payment_method' => 'cash',
+            'is_deposit' => false, 'unused_amount' => 0, 'created_by' => $this->user->id,
+        ]);
+        $this->assertSame('paid', $invoice->fresh()->status);
+
+        $payment->delete();
+
+        $this->assertEqualsWithDelta(1075.0, (float) $invoice->fresh()->balance_due, 0.001);
+        $this->assertSame(1075.0, $this->accountBalance($this->tenant->id, '1200'));
+        $this->assertSame(2, \App\Models\Journal::where('reference_type', PaymentReceived::class)->where('reference_id', $payment->id)->count());
+        $this->assertStoredBalancesMatchLedger($this->tenant->id);
+    }
+
+    public function test_m6_deleting_a_draft_leaves_no_journal(): void
+    {
+        $this->createAuthenticatedUser();
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $invoice = Invoice::factory()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000032']);
+
+        $invoice->delete();
+
+        $this->assertSame(0, \App\Models\Journal::withTrashed()->where('reference_type', Invoice::class)->where('reference_id', $invoice->id)->count());
+    }
+
+    private function asset(): \App\Models\FixedAsset
+    {
+        return \App\Models\FixedAsset::create([
+            'tenant_id' => $this->tenant->id, 'asset_number' => 'FA-'.random_int(1000, 9999), 'name' => 'Laptop',
+            'purchase_date' => now()->subMonths(2), 'in_service_date' => now()->subMonths(2),
+            'purchase_cost' => 1200, 'salvage_value' => 0, 'depreciable_amount' => 1200,
+            'useful_life' => 1, 'depreciation_method' => 'straight_line', 'accumulated_depreciation' => 0,
+            'book_value' => 1200, 'status' => 'active',
+        ]);
+    }
+
+    public function test_m6_depreciation_keeps_balances_in_step_with_the_ledger(): void
+    {
+        $this->createAuthenticatedUser();
+        $service = app(\App\Services\DepreciationService::class);
+
+        $depreciation = $service->recordDepreciation($this->asset(), now());
+
+        $this->assertSame(100.0, $this->accountBalance($this->tenant->id, '6800'));
+        // Accumulated depreciation is a credit on an asset account: it lowers the balance
+        $this->assertSame(-100.0, $this->accountBalance($this->tenant->id, '1600'));
+        $this->assertStoredBalancesMatchLedger($this->tenant->id);
+
+        $service->reverseDepreciation($depreciation->fresh());
+
+        $this->assertSame(0.0, $this->accountBalance($this->tenant->id, '6800'));
+        $this->assertSame(0.0, $this->accountBalance($this->tenant->id, '1600'));
+        $this->assertStoredBalancesMatchLedger($this->tenant->id);
+    }
+
+    public function test_m6_disposing_an_asset_keeps_balances_in_step_with_the_ledger(): void
+    {
+        $this->createAuthenticatedUser();
+        $service = app(\App\Services\DepreciationService::class);
+        $asset = $this->asset();
+        $service->recordDepreciation($asset, now());
+
+        $service->disposeAsset($asset->fresh(), 'sale', 1150, now());
+
+        // Sold for 1,150 with book value 1,100: gain of 50
+        $this->assertSame(0.0, $this->accountBalance($this->tenant->id, '1600'));
+        $this->assertSame(50.0, $this->accountBalance($this->tenant->id, '4200'));
+        $this->assertStoredBalancesMatchLedger($this->tenant->id);
+        $this->assertAllJournalsBalance($this->tenant->id);
+    }
 }

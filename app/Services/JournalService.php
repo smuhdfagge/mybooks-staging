@@ -1355,33 +1355,57 @@ class JournalService implements JournalServiceInterface
     }
 
     /**
-     * Delete journal entries for a transaction (when transaction is deleted)
+     * Called when a document (invoice, bill, payment, expense, payroll,
+     * sales receipt, refund) is deleted.
+     *
+     * A posted journal is kept and reversed with a new journal dated today,
+     * so the ledger shows what happened (finding M6). Previously it was
+     * force-deleted, leaving no trace. A journal that was never posted (so
+     * never reached the balances) is still removed.
      */
     public function deleteJournalForTransaction(string $referenceType, int $referenceId, ?int $tenantId = null): void
     {
-        // Resolve tenant_id from parameter, auth context, or fail safely
+        foreach ($this->journalsForTransaction($referenceType, $referenceId, $tenantId) as $journal) {
+            if ($journal->status === 'posted' && ! str_starts_with((string) $journal->reference, 'REV-')) {
+                $this->reverseJournal($journal, class_basename($referenceType).' deleted');
+            } elseif (! in_array($journal->status, ['posted', 'reversed'], true)) {
+                $journal->entries()->forceDelete();
+                $journal->forceDelete();
+            }
+        }
+    }
+
+    /**
+     * Remove a document's journals completely, undoing their effect on the
+     * balances. Only for repair commands that rebuild journals from scratch
+     * (e.g. payroll:fix-journals); normal deletes use deleteJournalForTransaction().
+     */
+    public function purgeJournalForTransaction(string $referenceType, int $referenceId, ?int $tenantId = null): void
+    {
+        foreach ($this->journalsForTransaction($referenceType, $referenceId, $tenantId) as $journal) {
+            if ($journal->status === 'posted') {
+                $this->reverseAccountBalances($journal);
+            }
+            $journal->entries()->forceDelete();
+            $journal->forceDelete();
+        }
+    }
+
+    protected function journalsForTransaction(string $referenceType, int $referenceId, ?int $tenantId)
+    {
         $tenantId = $tenantId ?? auth()->user()?->tenant_id;
 
         $query = Journal::withoutGlobalScopes()
             ->where('reference_type', $referenceType)
-            ->where('reference_id', $referenceId);
+            ->where('reference_id', $referenceId)
+            ->orderBy('id');
 
-        // Always scope to tenant to prevent cross-tenant deletion
+        // Always scope to tenant to prevent cross-tenant changes
         if ($tenantId) {
             $query->where('tenant_id', $tenantId);
         }
 
-        $journal = $query->first();
-
-        if ($journal) {
-            // Reverse the account balances first
-            $this->reverseAccountBalances($journal);
-            
-            // Force delete entries and journal (not soft delete) 
-            // since these are accounting records that should be removed when source transaction is deleted
-            $journal->entries()->forceDelete();
-            $journal->forceDelete();
-        }
+        return $query->get();
     }
 
     /**

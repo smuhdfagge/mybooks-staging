@@ -418,11 +418,7 @@ class FixedAssetController extends Controller
 
         $journal->updateTotals();
 
-        // Update account balances
-        $assetAccount->current_balance += $asset->purchase_cost;
-        $assetAccount->save();
-
-        $cashAccount->current_balance -= $asset->purchase_cost;
-        $cashAccount->save();
+        // Apply to the account balances with the normal debit/credit rules.
+        app(\App\Services\JournalService::class)->updateAccountBalances($journal);
     }
 }

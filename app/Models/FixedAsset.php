@@ -71,6 +71,7 @@ class FixedAsset extends Model
     const STATUS_IDLE = 'idle';
     const STATUS_FULLY_DEPRECIATED = 'fully_depreciated';
     const STATUS_DISPOSED = 'disposed';
+    const STATUS_SOLD = 'sold';
 
     // Depreciation Methods
     const METHOD_STRAIGHT_LINE = 'straight_line';
@@ -93,6 +94,7 @@ class FixedAsset extends Model
             self::STATUS_IDLE => 'Idle',
             self::STATUS_FULLY_DEPRECIATED => 'Fully Depreciated',
             self::STATUS_DISPOSED => 'Disposed',
+            self::STATUS_SOLD => 'Sold',
         ];
     }
 

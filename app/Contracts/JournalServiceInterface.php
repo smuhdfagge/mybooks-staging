@@ -35,6 +35,8 @@ interface JournalServiceInterface
 
     public function deleteJournalForTransaction(string $referenceType, int $referenceId, ?int $tenantId = null): void;
 
+    public function purgeJournalForTransaction(string $referenceType, int $referenceId, ?int $tenantId = null): void;
+
     public function createEntry(Journal $journal, string $accountCode, float $debit, float $credit, string $description): JournalEntry;
 
     public function updateAccountBalances(Journal $journal): void;
