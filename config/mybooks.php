@@ -79,4 +79,25 @@ return [
         'soft_deleted_months' => (int) env('MYBOOKS_RETENTION_SOFT_DELETED_MONTHS', 12),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Unfinished modules (finding N4)
+    |--------------------------------------------------------------------------
+    |
+    | These modules have back-end code but no screens yet, or their ledger
+    | postings are not finished. Their URLs answer 404 until switched on.
+    | Switch one on only once its screens exist and its tests pass.
+    |
+    */
+
+    'features' => [
+        'quotations' => (bool) env('MYBOOKS_FEATURE_QUOTATIONS', false),
+        'delivery_notes' => (bool) env('MYBOOKS_FEATURE_DELIVERY_NOTES', false),
+        'credit_notes' => (bool) env('MYBOOKS_FEATURE_CREDIT_NOTES', false),
+        'warehouses' => (bool) env('MYBOOKS_FEATURE_WAREHOUSES', false),
+        'stock_transfers' => (bool) env('MYBOOKS_FEATURE_STOCK_TRANSFERS', false),
+        'assembly' => (bool) env('MYBOOKS_FEATURE_ASSEMBLY', false),              // bills of materials and assembly orders
+        'inventory_valuation' => (bool) env('MYBOOKS_FEATURE_INVENTORY_VALUATION', false),
+    ],
+
 ];

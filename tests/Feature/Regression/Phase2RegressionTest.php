@@ -296,6 +296,7 @@ class Phase2RegressionTest extends TestCase
 
     public function test_l2_receiving_a_transfer_cannot_touch_another_tenants_transfer_lines(): void
     {
+        config(['mybooks.features.stock_transfers' => true]);   // hidden by default since Phase 6 (N4)
         $this->createAuthenticatedUser(['adjust inventory']);
         $mine = $this->transferFor($this->tenant->id, \App\Models\StockTransfer::STATUS_IN_TRANSIT);
         $theirs = $this->transferFor($this->otherTenant()->id, \App\Models\StockTransfer::STATUS_IN_TRANSIT);

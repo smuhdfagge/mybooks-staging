@@ -31,15 +31,6 @@ class RouteIntegrityTest extends TestCase
     ];
 
     private const KNOWN_MISSING_VIEWS = [
-        // Unfinished modules (N4)
-        'credit-notes.apply', 'credit-notes.create', 'credit-notes.index', 'credit-notes.show',
-        'delivery-notes.create', 'delivery-notes.index', 'delivery-notes.print', 'delivery-notes.show',
-        'inventory.assembly.create', 'inventory.assembly.index', 'inventory.assembly.show',
-        'inventory.bom.create', 'inventory.bom.edit', 'inventory.bom.index', 'inventory.bom.show',
-        'inventory.transfers.create', 'inventory.transfers.index', 'inventory.transfers.show',
-        'inventory.valuation',
-        'inventory.warehouses.create', 'inventory.warehouses.edit', 'inventory.warehouses.index', 'inventory.warehouses.show',
-        'quotations.create', 'quotations.edit', 'quotations.index', 'quotations.print', 'quotations.show',
         // Older gaps (N9)
         'departments.edit', 'departments.show',
         'exports.show',
@@ -48,6 +39,36 @@ class RouteIntegrityTest extends TestCase
         // Unrouted TenantManagementController (L3, to be deleted)
         'tenants.index', 'tenants.list', 'tenants.show',
     ];
+
+    /**
+     * Views of unfinished modules (N4). They may be missing only while the
+     * module is switched off by default in config/mybooks.php.
+     */
+    private const FEATURE_VIEWS = [
+        'credit_notes' => ['credit-notes.'],
+        'delivery_notes' => ['delivery-notes.'],
+        'assembly' => ['inventory.assembly.', 'inventory.bom.'],
+        'stock_transfers' => ['inventory.transfers.'],
+        'inventory_valuation' => ['inventory.valuation'],
+        'warehouses' => ['inventory.warehouses.'],
+        'quotations' => ['quotations.'],
+    ];
+
+    /** Missing views that belong to a module that is switched off. */
+    private function hiddenModuleViews(array $missing): array
+    {
+        return array_values(array_filter($missing, function ($view) {
+            foreach (self::FEATURE_VIEWS as $feature => $prefixes) {
+                foreach ($prefixes as $prefix) {
+                    if (str_starts_with($view, $prefix) && ! config("mybooks.features.{$feature}")) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }));
+    }
 
     public function test_every_route_points_at_an_existing_controller_method(): void
     {
@@ -89,6 +110,7 @@ class RouteIntegrityTest extends TestCase
 
         $missing = array_values(array_unique($missing));
         sort($missing);
+        $missing = array_values(array_diff($missing, $this->hiddenModuleViews($missing)));
 
         $this->assertSame([], array_values(array_diff($missing, self::KNOWN_MISSING_VIEWS)),
             'Code renders views that do not exist.');
