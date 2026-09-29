@@ -571,4 +571,73 @@ class PhaseBRegressionTest extends TestCase
         app(\App\Listeners\HandlePayrollPaid::class)->handle(new \App\Events\PayrollPaid($payroll->fresh()));
         $this->assertSame(1, $loan->repayments()->count());
     }
+
+    // ── A11: fixed assets ───────────────────────────────────────
+
+    private function assetPayload(array $extra = []): array
+    {
+        return array_merge([
+            'name' => 'Delivery van', 'purchase_date' => '2026-06-01', 'in_service_date' => '2026-06-01',
+            'purchase_cost' => 1200000, 'salvage_value' => 0, 'useful_life' => 5, 'depreciation_method' => 'straight_line',
+            'funding_source' => 'bank',
+        ], $extra);
+    }
+
+    public function test_a11_how_an_asset_was_paid_for_decides_the_credit(): void
+    {
+        $this->createAuthenticatedUser(['create fixed-assets', 'view fixed-assets']);
+
+        $this->post(route('fixed-assets.store'), $this->assetPayload())->assertSessionHasNoErrors();
+        $this->assertEqualsWithDelta(1200000, $this->code('1500'), 0.001);
+        $this->assertEqualsWithDelta(-1200000, $this->code('1100'), 0.001, 'paid from the bank');
+        $this->assertEqualsWithDelta(0, $this->code('1000'), 0.001);
+
+        // An asset the business already owned: no money leaves.
+        $this->post(route('fixed-assets.store'), $this->assetPayload(['name' => 'Old generator', 'purchase_cost' => 300000, 'funding_source' => 'opening_balance']))
+            ->assertSessionHasNoErrors();
+        $this->assertEqualsWithDelta(-1200000, $this->code('1100'), 0.001);
+        $this->assertEqualsWithDelta(300000, $this->code('3000'), 0.001, "owner's capital");
+
+        // Bought on a vendor bill already entered: move the cost off the expense, don't pay twice.
+        $this->post(route('fixed-assets.store'), $this->assetPayload(['name' => 'Laptop', 'purchase_cost' => 50000, 'funding_source' => 'bill']))
+            ->assertSessionHasNoErrors();
+        $this->assertEqualsWithDelta(-50000, $this->code('6990'), 0.001);
+        $this->assertEqualsWithDelta(-1200000, $this->code('1100'), 0.001);
+    }
+
+    public function test_a11_deleting_an_asset_reverses_its_journal(): void
+    {
+        $this->createAuthenticatedUser(['create fixed-assets', 'view fixed-assets', 'delete fixed-assets']);
+        $this->post(route('fixed-assets.store'), $this->assetPayload());
+        $asset = \App\Models\FixedAsset::sole();
+
+        $this->delete(route('fixed-assets.destroy', $asset))->assertSessionHas('success');
+
+        $this->assertEqualsWithDelta(0, $this->code('1500'), 0.001);
+        $this->assertEqualsWithDelta(0, $this->code('1100'), 0.001);
+    }
+
+    public function test_a11_the_same_month_cannot_be_depreciated_twice(): void
+    {
+        $this->createAuthenticatedUser(['create fixed-assets', 'view fixed-assets', 'edit fixed-assets']);
+        $this->post(route('fixed-assets.store'), $this->assetPayload());
+        $asset = \App\Models\FixedAsset::sole();
+
+        $this->post(route('fixed-assets.depreciate', $asset), ['depreciation_date' => '2026-06-30'])->assertSessionHas('success');
+        $this->post(route('fixed-assets.depreciate', $asset), ['depreciation_date' => '2026-06-30'])->assertSessionHas('error');
+
+        $this->assertSame(1, $asset->depreciations()->count());
+        $this->assertEqualsWithDelta(20000, $this->code('6800'), 0.001);
+    }
+
+    public function test_a11_status_cannot_be_set_to_disposed_by_editing(): void
+    {
+        $this->createAuthenticatedUser(['create fixed-assets', 'view fixed-assets', 'edit fixed-assets']);
+        $this->post(route('fixed-assets.store'), $this->assetPayload());
+        $asset = \App\Models\FixedAsset::sole();
+
+        $this->put(route('fixed-assets.update', $asset), ['name' => 'Delivery van', 'status' => 'disposed'])
+            ->assertSessionHasErrors('status');
+        $this->assertNotSame('disposed', $asset->fresh()->status);
+    }
 }

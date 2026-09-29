@@ -2,11 +2,9 @@
 
 namespace App\Services;
 
-use App\Models\ChartOfAccount;
 use App\Models\FixedAsset;
 use App\Models\FixedAssetDepreciation;
 use App\Models\Journal;
-use App\Models\JournalEntry;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -167,6 +165,17 @@ class DepreciationService
             throw new Exception('Asset cannot be depreciated.');
         }
 
+        // One depreciation per asset per month (A11): the manual button and
+        // the monthly run could both post the same month.
+        $alreadyDone = $asset->depreciations()
+            ->where('status', FixedAssetDepreciation::STATUS_POSTED)
+            ->whereYear('depreciation_date', $depreciationDate->year)
+            ->whereMonth('depreciation_date', $depreciationDate->month)
+            ->exists();
+        if ($alreadyDone) {
+            throw new Exception("{$asset->name} has already been depreciated for {$depreciationDate->format('F Y')}.");
+        }
+
         return DB::transaction(function () use ($asset, $depreciationDate, $notes) {
             // Calculate period number
             $periodNumber = $asset->depreciations()->count() + 1;
@@ -220,67 +229,12 @@ class DepreciationService
     }
 
     /**
-     * Create journal entry for depreciation
+     * Dr depreciation expense, Cr accumulated depreciation, with mapped or
+     * category accounts (A11).
      */
     protected function createDepreciationJournal(FixedAsset $asset, Carbon $date, float $amount): ?Journal
     {
-        // Get accounts
-        $depreciationAccount = $asset->depreciation_account_id
-            ? ChartOfAccount::find($asset->depreciation_account_id)
-            : ChartOfAccount::where('tenant_id', $asset->tenant_id)
-                ->where('account_code', '6800')
-                ->first();
-
-        $accumulatedAccount = $asset->accumulated_depreciation_account_id
-            ? ChartOfAccount::find($asset->accumulated_depreciation_account_id)
-            : ChartOfAccount::where('tenant_id', $asset->tenant_id)
-                ->where('account_code', '1600')
-                ->first();
-
-        if (! $depreciationAccount || ! $accumulatedAccount) {
-            return null;
-        }
-
-        $journal = Journal::create([
-            'tenant_id' => $asset->tenant_id,
-            'journal_number' => Journal::generateNumber($asset->tenant_id),
-            'journal_date' => $date,
-            'reference' => $asset->asset_number,
-            'description' => "Depreciation - {$asset->name} ({$date->format('M Y')})",
-            'reference_type' => FixedAsset::class,
-            'reference_id' => $asset->id,
-            'status' => 'posted',
-            'is_posted' => true,
-            'posted_at' => now(),
-            'created_by' => auth()->id(),
-        ]);
-
-        // Debit: Depreciation Expense
-        JournalEntry::create([
-            'journal_id' => $journal->id,
-            'account_id' => $depreciationAccount->id,
-            'description' => "Depreciation - {$asset->name}",
-            'debit' => $amount,
-            'credit' => 0,
-        ]);
-
-        // Credit: Accumulated Depreciation
-        JournalEntry::create([
-            'journal_id' => $journal->id,
-            'account_id' => $accumulatedAccount->id,
-            'description' => "Accumulated Depreciation - {$asset->name}",
-            'debit' => 0,
-            'credit' => $amount,
-        ]);
-
-        $journal->updateTotals();
-
-        // Apply to the account balances with the normal debit/credit rules
-        // (M6). The manual arithmetic here added the credit to Accumulated
-        // Depreciation, an asset account, so it moved the wrong way.
-        app(JournalService::class)->updateAccountBalances($journal);
-
-        return $journal;
+        return app(JournalService::class)->createDepreciationJournal($asset, $date, $amount);
     }
 
     /**
@@ -411,111 +365,12 @@ class DepreciationService
     }
 
     /**
-     * Create journal entry for asset disposal
+     * Remove the asset and its depreciation, record proceeds and the gain or
+     * loss, with mapped or category accounts (A11).
      */
     protected function createDisposalJournal(FixedAsset $asset, Carbon $date, float $amount, float $gainLoss): ?Journal
     {
-        $assetAccount = $asset->asset_account_id
-            ? ChartOfAccount::find($asset->asset_account_id)
-            : ChartOfAccount::where('tenant_id', $asset->tenant_id)
-                ->where('account_code', '1500')
-                ->first();
-
-        $accumulatedAccount = $asset->accumulated_depreciation_account_id
-            ? ChartOfAccount::find($asset->accumulated_depreciation_account_id)
-            : ChartOfAccount::where('tenant_id', $asset->tenant_id)
-                ->where('account_code', '1600')
-                ->first();
-
-        $cashAccount = ChartOfAccount::where('tenant_id', $asset->tenant_id)
-            ->where('account_code', '1000')
-            ->first();
-
-        // Gain/Loss account - use Other Income (4200) for gain, Miscellaneous Expense (6990) for loss
-        $gainLossAccount = $gainLoss >= 0
-            ? ChartOfAccount::where('tenant_id', $asset->tenant_id)->where('account_code', '4200')->first()
-            : ChartOfAccount::where('tenant_id', $asset->tenant_id)->where('account_code', '6990')->first();
-
-        if (! $assetAccount || ! $accumulatedAccount) {
-            return null;
-        }
-
-        $journal = Journal::create([
-            'tenant_id' => $asset->tenant_id,
-            'journal_number' => Journal::generateNumber($asset->tenant_id),
-            'journal_date' => $date,
-            'reference' => $asset->asset_number,
-            'description' => "Asset Disposal - {$asset->name}",
-            'reference_type' => FixedAsset::class,
-            'reference_id' => $asset->id,
-            'status' => 'posted',
-            'is_posted' => true,
-            'posted_at' => now(),
-            'created_by' => auth()->id(),
-        ]);
-
-        // Debit: Accumulated Depreciation (remove the accumulated depreciation)
-        if ($asset->accumulated_depreciation > 0) {
-            JournalEntry::create([
-                'journal_id' => $journal->id,
-                'account_id' => $accumulatedAccount->id,
-                'description' => "Remove Accumulated Depreciation - {$asset->name}",
-                'debit' => $asset->accumulated_depreciation,
-                'credit' => 0,
-            ]);
-        }
-
-        // Debit: Cash (if sold for money)
-        if ($amount > 0 && $cashAccount) {
-            JournalEntry::create([
-                'journal_id' => $journal->id,
-                'account_id' => $cashAccount->id,
-                'description' => "Cash received from disposal - {$asset->name}",
-                'debit' => $amount,
-                'credit' => 0,
-            ]);
-        }
-
-        // Credit: Asset Account (remove the asset)
-        JournalEntry::create([
-            'journal_id' => $journal->id,
-            'account_id' => $assetAccount->id,
-            'description' => "Remove Asset - {$asset->name}",
-            'debit' => 0,
-            'credit' => $asset->purchase_cost,
-        ]);
-
-        // Handle gain or loss
-        if ($gainLoss != 0 && $gainLossAccount) {
-            if ($gainLoss > 0) {
-                // Gain - Credit
-                JournalEntry::create([
-                    'journal_id' => $journal->id,
-                    'account_id' => $gainLossAccount->id,
-                    'description' => "Gain on Disposal - {$asset->name}",
-                    'debit' => 0,
-                    'credit' => $gainLoss,
-                ]);
-            } else {
-                // Loss - Debit
-                JournalEntry::create([
-                    'journal_id' => $journal->id,
-                    'account_id' => $gainLossAccount->id,
-                    'description' => "Loss on Disposal - {$asset->name}",
-                    'debit' => abs($gainLoss),
-                    'credit' => 0,
-                ]);
-            }
-        }
-
-        $journal->updateTotals();
-
-        // Apply to the account balances with the normal debit/credit rules
-        // (M6). The manual arithmetic here added the credit to Accumulated
-        // Depreciation, an asset account, so it moved the wrong way.
-        app(JournalService::class)->updateAccountBalances($journal);
-
-        return $journal;
+        return app(JournalService::class)->createDisposalJournal($asset, $date, $amount, $gainLoss);
     }
 
     /**

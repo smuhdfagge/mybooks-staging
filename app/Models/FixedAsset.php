@@ -15,6 +15,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class FixedAsset extends Model
 {
+    /** How the asset was paid for (finding A11) => what the purchase journal credits. */
+    public const FUNDING_SOURCES = [
+        'bank' => 'Paid from the bank',
+        'cash' => 'Paid in cash',
+        'on_account' => 'Owed to the vendor (no bill in MyBooks)',
+        'bill' => 'On a vendor bill already entered in MyBooks',
+        'opening_balance' => 'Already owned (opening balance)',
+    ];
+
     use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     protected $fillable = [
@@ -32,6 +41,7 @@ class FixedAsset extends Model
         'purchase_date',
         'in_service_date',
         'purchase_cost',
+        'funding_source',
         'salvage_value',
         'depreciable_amount',
         'useful_life',

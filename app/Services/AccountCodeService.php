@@ -27,6 +27,8 @@ class AccountCodeService
         'employee_advances' => '1250',
         'inventory' => '1300',
         'prepaid_expenses' => '1400',
+        'fixed_assets' => '1500',
+        'accumulated_depreciation' => '1600',
         'input_vat' => '1410',
 
         // Liabilities
@@ -51,6 +53,7 @@ class AccountCodeService
         // Income
         'sales_revenue' => '4000',
         'interest_income' => '4300',
+        'other_income' => '4200',
 
         // COGS
         'cost_of_goods_sold' => '5000',
@@ -63,6 +66,7 @@ class AccountCodeService
         'employer_pension' => '6050',
         'employer_health_insurance' => '6060',
         'workers_comp' => '6070',
+        'depreciation_expense' => '6800',
         'miscellaneous_expense' => '6990',
     ];
 

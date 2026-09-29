@@ -132,6 +132,18 @@
                             </div>
 
                             <div>
+                                <label for="funding_source" class="block text-sm font-medium text-gray-700 dark:text-gray-300">How was it paid for? *</label>
+                                <select name="funding_source" id="funding_source" required
+                                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    @foreach(\App\Models\FixedAsset::FUNDING_SOURCES as $value => $label)
+                                        <option value="{{ $value }}" {{ old('funding_source', 'bank') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Choose "vendor bill" if the purchase is already on a bill in MyBooks, so it isn't counted twice.</p>
+                                @error('funding_source') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                            </div>
+
+                            <div>
                                 <label for="salvage_value" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Salvage Value *</label>
                                 <input type="number" name="salvage_value" id="salvage_value" value="{{ old('salvage_value', 0) }}" step="0.01" min="0" required
                                     class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">

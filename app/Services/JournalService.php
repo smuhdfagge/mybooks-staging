@@ -1408,6 +1408,128 @@ class JournalService implements JournalServiceInterface
         }
     }
 
+    public const ASSET_ACQUISITION = 'asset_acquisition';
+
+    public const ASSET_DEPRECIATION = 'asset_depreciation';
+
+    public const ASSET_DISPOSAL = 'asset_disposal';
+
+    /**
+     * Ledger accounts for a fixed asset: the category's own accounts when
+     * set, otherwise the mapped defaults (finding A11).
+     *
+     * @return array{asset: string, accumulated: string, expense: string, gain: string, loss: string}
+     */
+    public function fixedAssetAccounts(\App\Models\FixedAsset $asset): array
+    {
+        $t = $asset->tenant_id;
+        $category = $asset->category;
+        $code = fn (?int $id) => $id ? ChartOfAccount::where('tenant_id', $t)->whereKey($id)->value('account_code') : null;
+
+        return [
+            'asset' => $code($category?->asset_account_id) ?? $this->acct($t, 'fixed_assets'),
+            'accumulated' => $code($category?->accumulated_depreciation_account_id) ?? $this->acct($t, 'accumulated_depreciation'),
+            'expense' => $code($category?->depreciation_expense_account_id) ?? $this->acct($t, 'depreciation_expense'),
+            'gain' => $code($category?->gain_loss_account_id) ?? $this->acct($t, 'other_income'),
+            'loss' => $code($category?->gain_loss_account_id) ?? $this->acct($t, 'miscellaneous_expense'),
+        ];
+    }
+
+    /**
+     * Buying (or registering) an asset (A11): Dr the asset account, Cr
+     * according to how it was paid for: bank, cash, the vendor (accounts
+     * payable), the expense a vendor bill already posted it to, or owner's
+     * capital for an asset the business already had.
+     */
+    public function createFixedAssetAcquisitionJournal(\App\Models\FixedAsset $asset): ?Journal
+    {
+        if ((float) $asset->purchase_cost <= 0) {
+            return null;
+        }
+        $t = $asset->tenant_id;
+        $credit = match ($asset->funding_source) {
+            'cash' => $this->acct($t, 'cash'),
+            'on_account' => $this->acct($t, 'accounts_payable'),
+            'bill' => $this->acct($t, 'miscellaneous_expense'),
+            'opening_balance' => $this->acct($t, 'owners_capital'),
+            default => $this->getPaymentAccountCode('bank_transfer', $t),
+        };
+        $label = \App\Models\FixedAsset::FUNDING_SOURCES[$asset->funding_source] ?? 'Paid from the bank';
+
+        return $this->postSimple($asset, self::ASSET_ACQUISITION, $asset->purchase_date, "Asset purchase - {$asset->name} ({$label})", [
+            [$this->fixedAssetAccounts($asset)['asset'], (float) $asset->purchase_cost, 0, "Asset - {$asset->name}"],
+            [$credit, 0, (float) $asset->purchase_cost, $label],
+        ]);
+    }
+
+    public function createDepreciationJournal(\App\Models\FixedAsset $asset, \Carbon\Carbon $date, float $amount): ?Journal
+    {
+        $accounts = $this->fixedAssetAccounts($asset);
+
+        return $this->postSimple($asset, self::ASSET_DEPRECIATION, $date, "Depreciation - {$asset->name} ({$date->format('M Y')})", [
+            [$accounts['expense'], $amount, 0, "Depreciation - {$asset->name}"],
+            [$accounts['accumulated'], 0, $amount, "Accumulated Depreciation - {$asset->name}"],
+        ]);
+    }
+
+    /**
+     * Disposal: remove cost and accumulated depreciation, record any money
+     * received, and the gain or loss.
+     */
+    public function createDisposalJournal(\App\Models\FixedAsset $asset, \Carbon\Carbon $date, float $proceeds, float $gainLoss): ?Journal
+    {
+        $a = $this->fixedAssetAccounts($asset);
+        $lines = [];
+        if ((float) $asset->accumulated_depreciation > 0) {
+            $lines[] = [$a['accumulated'], (float) $asset->accumulated_depreciation, 0, "Remove accumulated depreciation - {$asset->name}"];
+        }
+        if ($proceeds > 0) {
+            $lines[] = [$this->getPaymentAccountCode('bank_transfer', $asset->tenant_id), $proceeds, 0, "Proceeds - {$asset->name}"];
+        }
+        $lines[] = [$a['asset'], 0, (float) $asset->purchase_cost, "Remove asset - {$asset->name}"];
+        if ($gainLoss > 0) {
+            $lines[] = [$a['gain'], 0, $gainLoss, "Gain on disposal - {$asset->name}"];
+        } elseif ($gainLoss < 0) {
+            $lines[] = [$a['loss'], -$gainLoss, 0, "Loss on disposal - {$asset->name}"];
+        }
+
+        return $this->postSimple($asset, self::ASSET_DISPOSAL, $date, "Asset disposal - {$asset->name}", $lines);
+    }
+
+    /**
+     * One balanced journal for a document, inside a transaction, with the
+     * normal period check.
+     *
+     * @param  array<int, array{0: string, 1: float, 2: float, 3: string}>  $lines  code, debit, credit, text
+     */
+    protected function postSimple(\App\Models\FixedAsset $document, string $type, mixed $date, string $description, array $lines): Journal
+    {
+        return DB::transaction(function () use ($document, $type, $date, $description, $lines) {
+            $journal = Journal::create([
+                'tenant_id' => $document->tenant_id,
+                'journal_number' => Journal::generateNumber($document->tenant_id),
+                'journal_date' => $date,
+                'reference' => $document->asset_number,
+                'description' => $description,
+                'reference_type' => $document::class,
+                'reference_id' => $document->getKey(),
+                'journal_type' => $type,
+                'status' => 'posted',
+                'is_posted' => true,
+                'posted_at' => now(),
+                'created_by' => auth()->id(),
+            ]);
+            foreach ($lines as [$code, $debit, $credit, $text]) {
+                $this->createEntry($journal, $code, round($debit, 2), round($credit, 2), $text);
+            }
+            $journal->updateTotals();
+            $journal->save();
+            $this->updateAccountBalances($journal); // refuses an unbalanced journal (M2)
+
+            return $journal;
+        });
+    }
+
     /**
      * Opening a credit note reduces what the customer owes (finding N5):
      *   Dr Sales revenue      subtotal
