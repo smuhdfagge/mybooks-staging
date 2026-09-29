@@ -181,26 +181,27 @@ class InvoicesTable extends Component
                 break;
 
             case 'delete':
+                // Same rules as deleting one invoice (R3).
+                $deleteInvoice = app(\App\Actions\Invoices\DeleteInvoice::class);
                 $deletedCount = 0;
-                DB::transaction(function () use (&$deletedCount) {
+                $skipped = 0;
+                DB::transaction(function () use (&$deletedCount, &$skipped, $deleteInvoice) {
                     foreach ($this->selectedItems as $invoiceId) {
-                        $invoice = Invoice::with('items')->find($invoiceId);
-                        if ($invoice) {
-                            // Skip invoices with payments
-                            if ($invoice->amount_paid > 0) {
-                                continue;
-                            }
-                            // Release inventory reservations before deleting
-                            $invoice->releaseInventoryReservation();
-                            // Delete invoice items
-                            $invoice->items()->delete();
-                            // Delete invoice - this triggers the deleting event which cleans up journals
-                            $invoice->delete();
-                            $deletedCount++;
+                        $invoice = Invoice::find($invoiceId);
+                        if (! $invoice) {
+                            continue;
                         }
+                        if ($deleteInvoice->blockedBecause($invoice)) {
+                            $skipped++;
+
+                            continue;
+                        }
+                        $deleteInvoice->handle($invoice);
+                        $deletedCount++;
                     }
                 });
-                $this->successMessage = "Successfully deleted {$deletedCount} invoice(s). Journal entries, chart of account balances, and inventory reservations have been updated.";
+                $this->successMessage = "Deleted {$deletedCount} invoice(s)."
+                    .($skipped ? " {$skipped} skipped because they have payments, credits, refunds or released stock." : '');
                 break;
 
             default:

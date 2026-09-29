@@ -24,6 +24,7 @@ class Invoice extends Model
         'tenant_id',
         'customer_id',
         'sales_order_id',
+        'recurrent_invoice_id',
         'invoice_number',
         'reference',
         'invoice_date',

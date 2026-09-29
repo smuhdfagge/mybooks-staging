@@ -26,8 +26,10 @@ class DocumentTotals
     public static function calculate(array $lines, ?string $discountType, float|int|string|null $discountValue): array
     {
         $net = [];
+        $grossOf = [];
         foreach ($lines as $key => $line) {
             $gross = (float) ($line['quantity'] ?? 0) * (float) ($line['unit_price'] ?? 0);
+            $grossOf[$key] = round($gross, 2);
             $lineDiscount = (float) ($line['discount'] ?? 0);
             if ($lineDiscount > 0 && ($line['discount_type'] ?? 'fixed') === 'percentage') {
                 $lineDiscount = $gross * $lineDiscount / 100;
@@ -64,7 +66,9 @@ class DocumentTotals
             $lineTax = round(($net[$key] - $shares[$key]) * $rate / 100, 2);
             $tax += $lineTax;
 
-            $out[$key] = array_merge($line, [
+            $out[$key] = array_merge(array_diff_key($line, ['discount_type' => true]), [
+                // The line's own discount as money, ready to store.
+                'discount' => round($grossOf[$key] - $net[$key], 2),
                 'tax_rate' => $rate,
                 'tax_amount' => $lineTax,
                 'total' => round($net[$key] + $lineTax, 2),

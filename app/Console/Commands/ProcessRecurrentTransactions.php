@@ -6,7 +6,6 @@ use App\Models\Bill;
 use App\Models\BillItem;
 use App\Models\Expense;
 use App\Models\Invoice;
-use App\Models\InvoiceItem;
 use App\Models\RecurrentBill;
 use App\Models\RecurrentExpense;
 use App\Models\RecurrentInvoice;
@@ -80,62 +79,29 @@ class ProcessRecurrentTransactions extends Command
 
             try {
                 DB::transaction(function () use ($profile) {
-                    // Recalculate from the profile's lines: VAT after the discount (A4).
-                    $totals = \App\Services\Sales\DocumentTotals::calculate(
-                        $profile->items->map(fn ($i) => [
+                    // The same rules as every other invoice (R3): totals from
+                    // the profile's lines with today's VAT rules, stock checked
+                    // and reserved, journal posted with the lines in place.
+                    app(\App\Actions\Invoices\SaveInvoice::class)->create($profile->tenant_id, [
+                        'customer_id' => $profile->customer_id,
+                        'recurrent_invoice_id' => $profile->id,
+                        'invoice_date' => $profile->next_invoice_date->toDateString(),
+                        'due_date' => $profile->next_invoice_date->copy()->addDays($profile->payment_terms)->toDateString(),
+                        'status' => 'sent',
+                        'notes' => $profile->notes,
+                        'terms' => $profile->terms,
+                        'discount_type' => $profile->discount_type,
+                        'discount_amount' => $profile->discount_amount ?? 0,
+                        'items' => $profile->items->map(fn ($i) => [
                             'item_id' => $i->item_id,
                             'description' => $i->description,
                             'quantity' => $i->quantity,
                             'unit_price' => $i->unit_price,
                             'discount' => $i->discount ?? 0,
+                            'discount_type' => 'fixed',
                             'tax_rate' => $i->tax_rate ?? 0,
                         ])->all(),
-                        $profile->discount_type,
-                        $profile->discount_amount ?? 0
-                    );
-
-                    $invoice = Invoice::withoutEvents(function () use ($profile, $totals) {
-                        $inv = Invoice::create([
-                            'tenant_id' => $profile->tenant_id,
-                            'customer_id' => $profile->customer_id,
-                            'recurrent_invoice_id' => $profile->id,
-                            'invoice_number' => Invoice::generateNumber($profile->tenant_id),
-                            'invoice_date' => $profile->next_invoice_date,
-                            'due_date' => $profile->next_invoice_date->copy()->addDays($profile->payment_terms),
-                            'status' => 'sent',
-                            'subtotal' => $totals['subtotal'],
-                            'tax_amount' => $totals['tax_amount'],
-                            'discount_amount' => $totals['discount_amount'],
-                            'discount_type' => $profile->discount_type,
-                            'total' => $totals['total'],
-                            'amount_paid' => 0,
-                            'balance_due' => $totals['total'],
-                            'notes' => $profile->notes,
-                            'terms' => $profile->terms,
-                            'created_by' => $profile->created_by,
-                        ]);
-
-                        foreach ($totals['lines'] as $line) {
-                            InvoiceItem::create([
-                                'invoice_id' => $inv->id,
-                                'item_id' => $line['item_id'],
-                                'description' => $line['description'],
-                                'quantity' => $line['quantity'],
-                                'unit_price' => $line['unit_price'],
-                                'discount' => $line['discount'],
-                                'tax_rate' => $line['tax_rate'],
-                                'tax_amount' => $line['tax_amount'],
-                                'total' => $line['total'],
-                            ]);
-                        }
-
-                        return $inv;
-                    });
-
-                    // Create journal entry for the new invoice (outside withoutEvents)
-                    if ($invoice->total > 0) {
-                        $invoice->createJournalEntry();
-                    }
+                    ], $profile->created_by);
 
                     $profile->advanceNextDate();
                 });

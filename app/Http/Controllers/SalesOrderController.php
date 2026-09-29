@@ -3,9 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
-use App\Models\Inventory;
 use App\Models\Invoice;
-use App\Models\InvoiceItem;
 use App\Models\Item;
 use App\Models\SalesOrder;
 use App\Models\SalesOrderItem;
@@ -140,116 +138,63 @@ class SalesOrderController extends Controller
             ->with('success', 'Sales order confirmed successfully.');
     }
 
-    public function convertToInvoice(SalesOrder $salesOrder)
+    public function convertToInvoice(SalesOrder $salesOrder, \App\Actions\Invoices\SaveInvoice $save)
     {
         if (! in_array($salesOrder->status, ['confirmed', 'processing'])) {
             return redirect()->back()->with('error', 'Only confirmed or processing orders can be converted to invoices.');
         }
 
         $salesOrder->load('items');
-        $tenantId = auth()->user()->tenant_id;
 
-        DB::beginTransaction();
-        try {
-            $invoice = Invoice::create([
-                'tenant_id' => $tenantId,
+        // Lines still to deliver.
+        $lines = [];
+        foreach ($salesOrder->items as $soItem) {
+            $qty = $soItem->quantity - ($soItem->quantity_fulfilled ?? 0);
+            if ($qty <= 0) {
+                continue;
+            }
+            $lines[] = [
+                'item_id' => $soItem->item_id,
+                'description' => $soItem->description,
+                'quantity' => $qty,
+                'unit_price' => $soItem->unit_price,
+                'tax_rate' => $soItem->tax_rate ?? 0,
+            ];
+        }
+
+        if ($lines === []) {
+            return redirect()->back()->with('error', 'All items have already been fulfilled. Nothing to invoice.');
+        }
+
+        // The order's discount is stored as money. Invoice the share that
+        // belongs to the lines still to deliver.
+        $remaining = collect($lines)->sum(fn ($l) => (float) $l['quantity'] * (float) $l['unit_price']);
+        $orderSubtotal = (float) $salesOrder->subtotal;
+        $discountShare = $orderSubtotal > 0 ? (float) ($salesOrder->discount_amount ?? 0) * min(1, $remaining / $orderSubtotal) : 0;
+
+        // The same rules as every other invoice (R3): stock is checked and
+        // reserved, which conversion used to skip.
+        $invoice = DB::transaction(function () use ($save, $salesOrder, $lines, $discountShare) {
+            $invoice = $save->create(auth()->user()->tenant_id, [
                 'customer_id' => $salesOrder->customer_id,
                 'sales_order_id' => $salesOrder->id,
-                'invoice_number' => Invoice::generateNumber($tenantId),
-                'invoice_date' => now(),
-                'due_date' => now()->addDays(30),
+                'invoice_date' => now()->toDateString(),
+                'due_date' => now()->addDays(30)->toDateString(),
                 'reference' => $salesOrder->order_number,
                 'notes' => $salesOrder->notes,
                 'terms' => $salesOrder->terms,
-                'discount_type' => $salesOrder->discount_amount > 0 ? 'fixed' : null,
-                'discount_amount' => 0, // set below with the totals
-                'status' => 'draft',
-                'created_by' => auth()->id(),
-            ]);
+                'discount_type' => $discountShare > 0 ? 'fixed' : null,
+                'discount_amount' => round($discountShare, 2),
+                'items' => $lines,
+            ], auth()->id());
 
-            // Lines still to deliver; totals with VAT after the discount (A4).
-            $lines = [];
-            foreach ($salesOrder->items as $soItem) {
-                $qty = $soItem->quantity - ($soItem->quantity_fulfilled ?? 0);
-                if ($qty <= 0) {
-                    continue;
-                }
-                $lines[] = [
-                    'item_id' => $soItem->item_id,
-                    'description' => $soItem->description,
-                    'quantity' => $qty,
-                    'unit_price' => $soItem->unit_price,
-                    'tax_rate' => $soItem->tax_rate ?? 0,
-                ];
-            }
-
-            if ($lines === []) {
-                DB::rollBack();
-
-                return redirect()->back()->with('error', 'All items have already been fulfilled. Nothing to invoice.');
-            }
-
-            // The order's discount is stored as money. Invoice the share that
-            // belongs to the lines still to deliver.
-            $remaining = collect($lines)->sum(fn ($l) => (float) $l['quantity'] * (float) $l['unit_price']);
-            $orderSubtotal = (float) $salesOrder->subtotal;
-            $discountShare = $orderSubtotal > 0 ? (float) ($salesOrder->discount_amount ?? 0) * min(1, $remaining / $orderSubtotal) : 0;
-            $totals = \App\Services\Sales\DocumentTotals::calculate($lines, 'fixed', round($discountShare, 2));
-
-            foreach ($totals['lines'] as $line) {
-                InvoiceItem::create([
-                    'invoice_id' => $invoice->id,
-                    'item_id' => $line['item_id'],
-                    'description' => $line['description'],
-                    'quantity' => $line['quantity'],
-                    'unit_price' => $line['unit_price'],
-                    'tax_rate' => $line['tax_rate'],
-                    'tax_amount' => $line['tax_amount'],
-                    'total' => $line['total'],
-                ]);
-            }
-
-            $subtotal = $totals['subtotal'];
-            $totalTax = $totals['tax_amount'];
-            $discountAmount = $totals['discount_amount'];
-            $total = $totals['total'];
-
-            $invoice->update([
-                'subtotal' => $subtotal,
-                'tax_amount' => $totalTax,
-                'discount_amount' => $discountAmount,
-                'total' => $total,
-                'balance_due' => $total,
-            ]);
-
-            // Reserve inventory for invoice items
-            foreach ($invoice->items as $invoiceItem) {
-                if ($invoiceItem->item_id) {
-                    $item = Item::find($invoiceItem->item_id);
-                    if ($item && $item->track_inventory && $item->type !== 'service') {
-                        $inventory = Inventory::where('item_id', $item->id)
-                            ->where('tenant_id', $tenantId)
-                            ->first();
-                        if ($inventory) {
-                            $inventory->reserved_quantity = ($inventory->reserved_quantity ?? 0) + $invoiceItem->quantity;
-                            $inventory->save();
-                        }
-                    }
-                }
-            }
-
-            // Update sales order status
             $salesOrder->update(['status' => 'invoiced']);
 
-            DB::commit();
+            return $invoice;
+        });
 
-            return redirect()->route('invoices.show', $invoice)
-                ->with('success', "Invoice {$invoice->invoice_number} created from Sales Order {$salesOrder->order_number}.");
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return redirect()->back()->with('error', 'Failed to convert sales order: '.$e->getMessage());
-        }
+        return redirect()->route('invoices.show', $invoice)
+            ->with('success', "Invoice {$invoice->invoice_number} created from Sales Order {$salesOrder->order_number}.");
     }
 
     public function createDeliveryNote(SalesOrder $salesOrder)

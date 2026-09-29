@@ -30,7 +30,13 @@ class StoreInvoiceRequest extends FormRequest
             'items.*.description' => ['required', 'string'],
             'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'items.*.discount' => ['nullable', 'numeric', 'min:0'],
+            'items.*.discount_type' => ['nullable', 'in:fixed,percentage'],
             'items.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100', $this->configuredTaxRateRule()],
+            // Shared with the API (Q5). A new invoice starts as draft, sent or
+            // unpaid; payments and due dates decide the rest (I3).
+            'status' => ['sometimes', Rule::in(\App\Actions\Invoices\SaveInvoice::START_STATUSES)],
+            'sales_order_id' => ['nullable', Rule::exists('sales_orders', 'id')->where('tenant_id', $tenantId)],
         ];
     }
 
