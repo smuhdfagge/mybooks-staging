@@ -74,7 +74,7 @@ class EmployeeController extends BaseApiController
         $tenantId = $this->getTenantId();
 
         $validated = $request->validate([
-            'employee_id' => 'nullable|string|max:50',
+            'employee_id' => ['nullable', 'string', 'max:50', Rule::unique('employees', 'employee_id')->where('tenant_id', $tenantId)],
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
             'email' => 'required|email|max:255',

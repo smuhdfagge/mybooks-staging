@@ -158,5 +158,6 @@
             });
         }
     </script>
+    @include('partials.dom-actions')
 </body>
 </html>

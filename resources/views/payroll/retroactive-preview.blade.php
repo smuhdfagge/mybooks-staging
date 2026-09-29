@@ -90,7 +90,7 @@
 
                 @if($totalAdjustment != 0)
                     <div class="mt-6 flex justify-end">
-                        <form action="{{ route('payroll.retroactive-adjustment') }}" method="POST" onsubmit="return confirm('This will create an adjustment payroll record. Continue?')">
+                        <form action="{{ route('payroll.retroactive-adjustment') }}" method="POST" data-confirm="This will create an adjustment payroll record. Continue?">
                             @csrf
                             <input type="hidden" name="employee_id" value="{{ $employee->id }}">
                             <input type="hidden" name="effective_from" value="{{ $effectiveFrom }}">

@@ -138,10 +138,9 @@ class ExpenseController extends Controller
      */
     public function approve(Expense $expense)
     {
-        // Check if user has admin role or is super admin
-        if (! auth()->user()->hasRole('admin') && ! auth()->user()->isSuperAdmin()) {
+        if (! $expense->canBeApprovedBy(auth()->user())) {
             return redirect()->route('expenses.show', $expense)
-                ->with('error', 'You do not have permission to approve expenses.');
+                ->with('error', 'Only an admin who did not raise this expense can approve it.');
         }
 
         if (! $expense->canBeApproved()) {
@@ -160,8 +159,7 @@ class ExpenseController extends Controller
      */
     public function reject(Request $request, Expense $expense)
     {
-        // Check if user has admin role or is super admin
-        if (! auth()->user()->hasRole('admin') && ! auth()->user()->isSuperAdmin()) {
+        if (! $expense->canBeRejectedBy(auth()->user())) {
             return redirect()->route('expenses.show', $expense)
                 ->with('error', 'You do not have permission to reject expenses.');
         }

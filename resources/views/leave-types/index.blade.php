@@ -55,7 +55,7 @@
                                             @endcan
                                             @can('delete leave-types')
                                                 @if($type->leaves_count === 0)
-                                                    <form action="{{ route('leave-types.destroy', $type) }}" method="POST" class="inline ml-3" onsubmit="return confirm('Delete this leave type?');">
+                                                    <form action="{{ route('leave-types.destroy', $type) }}" method="POST" class="inline ml-3" data-confirm="Delete this leave type?">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="text-red-600 dark:text-red-400 hover:underline">Delete</button>

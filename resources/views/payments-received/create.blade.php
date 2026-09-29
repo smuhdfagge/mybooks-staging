@@ -43,11 +43,7 @@
 
                         <!-- Customer -->
                         <div x-data="searchableSelect({
-                            items: [
-                                @foreach($customers as $customer)
-                                { id: '{{ $customer->id }}', name: '{{ addslashes($customer->name) }}' },
-                                @endforeach
-                            ],
+                            items: @js($customers->map(fn ($customer) => ['id' => (string) $customer->id, 'name' => (string) $customer->name])->values()),
                             selectedId: '{{ old('customer_id', $invoice?->customer_id) }}',
                             onSelect: (id) => { selectedCustomer = id; filterInvoices(); filterDeposits(); }
                         })" class="relative">

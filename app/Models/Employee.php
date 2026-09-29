@@ -134,15 +134,28 @@ class Employee extends Model
         return $query->where('status', 'active');
     }
 
+    /**
+     * Next free EMP-nnnnn number for this business. Imported staff can have
+     * their own IDs (e.g. "STAFF-9"), so this looks at the highest EMP- number
+     * rather than the latest row, and skips any number already taken.
+     */
     public static function generateEmployeeId($tenantId)
     {
-        $lastEmployee = static::withoutGlobalScopes()
+        $existing = static::withoutGlobalScopes()
             ->where('tenant_id', $tenantId)
-            ->latest('id')
-            ->first();
+            ->where('employee_id', 'like', 'EMP-%')
+            ->pluck('employee_id');
 
-        $number = $lastEmployee ? intval(substr($lastEmployee->employee_id, 4)) + 1 : 1;
+        $highest = $existing
+            ->map(fn ($id) => ctype_digit(substr($id, 4)) ? (int) substr($id, 4) : 0)
+            ->max() ?? 0;
 
-        return 'EMP-'.str_pad($number, 5, '0', STR_PAD_LEFT);
+        $number = $highest + 1;
+        do {
+            $candidate = 'EMP-'.str_pad((string) $number, 5, '0', STR_PAD_LEFT);
+            $number++;
+        } while (static::withoutGlobalScopes()->where('tenant_id', $tenantId)->where('employee_id', $candidate)->exists());
+
+        return $candidate;
     }
 }

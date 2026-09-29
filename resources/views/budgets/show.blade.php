@@ -63,7 +63,7 @@
                         <form action="{{ route('budgets.activate', $budget) }}" method="POST" class="inline">
                             @csrf
                             <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700"
-                                    onclick="return confirm('Activate this budget? Once active, budget amounts will be compared against actual transactions.')">
+                                    data-confirm="Activate this budget? Once active, budget amounts will be compared against actual transactions.">
                                 Activate Budget
                             </button>
                         </form>
@@ -72,7 +72,7 @@
                         <form action="{{ route('budgets.lock', $budget) }}" method="POST" class="inline">
                             @csrf
                             <button type="submit" class="inline-flex items-center px-4 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700"
-                                    onclick="return confirm('Lock this budget? This action cannot be undone and the budget will become read-only.')">
+                                    data-confirm="Lock this budget? This action cannot be undone and the budget will become read-only.">
                                 Lock Budget
                             </button>
                         </form>

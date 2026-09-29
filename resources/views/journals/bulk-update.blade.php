@@ -209,7 +209,7 @@
                         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
                             Delete multiple draft journal entries at once. Posted journals cannot be deleted.
                         </p>
-                        <form action="{{ route('journals.bulk-update') }}" method="POST" id="bulkDeleteForm" onsubmit="return confirm('Are you sure you want to delete the selected journals? This action cannot be undone.');">
+                        <form action="{{ route('journals.bulk-update') }}" method="POST" id="bulkDeleteForm" data-confirm="Are you sure you want to delete the selected journals? This action cannot be undone.">
                             @csrf
                             @method('DELETE')
                             <input type="hidden" name="action" value="delete">

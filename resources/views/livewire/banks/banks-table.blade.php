@@ -189,7 +189,7 @@
                                         </a>
                                         @endcan
                                         @can('delete banks')
-                                        <form action="{{ route('banks.destroy', $bank) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this bank account?')">
+                                        <form action="{{ route('banks.destroy', $bank) }}" method="POST" class="inline" data-confirm="Are you sure you want to delete this bank account?">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-200" title="Delete" aria-label="Delete">

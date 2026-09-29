@@ -59,7 +59,7 @@
                                 </button>
                             </form>
                             <form action="{{ route('settings.invoice-templates.destroy', $template) }}" method="POST"
-                                  onsubmit="return confirm('Delete this template?')">
+                                  data-confirm="Delete this template?">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit"

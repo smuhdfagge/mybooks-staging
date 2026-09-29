@@ -212,7 +212,7 @@
                                     </svg>
                                     Edit Item
                                 </a>
-                                <form action="{{ route('items.destroy', $item) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this item?')">
+                                <form action="{{ route('items.destroy', $item) }}" method="POST" data-confirm="Are you sure you want to delete this item?">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">

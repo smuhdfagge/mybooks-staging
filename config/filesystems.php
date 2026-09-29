@@ -52,6 +52,27 @@ return [
             'report' => false,
         ],
 
+        // Backups on this server (finding O1). Not served to the web.
+        'backups' => [
+            'driver' => 'local',
+            'root' => storage_path('app/backups'),
+            'throw' => true,
+        ],
+
+        // Off-site backup copy on any S3-compatible storage (Cloudflare R2,
+        // Backblaze B2, AWS S3). Needs: composer require league/flysystem-aws-s3-v3
+        // then BACKUP_DISKS=backups,offsite. See README, "Backups".
+        'offsite' => [
+            'driver' => 's3',
+            'key' => env('BACKUP_S3_KEY'),
+            'secret' => env('BACKUP_S3_SECRET'),
+            'region' => env('BACKUP_S3_REGION', 'auto'),
+            'bucket' => env('BACKUP_S3_BUCKET'),
+            'endpoint' => env('BACKUP_S3_ENDPOINT'),
+            'use_path_style_endpoint' => (bool) env('BACKUP_S3_PATH_STYLE', false),
+            'throw' => true,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

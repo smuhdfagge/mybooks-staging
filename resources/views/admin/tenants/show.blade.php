@@ -321,7 +321,7 @@
                         <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
                             Cancelling the subscription will immediately disable access to premium features.
                         </p>
-                        <form method="POST" action="{{ route('admin.tenants.cancel-subscription', $tenant) }}" onsubmit="return confirm('Are you sure you want to cancel this subscription?');">
+                        <form method="POST" action="{{ route('admin.tenants.cancel-subscription', $tenant) }}" data-confirm="Are you sure you want to cancel this subscription?">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium">

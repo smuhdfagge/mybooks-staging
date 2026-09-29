@@ -40,10 +40,10 @@ class StatutoryTaxTemplate extends Model
      */
     public function applyToTenant(int $tenantId): int
     {
-        // Deactivate existing brackets for this period type
+        // One active table at a time: switch off existing brackets of both
+        // periods, or an old monthly table would keep overriding a new annual one.
         \App\Models\TaxBracket::withoutGlobalScopes()
             ->where('tenant_id', $tenantId)
-            ->where('period', $this->period)
             ->update(['is_active' => false]);
 
         $created = 0;

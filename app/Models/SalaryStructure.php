@@ -120,6 +120,27 @@ class SalaryStructure extends Model
         return round($total, 2);
     }
 
+    /**
+     * Deductions marked pre-tax (pension, NHF, health insurance): they come
+     * off pay before PAYE is worked out. Percentages are of gross pay, as in
+     * calculateDeductions().
+     */
+    public function calculatePreTaxDeductions(): float
+    {
+        $total = 0;
+        $grossSalary = $this->basic_salary + $this->calculateAllowances();
+        foreach ($this->deductions as $item) {
+            if (! $item->is_taxable) {
+                continue;
+            }
+            $total += $item->amount_type === 'percentage'
+                ? ($grossSalary * $item->amount / 100)
+                : $item->amount;
+        }
+
+        return round($total, 2);
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);

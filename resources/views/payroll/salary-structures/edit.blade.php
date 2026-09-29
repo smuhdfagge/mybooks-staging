@@ -173,7 +173,7 @@
                                         class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                 </div>
                                 <div class="col-span-2">
-                                    <label x-show="index === 0" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Taxable</label>
+                                    <label x-show="index === 0" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" title="Pre-tax deductions (pension, NHF, health insurance) are taken off pay before PAYE is worked out">Pre-tax</label>
                                     <select :name="'deductions['+index+'][is_taxable]'" x-model="deduction.is_taxable"
                                         class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                         <option value="0">No</option>

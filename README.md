@@ -73,10 +73,29 @@ composer analyse           # PHPStan; new code must not add to phpstan-baseline.
    ```
    * * * * * cd /path/to/mybooks && php artisan schedule:run >> /dev/null 2>&1
    ```
-5. **Queue.** Large payroll batches, imports and exports run on the queue. Keep `php artisan queue:work` running (Supervisor or similar). On shared hosting that can't do that, set `QUEUE_WORK_FROM_SCHEDULER=true` and the scheduler empties the queue every minute.
+5. **Queue.** Emails, large payroll batches, imports and exports run on the queue. The scheduler (step 4) empties it every minute, so shared hosting needs nothing more. If Supervisor keeps `php artisan queue:work --timeout=600` running, you can set `QUEUE_WORK_FROM_SCHEDULER=false`. Keep `DB_QUEUE_RETRY_AFTER` above 600.
 6. **First time billing is switched on.** Run `php artisan subscriptions:grace --days=14` once (try `--dry-run` first). Organisations already past their end date then get two weeks to pay instead of being locked out immediately.
 
-Take a database backup before every deploy. Deploy one phase of changes at a time.
+Take a database backup before every deploy (`php artisan mybooks:backup`). Deploy one phase of changes at a time.
+
+## Backups
+
+`php artisan mybooks:backup` runs every night at 01:30 from the scheduler. It makes one zip with a database dump (`mysqldump`, or a copy for SQLite) and the uploaded files, writes it to every disk in `BACKUP_DISKS`, and removes copies older than `BACKUP_KEEP_DAYS` (the newest one is always kept). If it fails, it emails `BACKUP_NOTIFY_EMAIL` (default: the support email).
+
+By default the only disk is `backups` (`storage/app/backups` on the same server). That protects against mistakes, not against losing the server, so add an off-site copy:
+
+1. Create a bucket on any S3-compatible storage (Cloudflare R2, Backblaze B2 or AWS S3) with a key that can only write to that bucket.
+2. `composer require league/flysystem-aws-s3-v3 "^3.0"`
+3. In `.env`: `BACKUP_DISKS=backups,offsite`, the `BACKUP_S3_*` settings (see `config/filesystems.php`), and `BACKUP_ARCHIVE_PASSWORD` to encrypt the zip (AES-256). Keep that password somewhere other than the server.
+4. Run `php artisan mybooks:backup` once and check the file arrives.
+
+**Restore test (do this every quarter):** download a backup, unzip it with the password (7-Zip or `unzip`), load `database.sql` into an empty database with `mysql new_db < database.sql`, and check the row counts look right. `files/` holds the uploads to copy back under `storage/app/`.
+
+## Errors and logs
+
+Logs go to `storage/logs/laravel-YYYY-MM-DD.log`, one file a day, kept for `LOG_DAILY_DAYS` (14). Set `LOG_LEVEL=warning` in production.
+
+In production, server errors are also emailed to `ERROR_ALERT_EMAIL` (default: the support email). Each distinct error is sent at most once an hour, with at most 20 alerts an hour in total. The email holds the error, where it happened, the page and the user and business IDs, never form data. For a fuller service later (grouping, history), Sentry or Flare can replace this.
 
 ## Feature switches
 
@@ -101,6 +120,7 @@ Other settings in `config/mybooks.php` include support email, import size limit,
 | `php artisan accounts:recalculate --dry-run` | Compares stored account balances with the journals; without `--dry-run` it corrects them |
 | `php artisan subscriptions:expire` | Expires ended subscriptions and sends reminders (runs daily) |
 | `php artisan subscriptions:grace --days=14` | Gives active subscriptions time to renew (one-off) |
+| `php artisan mybooks:backup` | Backs up the database and uploaded files now (`--only-db` for the database alone) |
 | `php artisan mybooks:ensure-admin-roles` | Makes sure every organisation's first user has the admin role |
 
 ## Project notes

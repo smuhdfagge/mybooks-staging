@@ -45,7 +45,7 @@
                 @endif
                 @if(in_array($purchaseOrder->status, ['draft', 'confirmed']))
                     @can('edit purchase-orders')
-                    <form action="{{ route('purchase-orders.cancel', $purchaseOrder) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to cancel this purchase order?');">
+                    <form action="{{ route('purchase-orders.cancel', $purchaseOrder) }}" method="POST" class="inline" data-confirm="Are you sure you want to cancel this purchase order?">
                         @csrf
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -287,7 +287,7 @@
                         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                             <div class="p-6">
                                 <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">Actions</h3>
-                                <form action="{{ route('purchase-orders.destroy', $purchaseOrder) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this purchase order?');">
+                                <form action="{{ route('purchase-orders.destroy', $purchaseOrder) }}" method="POST" data-confirm="Are you sure you want to delete this purchase order?">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">

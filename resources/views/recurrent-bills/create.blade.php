@@ -38,11 +38,7 @@
                             </div>
 
                             <div x-data="searchableSelect({
-                                items: [
-                                    @foreach($vendors as $vendor)
-                                    { id: '{{ $vendor->id }}', name: '{{ addslashes($vendor->name) }}{{ $vendor->company_name ? " (" . addslashes($vendor->company_name) . ")" : "" }}' },
-                                    @endforeach
-                                ],
+                                items: @js($vendors->map(fn ($vendor) => ['id' => (string) $vendor->id, 'name' => $vendor->name . ($vendor->company_name ? " (" . ($vendor->company_name) . ")" : "")])->values()),
                                 selectedId: '{{ old('vendor_id') }}'
                             })" class="relative">
                                 <label for="vendor_search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor <span class="text-red-500">*</span></label>
@@ -342,11 +338,7 @@
         function recurrentBillForm() {
             return {
                 items: [{ item_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 }],
-                availableProducts: [
-                    @foreach($items as $item)
-                    { id: '{{ $item->id }}', name: '{{ addslashes($item->name) }}', price: {{ $item->cost_price ?? $item->selling_price }}, desc: '{{ addslashes($item->name) }}', tax: {{ $item->tax_rate ?? 0 }} },
-                    @endforeach
-                ],
+                availableProducts: @js($items->map(fn ($item) => ['id' => (string) $item->id, 'name' => (string) $item->name, 'price' => (float) ($item->cost_price ?? $item->selling_price), 'desc' => (string) $item->name, 'tax' => (float) ($item->tax_rate ?? 0)])->values()),
                 subtotal: 0,
                 totalTax: 0,
                 grandTotal: 0,

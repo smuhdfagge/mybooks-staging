@@ -98,7 +98,8 @@ class ExpenseController extends BaseApiController
             'is_billable' => 'boolean',
             'customer_id' => ['nullable', Rule::exists('customers', 'id')->where('tenant_id', $tenantId)],
             'notes' => 'nullable|string',
-            'status' => 'sometimes|in:draft,pending_approval,approved,rejected,paid',
+            // Approval and payment have their own steps and checks (I4).
+            'status' => 'sometimes|in:draft,pending_approval',
         ]);
 
         $validated['expense_number'] = Expense::generateNumber($tenantId);
@@ -190,17 +191,17 @@ class ExpenseController extends BaseApiController
      */
     public function approve(Expense $expense): JsonResponse
     {
+        if (! $expense->canBeApprovedBy(auth()->user())) {
+            return $this->forbidden('Only an admin who did not raise this expense can approve it');
+        }
+
         if ($expense->status !== Expense::STATUS_PENDING_APPROVAL) {
             return $this->error('Only pending expenses can be approved', 422);
         }
 
-        $expense->update([
-            'status' => Expense::STATUS_APPROVED,
-            'approved_by' => auth()->id(),
-            'approved_at' => now(),
-        ]);
+        $expense->approve(auth()->id());
 
-        return $this->success(new ExpenseResource($expense), 'Expense approved');
+        return $this->success(new ExpenseResource($expense->fresh()), 'Expense approved');
     }
 
     /**
@@ -208,6 +209,10 @@ class ExpenseController extends BaseApiController
      */
     public function reject(Request $request, Expense $expense): JsonResponse
     {
+        if (! $expense->canBeRejectedBy(auth()->user())) {
+            return $this->forbidden('Only an admin can reject expenses');
+        }
+
         if ($expense->status !== Expense::STATUS_PENDING_APPROVAL) {
             return $this->error('Only pending expenses can be rejected', 422);
         }
@@ -216,14 +221,9 @@ class ExpenseController extends BaseApiController
             'rejection_reason' => 'required|string|max:500',
         ]);
 
-        $expense->update([
-            'status' => Expense::STATUS_REJECTED,
-            'rejected_by' => auth()->id(),
-            'rejected_at' => now(),
-            'rejection_reason' => $validated['rejection_reason'],
-        ]);
+        $expense->reject(auth()->id(), $validated['rejection_reason']);
 
-        return $this->success(new ExpenseResource($expense), 'Expense rejected');
+        return $this->success(new ExpenseResource($expense->fresh()), 'Expense rejected');
     }
 
     /**

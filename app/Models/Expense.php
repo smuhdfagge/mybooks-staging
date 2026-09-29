@@ -240,6 +240,25 @@ class Expense extends Model
     /**
      * Check if expense can be approved
      */
+    /**
+     * Approving or rejecting needs an admin (or super admin), and nobody
+     * approves an expense they raised themselves (finding I4). Used by the
+     * web and the API so the two can't drift apart again.
+     */
+    public function canBeApprovedBy(User $user): bool
+    {
+        if (! $user->hasRole('admin') && ! $user->isSuperAdmin()) {
+            return false;
+        }
+
+        return (int) $this->created_by !== (int) $user->id;
+    }
+
+    public function canBeRejectedBy(User $user): bool
+    {
+        return $user->hasRole('admin') || $user->isSuperAdmin();
+    }
+
     public function canBeApproved(): bool
     {
         return $this->status === self::STATUS_PENDING_APPROVAL;

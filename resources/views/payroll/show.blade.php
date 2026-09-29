@@ -273,7 +273,7 @@
             <!-- Delete Button -->
             @if($payroll->status === 'draft')
             <div class="mt-6 flex justify-end">
-                <form action="{{ route('payroll.destroy', $payroll) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this payroll record?');">
+                <form action="{{ route('payroll.destroy', $payroll) }}" method="POST" data-confirm="Are you sure you want to delete this payroll record?">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">

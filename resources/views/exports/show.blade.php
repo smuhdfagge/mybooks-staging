@@ -59,7 +59,7 @@
                     @if($export->isDownloadable() && ! $export->isExpired())
                         <a href="{{ route('exports.download', $export) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition ease-in-out duration-150">Download</a>
                     @endif
-                    <form action="{{ route('exports.destroy', $export) }}" method="POST" onsubmit="return confirm('Delete this export?');">
+                    <form action="{{ route('exports.destroy', $export) }}" method="POST" data-confirm="Delete this export?">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-red-300 dark:border-red-600 rounded-md font-semibold text-xs text-red-600 dark:text-red-400 uppercase tracking-widest hover:bg-red-50 dark:hover:bg-red-900/20 transition ease-in-out duration-150">Delete</button>

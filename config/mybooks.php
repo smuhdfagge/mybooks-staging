@@ -121,11 +121,55 @@ return [
     | Queue worker from the scheduler (finding N7)
     |--------------------------------------------------------------------------
     |
-    | On hosting that can't keep "php artisan queue:work" running, set this
-    | to true and the scheduler empties the queue every minute.
+    | The scheduler empties the queue every minute, so emails, payroll
+    | batches, imports and exports go out on hosting that can't keep
+    | "php artisan queue:work" running (most shared hosting). On by default
+    | since round 3 (finding R5): with it off and no worker, queued emails
+    | never left. If Supervisor runs a worker, it can be switched off, but
+    | leaving it on does no harm.
     |
     */
 
-    'queue_work_from_scheduler' => (bool) env('QUEUE_WORK_FROM_SCHEDULER', false),
+    'queue_work_from_scheduler' => (bool) env('QUEUE_WORK_FROM_SCHEDULER', true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Backups (finding O1)
+    |--------------------------------------------------------------------------
+    |
+    | "php artisan mybooks:backup" runs daily at 01:30 from the scheduler. It
+    | writes one zip (database dump + uploaded files) to every disk listed in
+    | BACKUP_DISKS. "backups" is a folder on this server (storage/app/backups):
+    | add an off-site disk too, or a server failure loses the backups with
+    | the data. BACKUP_ARCHIVE_PASSWORD encrypts the zip (AES-256); keep the
+    | password somewhere other than this server.
+    |
+    */
+
+    'backup' => [
+        'disks' => explode(',', (string) env('BACKUP_DISKS', 'backups')),
+        'keep_days' => (int) env('BACKUP_KEEP_DAYS', 30),
+        'password' => env('BACKUP_ARCHIVE_PASSWORD'),
+        'notify' => env('BACKUP_NOTIFY_EMAIL', env('MYBOOKS_SUPPORT_EMAIL')),
+        'mysqldump' => env('BACKUP_MYSQLDUMP_PATH', 'mysqldump'),
+        'enabled' => (bool) env('BACKUP_ENABLED', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Error alerts (finding O2)
+    |--------------------------------------------------------------------------
+    |
+    | Server errors are emailed to ERROR_ALERT_EMAIL: each distinct error at
+    | most once an hour, and at most ERROR_ALERT_MAX_PER_HOUR in total. On
+    | outside production unless ERROR_ALERTS_ENABLED says otherwise.
+    |
+    */
+
+    'error_alerts' => [
+        'email' => env('ERROR_ALERT_EMAIL', env('MYBOOKS_SUPPORT_EMAIL')),
+        'enabled' => (bool) env('ERROR_ALERTS_ENABLED', env('APP_ENV') === 'production'),
+        'max_per_hour' => (int) env('ERROR_ALERT_MAX_PER_HOUR', 20),
+    ],
 
 ];

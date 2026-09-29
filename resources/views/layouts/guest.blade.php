@@ -222,5 +222,6 @@
                 });
             }
         </script>
-    </body>
+        @include('partials.dom-actions')
+</body>
 </html>

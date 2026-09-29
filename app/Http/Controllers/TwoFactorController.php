@@ -22,6 +22,18 @@ class TwoFactorController extends Controller
     {
         $user = $request->user();
 
+        // Already on: show the status page only. Switching phones means
+        // disabling first (password required), then setting up again.
+        if (! is_null($user->two_factor_confirmed_at)) {
+            session()->forget('two_factor_secret');
+
+            return view('auth.two-factor.setup', [
+                'qrCodeSvg' => null,
+                'secret' => null,
+                'isEnabled' => true,
+            ]);
+        }
+
         $secret = $this->twoFactor->generateSecret();
         $qrCodeSvg = $this->twoFactor->generateQrCodeSvg($user, $secret);
 
@@ -31,7 +43,7 @@ class TwoFactorController extends Controller
         return view('auth.two-factor.setup', [
             'qrCodeSvg' => $qrCodeSvg,
             'secret' => $secret,
-            'isEnabled' => ! is_null($user->two_factor_confirmed_at),
+            'isEnabled' => false,
         ]);
     }
 
@@ -43,6 +55,13 @@ class TwoFactorController extends Controller
         $request->validate([
             'code' => 'required|string|size:6',
         ]);
+
+        if (! is_null($request->user()->two_factor_confirmed_at)) {
+            session()->forget('two_factor_secret');
+
+            return redirect()->route('two-factor.setup')
+                ->with('error', 'Two-factor authentication is already on. Disable it first to move it to another device.');
+        }
 
         $secret = session('two_factor_secret');
 

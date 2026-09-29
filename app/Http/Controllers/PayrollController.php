@@ -366,10 +366,6 @@ class PayrollController extends Controller
                         }
                     }
 
-                    // Progressive tax calculation with flat-rate fallback
-                    $taxResult = $taxService->calculateTax($taxableAmount, $tenantId, $flatTaxRate, 'monthly');
-                    $taxDeduction = $taxResult['tax'];
-
                     $deductionDetails = [];
                     $totalOtherDeductions = 0;
 
@@ -382,9 +378,19 @@ class PayrollController extends Controller
                             'amount_type' => $item->amount_type,
                             'rate' => $item->amount,
                             'amount' => $calculated,
+                            'pre_tax' => (bool) $item->is_taxable,
                         ];
                         $totalOtherDeductions += $calculated;
+
+                        // Pre-tax deductions (pension, NHF, health insurance) are reliefs.
+                        if ($item->is_taxable) {
+                            $taxableAmount -= $calculated;
+                        }
                     }
+
+                    // Progressive tax calculation with flat-rate fallback
+                    $taxResult = $taxService->calculateTax(max(0, $taxableAmount), $tenantId, $flatTaxRate, 'monthly');
+                    $taxDeduction = $taxResult['tax'];
 
                     // Include active loan/advance deductions
                     $activeLoans = \App\Models\EmployeeLoan::getActiveDeductionsForEmployee(
@@ -813,7 +819,9 @@ class PayrollController extends Controller
                 }
             }
 
-            $taxResult = $taxService->calculateTax($taxableAmount, $tenantId, 0, 'monthly');
+            $taxableAmount -= $structure->calculatePreTaxDeductions();
+
+            $taxResult = $taxService->calculateTax(max(0, $taxableAmount), $tenantId, 0, 'monthly');
             $newTax = $taxResult['tax'];
 
             $newDeductions = $structure->calculateDeductions();

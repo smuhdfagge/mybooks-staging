@@ -23,7 +23,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                         <div class="lg:col-span-1">
                             <label for="comparison_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Comparison Type</label>
-                            <select name="comparison_type" id="comparison_type" onchange="toggleCustomDates(this.value)"
+                            <select name="comparison_type" id="comparison_type" data-call="toggleCustomDates" data-pass-value
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                                 <option value="month" {{ $comparisonType === 'month' ? 'selected' : '' }}>Month over Month</option>
                                 <option value="quarter" {{ $comparisonType === 'quarter' ? 'selected' : '' }}>Quarter over Quarter</option>

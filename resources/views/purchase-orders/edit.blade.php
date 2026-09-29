@@ -35,11 +35,7 @@
                             </div>
 
                             <div x-data="searchableSelect({
-                                items: [
-                                    @foreach($vendors as $vendor)
-                                    { id: '{{ $vendor->id }}', name: '{{ addslashes($vendor->name) }}{{ $vendor->company_name ? " (" . addslashes($vendor->company_name) . ")" : "" }}' },
-                                    @endforeach
-                                ],
+                                items: @js($vendors->map(fn ($vendor) => ['id' => (string) $vendor->id, 'name' => $vendor->name . ($vendor->company_name ? " (" . ($vendor->company_name) . ")" : "")])->values()),
                                 selectedId: '{{ old('vendor_id', $purchaseOrder->vendor_id) }}'
                             })" class="relative">
                                 <label for="vendor_search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor <span class="text-red-500">*</span></label>
@@ -366,26 +362,18 @@
 
         function purchaseOrderForm() {
             return {
-                items: [
-                    @foreach($purchaseOrder->items as $poItem)
-                    {
-                        item_id: '{{ $poItem->item_id ?? '' }}',
-                        description: '{{ addslashes($poItem->description) }}',
-                        quantity: {{ $poItem->quantity }},
-                        unit_price: {{ $poItem->unit_price }},
-                        discount: {{ $poItem->discount }},
-                        tax_rate: {{ $poItem->tax_rate }},
-                        itemSearch: '{{ $poItem->item ? addslashes($poItem->item->name) : '' }}',
-                        itemDropdownOpen: false,
-                        itemHighlightedIndex: 0
-                    },
-                    @endforeach
-                ],
-                availableProducts: [
-                    @foreach($items as $item)
-                    { id: '{{ $item->id }}', name: '{{ addslashes($item->name) }}', price: {{ $item->purchase_price ?? $item->selling_price ?? 0 }}, desc: '{{ addslashes($item->description ?? $item->name) }}', tax: {{ $item->tax_rate ?? 0 }} },
-                    @endforeach
-                ],
+                items: @js($purchaseOrder->items->map(fn ($poItem) => [
+                    'item_id' => (string) ($poItem->item_id ?? ''),
+                    'description' => (string) $poItem->description,
+                    'quantity' => (float) $poItem->quantity,
+                    'unit_price' => (float) $poItem->unit_price,
+                    'discount' => (float) $poItem->discount,
+                    'tax_rate' => (float) $poItem->tax_rate,
+                    'itemSearch' => $poItem->item ? (string) $poItem->item->name : '',
+                    'itemDropdownOpen' => false,
+                    'itemHighlightedIndex' => 0,
+                ])->values()),
+                availableProducts: @js($items->map(fn ($item) => ['id' => (string) $item->id, 'name' => (string) $item->name, 'price' => (float) ($item->purchase_price ?? $item->selling_price ?? 0), 'desc' => (string) ($item->description ?? $item->name), 'tax' => (float) ($item->tax_rate ?? 0)])->values()),
                 subtotal: 0,
                 totalDiscount: 0,
                 totalTax: 0,

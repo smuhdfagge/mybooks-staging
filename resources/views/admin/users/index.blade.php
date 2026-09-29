@@ -72,7 +72,7 @@
                                                 @endif
                                             </button>
                                         </form>
-                                        <form method="POST" action="{{ route('admin.users.destroy', $adminUser) }}" class="inline" onsubmit="return confirm('Are you sure you want to delete this admin user?');">
+                                        <form method="POST" action="{{ route('admin.users.destroy', $adminUser) }}" class="inline" data-confirm="Are you sure you want to delete this admin user?">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition" title="Delete">
