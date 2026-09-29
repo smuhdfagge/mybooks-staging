@@ -428,4 +428,32 @@ class PhaseCRegressionTest extends TestCase
         $this->assertEqualsWithDelta(1000, $prefill[0]['discount'], 0.001);
         $this->assertStringContainsString('items[${index}][discount]', file_get_contents(resource_path('views/bills/create.blade.php')));
     }
+
+    // ── R3: cash sales ──────────────────────────────────────────
+
+    public function test_r3_a_cash_sale_charges_vat_like_an_invoice(): void
+    {
+        $this->createAuthenticatedUser(['create sales-receipts', 'edit sales-receipts', 'view sales-receipts']);
+        $item = $this->stockedItem(10);
+        $sale = [
+            'receipt_date' => '2026-09-01', 'payment_method' => 'cash',
+            'items' => [['item_id' => $item->id, 'description' => 'Goods', 'quantity' => 2, 'unit_price' => 10000, 'tax_rate' => 7.5]],
+        ];
+
+        $this->post(route('sales-receipts.store'), $sale)->assertSessionHasNoErrors();
+
+        $receipt = \App\Models\SalesReceipt::firstOrFail();
+        $this->assertEqualsWithDelta(1500, (float) $receipt->tax_amount, 0.001);
+        $this->assertEqualsWithDelta(21500, (float) $receipt->total, 0.001);
+        $journal = Journal::where('reference_type', \App\Models\SalesReceipt::class)->where('reference_id', $receipt->id)->firstOrFail();
+        $vat = \App\Services\AccountCodeService::resolve($this->tenant->id, 'sales_tax_payable');
+        $this->assertEqualsWithDelta(1500, (float) $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', $vat))->sum('credit'), 0.001);
+        $this->assertEqualsWithDelta(8, $this->onHand($item), 0.001);
+
+        // Editing keeps VAT and moves stock by the difference only.
+        $sale['items'][0]['quantity'] = 3;
+        $this->put(route('sales-receipts.update', $receipt), $sale)->assertSessionHasNoErrors();
+        $this->assertEqualsWithDelta(32250, (float) $receipt->fresh()->total, 0.001);
+        $this->assertEqualsWithDelta(7, $this->onHand($item), 0.001);
+    }
 }
