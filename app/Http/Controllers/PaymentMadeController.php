@@ -35,50 +35,10 @@ class PaymentMadeController extends Controller
         return view('payments-made.create', compact('vendors', 'bill', 'paymentNumber', 'banks'));
     }
 
-    public function store(Request $request)
+    public function store(\App\Http\Requests\StorePaymentMadeRequest $request, \App\Actions\Payments\RecordPaymentMade $record)
     {
-        $tenantId = auth()->user()->tenant_id;
-
-        $validated = $request->validate([
-            'vendor_id' => ['required', Rule::exists('vendors', 'id')->where('tenant_id', $tenantId)],
-            'bill_id' => ['nullable', Rule::exists('bills', 'id')->where('tenant_id', $tenantId)],
-            'payment_date' => 'required|date',
-            'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|string|max:50',
-            'bank_id' => ['nullable', Rule::exists('banks', 'id')->where('tenant_id', $tenantId)],
-            'reference' => 'nullable|string|max:100',
-            'notes' => 'nullable|string',
-        ]);
-
-        // Right vendor, payable bill, not more than is owed (M5)
-        $bill = ! empty($validated['bill_id']) ? Bill::find($validated['bill_id']) : null;
-        if ($errors = PaymentValidation::forBill($bill, $validated['vendor_id'], (float) $validated['amount'])) {
-            throw ValidationException::withMessages($errors);
-        }
-
-        $payment = DB::transaction(function () use ($tenantId, $validated) {
-            $payment = PaymentMade::create([
-                'tenant_id' => $tenantId,
-                'vendor_id' => $validated['vendor_id'],
-                'bill_id' => $validated['bill_id'] ?? null,
-                'payment_number' => PaymentMade::generateNumber($tenantId),
-                'payment_date' => $validated['payment_date'],
-                'amount' => $validated['amount'],
-                'payment_method' => $validated['payment_method'],
-                'bank_id' => $validated['bank_id'] ?? null,
-                'reference' => $validated['reference'] ?? null,
-                'notes' => $validated['notes'] ?? null,
-                'created_by' => auth()->id(),
-            ]);
-
-            $this->bankService->debit(
-                $validated['bank_id'] ?? null,
-                $validated['amount'],
-                "Payment made #{$payment->payment_number}"
-            );
-
-            return $payment;
-        });
+        // Same rules as the API (R3).
+        $payment = $record->handle(auth()->user()->tenant_id, $request->validated(), auth()->id());
 
         return redirect()->route('payments-made.show', $payment)->with('success', 'Payment recorded.');
     }
@@ -138,17 +98,9 @@ class PaymentMadeController extends Controller
         return redirect()->route('payments-made.show', $paymentMade)->with('success', 'Payment updated.');
     }
 
-    public function destroy(PaymentMade $paymentMade)
+    public function destroy(PaymentMade $paymentMade, \App\Actions\Payments\DeletePaymentMade $delete)
     {
-        DB::transaction(function () use ($paymentMade) {
-            $this->bankService->credit(
-                $paymentMade->bank_id,
-                $paymentMade->amount,
-                "Payment made #{$paymentMade->payment_number} deleted"
-            );
-
-            $paymentMade->delete();
-        });
+        $delete->handle($paymentMade);
 
         return redirect()->route('payments-made.index')->with('success', 'Payment deleted.');
     }

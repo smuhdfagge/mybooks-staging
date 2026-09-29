@@ -5,11 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Resources\PaymentReceivedResource;
 use App\Models\Invoice;
 use App\Models\PaymentReceived;
-use App\Services\PaymentValidation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class PaymentReceivedController extends BaseApiController
 {
@@ -86,101 +83,28 @@ class PaymentReceivedController extends BaseApiController
     /**
      * Create a new payment received
      */
-    public function store(Request $request): JsonResponse
+    public function store(\App\Http\Requests\StorePaymentReceivedRequest $request, \App\Actions\Payments\RecordPaymentReceived $record): JsonResponse
     {
-        $tenantId = $this->getTenantId();
+        // Same rules and code as the web form (R3, Q5): the bank balance
+        // is updated and deposits can be applied, which the API used to skip.
+        $payment = $record->handle($this->getTenantId(), $request->validated(), auth()->id());
+        $payment->load(['customer', 'invoice', 'bank']);
 
-        $validated = $request->validate([
-            'customer_id' => ['required', Rule::exists('customers', 'id')->where('tenant_id', $tenantId)],
-            'invoice_id' => ['nullable', Rule::exists('invoices', 'id')->where('tenant_id', $tenantId)],
-            'payment_date' => 'required|date',
-            'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|string|max:50',
-            'bank_id' => ['nullable', Rule::exists('banks', 'id')->where('tenant_id', $tenantId)],
-            'reference' => 'nullable|string|max:100',
-            'notes' => 'nullable|string',
-            'is_deposit' => 'boolean',
-        ]);
-
-        // Same checks as the web form (M5). The old strict !== comparison
-        // failed whenever the customer ID arrived as a string.
-        if (! empty($validated['invoice_id']) && ! ($validated['is_deposit'] ?? false)) {
-            $errors = PaymentValidation::forInvoice(
-                Invoice::find($validated['invoice_id']),
-                $validated['customer_id'],
-                (float) $validated['amount']
-            );
-            if ($errors) {
-                return $this->validationError(array_map(fn ($message) => [$message], $errors));
-            }
-        }
-
-        $validated['payment_number'] = PaymentReceived::generateNumber($tenantId);
-        $validated['tenant_id'] = $tenantId;
-        $validated['created_by'] = auth()->id();
-
-        // Set unused_amount for deposits
-        if ($validated['is_deposit'] ?? false) {
-            $validated['unused_amount'] = $validated['amount'];
-        }
-
-        DB::beginTransaction();
-        try {
-            $payment = PaymentReceived::create($validated);
-
-            // Update invoice if linked
-            if (! empty($validated['invoice_id'])) {
-                $payment->invoice?->updateBalances();
-            }
-
-            // Update customer deposit balance if it's a deposit
-            if ($validated['is_deposit'] ?? false) {
-                $payment->customer->updateDepositBalance();
-            }
-
-            DB::commit();
-
-            $payment->load(['customer', 'invoice', 'bank']);
-
-            return $this->created(new PaymentReceivedResource($payment), 'Payment recorded successfully');
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return $this->error('Failed to record payment: '.$e->getMessage(), 500);
-        }
+        return $this->created(new PaymentReceivedResource($payment), 'Payment recorded successfully');
     }
 
     /**
      * Delete a payment
      */
-    public function destroy(PaymentReceived $paymentReceived): JsonResponse
+    public function destroy(PaymentReceived $paymentReceived, \App\Actions\Payments\DeletePaymentReceived $delete): JsonResponse
     {
-        DB::beginTransaction();
-        try {
-            $invoice = $paymentReceived->invoice;
-            $customer = $paymentReceived->customer;
-            $isDeposit = $paymentReceived->is_deposit;
-
-            $paymentReceived->delete();
-
-            // Update invoice balances
-            if ($invoice) {
-                $invoice->updateBalances();
-            }
-
-            // Update customer deposit balance
-            if ($isDeposit) {
-                $customer->updateDepositBalance();
-            }
-
-            DB::commit();
-
-            return $this->success(null, 'Payment deleted successfully');
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return $this->error('Failed to delete payment: '.$e->getMessage(), 500);
+        if ($reason = $delete->blockedBecause($paymentReceived)) {
+            return $this->error($reason, 422);
         }
+
+        $delete->handle($paymentReceived);
+
+        return $this->success(null, 'Payment deleted successfully');
     }
 
     /**

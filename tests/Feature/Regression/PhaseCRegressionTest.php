@@ -456,4 +456,49 @@ class PhaseCRegressionTest extends TestCase
         $this->assertEqualsWithDelta(32250, (float) $receipt->fresh()->total, 0.001);
         $this->assertEqualsWithDelta(7, $this->onHand($item), 0.001);
     }
+
+    // ── R3: payments ────────────────────────────────────────────
+
+    public function test_r3_api_payments_move_the_bank_balance_like_the_web(): void
+    {
+        $this->createAuthenticatedUser(['create payments-received', 'delete payments-received', 'create payments-made', 'delete payments-made']);
+        $bank = \App\Models\Bank::factory()->create(['tenant_id' => $this->tenant->id, 'current_balance' => 100000]);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $balance = fn () => (float) $bank->fresh()->current_balance;
+
+        $this->postJson('/api/v1/payments-received', [
+            'customer_id' => $customer->id, 'payment_date' => '2026-09-01', 'amount' => 5000,
+            'payment_method' => 'bank_transfer', 'bank_id' => $bank->id, 'is_deposit' => true,
+        ])->assertCreated();
+        $this->assertEqualsWithDelta(105000, $balance(), 0.001);
+
+        $this->postJson('/api/v1/payments-made', [
+            'vendor_id' => $vendor->id, 'payment_date' => '2026-09-01', 'amount' => 2000,
+            'payment_method' => 'bank_transfer', 'bank_id' => $bank->id,
+        ])->assertCreated();
+        $this->assertEqualsWithDelta(103000, $balance(), 0.001);
+
+        $this->deleteJson('/api/v1/payments-made/'.\App\Models\PaymentMade::firstOrFail()->id)->assertOk();
+        $this->assertEqualsWithDelta(105000, $balance(), 0.001);
+
+        $this->deleteJson('/api/v1/payments-received/'.\App\Models\PaymentReceived::firstOrFail()->id)->assertOk();
+        $this->assertEqualsWithDelta(100000, $balance(), 0.001);
+    }
+
+    public function test_r3_api_cannot_delete_a_deposit_already_applied(): void
+    {
+        $this->createAuthenticatedUser(['create payments-received', 'delete payments-received']);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $invoice = Invoice::factory()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'status' => 'unpaid', 'subtotal' => 3000, 'tax_amount' => 0, 'discount_amount' => 0, 'total' => 3000, 'balance_due' => 3000, 'amount_paid' => 0]);
+
+        $this->postJson('/api/v1/payments-received', [
+            'customer_id' => $customer->id, 'payment_date' => '2026-09-01', 'amount' => 5000, 'payment_method' => 'cash', 'is_deposit' => true,
+        ])->assertCreated();
+        $deposit = \App\Models\PaymentReceived::firstOrFail();
+        $deposit->applyToInvoice($invoice, 3000);
+
+        $this->deleteJson('/api/v1/payments-received/'.$deposit->id)->assertStatus(422);
+        $this->assertNotSoftDeleted($deposit);
+    }
 }
