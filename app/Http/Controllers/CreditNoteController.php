@@ -23,7 +23,7 @@ class CreditNoteController extends Controller
         $tenantId = auth()->user()->tenant_id;
         $customers = Customer::where('is_active', true)->get();
         $items = Item::where('is_active', true)->get();
-        $creditNoteNumber = CreditNote::generateNumber($tenantId);
+        $creditNoteNumber = CreditNote::previewNumber($tenantId);
 
         $invoice = null;
         if ($request->has('invoice_id')) {

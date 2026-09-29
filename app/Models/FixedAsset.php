@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class FixedAsset extends Model
 {
+    use \App\Traits\HasDocumentNumber;
+
     /** How the asset was paid for (finding A11) => what the purchase journal credits. */
     public const FUNDING_SOURCES = [
         'bank' => 'Paid from the bank',
@@ -173,16 +175,10 @@ class FixedAsset extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public static function generateNumber($tenantId): string
+    /** @return array{0: string, 1: string, 2: int} */
+    protected static function documentNumberFormat(): array
     {
-        $lastAsset = static::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->latest('id')
-            ->first();
-
-        $number = $lastAsset ? intval(substr($lastAsset->asset_number, 3)) + 1 : 1;
-
-        return 'FA-'.str_pad($number, 6, '0', STR_PAD_LEFT);
+        return ['asset_number', 'FA-', 6];
     }
 
     /**

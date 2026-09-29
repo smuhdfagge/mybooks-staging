@@ -34,7 +34,7 @@ class InvoiceController extends Controller
                     });
             })
             ->get();
-        $invoiceNumber = Invoice::generateNumber(auth()->user()->tenant_id);
+        $invoiceNumber = Invoice::previewNumber(auth()->user()->tenant_id);
 
         return view('invoices.create', compact('customers', 'items', 'invoiceNumber'));
     }

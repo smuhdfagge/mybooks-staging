@@ -27,7 +27,7 @@ class ExpenseController extends Controller
         $vendors = Vendor::where('is_active', true)->get();
         $expenseAccounts = ChartOfAccount::where('type', 'expense')->where('is_active', true)->get();
         $paymentAccounts = ChartOfAccount::where('is_active', true)->orderBy('account_code')->get();
-        $expenseNumber = Expense::generateNumber(auth()->user()->tenant_id);
+        $expenseNumber = Expense::previewNumber(auth()->user()->tenant_id);
         $banks = Bank::where('is_active', true)->orderBy('name')->get();
 
         return view('expenses.create', compact('vendors', 'expenseAccounts', 'paymentAccounts', 'expenseNumber', 'banks'));

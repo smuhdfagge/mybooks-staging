@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PaymentReceived extends Model
 {
+    use \App\Traits\HasDocumentNumber;
     use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     protected $table = 'payments_received';
@@ -70,16 +71,10 @@ class PaymentReceived extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public static function generateNumber($tenantId)
+    /** @return array{0: string, 1: string, 2: int} */
+    protected static function documentNumberFormat(): array
     {
-        $lastPayment = static::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->latest('id')
-            ->first();
-
-        $number = $lastPayment ? intval(substr($lastPayment->payment_number, 4)) + 1 : 1;
-
-        return 'PAY-'.str_pad($number, 6, '0', STR_PAD_LEFT);
+        return ['payment_number', 'PAY-', 6];
     }
 
     /** @return MorphOne<Journal, $this> */

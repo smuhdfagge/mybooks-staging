@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SalesReceipt extends Model
 {
+    use \App\Traits\HasDocumentNumber;
     use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     protected $fillable = [
@@ -60,16 +61,10 @@ class SalesReceipt extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public static function generateNumber($tenantId)
+    /** @return array{0: string, 1: string, 2: int} */
+    protected static function documentNumberFormat(): array
     {
-        $lastReceipt = static::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->latest('id')
-            ->first();
-
-        $number = $lastReceipt ? intval(substr($lastReceipt->receipt_number, 3)) + 1 : 1;
-
-        return 'SR-'.str_pad($number, 6, '0', STR_PAD_LEFT);
+        return ['receipt_number', 'SR-', 6];
     }
 
     /** @return MorphOne<Journal, $this> */

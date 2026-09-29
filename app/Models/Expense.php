@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Expense extends Model
 {
+    use \App\Traits\HasDocumentNumber;
     use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     // Status constants
@@ -116,16 +117,10 @@ class Expense extends Model
         return $this->belongsTo(User::class, 'rejected_by');
     }
 
-    public static function generateNumber($tenantId)
+    /** @return array{0: string, 1: string, 2: int} */
+    protected static function documentNumberFormat(): array
     {
-        $lastExpense = static::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->latest('id')
-            ->first();
-
-        $number = $lastExpense ? intval(substr($lastExpense->expense_number, 4)) + 1 : 1;
-
-        return 'EXP-'.str_pad($number, 6, '0', STR_PAD_LEFT);
+        return ['expense_number', 'EXP-', 6];
     }
 
     /** @return MorphOne<Journal, $this> */

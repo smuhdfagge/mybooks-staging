@@ -23,7 +23,7 @@ class BillController extends Controller
     {
         $vendors = Vendor::where('is_active', true)->get();
         $items = Item::where('is_active', true)->get();
-        $billNumber = Bill::generateNumber(auth()->user()->tenant_id);
+        $billNumber = Bill::previewNumber(auth()->user()->tenant_id);
 
         // "Convert to bill" from a purchase order fills the form from the
         // order (finding N8).

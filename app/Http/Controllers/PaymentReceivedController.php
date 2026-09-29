@@ -32,7 +32,7 @@ class PaymentReceivedController extends Controller
         $customers = Customer::where('is_active', true)->get();
         $invoiceId = $request->get('invoice_id');
         $invoice = $invoiceId ? Invoice::find($invoiceId) : null;
-        $paymentNumber = PaymentReceived::generateNumber(auth()->user()->tenant_id);
+        $paymentNumber = PaymentReceived::previewNumber(auth()->user()->tenant_id);
         $banks = Bank::where('is_active', true)->orderBy('name')->get();
 
         // Get all unpaid invoices for dynamic filtering

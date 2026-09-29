@@ -21,7 +21,7 @@ class SalesReceiptController extends Controller
     {
         $customers = Customer::where('is_active', true)->get();
         $items = Item::where('is_active', true)->get();
-        $receiptNumber = SalesReceipt::generateNumber(auth()->user()->tenant_id);
+        $receiptNumber = SalesReceipt::previewNumber(auth()->user()->tenant_id);
 
         return view('sales-receipts.create', compact('customers', 'items', 'receiptNumber'));
     }

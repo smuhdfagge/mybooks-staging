@@ -21,7 +21,7 @@ class QuotationController extends Controller
     {
         $customers = Customer::where('is_active', true)->get();
         $items = Item::where('is_active', true)->with(['taxRate', 'taxGroup.taxRates'])->get();
-        $quotationNumber = Quotation::generateNumber(auth()->user()->tenant_id);
+        $quotationNumber = Quotation::previewNumber(auth()->user()->tenant_id);
 
         return view('quotations.create', compact('customers', 'items', 'quotationNumber'));
     }

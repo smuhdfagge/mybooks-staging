@@ -24,7 +24,7 @@ class SalesOrderController extends Controller
     {
         $customers = Customer::where('is_active', true)->get();
         $items = Item::where('is_active', true)->get();
-        $orderNumber = SalesOrder::generateNumber(auth()->user()->tenant_id);
+        $orderNumber = SalesOrder::previewNumber(auth()->user()->tenant_id);
 
         return view('sales-orders.create', compact('customers', 'items', 'orderNumber'));
     }

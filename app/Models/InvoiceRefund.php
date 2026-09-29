@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class InvoiceRefund extends Model
 {
+    use \App\Traits\HasDocumentNumber;
     use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
@@ -102,19 +103,10 @@ class InvoiceRefund extends Model
         return $this->morphOne(Journal::class, 'reference');
     }
 
-    /**
-     * Generate a unique refund number
-     */
-    public static function generateNumber($tenantId): string
+    /** @return array{0: string, 1: string, 2: int} */
+    protected static function documentNumberFormat(): array
     {
-        $lastRefund = static::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->latest('id')
-            ->first();
-
-        $number = $lastRefund ? intval(substr($lastRefund->refund_number, 4)) + 1 : 1;
-
-        return 'REF-'.str_pad($number, 6, '0', STR_PAD_LEFT);
+        return ['refund_number', 'REF-', 6];
     }
 
     /**

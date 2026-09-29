@@ -19,7 +19,7 @@ class JournalController extends Controller
     public function create()
     {
         $accounts = ChartOfAccount::where('is_active', true)->orderBy('account_code')->get();
-        $journalNumber = Journal::generateNumber(auth()->user()->tenant_id);
+        $journalNumber = Journal::previewNumber(auth()->user()->tenant_id);
 
         return view('journals.create', compact('accounts', 'journalNumber'));
     }

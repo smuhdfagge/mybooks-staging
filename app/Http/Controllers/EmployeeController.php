@@ -23,7 +23,7 @@ class EmployeeController extends Controller
     {
         $departments = Department::where('is_active', true)->get();
         $designations = Designation::where('is_active', true)->get();
-        $employeeId = Employee::generateEmployeeId(auth()->user()->tenant_id);
+        $employeeId = \App\Support\DocumentNumber::preview(auth()->user()->tenant_id, Employee::class, 'employee_id', 'EMP-', 5);
         $countries = Country::orderBy('name')->get();
         $states = State::orderBy('name')->get();
         $salaryStructures = SalaryStructure::where('is_active', true)->get();

@@ -29,7 +29,7 @@ class PaymentMadeController extends Controller
         $vendors = Vendor::where('is_active', true)->get();
         $billId = $request->get('bill_id');
         $bill = $billId ? Bill::find($billId) : null;
-        $paymentNumber = PaymentMade::generateNumber(auth()->user()->tenant_id);
+        $paymentNumber = PaymentMade::previewNumber(auth()->user()->tenant_id);
         $banks = Bank::where('is_active', true)->orderBy('name')->get();
 
         return view('payments-made.create', compact('vendors', 'bill', 'paymentNumber', 'banks'));

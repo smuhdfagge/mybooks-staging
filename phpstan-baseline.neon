@@ -661,12 +661,6 @@ parameters:
 			path: app/Models/AssemblyOrder.php
 
 		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/AssemblyOrder.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -723,12 +717,6 @@ parameters:
 		-
 			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\Bill\)\> and ''restored'' will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/Bill.php
-
-		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
 			count: 1
 			path: app/Models/Bill.php
 
@@ -829,12 +817,6 @@ parameters:
 			path: app/Models/CreditNote.php
 
 		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/CreditNote.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -897,12 +879,6 @@ parameters:
 		-
 			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\DeliveryNote\)\> and ''restored'' will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/DeliveryNote.php
-
-		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
 			count: 1
 			path: app/Models/DeliveryNote.php
 
@@ -997,12 +973,6 @@ parameters:
 			path: app/Models/EmployeeLoan.php
 
 		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/EmployeeLoan.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -1023,12 +993,6 @@ parameters:
 		-
 			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\Expense\)\> and ''restored'' will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/Expense.php
-
-		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
 			count: 1
 			path: app/Models/Expense.php
 
@@ -1059,12 +1023,6 @@ parameters:
 		-
 			message: '#^Negated boolean expression is always false\.$#'
 			identifier: booleanNot.alwaysFalse
-			count: 1
-			path: app/Models/FixedAsset.php
-
-		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
 			count: 1
 			path: app/Models/FixedAsset.php
 
@@ -1135,12 +1093,6 @@ parameters:
 			path: app/Models/Invoice.php
 
 		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
-			count: 2
-			path: app/Models/Invoice.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -1161,12 +1113,6 @@ parameters:
 		-
 			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\InvoiceRefund\)\> and ''restored'' will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/InvoiceRefund.php
-
-		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
 			count: 1
 			path: app/Models/InvoiceRefund.php
 
@@ -1243,12 +1189,6 @@ parameters:
 			path: app/Models/Journal.php
 
 		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/Journal.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -1309,12 +1249,6 @@ parameters:
 			path: app/Models/PaymentMade.php
 
 		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/PaymentMade.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -1335,12 +1269,6 @@ parameters:
 		-
 			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\PaymentReceived\)\> and ''restored'' will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/PaymentReceived.php
-
-		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
 			count: 1
 			path: app/Models/PaymentReceived.php
 
@@ -1369,12 +1297,6 @@ parameters:
 			path: app/Models/Payroll.php
 
 		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/Payroll.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -1395,12 +1317,6 @@ parameters:
 		-
 			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\PayrollBatch\)\> and ''restored'' will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/PayrollBatch.php
-
-		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
 			count: 1
 			path: app/Models/PayrollBatch.php
 
@@ -1435,12 +1351,6 @@ parameters:
 			path: app/Models/PurchaseOrder.php
 
 		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/PurchaseOrder.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -1461,12 +1371,6 @@ parameters:
 		-
 			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\Quotation\)\> and ''restored'' will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/Quotation.php
-
-		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
 			count: 1
 			path: app/Models/Quotation.php
 
@@ -1555,12 +1459,6 @@ parameters:
 			path: app/Models/SalesOrder.php
 
 		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/SalesOrder.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -1585,12 +1483,6 @@ parameters:
 			path: app/Models/SalesReceipt.php
 
 		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/SalesReceipt.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -1605,12 +1497,6 @@ parameters:
 		-
 			message: '#^Access to an undefined static property static\(App\\Models\\StockTransfer\)\:\:\$redactedFields\.$#'
 			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/StockTransfer.php
-
-		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
 			count: 1
 			path: app/Models/StockTransfer.php
 

@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Invoice extends Model
 {
+    use \App\Traits\HasDocumentNumber;
     use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     protected $fillable = [
@@ -145,16 +146,10 @@ class Invoice extends Model
         });
     }
 
-    public static function generateNumber($tenantId)
+    /** @return array{0: string, 1: string, 2: int} */
+    protected static function documentNumberFormat(): array
     {
-        $lastInvoice = static::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->latest('id')
-            ->first();
-
-        $number = $lastInvoice ? intval(substr($lastInvoice->invoice_number, 4)) + 1 : 1;
-
-        return 'INV-'.str_pad($number, 6, '0', STR_PAD_LEFT);
+        return ['invoice_number', 'INV-', 6];
     }
 
     /**
@@ -172,15 +167,8 @@ class Invoice extends Model
 
     public static function generateWaybillNumber($tenantId)
     {
-        $lastWaybill = static::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->whereNotNull('waybill_number')
-            ->latest('id')
-            ->first();
-
-        $number = $lastWaybill ? intval(substr($lastWaybill->waybill_number, 3)) + 1 : 1;
-
-        return 'WB-'.str_pad($number, 6, '0', STR_PAD_LEFT);
+        // Locked per-business sequence (R2).
+        return \App\Support\DocumentNumber::next((int) $tenantId, static::class, 'waybill_number', 'WB-', 6);
     }
 
     public function isReleased()

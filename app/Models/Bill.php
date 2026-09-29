@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\DB;
 
 class Bill extends Model
 {
+    use \App\Traits\HasDocumentNumber;
     use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     protected $fillable = [
@@ -111,16 +112,10 @@ class Bill extends Model
         });
     }
 
-    public static function generateNumber($tenantId)
+    /** @return array{0: string, 1: string, 2: int} */
+    protected static function documentNumberFormat(): array
     {
-        $lastBill = static::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->latest('id')
-            ->first();
-
-        $number = $lastBill ? intval(substr($lastBill->bill_number, 5)) + 1 : 1;
-
-        return 'BILL-'.str_pad($number, 6, '0', STR_PAD_LEFT);
+        return ['bill_number', 'BILL-', 6];
     }
 
     /**
