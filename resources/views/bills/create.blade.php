@@ -207,6 +207,8 @@
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                             </td>
                                             <td class="py-2 pr-2">
+                                                {{-- Line discounts from a purchase order or the API are kept. --}}
+                                                <input type="hidden" :name="`items[${index}][discount]`" :value="item.discount || 0">
                                                 <input type="number" :name="`items[${index}][tax_rate]`" x-model.number="item.tax_rate" min="0" max="100" step="0.01"
                                                     @input="calculateTotals()"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
@@ -389,7 +391,7 @@
 
                 lineTotal(index) {
                     const item = this.items[index];
-                    const subtotal = item.quantity * item.unit_price;
+                    const subtotal = item.quantity * item.unit_price - (item.discount || 0);
                     const tax = subtotal * (item.tax_rate / 100);
                     return subtotal + tax;
                 },
@@ -399,7 +401,7 @@
                     this.totalTax = 0;
                     
                     this.items.forEach(item => {
-                        const itemSubtotal = item.quantity * item.unit_price;
+                        const itemSubtotal = item.quantity * item.unit_price - (item.discount || 0);
                         const itemTax = itemSubtotal * (item.tax_rate / 100);
                         this.subtotal += itemSubtotal;
                         this.totalTax += itemTax;

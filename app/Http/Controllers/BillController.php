@@ -41,6 +41,8 @@ class BillController extends Controller
                 // Bill what arrived when goods have been received, else what was ordered
                 'quantity' => (float) ($line->quantity_received > 0 ? $line->quantity_received : $line->quantity),
                 'unit_price' => (float) $line->unit_price,
+                // The order's line discount, for the share being billed.
+                'discount' => (float) $line->quantity > 0 ? round((float) $line->discount * ($line->quantity_received > 0 ? $line->quantity_received : $line->quantity) / (float) $line->quantity, 2) : 0,
                 'tax_rate' => (float) $line->tax_rate,
                 'itemSearch' => $line->item?->name ?? '',
                 'itemDropdownOpen' => false,

@@ -413,4 +413,19 @@ class PhaseCRegressionTest extends TestCase
         $this->post(route('sales-orders.convert', $order))->assertSessionHasNoErrors();
         $this->assertOrderFigures(Invoice::firstOrFail(), 'invoice');
     }
+
+    public function test_r3_billing_a_purchase_order_keeps_its_line_discounts(): void
+    {
+        $this->createAuthenticatedUser(['create bills', 'view bills']);
+        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $order = \App\Models\PurchaseOrder::create([
+            'tenant_id' => $this->tenant->id, 'vendor_id' => $vendor->id, 'order_number' => 'PO-000001',
+            'order_date' => '2026-09-01', 'status' => 'confirmed', 'subtotal' => 20000, 'discount_amount' => 1000, 'total' => 19000,
+        ]);
+        $order->items()->create(['item_id' => $this->stockedItem(0)->id, 'description' => 'Paper', 'quantity' => 4, 'unit_price' => 5000, 'discount' => 1000, 'tax_rate' => 0, 'tax_amount' => 0, 'total' => 19000]);
+
+        $prefill = $this->get(route('bills.create', ['purchase_order_id' => $order->id]))->assertOk()->viewData('prefillItems');
+        $this->assertEqualsWithDelta(1000, $prefill[0]['discount'], 0.001);
+        $this->assertStringContainsString('items[${index}][discount]', file_get_contents(resource_path('views/bills/create.blade.php')));
+    }
 }
