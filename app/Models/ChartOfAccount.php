@@ -10,6 +10,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * Set by App\Services\Accounting\FinancialStatements::accountBalances():
+ *
+ * @property float $balance balance for the requested dates, natural direction
+ * @property float $ledger_debit
+ * @property float $ledger_credit
+ */
 class ChartOfAccount extends Model
 {
     use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;

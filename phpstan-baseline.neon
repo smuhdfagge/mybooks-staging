@@ -283,18 +283,6 @@ parameters:
 			path: app/Http/Controllers/Reports/PurchaseReportController.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\JournalEntry\:\:\$total_credit\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Reports/ReportController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\JournalEntry\:\:\$total_debit\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Reports/ReportController.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\Item\:\:\$quantity_sold\.$#'
 			identifier: property.notFound
 			count: 4
