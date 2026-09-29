@@ -126,6 +126,7 @@ Other settings in `config/mybooks.php` include support email, import size limit,
 | `php artisan accounts:recalculate --dry-run` | Compares stored account balances with the journals; without `--dry-run` it corrects them |
 | `php artisan subscriptions:expire` | Expires ended subscriptions and sends reminders (runs daily) |
 | `php artisan subscriptions:grace --days=14` | Gives active subscriptions time to renew (one-off) |
+| `php artisan bills:receive-pending-stock --dry-run` | Once after the October 2026 update: brings in stock for posted, unpaid bills (stock used to wait for payment) |
 | `php artisan mybooks:backup` | Backs up the database and uploaded files now (`--only-db` for the database alone) |
 | `php artisan mybooks:ensure-admin-roles` | Makes sure every organisation's first user has the admin role |
 

@@ -208,10 +208,8 @@ class ProcessRecurrentTransactions extends Command
                         return $b;
                     });
 
-                    // Create journal entry for the new bill (outside withoutEvents)
-                    if ($bill->total > 0) {
-                        $bill->createJournalEntry();
-                    }
+                    // Journal by line and stock in, now the lines exist (A21).
+                    $bill->postWithLines();
 
                     $profile->advanceNextDate();
                 });

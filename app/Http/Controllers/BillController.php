@@ -124,6 +124,8 @@ class BillController extends Controller
                 ]);
             }
 
+            $bill->postWithLines();
+
             if ($purchaseOrder) {
                 // Locked so two people can't bill the same order at once
                 $purchaseOrder = PurchaseOrder::lockForUpdate()->find($purchaseOrder->id);
@@ -229,6 +231,8 @@ class BillController extends Controller
                     'total' => $itemTotal - $discount + $tax,
                 ]);
             }
+
+            $bill->postWithLines();
 
             DB::commit();
 

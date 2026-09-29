@@ -123,17 +123,29 @@ class Bill extends Model
         return 'BILL-'.str_pad($number, 6, '0', STR_PAD_LEFT);
     }
 
+    /**
+     * Post (or re-post) the bill once its lines are saved: the journal splits
+     * goods and expenses by line, and goods enter stock (A21). Saving the
+     * bill before its lines exist posted everything to Inventory.
+     */
+    public function postWithLines(): void
+    {
+        if ((float) $this->total > 0 && $this->status !== 'draft') {
+            BillSaved::dispatch($this->fresh());
+        }
+    }
+
     public function updateBalances()
     {
-        $previousStatus = $this->status;
 
         $this->amount_paid = $this->payments()->sum('amount');
         $this->balance_due = $this->total - $this->amount_paid;
         $this->status = $this->balance_due <= 0 ? 'paid' : ($this->amount_paid > 0 ? 'partial' : 'unpaid');
         $this->withoutPeriodValidation()->save();
 
-        // Update inventory when bill becomes paid (and hasn't been updated yet)
-        if ($this->status === 'paid' && $previousStatus !== 'paid' && ! $this->inventory_updated_at) {
+        // Stock is received when the bill is posted (A21); this only catches
+        // bills posted before that change.
+        if (! in_array($this->status, ['draft', 'cancelled'], true) && ! $this->inventory_updated_at && $this->items()->exists()) {
             $this->updateInventory();
         }
     }
@@ -183,7 +195,7 @@ class Bill extends Model
                             'unit_cost' => $unitCost,
                             'reference_type' => 'bill',
                             'reference_id' => $this->id,
-                            'received_date' => now()->toDateString(),
+                            'received_date' => optional($this->bill_date)->toDateString() ?? now()->toDateString(),
                         ]);
 
                         // Record inventory history

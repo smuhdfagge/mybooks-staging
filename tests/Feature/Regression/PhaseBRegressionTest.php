@@ -660,4 +660,32 @@ class PhaseBRegressionTest extends TestCase
         $this->assertEqualsWithDelta($tb->viewData('totalDebits'), $tb->viewData('totalCredits'), 0.001);
         $this->assertEqualsWithDelta(46500 + 500, $tb->viewData('totalDebits'), 0.001);
     }
+
+    // ── A21: bill stock timing ──────────────────────────────────
+
+    public function test_a21_stock_arrives_when_the_bill_is_posted_and_matches_the_ledger(): void
+    {
+        $this->createAuthenticatedUser(['create bills', 'view bills']);
+        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $product = \App\Models\Item::factory()->create(['tenant_id' => $this->tenant->id, 'type' => 'product', 'track_inventory' => true]);
+        $service = \App\Models\Item::factory()->create(['tenant_id' => $this->tenant->id, 'type' => 'service', 'track_inventory' => false]);
+
+        $this->post(route('bills.store'), [
+            'vendor_id' => $vendor->id, 'bill_date' => now()->toDateString(), 'due_date' => now()->addDays(30)->toDateString(),
+            'items' => [
+                ['item_id' => $product->id, 'description' => 'Cement', 'quantity' => 10, 'unit_price' => 5000],
+                ['item_id' => $service->id, 'description' => 'Haulage', 'quantity' => 1, 'unit_price' => 7000],
+            ],
+        ])->assertSessionHasNoErrors();
+
+        $bill = \App\Models\Bill::sole();
+        $this->assertSame('unpaid', $bill->status);
+
+        // Stock is in, although nothing is paid yet.
+        $this->assertEqualsWithDelta(10, (float) \App\Models\Inventory::where('item_id', $product->id)->value('quantity'), 0.001);
+
+        // The ledger agrees: only the goods go to Inventory; haulage is an expense.
+        $this->assertEqualsWithDelta(50000, $this->code('1300'), 0.001);
+        $this->assertEqualsWithDelta(7000, $this->code('6990'), 0.001);
+    }
 }
