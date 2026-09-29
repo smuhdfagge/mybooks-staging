@@ -640,4 +640,24 @@ class PhaseBRegressionTest extends TestCase
             ->assertSessionHasErrors('status');
         $this->assertNotSame('disposed', $asset->fresh()->status);
     }
+
+    // ── P1: trial balance ───────────────────────────────────────
+
+    public function test_p1_trial_balance_uses_a_fixed_number_of_queries_and_balances(): void
+    {
+        $this->createAuthenticatedUser(['view reports']);
+        $this->chart();
+        for ($i = 1; $i <= 30; $i++) {
+            $this->postJournal('2026-03-'.str_pad((string) (($i % 28) + 1), 2, '0', STR_PAD_LEFT), [['1000', 100 * $i, 0], ['4000', 0, 100 * $i]]);
+        }
+        $this->postJournal('2026-03-31', [['6100', 500, 0], ['1000', 0, 500]]);
+
+        \Illuminate\Support\Facades\DB::enableQueryLog();
+        $tb = $this->get(route('reports.trial-balance', ['as_of' => '2026-03-31']))->assertOk();
+        $queries = count(\Illuminate\Support\Facades\DB::getQueryLog());
+
+        $this->assertLessThan(25, $queries, 'one grouped query, not one per account');
+        $this->assertEqualsWithDelta($tb->viewData('totalDebits'), $tb->viewData('totalCredits'), 0.001);
+        $this->assertEqualsWithDelta(46500 + 500, $tb->viewData('totalDebits'), 0.001);
+    }
 }

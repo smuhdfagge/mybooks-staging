@@ -71,25 +71,8 @@ class FinancialReportController extends ReportController
         $tenantId = auth()->user()->tenant_id;
         $asOf = $request->get('as_of', now()->format('Y-m-d'));
 
-        $accounts = ChartOfAccount::where('tenant_id', $tenantId)
-            ->where('is_active', true)
-            ->orderBy('account_code')
-            ->get()
-            ->map(function ($account) use ($tenantId, $asOf) {
-                $entries = JournalEntry::whereHas('journal', function ($q) use ($tenantId, $asOf) {
-                    $q->where('tenant_id', $tenantId)
-                        ->where('journal_date', '<=', $asOf)
-                        ->where('is_posted', true);
-                })->where('account_id', $account->id)->get();
-
-                $account->total_debit = $entries->sum('debit');
-                $account->total_credit = $entries->sum('credit');
-
-                return $account;
-            })
-            ->filter(function ($account) {
-                return $account->total_debit > 0 || $account->total_credit > 0;
-            });
+        // One grouped query instead of every line of every account (P1).
+        $accounts = app(\App\Services\Accounting\FinancialStatements::class)->trialBalance($tenantId, $asOf);
 
         $totalDebits = $accounts->sum('total_debit');
         $totalCredits = $accounts->sum('total_credit');
@@ -258,25 +241,8 @@ class FinancialReportController extends ReportController
         $asOf = $request->get('as_of', now()->format('Y-m-d'));
         $format = $request->get('format', 'pdf');
 
-        $accounts = ChartOfAccount::where('tenant_id', $tenantId)
-            ->where('is_active', true)
-            ->orderBy('account_code')
-            ->get()
-            ->map(function ($account) use ($tenantId, $asOf) {
-                $entries = JournalEntry::whereHas('journal', function ($q) use ($tenantId, $asOf) {
-                    $q->where('tenant_id', $tenantId)
-                        ->where('journal_date', '<=', $asOf)
-                        ->where('is_posted', true);
-                })->where('account_id', $account->id)->get();
-
-                $account->total_debit = $entries->sum('debit');
-                $account->total_credit = $entries->sum('credit');
-
-                return $account;
-            })
-            ->filter(function ($account) {
-                return $account->total_debit > 0 || $account->total_credit > 0;
-            });
+        // One grouped query instead of every line of every account (P1).
+        $accounts = app(\App\Services\Accounting\FinancialStatements::class)->trialBalance($tenantId, $asOf);
 
         $totalDebits = $accounts->sum('total_debit');
         $totalCredits = $accounts->sum('total_credit');

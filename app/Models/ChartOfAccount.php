@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property float $balance balance for the requested dates, natural direction
  * @property float $ledger_debit
  * @property float $ledger_credit
+ * @property float $total_debit set by FinancialStatements::trialBalance()
+ * @property float $total_credit
  */
 class ChartOfAccount extends Model
 {

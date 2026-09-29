@@ -229,18 +229,6 @@ parameters:
 			path: app/Http/Controllers/QuotationController.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\ChartOfAccount\:\:\$total_credit\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Http/Controllers/Reports/FinancialReportController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\ChartOfAccount\:\:\$total_debit\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Http/Controllers/Reports/FinancialReportController.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 2

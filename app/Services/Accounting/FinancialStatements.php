@@ -94,6 +94,24 @@ class FinancialStatements
     }
 
     /**
+     * Trial balance at $asOf: total debits and credits per account from one
+     * grouped query (finding P1; it used to load every journal line of
+     * every account into memory).
+     *
+     * @return Collection<int, ChartOfAccount> accounts with ->total_debit and ->total_credit
+     */
+    public function trialBalance(int $tenantId, string $asOf): Collection
+    {
+        return $this->accountBalances($tenantId, '1900-01-01', $asOf)
+            ->filter(fn ($a) => $a->ledger_debit > 0 || $a->ledger_credit > 0)
+            ->each(function ($a) {
+                $a->setAttribute('total_debit', $a->ledger_debit);
+                $a->setAttribute('total_credit', $a->ledger_credit);
+            })
+            ->values();
+    }
+
+    /**
      * Profit and loss for a date range, without closing journals (A8).
      *
      * @return array{revenue: float, costOfGoodsSold: float, operatingExpenses: float, payrollExpenses: float, totalExpenses: float, netProfit: float}

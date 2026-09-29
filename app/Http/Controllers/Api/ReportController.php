@@ -450,30 +450,16 @@ class ReportController extends BaseApiController
         $tenantId = $this->getTenantId();
         $asOf = $request->get('as_of', now()->format('Y-m-d'));
 
-        $accounts = ChartOfAccount::where('tenant_id', $tenantId)
-            ->where('is_active', true)
-            ->orderBy('account_code')
-            ->get()
-            ->map(function ($account) use ($tenantId, $asOf) {
-                $entries = JournalEntry::whereHas('journal', function ($q) use ($tenantId, $asOf) {
-                    $q->where('tenant_id', $tenantId)
-                        ->where('journal_date', '<=', $asOf)
-                        ->where('is_posted', true);
-                })->where('account_id', $account->id)->get();
-
-                $totalDebit = $entries->sum('debit');
-                $totalCredit = $entries->sum('credit');
-
-                return [
-                    'id' => $account->id,
-                    'account_code' => $account->account_code,
-                    'name' => $account->name,
-                    'type' => $account->type,
-                    'total_debit' => (float) $totalDebit,
-                    'total_credit' => (float) $totalCredit,
-                ];
-            })
-            ->filter(fn ($account) => $account['total_debit'] > 0 || $account['total_credit'] > 0)
+        // One grouped query (P1), same figures as the web report.
+        $accounts = app(\App\Services\Accounting\FinancialStatements::class)->trialBalance($tenantId, $asOf)
+            ->map(fn ($account) => [
+                'id' => $account->id,
+                'account_code' => $account->account_code,
+                'name' => $account->name,
+                'type' => $account->type,
+                'total_debit' => (float) $account->total_debit,
+                'total_credit' => (float) $account->total_credit,
+            ])
             ->values();
 
         $totalDebits = $accounts->sum('total_debit');
