@@ -377,8 +377,8 @@ class JournalService implements JournalServiceInterface
 
             // Debit: Tax if applicable (Input VAT is typically an asset)
             if ($bill->tax_amount > 0) {
-                $this->createEntry($journal, $this->acct($t, 'prepaid_expenses'), $bill->tax_amount, 0,
-                    "Input Tax - Bill {$bill->bill_number}"); // Prepaid/Input Tax
+                $this->createEntry($journal, $this->acct($t, 'input_vat'), $bill->tax_amount, 0,
+                    "Input VAT - Bill {$bill->bill_number}"); // own account, not Prepaid Expenses (A5)
             }
 
             // Credit: Accounts Payable
@@ -428,7 +428,7 @@ class JournalService implements JournalServiceInterface
         }
 
         if ($bill->tax_amount > 0) {
-            $this->createEntry($journal, $this->acct($t, 'prepaid_expenses'), $bill->tax_amount, 0,
+            $this->createEntry($journal, $this->acct($t, 'input_vat'), $bill->tax_amount, 0,
                 "Input Tax - Bill {$bill->bill_number}");
         }
 
@@ -487,7 +487,7 @@ class JournalService implements JournalServiceInterface
 
             // Debit: Input Tax (if applicable)
             if ($expense->tax_amount > 0) {
-                $this->createEntry($journal, $this->acct($t, 'prepaid_expenses'), $expense->tax_amount, 0,
+                $this->createEntry($journal, $this->acct($t, 'input_vat'), $expense->tax_amount, 0,
                     "Input Tax - {$expense->expense_number}");
             }
 
@@ -527,7 +527,7 @@ class JournalService implements JournalServiceInterface
             "Expense - {$expense->name}");
 
         if ($expense->tax_amount > 0) {
-            $this->createEntry($journal, $this->acct($t, 'prepaid_expenses'), $expense->tax_amount, 0,
+            $this->createEntry($journal, $this->acct($t, 'input_vat'), $expense->tax_amount, 0,
                 "Input Tax - {$expense->expense_number}");
         }
 

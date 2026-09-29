@@ -335,4 +335,83 @@ class PhaseBRegressionTest extends TestCase
         $this->put(route('invoices.update', $invoice), $this->discountedInvoicePayload($customer))->assertSessionHasNoErrors();
         $this->assertDiscountedTotals($invoice->fresh());
     }
+
+    // ── A5: VAT return from the ledger ──────────────────────────
+
+    private function vatScenario(): void
+    {
+        $journals = app(JournalService::class);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $today = now()->toDateString();
+
+        // An unpaid invoice (the old report skipped "unpaid").
+        $invoice = Invoice::withoutEvents(fn () => Invoice::factory()->create([
+            'tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'status' => 'unpaid',
+            'invoice_date' => $today, 'subtotal' => 1000, 'tax_amount' => 75, 'total' => 1075, 'balance_due' => 1075,
+        ]));
+        $invoice->items()->create(['description' => 'Goods', 'quantity' => 1, 'unit_price' => 1000, 'tax_rate' => 7.5, 'tax_amount' => 75, 'total' => 1075]);
+        $journals->createInvoiceJournal($invoice);
+
+        // An invoice posted then cancelled: its VAT and the reversal cancel out.
+        $cancelled = Invoice::withoutEvents(fn () => Invoice::factory()->create([
+            'tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'status' => 'unpaid',
+            'invoice_date' => $today, 'subtotal' => 2000, 'tax_amount' => 150, 'total' => 2150, 'balance_due' => 2150,
+        ]));
+        $cancelled->items()->create(['description' => 'Goods', 'quantity' => 1, 'unit_price' => 2000, 'tax_rate' => 7.5, 'tax_amount' => 150, 'total' => 2150]);
+        $journals->createInvoiceJournal($cancelled);
+        $cancelled->status = 'cancelled';
+        $journals->createInvoiceJournal($cancelled);
+
+        // An unpaid bill (the old report skipped it) and an expense.
+        $bill = \App\Models\Bill::withoutEvents(fn () => \App\Models\Bill::factory()->create([
+            'tenant_id' => $this->tenant->id, 'vendor_id' => $vendor->id, 'status' => 'unpaid',
+            'bill_date' => $today, 'subtotal' => 400, 'tax_amount' => 30, 'total' => 430, 'balance_due' => 430,
+        ]));
+        $bill->items()->create(['description' => 'Supplies', 'quantity' => 1, 'unit_price' => 400, 'tax_rate' => 7.5, 'tax_amount' => 30, 'total' => 430]);
+        $journals->createBillJournal($bill);
+
+        $expense = \App\Models\Expense::withoutEvents(fn () => \App\Models\Expense::factory()->create([
+            'tenant_id' => $this->tenant->id, 'expense_date' => $today, 'amount' => 200, 'tax_amount' => 20, 'total' => 220,
+            'status' => \App\Models\Expense::STATUS_PAID,
+            'expense_account_id' => ChartOfAccount::where('tenant_id', $this->tenant->id)->where('type', 'expense')->value('id'),
+        ]));
+        $journals->createExpenseJournal($expense);
+    }
+
+    public function test_a5_vat_return_counts_every_posted_document_from_the_ledger(): void
+    {
+        $this->createAuthenticatedUser(['view reports']);
+        $this->vatScenario();
+
+        $r = $this->get(route('reports.vat-gst-return', ['start_date' => now()->startOfMonth()->toDateString(), 'end_date' => now()->endOfMonth()->toDateString()]))->assertOk();
+
+        $this->assertEqualsWithDelta(75, $r->viewData('totalOutputTax'), 0.001);
+        $this->assertEqualsWithDelta(50, $r->viewData('totalInputTax'), 0.001, 'bill 30 + expense 20');
+        $this->assertEqualsWithDelta(25, $r->viewData('netTaxPayable'), 0.001);
+        $this->assertEqualsWithDelta(1000, $r->viewData('totalOutputTaxable'), 0.001);
+
+        // Input VAT has its own account, not Prepaid Expenses.
+        $this->assertEqualsWithDelta(50, (float) ChartOfAccount::where('tenant_id', $this->tenant->id)->where('account_code', '1410')->value('current_balance'), 0.001);
+    }
+
+    public function test_a5_settling_moves_the_net_into_vat_payable_once(): void
+    {
+        $this->createAuthenticatedUser(['view reports', 'create journals']);
+        $this->vatScenario();
+        $period = ['start_date' => now()->startOfMonth()->toDateString(), 'end_date' => now()->endOfMonth()->toDateString()];
+
+        $this->post(route('reports.vat-gst-return.settle'), $period)->assertSessionHas('success');
+        $this->post(route('reports.vat-gst-return.settle'), $period)->assertSessionHas('error');
+
+        $balance = fn ($code) => (float) ChartOfAccount::where('tenant_id', $this->tenant->id)->where('account_code', $code)->value('current_balance');
+        $this->assertEqualsWithDelta(0, $balance('2400'), 0.001);
+        $this->assertEqualsWithDelta(0, $balance('1410'), 0.001);
+        $this->assertEqualsWithDelta(25, $balance('2410'), 0.001);
+
+        // The return still shows the period's VAT after settling.
+        $r = $this->get(route('reports.vat-gst-return', $period));
+        $this->assertEqualsWithDelta(25, $r->viewData('netTaxPayable'), 0.001);
+        $this->assertNotNull($r->viewData('settlement'));
+    }
 }

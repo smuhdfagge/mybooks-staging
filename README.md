@@ -91,6 +91,12 @@ By default the only disk is `backups` (`storage/app/backups` on the same server)
 
 **Restore test (do this every quarter):** download a backup, unzip it with the password (7-Zip or `unzip`), load `database.sql` into an empty database with `mysql new_db < database.sql`, and check the row counts look right. `files/` holds the uploads to copy back under `storage/app/`.
 
+## VAT
+
+The VAT return (Reports > VAT/GST Return) is read from the ledger: output VAT on Sales Tax Payable (2400) and input VAT on Input VAT (1410), for every posted invoice, cash sale, refund, credit note, bill and expense in the period, paid or not. When you file a return, press **Settle VAT for this period**: the period's output and input VAT move into VAT Payable (2410), ready for the payment to the tax authority. Each period can be settled once.
+
+Before October 2026, input VAT was posted to Prepaid Expenses (1400). If you want earlier periods on the new basis, move that input VAT to 1410 with a manual journal (your accountant can tell you the amount from the old bills).
+
 ## Errors and logs
 
 Logs go to `storage/logs/laravel-YYYY-MM-DD.log`, one file a day, kept for `LOG_DAILY_DAYS` (14). Set `LOG_LEVEL=warning` in production.

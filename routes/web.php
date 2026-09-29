@@ -914,6 +914,7 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
 
         // Tax Reports
         Route::get('/vat-gst-return', [TaxReportController::class, 'vatGstReturn'])->name('vat-gst-return');
+        Route::post('/vat-gst-return/settle', [TaxReportController::class, 'settleVatReturn'])->name('vat-gst-return.settle')->middleware('permission:create journals');
         Route::get('/tax-liability', [TaxReportController::class, 'taxLiability'])->name('tax-liability');
 
         // Custom Report Builder
