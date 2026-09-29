@@ -576,4 +576,27 @@ class PhaseCRegressionTest extends TestCase
         $this->delete(route('bills.destroy', \App\Models\Bill::firstOrFail()))->assertSessionHasNoErrors();
         $this->assertSame('confirmed', $order->fresh()->status);
     }
+
+    // ── Edit forms that couldn't open ───────────────────────────
+
+    public function test_the_bill_sales_order_cash_sale_and_recurring_bill_edit_forms_open(): void
+    {
+        // Their item lists used a multi-line @json(...), which Blade splits
+        // at the first comma, so each edit page failed with an error.
+        $this->createAuthenticatedUser(['create sales-receipts', 'edit sales-receipts', 'create bills', 'edit bills', 'create sales-orders', 'edit sales-orders', 'edit recurrent-bills', 'view recurrent-bills']);
+        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $line = ['description' => 'Service', 'quantity' => 1, 'unit_price' => 100, 'tax_rate' => 0];
+
+        $this->post(route('sales-receipts.store'), ['receipt_date' => '2026-09-01', 'payment_method' => 'cash', 'items' => [$line]]);
+        $this->post(route('bills.store'), ['vendor_id' => $vendor->id, 'bill_date' => '2026-09-01', 'due_date' => '2026-10-01', 'items' => [$line]]);
+        $this->post(route('sales-orders.store'), ['customer_id' => $customer->id, 'order_date' => '2026-09-01', 'items' => [$line]]);
+        $profile = \App\Models\RecurrentBill::create(['tenant_id' => $this->tenant->id, 'vendor_id' => $vendor->id, 'profile_name' => 'Rent', 'frequency' => 'monthly', 'start_date' => '2026-09-01', 'next_bill_date' => '2026-10-01', 'status' => 'active', 'subtotal' => 100, 'tax_amount' => 0, 'total' => 100]);
+        $profile->items()->create($line + ['tax_amount' => 0, 'total' => 100]);
+
+        $this->get(route('sales-receipts.edit', \App\Models\SalesReceipt::firstOrFail()))->assertOk()->assertSee('VAT %');
+        $this->get(route('bills.edit', \App\Models\Bill::firstOrFail()))->assertOk();
+        $this->get(route('sales-orders.edit', \App\Models\SalesOrder::firstOrFail()))->assertOk();
+        $this->get(route('recurrent-bills.edit', $profile))->assertOk();
+    }
 }

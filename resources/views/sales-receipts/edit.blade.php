@@ -290,14 +290,14 @@
 
         function salesReceiptForm() {
             return {
-                availableProducts: @json($items->map(fn($i) => [
+                availableProducts: @js($items->map(fn($i) => [
                     'id' => $i->id,
                     'name' => $i->name,
                     'price' => $i->selling_price,
                     'description' => $i->description,
                     'tax' => (float) ($i->is_taxable ? ($i->effective_tax_rate ?? 0) : 0),
                 ])),
-                items: @json($salesReceipt->items->map(fn($item) => [
+                items: @js($salesReceipt->items->map(fn($item) => [
                     'item_id' => $item->item_id ?? '',
                     'description' => $item->description,
                     'quantity' => $item->quantity,

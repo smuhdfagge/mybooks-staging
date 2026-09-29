@@ -298,14 +298,14 @@
 
         function billForm() {
             return {
-                availableProducts: @json($items->map(fn($i) => [
+                availableProducts: @js($items->map(fn($i) => [
                     'id' => $i->id,
                     'name' => $i->name,
                     'price' => $i->cost_price ?? $i->selling_price,
                     'description' => $i->description,
                     'tax_rate' => $i->tax_rate ?? 0
                 ])),
-                items: @json($bill->items->map(fn($item) => [
+                items: @js($bill->items->map(fn($item) => [
                     'item_id' => $item->item_id ?? '',
                     'description' => $item->description,
                     'quantity' => $item->quantity,
