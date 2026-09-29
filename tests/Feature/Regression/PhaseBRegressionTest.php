@@ -454,4 +454,121 @@ class PhaseBRegressionTest extends TestCase
             'amount' => 1, 'refund_date' => now()->toDateString(), 'refund_method' => array_key_first(\App\Models\InvoiceRefund::METHODS),
         ])->assertSessionHasErrors('amount');
     }
+
+    // ── A9, A10: payroll postings ───────────────────────────────
+
+    private function code(string $code): float
+    {
+        return (float) ChartOfAccount::where('tenant_id', $this->tenant->id)->where('account_code', $code)->value('current_balance');
+    }
+
+    private function draftPayroll(array $attrs = []): \App\Models\Payroll
+    {
+        $employee = \App\Models\Employee::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id, 'employee_id' => \App\Models\Employee::generateEmployeeId($this->tenant->id),
+            'first_name' => 'Hauwa', 'last_name' => 'Sani', 'hire_date' => '2026-01-01',
+        ]);
+        $creator = \App\Models\User::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        return \App\Models\Payroll::withoutEvents(fn () => \App\Models\Payroll::create(array_merge([
+            'tenant_id' => $this->tenant->id, 'employee_id' => $employee->id, 'payroll_number' => 'PAY-B'.random_int(1000, 9999),
+            'pay_period_start' => '2026-08-01', 'pay_period_end' => '2026-08-31', 'pay_date' => '2026-08-31',
+            'basic_salary' => 5000, 'allowances' => 0, 'overtime_hours' => 0, 'overtime_amount' => 0, 'gross_salary' => 5000,
+            'tax_deduction' => 500, 'other_deductions' => 0, 'total_deductions' => 500, 'net_salary' => 4500,
+            'status' => 'draft', 'payment_method' => 'bank_transfer', 'created_by' => $creator->id,
+        ], $attrs)));
+    }
+
+    public function test_a10_approval_records_the_cost_and_payment_clears_net_pay(): void
+    {
+        $this->createAuthenticatedUser(['approve payroll', 'edit payroll', 'view payroll']);
+        $payroll = $this->draftPayroll();
+
+        $this->post(route('payroll.approve', $payroll))->assertSessionHas('success');
+
+        // Cost recognised in August, owed to the employee, nothing paid yet.
+        $accrual = Journal::where('reference_type', \App\Models\Payroll::class)->where('reference_id', $payroll->id)->sole();
+        $this->assertSame('2026-08-31', $accrual->journal_date->toDateString());
+        $this->assertEqualsWithDelta(5000, $this->code('6000'), 0.001);
+        $this->assertEqualsWithDelta(4500, $this->code('2210'), 0.001, 'net pay owed');
+        $this->assertEqualsWithDelta(500, $this->code('2310'), 0.001);
+        $this->assertEqualsWithDelta(0, $this->code('1100'), 0.001);
+
+        $this->post(route('payroll.mark-paid', $payroll))->assertSessionHas('success');
+
+        $this->assertEqualsWithDelta(0, $this->code('2210'), 0.001);
+        $this->assertEqualsWithDelta(-4500, $this->code('1100'), 0.001);
+        $this->assertEqualsWithDelta(5000, $this->code('6000'), 0.001, 'cost not counted twice');
+    }
+
+    public function test_a10_payroll_cannot_be_approved_into_a_locked_period(): void
+    {
+        $this->createAuthenticatedUser(['approve payroll', 'view payroll']);
+        AccountingPeriod::create([
+            'tenant_id' => $this->tenant->id, 'name' => 'Aug 2026', 'start_date' => '2026-08-01', 'end_date' => '2026-08-31', 'status' => 'locked',
+        ]);
+        $payroll = $this->draftPayroll();
+
+        $this->post(route('payroll.approve', $payroll))->assertSessionHas('error');
+
+        $this->assertSame('draft', $payroll->fresh()->status);
+        $this->assertSame(0, Journal::where('reference_type', \App\Models\Payroll::class)->count());
+    }
+
+    public function test_a10_payroll_liabilities_can_be_remitted(): void
+    {
+        $this->createAuthenticatedUser(['approve payroll', 'edit payroll', 'view payroll']);
+        $payroll = $this->draftPayroll();
+        $this->post(route('payroll.approve', $payroll));
+
+        $this->get(route('payroll.liabilities'))->assertOk()->assertSee('Tax Payable');
+
+        $this->post(route('payroll.liabilities.remit'), [
+            'account_code' => '2310', 'amount' => 500, 'date' => '2026-09-10', 'payment_method' => 'bank_transfer', 'reference' => 'PAYE Aug',
+        ])->assertSessionHas('success');
+
+        $this->assertEqualsWithDelta(0, $this->code('2310'), 0.001);
+        $this->assertEqualsWithDelta(-500, $this->code('1100'), 0.001);
+
+        // Not more than is owed.
+        $this->post(route('payroll.liabilities.remit'), [
+            'account_code' => '2310', 'amount' => 1, 'date' => '2026-09-10', 'payment_method' => 'bank_transfer',
+        ])->assertSessionHasErrors('amount');
+    }
+
+    public function test_a9_a_loan_is_an_advance_and_repayments_reduce_it(): void
+    {
+        $this->createAuthenticatedUser(['approve payroll', 'edit payroll', 'view payroll']);
+        $payroll = $this->draftPayroll();
+        $loan = \App\Models\EmployeeLoan::create([
+            'tenant_id' => $this->tenant->id, 'employee_id' => $payroll->employee_id, 'loan_number' => 'LN-1', 'type' => 'advance',
+            'principal_amount' => 100000, 'interest_rate' => 0, 'total_installments' => 10, 'installment_amount' => 10000,
+            'installments_paid' => 0, 'amount_repaid' => 0, 'outstanding_balance' => 100000,
+            'disbursement_date' => '2026-07-15', 'first_deduction_date' => '2026-08-31', 'status' => 'active',
+        ]);
+
+        // Paying out the loan: money owed to the business.
+        $this->assertEqualsWithDelta(100000, $this->code('1250'), 0.001);
+        $this->assertEqualsWithDelta(-100000, $this->code('1100'), 0.001);
+
+        // August payroll deducts one instalment, linked to the loan.
+        // 20,000 gross - 500 PAYE - 10,000 instalment = 9,500 net.
+        $payroll->update([
+            'basic_salary' => 20000, 'gross_salary' => 20000, 'tax_deduction' => 500,
+            'other_deductions' => 10000, 'total_deductions' => 10500, 'net_salary' => 9500,
+            'deduction_details' => [['name' => 'Advance: LN-1', 'amount_type' => 'fixed', 'rate' => 10000, 'amount' => 10000, '_loan_id' => $loan->id]],
+        ]);
+
+        $this->post(route('payroll.approve', $payroll))->assertSessionHas('success');
+        $this->assertEqualsWithDelta(90000, $this->code('1250'), 0.001, 'repayment reduces the advance');
+        $this->assertEqualsWithDelta(0, $this->code('2300'), 0.001, 'not parked in Payroll Liabilities');
+
+        $this->post(route('payroll.mark-paid', $payroll))->assertSessionHas('success');
+        $this->assertEqualsWithDelta(90000, (float) $loan->fresh()->outstanding_balance, 0.001);
+        $this->assertSame(1, $loan->repayments()->count());
+
+        // Paying again (e.g. a retried batch) doesn't record a second repayment.
+        app(\App\Listeners\HandlePayrollPaid::class)->handle(new \App\Events\PayrollPaid($payroll->fresh()));
+        $this->assertSame(1, $loan->repayments()->count());
+    }
 }

@@ -1090,142 +1090,65 @@ class JournalService implements JournalServiceInterface
         return $journal;
     }
 
+    /** Journal types for payroll (finding A10) and employee loans (A9). */
+    public const PAYROLL_ACCRUAL = 'payroll_accrual';
+
+    public const PAYROLL_PAYMENT = 'payroll_payment';
+
+    public const PAYROLL_REMITTANCE = 'payroll_remittance';
+
+    public const LOAN_DISBURSEMENT = 'loan_disbursement';
+
     /**
-     * Create journal entry for payroll
+     * Payroll cost, posted when the payroll is approved (A10):
+     *   Dr salaries, allowances, overtime, employer contributions
+     *   Cr Accrued Salaries (net pay owed to the employee)
+     *   Cr PAYE, pension and other deduction liabilities
+     *   Cr Employee Advances for loan repayments, found by the loan link (A9)
+     *   Cr employer contribution liabilities
+     * Dated the end of the pay period, and refused if that period is locked.
+     * Paying the employee is a separate journal (createPayrollPaymentJournal).
      *
-     * Debit: Salaries & Wages (expense increases - basic salary)
-     * Debit: Allowances Expense (expense increases - allowances)
-     * Debit: Overtime Expense (expense increases - overtime, if any)
-     * Debit: Payroll Taxes (expense increases - employer tax portion, if any)
-     * Credit: Cash/Bank (asset decreases - net salary paid)
-     * Credit: Payroll Liabilities (liability increases - tax deductions withheld)
-     * Credit: Payroll Liabilities (liability increases - other deductions)
-     * Credit: Payroll Liabilities (liability increases - employer contributions)
+     * Payrolls paid before this change have one combined journal (no type)
+     * that credited the bank directly; those are left as they are.
      */
     public function createPayrollJournal(Payroll $payroll): ?Journal
     {
-        if ($payroll->net_salary <= 0) {
+        if ((float) $payroll->gross_salary <= 0 && (float) $payroll->net_salary <= 0) {
             return null;
         }
 
         return DB::transaction(function () use ($payroll) {
-            $t = $payroll->tenant_id;
-
-            $existingJournal = Journal::where('reference_type', Payroll::class)
+            $existing = Journal::where('reference_type', Payroll::class)
                 ->where('reference_id', $payroll->id)
+                ->where(fn ($q) => $q->whereNull('journal_type')->orWhere('journal_type', self::PAYROLL_ACCRUAL))
+                ->where('status', 'posted')
+                ->orderBy('id')
                 ->first();
 
-            if ($existingJournal) {
-                return $this->updatePayrollJournal($payroll, $existingJournal);
+            if ($existing) {
+                return $this->updatePayrollJournal($payroll, $existing);
             }
 
-            $journal = new Journal([
+            $journal = Journal::create([
                 'tenant_id' => $payroll->tenant_id,
                 'journal_number' => Journal::generateNumber($payroll->tenant_id),
-                'journal_date' => $payroll->pay_date ?? now(),
+                'journal_date' => $payroll->pay_period_end ?? $payroll->pay_date ?? now(),
                 'reference' => $payroll->payroll_number,
                 'description' => "Payroll {$payroll->payroll_number} - {$payroll->employee?->full_name}",
                 'reference_type' => Payroll::class,
                 'reference_id' => $payroll->id,
+                'journal_type' => self::PAYROLL_ACCRUAL,
                 'status' => 'posted',
                 'is_posted' => true,
                 'posted_at' => now(),
                 'created_by' => $payroll->created_by ?? auth()->id(),
-            ]);
-            $journal->withoutPeriodValidation()->save();
+            ]); // period check applies: no posting into a locked month (A10)
 
-            // Debit: Salaries & Wages (basic salary only)
-            if ($payroll->basic_salary > 0) {
-                $this->createEntry($journal, $this->acct($t, 'salaries_wages'), $payroll->basic_salary, 0,
-                    "Basic Salary - {$payroll->employee?->full_name} ({$payroll->payroll_number})");
-            }
-
-            // Debit: Allowances Expense
-            if ($payroll->allowances > 0) {
-                $this->createEntry($journal, $this->acct($t, 'allowances_expense'), $payroll->allowances, 0,
-                    "Allowances - {$payroll->employee?->full_name} ({$payroll->payroll_number})");
-            }
-
-            // Debit: Overtime Expense
-            if ($payroll->overtime_amount > 0) {
-                $this->createEntry($journal, $this->acct($t, 'overtime_expense'), $payroll->overtime_amount, 0,
-                    "Overtime - {$payroll->employee?->full_name} ({$payroll->payroll_number})");
-            }
-
-            // Debit: Employer Contributions (split by type using contribution details)
-            $employerContributions = (float) ($payroll->employer_contributions ?? 0);
-            if ($employerContributions > 0) {
-                $contributionDetails = $payroll->employer_contribution_details ?? [];
-                if (! empty($contributionDetails)) {
-                    foreach ($contributionDetails as $contribution) {
-                        $amount = (float) ($contribution['amount'] ?? 0);
-                        if ($amount > 0) {
-                            $expenseAccount = $this->mapContributionToExpenseAccount($contribution['name'] ?? '', $t);
-                            $this->createEntry($journal, $expenseAccount, $amount, 0,
-                                "{$contribution['name']} - {$payroll->payroll_number}");
-                        }
-                    }
-                } else {
-                    $this->createEntry($journal, $this->acct($t, 'payroll_taxes'), $employerContributions, 0,
-                        "Employer Contributions - {$payroll->payroll_number}");
-                }
-            }
-
-            // Credit: Cash/Bank (net salary paid to employee)
-            $paymentAccountCode = $this->getPaymentAccountCode($payroll->payment_method ?? 'bank_transfer', $t);
-            $this->createEntry($journal, $paymentAccountCode, 0, $payroll->net_salary,
-                "Net Pay - {$payroll->payroll_number}");
-
-            // Credit: Tax Payable (income tax withheld from employee)
-            if ($payroll->tax_deduction > 0) {
-                $this->createEntry($journal, $this->acct($t, 'tax_payable'), 0, $payroll->tax_deduction,
-                    "Tax Withheld - {$payroll->payroll_number}");
-            }
-
-            // Credit: Liability accounts (other deductions split by type)
-            if ($payroll->other_deductions > 0) {
-                $deductionDetails = $payroll->deduction_details ?? [];
-                $mappedTotal = 0;
-                foreach ($deductionDetails as $deduction) {
-                    if (str_starts_with($deduction['name'] ?? '', '_')) {
-                        continue;
-                    }
-                    $amount = (float) ($deduction['amount'] ?? 0);
-                    if ($amount > 0) {
-                        $liabilityAccount = $this->mapDeductionToLiabilityAccount($deduction['name'] ?? '', $t);
-                        $this->createEntry($journal, $liabilityAccount, 0, $amount,
-                            "{$deduction['name']} - {$payroll->payroll_number}");
-                        $mappedTotal += $amount;
-                    }
-                }
-                $remainder = round($payroll->other_deductions - $mappedTotal, 2);
-                if ($remainder > 0) {
-                    $this->createEntry($journal, $this->acct($t, 'payroll_liabilities'), 0, $remainder,
-                        "Other Deductions - {$payroll->payroll_number}");
-                }
-            }
-
-            // Credit: Liability accounts (employer contributions split by type)
-            if ($employerContributions > 0) {
-                $contributionDetails = $payroll->employer_contribution_details ?? [];
-                if (! empty($contributionDetails)) {
-                    foreach ($contributionDetails as $contribution) {
-                        $amount = (float) ($contribution['amount'] ?? 0);
-                        if ($amount > 0) {
-                            $liabilityAccount = $this->mapContributionToLiabilityAccount($contribution['name'] ?? '', $t);
-                            $this->createEntry($journal, $liabilityAccount, 0, $amount,
-                                "{$contribution['name']} Payable - {$payroll->payroll_number}");
-                        }
-                    }
-                } else {
-                    $this->createEntry($journal, $this->acct($t, 'payroll_liabilities'), 0, $employerContributions,
-                        "Employer Contributions Payable - {$payroll->payroll_number}");
-                }
-            }
+            $this->writePayrollLines($journal, $payroll, $this->acct($payroll->tenant_id, 'accrued_salaries'));
 
             $journal->updateTotals();
-            $journal->withoutPeriodValidation()->save();
-
+            $journal->save();
             $this->updateAccountBalances($journal);
 
             return $journal;
@@ -1233,50 +1156,191 @@ class JournalService implements JournalServiceInterface
     }
 
     /**
-     * Update existing payroll journal
+     * Rebuild a payroll's cost journal after the payroll changed. An old
+     * combined journal (no type) keeps crediting the bank for net pay.
      */
     protected function updatePayrollJournal(Payroll $payroll, Journal $journal): Journal
     {
-        $t = $payroll->tenant_id;
-
         $this->reverseAccountBalances($journal);
         $journal->entries()->delete();
 
         $journal->fill([
-            'journal_date' => $payroll->pay_date ?? now(),
+            'journal_date' => $journal->journal_type === self::PAYROLL_ACCRUAL
+                ? ($payroll->pay_period_end ?? $payroll->pay_date ?? now())
+                : ($payroll->pay_date ?? now()),
             'reference' => $payroll->payroll_number,
             'description' => "Payroll {$payroll->payroll_number} - {$payroll->employee?->full_name}",
         ]);
         $journal->withoutPeriodValidation()->save();
 
-        // Debit: Basic Salary
+        $netAccount = $journal->journal_type === self::PAYROLL_ACCRUAL
+            ? $this->acct($payroll->tenant_id, 'accrued_salaries')
+            : $this->getPaymentAccountCode($payroll->payment_method ?? 'bank_transfer', $payroll->tenant_id);
+        $this->writePayrollLines($journal, $payroll, $netAccount);
+
+        $journal->updateTotals();
+        $journal->withoutPeriodValidation()->save();
+        $this->updateAccountBalances($journal);
+
+        return $journal;
+    }
+
+    /**
+     * Paying net pay (A10): Dr Accrued Salaries, Cr bank. Dated today.
+     * Nothing to do for an old combined journal (it already paid the bank)
+     * or if this payroll's payment is already posted.
+     */
+    public function createPayrollPaymentJournal(Payroll $payroll): ?Journal
+    {
+        if ((float) $payroll->net_salary <= 0) {
+            return null;
+        }
+
+        $journals = Journal::where('reference_type', Payroll::class)
+            ->where('reference_id', $payroll->id)
+            ->where('status', 'posted')
+            ->get();
+        if ($journals->contains(fn ($j) => $j->journal_type === null && ! str_starts_with((string) $j->reference, 'REV-'))) {
+            return null;
+        }
+        if ($existing = $journals->firstWhere('journal_type', self::PAYROLL_PAYMENT)) {
+            return $existing;
+        }
+
+        return DB::transaction(function () use ($payroll) {
+            $t = $payroll->tenant_id;
+            $journal = Journal::create([
+                'tenant_id' => $t,
+                'journal_number' => Journal::generateNumber($t),
+                'journal_date' => now()->toDateString(),
+                'reference' => $payroll->payroll_number,
+                'description' => "Net pay - Payroll {$payroll->payroll_number} - {$payroll->employee?->full_name}",
+                'reference_type' => Payroll::class,
+                'reference_id' => $payroll->id,
+                'journal_type' => self::PAYROLL_PAYMENT,
+                'status' => 'posted',
+                'is_posted' => true,
+                'posted_at' => now(),
+                'created_by' => auth()->id() ?? $payroll->created_by,
+            ]);
+
+            $this->createEntry($journal, $this->acct($t, 'accrued_salaries'), (float) $payroll->net_salary, 0,
+                "Net pay owed - {$payroll->payroll_number}");
+            $this->createEntry($journal, $this->getPaymentAccountCode($payroll->payment_method ?? 'bank_transfer', $t), 0, (float) $payroll->net_salary,
+                "Net Pay - {$payroll->payroll_number}");
+
+            $journal->updateTotals();
+            $journal->save();
+            $this->updateAccountBalances($journal);
+
+            return $journal;
+        });
+    }
+
+    /**
+     * Paying a payroll liability to the authority or fund (PAYE to the state,
+     * pension to the PFA, NHF, NSITF, ITF...): Dr the liability, Cr bank.
+     */
+    public function createPayrollRemittanceJournal(int $tenantId, string $liabilityCode, float $amount, string $date, ?string $paymentMethod, ?string $reference): Journal
+    {
+        return DB::transaction(function () use ($tenantId, $liabilityCode, $amount, $date, $paymentMethod, $reference) {
+            $account = ChartOfAccount::where('tenant_id', $tenantId)->where('account_code', $liabilityCode)->firstOrFail();
+            $journal = Journal::create([
+                'tenant_id' => $tenantId,
+                'journal_number' => Journal::generateNumber($tenantId),
+                'journal_date' => $date,
+                'reference' => $reference ?: 'REMIT-'.$liabilityCode,
+                'description' => "Remittance - {$account->name}",
+                'journal_type' => self::PAYROLL_REMITTANCE,
+                'status' => 'posted',
+                'is_posted' => true,
+                'posted_at' => now(),
+                'created_by' => auth()->id(),
+            ]);
+
+            $this->createEntry($journal, $liabilityCode, $amount, 0, "Remitted: {$account->name}");
+            $this->createEntry($journal, $this->getPaymentAccountCode($paymentMethod ?? 'bank_transfer', $tenantId), 0, $amount, "Remittance: {$account->name}");
+
+            $journal->updateTotals();
+            $journal->save();
+            $this->updateAccountBalances($journal);
+
+            return $journal;
+        });
+    }
+
+    /**
+     * An employee loan or advance paid out (A9): Dr Employee Advances, Cr bank.
+     */
+    public function createLoanDisbursementJournal(\App\Models\EmployeeLoan $loan): ?Journal
+    {
+        $already = Journal::where('reference_type', \App\Models\EmployeeLoan::class)
+            ->where('reference_id', $loan->id)
+            ->where('journal_type', self::LOAN_DISBURSEMENT)
+            ->exists();
+        if ($already || (float) $loan->principal_amount <= 0) {
+            return null;
+        }
+
+        return DB::transaction(function () use ($loan) {
+            $t = $loan->tenant_id;
+            $name = $loan->employee?->full_name;
+            $journal = Journal::create([
+                'tenant_id' => $t,
+                'journal_number' => Journal::generateNumber($t),
+                'journal_date' => $loan->disbursement_date ?? now()->toDateString(),
+                'reference' => $loan->loan_number,
+                'description' => "Loan paid out {$loan->loan_number} - {$name}",
+                'reference_type' => \App\Models\EmployeeLoan::class,
+                'reference_id' => $loan->id,
+                'journal_type' => self::LOAN_DISBURSEMENT,
+                'status' => 'posted',
+                'is_posted' => true,
+                'posted_at' => now(),
+                'created_by' => $loan->created_by ?? auth()->id(),
+            ]);
+
+            $this->createEntry($journal, $this->acct($t, 'employee_advances'), (float) $loan->principal_amount, 0, "Loan {$loan->loan_number} - {$name}");
+            $this->createEntry($journal, $this->getPaymentAccountCode('bank_transfer', $t), 0, (float) $loan->principal_amount, "Loan {$loan->loan_number} paid out");
+
+            $journal->updateTotals();
+            $journal->save();
+            $this->updateAccountBalances($journal);
+
+            return $journal;
+        });
+    }
+
+    /**
+     * The lines of a payroll's cost journal. $netAccount receives net pay:
+     * Accrued Salaries for the cost journal, the bank for old combined ones.
+     */
+    protected function writePayrollLines(Journal $journal, Payroll $payroll, string $netAccount): void
+    {
+        $t = $payroll->tenant_id;
+        $who = $payroll->employee?->full_name;
+
         if ($payroll->basic_salary > 0) {
-            $this->createEntry($journal, $this->acct($t, 'salaries_wages'), $payroll->basic_salary, 0,
-                "Basic Salary - {$payroll->employee?->full_name} ({$payroll->payroll_number})");
+            $this->createEntry($journal, $this->acct($t, 'salaries_wages'), (float) $payroll->basic_salary, 0,
+                "Basic Salary - {$who} ({$payroll->payroll_number})");
         }
-
-        // Debit: Allowances
         if ($payroll->allowances > 0) {
-            $this->createEntry($journal, $this->acct($t, 'allowances_expense'), $payroll->allowances, 0,
-                "Allowances - {$payroll->employee?->full_name} ({$payroll->payroll_number})");
+            $this->createEntry($journal, $this->acct($t, 'allowances_expense'), (float) $payroll->allowances, 0,
+                "Allowances - {$who} ({$payroll->payroll_number})");
         }
-
-        // Debit: Overtime
         if ($payroll->overtime_amount > 0) {
-            $this->createEntry($journal, $this->acct($t, 'overtime_expense'), $payroll->overtime_amount, 0,
-                "Overtime - {$payroll->employee?->full_name} ({$payroll->payroll_number})");
+            $this->createEntry($journal, $this->acct($t, 'overtime_expense'), (float) $payroll->overtime_amount, 0,
+                "Overtime - {$who} ({$payroll->payroll_number})");
         }
 
-        // Debit: Employer Contributions (split by type)
         $employerContributions = (float) ($payroll->employer_contributions ?? 0);
+        $contributionDetails = $payroll->employer_contribution_details ?? [];
         if ($employerContributions > 0) {
-            $contributionDetails = $payroll->employer_contribution_details ?? [];
             if (! empty($contributionDetails)) {
                 foreach ($contributionDetails as $contribution) {
                     $amount = (float) ($contribution['amount'] ?? 0);
                     if ($amount > 0) {
-                        $expenseAccount = $this->mapContributionToExpenseAccount($contribution['name'] ?? '', $t);
-                        $this->createEntry($journal, $expenseAccount, $amount, 0,
+                        $this->createEntry($journal, $this->mapContributionToExpenseAccount($contribution['name'] ?? '', $t), $amount, 0,
                             "{$contribution['name']} - {$payroll->payroll_number}");
                     }
                 }
@@ -1286,29 +1350,40 @@ class JournalService implements JournalServiceInterface
             }
         }
 
-        $paymentAccountCode = $this->getPaymentAccountCode($payroll->payment_method ?? 'bank_transfer', $t);
-        $this->createEntry($journal, $paymentAccountCode, 0, $payroll->net_salary,
-            "Net Pay - {$payroll->payroll_number}");
+        if ($payroll->net_salary > 0) {
+            $this->createEntry($journal, $netAccount, 0, (float) $payroll->net_salary, "Net Pay - {$payroll->payroll_number}");
+        }
 
         if ($payroll->tax_deduction > 0) {
-            $this->createEntry($journal, $this->acct($t, 'tax_payable'), 0, $payroll->tax_deduction,
+            $this->createEntry($journal, $this->acct($t, 'tax_payable'), 0, (float) $payroll->tax_deduction,
                 "Tax Withheld - {$payroll->payroll_number}");
         }
 
         if ($payroll->other_deductions > 0) {
-            $deductionDetails = $payroll->deduction_details ?? [];
             $mappedTotal = 0;
-            foreach ($deductionDetails as $deduction) {
+            foreach ($payroll->deduction_details ?? [] as $deduction) {
                 if (str_starts_with($deduction['name'] ?? '', '_')) {
                     continue;
                 }
                 $amount = (float) ($deduction['amount'] ?? 0);
-                if ($amount > 0) {
-                    $liabilityAccount = $this->mapDeductionToLiabilityAccount($deduction['name'] ?? '', $t);
-                    $this->createEntry($journal, $liabilityAccount, 0, $amount,
-                        "{$deduction['name']} - {$payroll->payroll_number}");
-                    $mappedTotal += $amount;
+                if ($amount <= 0) {
+                    continue;
                 }
+
+                if (! empty($deduction['_loan_id']) && ($loan = \App\Models\EmployeeLoan::find($deduction['_loan_id']))) {
+                    // Loan repayment: reduces the advance; any interest is income (A9).
+                    $interest = $loan->interestPortionFor($amount);
+                    $this->createEntry($journal, $this->acct($t, 'employee_advances'), 0, round($amount - $interest, 2),
+                        "{$deduction['name']} - {$payroll->payroll_number}");
+                    if ($interest > 0) {
+                        $this->createEntry($journal, $this->acct($t, 'interest_income'), 0, $interest,
+                            "Interest {$loan->loan_number} - {$payroll->payroll_number}");
+                    }
+                } else {
+                    $this->createEntry($journal, $this->mapDeductionToLiabilityAccount($deduction['name'] ?? '', $t), 0, $amount,
+                        "{$deduction['name']} - {$payroll->payroll_number}");
+                }
+                $mappedTotal += $amount;
             }
             $remainder = round($payroll->other_deductions - $mappedTotal, 2);
             if ($remainder > 0) {
@@ -1318,13 +1393,11 @@ class JournalService implements JournalServiceInterface
         }
 
         if ($employerContributions > 0) {
-            $contributionDetails = $payroll->employer_contribution_details ?? [];
             if (! empty($contributionDetails)) {
                 foreach ($contributionDetails as $contribution) {
                     $amount = (float) ($contribution['amount'] ?? 0);
                     if ($amount > 0) {
-                        $liabilityAccount = $this->mapContributionToLiabilityAccount($contribution['name'] ?? '', $t);
-                        $this->createEntry($journal, $liabilityAccount, 0, $amount,
+                        $this->createEntry($journal, $this->mapContributionToLiabilityAccount($contribution['name'] ?? '', $t), 0, $amount,
                             "{$contribution['name']} Payable - {$payroll->payroll_number}");
                     }
                 }
@@ -1333,13 +1406,6 @@ class JournalService implements JournalServiceInterface
                     "Employer Contributions Payable - {$payroll->payroll_number}");
             }
         }
-
-        $journal->updateTotals();
-        $journal->withoutPeriodValidation()->save();
-
-        $this->updateAccountBalances($journal);
-
-        return $journal;
     }
 
     /**

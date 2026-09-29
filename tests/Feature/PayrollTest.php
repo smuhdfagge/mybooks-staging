@@ -637,13 +637,17 @@ class PayrollTest extends TestCase
 
         $payroll->delete();
 
-        // The original journal is kept and a reversing journal is posted,
-        // so the ledger shows both (finding M6). Previously it was force-deleted.
+        // The cost and payment journals (A10) are kept and each gets a
+        // reversing journal, so the ledger shows all of them (finding M6).
         $journals = Journal::withTrashed()->where('reference_type', Payroll::class)
             ->where('reference_id', $payroll->id)->orderBy('id')->get();
-        $this->assertCount(2, $journals);
-        $this->assertSame('reversed', $journals[0]->status);
-        $this->assertSame('REV-'.$journals[0]->journal_number, $journals[1]->reference);
+        $this->assertCount(4, $journals);
+        $originals = $journals->reject(fn ($j) => str_starts_with((string) $j->reference, 'REV-'));
+        $this->assertCount(2, $originals);
+        foreach ($originals as $original) {
+            $this->assertSame('reversed', $original->status);
+            $this->assertTrue($journals->contains('reference', 'REV-'.$original->journal_number));
+        }
 
         // Every account's lines across both journals net to zero
         $net = \App\Models\JournalEntry::whereIn('journal_id', $journals->pluck('id'))

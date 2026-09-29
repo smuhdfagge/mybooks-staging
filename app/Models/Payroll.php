@@ -148,7 +148,27 @@ class Payroll extends Model
     }
 
     /**
-     * Mark payroll as paid and create journal entry
+     * Approve the payroll and post its cost (A10): salaries expense against
+     * net pay owed and the deduction liabilities, dated the end of the pay
+     * period. A locked period throws a ValidationException and nothing is
+     * saved.
+     */
+    public function approve(int $approverId): void
+    {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($approverId) {
+            $this->update([
+                'status' => self::STATUS_APPROVED,
+                'approved_by' => $approverId,
+                'approved_at' => now(),
+            ]);
+
+            app(JournalService::class)->createPayrollJournal($this);
+        });
+    }
+
+    /**
+     * Mark payroll as paid: the listener posts the net pay payment (A10)
+     * and records loan repayments (A9).
      */
     public function markAsPaid(): bool
     {

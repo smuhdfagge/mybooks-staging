@@ -50,6 +50,7 @@ class AccountCodeService
 
         // Income
         'sales_revenue' => '4000',
+        'interest_income' => '4300',
 
         // COGS
         'cost_of_goods_sold' => '5000',
