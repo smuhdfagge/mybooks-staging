@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class RecurrentInvoice extends Model
 {
-    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
+    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'tenant_id',
@@ -108,5 +108,13 @@ class RecurrentInvoice extends Model
         }
 
         $this->save();
+    }
+
+    /**
+     * total = subtotal + tax_amount - discount_amount (see KeepsTotalsBalanced, Q2).
+     */
+    protected function documentTotalParts(): array
+    {
+        return [['subtotal', 'tax_amount'], ['discount_amount']];
     }
 }

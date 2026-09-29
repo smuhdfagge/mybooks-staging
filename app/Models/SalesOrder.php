@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class SalesOrder extends Model
 {
     use \App\Traits\HasDocumentNumber;
-    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
+    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     protected $fillable = [
         'tenant_id',
@@ -130,5 +130,13 @@ class SalesOrder extends Model
     public function hasUnfulfilledItems(): bool
     {
         return $this->items()->whereRaw('quantity_fulfilled < quantity')->exists();
+    }
+
+    /**
+     * total = subtotal + tax_amount - discount_amount (see KeepsTotalsBalanced, Q2).
+     */
+    protected function documentTotalParts(): array
+    {
+        return [['subtotal', 'tax_amount'], ['discount_amount']];
     }
 }

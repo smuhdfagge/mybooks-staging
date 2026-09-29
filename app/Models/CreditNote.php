@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class CreditNote extends Model
 {
     use \App\Traits\HasDocumentNumber;
-    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
+    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
 
     const STATUS_DRAFT = 'draft';
 
@@ -184,5 +184,13 @@ class CreditNote extends Model
         });
 
         return true;
+    }
+
+    /**
+     * total = subtotal + tax_amount (see KeepsTotalsBalanced, Q2).
+     */
+    protected function documentTotalParts(): array
+    {
+        return [['subtotal', 'tax_amount'], []];
     }
 }

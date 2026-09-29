@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Quotation extends Model
 {
     use \App\Traits\HasDocumentNumber;
-    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
+    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
 
     const STATUS_DRAFT = 'draft';
 
@@ -124,5 +124,13 @@ class Quotation extends Model
         ]);
 
         return $salesOrder;
+    }
+
+    /**
+     * total = subtotal + tax_amount - discount_amount (see KeepsTotalsBalanced, Q2).
+     */
+    protected function documentTotalParts(): array
+    {
+        return [['subtotal', 'tax_amount'], ['discount_amount']];
     }
 }

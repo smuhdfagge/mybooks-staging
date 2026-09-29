@@ -2,6 +2,8 @@
 
 namespace App\Traits;
 
+use App\Support\Money;
+
 /**
  * Keeps a financial document's stored amounts consistent with its ledger
  * entry (finding M2).
@@ -36,18 +38,14 @@ trait KeepsTotalsBalanced
 
         foreach (array_merge($plus, $minus, ['total', 'amount_paid']) as $field) {
             if ($this->getAttribute($field) !== null) {
-                $this->setAttribute($field, round((float) $this->getAttribute($field), 2));
+                $this->setAttribute($field, Money::round($this->getAttribute($field)));
             }
         }
 
-        $computed = 0.0;
-        foreach ($plus as $field) {
-            $computed += (float) ($this->getAttribute($field) ?? 0);
-        }
-        foreach ($minus as $field) {
-            $computed -= (float) ($this->getAttribute($field) ?? 0);
-        }
-        $computed = round($computed, 2);
+        $computed = Money::subtract(
+            Money::sum(array_map(fn ($f) => $this->getAttribute($f), $plus)),
+            ...array_map(fn ($f) => $this->getAttribute($f), $minus),
+        );
 
         $total = (float) ($this->getAttribute('total') ?? 0);
         $difference = abs($computed - $total);
@@ -57,7 +55,7 @@ trait KeepsTotalsBalanced
 
             // amount_paid defaults to 0 in the database, so a new document may not have it set yet.
             if (array_key_exists('balance_due', $this->getAttributes())) {
-                $this->setAttribute('balance_due', round($computed - (float) ($this->getAttribute('amount_paid') ?? 0), 2));
+                $this->setAttribute('balance_due', Money::subtract($computed, $this->getAttribute('amount_paid')));
             }
         }
     }

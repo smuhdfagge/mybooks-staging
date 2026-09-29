@@ -6,6 +6,7 @@ use App\Models\Bill;
 use App\Models\BillItem;
 use App\Models\PurchaseOrder;
 use App\Services\Sales\DocumentTotals;
+use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -139,7 +140,7 @@ class SaveBill
                 'tax_rate' => $line['tax_rate'],
                 'tax_amount' => $line['tax_amount'],
                 // After both discounts, plus VAT: what the journal and stock cost read.
-                'total' => round($line['total'] - $line['discount_share'], 2),
+                'total' => Money::subtract($line['total'], $line['discount_share']),
             ]);
         }
     }
@@ -150,16 +151,16 @@ class SaveBill
      */
     protected function totalsColumns(array $totals, float $paid): array
     {
-        $gross = round(array_sum(array_map(fn ($l) => (float) $l['quantity'] * (float) $l['unit_price'], $totals['lines'])), 2);
-        $lineDiscounts = round(array_sum(array_column($totals['lines'], 'discount')), 2);
+        $gross = Money::sum(array_map(fn ($l) => (float) $l['quantity'] * (float) $l['unit_price'], $totals['lines']));
+        $lineDiscounts = Money::sum(array_column($totals['lines'], 'discount'));
 
         return [
             'subtotal' => $gross,
-            'discount_amount' => round($lineDiscounts + $totals['discount_amount'], 2),
+            'discount_amount' => Money::add($lineDiscounts, $totals['discount_amount']),
             'tax_amount' => $totals['tax_amount'],
             'total' => $totals['total'],
             'amount_paid' => $paid,
-            'balance_due' => round($totals['total'] - $paid, 2),
+            'balance_due' => Money::subtract($totals['total'], $paid),
         ];
     }
 

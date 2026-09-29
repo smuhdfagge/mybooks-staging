@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class PurchaseOrder extends Model
 {
     use \App\Traits\HasDocumentNumber;
-    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
+    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     /** A bill has been raised for this order (finding N8). */
     public const STATUS_BILLED = 'billed';
@@ -104,5 +104,13 @@ class PurchaseOrder extends Model
         }
 
         $this->save();
+    }
+
+    /**
+     * total = subtotal + tax_amount - discount_amount (see KeepsTotalsBalanced, Q2).
+     */
+    protected function documentTotalParts(): array
+    {
+        return [['subtotal', 'tax_amount'], ['discount_amount']];
     }
 }

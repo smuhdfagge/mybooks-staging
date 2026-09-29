@@ -501,4 +501,35 @@ class PhaseCRegressionTest extends TestCase
         $this->deleteJson('/api/v1/payments-received/'.$deposit->id)->assertStatus(422);
         $this->assertNotSoftDeleted($deposit);
     }
+
+    // ── Q2: money ───────────────────────────────────────────────
+
+    public function test_q2_money_rounds_and_adds_in_whole_kobo(): void
+    {
+        $this->assertSame(1.01, \App\Support\Money::round(1.005));
+        $this->assertSame(0.6, \App\Support\Money::sum([0.1, 0.2, 0.3]));
+        $this->assertSame([33.33, 33.33, 33.34], \App\Support\Money::allocate(100, [1, 1, 1]));
+        $this->assertTrue(\App\Support\Money::equals(0.1 + 0.2, 0.3));
+    }
+
+    public function test_q2_every_document_keeps_its_total_equal_to_its_parts(): void
+    {
+        [$tenant] = $this->createTenantWithSubscription();
+        $customer = Customer::factory()->create(['tenant_id' => $tenant->id]);
+        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $tenant->id]);
+        // 3.71 + 0.28 stored as 3.98: a kobo out, as unrounded sums used to give.
+        $figures = ['subtotal' => 3.71, 'tax_amount' => 0.28, 'total' => 3.98];
+
+        $docs = [
+            \App\Models\SalesOrder::create($figures + ['tenant_id' => $tenant->id, 'customer_id' => $customer->id, 'order_number' => 'SO-9', 'order_date' => '2026-09-01', 'status' => 'draft']),
+            \App\Models\Quotation::create($figures + ['tenant_id' => $tenant->id, 'customer_id' => $customer->id, 'quotation_number' => 'QT-9', 'quotation_date' => '2026-09-01', 'status' => 'draft']),
+            \App\Models\PurchaseOrder::create($figures + ['tenant_id' => $tenant->id, 'vendor_id' => $vendor->id, 'order_number' => 'PO-9', 'order_date' => '2026-09-01', 'status' => 'draft']),
+            \App\Models\CreditNote::create($figures + ['tenant_id' => $tenant->id, 'customer_id' => $customer->id, 'credit_note_number' => 'CN-9', 'credit_note_date' => '2026-09-01', 'status' => 'draft']),
+            \App\Models\RecurrentBill::create($figures + ['tenant_id' => $tenant->id, 'vendor_id' => $vendor->id, 'profile_name' => 'R', 'frequency' => 'monthly', 'start_date' => '2026-09-01', 'next_bill_date' => '2026-10-01', 'status' => 'active']),
+        ];
+
+        foreach ($docs as $doc) {
+            $this->assertEqualsWithDelta(3.99, (float) $doc->fresh()->total, 0.0001, class_basename($doc));
+        }
+    }
 }
