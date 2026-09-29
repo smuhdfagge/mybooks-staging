@@ -72,6 +72,7 @@ class FixedAssetController extends Controller
             'purchase_date' => 'required|date',
             'in_service_date' => 'required|date|after_or_equal:purchase_date',
             'purchase_cost' => 'required|numeric|min:0',
+            'funding_source' => ['required', Rule::in(array_keys(FixedAsset::FUNDING_SOURCES))],
             'salvage_value' => 'required|numeric|min:0|lt:purchase_cost',
             'useful_life' => 'required|numeric|min:0.5|max:50',
             'depreciation_method' => 'required|in:straight_line,declining_balance,double_declining,sum_of_years',
@@ -92,15 +93,19 @@ class FixedAssetController extends Controller
             }
         }
 
-        $asset = FixedAsset::create([
-            'tenant_id' => $tenantId,
-            'asset_number' => FixedAsset::generateNumber($tenantId),
-            'created_by' => auth()->id(),
-            ...$validated,
-        ]);
+        // The asset and its purchase journal are saved together (A11).
+        $asset = \Illuminate\Support\Facades\DB::transaction(function () use ($tenantId, $validated) {
+            $asset = FixedAsset::create([
+                'tenant_id' => $tenantId,
+                'asset_number' => FixedAsset::generateNumber($tenantId),
+                'created_by' => auth()->id(),
+                ...$validated,
+            ]);
 
-        // Create initial journal entry for asset acquisition
-        $this->createAcquisitionJournal($asset);
+            app(\App\Services\JournalService::class)->createFixedAssetAcquisitionJournal($asset);
+
+            return $asset;
+        });
 
         return redirect()->route('fixed-assets.show', $asset)
             ->with('success', 'Fixed asset created successfully.');
@@ -140,7 +145,8 @@ class FixedAssetController extends Controller
             'manufacturer' => 'nullable|string|max:255',
             'location' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
-            'status' => 'required|in:active,under_maintenance,idle,disposed',
+            // Disposal goes through the Dispose action, which posts it (A11).
+            'status' => ['required', Rule::in(array_unique(['active', 'under_maintenance', 'idle', $fixedAsset->status]))],
             'assigned_to' => ['nullable', Rule::exists('users', 'id')->where('tenant_id', auth()->user()->tenant_id)],
         ];
 
@@ -164,7 +170,11 @@ class FixedAssetController extends Controller
             return back()->with('error', 'Cannot delete asset with posted depreciation. Please dispose the asset instead.');
         }
 
-        $fixedAsset->delete();
+        \Illuminate\Support\Facades\DB::transaction(function () use ($fixedAsset) {
+            // Keep the purchase journal and post its reversal (A11, M6).
+            app(\App\Services\JournalService::class)->deleteJournalForTransaction(FixedAsset::class, $fixedAsset->id, $fixedAsset->tenant_id);
+            $fixedAsset->delete();
+        });
 
         return redirect()->route('fixed-assets.index')
             ->with('success', 'Fixed asset deleted successfully.');
@@ -362,62 +372,5 @@ class FixedAssetController extends Controller
             'totalDepreciation',
             'totalBookValue'
         ));
-    }
-
-    /**
-     * Create journal entry for asset acquisition
-     */
-    protected function createAcquisitionJournal(FixedAsset $asset): void
-    {
-        $assetAccount = $asset->asset_account_id
-            ? ChartOfAccount::find($asset->asset_account_id)
-            : ChartOfAccount::where('tenant_id', $asset->tenant_id)
-                ->where('account_code', '1500')
-                ->first();
-
-        $cashAccount = ChartOfAccount::where('tenant_id', $asset->tenant_id)
-            ->where('account_code', '1000')
-            ->first();
-
-        if (! $assetAccount || ! $cashAccount) {
-            return;
-        }
-
-        $journal = \App\Models\Journal::create([
-            'tenant_id' => $asset->tenant_id,
-            'journal_number' => \App\Models\Journal::generateNumber($asset->tenant_id),
-            'journal_date' => $asset->purchase_date,
-            'reference' => $asset->asset_number,
-            'description' => "Asset Acquisition - {$asset->name}",
-            'reference_type' => FixedAsset::class,
-            'reference_id' => $asset->id,
-            'status' => 'posted',
-            'is_posted' => true,
-            'posted_at' => now(),
-            'created_by' => auth()->id(),
-        ]);
-
-        // Debit: Asset Account
-        \App\Models\JournalEntry::create([
-            'journal_id' => $journal->id,
-            'account_id' => $assetAccount->id,
-            'description' => "Asset Acquisition - {$asset->name}",
-            'debit' => $asset->purchase_cost,
-            'credit' => 0,
-        ]);
-
-        // Credit: Cash
-        \App\Models\JournalEntry::create([
-            'journal_id' => $journal->id,
-            'account_id' => $cashAccount->id,
-            'description' => "Payment for {$asset->name}",
-            'debit' => 0,
-            'credit' => $asset->purchase_cost,
-        ]);
-
-        $journal->updateTotals();
-
-        // Apply to the account balances with the normal debit/credit rules.
-        app(\App\Services\JournalService::class)->updateAccountBalances($journal);
     }
 }

@@ -118,12 +118,7 @@ class EmployeeLoan extends Model
         // Cap at outstanding balance
         $amount = min($amount, (float) $this->outstanding_balance);
 
-        $interestPortion = 0;
-        if ($this->interest_rate > 0) {
-            $monthlyRate = $this->interest_rate / 100 / 12;
-            $interestPortion = round((float) $this->outstanding_balance * $monthlyRate, 2);
-            $interestPortion = min($interestPortion, $amount);
-        }
+        $interestPortion = $this->interestPortionFor($amount);
 
         $principalPortion = round($amount - $interestPortion, 2);
 
@@ -147,6 +142,35 @@ class EmployeeLoan extends Model
         ]);
 
         return $repayment;
+    }
+
+    /**
+     * Interest in a repayment of $amount: one month's interest on what is
+     * still owed. Used when recording the repayment and when the payroll
+     * journal splits the deduction between the advance and interest income.
+     */
+    public function interestPortionFor(float $amount): float
+    {
+        if ((float) $this->interest_rate <= 0) {
+            return 0.0;
+        }
+
+        $interest = round((float) $this->outstanding_balance * (float) $this->interest_rate / 100 / 12, 2);
+
+        return min($interest, $amount);
+    }
+
+    /**
+     * Paying the loan out puts money owed to the business on the books
+     * (Dr Employee Advances, Cr Bank). Finding A9.
+     */
+    protected static function booted(): void
+    {
+        static::created(function (self $loan) {
+            if ($loan->status === self::STATUS_ACTIVE && (float) $loan->principal_amount > 0) {
+                app(\App\Services\JournalService::class)->createLoanDisbursementJournal($loan);
+            }
+        });
     }
 
     /**

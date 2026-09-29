@@ -161,52 +161,58 @@ class SalesOrderController extends Controller
                 'reference' => $salesOrder->order_number,
                 'notes' => $salesOrder->notes,
                 'terms' => $salesOrder->terms,
-                'discount_type' => $salesOrder->discount_type,
-                'discount_amount' => $salesOrder->discount_amount ?? 0,
+                'discount_type' => $salesOrder->discount_amount > 0 ? 'fixed' : null,
+                'discount_amount' => 0, // set below with the totals
                 'status' => 'draft',
                 'created_by' => auth()->id(),
             ]);
 
-            $subtotal = 0;
-            $totalTax = 0;
-
+            // Lines still to deliver; totals with VAT after the discount (A4).
+            $lines = [];
             foreach ($salesOrder->items as $soItem) {
                 $qty = $soItem->quantity - ($soItem->quantity_fulfilled ?? 0);
                 if ($qty <= 0) {
                     continue;
                 }
-
-                $lineTotal = $qty * $soItem->unit_price;
-                $taxRate = $soItem->tax_rate ?? 0;
-                $taxAmount = $lineTotal * ($taxRate / 100);
-
-                InvoiceItem::create([
-                    'invoice_id' => $invoice->id,
+                $lines[] = [
                     'item_id' => $soItem->item_id,
                     'description' => $soItem->description,
                     'quantity' => $qty,
                     'unit_price' => $soItem->unit_price,
-                    'tax_rate' => $taxRate,
-                    'tax_amount' => $taxAmount,
-                    'total' => $lineTotal + $taxAmount,
-                ]);
-
-                $subtotal += $lineTotal;
-                $totalTax += $taxAmount;
+                    'tax_rate' => $soItem->tax_rate ?? 0,
+                ];
             }
 
-            if ($subtotal === 0) {
+            if ($lines === []) {
                 DB::rollBack();
 
                 return redirect()->back()->with('error', 'All items have already been fulfilled. Nothing to invoice.');
             }
 
-            $discountAmount = $salesOrder->discount_amount ?? 0;
-            if (($salesOrder->discount_type ?? null) === 'percentage') {
-                $discountAmount = $subtotal * ($discountAmount / 100);
+            // The order's discount is stored as money. Invoice the share that
+            // belongs to the lines still to deliver.
+            $remaining = collect($lines)->sum(fn ($l) => (float) $l['quantity'] * (float) $l['unit_price']);
+            $orderSubtotal = (float) $salesOrder->subtotal;
+            $discountShare = $orderSubtotal > 0 ? (float) ($salesOrder->discount_amount ?? 0) * min(1, $remaining / $orderSubtotal) : 0;
+            $totals = \App\Services\Sales\DocumentTotals::calculate($lines, 'fixed', round($discountShare, 2));
+
+            foreach ($totals['lines'] as $line) {
+                InvoiceItem::create([
+                    'invoice_id' => $invoice->id,
+                    'item_id' => $line['item_id'],
+                    'description' => $line['description'],
+                    'quantity' => $line['quantity'],
+                    'unit_price' => $line['unit_price'],
+                    'tax_rate' => $line['tax_rate'],
+                    'tax_amount' => $line['tax_amount'],
+                    'total' => $line['total'],
+                ]);
             }
 
-            $total = $subtotal + $totalTax - $discountAmount;
+            $subtotal = $totals['subtotal'];
+            $totalTax = $totals['tax_amount'];
+            $discountAmount = $totals['discount_amount'];
+            $total = $totals['total'];
 
             $invoice->update([
                 'subtotal' => $subtotal,

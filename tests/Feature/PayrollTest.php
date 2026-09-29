@@ -149,7 +149,7 @@ class PayrollTest extends TestCase
 
         $journal = Journal::where('reference_type', Payroll::class)
             ->where('reference_id', $payroll->id)
-            ->first();
+            ->orderBy('id')->first();
 
         $this->assertNotNull($journal);
 
@@ -187,7 +187,7 @@ class PayrollTest extends TestCase
 
         $journal = Journal::where('reference_type', Payroll::class)
             ->where('reference_id', $payroll->id)
-            ->first();
+            ->orderBy('id')->first();
 
         $this->assertNotNull($journal);
 
@@ -221,7 +221,7 @@ class PayrollTest extends TestCase
         $payroll->markAsPaid();
 
         $journal = Journal::where('reference_type', Payroll::class)
-            ->where('reference_id', $payroll->id)->first();
+            ->where('reference_id', $payroll->id)->orderBy('id')->first();
 
         // Basic salary debits 6000 (Salaries & Wages) — NOT the full gross
         $salaryEntry = $journal->entries()
@@ -250,7 +250,7 @@ class PayrollTest extends TestCase
         $payroll->markAsPaid();
 
         $journal = Journal::where('reference_type', Payroll::class)
-            ->where('reference_id', $payroll->id)->first();
+            ->where('reference_id', $payroll->id)->orderBy('id')->first();
 
         $allowanceEntry = $journal->entries()
             ->whereHas('account', fn ($q) => $q->where('account_code', '6030'))
@@ -281,7 +281,7 @@ class PayrollTest extends TestCase
         $payroll->markAsPaid();
 
         $journal = Journal::where('reference_type', Payroll::class)
-            ->where('reference_id', $payroll->id)->first();
+            ->where('reference_id', $payroll->id)->orderBy('id')->first();
 
         $overtimeEntry = $journal->entries()
             ->whereHas('account', fn ($q) => $q->where('account_code', '6040'))
@@ -314,7 +314,7 @@ class PayrollTest extends TestCase
         $payroll->markAsPaid();
 
         $journal = Journal::where('reference_type', Payroll::class)
-            ->where('reference_id', $payroll->id)->first();
+            ->where('reference_id', $payroll->id)->orderBy('id')->first();
 
         $totalDebit = $journal->entries()->sum('debit');
         $totalCredit = $journal->entries()->sum('credit');
@@ -353,7 +353,7 @@ class PayrollTest extends TestCase
         $payroll->markAsPaid();
 
         $journal = Journal::where('reference_type', Payroll::class)
-            ->where('reference_id', $payroll->id)->first();
+            ->where('reference_id', $payroll->id)->orderBy('id')->first();
 
         $totalDebit = $journal->entries()->sum('debit');
         $totalCredit = $journal->entries()->sum('credit');
@@ -632,18 +632,22 @@ class PayrollTest extends TestCase
         $payroll->markAsPaid();
 
         $journal = Journal::where('reference_type', Payroll::class)
-            ->where('reference_id', $payroll->id)->first();
+            ->where('reference_id', $payroll->id)->orderBy('id')->first();
         $this->assertNotNull($journal);
 
         $payroll->delete();
 
-        // The original journal is kept and a reversing journal is posted,
-        // so the ledger shows both (finding M6). Previously it was force-deleted.
+        // The cost and payment journals (A10) are kept and each gets a
+        // reversing journal, so the ledger shows all of them (finding M6).
         $journals = Journal::withTrashed()->where('reference_type', Payroll::class)
             ->where('reference_id', $payroll->id)->orderBy('id')->get();
-        $this->assertCount(2, $journals);
-        $this->assertSame('reversed', $journals[0]->status);
-        $this->assertSame('REV-'.$journals[0]->journal_number, $journals[1]->reference);
+        $this->assertCount(4, $journals);
+        $originals = $journals->reject(fn ($j) => str_starts_with((string) $j->reference, 'REV-'));
+        $this->assertCount(2, $originals);
+        foreach ($originals as $original) {
+            $this->assertSame('reversed', $original->status);
+            $this->assertTrue($journals->contains('reference', 'REV-'.$original->journal_number));
+        }
 
         // Every account's lines across both journals net to zero
         $net = \App\Models\JournalEntry::whereIn('journal_id', $journals->pluck('id'))
@@ -729,8 +733,8 @@ class PayrollTest extends TestCase
             $payroll->markAsPaid();
         }
 
-        $this->assertNotNull(Journal::where('reference_type', Payroll::class)->where('reference_id', $p1->id)->first());
-        $this->assertNotNull(Journal::where('reference_type', Payroll::class)->where('reference_id', $p2->id)->first());
+        $this->assertNotNull(Journal::where('reference_type', Payroll::class)->where('reference_id', $p1->id)->orderBy('id')->first());
+        $this->assertNotNull(Journal::where('reference_type', Payroll::class)->where('reference_id', $p2->id)->orderBy('id')->first());
     }
 
     // ── HTTP Route Tests ─────────────────────────────────────────
@@ -796,7 +800,7 @@ class PayrollTest extends TestCase
         $payroll->markAsPaid();
 
         $journal = Journal::where('reference_type', Payroll::class)
-            ->where('reference_id', $payroll->id)->first();
+            ->where('reference_id', $payroll->id)->orderBy('id')->first();
 
         $taxPayableEntry = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '2310'))->first();
         $this->assertNotNull($taxPayableEntry);
@@ -829,7 +833,7 @@ class PayrollTest extends TestCase
         $payroll->markAsPaid();
 
         $journal = Journal::where('reference_type', Payroll::class)
-            ->where('reference_id', $payroll->id)->first();
+            ->where('reference_id', $payroll->id)->orderBy('id')->first();
 
         // Tax → 2310
         $taxEntry = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '2310'))->first();
@@ -877,7 +881,7 @@ class PayrollTest extends TestCase
         $payroll->markAsPaid();
 
         $journal = Journal::where('reference_type', Payroll::class)
-            ->where('reference_id', $payroll->id)->first();
+            ->where('reference_id', $payroll->id)->orderBy('id')->first();
 
         // Expense side: debits
         $pensionExpense = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '6050'))->first();
@@ -925,7 +929,7 @@ class PayrollTest extends TestCase
         $payroll->markAsPaid();
 
         $journal = Journal::where('reference_type', Payroll::class)
-            ->where('reference_id', $payroll->id)->first();
+            ->where('reference_id', $payroll->id)->orderBy('id')->first();
 
         // Unrecognized deduction falls back to 2300
         $fallbackEntry = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '2300'))->first();

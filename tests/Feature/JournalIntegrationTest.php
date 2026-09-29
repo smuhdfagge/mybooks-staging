@@ -191,7 +191,7 @@ class JournalIntegrationTest extends TestCase
 
         $journal = Journal::where('reference_type', Payroll::class)
             ->where('reference_id', $payroll->id)
-            ->first();
+            ->orderBy('id')->first();
 
         $this->assertNotNull($journal);
         $this->assertEquals('posted', $journal->status);
@@ -203,7 +203,13 @@ class JournalIntegrationTest extends TestCase
         $allowanceEntry = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '6030'))->first();
         $this->assertEquals(500.00, (float) $allowanceEntry->debit);
 
-        $cashEntry = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '1100'))->first();
+        // Net pay is owed on approval (Accrued Salaries) and paid by a
+        // separate payment journal (A10).
+        $owedEntry = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '2210'))->first();
+        $this->assertEquals(4850.00, (float) $owedEntry->credit);
+        $payment = Journal::where('reference_type', Payroll::class)->where('reference_id', $payroll->id)
+            ->where('journal_type', \App\Services\JournalService::PAYROLL_PAYMENT)->sole();
+        $cashEntry = $payment->entries()->whereHas('account', fn ($q) => $q->where('account_code', '1100'))->first();
         $this->assertEquals(4850.00, (float) $cashEntry->credit);
 
         // Tax withheld goes to 2310 (Tax Payable)
@@ -256,7 +262,7 @@ class JournalIntegrationTest extends TestCase
 
         $this->assertFalse($result);
         $this->assertEquals(Payroll::STATUS_DRAFT, $payroll->fresh()->status);
-        $this->assertNull(Journal::where('reference_type', Payroll::class)->where('reference_id', $payroll->id)->first());
+        $this->assertNull(Journal::where('reference_type', Payroll::class)->where('reference_id', $payroll->id)->orderBy('id')->first());
     }
 
     public function test_payroll_is_paid_helper(): void

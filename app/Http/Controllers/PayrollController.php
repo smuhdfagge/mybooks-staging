@@ -172,11 +172,13 @@ class PayrollController extends Controller
             return redirect()->route('payroll.show', $payroll)->with('error', 'You cannot approve a payroll you created. A different user must approve it.');
         }
 
-        $payroll->update([
-            'status' => 'approved',
-            'approved_by' => auth()->id(),
-            'approved_at' => now(),
-        ]);
+        try {
+            // Posts the payroll cost into its pay period (A10).
+            $payroll->approve(auth()->id());
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->route('payroll.show', $payroll)
+                ->with('error', collect($e->errors())->flatten()->first() ?? 'This payroll cannot be approved.');
+        }
 
         // Log the activity
         $payroll->logCustomActivity(ActivityLog::ACTION_APPROVED, "Payroll '{$payroll->payroll_number}' was approved");
@@ -388,6 +390,9 @@ class PayrollController extends Controller
                         }
                     }
 
+                    // Rent relief (Nigeria Tax Act 2025) also comes off before tax.
+                    $taxableAmount -= $taxService->monthlyRentRelief($employee);
+
                     // Progressive tax calculation with flat-rate fallback
                     $taxResult = $taxService->calculateTax(max(0, $taxableAmount), $tenantId, $flatTaxRate, 'monthly');
                     $taxDeduction = $taxResult['tax'];
@@ -536,16 +541,20 @@ class PayrollController extends Controller
                 'approved_at' => now(),
             ]);
 
-            $payrollBatch->payrolls()->where('status', 'draft')->update([
-                'status' => 'approved',
-                'approved_by' => auth()->id(),
-                'approved_at' => now(),
-            ]);
+            // One by one, so each payroll's cost is posted (A10).
+            foreach ($payrollBatch->payrolls()->where('status', 'draft')->get() as $payroll) {
+                $payroll->approve(auth()->id());
+            }
 
             DB::commit();
 
             return redirect()->route('payroll-batches.show', $payrollBatch)
                 ->with('success', 'Payroll batch approved successfully.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+
+            return redirect()->route('payroll-batches.show', $payrollBatch)
+                ->with('error', collect($e->errors())->flatten()->first() ?? 'Failed to approve batch.');
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -820,6 +829,7 @@ class PayrollController extends Controller
             }
 
             $taxableAmount -= $structure->calculatePreTaxDeductions();
+            $taxableAmount -= $taxService->monthlyRentRelief($employee);
 
             $taxResult = $taxService->calculateTax(max(0, $taxableAmount), $tenantId, 0, 'monthly');
             $newTax = $taxResult['tax'];

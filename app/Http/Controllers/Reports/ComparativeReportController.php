@@ -4,10 +4,6 @@ namespace App\Http\Controllers\Reports;
 
 use App\Models\Expense;
 use App\Models\Journal;
-use App\Models\JournalEntry;
-use App\Models\PaymentMade;
-use App\Models\PaymentReceived;
-use App\Models\Payroll;
 use Illuminate\Http\Request;
 
 /**
@@ -85,93 +81,19 @@ class ComparativeReportController extends ReportController
         foreach ($periods as $key => $period) {
             $asOf = $period['end'];
 
-            // Calculate Total Assets from journal entries (Debit - Credit for asset accounts)
-            $assetData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $asOf) {
-                $query->where('tenant_id', $tenantId)
-                    ->where('journal_date', '<=', $asOf)
-                    ->where('is_posted', true);
-            })
-                ->whereHas('account', function ($query) {
-                    $query->where('type', 'asset');
-                })
-                ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
-                ->first();
-
-            $totalAssets = ($assetData->total_debit ?? 0) - ($assetData->total_credit ?? 0);
-
-            // Get Accounts Receivable specifically
-            $arData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $asOf) {
-                $query->where('tenant_id', $tenantId)
-                    ->where('journal_date', '<=', $asOf)
-                    ->where('is_posted', true);
-            })
-                ->whereHas('account', function ($query) {
-                    $query->where('type', 'asset')
-                        ->where('sub_type', 'accounts_receivable');
-                })
-                ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
-                ->first();
-
-            $accountsReceivable = ($arData->total_debit ?? 0) - ($arData->total_credit ?? 0);
-
-            // Calculate Total Liabilities from journal entries (Credit - Debit for liability accounts)
-            $liabilityData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $asOf) {
-                $query->where('tenant_id', $tenantId)
-                    ->where('journal_date', '<=', $asOf)
-                    ->where('is_posted', true);
-            })
-                ->whereHas('account', function ($query) {
-                    $query->where('type', 'liability');
-                })
-                ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
-                ->first();
-
-            $totalLiabilities = ($liabilityData->total_credit ?? 0) - ($liabilityData->total_debit ?? 0);
-
-            // Get Accounts Payable specifically
-            $apData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $asOf) {
-                $query->where('tenant_id', $tenantId)
-                    ->where('journal_date', '<=', $asOf)
-                    ->where('is_posted', true);
-            })
-                ->whereHas('account', function ($query) {
-                    $query->where('type', 'liability')
-                        ->where('sub_type', 'accounts_payable');
-                })
-                ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
-                ->first();
-
-            $accountsPayable = ($apData->total_credit ?? 0) - ($apData->total_debit ?? 0);
-
-            // Calculate Total Equity from journal entries (Credit - Debit for equity accounts)
-            $equityData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $asOf) {
-                $query->where('tenant_id', $tenantId)
-                    ->where('journal_date', '<=', $asOf)
-                    ->where('is_posted', true);
-            })
-                ->whereHas('account', function ($query) {
-                    $query->where('type', 'equity');
-                })
-                ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
-                ->first();
-
-            $equityFromAccounts = ($equityData->total_credit ?? 0) - ($equityData->total_debit ?? 0);
-
-            // Add retained earnings (net income from beginning of fiscal year to as-of date)
-            $netIncome = $this->calculateNetIncomeForBalanceSheet($tenantId, $asOf);
-
-            // Total equity = Equity accounts + Net Income (retained earnings for the period)
-            $equity = $equityFromAccounts + $netIncome;
+            // Same ledger-based figures as the balance sheet (A2).
+            $bs = app(\App\Services\Accounting\FinancialStatements::class)->balanceSheet($tenantId, $asOf);
+            $equity = $bs['totalEquity'];
 
             $periodData[$key] = [
                 'label' => $period['label'],
                 'asOf' => $asOf,
-                'accountsReceivable' => $accountsReceivable,
-                'totalAssets' => $totalAssets,
-                'accountsPayable' => $accountsPayable,
-                'totalLiabilities' => $totalLiabilities,
+                'accountsReceivable' => $bs['accountsReceivable'],
+                'totalAssets' => $bs['totalAssets'],
+                'accountsPayable' => $bs['accountsPayable'],
+                'totalLiabilities' => $bs['totalLiabilities'],
                 'equity' => $equity,
-                'totalLiabilitiesEquity' => $totalLiabilities + $equity,
+                'totalLiabilitiesEquity' => $bs['totalLiabilitiesAndEquity'],
             ];
         }
 
@@ -195,38 +117,20 @@ class ComparativeReportController extends ReportController
         $periodData = [];
 
         foreach ($periods as $key => $period) {
-            $paymentsReceived = PaymentReceived::where('tenant_id', $tenantId)
-                ->whereBetween('payment_date', [$period['start'], $period['end']])
-                ->sum('amount');
-
-            $paymentsMade = PaymentMade::where('tenant_id', $tenantId)
-                ->whereBetween('payment_date', [$period['start'], $period['end']])
-                ->sum('amount');
-
-            $expensesPaid = Expense::where('tenant_id', $tenantId)
-                ->whereBetween('expense_date', [$period['start'], $period['end']])
-                ->sum('amount');
-
-            $payrollPaid = Payroll::where('tenant_id', $tenantId)
-                ->whereBetween('pay_date', [$period['start'], $period['end']])
-                ->where('status', 'paid')
-                ->sum('net_salary');
-
-            $totalInflows = $paymentsReceived;
-            $totalOutflows = $paymentsMade + $expensesPaid + $payrollPaid;
-            $netCashFlow = $totalInflows - $totalOutflows;
+            // Same ledger-based figures as the cash flow statement (A7).
+            $cf = app(\App\Services\Accounting\FinancialStatements::class)->cashFlow($tenantId, $period['start'], $period['end']);
 
             $periodData[$key] = [
                 'label' => $period['label'],
                 'start' => $period['start'],
                 'end' => $period['end'],
-                'paymentsReceived' => $paymentsReceived,
-                'paymentsMade' => $paymentsMade,
-                'expensesPaid' => $expensesPaid,
-                'payrollPaid' => $payrollPaid,
-                'totalInflows' => $totalInflows,
-                'totalOutflows' => $totalOutflows,
-                'netCashFlow' => $netCashFlow,
+                'paymentsReceived' => $cf['paymentsReceived'],
+                'paymentsMade' => $cf['paymentsMade'],
+                'expensesPaid' => $cf['expensesPaid'],
+                'payrollPaid' => $cf['payrollPaid'],
+                'totalInflows' => $cf['totalInflows'],
+                'totalOutflows' => $cf['totalOutflows'],
+                'netCashFlow' => $cf['netCashFlow'],
             ];
         }
 

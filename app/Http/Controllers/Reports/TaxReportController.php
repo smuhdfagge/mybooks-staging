@@ -28,95 +28,43 @@ class TaxReportController extends ReportController
         $endDate = $request->get('end_date', now()->endOfQuarter()->format('Y-m-d'));
         $taxRateId = $request->get('tax_rate_id');
 
-        // Get all active tax rates for filter dropdown
         $taxRates = TaxRate::where('tenant_id', $tenantId)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
 
-        // Output Tax (Sales) - Tax collected on sales
-        $outputTaxQuery = InvoiceItem::select(
-            'invoice_items.tax_rate',
-            DB::raw('SUM(invoice_items.quantity * invoice_items.unit_price) as taxable_amount'),
-            DB::raw('SUM(invoice_items.tax_amount) as tax_amount'),
-            DB::raw('COUNT(DISTINCT invoice_items.invoice_id) as transaction_count')
-        )
-            ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
-            ->where('invoices.tenant_id', $tenantId)
-            ->whereBetween('invoices.invoice_date', [$startDate, $endDate])
-            ->whereIn('invoices.status', ['sent', 'paid', 'partial', 'overdue'])
-            ->where('invoice_items.tax_rate', '>', 0);
+        // From the ledger: every posted document, whatever its payment status (A5).
+        $return = app(\App\Services\Accounting\VatReturn::class)->build($tenantId, $startDate, $endDate);
 
-        if ($taxRateId) {
-            $selectedTaxRate = TaxRate::where('tenant_id', $tenantId)->find($taxRateId);
-            if ($selectedTaxRate) {
-                $outputTaxQuery->where('invoice_items.tax_rate', $selectedTaxRate->rate);
-            }
+        // The rate filter narrows the by-rate tables only; totals stay complete.
+        if ($taxRateId && ($selected = $taxRates->firstWhere('id', (int) $taxRateId))) {
+            $only = fn ($rows) => $rows->filter(fn ($r) => $r->tax_rate !== null && abs($r->tax_rate - (float) $selected->rate) < 0.005)->values();
+            $return['outputTaxByRate'] = $only($return['outputTaxByRate']);
+            $return['inputTaxByRate'] = $only($return['inputTaxByRate']);
         }
 
-        $outputTaxByRate = $outputTaxQuery->groupBy('invoice_items.tax_rate')
-            ->orderBy('invoice_items.tax_rate')
-            ->get();
+        return view('reports.vat-gst-return', $return + compact('startDate', 'endDate', 'taxRates', 'taxRateId'));
+    }
 
-        // Input Tax (Purchases) - Tax paid on purchases
-        $inputTaxQuery = BillItem::select(
-            'bill_items.tax_rate',
-            DB::raw('SUM(bill_items.quantity * bill_items.unit_price) as taxable_amount'),
-            DB::raw('SUM(bill_items.tax_amount) as tax_amount'),
-            DB::raw('COUNT(DISTINCT bill_items.bill_id) as transaction_count')
-        )
-            ->join('bills', 'bill_items.bill_id', '=', 'bills.id')
-            ->where('bills.tenant_id', $tenantId)
-            ->whereBetween('bills.bill_date', [$startDate, $endDate])
-            ->whereIn('bills.status', ['approved', 'paid', 'partial', 'overdue'])
-            ->where('bill_items.tax_rate', '>', 0);
+    /**
+     * Settle a VAT period when the return is filed (A5).
+     */
+    public function settleVatReturn(Request $request)
+    {
+        $validated = $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
 
-        if ($taxRateId) {
-            $selectedTaxRate = TaxRate::where('tenant_id', $tenantId)->find($taxRateId);
-            if ($selectedTaxRate) {
-                $inputTaxQuery->where('bill_items.tax_rate', $selectedTaxRate->rate);
-            }
+        try {
+            $journal = app(\App\Services\Accounting\VatReturn::class)
+                ->settle(auth()->user()->tenant_id, $validated['start_date'], $validated['end_date']);
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
         }
 
-        $inputTaxByRate = $inputTaxQuery->groupBy('bill_items.tax_rate')
-            ->orderBy('bill_items.tax_rate')
-            ->get();
-
-        // Calculate totals
-        $totalOutputTax = $outputTaxByRate->sum('tax_amount');
-        $totalOutputTaxable = $outputTaxByRate->sum('taxable_amount');
-        $totalInputTax = $inputTaxByRate->sum('tax_amount');
-        $totalInputTaxable = $inputTaxByRate->sum('taxable_amount');
-
-        // Net VAT/GST payable (or refundable if negative)
-        $netTaxPayable = $totalOutputTax - $totalInputTax;
-
-        // Get detailed transactions for Output Tax
-        $outputTransactions = Invoice::with(['customer', 'items'])
-            ->where('tenant_id', $tenantId)
-            ->whereBetween('invoice_date', [$startDate, $endDate])
-            ->whereIn('status', ['sent', 'paid', 'partial', 'overdue'])
-            ->where('tax_amount', '>', 0)
-            ->orderBy('invoice_date', 'desc')
-            ->get();
-
-        // Get detailed transactions for Input Tax
-        $inputTransactions = Bill::with(['vendor', 'items'])
-            ->where('tenant_id', $tenantId)
-            ->whereBetween('bill_date', [$startDate, $endDate])
-            ->whereIn('status', ['approved', 'paid', 'partial', 'overdue'])
-            ->where('tax_amount', '>', 0)
-            ->orderBy('bill_date', 'desc')
-            ->get();
-
-        return view('reports.vat-gst-return', compact(
-            'startDate', 'endDate', 'taxRates', 'taxRateId',
-            'outputTaxByRate', 'inputTaxByRate',
-            'totalOutputTax', 'totalOutputTaxable',
-            'totalInputTax', 'totalInputTaxable',
-            'netTaxPayable',
-            'outputTransactions', 'inputTransactions'
-        ));
+        return redirect()->route('reports.vat-gst-return', ['start_date' => $validated['start_date'], 'end_date' => $validated['end_date']])
+            ->with('success', "VAT settled (journal {$journal->journal_number}).");
     }
 
     /**

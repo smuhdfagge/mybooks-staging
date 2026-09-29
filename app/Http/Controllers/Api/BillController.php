@@ -144,6 +144,7 @@ class BillController extends BaseApiController
         foreach ($validated['items'] as $item) {
             $bill->items()->create($item);
         }
+        $bill->postWithLines(); // journal by line and stock in (A21)
 
         $bill->load(['vendor', 'items.item']);
 

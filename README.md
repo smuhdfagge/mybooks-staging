@@ -91,6 +91,12 @@ By default the only disk is `backups` (`storage/app/backups` on the same server)
 
 **Restore test (do this every quarter):** download a backup, unzip it with the password (7-Zip or `unzip`), load `database.sql` into an empty database with `mysql new_db < database.sql`, and check the row counts look right. `files/` holds the uploads to copy back under `storage/app/`.
 
+## VAT
+
+The VAT return (Reports > VAT/GST Return) is read from the ledger: output VAT on Sales Tax Payable (2400) and input VAT on Input VAT (1410), for every posted invoice, cash sale, refund, credit note, bill and expense in the period, paid or not. When you file a return, press **Settle VAT for this period**: the period's output and input VAT move into VAT Payable (2410), ready for the payment to the tax authority. Each period can be settled once.
+
+Before October 2026, input VAT was posted to Prepaid Expenses (1400). If you want earlier periods on the new basis, move that input VAT to 1410 with a manual journal (your accountant can tell you the amount from the old bills).
+
 ## Errors and logs
 
 Logs go to `storage/logs/laravel-YYYY-MM-DD.log`, one file a day, kept for `LOG_DAILY_DAYS` (14). Set `LOG_LEVEL=warning` in production.
@@ -120,6 +126,7 @@ Other settings in `config/mybooks.php` include support email, import size limit,
 | `php artisan accounts:recalculate --dry-run` | Compares stored account balances with the journals; without `--dry-run` it corrects them |
 | `php artisan subscriptions:expire` | Expires ended subscriptions and sends reminders (runs daily) |
 | `php artisan subscriptions:grace --days=14` | Gives active subscriptions time to renew (one-off) |
+| `php artisan bills:receive-pending-stock --dry-run` | Once after the October 2026 update: brings in stock for posted, unpaid bills (stock used to wait for payment) |
 | `php artisan mybooks:backup` | Backs up the database and uploaded files now (`--only-db` for the database alone) |
 | `php artisan mybooks:ensure-admin-roles` | Makes sure every organisation's first user has the admin role |
 

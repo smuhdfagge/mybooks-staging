@@ -344,6 +344,15 @@
                                     <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
+                            <div>
+                                <label for="annual_rent" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Annual rent paid (for PAYE rent relief)</label>
+                                <input type="number" step="0.01" min="0" name="annual_rent" id="annual_rent" value="{{ old('annual_rent', $employee->annual_rent) }}"
+                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('annual_rent') border-red-500 @enderror">
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Nigeria: 20% of this, up to ₦500,000 a year, comes off pay before PAYE. Keep the tenancy receipt.</p>
+                                @error('annual_rent')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
                         </div>
                     </div>
 

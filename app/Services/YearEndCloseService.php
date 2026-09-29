@@ -5,34 +5,34 @@ namespace App\Services;
 use App\Models\AccountingPeriod;
 use App\Models\ChartOfAccount;
 use App\Models\Journal;
+use App\Services\Accounting\FinancialStatements;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
+/**
+ * Year-end close (finding A1).
+ *
+ * 1. Every income and expense account is brought to zero by its signed
+ *    balance for the period, against Income Summary.
+ * 2. Income Summary is closed to Retained Earnings.
+ * 3. Every income and expense account is checked to be at zero for the
+ *    period; if not, nothing is saved and the period stays open.
+ * 4. The period is locked.
+ *
+ * Balances come from posted journals (a cancelled document's journal and
+ * its reversal are both posted and cancel out). Account codes come from
+ * AccountCodeService, so a business with its own chart is closed to its
+ * own retained earnings account.
+ */
 class YearEndCloseService
 {
-    const ACCOUNT_RETAINED_EARNINGS = '3200';
-
-    const ACCOUNT_INCOME_SUMMARY = '3300';
-
-    protected JournalService $journalService;
-
-    public function __construct(JournalService $journalService)
-    {
-        $this->journalService = $journalService;
-    }
+    public function __construct(
+        protected JournalService $journalService,
+        protected FinancialStatements $statements,
+    ) {}
 
     /**
-     * Perform year-end close for a given accounting period.
-     *
-     * This process:
-     * 1. Creates an Income Summary account if it doesn't exist
-     * 2. Closes all revenue accounts to Income Summary (DR Revenue, CR Income Summary)
-     * 3. Closes all expense accounts to Income Summary (DR Income Summary, CR Expense)
-     * 4. Closes Income Summary to Retained Earnings
-     * 5. Locks the accounting period
-     *
-     * @param  AccountingPeriod  $period  The year-end period to close
-     * @param  string|null  $notes  Optional closing notes
-     * @return array Summary of the closing process
+     * @return array{total_income: float, total_expenses: float, net_income: float, journals_created: int, period_locked: bool}
      */
     public function performYearEndClose(AccountingPeriod $period, ?string $notes = null): array
     {
@@ -41,198 +41,104 @@ class YearEndCloseService
         }
 
         $tenantId = $period->tenant_id;
+        $start = $period->start_date->toDateString();
+        $end = $period->end_date->toDateString();
 
-        return DB::transaction(function () use ($period, $tenantId, $notes) {
-            $startDate = $period->start_date;
-            $endDate = $period->end_date;
+        return DB::transaction(function () use ($period, $tenantId, $start, $end, $notes) {
+            $retainedCode = AccountCodeService::resolve($tenantId, 'retained_earnings');
+            $summaryCode = AccountCodeService::resolve($tenantId, 'income_summary');
+            $this->ensureAccount($tenantId, $retainedCode, 'Retained Earnings', 'retained_earnings');
+            $this->ensureAccount($tenantId, $summaryCode, 'Income Summary', 'equity');
 
-            // Ensure Income Summary account exists
-            $this->ensureIncomeSummaryAccount($tenantId);
+            $profitAndLoss = $this->statements->accountBalances($tenantId, $start, $end)
+                ->whereIn('type', [ChartOfAccount::TYPE_INCOME, ChartOfAccount::TYPE_EXPENSE])
+                ->filter(fn ($a) => abs($a->balance) >= 0.005);
 
-            // Step 1: Calculate totals for income and expense accounts from journal entries
-            $incomeAccounts = $this->getAccountBalancesForPeriod($tenantId, 'income', $startDate, $endDate);
-            $expenseAccounts = $this->getAccountBalancesForPeriod($tenantId, 'expense', $startDate, $endDate);
+            $totalIncome = round($profitAndLoss->where('type', ChartOfAccount::TYPE_INCOME)->sum('balance'), 2);
+            $totalExpenses = round($profitAndLoss->where('type', ChartOfAccount::TYPE_EXPENSE)->sum('balance'), 2);
+            $netIncome = round($totalIncome - $totalExpenses, 2);
+            $journals = 0;
 
-            $totalIncome = 0;
-            $totalExpenses = 0;
-            $closingEntries = [];
+            // Step 1: every income and expense account to Income Summary.
+            if ($profitAndLoss->isNotEmpty()) {
+                $journal = $this->closingJournal($tenantId, $end, 'Close income and expense accounts to Income Summary', 'year-end-close-accounts');
+                $summaryDebit = 0.0;
+                $summaryCredit = 0.0;
 
-            // Step 2: Close revenue accounts → Income Summary
-            if (! empty($incomeAccounts)) {
-                $journal = $this->createClosingJournal(
-                    $tenantId,
-                    $endDate,
-                    'Close Revenue Accounts to Income Summary',
-                    'year-end-close-revenue'
-                );
+                foreach ($profitAndLoss as $account) {
+                    // Take the balance off in the opposite direction to how it sits.
+                    // Income normally has a credit balance, so it is debited; an
+                    // expense with a credit balance (a rebate) is debited too.
+                    $sitsAsCredit = $account->isDebitBalance() ? $account->balance < 0 : $account->balance > 0;
+                    $amount = abs($account->balance);
 
-                foreach ($incomeAccounts as $account) {
-                    if (abs($account->net_balance) < 0.01) {
-                        continue;
+                    if ($sitsAsCredit) {
+                        $this->journalService->createEntry($journal, $account->account_code, $amount, 0, "Close {$account->name}");
+                        $summaryCredit += $amount;
+                    } else {
+                        $this->journalService->createEntry($journal, $account->account_code, 0, $amount, "Close {$account->name}");
+                        $summaryDebit += $amount;
                     }
-                    // Debit Revenue accounts (to zero them out — they normally have credit balances)
-                    $this->journalService->createEntry(
-                        $journal, $account->account_code, $account->net_balance, 0,
-                        "Close {$account->name} to Income Summary"
-                    );
-                    $totalIncome += $account->net_balance;
                 }
 
-                if ($totalIncome > 0) {
-                    // Credit Income Summary
-                    $this->journalService->createEntry(
-                        $journal, self::ACCOUNT_INCOME_SUMMARY, 0, $totalIncome,
-                        'Total Revenue closed to Income Summary'
-                    );
+                if ($summaryCredit > 0) {
+                    $this->journalService->createEntry($journal, $summaryCode, 0, round($summaryCredit, 2), 'Income and credits closed');
+                }
+                if ($summaryDebit > 0) {
+                    $this->journalService->createEntry($journal, $summaryCode, round($summaryDebit, 2), 0, 'Expenses and debits closed');
                 }
 
-                $journal->updateTotals();
-                $journal->save();
-                $this->journalService->updateAccountBalances($journal);
-                $closingEntries[] = $journal;
+                $this->finish($journal);
+                $journals++;
             }
 
-            // Step 3: Close expense accounts → Income Summary
-            if (! empty($expenseAccounts)) {
-                $journal = $this->createClosingJournal(
-                    $tenantId,
-                    $endDate,
-                    'Close Expense Accounts to Income Summary',
-                    'year-end-close-expenses'
-                );
-
-                foreach ($expenseAccounts as $account) {
-                    if (abs($account->net_balance) < 0.01) {
-                        continue;
-                    }
-                    // Expense accounts have negative net_balance (debit balances → credit - debit < 0)
-                    $expenseAmount = abs($account->net_balance);
-                    // Credit Expense accounts (to zero them out — they normally have debit balances)
-                    $this->journalService->createEntry(
-                        $journal, $account->account_code, 0, $expenseAmount,
-                        "Close {$account->name} to Income Summary"
-                    );
-                    $totalExpenses += $expenseAmount;
-                }
-
-                if ($totalExpenses > 0) {
-                    // Debit Income Summary
-                    $this->journalService->createEntry(
-                        $journal, self::ACCOUNT_INCOME_SUMMARY, $totalExpenses, 0,
-                        'Total Expenses closed to Income Summary'
-                    );
-                }
-
-                $journal->updateTotals();
-                $journal->save();
-                $this->journalService->updateAccountBalances($journal);
-                $closingEntries[] = $journal;
-            }
-
-            // Step 4: Close Income Summary → Retained Earnings
-            $netIncome = $totalIncome - $totalExpenses;
-            if (abs($netIncome) >= 0.01) {
-                $journal = $this->createClosingJournal(
-                    $tenantId,
-                    $endDate,
-                    'Close Income Summary to Retained Earnings',
-                    'year-end-close-retained'
-                );
+            // Step 2: Income Summary to Retained Earnings.
+            if (abs($netIncome) >= 0.005) {
+                $journal = $this->closingJournal($tenantId, $end, 'Close Income Summary to Retained Earnings', 'year-end-close-retained');
 
                 if ($netIncome > 0) {
-                    // Net profit: DR Income Summary, CR Retained Earnings
-                    $this->journalService->createEntry(
-                        $journal, self::ACCOUNT_INCOME_SUMMARY, $netIncome, 0,
-                        'Close net income to Retained Earnings'
-                    );
-                    $this->journalService->createEntry(
-                        $journal, self::ACCOUNT_RETAINED_EARNINGS, 0, $netIncome,
-                        'Net income transferred to Retained Earnings'
-                    );
+                    $this->journalService->createEntry($journal, $summaryCode, $netIncome, 0, 'Net profit to Retained Earnings');
+                    $this->journalService->createEntry($journal, $retainedCode, 0, $netIncome, 'Net profit for the year');
                 } else {
-                    // Net loss: DR Retained Earnings, CR Income Summary
-                    $loss = abs($netIncome);
-                    $this->journalService->createEntry(
-                        $journal, self::ACCOUNT_RETAINED_EARNINGS, $loss, 0,
-                        'Net loss transferred from Retained Earnings'
-                    );
-                    $this->journalService->createEntry(
-                        $journal, self::ACCOUNT_INCOME_SUMMARY, 0, $loss,
-                        'Close net loss to Retained Earnings'
-                    );
+                    $this->journalService->createEntry($journal, $retainedCode, -$netIncome, 0, 'Net loss for the year');
+                    $this->journalService->createEntry($journal, $summaryCode, 0, -$netIncome, 'Net loss to Retained Earnings');
                 }
 
-                $journal->updateTotals();
-                $journal->save();
-                $this->journalService->updateAccountBalances($journal);
-                $closingEntries[] = $journal;
+                $this->finish($journal);
+                $journals++;
             }
 
-            // Step 5: Lock the period
+            // Step 3: refuse to lock unless the year really is closed.
+            $leftOver = $this->statements->accountBalances($tenantId, $start, $end)
+                ->whereIn('type', [ChartOfAccount::TYPE_INCOME, ChartOfAccount::TYPE_EXPENSE])
+                ->filter(fn ($a) => abs($a->balance) >= 0.005);
+            if ($leftOver->isNotEmpty()) {
+                throw new RuntimeException('Year-end close did not bring these accounts to zero: '
+                    .$leftOver->map(fn ($a) => "{$a->account_code} ({$a->balance})")->implode(', '));
+            }
+
+            // Step 4: lock the period.
             $period->lock($notes ?? 'Year-end close completed');
 
             return [
                 'total_income' => $totalIncome,
                 'total_expenses' => $totalExpenses,
                 'net_income' => $netIncome,
-                'journals_created' => count($closingEntries),
+                'journals_created' => $journals,
                 'period_locked' => true,
             ];
         });
     }
 
-    /**
-     * Get net balances for all accounts of a given type within a period
-     */
-    protected function getAccountBalancesForPeriod(int $tenantId, string $type, $startDate, $endDate): array
-    {
-        return DB::select("
-            SELECT 
-                coa.id,
-                coa.account_code,
-                coa.name,
-                coa.type,
-                COALESCE(SUM(je.credit) - SUM(je.debit), 0) as net_balance
-            FROM chart_of_accounts coa
-            INNER JOIN journal_entries je ON je.account_id = coa.id
-            INNER JOIN journals j ON j.id = je.journal_id
-            WHERE coa.tenant_id = ?
-              AND coa.type = ?
-              AND j.tenant_id = ?
-              AND j.journal_date BETWEEN ? AND ?
-              AND j.status = 'posted'
-              AND j.deleted_at IS NULL
-              AND coa.deleted_at IS NULL
-            GROUP BY coa.id, coa.account_code, coa.name, coa.type
-            HAVING ABS(COALESCE(SUM(je.credit) - SUM(je.debit), 0)) >= 0.01
-        ", [$tenantId, $type, $tenantId, $startDate, $endDate]);
-    }
-
-    /**
-     * Ensure the Income Summary account exists for the tenant
-     */
-    protected function ensureIncomeSummaryAccount(int $tenantId): void
+    protected function ensureAccount(int $tenantId, string $code, string $name, string $subType): void
     {
         ChartOfAccount::firstOrCreate(
-            [
-                'tenant_id' => $tenantId,
-                'account_code' => self::ACCOUNT_INCOME_SUMMARY,
-            ],
-            [
-                'name' => 'Income Summary',
-                'type' => 'equity',
-                'sub_type' => 'equity',
-                'is_system' => true,
-                'is_active' => true,
-                'current_balance' => 0,
-            ]
+            ['tenant_id' => $tenantId, 'account_code' => $code],
+            ['name' => $name, 'type' => ChartOfAccount::TYPE_EQUITY, 'sub_type' => $subType, 'is_system' => true, 'is_active' => true, 'current_balance' => 0]
         );
     }
 
-    /**
-     * Create a closing journal entry
-     */
-    protected function createClosingJournal(int $tenantId, $date, string $description, string $reference): Journal
+    protected function closingJournal(int $tenantId, string $date, string $description, string $reference): Journal
     {
         return Journal::create([
             'tenant_id' => $tenantId,
@@ -240,10 +146,18 @@ class YearEndCloseService
             'journal_date' => $date,
             'reference' => $reference,
             'description' => $description,
+            'journal_type' => Journal::TYPE_CLOSING,
             'status' => 'posted',
             'is_posted' => true,
             'posted_at' => now(),
             'created_by' => auth()->id(),
         ]);
+    }
+
+    protected function finish(Journal $journal): void
+    {
+        $journal->updateTotals();
+        $journal->save();
+        $this->journalService->updateAccountBalances($journal); // checks it balances (M2)
     }
 }

@@ -53,6 +53,7 @@ class Employee extends Model
         'bank_account_number',
         'bank_routing_number',
         'tax_id',
+        'annual_rent',
         'emergency_contact_name',
         'emergency_contact_phone',
         'status',
@@ -61,6 +62,7 @@ class Employee extends Model
     ];
 
     protected $casts = [
+        'annual_rent' => 'decimal:2',
         'date_of_birth' => 'date',
         'hire_date' => 'date',
         'termination_date' => 'date',

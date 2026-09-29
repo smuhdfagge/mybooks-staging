@@ -27,6 +27,9 @@ class AccountCodeService
         'employee_advances' => '1250',
         'inventory' => '1300',
         'prepaid_expenses' => '1400',
+        'fixed_assets' => '1500',
+        'accumulated_depreciation' => '1600',
+        'input_vat' => '1410',
 
         // Liabilities
         'accounts_payable' => '2000',
@@ -39,10 +42,18 @@ class AccountCodeService
         'union_dues_payable' => '2340',
         'customer_deposits' => '2350',
         'garnishments_payable' => '2360',
-        'sales_tax_payable' => '2400',
+        'sales_tax_payable' => '2400', // output VAT
+        'vat_payable' => '2410', // net VAT owed after a return is settled
+
+        // Equity
+        'owners_capital' => '3000',
+        'retained_earnings' => '3200',
+        'income_summary' => '3300',
 
         // Income
         'sales_revenue' => '4000',
+        'interest_income' => '4300',
+        'other_income' => '4200',
 
         // COGS
         'cost_of_goods_sold' => '5000',
@@ -55,6 +66,7 @@ class AccountCodeService
         'employer_pension' => '6050',
         'employer_health_insurance' => '6060',
         'workers_comp' => '6070',
+        'depreciation_expense' => '6800',
         'miscellaneous_expense' => '6990',
     ];
 

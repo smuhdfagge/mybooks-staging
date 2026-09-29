@@ -134,7 +134,16 @@ class Payroll extends Model
     /** @return MorphOne<Journal, $this> */
     public function journal(): MorphOne
     {
-        return $this->morphOne(Journal::class, 'reference');
+        // The cost journal (A10); the payment has its own (payment journal type).
+        return $this->morphOne(Journal::class, 'reference')
+            ->where(fn ($q) => $q->whereNull('journal_type')->orWhere('journal_type', \App\Services\JournalService::PAYROLL_ACCRUAL))
+            ->orderBy('id');
+    }
+
+    /** @return \Illuminate\Database\Eloquent\Relations\MorphMany<Journal, $this> */
+    public function journals(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(Journal::class, 'reference')->orderBy('id');
     }
 
     /**
@@ -148,7 +157,27 @@ class Payroll extends Model
     }
 
     /**
-     * Mark payroll as paid and create journal entry
+     * Approve the payroll and post its cost (A10): salaries expense against
+     * net pay owed and the deduction liabilities, dated the end of the pay
+     * period. A locked period throws a ValidationException and nothing is
+     * saved.
+     */
+    public function approve(int $approverId): void
+    {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($approverId) {
+            $this->update([
+                'status' => self::STATUS_APPROVED,
+                'approved_by' => $approverId,
+                'approved_at' => now(),
+            ]);
+
+            app(JournalService::class)->createPayrollJournal($this);
+        });
+    }
+
+    /**
+     * Mark payroll as paid: the listener posts the net pay payment (A10)
+     * and records loan repayments (A9).
      */
     public function markAsPaid(): bool
     {

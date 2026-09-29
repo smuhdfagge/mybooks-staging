@@ -150,24 +150,13 @@ class InvoiceRefund extends Model
         $this->approved_at = now();
         $this->save();
 
-        // Update invoice total_refunded
+        // A refund gives back money and reverses that part of the sale (the
+        // journal debits revenue and VAT, credits cash). Payments received
+        // stay as they were, so what the customer owes doesn't change: a
+        // paid invoice refunded in full is settled, not owed again (A6).
         $invoice = $this->invoice;
-        $invoice->total_refunded = ($invoice->total_refunded ?? 0) + $this->amount;
-
-        // Adjust amount_paid and balance_due
-        $invoice->amount_paid = max(0, $invoice->amount_paid - $this->amount);
-        $invoice->balance_due = $invoice->total - $invoice->amount_paid;
-
-        // Update status based on new balance
-        if ($invoice->balance_due >= $invoice->total) {
-            $invoice->status = 'unpaid';
-        } elseif ($invoice->balance_due > 0) {
-            $invoice->status = 'partial';
-        } else {
-            $invoice->status = 'paid';
-        }
-
-        $invoice->save();
+        $invoice->total_refunded = round((float) ($invoice->total_refunded ?? 0) + (float) $this->amount, 2);
+        $invoice->updateBalances();
 
         // Create journal entry for the refund
         $this->createJournalEntry();
@@ -187,19 +176,8 @@ class InvoiceRefund extends Model
         // If already completed, reverse the effects
         if ($this->status === 'completed') {
             $invoice = $this->invoice;
-            $invoice->total_refunded = max(0, ($invoice->total_refunded ?? 0) - $this->amount);
-            $invoice->amount_paid = min($invoice->total, $invoice->amount_paid + $this->amount);
-            $invoice->balance_due = $invoice->total - $invoice->amount_paid;
-
-            if ($invoice->balance_due <= 0) {
-                $invoice->status = 'paid';
-            } elseif ($invoice->amount_paid > 0) {
-                $invoice->status = 'partial';
-            } else {
-                $invoice->status = 'unpaid';
-            }
-
-            $invoice->save();
+            $invoice->total_refunded = max(0, round((float) ($invoice->total_refunded ?? 0) - (float) $this->amount, 2));
+            $invoice->updateBalances();
 
             // Delete the journal entry
             $journalService = app(JournalService::class);

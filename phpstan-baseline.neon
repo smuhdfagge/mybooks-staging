@@ -157,12 +157,6 @@ parameters:
 			path: app/Http/Controllers/DeliveryNoteController.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\FixedAsset\:\:\$asset_account_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/FixedAssetController.php
-
-		-
 			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
 			identifier: argument.type
 			count: 1
@@ -235,18 +229,6 @@ parameters:
 			path: app/Http/Controllers/QuotationController.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\ChartOfAccount\:\:\$total_credit\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Http/Controllers/Reports/FinancialReportController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\ChartOfAccount\:\:\$total_debit\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Http/Controllers/Reports/FinancialReportController.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 2
@@ -281,18 +263,6 @@ parameters:
 			identifier: property.notFound
 			count: 2
 			path: app/Http/Controllers/Reports/PurchaseReportController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\JournalEntry\:\:\$total_credit\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Reports/ReportController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\JournalEntry\:\:\$total_debit\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Reports/ReportController.php
 
 		-
 			message: '#^Access to an undefined property App\\Models\\Item\:\:\$quantity_sold\.$#'
@@ -1921,24 +1891,6 @@ parameters:
 			path: app/Services/BudgetService.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\FixedAsset\:\:\$accumulated_depreciation_account_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/DepreciationService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\FixedAsset\:\:\$asset_account_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/DepreciationService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\FixedAsset\:\:\$depreciation_account_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/DepreciationService.php
-
-		-
 			message: '#^Call to method getActiveSheet\(\) on an unknown class PhpOffice\\PhpSpreadsheet\\Spreadsheet\.$#'
 			identifier: class.notFound
 			count: 1
@@ -1983,13 +1935,13 @@ parameters:
 		-
 			message: '#^Parameter \#3 \$debit of method App\\Services\\JournalService\:\:createEntry\(\) expects float, string given\.$#'
 			identifier: argument.type
-			count: 25
+			count: 19
 			path: app/Services/JournalService.php
 
 		-
 			message: '#^Parameter \#4 \$credit of method App\\Services\\JournalService\:\:createEntry\(\) expects float, string given\.$#'
 			identifier: argument.type
-			count: 23
+			count: 19
 			path: app/Services/JournalService.php
 
 		-

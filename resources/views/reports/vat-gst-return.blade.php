@@ -142,7 +142,7 @@
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                 @forelse($outputTaxByRate as $row)
                                 <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ number_format($row->tax_rate, 2) }}%</td>
+                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $row->tax_rate === null ? 'No rate (expenses, journals)' : number_format($row->tax_rate, 2).'%' }}</td>
                                     <td class="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">{{ number_format($row->taxable_amount, 2) }}</td>
                                     <td class="px-4 py-3 text-sm text-right font-medium text-red-600 dark:text-red-400">{{ number_format($row->tax_amount, 2) }}</td>
                                     <td class="px-4 py-3 text-sm text-center text-gray-600 dark:text-gray-400">{{ $row->transaction_count }}</td>
@@ -185,7 +185,7 @@
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                 @forelse($inputTaxByRate as $row)
                                 <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ number_format($row->tax_rate, 2) }}%</td>
+                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $row->tax_rate === null ? 'No rate (expenses, journals)' : number_format($row->tax_rate, 2).'%' }}</td>
                                     <td class="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">{{ number_format($row->taxable_amount, 2) }}</td>
                                     <td class="px-4 py-3 text-sm text-right font-medium text-green-600 dark:text-green-400">{{ number_format($row->tax_amount, 2) }}</td>
                                     <td class="px-4 py-3 text-sm text-center text-gray-600 dark:text-gray-400">{{ $row->transaction_count }}</td>
@@ -247,42 +247,38 @@
         <!-- Detailed Transactions -->
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
             <div class="p-6">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Output Tax Transactions (Sales)</h3>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Output VAT entries (sales, cash sales, refunds, credit notes)</h3>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Date</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Invoice #</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Document</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Customer</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Subtotal</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Tax</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Total</th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">VAT</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            @forelse($outputTransactions->take(10) as $invoice)
+                            @forelse($outputLines->take(50) as $line)
                             <tr>
-                                <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{{ $invoice->invoice_date->format('M d, Y') }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{{ $line->date->format('M d, Y') }}</td>
                                 <td class="px-4 py-3 text-sm">
-                                    <a href="{{ route('invoices.show', $invoice) }}" class="text-blue-600 dark:text-blue-400 hover:underline">
-                                        {{ $invoice->invoice_number }}
+                                    <a href="{{ route('journals.show', $line->journal_id) }}" class="text-blue-600 dark:text-blue-400 hover:underline">
+                                        {{ $line->type }} {{ $line->number }}
                                     </a>
                                 </td>
-                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $invoice->customer->name ?? 'N/A' }}</td>
-                                <td class="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">{{ number_format($invoice->subtotal, 2) }}</td>
-                                <td class="px-4 py-3 text-sm text-right font-medium text-red-600 dark:text-red-400">{{ number_format($invoice->tax_amount, 2) }}</td>
-                                <td class="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-gray-100">{{ number_format($invoice->total, 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $line->party ?? '—' }}</td>
+                                <td class="px-4 py-3 text-sm text-right font-medium {{ $line->vat < 0 ? 'text-gray-500' : 'text-red-600 dark:text-red-400' }}">{{ number_format($line->vat, 2) }}</td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="6" class="px-4 py-3 text-sm text-center text-gray-500 dark:text-gray-400">No taxable invoices in this period</td>
+                                <td colspan="4" class="px-4 py-3 text-sm text-center text-gray-500 dark:text-gray-400">No output VAT in this period</td>
                             </tr>
                             @endforelse
                         </tbody>
                     </table>
-                    @if($outputTransactions->count() > 10)
-                    <p class="mt-4 text-sm text-gray-500 dark:text-gray-400 text-center">Showing 10 of {{ $outputTransactions->count() }} transactions</p>
+                    @if($outputLines->count() > 50)
+                    <p class="mt-4 text-sm text-gray-500 dark:text-gray-400 text-center">Showing 50 of {{ $outputLines->count() }} entries. Open the {{ 'Customer' === 'Customer' ? 'Sales Tax Payable' : 'Input VAT' }} account in the general ledger for the full list.</p>
                     @endif
                 </div>
             </div>
@@ -290,44 +286,64 @@
 
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
             <div class="p-6">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Input Tax Transactions (Purchases)</h3>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Input VAT entries (bills and expenses)</h3>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Date</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Bill #</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Document</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Vendor</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Subtotal</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Tax</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Total</th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">VAT</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            @forelse($inputTransactions->take(10) as $bill)
+                            @forelse($inputLines->take(50) as $line)
                             <tr>
-                                <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{{ $bill->bill_date->format('M d, Y') }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{{ $line->date->format('M d, Y') }}</td>
                                 <td class="px-4 py-3 text-sm">
-                                    <a href="{{ route('bills.show', $bill) }}" class="text-blue-600 dark:text-blue-400 hover:underline">
-                                        {{ $bill->bill_number }}
+                                    <a href="{{ route('journals.show', $line->journal_id) }}" class="text-blue-600 dark:text-blue-400 hover:underline">
+                                        {{ $line->type }} {{ $line->number }}
                                     </a>
                                 </td>
-                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $bill->vendor->name ?? 'N/A' }}</td>
-                                <td class="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">{{ number_format($bill->subtotal, 2) }}</td>
-                                <td class="px-4 py-3 text-sm text-right font-medium text-green-600 dark:text-green-400">{{ number_format($bill->tax_amount, 2) }}</td>
-                                <td class="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-gray-100">{{ number_format($bill->total, 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $line->party ?? '—' }}</td>
+                                <td class="px-4 py-3 text-sm text-right font-medium {{ $line->vat < 0 ? 'text-gray-500' : 'text-green-600 dark:text-green-400' }}">{{ number_format($line->vat, 2) }}</td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="6" class="px-4 py-3 text-sm text-center text-gray-500 dark:text-gray-400">No taxable bills in this period</td>
+                                <td colspan="4" class="px-4 py-3 text-sm text-center text-gray-500 dark:text-gray-400">No input VAT in this period</td>
                             </tr>
                             @endforelse
                         </tbody>
                     </table>
-                    @if($inputTransactions->count() > 10)
-                    <p class="mt-4 text-sm text-gray-500 dark:text-gray-400 text-center">Showing 10 of {{ $inputTransactions->count() }} transactions</p>
+                    @if($inputLines->count() > 50)
+                    <p class="mt-4 text-sm text-gray-500 dark:text-gray-400 text-center">Showing 50 of {{ $inputLines->count() }} entries. Open the {{ 'Vendor' === 'Customer' ? 'Sales Tax Payable' : 'Input VAT' }} account in the general ledger for the full list.</p>
                     @endif
                 </div>
+            </div>
+        </div>
+
+        <!-- VAT settlement (A5) -->
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Settle this return</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Figures come from the ledger: output VAT on account {{ $outputAccount }}, input VAT on account {{ $inputAccount }}.
+                    When you file the return, settle it: the period's output and input VAT move into VAT Payable, ready for the payment to the tax authority.
+                </p>
+                @if($settlement)
+                    <p class="text-sm text-green-700 dark:text-green-300">Settled on {{ $settlement->journal_date->format('M d, Y') }}
+                        (<a href="{{ route('journals.show', $settlement) }}" class="underline">journal {{ $settlement->journal_number }}</a>).</p>
+                @else
+                    @can('create journals')
+                    <form method="POST" action="{{ route('reports.vat-gst-return.settle') }}" data-confirm="Settle VAT for {{ $startDate }} to {{ $endDate }}? Net {{ number_format($netTaxPayable, 2) }} goes to VAT Payable.">
+                        @csrf
+                        <input type="hidden" name="start_date" value="{{ $startDate }}">
+                        <input type="hidden" name="end_date" value="{{ $endDate }}">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">Settle VAT for this period</button>
+                    </form>
+                    @endcan
+                @endif
             </div>
         </div>
 

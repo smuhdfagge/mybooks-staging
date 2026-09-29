@@ -430,9 +430,19 @@
                                     </div>
                                 </div>
 
+                                @if(abs($priorYearsProfit ?? 0) >= 0.01)
+                                <!-- Profit of earlier years not yet closed (A2) -->
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600 dark:text-gray-400 pl-5" title="Run the year-end close to move this into Retained Earnings">Earlier Years' Profit (not yet closed)</span>
+                                    <span class="font-medium {{ $priorYearsProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                        {{ number_format($priorYearsProfit, 2) }}
+                                    </span>
+                                </div>
+                                @endif
+
                                 <!-- Net Income (Current Year) -->
                                 <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600 dark:text-gray-400 pl-5">Net Income (Current Year)</span>
+                                    <span class="text-gray-600 dark:text-gray-400 pl-5">Net Income (Year from {{ \Carbon\Carbon::parse($fiscalYearStart)->format('j M Y') }})</span>
                                     <span class="font-medium {{ $netIncome >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
                                         {{ number_format($netIncome, 2) }}
                                     </span>

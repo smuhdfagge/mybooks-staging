@@ -64,7 +64,9 @@
                                         <option value="active" {{ old('status', $asset->status) == 'active' ? 'selected' : '' }}>Active</option>
                                         <option value="under_maintenance" {{ old('status', $asset->status) == 'under_maintenance' ? 'selected' : '' }}>Under Maintenance</option>
                                         <option value="idle" {{ old('status', $asset->status) == 'idle' ? 'selected' : '' }}>Idle</option>
-                                        <option value="disposed" {{ old('status', $asset->status) == 'disposed' ? 'selected' : '' }}>Disposed</option>
+                                        @if(in_array($asset->status, ['disposed', 'sold', 'fully_depreciated'], true))
+                                            <option value="{{ $asset->status }}" selected>{{ ucfirst(str_replace('_', ' ', $asset->status)) }}</option>
+                                        @endif
                                     </select>
                                     @error('status')
                                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
