@@ -390,6 +390,9 @@ class PayrollController extends Controller
                         }
                     }
 
+                    // Rent relief (Nigeria Tax Act 2025) also comes off before tax.
+                    $taxableAmount -= $taxService->monthlyRentRelief($employee);
+
                     // Progressive tax calculation with flat-rate fallback
                     $taxResult = $taxService->calculateTax(max(0, $taxableAmount), $tenantId, $flatTaxRate, 'monthly');
                     $taxDeduction = $taxResult['tax'];
@@ -826,6 +829,7 @@ class PayrollController extends Controller
             }
 
             $taxableAmount -= $structure->calculatePreTaxDeductions();
+            $taxableAmount -= $taxService->monthlyRentRelief($employee);
 
             $taxResult = $taxService->calculateTax(max(0, $taxableAmount), $tenantId, 0, 'monthly');
             $newTax = $taxResult['tax'];

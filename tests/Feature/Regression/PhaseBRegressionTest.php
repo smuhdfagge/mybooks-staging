@@ -688,4 +688,30 @@ class PhaseBRegressionTest extends TestCase
         $this->assertEqualsWithDelta(50000, $this->code('1300'), 0.001);
         $this->assertEqualsWithDelta(7000, $this->code('6990'), 0.001);
     }
+
+    // ── Rent relief (follow-up to A3) ───────────────────────────
+
+    public function test_rent_relief_comes_off_pay_before_paye(): void
+    {
+        $this->createAuthenticatedUser(['create payroll', 'view payroll']);
+        $this->tenant->update(['country' => 'NG']);
+        \App\Models\StatutoryTaxTemplate::where('country_code', 'NGA')->where('tax_year', 2026)->sole()->applyToTenant($this->tenant->id);
+
+        $employee = \App\Models\Employee::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id, 'employee_id' => 'EMP-00001', 'first_name' => 'Aisha', 'last_name' => 'Musa',
+            'hire_date' => '2026-01-01', 'annual_rent' => 1200000,
+        ]);
+        $structure = \App\Models\SalaryStructure::create([
+            'tenant_id' => $this->tenant->id, 'name' => 'Officer', 'basic_salary' => 500000, 'effective_from' => '2026-01-01', 'is_active' => true,
+        ]);
+        $structure->items()->create(['type' => 'deduction', 'name' => 'Pension (8%)', 'amount_type' => 'percentage', 'amount' => 8, 'is_taxable' => true, 'sort_order' => 0]);
+        $structure->items()->create(['type' => 'deduction', 'name' => 'NHF', 'amount_type' => 'percentage', 'amount' => 2.5, 'is_taxable' => true, 'sort_order' => 1]);
+        $employee->update(['salary_structure_id' => $structure->id]);
+
+        $this->post(route('payroll.generate'), ['month' => '2026-03', 'employee_ids' => [$employee->id]])->assertSessionHasNoErrors();
+
+        // 447,500 - 20,000 rent relief (20% of 1.2m / 12) = 427,500 a month = 5,130,000 a year:
+        // 15% of 2.2m = 330,000 + 18% of 2.13m = 383,400 -> 713,400 a year = 59,450 a month.
+        $this->assertEqualsWithDelta(59450, (float) \App\Models\Payroll::sole()->tax_deduction, 0.01);
+    }
 }

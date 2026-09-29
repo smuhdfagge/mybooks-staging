@@ -127,6 +127,26 @@ class PayrollTaxService
         ];
     }
 
+    /** Nigeria Tax Act 2025: 20% of annual rent, at most 500,000 a year. */
+    public const RENT_RELIEF_RATE = 0.20;
+
+    public const RENT_RELIEF_CAP = 500000;
+
+    /**
+     * Monthly rent relief for an employee of a Nigerian business: taken off
+     * pay before PAYE, like pension and NHF. Zero elsewhere or with no rent.
+     */
+    public function monthlyRentRelief(\App\Models\Employee $employee): float
+    {
+        $rent = (float) ($employee->annual_rent ?? 0);
+        $country = strtoupper(trim((string) \App\Models\Tenant::whereKey($employee->tenant_id)->value('country')));
+        if ($rent <= 0 || ! in_array($country, ['NG', 'NGA', 'NIGERIA'], true)) {
+            return 0.0;
+        }
+
+        return round(min($rent * self::RENT_RELIEF_RATE, self::RENT_RELIEF_CAP) / 12, 2);
+    }
+
     /**
      * Calculate employer contributions based on tenant configuration.
      *
