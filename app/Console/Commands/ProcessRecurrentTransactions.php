@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Models\Bill;
-use App\Models\BillItem;
 use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\RecurrentBill;
@@ -139,43 +138,24 @@ class ProcessRecurrentTransactions extends Command
 
             try {
                 DB::transaction(function () use ($profile) {
-                    $bill = Bill::withoutEvents(function () use ($profile) {
-                        $b = Bill::create([
-                            'tenant_id' => $profile->tenant_id,
-                            'vendor_id' => $profile->vendor_id,
-                            'recurrent_bill_id' => $profile->id,
-                            'bill_number' => Bill::generateNumber($profile->tenant_id),
-                            'bill_date' => $profile->next_bill_date,
-                            'due_date' => $profile->next_bill_date->copy()->addDays(30),
-                            'status' => 'unpaid',
-                            'subtotal' => $profile->subtotal,
-                            'tax_amount' => $profile->tax_amount,
-                            'total' => $profile->total,
-                            'amount_paid' => 0,
-                            'balance_due' => $profile->total,
-                            'notes' => $profile->notes,
-                            'created_by' => $profile->created_by,
-                        ]);
-
-                        foreach ($profile->items as $profileItem) {
-                            BillItem::create([
-                                'bill_id' => $b->id,
-                                'item_id' => $profileItem->item_id,
-                                'account_id' => $profileItem->account_id,
-                                'description' => $profileItem->description,
-                                'quantity' => $profileItem->quantity,
-                                'unit_price' => $profileItem->unit_price,
-                                'tax_rate' => $profileItem->tax_rate ?? 0,
-                                'tax_amount' => $profileItem->tax_amount ?? 0,
-                                'total' => $profileItem->total,
-                            ]);
-                        }
-
-                        return $b;
-                    });
-
-                    // Journal by line and stock in, now the lines exist (A21).
-                    $bill->postWithLines();
+                    // The same rules as every other bill (R3): totals from the
+                    // profile's lines, journal by line and stock in (A21).
+                    app(\App\Actions\Bills\SaveBill::class)->create($profile->tenant_id, [
+                        'vendor_id' => $profile->vendor_id,
+                        'recurrent_bill_id' => $profile->id,
+                        'bill_date' => $profile->next_bill_date->toDateString(),
+                        'due_date' => $profile->next_bill_date->copy()->addDays(30)->toDateString(),
+                        'status' => 'unpaid',
+                        'notes' => $profile->notes,
+                        'items' => $profile->items->map(fn ($i) => [
+                            'item_id' => $i->item_id,
+                            'account_id' => $i->account_id,
+                            'description' => $i->description,
+                            'quantity' => $i->quantity,
+                            'unit_price' => $i->unit_price,
+                            'tax_rate' => $i->tax_rate ?? 0,
+                        ])->all(),
+                    ], $profile->created_by);
 
                     $profile->advanceNextDate();
                 });

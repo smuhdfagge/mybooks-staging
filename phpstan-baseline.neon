@@ -319,12 +319,6 @@ parameters:
 			path: app/Http/Controllers/WarehouseController.php
 
 		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\BillItemResource\:\:\$discount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/BillItemResource.php
-
-		-
 			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 2

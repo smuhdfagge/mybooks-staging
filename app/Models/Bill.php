@@ -25,6 +25,7 @@ class Bill extends Model
         'tenant_id',
         'vendor_id',
         'purchase_order_id',
+        'recurrent_bill_id',
         'bill_number',
         'vendor_bill_number',
         'bill_date',
@@ -217,6 +218,64 @@ class Bill extends Model
             DB::rollBack();
             throw $e;
         }
+    }
+
+    /** Whether every unit this bill put into stock is still there (none sold or used). */
+    public function stockStillOnHand(): bool
+    {
+        return ! InventoryLayer::withoutGlobalScopes()
+            ->where('reference_type', 'bill')
+            ->where('reference_id', $this->id)
+            ->whereColumn('remaining_quantity', '<', 'quantity')
+            ->exists();
+    }
+
+    /**
+     * Take the goods this bill received back out of stock (when the bill is
+     * deleted). Callers check stockStillOnHand() first.
+     */
+    public function reverseInventory(): void
+    {
+        $layers = InventoryLayer::withoutGlobalScopes()
+            ->where('reference_type', 'bill')
+            ->where('reference_id', $this->id)
+            ->get();
+
+        foreach ($layers as $layer) {
+            $inventory = Inventory::withoutGlobalScopes()
+                ->where('tenant_id', $this->tenant_id)
+                ->where('item_id', $layer->item_id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($inventory) {
+                $qty = (float) $inventory->quantity;
+                $out = (float) $layer->quantity;
+                $left = $qty - $out;
+                // Weighted average without this bill's goods.
+                if ($left > 0.00001) {
+                    $inventory->unit_cost = round(max(0, ($qty * (float) $inventory->unit_cost - $out * (float) $layer->unit_cost) / $left), 2);
+                }
+                $inventory->quantity = max(0, $left);
+                $inventory->save();
+            }
+
+            InventoryHistory::create([
+                'tenant_id' => $this->tenant_id,
+                'item_id' => $layer->item_id,
+                'type' => 'out',
+                'quantity' => -$layer->quantity,
+                'reference_type' => 'bill',
+                'reference_id' => $this->id,
+                'notes' => "Bill #{$this->bill_number} deleted",
+                'created_by' => auth()->id(),
+            ]);
+
+            $layer->delete();
+        }
+
+        $this->inventory_updated_at = null;
+        $this->withoutPeriodValidation()->saveQuietly();
     }
 
     /**

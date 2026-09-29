@@ -2,10 +2,12 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
-
-class UpdateBillRequest extends FormRequest
+/**
+ * Changing a bill, from the web form or the API (finding Q5). Same rules as
+ * creating one; header fields may be left out so the API can send only what
+ * changes. A bill keeps its status and purchase order.
+ */
+class UpdateBillRequest extends StoreBillRequest
 {
     public function authorize(): bool
     {
@@ -14,20 +16,13 @@ class UpdateBillRequest extends FormRequest
 
     public function rules(): array
     {
-        $tenantId = auth()->user()->tenant_id;
+        $rules = parent::rules();
 
-        return [
-            'bill_date' => ['required', 'date'],
-            'due_date' => ['required', 'date', 'after_or_equal:bill_date'],
-            'reference' => ['nullable', 'string', 'max:100'],
-            'notes' => ['nullable', 'string'],
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.item_id' => ['nullable', Rule::exists('items', 'id')->where('tenant_id', $tenantId)],
-            'items.*.description' => ['required', 'string'],
-            'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
-            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
-            'items.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'items.*.discount' => ['nullable', 'numeric', 'min:0'],
-        ];
+        foreach (['vendor_id', 'bill_date', 'due_date', 'items'] as $field) {
+            $rules[$field] = array_merge(['sometimes'], array_values(array_diff((array) $rules[$field], ['required'])));
+        }
+        unset($rules['status'], $rules['purchase_order_id']);
+
+        return $rules;
     }
 }

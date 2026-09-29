@@ -6,7 +6,6 @@ use App\Http\Resources\BillResource;
 use App\Models\Bill;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class BillController extends BaseApiController
 {
@@ -79,73 +78,10 @@ class BillController extends BaseApiController
     /**
      * Create a new bill
      */
-    public function store(Request $request): JsonResponse
+    public function store(\App\Http\Requests\StoreBillRequest $request, \App\Actions\Bills\SaveBill $save): JsonResponse
     {
-        $tenantId = $this->getTenantId();
-
-        $validated = $request->validate([
-            'vendor_id' => ['required', Rule::exists('vendors', 'id')->where('tenant_id', $tenantId)],
-            'vendor_bill_number' => 'nullable|string|max:100',
-            'bill_date' => 'required|date',
-            'due_date' => 'required|date|after_or_equal:bill_date',
-            'status' => 'sometimes|in:draft,unpaid,partial,paid,overdue',
-            'discount_amount' => 'nullable|numeric|min:0',
-            'notes' => 'nullable|string',
-            'items' => 'required|array|min:1',
-            'items.*.item_id' => ['nullable', Rule::exists('items', 'id')->where('tenant_id', $tenantId)],
-            'items.*.description' => 'required|string',
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.discount' => 'nullable|numeric|min:0',
-            'items.*.tax_rate' => 'nullable|numeric|min:0|max:100',
-        ]);
-
-        // Generate bill number
-        $validated['bill_number'] = Bill::generateNumber($tenantId);
-        $validated['tenant_id'] = $tenantId;
-        $validated['created_by'] = auth()->id();
-
-        // Calculate totals
-        $subtotal = 0;
-        $taxAmount = 0;
-
-        foreach ($validated['items'] as &$item) {
-            $itemSubtotal = $item['quantity'] * $item['unit_price'];
-
-            if (! empty($item['discount'])) {
-                $itemSubtotal -= $item['discount'];
-            }
-
-            $itemTax = 0;
-            if (! empty($item['tax_rate'])) {
-                $itemTax = $itemSubtotal * ($item['tax_rate'] / 100);
-            }
-
-            $item['tax_amount'] = $itemTax;
-            $item['total'] = $itemSubtotal + $itemTax;
-
-            $subtotal += $itemSubtotal;
-            $taxAmount += $itemTax;
-        }
-
-        $discountAmount = $validated['discount_amount'] ?? 0;
-
-        $validated['subtotal'] = $subtotal;
-        $validated['tax_amount'] = $taxAmount;
-        $validated['discount_amount'] = $discountAmount;
-        $validated['total'] = $subtotal + $taxAmount - $discountAmount;
-        $validated['balance_due'] = $validated['total'];
-        $validated['amount_paid'] = 0;
-
-        // Create bill
-        $bill = Bill::create(collect($validated)->except('items')->toArray());
-
-        // Create bill items
-        foreach ($validated['items'] as $item) {
-            $bill->items()->create($item);
-        }
-        $bill->postWithLines(); // journal by line and stock in (A21)
-
+        // Same rules and code as the web form (R3, Q5), in a transaction (R6).
+        $bill = $save->create($this->getTenantId(), $request->validated(), auth()->id());
         $bill->load(['vendor', 'items.item']);
 
         return $this->created(new BillResource($bill), 'Bill created successfully');
@@ -154,65 +90,9 @@ class BillController extends BaseApiController
     /**
      * Update a bill
      */
-    public function update(Request $request, Bill $bill): JsonResponse
+    public function update(\App\Http\Requests\UpdateBillRequest $request, Bill $bill, \App\Actions\Bills\SaveBill $save): JsonResponse
     {
-        $tenantId = $this->getTenantId();
-
-        $validated = $request->validate([
-            'vendor_id' => ['sometimes', Rule::exists('vendors', 'id')->where('tenant_id', $tenantId)],
-            'vendor_bill_number' => 'nullable|string|max:100',
-            'bill_date' => 'sometimes|date',
-            'due_date' => 'sometimes|date|after_or_equal:bill_date',
-            'discount_amount' => 'nullable|numeric|min:0',
-            'notes' => 'nullable|string',
-            'items' => 'sometimes|array|min:1',
-            'items.*.id' => ['nullable', Rule::exists('bill_items', 'id')->where('bill_id', $bill->id)],
-            'items.*.item_id' => ['nullable', Rule::exists('items', 'id')->where('tenant_id', $tenantId)],
-            'items.*.description' => 'required|string',
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.discount' => 'nullable|numeric|min:0',
-            'items.*.tax_rate' => 'nullable|numeric|min:0|max:100',
-        ]);
-
-        if (isset($validated['items'])) {
-            $subtotal = 0;
-            $taxAmount = 0;
-
-            foreach ($validated['items'] as &$item) {
-                $itemSubtotal = $item['quantity'] * $item['unit_price'];
-
-                if (! empty($item['discount'])) {
-                    $itemSubtotal -= $item['discount'];
-                }
-
-                $itemTax = 0;
-                if (! empty($item['tax_rate'])) {
-                    $itemTax = $itemSubtotal * ($item['tax_rate'] / 100);
-                }
-
-                $item['tax_amount'] = $itemTax;
-                $item['total'] = $itemSubtotal + $itemTax;
-
-                $subtotal += $itemSubtotal;
-                $taxAmount += $itemTax;
-            }
-
-            $discountAmount = $validated['discount_amount'] ?? 0;
-
-            $validated['subtotal'] = $subtotal;
-            $validated['tax_amount'] = $taxAmount;
-            $validated['discount_amount'] = $discountAmount;
-            $validated['total'] = $subtotal + $taxAmount - $discountAmount;
-            $validated['balance_due'] = $validated['total'] - $bill->amount_paid;
-
-            $bill->items()->delete();
-            foreach ($validated['items'] as $item) {
-                $bill->items()->create($item);
-            }
-        }
-
-        $bill->update(collect($validated)->except('items')->toArray());
+        $bill = $save->update($bill, $request->validated());
         $bill->load(['vendor', 'items.item']);
 
         return $this->success(new BillResource($bill), 'Bill updated successfully');
@@ -221,14 +101,12 @@ class BillController extends BaseApiController
     /**
      * Delete a bill
      */
-    public function destroy(Bill $bill): JsonResponse
+    public function destroy(Bill $bill, \App\Actions\Bills\DeleteBill $delete): JsonResponse
     {
-        if ($bill->payments()->exists()) {
-            return $this->error('Cannot delete bill with payments', 422);
+        if ($reason = $delete->blockedBecause($bill)) {
+            return $this->error($reason, 422);
         }
-
-        $bill->items()->delete();
-        $bill->delete();
+        $delete->handle($bill);
 
         return $this->success(null, 'Bill deleted successfully');
     }

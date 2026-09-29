@@ -69,6 +69,8 @@ class DocumentTotals
             $out[$key] = array_merge(array_diff_key($line, ['discount_type' => true]), [
                 // The line's own discount as money, ready to store.
                 'discount' => round($grossOf[$key] - $net[$key], 2),
+                // This line's part of the document discount (bills need it).
+                'discount_share' => $shares[$key],
                 'tax_rate' => $rate,
                 'tax_amount' => $lineTax,
                 'total' => round($net[$key] + $lineTax, 2),

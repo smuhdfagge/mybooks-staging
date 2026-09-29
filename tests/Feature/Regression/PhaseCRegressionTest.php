@@ -175,4 +175,136 @@ class PhaseCRegressionTest extends TestCase
 
         $this->postJson('/api/v1/invoices', $sale + ['status' => 'paid'])->assertStatus(422)->assertJsonValidationErrors('status');
     }
+
+    // ── R3: one set of bill rules ───────────────────────────────
+
+    /** @return array<string, mixed> */
+    private function samePurchase(\App\Models\Vendor $vendor, \App\Models\Item $item): array
+    {
+        return [
+            'vendor_id' => $vendor->id, 'bill_date' => '2026-09-01', 'due_date' => '2026-10-01',
+            'discount_amount' => 2400,
+            'items' => [
+                ['item_id' => $item->id, 'description' => 'Goods', 'quantity' => 2, 'unit_price' => 10000, 'discount' => 2000, 'tax_rate' => 7.5],
+                ['description' => 'Freight', 'quantity' => 1, 'unit_price' => 6000, 'tax_rate' => 0],
+            ],
+        ];
+    }
+
+    private function onHand(\App\Models\Item $item): float
+    {
+        return (float) \App\Models\Inventory::where('item_id', $item->id)->value('quantity');
+    }
+
+    public function test_r3_the_same_purchase_gives_the_same_bill_on_web_and_api(): void
+    {
+        $this->createAuthenticatedUser(['create bills', 'view bills']);
+        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $item = $this->stockedItem(0);
+        $purchase = $this->samePurchase($vendor, $item);
+
+        $this->post(route('bills.store'), $purchase)->assertSessionHasNoErrors();
+        $this->postJson('/api/v1/bills', $purchase)->assertCreated();
+
+        $bills = \App\Models\Bill::orderBy('id')->get();
+        $this->assertCount(2, $bills);
+        foreach ($bills as $bill) {
+            // Goods 20,000 less 2,000 = 18,000; freight 6,000. The 2,400 bill
+            // discount is shared 3:1, so goods cost 16,200 and VAT is 1,215.
+            $this->assertEqualsWithDelta(26000, (float) $bill->subtotal, 0.001, "subtotal #{$bill->id}");
+            $this->assertEqualsWithDelta(4400, (float) $bill->discount_amount, 0.001, "discount #{$bill->id}");
+            $this->assertEqualsWithDelta(1215, (float) $bill->tax_amount, 0.001, "VAT #{$bill->id}");
+            $this->assertEqualsWithDelta(22815, (float) $bill->total, 0.001, "total #{$bill->id}");
+            $this->assertEqualsWithDelta(2000, (float) $bill->items()->where('description', 'Goods')->value('discount'), 0.001);
+
+            $journal = Journal::where('reference_type', \App\Models\Bill::class)->where('reference_id', $bill->id)->firstOrFail();
+            $this->assertEqualsWithDelta(22815, (float) $journal->entries()->sum('credit'), 0.001, "journal #{$bill->id}");
+            $this->assertEqualsWithDelta((float) $journal->entries()->sum('debit'), (float) $journal->entries()->sum('credit'), 0.001);
+        }
+        // Both bills received their 2 units.
+        $this->assertEqualsWithDelta(4, $this->onHand($item), 0.001);
+    }
+
+    public function test_r3_api_cannot_create_a_bill_already_paid(): void
+    {
+        $this->createAuthenticatedUser(['create bills', 'view bills']);
+        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $this->postJson('/api/v1/bills', $this->samePurchase($vendor, $this->stockedItem(0)) + ['status' => 'paid'])
+            ->assertStatus(422)->assertJsonValidationErrors('status');
+        $this->assertSame(0, \App\Models\Bill::count());
+    }
+
+    public function test_r3_deleting_a_bill_takes_its_unsold_goods_back_out_of_stock(): void
+    {
+        $this->createAuthenticatedUser(['create bills', 'view bills', 'delete bills']);
+        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $item = $this->stockedItem(0);
+
+        $this->postJson('/api/v1/bills', $this->samePurchase($vendor, $item))->assertCreated();
+        $bill = \App\Models\Bill::firstOrFail();
+        $this->assertEqualsWithDelta(2, $this->onHand($item), 0.001);
+
+        $this->delete(route('bills.destroy', $bill))->assertSessionHasNoErrors();
+        $this->assertSoftDeleted($bill);
+        $this->assertEqualsWithDelta(0, $this->onHand($item), 0.001);
+    }
+
+    public function test_r3_a_bill_whose_goods_were_sold_cannot_be_deleted(): void
+    {
+        $this->createAuthenticatedUser(['create bills', 'view bills', 'delete bills']);
+        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $item = $this->stockedItem(0);
+
+        $this->postJson('/api/v1/bills', $this->samePurchase($vendor, $item))->assertCreated();
+        $bill = \App\Models\Bill::firstOrFail();
+        // One of the two units has since been sold.
+        \App\Models\InventoryLayer::where('reference_type', 'bill')->where('reference_id', $bill->id)->update(['remaining_quantity' => 1]);
+
+        $this->deleteJson('/api/v1/bills/'.$bill->id)->assertStatus(422);
+        $this->delete(route('bills.destroy', $bill))->assertSessionHas('error');
+        $this->assertNotSoftDeleted($bill);
+    }
+
+    public function test_r3_goods_already_in_stock_cannot_be_changed_on_the_bill(): void
+    {
+        $this->createAuthenticatedUser(['create bills', 'view bills', 'edit bills']);
+        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $item = $this->stockedItem(0);
+        $purchase = $this->samePurchase($vendor, $item);
+
+        $this->postJson('/api/v1/bills', $purchase)->assertCreated();
+        $bill = \App\Models\Bill::firstOrFail();
+
+        $purchase['items'][0]['quantity'] = 3;
+        $this->putJson('/api/v1/bills/'.$bill->id, $purchase)->assertStatus(422);
+        $this->assertEqualsWithDelta(2, (float) $bill->items()->where('item_id', $item->id)->value('quantity'), 0.001);
+
+        // A price change on the same goods is fine.
+        $purchase['items'][0]['quantity'] = 2;
+        $purchase['items'][1]['unit_price'] = 7000;
+        $this->putJson('/api/v1/bills/'.$bill->id, $purchase)->assertOk();
+        // 2,400 now shared 18,000:7,000, so goods cost 16,272 and VAT is 1,220.40.
+        $this->assertEqualsWithDelta(27000 - 4400 + 1220.40, (float) $bill->fresh()->total, 0.001);
+    }
+
+    public function test_r3_recurring_bills_work_out_totals_from_their_lines(): void
+    {
+        $this->createAuthenticatedUser();
+        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $item = $this->stockedItem(0);
+        $profile = \App\Models\RecurrentBill::create([
+            'tenant_id' => $this->tenant->id, 'vendor_id' => $vendor->id, 'profile_name' => 'Monthly stock', 'frequency' => 'monthly',
+            'start_date' => '2026-09-01', 'next_bill_date' => now()->subDay()->toDateString(), 'status' => 'active',
+            'created_by' => $this->user->id, 'subtotal' => 999, 'tax_amount' => 999, 'total' => 999, // stale
+        ]);
+        $profile->items()->create(['item_id' => $item->id, 'description' => 'Goods', 'quantity' => 2, 'unit_price' => 10000, 'tax_rate' => 7.5, 'tax_amount' => 0, 'total' => 0]);
+
+        $this->artisan('transactions:process-recurring')->assertSuccessful();
+
+        $bill = \App\Models\Bill::firstOrFail();
+        $this->assertEqualsWithDelta(21500, (float) $bill->total, 0.001);
+        $this->assertEqualsWithDelta(1500, (float) $bill->items()->value('tax_amount'), 0.001);
+        $this->assertEqualsWithDelta(2, $this->onHand($item), 0.001);
+    }
 }
