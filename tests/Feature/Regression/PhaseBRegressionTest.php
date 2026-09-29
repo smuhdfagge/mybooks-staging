@@ -23,6 +23,10 @@ class PhaseBRegressionTest extends TestCase
             ['1000', 'Cash', 'asset', 'cash'],
             ['1200', 'Accounts Receivable', 'asset', 'accounts_receivable'],
             ['1500', 'Equipment', 'asset', 'fixed_asset'],
+            ['1510', 'Accumulated Depreciation', 'asset', 'fixed_asset'],
+            ['2350', 'Customer Deposits', 'liability', 'other_current_liability'],
+            ['2500', 'Bank Loan', 'liability', 'long_term_liability'],
+            ['6300', 'Depreciation', 'expense', 'expense'],
             ['1900', 'Suspense asset', 'asset', null],
             ['2000', 'Accounts Payable', 'liability', 'accounts_payable'],
             ['3000', "Owner's Capital", 'equity', 'equity'],
@@ -207,5 +211,52 @@ class PhaseBRegressionTest extends TestCase
         $this->assertEqualsWithDelta($web->viewData('totalAssets'), $api['assets']['total_assets'], 0.001);
         $this->assertEqualsWithDelta($web->viewData('totalLiabilitiesAndEquity'), $api['total_liabilities_and_equity'], 0.001);
         $this->assertEqualsWithDelta(0, $api['difference'], 0.001);
+    }
+
+    // ── A7: cash flow ───────────────────────────────────────────
+
+    public function test_a7_cash_flow_comes_from_cash_account_movements(): void
+    {
+        $this->createAuthenticatedUser(['view reports']);
+        $this->chart();
+        // Before the period: 1,000 in the bank
+        $this->postJournal('2026-02-15', [['1000', 1000, 0], ['3000', 0, 1000]], 'Opening capital');
+        // March
+        $this->postJournal('2026-03-01', [['1200', 5000, 0], ['4000', 0, 5000]], 'Invoice (no cash)');
+        $this->postJournal('2026-03-05', [['1000', 3000, 0], ['1200', 0, 3000]], 'Customer pays part');
+        $this->postJournal('2026-03-06', [['1000', 800, 0], ['4000', 0, 800]], 'Cash sale (no payment record)');
+        $this->postJournal('2026-03-07', [['1000', 500, 0], ['2350', 0, 500]], 'Customer deposit received');
+        $this->postJournal('2026-03-08', [['2350', 500, 0], ['1200', 0, 500]], 'Deposit applied (no cash)');
+        $this->postJournal('2026-03-10', [['6100', 1200, 0], ['1000', 0, 1200]], 'Rent paid');
+        $this->postJournal('2026-03-12', [['1500', 2500, 0], ['1000', 0, 2500]], 'Equipment bought');
+        $this->postJournal('2026-03-31', [['6300', 400, 0], ['1510', 0, 400]], 'Depreciation (no cash)');
+        $this->postJournal('2026-03-20', [['1000', 4000, 0], ['2500', 0, 4000]], 'Bank loan');
+
+        $cf = $this->get(route('reports.cash-flow', ['start_date' => '2026-03-01', 'end_date' => '2026-03-31']))->assertOk();
+
+        $this->assertEqualsWithDelta(1000, $cf->viewData('beginningCash'), 0.001);
+        $this->assertEqualsWithDelta(4300, $cf->viewData('paymentsReceived'), 0.001, 'part payment + cash sale + deposit, once');
+        $this->assertEqualsWithDelta(1200, $cf->viewData('expensesPaid'), 0.001);
+        $this->assertEqualsWithDelta(3100, $cf->viewData('netOperatingCashFlow'), 0.001);
+        $this->assertEqualsWithDelta(2500, $cf->viewData('fixedAssetPurchases'), 0.001);
+        $this->assertEqualsWithDelta(0, $cf->viewData('fixedAssetSales'), 0.001, 'depreciation is not a sale of assets');
+        $this->assertEqualsWithDelta(4000, $cf->viewData('borrowingsReceived'), 0.001);
+        $this->assertEqualsWithDelta(0, $cf->viewData('capitalContributions'), 0.001);
+        $this->assertEqualsWithDelta(4600, $cf->viewData('netCashFlow'), 0.001); // 3,100 - 2,500 + 4,000
+        $this->assertEqualsWithDelta(5600, $cf->viewData('endingCash'), 0.001);
+        $this->assertEqualsWithDelta(5600, (float) $this->acct['1000']->fresh()->current_balance, 0.001, 'closing cash = the cash account');
+    }
+
+    public function test_a7_year_end_close_is_not_owners_capital_in_cash_flow(): void
+    {
+        $this->createAuthenticatedUser(['view reports']);
+        $this->chart();
+        app(YearEndCloseService::class)->performYearEndClose($this->year2025());
+
+        $cf = $this->get(route('reports.cash-flow', ['start_date' => '2025-01-01', 'end_date' => '2025-12-31']))->assertOk();
+
+        $this->assertEqualsWithDelta(0, $cf->viewData('capitalContributions'), 0.001);
+        $this->assertEqualsWithDelta(0, $cf->viewData('drawings'), 0.001);
+        $this->assertEqualsWithDelta(3300, $cf->viewData('netCashFlow'), 0.001);
     }
 }

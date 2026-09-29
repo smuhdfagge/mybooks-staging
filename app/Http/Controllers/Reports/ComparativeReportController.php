@@ -4,9 +4,6 @@ namespace App\Http\Controllers\Reports;
 
 use App\Models\Expense;
 use App\Models\Journal;
-use App\Models\PaymentMade;
-use App\Models\PaymentReceived;
-use App\Models\Payroll;
 use Illuminate\Http\Request;
 
 /**
@@ -120,38 +117,20 @@ class ComparativeReportController extends ReportController
         $periodData = [];
 
         foreach ($periods as $key => $period) {
-            $paymentsReceived = PaymentReceived::where('tenant_id', $tenantId)
-                ->whereBetween('payment_date', [$period['start'], $period['end']])
-                ->sum('amount');
-
-            $paymentsMade = PaymentMade::where('tenant_id', $tenantId)
-                ->whereBetween('payment_date', [$period['start'], $period['end']])
-                ->sum('amount');
-
-            $expensesPaid = Expense::where('tenant_id', $tenantId)
-                ->whereBetween('expense_date', [$period['start'], $period['end']])
-                ->sum('amount');
-
-            $payrollPaid = Payroll::where('tenant_id', $tenantId)
-                ->whereBetween('pay_date', [$period['start'], $period['end']])
-                ->where('status', 'paid')
-                ->sum('net_salary');
-
-            $totalInflows = $paymentsReceived;
-            $totalOutflows = $paymentsMade + $expensesPaid + $payrollPaid;
-            $netCashFlow = $totalInflows - $totalOutflows;
+            // Same ledger-based figures as the cash flow statement (A7).
+            $cf = app(\App\Services\Accounting\FinancialStatements::class)->cashFlow($tenantId, $period['start'], $period['end']);
 
             $periodData[$key] = [
                 'label' => $period['label'],
                 'start' => $period['start'],
                 'end' => $period['end'],
-                'paymentsReceived' => $paymentsReceived,
-                'paymentsMade' => $paymentsMade,
-                'expensesPaid' => $expensesPaid,
-                'payrollPaid' => $payrollPaid,
-                'totalInflows' => $totalInflows,
-                'totalOutflows' => $totalOutflows,
-                'netCashFlow' => $netCashFlow,
+                'paymentsReceived' => $cf['paymentsReceived'],
+                'paymentsMade' => $cf['paymentsMade'],
+                'expensesPaid' => $cf['expensesPaid'],
+                'payrollPaid' => $cf['payrollPaid'],
+                'totalInflows' => $cf['totalInflows'],
+                'totalOutflows' => $cf['totalOutflows'],
+                'netCashFlow' => $cf['netCashFlow'],
             ];
         }
 

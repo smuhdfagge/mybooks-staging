@@ -238,6 +238,142 @@ class FinancialStatements
         ];
     }
 
+    /**
+     * Cash flow statement from the ledger (finding A7).
+     *
+     * Only journals that touch a cash or bank account count. In such a
+     * journal, every other line's (credit - debit) is the cash it brought in
+     * (positive) or paid out (negative), so the lines add up exactly to the
+     * change in cash and closing cash always equals the cash accounts. Each
+     * line is classified by its account:
+     *  - investing: fixed assets and accumulated depreciation
+     *  - financing: long-term liabilities and equity
+     *  - operating: everything else, split into customers, suppliers,
+     *    payroll and other expenses
+     *
+     * Journals without a cash line (invoices, depreciation, applying a
+     * customer deposit, the year-end close) move no cash and are left out.
+     *
+     * @return array<string, float|string>
+     */
+    public function cashFlow(int $tenantId, string $from, string $to): array
+    {
+        $isCash = fn ($a) => $a->type === ChartOfAccount::TYPE_ASSET && in_array($a->sub_type, ['cash', 'bank'], true);
+        $accounts = ChartOfAccount::withTrashed()->where('tenant_id', $tenantId)->get()->keyBy('id');
+        $cashIds = $accounts->filter($isCash)->keys()->all();
+
+        $payrollCodes = collect(['accrued_salaries', 'payroll_liabilities', 'tax_payable', 'pension_payable', 'insurance_payable', 'union_dues_payable', 'garnishments_payable', 'net_pay_payable'])
+            ->map(function ($key) use ($tenantId) {
+                try {
+                    return \App\Services\AccountCodeService::resolve($tenantId, $key);
+                } catch (\InvalidArgumentException) {
+                    return null;
+                }
+            })->filter()->all();
+
+        $depositCode = \App\Services\AccountCodeService::resolve($tenantId, 'customer_deposits');
+
+        $totals = [
+            'customers' => 0.0, 'suppliers' => 0.0, 'payroll' => 0.0, 'other' => 0.0,
+            'investIn' => 0.0, 'investOut' => 0.0,
+            'borrowIn' => 0.0, 'borrowOut' => 0.0, 'capitalIn' => 0.0, 'capitalOut' => 0.0,
+        ];
+
+        $end = Carbon::parse($to)->addDay()->toDateString();
+        DB::table('journal_entries as je')
+            ->join('journals as j', 'j.id', '=', 'je.journal_id')
+            ->where('j.tenant_id', $tenantId)
+            ->where('j.is_posted', true)
+            ->whereNull('j.deleted_at')
+            ->where('j.journal_date', '>=', $from)
+            ->where('j.journal_date', '<', $end)
+            ->whereNotIn('je.account_id', $cashIds ?: [0])
+            ->whereExists(fn ($q) => $q->selectRaw('1')->from('journal_entries as cash')
+                ->whereColumn('cash.journal_id', 'je.journal_id')
+                ->whereIn('cash.account_id', $cashIds ?: [0]))
+            ->select('je.account_id', 'je.debit', 'je.credit')
+            ->orderBy('je.id')
+            ->lazy(1000)
+            ->each(function ($line) use ($accounts, $payrollCodes, $depositCode, &$totals) {
+                $account = $accounts->get($line->account_id);
+                if (! $account) {
+                    return;
+                }
+                $cash = round((float) $line->credit - (float) $line->debit, 2);
+                if ($cash == 0.0) {
+                    return;
+                }
+
+                $sub = (string) $account->sub_type;
+                if ($account->type === ChartOfAccount::TYPE_ASSET && in_array($sub, ['fixed_asset', 'accumulated_depreciation'], true)) {
+                    $cash > 0 ? $totals['investIn'] += $cash : $totals['investOut'] -= $cash;
+                } elseif ($account->type === ChartOfAccount::TYPE_LIABILITY && $sub === 'long_term_liability') {
+                    $cash > 0 ? $totals['borrowIn'] += $cash : $totals['borrowOut'] -= $cash;
+                } elseif ($account->type === ChartOfAccount::TYPE_EQUITY) {
+                    $cash > 0 ? $totals['capitalIn'] += $cash : $totals['capitalOut'] -= $cash;
+                } elseif ($account->type === ChartOfAccount::TYPE_INCOME
+                    || in_array($sub, ['accounts_receivable'], true)
+                    || $account->account_code === $depositCode) {
+                    $totals['customers'] += $cash;
+                } elseif (in_array($sub, ['accounts_payable', 'inventory', 'cost_of_goods_sold'], true)) {
+                    $totals['suppliers'] += $cash;
+                } elseif (in_array($account->account_code, $payrollCodes, true)
+                    || ($account->type === ChartOfAccount::TYPE_EXPENSE && preg_match('/salar|wage|payroll/i', (string) $account->name))) {
+                    $totals['payroll'] += $cash;
+                } else {
+                    $totals['other'] += $cash;
+                }
+            });
+
+        $totals = array_map(fn ($v) => round($v, 2), $totals);
+        $beginningCash = round($this->accountBalances($tenantId, null, Carbon::parse($from)->subDay()->toDateString())->filter($isCash)->sum('balance'), 2);
+
+        $paymentsReceived = $totals['customers'];
+        $paymentsMade = -$totals['suppliers'];
+        $payrollPaid = -$totals['payroll'];
+        $expensesPaid = -$totals['other'];
+        $operatingInflows = $paymentsReceived;
+        $operatingOutflows = round($paymentsMade + $expensesPaid + $payrollPaid, 2);
+        $netOperatingCashFlow = round($operatingInflows - $operatingOutflows, 2);
+
+        $fixedAssetPurchases = $totals['investOut'];
+        $fixedAssetSales = $totals['investIn'];
+        $netInvestingCashFlow = round($fixedAssetSales - $fixedAssetPurchases, 2);
+
+        $borrowingsReceived = $totals['borrowIn'];
+        $loanRepayments = $totals['borrowOut'];
+        $capitalContributions = $totals['capitalIn'];
+        $drawings = $totals['capitalOut'];
+        $netFinancingCashFlow = round($borrowingsReceived - $loanRepayments + $capitalContributions - $drawings, 2);
+
+        $netCashFlow = round($netOperatingCashFlow + $netInvestingCashFlow + $netFinancingCashFlow, 2);
+
+        return [
+            'startDate' => $from,
+            'endDate' => $to,
+            'paymentsReceived' => $paymentsReceived,
+            'paymentsMade' => $paymentsMade,
+            'expensesPaid' => $expensesPaid,
+            'payrollPaid' => $payrollPaid,
+            'operatingInflows' => $operatingInflows,
+            'operatingOutflows' => $operatingOutflows,
+            'netOperatingCashFlow' => $netOperatingCashFlow,
+            'fixedAssetPurchases' => $fixedAssetPurchases,
+            'fixedAssetSales' => $fixedAssetSales,
+            'netInvestingCashFlow' => $netInvestingCashFlow,
+            'borrowingsReceived' => $borrowingsReceived,
+            'loanRepayments' => $loanRepayments,
+            'capitalContributions' => $capitalContributions,
+            'drawings' => $drawings,
+            'netFinancingCashFlow' => $netFinancingCashFlow,
+            'totalInflows' => round($paymentsReceived + $fixedAssetSales + $borrowingsReceived + $capitalContributions, 2),
+            'totalOutflows' => round($operatingOutflows + $fixedAssetPurchases + $loanRepayments + $drawings, 2),
+            'netCashFlow' => $netCashFlow,
+            'beginningCash' => $beginningCash,
+            'endingCash' => round($beginningCash + $netCashFlow, 2),
+        ];
+    }
+
     /** @param Collection<int, ChartOfAccount> $accounts */
     private function profitFrom(Collection $accounts): float
     {

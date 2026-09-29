@@ -25,7 +25,7 @@ class ChartOfAccountService
             ['account_code' => '1500', 'name' => 'Equipment', 'type' => 'asset', 'sub_type' => 'fixed_asset'],
             ['account_code' => '1510', 'name' => 'Furniture & Fixtures', 'type' => 'asset', 'sub_type' => 'fixed_asset'],
             ['account_code' => '1520', 'name' => 'Vehicles', 'type' => 'asset', 'sub_type' => 'fixed_asset'],
-            ['account_code' => '1600', 'name' => 'Accumulated Depreciation', 'type' => 'asset', 'sub_type' => 'fixed_asset'],
+            ['account_code' => '1600', 'name' => 'Accumulated Depreciation', 'type' => 'asset', 'sub_type' => 'accumulated_depreciation'],
 
             // Liabilities (2000-2999)
             ['account_code' => '2000', 'name' => 'Accounts Payable', 'type' => 'liability', 'sub_type' => 'accounts_payable'],

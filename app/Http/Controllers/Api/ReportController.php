@@ -9,7 +9,6 @@ use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Item;
 use App\Models\JournalEntry;
-use App\Models\PaymentMade;
 use App\Models\PaymentReceived;
 use App\Models\Payroll;
 use App\Models\Vendor;
@@ -100,79 +99,42 @@ class ReportController extends BaseApiController
         $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->get('end_date', now()->format('Y-m-d'));
 
-        $beginningCash = $this->calculateCashBalance($tenantId, $startDate, true);
-
-        // Operating Activities
-        $paymentsReceived = PaymentReceived::where('tenant_id', $tenantId)
-            ->whereBetween('payment_date', [$startDate, $endDate])
-            ->sum('amount');
-
-        $paymentsMade = PaymentMade::where('tenant_id', $tenantId)
-            ->whereBetween('payment_date', [$startDate, $endDate])
-            ->sum('amount');
-
-        $expensesPaid = Expense::where('tenant_id', $tenantId)
-            ->whereBetween('expense_date', [$startDate, $endDate])
-            ->where('status', Expense::STATUS_PAID)
-            ->sum('total');
-
-        $payrollPaid = Payroll::where('tenant_id', $tenantId)
-            ->whereBetween('pay_date', [$startDate, $endDate])
-            ->where('status', 'paid')
-            ->sum('net_salary');
-
-        $operatingInflows = $paymentsReceived;
-        $operatingOutflows = $paymentsMade + $expensesPaid + $payrollPaid;
-        $netOperatingCashFlow = $operatingInflows - $operatingOutflows;
-
-        // Investing Activities
-        $fixedAssetPurchases = $this->getJournalSum($tenantId, $startDate, $endDate, 'asset', 'fixed_asset', 'debit');
-        $fixedAssetSales = $this->getJournalSum($tenantId, $startDate, $endDate, 'asset', 'fixed_asset', 'credit');
-        $netInvestingCashFlow = $fixedAssetSales - $fixedAssetPurchases;
-
-        // Financing Activities
-        $borrowingsReceived = $this->getJournalSum($tenantId, $startDate, $endDate, 'liability', 'long_term_liability', 'credit');
-        $loanRepayments = $this->getJournalSum($tenantId, $startDate, $endDate, 'liability', 'long_term_liability', 'debit');
-        $capitalContributions = $this->getJournalSum($tenantId, $startDate, $endDate, 'equity', 'equity', 'credit');
-        $drawings = $this->getJournalSum($tenantId, $startDate, $endDate, 'equity', 'equity', 'debit');
-        $netFinancingCashFlow = $borrowingsReceived - $loanRepayments + $capitalContributions - $drawings;
-
-        $netCashFlow = $netOperatingCashFlow + $netInvestingCashFlow + $netFinancingCashFlow;
-        $endingCash = $beginningCash + $netCashFlow;
+        // Same ledger-based figures as the web report (A7).
+        $cf = app(\App\Services\Accounting\FinancialStatements::class)->cashFlow($tenantId, $startDate, $endDate);
 
         return $this->success([
             'period' => [
                 'start_date' => $startDate,
                 'end_date' => $endDate,
             ],
-            'beginning_cash' => (float) $beginningCash,
+            'beginning_cash' => (float) $cf['beginningCash'],
             'operating_activities' => [
                 'inflows' => [
-                    'payments_received' => (float) $paymentsReceived,
-                    'total' => (float) $operatingInflows,
+                    'payments_received' => (float) $cf['paymentsReceived'],
+                    'total' => (float) $cf['operatingInflows'],
                 ],
                 'outflows' => [
-                    'payments_made' => (float) $paymentsMade,
-                    'expenses_paid' => (float) $expensesPaid,
-                    'payroll_paid' => (float) $payrollPaid,
-                    'total' => (float) $operatingOutflows,
+                    'payments_made' => (float) $cf['paymentsMade'],
+                    'expenses_paid' => (float) $cf['expensesPaid'],
+                    'payroll_paid' => (float) $cf['payrollPaid'],
+                    'total' => (float) $cf['operatingOutflows'],
                 ],
-                'net' => (float) $netOperatingCashFlow,
+                'net' => (float) $cf['netOperatingCashFlow'],
             ],
             'investing_activities' => [
-                'fixed_asset_purchases' => (float) $fixedAssetPurchases,
-                'fixed_asset_sales' => (float) $fixedAssetSales,
-                'net' => (float) $netInvestingCashFlow,
+                'fixed_asset_purchases' => (float) $cf['fixedAssetPurchases'],
+                'fixed_asset_sales' => (float) $cf['fixedAssetSales'],
+                'net' => (float) $cf['netInvestingCashFlow'],
             ],
             'financing_activities' => [
-                'borrowings_received' => (float) $borrowingsReceived,
-                'loan_repayments' => (float) $loanRepayments,
-                'capital_contributions' => (float) $capitalContributions,
-                'drawings' => (float) $drawings,
-                'net' => (float) $netFinancingCashFlow,
+                'borrowings_received' => (float) $cf['borrowingsReceived'],
+                'loan_repayments' => (float) $cf['loanRepayments'],
+                'capital_contributions' => (float) $cf['capitalContributions'],
+                'drawings' => (float) $cf['drawings'],
+                'net' => (float) $cf['netFinancingCashFlow'],
             ],
-            'net_cash_flow' => (float) $netCashFlow,
-            'ending_cash' => (float) $endingCash,
+            'net_cash_flow' => (float) $cf['netCashFlow'],
+            'ending_cash' => (float) $cf['endingCash'],
         ]);
     }
 
