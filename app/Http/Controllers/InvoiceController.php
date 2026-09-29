@@ -99,35 +99,28 @@ class InvoiceController extends Controller
             'created_by' => auth()->id(),
         ]);
 
-        $subtotal = 0;
-        $totalTax = 0;
+        // VAT after the discount, the same everywhere (A4).
+        $totals = \App\Services\Sales\DocumentTotals::calculate(
+            $validated['items'], $validated['discount_type'] ?? null, $validated['discount_amount'] ?? 0
+        );
 
-        foreach ($validated['items'] as $itemData) {
-            $taxRate = $itemData['tax_rate'] ?? 0;
-            $lineTotal = $itemData['quantity'] * $itemData['unit_price'];
-            $taxAmount = $lineTotal * ($taxRate / 100);
-
+        foreach ($totals['lines'] as $line) {
             InvoiceItem::create([
                 'invoice_id' => $invoice->id,
-                'item_id' => $itemData['item_id'] ?? null,
-                'description' => $itemData['description'],
-                'quantity' => $itemData['quantity'],
-                'unit_price' => $itemData['unit_price'],
-                'tax_rate' => $taxRate,
-                'tax_amount' => $taxAmount,
-                'total' => $lineTotal + $taxAmount,
+                'item_id' => $line['item_id'] ?? null,
+                'description' => $line['description'],
+                'quantity' => $line['quantity'],
+                'unit_price' => $line['unit_price'],
+                'tax_rate' => $line['tax_rate'],
+                'tax_amount' => $line['tax_amount'],
+                'total' => $line['total'],
             ]);
-
-            $subtotal += $lineTotal;
-            $totalTax += $taxAmount;
         }
 
-        $discountAmount = $validated['discount_amount'] ?? 0;
-        if (($validated['discount_type'] ?? null) === 'percentage') {
-            $discountAmount = $subtotal * ($discountAmount / 100);
-        }
-
-        $total = $subtotal + $totalTax - $discountAmount;
+        $subtotal = $totals['subtotal'];
+        $totalTax = $totals['tax_amount'];
+        $discountAmount = $totals['discount_amount'];
+        $total = $totals['total'];
 
         $invoice->update([
             'subtotal' => $subtotal,
@@ -269,35 +262,28 @@ class InvoiceController extends Controller
         // Delete existing items and recreate
         $invoice->items()->delete();
 
-        $subtotal = 0;
-        $totalTax = 0;
+        // VAT after the discount, the same everywhere (A4).
+        $totals = \App\Services\Sales\DocumentTotals::calculate(
+            $validated['items'], $validated['discount_type'] ?? null, $validated['discount_amount'] ?? 0
+        );
 
-        foreach ($validated['items'] as $itemData) {
-            $taxRate = $itemData['tax_rate'] ?? 0;
-            $lineTotal = $itemData['quantity'] * $itemData['unit_price'];
-            $taxAmount = $lineTotal * ($taxRate / 100);
-
+        foreach ($totals['lines'] as $line) {
             InvoiceItem::create([
                 'invoice_id' => $invoice->id,
-                'item_id' => $itemData['item_id'] ?? null,
-                'description' => $itemData['description'],
-                'quantity' => $itemData['quantity'],
-                'unit_price' => $itemData['unit_price'],
-                'tax_rate' => $taxRate,
-                'tax_amount' => $taxAmount,
-                'total' => $lineTotal + $taxAmount,
+                'item_id' => $line['item_id'] ?? null,
+                'description' => $line['description'],
+                'quantity' => $line['quantity'],
+                'unit_price' => $line['unit_price'],
+                'tax_rate' => $line['tax_rate'],
+                'tax_amount' => $line['tax_amount'],
+                'total' => $line['total'],
             ]);
-
-            $subtotal += $lineTotal;
-            $totalTax += $taxAmount;
         }
 
-        $discountAmount = $validated['discount_amount'] ?? 0;
-        if (($validated['discount_type'] ?? null) === 'percentage') {
-            $discountAmount = $subtotal * ($discountAmount / 100);
-        }
-
-        $total = $subtotal + $totalTax - $discountAmount;
+        $subtotal = $totals['subtotal'];
+        $totalTax = $totals['tax_amount'];
+        $discountAmount = $totals['discount_amount'];
+        $total = $totals['total'];
 
         $invoice->update([
             'subtotal' => $subtotal,

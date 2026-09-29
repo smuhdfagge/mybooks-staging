@@ -80,7 +80,21 @@ class ProcessRecurrentTransactions extends Command
 
             try {
                 DB::transaction(function () use ($profile) {
-                    $invoice = Invoice::withoutEvents(function () use ($profile) {
+                    // Recalculate from the profile's lines: VAT after the discount (A4).
+                    $totals = \App\Services\Sales\DocumentTotals::calculate(
+                        $profile->items->map(fn ($i) => [
+                            'item_id' => $i->item_id,
+                            'description' => $i->description,
+                            'quantity' => $i->quantity,
+                            'unit_price' => $i->unit_price,
+                            'discount' => $i->discount ?? 0,
+                            'tax_rate' => $i->tax_rate ?? 0,
+                        ])->all(),
+                        $profile->discount_type,
+                        $profile->discount_amount ?? 0
+                    );
+
+                    $invoice = Invoice::withoutEvents(function () use ($profile, $totals) {
                         $inv = Invoice::create([
                             'tenant_id' => $profile->tenant_id,
                             'customer_id' => $profile->customer_id,
@@ -89,29 +103,29 @@ class ProcessRecurrentTransactions extends Command
                             'invoice_date' => $profile->next_invoice_date,
                             'due_date' => $profile->next_invoice_date->copy()->addDays($profile->payment_terms),
                             'status' => 'sent',
-                            'subtotal' => $profile->subtotal,
-                            'tax_amount' => $profile->tax_amount,
-                            'discount_amount' => $profile->discount_amount ?? 0,
+                            'subtotal' => $totals['subtotal'],
+                            'tax_amount' => $totals['tax_amount'],
+                            'discount_amount' => $totals['discount_amount'],
                             'discount_type' => $profile->discount_type,
-                            'total' => $profile->total,
+                            'total' => $totals['total'],
                             'amount_paid' => 0,
-                            'balance_due' => $profile->total,
+                            'balance_due' => $totals['total'],
                             'notes' => $profile->notes,
                             'terms' => $profile->terms,
                             'created_by' => $profile->created_by,
                         ]);
 
-                        foreach ($profile->items as $profileItem) {
+                        foreach ($totals['lines'] as $line) {
                             InvoiceItem::create([
                                 'invoice_id' => $inv->id,
-                                'item_id' => $profileItem->item_id,
-                                'description' => $profileItem->description,
-                                'quantity' => $profileItem->quantity,
-                                'unit_price' => $profileItem->unit_price,
-                                'discount' => $profileItem->discount ?? 0,
-                                'tax_rate' => $profileItem->tax_rate ?? 0,
-                                'tax_amount' => $profileItem->tax_amount ?? 0,
-                                'total' => $profileItem->total,
+                                'item_id' => $line['item_id'],
+                                'description' => $line['description'],
+                                'quantity' => $line['quantity'],
+                                'unit_price' => $line['unit_price'],
+                                'discount' => $line['discount'],
+                                'tax_rate' => $line['tax_rate'],
+                                'tax_amount' => $line['tax_amount'],
+                                'total' => $line['total'],
                             ]);
                         }
 

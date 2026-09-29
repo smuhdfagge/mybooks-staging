@@ -4,6 +4,8 @@ namespace Tests\Feature\Regression;
 
 use App\Models\AccountingPeriod;
 use App\Models\ChartOfAccount;
+use App\Models\Customer;
+use App\Models\Invoice;
 use App\Models\Journal;
 use App\Services\JournalService;
 use App\Services\YearEndCloseService;
@@ -258,5 +260,79 @@ class PhaseBRegressionTest extends TestCase
         $this->assertEqualsWithDelta(0, $cf->viewData('capitalContributions'), 0.001);
         $this->assertEqualsWithDelta(0, $cf->viewData('drawings'), 0.001);
         $this->assertEqualsWithDelta(3300, $cf->viewData('netCashFlow'), 0.001);
+    }
+
+    // ── A4: VAT after discount ──────────────────────────────────
+
+    private function discountedInvoicePayload(Customer $customer): array
+    {
+        return [
+            'customer_id' => $customer->id,
+            'invoice_date' => '2026-09-01',
+            'due_date' => '2026-09-30',
+            'discount_type' => 'percentage',
+            'discount_amount' => 10,
+            'items' => [
+                ['description' => 'Goods A', 'quantity' => 6, 'unit_price' => 10000, 'tax_rate' => 7.5],
+                ['description' => 'Goods B', 'quantity' => 4, 'unit_price' => 10000, 'tax_rate' => 7.5],
+            ],
+        ];
+    }
+
+    private function assertDiscountedTotals(Invoice $invoice): void
+    {
+        $this->assertEqualsWithDelta(100000, (float) $invoice->subtotal, 0.001);
+        $this->assertEqualsWithDelta(10000, (float) $invoice->discount_amount, 0.001);
+        $this->assertEqualsWithDelta(6750, (float) $invoice->tax_amount, 0.001, 'VAT on the discounted 90,000');
+        $this->assertEqualsWithDelta(96750, (float) $invoice->total, 0.001);
+        $this->assertEqualsWithDelta(6750, (float) $invoice->items()->sum('tax_amount'), 0.001);
+    }
+
+    public function test_a4_web_invoice_charges_vat_after_the_discount(): void
+    {
+        $this->createAuthenticatedUser(['create invoices', 'view invoices']);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $this->post(route('invoices.store'), $this->discountedInvoicePayload($customer))->assertSessionHasNoErrors();
+
+        $this->assertDiscountedTotals(Invoice::sole());
+    }
+
+    public function test_a4_api_invoice_charges_vat_after_the_discount(): void
+    {
+        $this->createAuthenticatedUser(['create invoices', 'view invoices']);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $this->postJson('/api/v1/invoices', $this->discountedInvoicePayload($customer))->assertCreated();
+
+        $this->assertDiscountedTotals(Invoice::sole());
+    }
+
+    public function test_a4_document_discount_is_shared_across_lines_with_different_vat(): void
+    {
+        $totals = \App\Services\Sales\DocumentTotals::calculate([
+            ['quantity' => 1, 'unit_price' => 60000, 'tax_rate' => 7.5],
+            ['quantity' => 1, 'unit_price' => 40000, 'tax_rate' => 0], // exempt
+        ], 'fixed', 10000);
+
+        // Discount 6,000 / 4,000; VAT only on the first line: 54,000 x 7.5%.
+        $this->assertEqualsWithDelta(4050, $totals['tax_amount'], 0.001);
+        $this->assertEqualsWithDelta(94050, $totals['total'], 0.001);
+    }
+
+    public function test_a4_editing_an_invoice_keeps_its_discount(): void
+    {
+        $this->createAuthenticatedUser(['create invoices', 'view invoices', 'edit invoices']);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $this->post(route('invoices.store'), $this->discountedInvoicePayload($customer));
+        $invoice = Invoice::sole();
+
+        // The edit form's discount field must be the one the server reads.
+        $html = $this->get(route('invoices.edit', $invoice))->assertOk()->getContent();
+        $this->assertStringContainsString('name="discount_amount"', $html);
+        $this->assertStringNotContainsString('name="discount_value"', $html);
+
+        $this->put(route('invoices.update', $invoice), $this->discountedInvoicePayload($customer))->assertSessionHasNoErrors();
+        $this->assertDiscountedTotals($invoice->fresh());
     }
 }

@@ -101,46 +101,15 @@ class SalesOrderController extends BaseApiController
         $validated['tenant_id'] = $tenantId;
         $validated['created_by'] = auth()->id();
 
-        // Calculate totals
-        $subtotal = 0;
-        $taxAmount = 0;
-
-        foreach ($validated['items'] as &$item) {
-            $itemSubtotal = $item['quantity'] * $item['unit_price'];
-
-            if (! empty($item['discount'])) {
-                if (($item['discount_type'] ?? 'fixed') === 'percentage') {
-                    $itemSubtotal -= $itemSubtotal * ($item['discount'] / 100);
-                } else {
-                    $itemSubtotal -= $item['discount'];
-                }
-            }
-
-            $itemTax = 0;
-            if (! empty($item['tax_rate'])) {
-                $itemTax = $itemSubtotal * ($item['tax_rate'] / 100);
-            }
-
-            $item['tax_amount'] = $itemTax;
-            $item['total'] = $itemSubtotal + $itemTax;
-
-            $subtotal += $itemSubtotal;
-            $taxAmount += $itemTax;
-        }
-
-        $discountAmount = 0;
-        if (! empty($validated['discount_amount'])) {
-            if (($validated['discount_type'] ?? 'fixed') === 'percentage') {
-                $discountAmount = $subtotal * ($validated['discount_amount'] / 100);
-            } else {
-                $discountAmount = $validated['discount_amount'];
-            }
-        }
-
-        $validated['subtotal'] = $subtotal;
-        $validated['tax_amount'] = $taxAmount;
-        $validated['discount_amount'] = $discountAmount;
-        $validated['total'] = $subtotal + $taxAmount - $discountAmount;
+        // Calculate totals: VAT after the discount (A4).
+        $totals = \App\Services\Sales\DocumentTotals::calculate(
+            $validated['items'], $validated['discount_type'] ?? null, $validated['discount_amount'] ?? 0
+        );
+        $validated['items'] = $totals['lines'];
+        $validated['subtotal'] = $totals['subtotal'];
+        $validated['tax_amount'] = $totals['tax_amount'];
+        $validated['discount_amount'] = $totals['discount_amount'];
+        $validated['total'] = $totals['total'];
 
         $order = SalesOrder::create(collect($validated)->except('items')->toArray());
 
@@ -186,45 +155,18 @@ class SalesOrderController extends BaseApiController
         ]);
 
         if (isset($validated['items'])) {
-            $subtotal = 0;
-            $taxAmount = 0;
-
-            foreach ($validated['items'] as &$item) {
-                $itemSubtotal = $item['quantity'] * $item['unit_price'];
-
-                if (! empty($item['discount'])) {
-                    if (($item['discount_type'] ?? 'fixed') === 'percentage') {
-                        $itemSubtotal -= $itemSubtotal * ($item['discount'] / 100);
-                    } else {
-                        $itemSubtotal -= $item['discount'];
-                    }
-                }
-
-                $itemTax = 0;
-                if (! empty($item['tax_rate'])) {
-                    $itemTax = $itemSubtotal * ($item['tax_rate'] / 100);
-                }
-
-                $item['tax_amount'] = $itemTax;
-                $item['total'] = $itemSubtotal + $itemTax;
-
-                $subtotal += $itemSubtotal;
-                $taxAmount += $itemTax;
-            }
-
-            $discountAmount = 0;
-            if (! empty($validated['discount_amount'])) {
-                if (($validated['discount_type'] ?? 'fixed') === 'percentage') {
-                    $discountAmount = $subtotal * ($validated['discount_amount'] / 100);
-                } else {
-                    $discountAmount = $validated['discount_amount'];
-                }
-            }
-
-            $validated['subtotal'] = $subtotal;
-            $validated['tax_amount'] = $taxAmount;
-            $validated['discount_amount'] = $discountAmount;
-            $validated['total'] = $subtotal + $taxAmount - $discountAmount;
+            // VAT after the discount (A4). The stored discount is money, so
+            // without a new one keep it as a fixed amount.
+            $totals = \App\Services\Sales\DocumentTotals::calculate(
+                $validated['items'],
+                array_key_exists('discount_amount', $validated) ? ($validated['discount_type'] ?? null) : 'fixed',
+                array_key_exists('discount_amount', $validated) ? $validated['discount_amount'] : $salesOrder->discount_amount,
+            );
+            $validated['items'] = $totals['lines'];
+            $validated['subtotal'] = $totals['subtotal'];
+            $validated['tax_amount'] = $totals['tax_amount'];
+            $validated['discount_amount'] = $totals['discount_amount'];
+            $validated['total'] = $totals['total'];
 
             $salesOrder->items()->delete();
             foreach ($validated['items'] as $item) {

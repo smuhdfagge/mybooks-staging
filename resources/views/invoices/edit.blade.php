@@ -228,7 +228,7 @@
                                             <option value="percentage">%</option>
                                             <option value="fixed">₦</option>
                                         </select>
-                                        <input type="number" name="discount_value" x-model.number="discountValue" x-show="discountType" min="0" step="0.01"
+                                        <input type="number" name="discount_amount" x-model.number="discountValue" x-show="discountType" min="0" step="0.01"
                                             @input="calculateTotals()"
                                             class="w-20 text-xs rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 py-1">
                                     </div>
@@ -387,10 +387,16 @@
                     }
                 },
 
+                // Share of the invoice discount left after it is applied: VAT is
+                // charged on the discounted amount, as the server does (A4).
+                discountFactor() {
+                    return this.subtotal > 0 ? Math.max(0, 1 - (this.discount || 0) / this.subtotal) : 1;
+                },
+
                 lineTotal(index) {
                     const item = this.items[index];
                     const lineSubtotal = (item.quantity || 0) * (item.unit_price || 0);
-                    const lineTax = lineSubtotal * ((item.tax_rate || 0) / 100);
+                    const lineTax = lineSubtotal * this.discountFactor() * ((item.tax_rate || 0) / 100);
                     return lineSubtotal + lineTax;
                 },
 
@@ -399,18 +405,19 @@
                         return sum + ((item.quantity || 0) * (item.unit_price || 0));
                     }, 0);
 
-                    this.totalTax = this.items.reduce((sum, item) => {
-                        const lineSubtotal = (item.quantity || 0) * (item.unit_price || 0);
-                        return sum + (lineSubtotal * ((item.tax_rate || 0) / 100));
-                    }, 0);
-
                     if (this.discountType === 'percentage') {
                         this.discount = this.subtotal * ((this.discountValue || 0) / 100);
                     } else if (this.discountType === 'fixed') {
-                        this.discount = this.discountValue || 0;
+                        this.discount = Math.min(this.discountValue || 0, this.subtotal);
                     } else {
                         this.discount = 0;
                     }
+
+                    const factor = this.discountFactor();
+                    this.totalTax = this.items.reduce((sum, item) => {
+                        const lineSubtotal = (item.quantity || 0) * (item.unit_price || 0);
+                        return sum + (lineSubtotal * factor * ((item.tax_rate || 0) / 100));
+                    }, 0);
 
                     this.total = this.subtotal + this.totalTax - this.discount;
                 }
