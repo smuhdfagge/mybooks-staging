@@ -16,6 +16,9 @@ class Journal extends Model
 {
     use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
+    /** Year-end closing journal: kept out of the profit and loss (A8). */
+    public const TYPE_CLOSING = 'closing';
+
     protected $fillable = [
         'tenant_id',
         'journal_number',
@@ -29,6 +32,7 @@ class Journal extends Model
         'posted_at',
         'reference_type',
         'reference_id',
+        'journal_type',
         'created_by',
         'approved_by',
     ];

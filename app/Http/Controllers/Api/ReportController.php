@@ -53,68 +53,41 @@ class ReportController extends BaseApiController
         $tenantId = $this->getTenantId();
         $asOf = $request->get('as_of', now()->format('Y-m-d'));
 
-        $accounts = ChartOfAccount::where('tenant_id', $tenantId)
-            ->where('is_active', true)
-            ->orderBy('account_code')
-            ->get();
-
-        // Assets
-        $cashAndBank = $accounts->where('type', 'asset')->whereIn('sub_type', ['cash', 'bank'])->sum('current_balance');
-        $accountsReceivable = $accounts->where('type', 'asset')->where('sub_type', 'accounts_receivable')->sum('current_balance');
-        $inventory = $accounts->where('type', 'asset')->where('sub_type', 'inventory')->sum('current_balance');
-        $otherCurrentAssets = $accounts->where('type', 'asset')->where('sub_type', 'other_current_asset')->sum('current_balance');
-        $fixedAssets = $accounts->where('type', 'asset')->where('sub_type', 'fixed_asset')->sum('current_balance');
-
-        $totalCurrentAssets = $cashAndBank + $accountsReceivable + $inventory + $otherCurrentAssets;
-        $totalAssets = $totalCurrentAssets + $fixedAssets;
-
-        // Liabilities
-        $accountsPayable = $accounts->where('type', 'liability')->where('sub_type', 'accounts_payable')->sum('current_balance');
-        $creditCardPayable = $accounts->where('type', 'liability')->where('sub_type', 'credit_card')->sum('current_balance');
-        $otherCurrentLiabilities = $accounts->where('type', 'liability')->where('sub_type', 'other_current_liability')->sum('current_balance');
-        $longTermLiabilities = $accounts->where('type', 'liability')->where('sub_type', 'long_term_liability')->sum('current_balance');
-
-        $totalCurrentLiabilities = $accountsPayable + $creditCardPayable + $otherCurrentLiabilities;
-        $totalLiabilities = $totalCurrentLiabilities + $longTermLiabilities;
-
-        // Equity
-        $ownersEquity = $accounts->where('type', 'equity')->where('sub_type', 'equity')->sum('current_balance');
-        $retainedEarnings = $accounts->where('type', 'equity')->where('sub_type', 'retained_earnings')->sum('current_balance');
-        $netIncome = $this->calculateNetIncomeForBalanceSheet($tenantId, $asOf);
-
-        $totalEquity = $ownersEquity + $retainedEarnings + $netIncome;
-        $totalLiabilitiesAndEquity = $totalLiabilities + $totalEquity;
+        // Built from the ledger at the chosen date (A2), same as the web report.
+        $bs = app(\App\Services\Accounting\FinancialStatements::class)->balanceSheet($tenantId, $asOf);
 
         return $this->success([
             'as_of' => $asOf,
             'assets' => [
                 'current' => [
-                    'cash_and_bank' => (float) $cashAndBank,
-                    'accounts_receivable' => (float) $accountsReceivable,
-                    'inventory' => (float) $inventory,
-                    'other_current_assets' => (float) $otherCurrentAssets,
-                    'total_current_assets' => (float) $totalCurrentAssets,
+                    'cash_and_bank' => (float) $bs['cashAndBank'],
+                    'accounts_receivable' => (float) $bs['accountsReceivable'],
+                    'inventory' => (float) $bs['inventory'],
+                    'other_current_assets' => (float) $bs['otherCurrentAssets'],
+                    'total_current_assets' => (float) $bs['totalCurrentAssets'],
                 ],
-                'fixed_assets' => (float) $fixedAssets,
-                'total_assets' => (float) $totalAssets,
+                'fixed_assets' => (float) $bs['fixedAssets'],
+                'total_assets' => (float) $bs['totalAssets'],
             ],
             'liabilities' => [
                 'current' => [
-                    'accounts_payable' => (float) $accountsPayable,
-                    'credit_card_payable' => (float) $creditCardPayable,
-                    'other_current_liabilities' => (float) $otherCurrentLiabilities,
-                    'total_current_liabilities' => (float) $totalCurrentLiabilities,
+                    'accounts_payable' => (float) $bs['accountsPayable'],
+                    'credit_card_payable' => (float) $bs['creditCardPayable'],
+                    'other_current_liabilities' => (float) $bs['otherCurrentLiabilities'],
+                    'total_current_liabilities' => (float) $bs['totalCurrentLiabilities'],
                 ],
-                'long_term_liabilities' => (float) $longTermLiabilities,
-                'total_liabilities' => (float) $totalLiabilities,
+                'long_term_liabilities' => (float) $bs['longTermLiabilities'],
+                'total_liabilities' => (float) $bs['totalLiabilities'],
             ],
             'equity' => [
-                'owners_equity' => (float) $ownersEquity,
-                'retained_earnings' => (float) $retainedEarnings,
-                'net_income' => (float) $netIncome,
-                'total_equity' => (float) $totalEquity,
+                'owners_equity' => (float) $bs['ownersEquity'],
+                'retained_earnings' => (float) $bs['retainedEarnings'],
+                'prior_years_profit' => (float) $bs['priorYearsProfit'],
+                'net_income' => (float) $bs['netIncome'],
+                'total_equity' => (float) $bs['totalEquity'],
             ],
-            'total_liabilities_and_equity' => (float) $totalLiabilitiesAndEquity,
+            'total_liabilities_and_equity' => (float) $bs['totalLiabilitiesAndEquity'],
+            'difference' => (float) $bs['difference'],
         ]);
     }
 
@@ -1091,105 +1064,21 @@ class ReportController extends BaseApiController
     }
 
     /**
-     * Calculate Profit & Loss from journal entries
+     * Profit and loss from the ledger, without year-end closing journals
+     * (A8). See App\Services\Accounting\FinancialStatements.
      */
     protected function calculateProfitLossFromJournals(int $tenantId, string $startDate, string $endDate): array
     {
-        $incomeData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-            $query->where('tenant_id', $tenantId)
-                ->whereBetween('journal_date', [$startDate, $endDate])
-                ->where('is_posted', true);
-        })
-            ->whereHas('account', fn ($q) => $q->where('type', 'income'))
-            ->selectRaw('SUM(credit) as total_credit, SUM(debit) as total_debit')
-            ->first();
-
-        $revenue = ($incomeData->total_credit ?? 0) - ($incomeData->total_debit ?? 0);
-
-        $expenseData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-            $query->where('tenant_id', $tenantId)
-                ->whereBetween('journal_date', [$startDate, $endDate])
-                ->where('is_posted', true);
-        })
-            ->whereHas('account', fn ($q) => $q->where('type', 'expense'))
-            ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
-            ->first();
-
-        $totalExpenses = ($expenseData->total_debit ?? 0) - ($expenseData->total_credit ?? 0);
-
-        // COGS breakdown
-        $cogsData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-            $query->where('tenant_id', $tenantId)
-                ->whereBetween('journal_date', [$startDate, $endDate])
-                ->where('is_posted', true);
-        })
-            ->whereHas('account', fn ($q) => $q->where('type', 'expense')->where('sub_type', 'cost_of_goods_sold'))
-            ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
-            ->first();
-
-        $costOfGoodsSold = ($cogsData->total_debit ?? 0) - ($cogsData->total_credit ?? 0);
-        $operatingExpenses = $totalExpenses - $costOfGoodsSold;
-
-        // Payroll expenses
-        $payrollData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $startDate, $endDate) {
-            $query->where('tenant_id', $tenantId)
-                ->whereBetween('journal_date', [$startDate, $endDate])
-                ->where('is_posted', true);
-        })
-            ->whereHas('account', function ($q) {
-                $q->where('type', 'expense')
-                    ->where(function ($q2) {
-                        $q2->where('name', 'like', '%salary%')
-                            ->orWhere('name', 'like', '%wage%')
-                            ->orWhere('name', 'like', '%payroll%');
-                    });
-            })
-            ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
-            ->first();
-
-        $payrollExpenses = ($payrollData->total_debit ?? 0) - ($payrollData->total_credit ?? 0);
-        $operatingExpenses -= $payrollExpenses;
-
-        return [
-            'revenue' => $revenue,
-            'costOfGoodsSold' => $costOfGoodsSold,
-            'operatingExpenses' => $operatingExpenses,
-            'payrollExpenses' => $payrollExpenses,
-            'totalExpenses' => $totalExpenses,
-            'netProfit' => $revenue - $totalExpenses,
-        ];
+        return app(\App\Services\Accounting\FinancialStatements::class)->profitAndLoss($tenantId, $startDate, $endDate);
     }
 
     /**
-     * Calculate net income for balance sheet
+     * This financial year's profit up to $asOf, as shown on the balance
+     * sheet (A2): from the business's own financial-year start.
      */
     protected function calculateNetIncomeForBalanceSheet(int $tenantId, string $asOf): float
     {
-        $fiscalYearStart = Carbon::parse($asOf)->startOfYear()->format('Y-m-d');
-
-        $incomeData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $fiscalYearStart, $asOf) {
-            $query->where('tenant_id', $tenantId)
-                ->whereBetween('journal_date', [$fiscalYearStart, $asOf])
-                ->where('is_posted', true);
-        })
-            ->whereHas('account', fn ($q) => $q->where('type', 'income'))
-            ->selectRaw('SUM(credit) as total_credit, SUM(debit) as total_debit')
-            ->first();
-
-        $totalIncome = ($incomeData->total_credit ?? 0) - ($incomeData->total_debit ?? 0);
-
-        $expenseData = JournalEntry::whereHas('journal', function ($query) use ($tenantId, $fiscalYearStart, $asOf) {
-            $query->where('tenant_id', $tenantId)
-                ->whereBetween('journal_date', [$fiscalYearStart, $asOf])
-                ->where('is_posted', true);
-        })
-            ->whereHas('account', fn ($q) => $q->where('type', 'expense'))
-            ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
-            ->first();
-
-        $totalExpenses = ($expenseData->total_debit ?? 0) - ($expenseData->total_credit ?? 0);
-
-        return $totalIncome - $totalExpenses;
+        return app(\App\Services\Accounting\FinancialStatements::class)->balanceSheet($tenantId, $asOf)['netIncome'];
     }
 
     /**

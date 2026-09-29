@@ -41,6 +41,11 @@ class AccountCodeService
         'garnishments_payable' => '2360',
         'sales_tax_payable' => '2400',
 
+        // Equity
+        'owners_capital' => '3000',
+        'retained_earnings' => '3200',
+        'income_summary' => '3300',
+
         // Income
         'sales_revenue' => '4000',
 

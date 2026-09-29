@@ -52,98 +52,8 @@ class FinancialReportController extends ReportController
         $tenantId = auth()->user()->tenant_id;
         $asOf = $request->get('as_of', now()->format('Y-m-d'));
 
-        // Get all account balances from Chart of Accounts grouped by type and sub_type
-        $accounts = ChartOfAccount::where('tenant_id', $tenantId)
-            ->where('is_active', true)
-            ->orderBy('account_code')
-            ->get();
-
-        // ========== ASSETS ==========
-        // Current Assets
-        $cashAccounts = $accounts->where('type', 'asset')->whereIn('sub_type', ['cash', 'bank']);
-        $accountsReceivableAccounts = $accounts->where('type', 'asset')->where('sub_type', 'accounts_receivable');
-        $inventoryAccounts = $accounts->where('type', 'asset')->where('sub_type', 'inventory');
-        $otherCurrentAssetAccounts = $accounts->where('type', 'asset')->where('sub_type', 'other_current_asset');
-
-        // Fixed Assets
-        $fixedAssetAccounts = $accounts->where('type', 'asset')->where('sub_type', 'fixed_asset');
-
-        // Calculate asset totals
-        $cashAndBank = $cashAccounts->sum('current_balance');
-        $accountsReceivable = $accountsReceivableAccounts->sum('current_balance');
-        $inventory = $inventoryAccounts->sum('current_balance');
-        $otherCurrentAssets = $otherCurrentAssetAccounts->sum('current_balance');
-        $fixedAssets = $fixedAssetAccounts->sum('current_balance');
-
-        $totalCurrentAssets = $cashAndBank + $accountsReceivable + $inventory + $otherCurrentAssets;
-        $totalAssets = $totalCurrentAssets + $fixedAssets;
-
-        // ========== LIABILITIES ==========
-        // Current Liabilities
-        $accountsPayableAccounts = $accounts->where('type', 'liability')->where('sub_type', 'accounts_payable');
-        $creditCardAccounts = $accounts->where('type', 'liability')->where('sub_type', 'credit_card');
-        $otherCurrentLiabilityAccounts = $accounts->where('type', 'liability')->where('sub_type', 'other_current_liability');
-
-        // Long-term Liabilities
-        $longTermLiabilityAccounts = $accounts->where('type', 'liability')->where('sub_type', 'long_term_liability');
-
-        // Calculate liability totals
-        $accountsPayable = $accountsPayableAccounts->sum('current_balance');
-        $creditCardPayable = $creditCardAccounts->sum('current_balance');
-        $otherCurrentLiabilities = $otherCurrentLiabilityAccounts->sum('current_balance');
-        $longTermLiabilities = $longTermLiabilityAccounts->sum('current_balance');
-
-        $totalCurrentLiabilities = $accountsPayable + $creditCardPayable + $otherCurrentLiabilities;
-        $totalLiabilities = $totalCurrentLiabilities + $longTermLiabilities;
-
-        // ========== EQUITY ==========
-        $equityAccounts = $accounts->where('type', 'equity')->where('sub_type', 'equity');
-        $retainedEarningsAccounts = $accounts->where('type', 'equity')->where('sub_type', 'retained_earnings');
-
-        $ownersEquity = $equityAccounts->sum('current_balance');
-        $retainedEarnings = $retainedEarningsAccounts->sum('current_balance');
-
-        // Calculate Net Income for the period (Income - Expenses from journal entries)
-        $netIncome = $this->calculateNetIncomeForBalanceSheet($tenantId, $asOf);
-
-        $totalEquity = $ownersEquity + $retainedEarnings + $netIncome;
-        $totalLiabilitiesAndEquity = $totalLiabilities + $totalEquity;
-
-        // Prepare detailed account lists for the view
-        $assetDetails = [
-            'cash' => $cashAccounts,
-            'accounts_receivable' => $accountsReceivableAccounts,
-            'inventory' => $inventoryAccounts,
-            'other_current' => $otherCurrentAssetAccounts,
-            'fixed' => $fixedAssetAccounts,
-        ];
-
-        $liabilityDetails = [
-            'accounts_payable' => $accountsPayableAccounts,
-            'credit_card' => $creditCardAccounts,
-            'other_current' => $otherCurrentLiabilityAccounts,
-            'long_term' => $longTermLiabilityAccounts,
-        ];
-
-        $equityDetails = [
-            'capital' => $equityAccounts,
-            'retained_earnings' => $retainedEarningsAccounts,
-        ];
-
-        return view('reports.balance-sheet', compact(
-            'asOf',
-            // Asset totals
-            'cashAndBank', 'accountsReceivable', 'inventory', 'otherCurrentAssets', 'fixedAssets',
-            'totalCurrentAssets', 'totalAssets',
-            // Liability totals
-            'accountsPayable', 'creditCardPayable', 'otherCurrentLiabilities', 'longTermLiabilities',
-            'totalCurrentLiabilities', 'totalLiabilities',
-            // Equity totals
-            'ownersEquity', 'retainedEarnings', 'netIncome', 'totalEquity',
-            'totalLiabilitiesAndEquity',
-            // Account details for expandable view
-            'assetDetails', 'liabilityDetails', 'equityDetails'
-        ));
+        // Built from the ledger at the chosen date (A2).
+        return view('reports.balance-sheet', app(\App\Services\Accounting\FinancialStatements::class)->balanceSheet($tenantId, $asOf));
     }
 
     /**
@@ -424,48 +334,8 @@ class FinancialReportController extends ReportController
         $asOf = $request->get('as_of', now()->format('Y-m-d'));
         $format = $request->get('format', 'pdf');
 
-        // Get all account balances from Chart of Accounts grouped by type and sub_type
-        $accounts = ChartOfAccount::where('tenant_id', $tenantId)
-            ->where('is_active', true)
-            ->orderBy('account_code')
-            ->get();
-
-        // Assets
-        $cashAndBank = $accounts->where('type', 'asset')->whereIn('sub_type', ['cash', 'bank'])->sum('current_balance');
-        $accountsReceivable = $accounts->where('type', 'asset')->where('sub_type', 'accounts_receivable')->sum('current_balance');
-        $inventory = $accounts->where('type', 'asset')->where('sub_type', 'inventory')->sum('current_balance');
-        $otherCurrentAssets = $accounts->where('type', 'asset')->where('sub_type', 'other_current_asset')->sum('current_balance');
-        $fixedAssets = $accounts->where('type', 'asset')->where('sub_type', 'fixed_asset')->sum('current_balance');
-
-        $totalCurrentAssets = $cashAndBank + $accountsReceivable + $inventory + $otherCurrentAssets;
-        $totalAssets = $totalCurrentAssets + $fixedAssets;
-
-        // Liabilities
-        $accountsPayable = $accounts->where('type', 'liability')->where('sub_type', 'accounts_payable')->sum('current_balance');
-        $creditCardPayable = $accounts->where('type', 'liability')->where('sub_type', 'credit_card')->sum('current_balance');
-        $otherCurrentLiabilities = $accounts->where('type', 'liability')->where('sub_type', 'other_current_liability')->sum('current_balance');
-        $longTermLiabilities = $accounts->where('type', 'liability')->where('sub_type', 'long_term_liability')->sum('current_balance');
-
-        $totalCurrentLiabilities = $accountsPayable + $creditCardPayable + $otherCurrentLiabilities;
-        $totalLiabilities = $totalCurrentLiabilities + $longTermLiabilities;
-
-        // Equity
-        $ownersEquity = $accounts->where('type', 'equity')->where('sub_type', 'equity')->sum('current_balance');
-        $retainedEarnings = $accounts->where('type', 'equity')->where('sub_type', 'retained_earnings')->sum('current_balance');
-        $netIncome = $this->calculateNetIncomeForBalanceSheet($tenantId, $asOf);
-
-        $totalEquity = $ownersEquity + $retainedEarnings + $netIncome;
-        $totalLiabilitiesAndEquity = $totalLiabilities + $totalEquity;
-
-        $data = compact(
-            'asOf',
-            'cashAndBank', 'accountsReceivable', 'inventory', 'otherCurrentAssets', 'fixedAssets',
-            'totalCurrentAssets', 'totalAssets',
-            'accountsPayable', 'creditCardPayable', 'otherCurrentLiabilities', 'longTermLiabilities',
-            'totalCurrentLiabilities', 'totalLiabilities',
-            'ownersEquity', 'retainedEarnings', 'netIncome', 'totalEquity',
-            'totalLiabilitiesAndEquity'
-        );
+        $data = app(\App\Services\Accounting\FinancialStatements::class)->balanceSheet($tenantId, $asOf);
+        unset($data['assetDetails'], $data['liabilityDetails'], $data['equityDetails']);
 
         if ($format === 'csv') {
             $exportData = $this->exportService->balanceSheetData($data);
