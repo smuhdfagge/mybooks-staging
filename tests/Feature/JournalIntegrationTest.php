@@ -191,7 +191,7 @@ class JournalIntegrationTest extends TestCase
 
         $journal = Journal::where('reference_type', Payroll::class)
             ->where('reference_id', $payroll->id)
-            ->first();
+            ->orderBy('id')->first();
 
         $this->assertNotNull($journal);
         $this->assertEquals('posted', $journal->status);
@@ -262,7 +262,7 @@ class JournalIntegrationTest extends TestCase
 
         $this->assertFalse($result);
         $this->assertEquals(Payroll::STATUS_DRAFT, $payroll->fresh()->status);
-        $this->assertNull(Journal::where('reference_type', Payroll::class)->where('reference_id', $payroll->id)->first());
+        $this->assertNull(Journal::where('reference_type', Payroll::class)->where('reference_id', $payroll->id)->orderBy('id')->first());
     }
 
     public function test_payroll_is_paid_helper(): void
