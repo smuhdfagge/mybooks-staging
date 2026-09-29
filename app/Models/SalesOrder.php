@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SalesOrder extends Model
 {
-    use \App\Traits\HasDocumentNumber;
+    use \App\Traits\GuardsStatusTransitions, \App\Traits\HasDocumentNumber;
     use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     protected $fillable = [
@@ -138,5 +138,11 @@ class SalesOrder extends Model
     protected function documentTotalParts(): array
     {
         return [['subtotal', 'tax_amount'], ['discount_amount']];
+    }
+
+    /** Allowed status moves (Q3). */
+    protected static function statusEnum(): string
+    {
+        return \App\Enums\SalesOrderStatus::class;
     }
 }

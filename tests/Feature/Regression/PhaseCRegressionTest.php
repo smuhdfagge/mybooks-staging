@@ -532,4 +532,48 @@ class PhaseCRegressionTest extends TestCase
             $this->assertEqualsWithDelta(3.99, (float) $doc->fresh()->total, 0.0001, class_basename($doc));
         }
     }
+
+    // ── Q3: statuses ────────────────────────────────────────────
+
+    public function test_q3_a_cancelled_invoice_or_bill_cannot_be_reopened(): void
+    {
+        $this->createAuthenticatedUser();
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $invoice = Invoice::withoutEvents(fn () => Invoice::factory()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'status' => 'cancelled']));
+        $bill = \App\Models\Bill::withoutEvents(fn () => \App\Models\Bill::factory()->create(['tenant_id' => $this->tenant->id, 'vendor_id' => $vendor->id, 'status' => 'paid']));
+
+        foreach ([[$invoice, 'unpaid'], [$bill, 'draft'], [$invoice, 'finished']] as [$doc, $status]) {
+            try {
+                $doc->update(['status' => $status]);
+                $this->fail(class_basename($doc)." moved to {$status}");
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                $this->assertArrayHasKey('status', $e->errors());
+            }
+        }
+        $this->assertSame('cancelled', $invoice->fresh()->status);
+        $this->assertSame('paid', $bill->fresh()->status);
+
+        // Payment-driven moves still work.
+        $bill->update(['status' => 'partial']);
+        $this->assertSame('partial', $bill->fresh()->status);
+    }
+
+    public function test_q3_deleting_a_purchase_orders_bill_makes_the_order_billable_again(): void
+    {
+        $this->createAuthenticatedUser(['create bills', 'view bills', 'delete bills']);
+        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $order = \App\Models\PurchaseOrder::create([
+            'tenant_id' => $this->tenant->id, 'vendor_id' => $vendor->id, 'order_number' => 'PO-000007',
+            'order_date' => '2026-09-01', 'status' => 'confirmed', 'subtotal' => 6000, 'total' => 6000,
+        ]);
+        $purchase = $this->samePurchase($vendor, $this->stockedItem(0));
+        unset($purchase['items'][0]);
+
+        $this->post(route('bills.store'), $purchase + ['purchase_order_id' => $order->id])->assertSessionHasNoErrors();
+        $this->assertSame('billed', $order->fresh()->status);
+
+        $this->delete(route('bills.destroy', \App\Models\Bill::firstOrFail()))->assertSessionHasNoErrors();
+        $this->assertSame('confirmed', $order->fresh()->status);
+    }
 }

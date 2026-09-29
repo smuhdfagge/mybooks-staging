@@ -2,6 +2,7 @@
 
 namespace App\Actions\Bills;
 
+use App\Enums\BillStatus;
 use App\Models\Bill;
 use App\Models\BillItem;
 use App\Models\PurchaseOrder;
@@ -33,7 +34,7 @@ use Illuminate\Validation\ValidationException;
  */
 class SaveBill
 {
-    public const START_STATUSES = ['draft', 'unpaid'];
+    public const START_STATUSES = [BillStatus::Draft->value, BillStatus::Unpaid->value];
 
     /** @param array<string, mixed> $data */
     public function create(int $tenantId, array $data, ?int $userId = null): Bill

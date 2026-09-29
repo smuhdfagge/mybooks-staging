@@ -2,6 +2,7 @@
 
 namespace App\Actions\Invoices;
 
+use App\Enums\InvoiceStatus;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Services\Sales\DocumentTotals;
@@ -27,7 +28,7 @@ use Illuminate\Validation\ValidationException;
 class SaveInvoice
 {
     /** Statuses a new invoice may start in. Payments and dates set the rest (I3). */
-    public const START_STATUSES = ['draft', 'sent', 'unpaid'];
+    public const START_STATUSES = [InvoiceStatus::Draft->value, InvoiceStatus::Sent->value, InvoiceStatus::Unpaid->value];
 
     /**
      * @param  array<string, mixed>  $data

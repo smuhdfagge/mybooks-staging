@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PurchaseOrderStatus;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
@@ -13,14 +14,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PurchaseOrder extends Model
 {
-    use \App\Traits\HasDocumentNumber;
+    use \App\Traits\GuardsStatusTransitions, \App\Traits\HasDocumentNumber;
     use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     /** A bill has been raised for this order (finding N8). */
-    public const STATUS_BILLED = 'billed';
+    public const STATUS_BILLED = PurchaseOrderStatus::Billed->value;
 
     /** Statuses from which a bill can be raised. */
-    public const BILLABLE = ['confirmed', 'partially_received', 'received'];
+    public const BILLABLE = [PurchaseOrderStatus::Confirmed->value, PurchaseOrderStatus::PartiallyReceived->value, PurchaseOrderStatus::Received->value];
 
     protected $fillable = [
         'tenant_id',
@@ -112,5 +113,11 @@ class PurchaseOrder extends Model
     protected function documentTotalParts(): array
     {
         return [['subtotal', 'tax_amount'], ['discount_amount']];
+    }
+
+    /** Allowed status moves (Q3). */
+    protected static function statusEnum(): string
+    {
+        return \App\Enums\PurchaseOrderStatus::class;
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Actions\SalesOrders;
 
+use App\Enums\SalesOrderStatus;
 use App\Models\SalesOrder;
 use App\Models\SalesOrderItem;
 use App\Services\Sales\DocumentTotals;
@@ -23,15 +24,15 @@ use Illuminate\Validation\ValidationException;
  */
 class SaveSalesOrder
 {
-    public const START_STATUSES = ['draft', 'confirmed'];
+    public const START_STATUSES = [SalesOrderStatus::Draft->value, SalesOrderStatus::Confirmed->value];
 
     /** Only draft and confirmed orders can be changed. */
-    public const EDITABLE = ['draft', 'confirmed'];
+    public const EDITABLE = [SalesOrderStatus::Draft->value, SalesOrderStatus::Confirmed->value];
 
-    /** Status changes allowed through an update; the rest follow invoicing and delivery. */
+    /** Status changes allowed through an update; the rest follow invoicing and delivery (the model guards them all, Q3). */
     public const TRANSITIONS = [
-        'draft' => ['confirmed', 'cancelled'],
-        'confirmed' => ['cancelled'],
+        'draft' => [SalesOrderStatus::Confirmed->value, SalesOrderStatus::Cancelled->value],
+        'confirmed' => [SalesOrderStatus::Cancelled->value],
     ];
 
     /** @param array<string, mixed> $data */

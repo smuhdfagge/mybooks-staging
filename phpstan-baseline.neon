@@ -511,20 +511,8 @@ parameters:
 			path: app/Livewire/PaymentsMade/PaymentsMadeTable.php
 
 		-
-			message: '#^Parameter \#2 \$amount of method App\\Services\\BankService\:\:credit\(\) expects float, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Livewire/PaymentsMade/PaymentsMadeTable.php
-
-		-
 			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\PaymentsReceived\\PaymentsReceivedTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/PaymentsReceived/PaymentsReceivedTable.php
-
-		-
-			message: '#^Parameter \#2 \$amount of method App\\Services\\BankService\:\:debit\(\) expects float, string given\.$#'
-			identifier: argument.type
 			count: 1
 			path: app/Livewire/PaymentsReceived/PaymentsReceivedTable.php
 

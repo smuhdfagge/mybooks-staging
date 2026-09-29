@@ -24,6 +24,12 @@ class DeleteBill
             if ($bill->inventory_updated_at) {
                 $bill->reverseInventory();
             }
+            // The order can be billed again once its bill is gone.
+            $order = $bill->purchase_order_id ? \App\Models\PurchaseOrder::find($bill->purchase_order_id) : null;
+            if ($order && $order->status === \App\Enums\PurchaseOrderStatus::Billed->value
+                && ! \App\Models\Bill::where('purchase_order_id', $order->id)->whereKeyNot($bill->id)->exists()) {
+                $order->update(['status' => \App\Enums\PurchaseOrderStatus::Confirmed->value]);
+            }
             $bill->items()->delete();
             $bill->delete();
         });
