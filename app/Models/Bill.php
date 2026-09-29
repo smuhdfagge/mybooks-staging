@@ -148,8 +148,7 @@ class Bill extends Model
 
     public function updateInventory()
     {
-        DB::beginTransaction();
-        try {
+        DB::transaction(function () {
             foreach ($this->items as $billItem) {
                 if ($billItem->item_id) {
                     $item = Item::find($billItem->item_id);
@@ -212,12 +211,7 @@ class Bill extends Model
             // Mark inventory as updated
             $this->inventory_updated_at = now();
             $this->withoutPeriodValidation()->save();
-
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            throw $e;
-        }
+        });
     }
 
     /** Whether every unit this bill put into stock is still there (none sold or used). */

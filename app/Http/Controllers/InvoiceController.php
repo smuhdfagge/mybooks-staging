@@ -152,60 +152,59 @@ class InvoiceController extends Controller
             return redirect()->back()->with('error', 'Only paid invoices can be released.');
         }
 
-        DB::beginTransaction();
         try {
-            // Generate waybill number
-            $waybillNumber = Invoice::generateWaybillNumber(auth()->user()->tenant_id);
+            $waybillNumber = DB::transaction(function () use ($invoice) {
+                // Generate waybill number
+                $waybillNumber = Invoice::generateWaybillNumber(auth()->user()->tenant_id);
 
-            // Deduct inventory for each item (move from reserved to sold)
-            foreach ($invoice->items as $invoiceItem) {
-                if ($invoiceItem->item_id) {
-                    $inventory = Inventory::where('item_id', $invoiceItem->item_id)
-                        ->where('tenant_id', auth()->user()->tenant_id)
-                        ->lockForUpdate()
-                        ->first();
+                // Deduct inventory for each item (move from reserved to sold)
+                foreach ($invoice->items as $invoiceItem) {
+                    if ($invoiceItem->item_id) {
+                        $inventory = Inventory::where('item_id', $invoiceItem->item_id)
+                            ->where('tenant_id', auth()->user()->tenant_id)
+                            ->lockForUpdate()
+                            ->first();
 
-                    if ($inventory) {
-                        // Deduct from both quantity and reserved_quantity
-                        $previousQty = $inventory->quantity;
-                        // Refuse rather than silently clamping stock at zero (M4)
-                        if ((float) $inventory->quantity < (float) $invoiceItem->quantity) {
-                            throw new \RuntimeException("Not enough stock to release {$invoiceItem->description}: {$inventory->quantity} on hand, {$invoiceItem->quantity} needed.");
+                        if ($inventory) {
+                            // Deduct from both quantity and reserved_quantity
+                            $previousQty = $inventory->quantity;
+                            // Refuse rather than silently clamping stock at zero (M4)
+                            if ((float) $inventory->quantity < (float) $invoiceItem->quantity) {
+                                throw new \RuntimeException("Not enough stock to release {$invoiceItem->description}: {$inventory->quantity} on hand, {$invoiceItem->quantity} needed.");
+                            }
+                            $inventory->quantity = $inventory->quantity - $invoiceItem->quantity;
+                            $inventory->reserved_quantity = max(0, $inventory->reserved_quantity - $invoiceItem->quantity);
+                            $inventory->save();
+
+                            // Record inventory history
+                            InventoryHistory::create([
+                                'tenant_id' => auth()->user()->tenant_id,
+                                'item_id' => $invoiceItem->item_id,
+                                'type' => 'out',
+                                'quantity' => -$invoiceItem->quantity,
+                                'reference_type' => 'invoice',
+                                'reference_id' => $invoice->id,
+                                'notes' => "Released via Invoice #{$invoice->invoice_number}, Waybill #{$waybillNumber}",
+                                'created_by' => auth()->id(),
+                            ]);
                         }
-                        $inventory->quantity = $inventory->quantity - $invoiceItem->quantity;
-                        $inventory->reserved_quantity = max(0, $inventory->reserved_quantity - $invoiceItem->quantity);
-                        $inventory->save();
-
-                        // Record inventory history
-                        InventoryHistory::create([
-                            'tenant_id' => auth()->user()->tenant_id,
-                            'item_id' => $invoiceItem->item_id,
-                            'type' => 'out',
-                            'quantity' => -$invoiceItem->quantity,
-                            'reference_type' => 'invoice',
-                            'reference_id' => $invoice->id,
-                            'notes' => "Released via Invoice #{$invoice->invoice_number}, Waybill #{$waybillNumber}",
-                            'created_by' => auth()->id(),
-                        ]);
                     }
                 }
-            }
 
-            // Update invoice with release info
-            $invoice->update([
-                'released_at' => now(),
-                'waybill_number' => $waybillNumber,
-            ]);
+                // Update invoice with release info
+                $invoice->update([
+                    'released_at' => now(),
+                    'waybill_number' => $waybillNumber,
+                ]);
 
-            // Log the activity
-            $invoice->logCustomActivity(ActivityLog::ACTION_RELEASED, "Invoice '{$invoice->invoice_number}' was released with Waybill #{$waybillNumber}");
+                // Log the activity
+                $invoice->logCustomActivity(ActivityLog::ACTION_RELEASED, "Invoice '{$invoice->invoice_number}' was released with Waybill #{$waybillNumber}");
 
-            DB::commit();
+                return $waybillNumber;
+            });
 
             return redirect()->back()->with('success', "Invoice released successfully. Waybill Number: {$waybillNumber}");
         } catch (\Exception $e) {
-            DB::rollBack();
-
             return redirect()->back()->with('error', 'Failed to release invoice: '.$e->getMessage());
         }
     }

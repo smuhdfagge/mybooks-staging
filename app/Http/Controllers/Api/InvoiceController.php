@@ -192,56 +192,55 @@ class InvoiceController extends BaseApiController
             return $this->error('Only paid invoices can be released.', 422);
         }
 
-        DB::beginTransaction();
         try {
-            $waybillNumber = Invoice::generateWaybillNumber($invoice->tenant_id);
+            $waybillNumber = DB::transaction(function () use ($invoice) {
+                $waybillNumber = Invoice::generateWaybillNumber($invoice->tenant_id);
 
-            foreach ($invoice->items as $invoiceItem) {
-                if ($invoiceItem->item_id) {
-                    $inventory = Inventory::where('item_id', $invoiceItem->item_id)
-                        ->where('tenant_id', $invoice->tenant_id)
-                        ->lockForUpdate()
-                        ->first();
+                foreach ($invoice->items as $invoiceItem) {
+                    if ($invoiceItem->item_id) {
+                        $inventory = Inventory::where('item_id', $invoiceItem->item_id)
+                            ->where('tenant_id', $invoice->tenant_id)
+                            ->lockForUpdate()
+                            ->first();
 
-                    if ($inventory) {
-                        // Refuse rather than silently clamping stock at zero (M4)
-                        if ((float) $inventory->quantity < (float) $invoiceItem->quantity) {
-                            throw new \RuntimeException("Not enough stock to release {$invoiceItem->description}: {$inventory->quantity} on hand, {$invoiceItem->quantity} needed.");
+                        if ($inventory) {
+                            // Refuse rather than silently clamping stock at zero (M4)
+                            if ((float) $inventory->quantity < (float) $invoiceItem->quantity) {
+                                throw new \RuntimeException("Not enough stock to release {$invoiceItem->description}: {$inventory->quantity} on hand, {$invoiceItem->quantity} needed.");
+                            }
+                            $inventory->quantity = $inventory->quantity - $invoiceItem->quantity;
+                            $inventory->reserved_quantity = max(0, $inventory->reserved_quantity - $invoiceItem->quantity);
+                            $inventory->save();
+
+                            InventoryHistory::create([
+                                'tenant_id' => $invoice->tenant_id,
+                                'item_id' => $invoiceItem->item_id,
+                                'type' => 'out',
+                                'quantity' => -$invoiceItem->quantity,
+                                'reference_type' => 'invoice',
+                                'reference_id' => $invoice->id,
+                                'notes' => "Released via Invoice #{$invoice->invoice_number}, Waybill #{$waybillNumber}",
+                                'created_by' => auth()->id(),
+                            ]);
                         }
-                        $inventory->quantity = $inventory->quantity - $invoiceItem->quantity;
-                        $inventory->reserved_quantity = max(0, $inventory->reserved_quantity - $invoiceItem->quantity);
-                        $inventory->save();
-
-                        InventoryHistory::create([
-                            'tenant_id' => $invoice->tenant_id,
-                            'item_id' => $invoiceItem->item_id,
-                            'type' => 'out',
-                            'quantity' => -$invoiceItem->quantity,
-                            'reference_type' => 'invoice',
-                            'reference_id' => $invoice->id,
-                            'notes' => "Released via Invoice #{$invoice->invoice_number}, Waybill #{$waybillNumber}",
-                            'created_by' => auth()->id(),
-                        ]);
                     }
                 }
-            }
 
-            $invoice->update([
-                'released_at' => now(),
-                'waybill_number' => $waybillNumber,
-            ]);
+                $invoice->update([
+                    'released_at' => now(),
+                    'waybill_number' => $waybillNumber,
+                ]);
 
-            $invoice->logCustomActivity(ActivityLog::ACTION_RELEASED, "Invoice '{$invoice->invoice_number}' was released with waybill #{$waybillNumber}");
+                $invoice->logCustomActivity(ActivityLog::ACTION_RELEASED, "Invoice '{$invoice->invoice_number}' was released with waybill #{$waybillNumber}");
 
-            DB::commit();
+                return $waybillNumber;
+            });
 
             return $this->success([
                 'invoice' => new InvoiceResource($invoice->fresh(['customer', 'items.item'])),
                 'waybill_number' => $waybillNumber,
             ], 'Invoice released successfully');
         } catch (\Exception $e) {
-            DB::rollBack();
-
             return $this->error('Failed to release invoice: '.$e->getMessage(), 500);
         }
     }
