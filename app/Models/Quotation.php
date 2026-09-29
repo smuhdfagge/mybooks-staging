@@ -95,39 +95,28 @@ class Quotation extends Model
      */
     public function convertToSalesOrder(): SalesOrder
     {
-        $tenantId = $this->tenant_id;
-
-        $salesOrder = SalesOrder::create([
-            'tenant_id' => $tenantId,
+        // The same rules as every other sales order (R3), so the order's
+        // figures match the quotation's and the invoice that follows.
+        $salesOrder = app(\App\Actions\SalesOrders\SaveSalesOrder::class)->create($this->tenant_id, [
             'customer_id' => $this->customer_id,
-            'order_number' => SalesOrder::generateNumber($tenantId),
             'reference' => "From {$this->quotation_number}",
-            'order_date' => now(),
-            'expected_date' => $this->expiry_date,
-            'status' => 'draft',
-            'subtotal' => $this->subtotal,
-            'tax_amount' => $this->tax_amount,
-            'discount_amount' => $this->discount_amount,
-            'discount_type' => $this->discount_type,
-            'total' => $this->total,
+            'order_date' => now()->toDateString(),
+            'expected_date' => $this->expiry_date?->toDateString(),
             'notes' => $this->notes,
             'terms' => $this->terms,
-            'created_by' => auth()->id(),
-        ]);
-
-        foreach ($this->items as $item) {
-            SalesOrderItem::create([
-                'sales_order_id' => $salesOrder->id,
-                'item_id' => $item->item_id,
-                'description' => $item->description,
-                'quantity' => $item->quantity,
-                'unit_price' => $item->unit_price,
-                'discount' => $item->discount,
-                'tax_rate' => $item->tax_rate,
-                'tax_amount' => $item->tax_amount,
-                'total' => $item->total,
-            ]);
-        }
+            // Stored as money on the quotation.
+            'discount_type' => 'fixed',
+            'discount_amount' => $this->discount_amount ?? 0,
+            'items' => $this->items->map(fn ($i) => [
+                'item_id' => $i->item_id,
+                'description' => $i->description,
+                'quantity' => $i->quantity,
+                'unit_price' => $i->unit_price,
+                'discount' => $i->discount ?? 0,
+                'discount_type' => 'fixed',
+                'tax_rate' => $i->tax_rate ?? 0,
+            ])->all(),
+        ], auth()->id());
 
         $this->update([
             'status' => self::STATUS_CONVERTED,

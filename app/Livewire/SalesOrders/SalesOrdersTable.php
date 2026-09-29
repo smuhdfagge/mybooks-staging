@@ -161,24 +161,24 @@ class SalesOrdersTable extends Component
                         continue;
                     }
 
-                    // Check if order has been invoiced
-                    if ($order->invoices()->exists()) {
+                    // Same rules as the web and API delete (R3).
+                    $delete = app(\App\Actions\SalesOrders\DeleteSalesOrder::class);
+                    if ($delete->blockedBecause($order)) {
                         $skippedCount++;
 
                         continue;
                     }
 
-                    $order->items()->delete();
-                    $order->delete();
+                    $delete->handle($order);
                     $deletedCount++;
                 }
 
                 if ($deletedCount > 0 && $skippedCount > 0) {
-                    $this->successMessage = "Deleted {$deletedCount} order(s). Skipped {$skippedCount} order(s) with existing invoices.";
+                    $this->successMessage = "Deleted {$deletedCount} order(s). Skipped {$skippedCount} order(s) with invoices or delivery notes.";
                 } elseif ($deletedCount > 0) {
                     $this->successMessage = "Successfully deleted {$deletedCount} order(s).";
                 } else {
-                    $this->errorMessage = 'Could not delete any orders. All selected orders have existing invoices.';
+                    $this->errorMessage = 'Could not delete any orders. All selected orders have invoices or delivery notes.';
                 }
                 break;
 

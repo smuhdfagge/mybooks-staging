@@ -159,6 +159,8 @@
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                             </td>
                                             <td class="py-2 pr-2">
+                                                {{-- Discounts set elsewhere (API, quotation) are kept. --}}
+                                                <input type="hidden" :name="`items[${index}][discount]`" :value="item.discount || 0">
                                                 <input type="number" :name="`items[${index}][tax_rate]`" x-model.number="item.tax_rate" min="0" max="100" step="0.01"
                                                     @input="calculateTotals()"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
@@ -299,6 +301,7 @@
                     'description' => $item->description,
                     'quantity' => $item->quantity,
                     'unit_price' => $item->unit_price,
+                    'discount' => (float) $item->discount,
                     'tax_rate' => $item->tax_rate,
                     'itemSearch' => '',
                     'itemDropdownOpen' => false,

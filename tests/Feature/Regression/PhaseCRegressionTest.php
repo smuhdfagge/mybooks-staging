@@ -307,4 +307,110 @@ class PhaseCRegressionTest extends TestCase
         $this->assertEqualsWithDelta(1500, (float) $bill->items()->value('tax_amount'), 0.001);
         $this->assertEqualsWithDelta(2, $this->onHand($item), 0.001);
     }
+
+    // ── R3: one set of sales order rules ────────────────────────
+
+    /** @return array<string, mixed> */
+    private function sameOrder(Customer $customer): array
+    {
+        return [
+            'customer_id' => $customer->id, 'order_date' => '2026-09-01',
+            'discount_type' => 'fixed', 'discount_amount' => 2400,
+            'items' => [
+                ['description' => 'Goods', 'quantity' => 2, 'unit_price' => 10000, 'discount' => 2000, 'tax_rate' => 7.5],
+                ['description' => 'Delivery', 'quantity' => 1, 'unit_price' => 6000, 'tax_rate' => 0],
+            ],
+        ];
+    }
+
+    private function assertOrderFigures(object $doc, string $label): void
+    {
+        // Goods 18,000 after the line discount, delivery 6,000; the 2,400
+        // discount is shared 3:1, so VAT is 7.5% of 16,200 = 1,215.
+        $this->assertEqualsWithDelta(24000, (float) $doc->subtotal, 0.001, "subtotal {$label}");
+        $this->assertEqualsWithDelta(2400, (float) $doc->discount_amount, 0.001, "discount {$label}");
+        $this->assertEqualsWithDelta(1215, (float) $doc->tax_amount, 0.001, "VAT {$label}");
+        $this->assertEqualsWithDelta(22815, (float) $doc->total, 0.001, "total {$label}");
+    }
+
+    public function test_r3_the_same_order_gives_the_same_sales_order_on_web_and_api(): void
+    {
+        $this->createAuthenticatedUser(['create sales-orders', 'view sales-orders']);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $this->post(route('sales-orders.store'), $this->sameOrder($customer))->assertSessionHasNoErrors();
+        $this->postJson('/api/v1/sales-orders', $this->sameOrder($customer))->assertCreated();
+
+        $orders = \App\Models\SalesOrder::orderBy('id')->get();
+        $this->assertCount(2, $orders);
+        foreach ($orders as $order) {
+            $this->assertOrderFigures($order, "#{$order->id}");
+        }
+    }
+
+    public function test_r3_saving_the_sales_order_edit_form_saves_the_changes(): void
+    {
+        $this->createAuthenticatedUser(['create sales-orders', 'edit sales-orders', 'view sales-orders']);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $this->post(route('sales-orders.store'), $this->sameOrder($customer));
+        $order = \App\Models\SalesOrder::firstOrFail();
+
+        $changed = $this->sameOrder($customer);
+        $changed['items'][1]['quantity'] = 2;
+        $changed['notes'] = 'Two deliveries';
+        $this->put(route('sales-orders.update', $order), $changed)->assertSessionHasNoErrors();
+
+        $order->refresh();
+        $this->assertSame('Two deliveries', $order->notes);
+        $this->assertEqualsWithDelta(2, (float) $order->items()->where('description', 'Delivery')->value('quantity'), 0.001);
+    }
+
+    public function test_r3_api_cannot_create_or_jump_a_sales_order_to_completed(): void
+    {
+        $this->createAuthenticatedUser(['create sales-orders', 'edit sales-orders', 'view sales-orders']);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $this->postJson('/api/v1/sales-orders', $this->sameOrder($customer) + ['status' => 'completed'])
+            ->assertStatus(422)->assertJsonValidationErrors('status');
+
+        $this->postJson('/api/v1/sales-orders', $this->sameOrder($customer))->assertCreated();
+        $order = \App\Models\SalesOrder::firstOrFail();
+        $this->putJson('/api/v1/sales-orders/'.$order->id, ['status' => 'completed'])->assertStatus(422);
+        $this->putJson('/api/v1/sales-orders/'.$order->id, ['status' => 'confirmed'])->assertOk();
+        $this->assertSame('confirmed', $order->fresh()->status);
+    }
+
+    public function test_r3_an_invoiced_sales_order_cannot_be_deleted_from_the_web(): void
+    {
+        $this->createAuthenticatedUser(['create sales-orders', 'view sales-orders', 'delete sales-orders']);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $this->post(route('sales-orders.store'), $this->sameOrder($customer));
+        $order = \App\Models\SalesOrder::firstOrFail();
+        Invoice::withoutEvents(fn () => Invoice::factory()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'sales_order_id' => $order->id]));
+
+        $this->delete(route('sales-orders.destroy', $order))->assertSessionHas('error');
+        $this->assertNotSoftDeleted($order);
+    }
+
+    public function test_r3_quotation_to_order_to_invoice_keeps_the_same_figures(): void
+    {
+        config(['mybooks.features.quotations' => true]);
+        $this->createAuthenticatedUser(['edit invoices', 'create sales-orders', 'edit sales-orders', 'view sales-orders', 'create invoices', 'view invoices']);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $quote = $this->sameOrder($customer);
+        unset($quote['order_date']);
+        $quote['quotation_date'] = '2026-09-01';
+
+        $this->post(route('quotations.store'), $quote)->assertSessionHasNoErrors();
+        $quotation = \App\Models\Quotation::firstOrFail();
+        $this->assertOrderFigures($quotation, 'quotation');
+
+        $this->post(route('quotations.convert', $quotation))->assertSessionHasNoErrors();
+        $order = \App\Models\SalesOrder::firstOrFail();
+        $this->assertOrderFigures($order, 'order');
+
+        $order->update(['status' => 'confirmed']);
+        $this->post(route('sales-orders.convert', $order))->assertSessionHasNoErrors();
+        $this->assertOrderFigures(Invoice::firstOrFail(), 'invoice');
+    }
 }

@@ -2,16 +2,22 @@
 
 namespace App\Http\Requests;
 
+use App\Actions\SalesOrders\SaveSalesOrder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreInvoiceRequest extends FormRequest
+/**
+ * Creating a sales order, from the web form or the API (finding Q5).
+ * Line rules are the invoice's, so tax rates and discounts are checked the
+ * same way on both.
+ */
+class StoreSalesOrderRequest extends FormRequest
 {
     use Concerns\ValidatesSalesLines;
 
     public function authorize(): bool
     {
-        return $this->user()->can('create invoices');
+        return $this->user()->can('create sales-orders');
     }
 
     public function rules(): array
@@ -20,16 +26,14 @@ class StoreInvoiceRequest extends FormRequest
 
         return [
             'customer_id' => ['required', Rule::exists('customers', 'id')->where('tenant_id', $tenantId)],
-            'invoice_date' => ['required', 'date'],
-            'due_date' => ['required', 'date', 'after_or_equal:invoice_date'],
+            'order_date' => ['required', 'date'],
+            'expected_date' => ['nullable', 'date', 'after_or_equal:order_date'],
             'reference' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string'],
             'terms' => ['nullable', 'string'],
             ...$this->salesLineRules($tenantId),
-            // Shared with the API (Q5). A new invoice starts as draft, sent or
-            // unpaid; payments and due dates decide the rest (I3).
-            'status' => ['sometimes', Rule::in(\App\Actions\Invoices\SaveInvoice::START_STATUSES)],
-            'sales_order_id' => ['nullable', Rule::exists('sales_orders', 'id')->where('tenant_id', $tenantId)],
+            // A new order is draft or confirmed; invoicing and delivery move it on.
+            'status' => ['sometimes', Rule::in(SaveSalesOrder::START_STATUSES)],
         ];
     }
 }

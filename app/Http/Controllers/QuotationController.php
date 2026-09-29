@@ -44,6 +44,8 @@ class QuotationController extends Controller
             'items.*.description' => 'required|string',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.discount' => 'nullable|numeric|min:0',
+            'items.*.discount_type' => 'nullable|in:fixed,percentage',
             'items.*.tax_rate' => 'nullable|numeric|min:0|max:100',
         ]);
 
@@ -62,40 +64,7 @@ class QuotationController extends Controller
                 'created_by' => auth()->id(),
             ]);
 
-            $subtotal = 0;
-            $totalTax = 0;
-
-            foreach ($validated['items'] as $itemData) {
-                $taxRate = $itemData['tax_rate'] ?? 0;
-                $lineTotal = $itemData['quantity'] * $itemData['unit_price'];
-                $taxAmount = $lineTotal * ($taxRate / 100);
-
-                QuotationItem::create([
-                    'quotation_id' => $quotation->id,
-                    'item_id' => $itemData['item_id'] ?? null,
-                    'description' => $itemData['description'],
-                    'quantity' => $itemData['quantity'],
-                    'unit_price' => $itemData['unit_price'],
-                    'tax_rate' => $taxRate,
-                    'tax_amount' => $taxAmount,
-                    'total' => $lineTotal + $taxAmount,
-                ]);
-
-                $subtotal += $lineTotal;
-                $totalTax += $taxAmount;
-            }
-
-            $discountAmount = $validated['discount_amount'] ?? 0;
-            if (($validated['discount_type'] ?? null) === 'percentage') {
-                $discountAmount = $subtotal * ($discountAmount / 100);
-            }
-
-            $quotation->update([
-                'subtotal' => $subtotal,
-                'tax_amount' => $totalTax,
-                'discount_amount' => $discountAmount,
-                'total' => $subtotal + $totalTax - $discountAmount,
-            ]);
+            $this->writeLines($quotation, $validated);
 
             return $quotation;
         });
@@ -146,6 +115,8 @@ class QuotationController extends Controller
             'items.*.description' => 'required|string',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.discount' => 'nullable|numeric|min:0',
+            'items.*.discount_type' => 'nullable|in:fixed,percentage',
             'items.*.tax_rate' => 'nullable|numeric|min:0|max:100',
         ]);
 
@@ -162,40 +133,7 @@ class QuotationController extends Controller
 
             $quotation->items()->delete();
 
-            $subtotal = 0;
-            $totalTax = 0;
-
-            foreach ($validated['items'] as $itemData) {
-                $taxRate = $itemData['tax_rate'] ?? 0;
-                $lineTotal = $itemData['quantity'] * $itemData['unit_price'];
-                $taxAmount = $lineTotal * ($taxRate / 100);
-
-                QuotationItem::create([
-                    'quotation_id' => $quotation->id,
-                    'item_id' => $itemData['item_id'] ?? null,
-                    'description' => $itemData['description'],
-                    'quantity' => $itemData['quantity'],
-                    'unit_price' => $itemData['unit_price'],
-                    'tax_rate' => $taxRate,
-                    'tax_amount' => $taxAmount,
-                    'total' => $lineTotal + $taxAmount,
-                ]);
-
-                $subtotal += $lineTotal;
-                $totalTax += $taxAmount;
-            }
-
-            $discountAmount = $validated['discount_amount'] ?? 0;
-            if (($validated['discount_type'] ?? null) === 'percentage') {
-                $discountAmount = $subtotal * ($discountAmount / 100);
-            }
-
-            $quotation->update([
-                'subtotal' => $subtotal,
-                'tax_amount' => $totalTax,
-                'discount_amount' => $discountAmount,
-                'total' => $subtotal + $totalTax - $discountAmount,
-            ]);
+            $this->writeLines($quotation, $validated);
         });
 
         return redirect()->route('quotations.show', $quotation)->with('success', 'Quotation updated.');
@@ -266,5 +204,38 @@ class QuotationController extends Controller
         $tenant = auth()->user()->tenant;
 
         return view('quotations.print', compact('quotation', 'tenant'));
+    }
+
+    /**
+     * Lines and totals by the same rules as sales orders and invoices
+     * (A4, R3): VAT after discounts. It was charged before the discount,
+     * so a converted quotation came out at a different total.
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    private function writeLines(Quotation $quotation, array $validated): void
+    {
+        $totals = \App\Services\Sales\DocumentTotals::calculate($validated['items'], $validated['discount_type'] ?? null, $validated['discount_amount'] ?? 0);
+
+        foreach ($totals['lines'] as $line) {
+            QuotationItem::create([
+                'quotation_id' => $quotation->id,
+                'item_id' => $line['item_id'] ?? null,
+                'description' => $line['description'],
+                'quantity' => $line['quantity'],
+                'unit_price' => $line['unit_price'],
+                'discount' => $line['discount'] ?? 0,
+                'tax_rate' => $line['tax_rate'],
+                'tax_amount' => $line['tax_amount'],
+                'total' => $line['total'],
+            ]);
+        }
+
+        $quotation->update([
+            'subtotal' => $totals['subtotal'],
+            'tax_amount' => $totals['tax_amount'],
+            'discount_amount' => $totals['discount_amount'],
+            'total' => $totals['total'],
+        ]);
     }
 }

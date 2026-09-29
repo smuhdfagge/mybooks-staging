@@ -6,7 +6,6 @@ use App\Http\Resources\SalesOrderResource;
 use App\Models\SalesOrder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class SalesOrderController extends BaseApiController
 {
@@ -71,52 +70,12 @@ class SalesOrderController extends BaseApiController
     }
 
     /**
-     * Create a new sales order
+     * Create a sales order
      */
-    public function store(Request $request): JsonResponse
+    public function store(\App\Http\Requests\StoreSalesOrderRequest $request, \App\Actions\SalesOrders\SaveSalesOrder $save): JsonResponse
     {
-        $tenantId = $this->getTenantId();
-
-        $validated = $request->validate([
-            'customer_id' => ['required', Rule::exists('customers', 'id')->where('tenant_id', $tenantId)],
-            'reference' => 'nullable|string|max:100',
-            'order_date' => 'required|date',
-            'expected_date' => 'nullable|date|after_or_equal:order_date',
-            'status' => 'sometimes|in:draft,confirmed,processing,completed,cancelled',
-            'discount_amount' => 'nullable|numeric|min:0',
-            'discount_type' => 'nullable|in:fixed,percentage',
-            'notes' => 'nullable|string',
-            'terms' => 'nullable|string',
-            'items' => 'required|array|min:1',
-            'items.*.item_id' => ['nullable', Rule::exists('items', 'id')->where('tenant_id', $tenantId)],
-            'items.*.description' => 'required|string',
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.discount' => 'nullable|numeric|min:0',
-            'items.*.discount_type' => 'nullable|in:fixed,percentage',
-            'items.*.tax_rate' => 'nullable|numeric|min:0|max:100',
-        ]);
-
-        $validated['order_number'] = SalesOrder::generateNumber($tenantId);
-        $validated['tenant_id'] = $tenantId;
-        $validated['created_by'] = auth()->id();
-
-        // Calculate totals: VAT after the discount (A4).
-        $totals = \App\Services\Sales\DocumentTotals::calculate(
-            $validated['items'], $validated['discount_type'] ?? null, $validated['discount_amount'] ?? 0
-        );
-        $validated['items'] = $totals['lines'];
-        $validated['subtotal'] = $totals['subtotal'];
-        $validated['tax_amount'] = $totals['tax_amount'];
-        $validated['discount_amount'] = $totals['discount_amount'];
-        $validated['total'] = $totals['total'];
-
-        $order = SalesOrder::create(collect($validated)->except('items')->toArray());
-
-        foreach ($validated['items'] as $item) {
-            $order->items()->create($item);
-        }
-
+        // Same rules and code as the web form (R3, Q5), in a transaction (R6).
+        $order = $save->create($this->getTenantId(), $request->validated(), auth()->id());
         $order->load(['customer', 'items.item']);
 
         return $this->created(new SalesOrderResource($order), 'Sales order created successfully');
@@ -125,56 +84,9 @@ class SalesOrderController extends BaseApiController
     /**
      * Update a sales order
      */
-    public function update(Request $request, SalesOrder $salesOrder): JsonResponse
+    public function update(\App\Http\Requests\UpdateSalesOrderRequest $request, SalesOrder $salesOrder, \App\Actions\SalesOrders\SaveSalesOrder $save): JsonResponse
     {
-        if (in_array($salesOrder->status, ['completed', 'cancelled'])) {
-            return $this->forbidden('Cannot modify a completed or cancelled order');
-        }
-
-        $tenantId = $this->getTenantId();
-
-        $validated = $request->validate([
-            'customer_id' => ['sometimes', Rule::exists('customers', 'id')->where('tenant_id', $tenantId)],
-            'reference' => 'nullable|string|max:100',
-            'order_date' => 'sometimes|date',
-            'expected_date' => 'nullable|date|after_or_equal:order_date',
-            'status' => 'sometimes|in:draft,confirmed,processing,completed,cancelled',
-            'discount_amount' => 'nullable|numeric|min:0',
-            'discount_type' => 'nullable|in:fixed,percentage',
-            'notes' => 'nullable|string',
-            'terms' => 'nullable|string',
-            'items' => 'sometimes|array|min:1',
-            'items.*.id' => ['nullable', Rule::exists('sales_order_items', 'id')->where('sales_order_id', $salesOrder->id)],
-            'items.*.item_id' => ['nullable', Rule::exists('items', 'id')->where('tenant_id', $tenantId)],
-            'items.*.description' => 'required|string',
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.discount' => 'nullable|numeric|min:0',
-            'items.*.discount_type' => 'nullable|in:fixed,percentage',
-            'items.*.tax_rate' => 'nullable|numeric|min:0|max:100',
-        ]);
-
-        if (isset($validated['items'])) {
-            // VAT after the discount (A4). The stored discount is money, so
-            // without a new one keep it as a fixed amount.
-            $totals = \App\Services\Sales\DocumentTotals::calculate(
-                $validated['items'],
-                array_key_exists('discount_amount', $validated) ? ($validated['discount_type'] ?? null) : 'fixed',
-                array_key_exists('discount_amount', $validated) ? $validated['discount_amount'] : $salesOrder->discount_amount,
-            );
-            $validated['items'] = $totals['lines'];
-            $validated['subtotal'] = $totals['subtotal'];
-            $validated['tax_amount'] = $totals['tax_amount'];
-            $validated['discount_amount'] = $totals['discount_amount'];
-            $validated['total'] = $totals['total'];
-
-            $salesOrder->items()->delete();
-            foreach ($validated['items'] as $item) {
-                $salesOrder->items()->create($item);
-            }
-        }
-
-        $salesOrder->update(collect($validated)->except('items')->toArray());
+        $salesOrder = $save->update($salesOrder, $request->validated());
         $salesOrder->load(['customer', 'items.item']);
 
         return $this->success(new SalesOrderResource($salesOrder), 'Sales order updated successfully');
@@ -183,14 +95,13 @@ class SalesOrderController extends BaseApiController
     /**
      * Delete a sales order
      */
-    public function destroy(SalesOrder $salesOrder): JsonResponse
+    public function destroy(SalesOrder $salesOrder, \App\Actions\SalesOrders\DeleteSalesOrder $delete): JsonResponse
     {
-        if ($salesOrder->invoices()->exists()) {
-            return $this->error('Cannot delete sales order with invoices', 422);
+        if ($reason = $delete->blockedBecause($salesOrder)) {
+            return $this->error($reason, 422);
         }
 
-        $salesOrder->items()->delete();
-        $salesOrder->delete();
+        $delete->handle($salesOrder);
 
         return $this->success(null, 'Sales order deleted successfully');
     }
