@@ -414,4 +414,44 @@ class PhaseBRegressionTest extends TestCase
         $this->assertEqualsWithDelta(25, $r->viewData('netTaxPayable'), 0.001);
         $this->assertNotNull($r->viewData('settlement'));
     }
+
+    // ── A6: refunds ─────────────────────────────────────────────
+
+    public function test_a6_a_full_refund_leaves_nothing_owed_in_ageing_or_the_ledger(): void
+    {
+        $this->createAuthenticatedUser(['edit invoices', 'view reports', 'view invoices']);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $invoice = Invoice::withoutEvents(fn () => Invoice::factory()->create([
+            'tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'status' => 'unpaid',
+            'invoice_date' => now()->toDateString(), 'subtotal' => 1000, 'tax_amount' => 75, 'total' => 1075, 'balance_due' => 1075,
+        ]));
+        app(JournalService::class)->createInvoiceJournal($invoice);
+
+        \App\Models\PaymentReceived::create([
+            'tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_id' => $invoice->id,
+            'payment_number' => 'PAY-A6', 'payment_date' => now()->toDateString(), 'amount' => 1075, 'payment_method' => 'cash',
+        ]);
+        $this->assertSame('paid', $invoice->fresh()->status);
+
+        $this->post(route('invoices.refunds.store', $invoice), [
+            'amount' => 1075, 'refund_date' => now()->toDateString(), 'refund_method' => array_key_first(\App\Models\InvoiceRefund::METHODS),
+        ])->assertSessionHas('success');
+
+        $invoice->refresh();
+        $this->assertEqualsWithDelta(0, (float) $invoice->balance_due, 0.001, 'customer owes nothing');
+        $this->assertEqualsWithDelta(1075, (float) $invoice->total_refunded, 0.001);
+        $this->assertNotContains($invoice->status, ['unpaid', 'partial', 'overdue']);
+
+        $ar = (float) ChartOfAccount::where('tenant_id', $this->tenant->id)->where('account_code', '1200')->value('current_balance');
+        $this->assertEqualsWithDelta(0, $ar, 0.001);
+
+        // A later balance recalculation (e.g. another payment event) keeps it settled.
+        $invoice->updateBalances();
+        $this->assertEqualsWithDelta(0, (float) $invoice->fresh()->balance_due, 0.001);
+
+        // No second refund of the same money.
+        $this->post(route('invoices.refunds.store', $invoice), [
+            'amount' => 1, 'refund_date' => now()->toDateString(), 'refund_method' => array_key_first(\App\Models\InvoiceRefund::METHODS),
+        ])->assertSessionHasErrors('amount');
+    }
 }
