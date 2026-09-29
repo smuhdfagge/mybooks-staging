@@ -62,8 +62,8 @@
                         </div>
 
                         <div class="mt-4">
-                            <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                            <textarea name="description" id="description" rows="2"
+                            <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description <span class="text-red-500">*</span></label>
+                            <textarea name="description" id="description" rows="2" required maxlength="500"
                                 class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('description') border-red-500 @enderror"
                                 placeholder="Enter journal description...">{{ old('description') }}</textarea>
                             @error('description')

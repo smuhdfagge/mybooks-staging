@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\StoreTaxRateRequest;
+use App\Http\Requests\UpdateTaxRateRequest;
 use App\Http\Resources\TaxRateResource;
 use App\Models\TaxRate;
 use Illuminate\Http\JsonResponse;
@@ -67,17 +69,9 @@ class TaxRateController extends BaseApiController
     /**
      * Create a new tax rate
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreTaxRateRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:100',
-            'rate' => 'required|numeric|min:0|max:100',
-            'description' => 'nullable|string',
-            'applies_to' => 'required|in:sales,purchases,both',
-            'is_compound' => 'boolean',
-            'is_default' => 'boolean',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $validated['tenant_id'] = $this->getTenantId();
 
@@ -100,17 +94,9 @@ class TaxRateController extends BaseApiController
     /**
      * Update a tax rate
      */
-    public function update(Request $request, TaxRate $taxRate): JsonResponse
+    public function update(UpdateTaxRateRequest $request, TaxRate $taxRate): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:100',
-            'rate' => 'sometimes|numeric|min:0|max:100',
-            'description' => 'nullable|string',
-            'applies_to' => 'sometimes|in:sales,purchases,both',
-            'is_compound' => 'boolean',
-            'is_default' => 'boolean',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         // If this is set as default, unset other defaults
         if (($validated['is_default'] ?? false) && ! $taxRate->is_default) {

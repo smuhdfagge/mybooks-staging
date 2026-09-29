@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreJournalRequest;
+use App\Http\Requests\UpdateJournalRequest;
 use App\Models\ChartOfAccount;
 use App\Models\Journal;
 use App\Models\JournalEntry;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class JournalController extends Controller
 {
@@ -24,20 +24,11 @@ class JournalController extends Controller
         return view('journals.create', compact('accounts', 'journalNumber'));
     }
 
-    public function store(Request $request)
+    public function store(StoreJournalRequest $request)
     {
         $tenantId = auth()->user()->tenant_id;
 
-        $validated = $request->validate([
-            'journal_date' => 'required|date',
-            'reference' => 'nullable|string|max:100',
-            'description' => 'nullable|string',
-            'entries' => 'required|array|min:2',
-            'entries.*.account_id' => ['required', Rule::exists('chart_of_accounts', 'id')->where('tenant_id', $tenantId)],
-            'entries.*.description' => 'nullable|string',
-            'entries.*.debit' => 'nullable|numeric|min:0',
-            'entries.*.credit' => 'nullable|numeric|min:0',
-        ]);
+        $validated = $request->validated();
 
         $totalDebit = 0;
         $totalCredit = 0;
@@ -99,24 +90,19 @@ class JournalController extends Controller
         return view('journals.edit', compact('journal', 'accounts'));
     }
 
-    public function update(Request $request, Journal $journal)
+    public function update(UpdateJournalRequest $request, Journal $journal)
     {
         if ($journal->is_posted) {
             return redirect()->back()->with('error', 'Posted journals cannot be modified.');
         }
 
-        $tenantId = auth()->user()->tenant_id;
-
-        $validated = $request->validate([
-            'journal_date' => 'required|date',
-            'reference' => 'nullable|string|max:100',
-            'description' => 'nullable|string',
-            'entries' => 'required|array|min:2',
-            'entries.*.account_id' => ['required', Rule::exists('chart_of_accounts', 'id')->where('tenant_id', $tenantId)],
-            'entries.*.description' => 'nullable|string',
-            'entries.*.debit' => 'nullable|numeric|min:0',
-            'entries.*.credit' => 'nullable|numeric|min:0',
-        ]);
+        $validated = $request->validated();
+        // The form sends every field; anything left out stays as it was.
+        $validated += [
+            'journal_date' => $journal->journal_date,
+            'description' => $journal->description,
+            'entries' => $journal->entries->map->only(['account_id', 'description', 'debit', 'credit'])->all(),
+        ];
 
         $totalDebit = 0;
         $totalCredit = 0;
@@ -134,7 +120,7 @@ class JournalController extends Controller
             $journal->update([
                 'journal_date' => $validated['journal_date'],
                 'reference' => $validated['reference'] ?? null,
-                'description' => $validated['description'] ?? null,
+                'description' => $validated['description'],
                 'total_debit' => $totalDebit,
                 'total_credit' => $totalCredit,
             ]);

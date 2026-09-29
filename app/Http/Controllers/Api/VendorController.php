@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\StoreVendorRequest;
+use App\Http\Requests\UpdateVendorRequest;
 use App\Http\Resources\VendorResource;
 use App\Models\Vendor;
 use Illuminate\Http\JsonResponse;
@@ -56,23 +58,9 @@ class VendorController extends BaseApiController
     /**
      * Create a new vendor
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreVendorRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:50',
-            'company_name' => 'nullable|string|max:255',
-            'tax_number' => 'nullable|string|max:100',
-            'address' => 'nullable|string',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'country' => 'nullable|string|max:100',
-            'postal_code' => 'nullable|string|max:20',
-            'payment_terms' => 'nullable|integer|min:0',
-            'notes' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $vendor = Vendor::create($validated);
 
@@ -82,23 +70,9 @@ class VendorController extends BaseApiController
     /**
      * Update a vendor
      */
-    public function update(Request $request, Vendor $vendor): JsonResponse
+    public function update(UpdateVendorRequest $request, Vendor $vendor): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:50',
-            'company_name' => 'nullable|string|max:255',
-            'tax_number' => 'nullable|string|max:100',
-            'address' => 'nullable|string',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'country' => 'nullable|string|max:100',
-            'postal_code' => 'nullable|string|max:20',
-            'payment_terms' => 'nullable|integer|min:0',
-            'notes' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $vendor->update($validated);
 

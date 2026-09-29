@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\StoreExpenseRequest;
+use App\Http\Requests\UpdateExpenseRequest;
 use App\Http\Resources\ExpenseResource;
 use App\Models\Expense;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class ExpenseController extends BaseApiController
 {
@@ -79,28 +80,11 @@ class ExpenseController extends BaseApiController
     /**
      * Create a new expense
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreExpenseRequest $request): JsonResponse
     {
         $tenantId = $this->getTenantId();
 
-        $validated = $request->validate([
-            'vendor_id' => ['nullable', Rule::exists('vendors', 'id')->where('tenant_id', $tenantId)],
-            'expense_account_id' => ['required', Rule::exists('chart_of_accounts', 'id')->where('tenant_id', $tenantId)],
-            'paid_through_id' => ['nullable', Rule::exists('chart_of_accounts', 'id')->where('tenant_id', $tenantId)],
-            'bank_id' => ['nullable', Rule::exists('banks', 'id')->where('tenant_id', $tenantId)],
-            'name' => 'required|string|max:255',
-            'expense_date' => 'required|date',
-            'amount' => 'required|numeric|min:0',
-            'tax_amount' => 'nullable|numeric|min:0',
-            'payment_method' => 'nullable|string|max:50',
-            'reference' => 'nullable|string|max:100',
-            'description' => 'nullable|string',
-            'is_billable' => 'boolean',
-            'customer_id' => ['nullable', Rule::exists('customers', 'id')->where('tenant_id', $tenantId)],
-            'notes' => 'nullable|string',
-            // Approval and payment have their own steps and checks (I4).
-            'status' => 'sometimes|in:draft,pending_approval',
-        ]);
+        $validated = $request->validated();
 
         $validated['expense_number'] = Expense::generateNumber($tenantId);
         $validated['tenant_id'] = $tenantId;
@@ -117,31 +101,15 @@ class ExpenseController extends BaseApiController
     /**
      * Update an expense
      */
-    public function update(Request $request, Expense $expense): JsonResponse
+    public function update(UpdateExpenseRequest $request, Expense $expense): JsonResponse
     {
-        // Cannot update approved/paid expenses
-        if (in_array($expense->status, [Expense::STATUS_APPROVED, Expense::STATUS_PAID])) {
-            return $this->forbidden('Cannot modify an approved or paid expense');
+        // Same rule as the web: only draft or rejected expenses change, so
+        // an expense can't be altered while it waits for approval (I4).
+        if (! $expense->canBeEdited()) {
+            return $this->forbidden('This expense cannot be updated in its current status.');
         }
 
-        $tenantId = $this->getTenantId();
-
-        $validated = $request->validate([
-            'vendor_id' => ['nullable', Rule::exists('vendors', 'id')->where('tenant_id', $tenantId)],
-            'expense_account_id' => ['sometimes', Rule::exists('chart_of_accounts', 'id')->where('tenant_id', $tenantId)],
-            'paid_through_id' => ['nullable', Rule::exists('chart_of_accounts', 'id')->where('tenant_id', $tenantId)],
-            'bank_id' => ['nullable', Rule::exists('banks', 'id')->where('tenant_id', $tenantId)],
-            'name' => 'sometimes|string|max:255',
-            'expense_date' => 'sometimes|date',
-            'amount' => 'sometimes|numeric|min:0',
-            'tax_amount' => 'nullable|numeric|min:0',
-            'payment_method' => 'nullable|string|max:50',
-            'reference' => 'nullable|string|max:100',
-            'description' => 'nullable|string',
-            'is_billable' => 'boolean',
-            'customer_id' => ['nullable', Rule::exists('customers', 'id')->where('tenant_id', $tenantId)],
-            'notes' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         if (isset($validated['amount']) || isset($validated['tax_amount'])) {
             $amount = $validated['amount'] ?? $expense->amount;

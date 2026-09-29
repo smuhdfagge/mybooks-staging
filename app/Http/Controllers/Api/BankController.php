@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\StoreBankRequest;
+use App\Http\Requests\UpdateBankRequest;
 use App\Http\Resources\BankResource;
 use App\Models\Bank;
 use Illuminate\Http\JsonResponse;
@@ -64,25 +66,9 @@ class BankController extends BaseApiController
     /**
      * Create a new bank account
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreBankRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'bank_name' => 'required|string|max:255',
-            'account_number' => 'required|string|max:50',
-            'account_type' => 'required|in:checking,savings,credit_card,cash,other',
-            'currency' => 'required|string|max:10',
-            'routing_number' => 'nullable|string|max:50',
-            'swift_code' => 'nullable|string|max:20',
-            'iban' => 'nullable|string|max:50',
-            'branch_name' => 'nullable|string|max:255',
-            'branch_address' => 'nullable|string',
-            'opening_balance' => 'nullable|numeric',
-            'opening_balance_date' => 'nullable|date',
-            'description' => 'nullable|string',
-            'is_primary' => 'boolean',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $validated['tenant_id'] = $this->getTenantId();
         $validated['current_balance'] = $validated['opening_balance'] ?? 0;
@@ -102,23 +88,9 @@ class BankController extends BaseApiController
     /**
      * Update a bank account
      */
-    public function update(Request $request, Bank $bank): JsonResponse
+    public function update(UpdateBankRequest $request, Bank $bank): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'bank_name' => 'sometimes|string|max:255',
-            'account_number' => 'sometimes|string|max:50',
-            'account_type' => 'sometimes|in:checking,savings,credit_card,cash,other',
-            'currency' => 'sometimes|string|max:10',
-            'routing_number' => 'nullable|string|max:50',
-            'swift_code' => 'nullable|string|max:20',
-            'iban' => 'nullable|string|max:50',
-            'branch_name' => 'nullable|string|max:255',
-            'branch_address' => 'nullable|string',
-            'description' => 'nullable|string',
-            'is_primary' => 'boolean',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         // If this is set as primary, unset other primary accounts
         if (($validated['is_primary'] ?? false) && ! $bank->is_primary) {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreExpenseRequest;
+use App\Http\Requests\UpdateExpenseRequest;
 use App\Models\Bank;
 use App\Models\ChartOfAccount;
 use App\Models\Expense;
@@ -40,7 +41,7 @@ class ExpenseController extends Controller
         $validated = $request->validated();
 
         $amount = $validated['amount'];
-        $taxAmount = 0; // Can be added to form if needed
+        $taxAmount = $validated['tax_amount'] ?? 0;
         $total = $amount + $taxAmount;
 
         $expense = Expense::create([
@@ -58,6 +59,9 @@ class ExpenseController extends Controller
             'reference' => $validated['reference'] ?? null,
             'description' => $validated['description'] ?? null,
             'is_billable' => $validated['is_billable'] ?? false,
+            'customer_id' => $validated['customer_id'] ?? null,
+            'payment_method' => $validated['payment_method'] ?? null,
+            'notes' => $validated['notes'] ?? null,
             'created_by' => auth()->id(),
             'status' => Expense::STATUS_DRAFT, // Always start as draft
         ]);
@@ -90,7 +94,7 @@ class ExpenseController extends Controller
         return view('expenses.edit', compact('expense', 'vendors', 'expenseAccounts', 'paymentAccounts', 'banks'));
     }
 
-    public function update(StoreExpenseRequest $request, Expense $expense)
+    public function update(UpdateExpenseRequest $request, Expense $expense)
     {
         // Only allow updating if expense is in draft or rejected status
         if (! $expense->canBeEdited()) {
@@ -98,11 +102,11 @@ class ExpenseController extends Controller
                 ->with('error', 'This expense cannot be updated in its current status.');
         }
 
-        $tenantId = auth()->user()->tenant_id;
-
         $validated = $request->validated();
 
-        $validated['total'] = $validated['amount']; // Using amount as total for simplicity
+        if (isset($validated['amount']) || isset($validated['tax_amount'])) {
+            $validated['total'] = ($validated['amount'] ?? $expense->amount) + ($validated['tax_amount'] ?? $expense->tax_amount ?? 0);
+        }
 
         // Reset to draft status if it was rejected
         if ($expense->isRejected()) {

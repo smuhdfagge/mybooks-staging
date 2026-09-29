@@ -5,6 +5,12 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+/**
+ * Creating a bank account, from the web form or the API (finding Q5).
+ * Currency is a 3-letter code (the API took up to 10 characters, the column
+ * holds 3). Bank name and account number are optional, as on the web, since
+ * a cash account has neither (the API required them).
+ */
 class StoreBankRequest extends FormRequest
 {
     public function authorize(): bool
@@ -32,6 +38,7 @@ class StoreBankRequest extends FormRequest
             'chart_of_account_id' => ['nullable', Rule::exists('chart_of_accounts', 'id')->where('tenant_id', $tenantId)],
             'description' => ['nullable', 'string'],
             'is_primary' => ['boolean'],
+            'is_active' => ['boolean'],
         ];
     }
 }
