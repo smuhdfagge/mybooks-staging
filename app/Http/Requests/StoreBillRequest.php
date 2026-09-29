@@ -30,6 +30,11 @@ class StoreBillRequest extends FormRequest
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'items.*.discount' => ['nullable', 'numeric', 'min:0'],
+            'items.*.account_id' => ['nullable', Rule::exists('chart_of_accounts', 'id')->where('tenant_id', $tenantId)],
+            // Shared with the API (Q5).
+            'vendor_bill_number' => ['nullable', 'string', 'max:100'],
+            'discount_amount' => ['nullable', 'numeric', 'min:0'],
+            'status' => ['sometimes', Rule::in(\App\Actions\Bills\SaveBill::START_STATUSES)],
         ];
     }
 }

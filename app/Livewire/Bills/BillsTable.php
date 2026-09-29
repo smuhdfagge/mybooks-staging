@@ -193,25 +193,25 @@ class BillsTable extends Component
                             continue;
                         }
 
-                        // Check if bill has payments
-                        if ($bill->amount_paid > 0) {
+                        // Same rules as the web and API delete (R3).
+                        $delete = app(\App\Actions\Bills\DeleteBill::class);
+                        if ($delete->blockedBecause($bill)) {
                             $skippedCount++;
 
                             continue;
                         }
 
-                        $bill->items()->delete();
-                        $bill->delete();
+                        $delete->handle($bill);
                         $deletedCount++;
                     }
                 });
 
                 if ($deletedCount > 0 && $skippedCount > 0) {
-                    $this->successMessage = "Deleted {$deletedCount} bill(s). Skipped {$skippedCount} bill(s) with recorded payments. Journal entries and chart of account balances have been updated.";
+                    $this->successMessage = "Deleted {$deletedCount} bill(s). Skipped {$skippedCount} bill(s) with payments or stock already used. Journal entries and chart of account balances have been updated.";
                 } elseif ($deletedCount > 0) {
                     $this->successMessage = "Successfully deleted {$deletedCount} bill(s). Journal entries and chart of account balances have been updated.";
                 } else {
-                    $this->errorMessage = 'Could not delete any bills. All selected bills have recorded payments.';
+                    $this->errorMessage = 'Could not delete any bills. All selected bills have payments or stock already used.';
                 }
                 break;
 

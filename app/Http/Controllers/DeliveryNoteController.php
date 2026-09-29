@@ -21,7 +21,7 @@ class DeliveryNoteController extends Controller
     {
         $tenantId = auth()->user()->tenant_id;
         $customers = Customer::where('is_active', true)->get();
-        $deliveryNumber = DeliveryNote::generateNumber($tenantId);
+        $deliveryNumber = DeliveryNote::previewNumber($tenantId);
 
         $salesOrder = null;
         if ($request->has('sales_order_id')) {

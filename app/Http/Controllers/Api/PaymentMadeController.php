@@ -5,11 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Resources\PaymentMadeResource;
 use App\Models\Bill;
 use App\Models\PaymentMade;
-use App\Services\PaymentValidation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class PaymentMadeController extends BaseApiController
 {
@@ -81,79 +78,23 @@ class PaymentMadeController extends BaseApiController
     /**
      * Create a new payment made
      */
-    public function store(Request $request): JsonResponse
+    public function store(\App\Http\Requests\StorePaymentMadeRequest $request, \App\Actions\Payments\RecordPaymentMade $record): JsonResponse
     {
-        $tenantId = $this->getTenantId();
+        // Same rules and code as the web form (R3, Q5), including the bank balance.
+        $payment = $record->handle($this->getTenantId(), $request->validated(), auth()->id());
+        $payment->load(['vendor', 'bill', 'bank']);
 
-        $validated = $request->validate([
-            'vendor_id' => ['required', Rule::exists('vendors', 'id')->where('tenant_id', $tenantId)],
-            'bill_id' => ['nullable', Rule::exists('bills', 'id')->where('tenant_id', $tenantId)],
-            'payment_date' => 'required|date',
-            'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|string|max:50',
-            'bank_id' => ['nullable', Rule::exists('banks', 'id')->where('tenant_id', $tenantId)],
-            'reference' => 'nullable|string|max:100',
-            'notes' => 'nullable|string',
-        ]);
-
-        // Same checks as the web form (M5). The old strict !== comparison
-        // failed whenever the vendor ID arrived as a string.
-        if (! empty($validated['bill_id'])) {
-            $errors = PaymentValidation::forBill(Bill::find($validated['bill_id']), $validated['vendor_id'], (float) $validated['amount']);
-            if ($errors) {
-                return $this->validationError(array_map(fn ($message) => [$message], $errors));
-            }
-        }
-
-        $validated['payment_number'] = PaymentMade::generateNumber($tenantId);
-        $validated['tenant_id'] = $tenantId;
-        $validated['created_by'] = auth()->id();
-
-        DB::beginTransaction();
-        try {
-            $payment = PaymentMade::create($validated);
-
-            // Update bill if linked
-            if (! empty($validated['bill_id'])) {
-                $payment->bill?->updateBalances();
-            }
-
-            DB::commit();
-
-            $payment->load(['vendor', 'bill', 'bank']);
-
-            return $this->created(new PaymentMadeResource($payment), 'Payment recorded successfully');
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return $this->error('Failed to record payment: '.$e->getMessage(), 500);
-        }
+        return $this->created(new PaymentMadeResource($payment), 'Payment recorded successfully');
     }
 
     /**
      * Delete a payment
      */
-    public function destroy(PaymentMade $paymentMade): JsonResponse
+    public function destroy(PaymentMade $paymentMade, \App\Actions\Payments\DeletePaymentMade $delete): JsonResponse
     {
-        DB::beginTransaction();
-        try {
-            $bill = $paymentMade->bill;
+        $delete->handle($paymentMade);
 
-            $paymentMade->delete();
-
-            // Update bill balances
-            if ($bill) {
-                $bill->updateBalances();
-            }
-
-            DB::commit();
-
-            return $this->success(null, 'Payment deleted successfully');
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return $this->error('Failed to delete payment: '.$e->getMessage(), 500);
-        }
+        return $this->success(null, 'Payment deleted successfully');
     }
 
     /**

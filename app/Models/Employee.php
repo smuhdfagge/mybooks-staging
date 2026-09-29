@@ -137,27 +137,12 @@ class Employee extends Model
     }
 
     /**
-     * Next free EMP-nnnnn number for this business. Imported staff can have
-     * their own IDs (e.g. "STAFF-9"), so this looks at the highest EMP- number
-     * rather than the latest row, and skips any number already taken.
+     * Next free EMP-nnnnn number for this business, from the locked
+     * sequence (R2). Imported staff with their own IDs don't affect it, and
+     * taken numbers are skipped (R1).
      */
     public static function generateEmployeeId($tenantId)
     {
-        $existing = static::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->where('employee_id', 'like', 'EMP-%')
-            ->pluck('employee_id');
-
-        $highest = $existing
-            ->map(fn ($id) => ctype_digit(substr($id, 4)) ? (int) substr($id, 4) : 0)
-            ->max() ?? 0;
-
-        $number = $highest + 1;
-        do {
-            $candidate = 'EMP-'.str_pad((string) $number, 5, '0', STR_PAD_LEFT);
-            $number++;
-        } while (static::withoutGlobalScopes()->where('tenant_id', $tenantId)->where('employee_id', $candidate)->exists());
-
-        return $candidate;
+        return \App\Support\DocumentNumber::next((int) $tenantId, static::class, 'employee_id', 'EMP-', 5);
     }
 }

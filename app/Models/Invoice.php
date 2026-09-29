@@ -17,12 +17,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Invoice extends Model
 {
+    use \App\Traits\GuardsStatusTransitions, \App\Traits\HasDocumentNumber;
     use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     protected $fillable = [
         'tenant_id',
         'customer_id',
         'sales_order_id',
+        'recurrent_invoice_id',
         'invoice_number',
         'reference',
         'invoice_date',
@@ -145,16 +147,10 @@ class Invoice extends Model
         });
     }
 
-    public static function generateNumber($tenantId)
+    /** @return array{0: string, 1: string, 2: int} */
+    protected static function documentNumberFormat(): array
     {
-        $lastInvoice = static::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->latest('id')
-            ->first();
-
-        $number = $lastInvoice ? intval(substr($lastInvoice->invoice_number, 4)) + 1 : 1;
-
-        return 'INV-'.str_pad($number, 6, '0', STR_PAD_LEFT);
+        return ['invoice_number', 'INV-', 6];
     }
 
     /**
@@ -172,15 +168,8 @@ class Invoice extends Model
 
     public static function generateWaybillNumber($tenantId)
     {
-        $lastWaybill = static::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->whereNotNull('waybill_number')
-            ->latest('id')
-            ->first();
-
-        $number = $lastWaybill ? intval(substr($lastWaybill->waybill_number, 3)) + 1 : 1;
-
-        return 'WB-'.str_pad($number, 6, '0', STR_PAD_LEFT);
+        // Locked per-business sequence (R2).
+        return \App\Support\DocumentNumber::next((int) $tenantId, static::class, 'waybill_number', 'WB-', 6);
     }
 
     public function isReleased()
@@ -347,5 +336,11 @@ class Invoice extends Model
     protected function documentTotalParts(): array
     {
         return [['subtotal', 'tax_amount'], ['discount_amount']];
+    }
+
+    /** Allowed status moves (Q3). */
+    protected static function statusEnum(): string
+    {
+        return \App\Enums\InvoiceStatus::class;
     }
 }

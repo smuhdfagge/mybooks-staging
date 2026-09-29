@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Payroll extends Model
 {
+    use \App\Traits\HasDocumentNumber;
     use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     // Status constants
@@ -112,16 +113,10 @@ class Payroll extends Model
         return $this->belongsTo(User::class, 'approved_by');
     }
 
-    public static function generateNumber($tenantId)
+    /** @return array{0: string, 1: string, 2: int} */
+    protected static function documentNumberFormat(): array
     {
-        $lastPayroll = static::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->latest('id')
-            ->first();
-
-        $number = $lastPayroll ? intval(substr($lastPayroll->payroll_number, 4)) + 1 : 1;
-
-        return 'PAY-'.str_pad($number, 6, '0', STR_PAD_LEFT);
+        return ['payroll_number', 'PAY-', 6];
     }
 
     public function calculateTotals()

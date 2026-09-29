@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreTaxRateRequest;
+use App\Http\Requests\UpdateTaxRateRequest;
 use App\Models\TaxRate;
-use Illuminate\Http\Request;
 
 class TaxRateController extends Controller
 {
@@ -17,32 +18,11 @@ class TaxRateController extends Controller
         return view('tax-rates.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreTaxRateRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'code' => 'nullable|string|max:20',
-            'rate' => 'required|numeric|min:0|max:100',
-            'type' => 'required|in:inclusive,exclusive',
-            'applies_to' => 'required|in:sales,purchases,both',
-            'tax_number' => 'nullable|string|max:100',
-            'description' => 'nullable|string',
-            'is_compound' => 'boolean',
-            'is_default' => 'boolean',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $tenantId = auth()->user()->tenant_id;
-
-        // Check for unique code within tenant
-        if (! empty($validated['code'])) {
-            $exists = TaxRate::where('tenant_id', $tenantId)
-                ->where('code', $validated['code'])
-                ->exists();
-            if ($exists) {
-                return redirect()->back()->withInput()->with('error', 'A tax rate with this code already exists.');
-            }
-        }
 
         $taxRate = TaxRate::create([
             'tenant_id' => $tenantId,
@@ -75,40 +55,17 @@ class TaxRateController extends Controller
         return view('tax-rates.edit', compact('taxRate'));
     }
 
-    public function update(Request $request, TaxRate $taxRate)
+    public function update(UpdateTaxRateRequest $request, TaxRate $taxRate)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'code' => 'nullable|string|max:20',
-            'rate' => 'required|numeric|min:0|max:100',
-            'type' => 'required|in:inclusive,exclusive',
-            'applies_to' => 'required|in:sales,purchases,both',
-            'tax_number' => 'nullable|string|max:100',
-            'description' => 'nullable|string',
-            'is_compound' => 'boolean',
-            'is_default' => 'boolean',
-            'is_active' => 'boolean',
-        ]);
-
-        $tenantId = auth()->user()->tenant_id;
-
-        // Check for unique code within tenant (excluding current)
-        if (! empty($validated['code'])) {
-            $exists = TaxRate::where('tenant_id', $tenantId)
-                ->where('code', $validated['code'])
-                ->where('id', '!=', $taxRate->id)
-                ->exists();
-            if ($exists) {
-                return redirect()->back()->withInput()->with('error', 'A tax rate with this code already exists.');
-            }
-        }
+        // A code already used in the business is refused by the request.
+        $validated = $request->validated();
 
         $taxRate->update([
-            'name' => $validated['name'],
+            'name' => $validated['name'] ?? $taxRate->name,
             'code' => $validated['code'] ?? null,
-            'rate' => $validated['rate'],
-            'type' => $validated['type'],
-            'applies_to' => $validated['applies_to'],
+            'rate' => $validated['rate'] ?? $taxRate->rate,
+            'type' => $validated['type'] ?? $taxRate->type,
+            'applies_to' => $validated['applies_to'] ?? $taxRate->applies_to,
             'tax_number' => $validated['tax_number'] ?? null,
             'description' => $validated['description'] ?? null,
             'is_compound' => $validated['is_compound'] ?? false,

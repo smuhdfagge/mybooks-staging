@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PurchaseOrderStatus;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
@@ -13,13 +14,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PurchaseOrder extends Model
 {
-    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
+    use \App\Traits\GuardsStatusTransitions, \App\Traits\HasDocumentNumber;
+    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     /** A bill has been raised for this order (finding N8). */
-    public const STATUS_BILLED = 'billed';
+    public const STATUS_BILLED = PurchaseOrderStatus::Billed->value;
 
     /** Statuses from which a bill can be raised. */
-    public const BILLABLE = ['confirmed', 'partially_received', 'received'];
+    public const BILLABLE = [PurchaseOrderStatus::Confirmed->value, PurchaseOrderStatus::PartiallyReceived->value, PurchaseOrderStatus::Received->value];
 
     protected $fillable = [
         'tenant_id',
@@ -74,16 +76,10 @@ class PurchaseOrder extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public static function generateNumber($tenantId): string
+    /** @return array{0: string, 1: string, 2: int} */
+    protected static function documentNumberFormat(): array
     {
-        $last = static::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->latest('id')
-            ->first();
-
-        $number = $last ? (int) substr($last->order_number, 3) + 1 : 1;
-
-        return 'PO-'.str_pad($number, 6, '0', STR_PAD_LEFT);
+        return ['order_number', 'PO-', 6];
     }
 
     public function hasUnreceivedItems(): bool
@@ -109,5 +105,19 @@ class PurchaseOrder extends Model
         }
 
         $this->save();
+    }
+
+    /**
+     * total = subtotal + tax_amount - discount_amount (see KeepsTotalsBalanced, Q2).
+     */
+    protected function documentTotalParts(): array
+    {
+        return [['subtotal', 'tax_amount'], ['discount_amount']];
+    }
+
+    /** Allowed status moves (Q3). */
+    protected static function statusEnum(): string
+    {
+        return \App\Enums\PurchaseOrderStatus::class;
     }
 }

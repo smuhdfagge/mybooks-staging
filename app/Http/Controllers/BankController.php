@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreBankRequest;
+use App\Http\Requests\UpdateBankRequest;
 use App\Models\Bank;
 use App\Models\ChartOfAccount;
 use App\Models\Expense;
@@ -29,27 +31,11 @@ class BankController extends Controller
         return view('banks.create', compact('chartOfAccounts', 'accountTypes'));
     }
 
-    public function store(Request $request)
+    public function store(StoreBankRequest $request)
     {
         $tenantId = auth()->user()->tenant_id;
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'bank_name' => 'nullable|string|max:255',
-            'account_number' => 'nullable|string|max:50',
-            'account_type' => 'required|in:checking,savings,credit_card,cash,other',
-            'currency' => 'required|string|size:3',
-            'routing_number' => 'nullable|string|max:50',
-            'swift_code' => 'nullable|string|max:20',
-            'iban' => 'nullable|string|max:50',
-            'branch_name' => 'nullable|string|max:255',
-            'branch_address' => 'nullable|string|max:500',
-            'opening_balance' => 'nullable|numeric',
-            'opening_balance_date' => 'nullable|date',
-            'chart_of_account_id' => ['nullable', Rule::exists('chart_of_accounts', 'id')->where('tenant_id', $tenantId)],
-            'description' => 'nullable|string',
-            'is_primary' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $validated['tenant_id'] = $tenantId;
         $validated['current_balance'] = $validated['opening_balance'] ?? 0;
@@ -132,26 +118,9 @@ class BankController extends Controller
         return view('banks.edit', compact('bank', 'chartOfAccounts', 'accountTypes'));
     }
 
-    public function update(Request $request, Bank $bank)
+    public function update(UpdateBankRequest $request, Bank $bank)
     {
-        $tenantId = auth()->user()->tenant_id;
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'bank_name' => 'nullable|string|max:255',
-            'account_number' => 'nullable|string|max:50',
-            'account_type' => 'required|in:checking,savings,credit_card,cash,other',
-            'currency' => 'required|string|size:3',
-            'routing_number' => 'nullable|string|max:50',
-            'swift_code' => 'nullable|string|max:20',
-            'iban' => 'nullable|string|max:50',
-            'branch_name' => 'nullable|string|max:255',
-            'branch_address' => 'nullable|string|max:500',
-            'chart_of_account_id' => ['nullable', Rule::exists('chart_of_accounts', 'id')->where('tenant_id', $tenantId)],
-            'description' => 'nullable|string',
-            'is_primary' => 'boolean',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         // If setting as primary, unset other primary banks
         if (! empty($validated['is_primary']) && ! $bank->is_primary) {

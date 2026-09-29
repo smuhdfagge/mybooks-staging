@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class EmployeeLoan extends Model
 {
+    use \App\Traits\HasDocumentNumber;
     use BelongsToTenant, LogsActivity, SoftDeletes;
 
     const TYPE_LOAN = 'loan';
@@ -86,16 +87,10 @@ class EmployeeLoan extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public static function generateNumber(int $tenantId): string
+    /** @return array{0: string, 1: string, 2: int} */
+    protected static function documentNumberFormat(): array
     {
-        $last = static::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->latest('id')
-            ->first();
-
-        $number = $last ? intval(substr($last->loan_number, 5)) + 1 : 1;
-
-        return 'LOAN-'.str_pad($number, 6, '0', STR_PAD_LEFT);
+        return ['loan_number', 'LOAN-', 6];
     }
 
     /**

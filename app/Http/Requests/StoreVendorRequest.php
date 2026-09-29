@@ -4,6 +4,10 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Creating a vendor, from the web form or the API (finding Q5).
+ * The rules already matched; the API also took is_active, so both do now.
+ */
 class StoreVendorRequest extends FormRequest
 {
     public function authorize(): bool
@@ -26,6 +30,7 @@ class StoreVendorRequest extends FormRequest
             'postal_code' => ['nullable', 'string', 'max:20'],
             'payment_terms' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string'],
+            'is_active' => ['boolean'],
         ];
     }
 }

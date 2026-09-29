@@ -5,6 +5,11 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+/**
+ * Creating an item, from the web form or the API (finding Q5). The rules
+ * already matched; both now take is_active (API only before) and an image
+ * (web only before).
+ */
 class StoreItemRequest extends FormRequest
 {
     public function authorize(): bool
@@ -29,6 +34,8 @@ class StoreItemRequest extends FormRequest
             'is_taxable' => ['boolean'],
             'track_inventory' => ['boolean'],
             'reorder_level' => ['nullable', 'integer', 'min:0'],
+            'is_active' => ['boolean'],
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
         ];
     }
 }

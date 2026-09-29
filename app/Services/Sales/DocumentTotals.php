@@ -2,6 +2,8 @@
 
 namespace App\Services\Sales;
 
+use App\Support\Money;
+
 /**
  * Line and document totals for sales documents (invoices, sales orders,
  * recurring invoices). One place, so the web, API, sales-order conversion
@@ -25,59 +27,56 @@ class DocumentTotals
      */
     public static function calculate(array $lines, ?string $discountType, float|int|string|null $discountValue): array
     {
+        // Round each line, then add the rounded lines (Q2).
         $net = [];
+        $grossOf = [];
         foreach ($lines as $key => $line) {
             $gross = (float) ($line['quantity'] ?? 0) * (float) ($line['unit_price'] ?? 0);
+            $grossOf[$key] = Money::round($gross);
             $lineDiscount = (float) ($line['discount'] ?? 0);
             if ($lineDiscount > 0 && ($line['discount_type'] ?? 'fixed') === 'percentage') {
                 $lineDiscount = $gross * $lineDiscount / 100;
             }
-            $net[$key] = round(max(0, $gross - $lineDiscount), 2);
+            $net[$key] = Money::round(max(0, $gross - $lineDiscount));
         }
 
-        $subtotal = round(array_sum($net), 2);
+        $subtotal = Money::sum($net);
 
         $discount = (float) ($discountValue ?? 0);
         if ($discountType === 'percentage') {
             $discount = $subtotal * $discount / 100;
         }
-        $discount = round(min(max(0, $discount), $subtotal), 2);
+        $discount = Money::round(min(max(0, $discount), $subtotal));
 
-        // Share the document discount across lines, in proportion to their amounts.
-        $shares = [];
-        $left = $discount;
-        $keys = array_keys($net);
-        $last = end($keys);
-        foreach ($net as $key => $amount) {
-            if ($key === $last) {
-                $shares[$key] = round($left, 2);
-            } else {
-                $shares[$key] = $subtotal > 0 ? round($discount * $amount / $subtotal, 2) : 0.0;
-                $left -= $shares[$key];
-            }
-        }
+        // Share the document discount across lines, in proportion to their
+        // amounts, in whole kobo so the shares add up to the discount.
+        $shares = $net === [] ? [] : Money::allocate($discount, $net);
 
         $out = [];
-        $tax = 0.0;
+        $taxes = [];
         foreach ($lines as $key => $line) {
             $rate = (float) ($line['tax_rate'] ?? 0);
-            $lineTax = round(($net[$key] - $shares[$key]) * $rate / 100, 2);
-            $tax += $lineTax;
+            $lineTax = Money::percent(Money::subtract($net[$key], $shares[$key]), $rate);
+            $taxes[] = $lineTax;
 
-            $out[$key] = array_merge($line, [
+            $out[$key] = array_merge(array_diff_key($line, ['discount_type' => true]), [
+                // The line's own discount as money, ready to store.
+                'discount' => Money::subtract($grossOf[$key], $net[$key]),
+                // This line's part of the document discount (bills need it).
+                'discount_share' => $shares[$key],
                 'tax_rate' => $rate,
                 'tax_amount' => $lineTax,
-                'total' => round($net[$key] + $lineTax, 2),
+                'total' => Money::add($net[$key], $lineTax),
             ]);
         }
-        $tax = round($tax, 2);
+        $tax = Money::sum($taxes);
 
         return [
             'lines' => $out,
             'subtotal' => $subtotal,
             'discount_amount' => $discount,
             'tax_amount' => $tax,
-            'total' => round($subtotal - $discount + $tax, 2),
+            'total' => Money::subtract(Money::add($subtotal, $tax), $discount),
         ];
     }
 }

@@ -17,6 +17,7 @@ class BillItem extends Model
         'description',
         'quantity',
         'unit_price',
+        'discount',
         'tax_rate',
         'tax_amount',
         'total',

@@ -14,7 +14,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SalesOrder extends Model
 {
-    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
+    use \App\Traits\GuardsStatusTransitions, \App\Traits\HasDocumentNumber;
+    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     protected $fillable = [
         'tenant_id',
@@ -81,16 +82,10 @@ class SalesOrder extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public static function generateNumber($tenantId)
+    /** @return array{0: string, 1: string, 2: int} */
+    protected static function documentNumberFormat(): array
     {
-        $lastOrder = static::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->latest('id')
-            ->first();
-
-        $number = $lastOrder ? intval(substr($lastOrder->order_number, 3)) + 1 : 1;
-
-        return 'SO-'.str_pad($number, 6, '0', STR_PAD_LEFT);
+        return ['order_number', 'SO-', 6];
     }
 
     /**
@@ -135,5 +130,19 @@ class SalesOrder extends Model
     public function hasUnfulfilledItems(): bool
     {
         return $this->items()->whereRaw('quantity_fulfilled < quantity')->exists();
+    }
+
+    /**
+     * total = subtotal + tax_amount - discount_amount (see KeepsTotalsBalanced, Q2).
+     */
+    protected function documentTotalParts(): array
+    {
+        return [['subtotal', 'tax_amount'], ['discount_amount']];
+    }
+
+    /** Allowed status moves (Q3). */
+    protected static function statusEnum(): string
+    {
+        return \App\Enums\SalesOrderStatus::class;
     }
 }

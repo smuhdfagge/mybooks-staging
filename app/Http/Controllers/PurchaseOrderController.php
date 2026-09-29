@@ -21,7 +21,7 @@ class PurchaseOrderController extends Controller
     {
         $vendors = Vendor::where('is_active', true)->get();
         $items = Item::where('is_active', true)->get();
-        $orderNumber = PurchaseOrder::generateNumber(auth()->user()->tenant_id);
+        $orderNumber = PurchaseOrder::previewNumber(auth()->user()->tenant_id);
 
         return view('purchase-orders.create', compact('vendors', 'items', 'orderNumber'));
     }

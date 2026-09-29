@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\StoreChartOfAccountRequest;
+use App\Http\Requests\UpdateChartOfAccountRequest;
 use App\Http\Resources\ChartOfAccountResource;
 use App\Models\ChartOfAccount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class ChartOfAccountController extends BaseApiController
 {
@@ -72,20 +73,11 @@ class ChartOfAccountController extends BaseApiController
     /**
      * Create a new account
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreChartOfAccountRequest $request): JsonResponse
     {
         $tenantId = $this->getTenantId();
 
-        $validated = $request->validate([
-            'parent_id' => ['nullable', Rule::exists('chart_of_accounts', 'id')->where('tenant_id', $tenantId)],
-            'account_code' => 'required|string|max:20',
-            'name' => 'required|string|max:255',
-            'type' => 'required|in:asset,liability,equity,income,expense',
-            'sub_type' => 'nullable|string|max:100',
-            'description' => 'nullable|string',
-            'opening_balance' => 'nullable|numeric',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $validated['tenant_id'] = $tenantId;
         $validated['current_balance'] = $validated['opening_balance'] ?? 0;
@@ -99,22 +91,13 @@ class ChartOfAccountController extends BaseApiController
     /**
      * Update an account
      */
-    public function update(Request $request, ChartOfAccount $chartOfAccount): JsonResponse
+    public function update(UpdateChartOfAccountRequest $request, ChartOfAccount $chartOfAccount): JsonResponse
     {
         if ($chartOfAccount->is_system) {
             return $this->forbidden('Cannot modify system accounts');
         }
 
-        $tenantId = $this->getTenantId();
-
-        $validated = $request->validate([
-            'parent_id' => ['nullable', Rule::exists('chart_of_accounts', 'id')->where('tenant_id', $tenantId)],
-            'account_code' => 'sometimes|string|max:20',
-            'name' => 'sometimes|string|max:255',
-            'sub_type' => 'nullable|string|max:100',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $chartOfAccount->update($validated);
         $chartOfAccount->load(['parent', 'children']);

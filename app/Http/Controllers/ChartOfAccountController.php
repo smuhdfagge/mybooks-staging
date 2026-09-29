@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreChartOfAccountRequest;
+use App\Http\Requests\UpdateChartOfAccountRequest;
 use App\Models\ChartOfAccount;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class ChartOfAccountController extends Controller
 {
@@ -21,19 +21,11 @@ class ChartOfAccountController extends Controller
         return view('chart-of-accounts.create', compact('accounts', 'types'));
     }
 
-    public function store(Request $request)
+    public function store(StoreChartOfAccountRequest $request)
     {
         $tenantId = auth()->user()->tenant_id;
 
-        $validated = $request->validate([
-            'account_code' => 'required|string|max:20',
-            'name' => 'required|string|max:255',
-            'type' => 'required|in:asset,liability,equity,income,expense',
-            'sub_type' => 'nullable|string|max:100',
-            'parent_id' => ['nullable', Rule::exists('chart_of_accounts', 'id')->where('tenant_id', $tenantId)],
-            'description' => 'nullable|string',
-            'opening_balance' => 'nullable|numeric',
-        ]);
+        $validated = $request->validated();
 
         $validated['tenant_id'] = $tenantId;
         $validated['current_balance'] = $validated['opening_balance'] ?? 0;
@@ -64,23 +56,13 @@ class ChartOfAccountController extends Controller
         return view('chart-of-accounts.edit', compact('chartOfAccount', 'accounts', 'types'));
     }
 
-    public function update(Request $request, ChartOfAccount $chartOfAccount)
+    public function update(UpdateChartOfAccountRequest $request, ChartOfAccount $chartOfAccount)
     {
         if ($chartOfAccount->is_system) {
             return redirect()->back()->with('error', 'System accounts cannot be modified.');
         }
 
-        $tenantId = auth()->user()->tenant_id;
-
-        $validated = $request->validate([
-            'account_code' => 'required|string|max:20',
-            'name' => 'required|string|max:255',
-            'type' => 'required|in:asset,liability,equity,income,expense',
-            'sub_type' => 'nullable|string|max:100',
-            'parent_id' => ['nullable', Rule::exists('chart_of_accounts', 'id')->where('tenant_id', $tenantId)],
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $chartOfAccount->update($validated);
 

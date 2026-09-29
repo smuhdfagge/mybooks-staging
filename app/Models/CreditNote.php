@@ -12,7 +12,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CreditNote extends Model
 {
-    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
+    use \App\Traits\HasDocumentNumber;
+    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
 
     const STATUS_DRAFT = 'draft';
 
@@ -86,16 +87,10 @@ class CreditNote extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public static function generateNumber($tenantId): string
+    /** @return array{0: string, 1: string, 2: int} */
+    protected static function documentNumberFormat(): array
     {
-        $last = static::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->latest('id')
-            ->first();
-
-        $number = $last ? intval(substr($last->credit_note_number, 3)) + 1 : 1;
-
-        return 'CN-'.str_pad($number, 6, '0', STR_PAD_LEFT);
+        return ['credit_note_number', 'CN-', 6];
     }
 
     /**
@@ -189,5 +184,13 @@ class CreditNote extends Model
         });
 
         return true;
+    }
+
+    /**
+     * total = subtotal + tax_amount (see KeepsTotalsBalanced, Q2).
+     */
+    protected function documentTotalParts(): array
+    {
+        return [['subtotal', 'tax_amount'], []];
     }
 }

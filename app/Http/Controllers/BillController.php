@@ -5,12 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreBillRequest;
 use App\Http\Requests\UpdateBillRequest;
 use App\Models\Bill;
-use App\Models\BillItem;
 use App\Models\Item;
 use App\Models\PurchaseOrder;
 use App\Models\Vendor;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class BillController extends Controller
 {
@@ -23,7 +21,7 @@ class BillController extends Controller
     {
         $vendors = Vendor::where('is_active', true)->get();
         $items = Item::where('is_active', true)->get();
-        $billNumber = Bill::generateNumber(auth()->user()->tenant_id);
+        $billNumber = Bill::previewNumber(auth()->user()->tenant_id);
 
         // "Convert to bill" from a purchase order fills the form from the
         // order (finding N8).
@@ -43,6 +41,8 @@ class BillController extends Controller
                 // Bill what arrived when goods have been received, else what was ordered
                 'quantity' => (float) ($line->quantity_received > 0 ? $line->quantity_received : $line->quantity),
                 'unit_price' => (float) $line->unit_price,
+                // The order's line discount, for the share being billed.
+                'discount' => (float) $line->quantity > 0 ? round((float) $line->discount * ($line->quantity_received > 0 ? $line->quantity_received : $line->quantity) / (float) $line->quantity, 2) : 0,
                 'tax_rate' => (float) $line->tax_rate,
                 'itemSearch' => $line->item?->name ?? '',
                 'itemDropdownOpen' => false,
@@ -53,98 +53,12 @@ class BillController extends Controller
         return view('bills.create', compact('vendors', 'items', 'billNumber', 'purchaseOrder', 'prefillItems'));
     }
 
-    public function store(StoreBillRequest $request)
+    public function store(StoreBillRequest $request, \App\Actions\Bills\SaveBill $save)
     {
-        $tenantId = auth()->user()->tenant_id;
+        // Same rules as the API and recurring bills (R3).
+        $bill = $save->create(auth()->user()->tenant_id, $request->validated(), auth()->id());
 
-        $validated = $request->validated();
-
-        $purchaseOrder = null;
-        if (! empty($validated['purchase_order_id'])) {
-            $purchaseOrder = PurchaseOrder::find($validated['purchase_order_id']);
-
-            if ((int) $purchaseOrder->vendor_id !== (int) $validated['vendor_id']) {
-                return back()->withInput()->withErrors(['vendor_id' => "The vendor must be the purchase order's vendor."]);
-            }
-        }
-
-        DB::beginTransaction();
-
-        try {
-            $subtotal = 0;
-            $totalTax = 0;
-            $totalDiscount = 0;
-
-            foreach ($validated['items'] as $item) {
-                $itemTotal = $item['quantity'] * $item['unit_price'];
-                $discount = $item['discount'] ?? 0;
-                $itemTotal -= $discount;
-                $tax = $itemTotal * (($item['tax_rate'] ?? 0) / 100);
-
-                $subtotal += $item['quantity'] * $item['unit_price'];
-                $totalDiscount += $discount;
-                $totalTax += $tax;
-            }
-
-            $bill = Bill::create([
-                'tenant_id' => $tenantId,
-                'vendor_id' => $validated['vendor_id'],
-                'purchase_order_id' => $purchaseOrder?->id,
-                'bill_number' => Bill::generateNumber($tenantId),
-                'bill_date' => $validated['bill_date'],
-                'due_date' => $validated['due_date'],
-                'subtotal' => $subtotal,
-                'tax_amount' => $totalTax,
-                'discount_amount' => $totalDiscount,
-                'total' => $subtotal - $totalDiscount + $totalTax,
-                'balance_due' => $subtotal - $totalDiscount + $totalTax,
-                // The form's 'Vendor Bill Number / Reference' field. Bills have no
-                // 'reference' column, so it used to be silently dropped.
-                'vendor_bill_number' => $validated['reference'] ?? null,
-                'notes' => $validated['notes'] ?? null,
-                'status' => 'unpaid',
-                'created_by' => auth()->id(),
-            ]);
-
-            foreach ($validated['items'] as $item) {
-                $itemTotal = $item['quantity'] * $item['unit_price'];
-                $discount = $item['discount'] ?? 0;
-                $tax = ($itemTotal - $discount) * (($item['tax_rate'] ?? 0) / 100);
-
-                BillItem::create([
-                    'bill_id' => $bill->id,
-                    'item_id' => $item['item_id'] ?? null,
-                    'description' => $item['description'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'tax_rate' => $item['tax_rate'] ?? 0,
-                    'tax_amount' => $tax,
-                    'discount' => $discount,
-                    'total' => $itemTotal - $discount + $tax,
-                ]);
-            }
-
-            $bill->postWithLines();
-
-            if ($purchaseOrder) {
-                // Locked so two people can't bill the same order at once
-                $purchaseOrder = PurchaseOrder::lockForUpdate()->find($purchaseOrder->id);
-                if (! in_array($purchaseOrder->status, PurchaseOrder::BILLABLE, true)) {
-                    DB::rollBack();
-
-                    return back()->withInput()->withErrors(['purchase_order_id' => 'This purchase order has already been billed or cannot be billed.']);
-                }
-                $purchaseOrder->update(['status' => PurchaseOrder::STATUS_BILLED]);
-            }
-
-            DB::commit();
-
-            return redirect()->route('bills.show', $bill)->with('success', 'Bill created.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return back()->withInput()->withErrors(['error' => 'Failed to create bill.']);
-        }
+        return redirect()->route('bills.show', $bill)->with('success', 'Bill created.');
     }
 
     public function show(Bill $bill)
@@ -167,91 +81,23 @@ class BillController extends Controller
         return view('bills.edit', compact('bill', 'vendors', 'items'));
     }
 
-    public function update(UpdateBillRequest $request, Bill $bill)
+    public function update(UpdateBillRequest $request, Bill $bill, \App\Actions\Bills\SaveBill $save)
     {
         if ($bill->status === 'paid') {
             return redirect()->route('bills.show', $bill)->with('error', 'Paid bills cannot be updated.');
         }
 
-        $tenantId = auth()->user()->tenant_id;
+        $save->update($bill, $request->validated());
 
-        $validated = $request->validated();
-
-        DB::beginTransaction();
-
-        try {
-            $subtotal = 0;
-            $totalTax = 0;
-            $totalDiscount = 0;
-
-            foreach ($validated['items'] as $item) {
-                $itemTotal = $item['quantity'] * $item['unit_price'];
-                $discount = $item['discount'] ?? 0;
-                $itemTotal -= $discount;
-                $tax = $itemTotal * (($item['tax_rate'] ?? 0) / 100);
-
-                $subtotal += $item['quantity'] * $item['unit_price'];
-                $totalDiscount += $discount;
-                $totalTax += $tax;
-            }
-
-            $totalAmount = $subtotal - $totalDiscount + $totalTax;
-            $amountPaid = $bill->total - $bill->balance_due;
-
-            $bill->update([
-                'bill_date' => $validated['bill_date'],
-                'due_date' => $validated['due_date'],
-                'subtotal' => $subtotal,
-                'tax_amount' => $totalTax,
-                'discount_amount' => $totalDiscount,
-                'total' => $totalAmount,
-                'balance_due' => max(0, $totalAmount - $amountPaid),
-                // The form's 'Vendor Bill Number / Reference' field. Bills have no
-                // 'reference' column, so it used to be silently dropped.
-                'vendor_bill_number' => $validated['reference'] ?? null,
-                'notes' => $validated['notes'] ?? null,
-            ]);
-
-            $bill->items()->delete();
-
-            foreach ($validated['items'] as $item) {
-                $itemTotal = $item['quantity'] * $item['unit_price'];
-                $discount = $item['discount'] ?? 0;
-                $tax = ($itemTotal - $discount) * (($item['tax_rate'] ?? 0) / 100);
-
-                BillItem::create([
-                    'bill_id' => $bill->id,
-                    'item_id' => $item['item_id'] ?? null,
-                    'description' => $item['description'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'tax_rate' => $item['tax_rate'] ?? 0,
-                    'tax_amount' => $tax,
-                    'discount' => $discount,
-                    'total' => $itemTotal - $discount + $tax,
-                ]);
-            }
-
-            $bill->postWithLines();
-
-            DB::commit();
-
-            return redirect()->route('bills.show', $bill)->with('success', 'Bill updated.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return back()->withInput()->withErrors(['error' => 'Failed to update bill.']);
-        }
+        return redirect()->route('bills.show', $bill)->with('success', 'Bill updated.');
     }
 
-    public function destroy(Bill $bill)
+    public function destroy(Bill $bill, \App\Actions\Bills\DeleteBill $delete)
     {
-        if ($bill->payments()->exists()) {
-            return redirect()->route('bills.index')->with('error', 'Cannot delete bill with payments.');
+        if ($reason = $delete->blockedBecause($bill)) {
+            return redirect()->route('bills.index')->with('error', $reason);
         }
-
-        $bill->items()->delete();
-        $bill->delete();
+        $delete->handle($bill);
 
         return redirect()->route('bills.index')->with('success', 'Bill deleted.');
     }

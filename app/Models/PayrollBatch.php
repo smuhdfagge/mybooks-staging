@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PayrollBatch extends Model
 {
+    use \App\Traits\HasDocumentNumber;
     use BelongsToTenant, LogsActivity, SoftDeletes;
 
     const STATUS_DRAFT = 'draft';
@@ -73,16 +74,10 @@ class PayrollBatch extends Model
         return $this->belongsTo(User::class, 'approved_by');
     }
 
-    public static function generateNumber($tenantId)
+    /** @return array{0: string, 1: string, 2: int} */
+    protected static function documentNumberFormat(): array
     {
-        $last = static::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->latest('id')
-            ->first();
-
-        $number = $last ? intval(substr($last->batch_number, 4)) + 1 : 1;
-
-        return 'PBN-'.str_pad($number, 6, '0', STR_PAD_LEFT);
+        return ['batch_number', 'PBN-', 6];
     }
 
     public function recalculateTotals()

@@ -44,57 +44,55 @@ class RecurrentBillController extends Controller
             'items.*.tax_rate' => 'nullable|numeric|min:0|max:100',
         ]);
 
-        DB::beginTransaction();
-
         try {
-            $subtotal = 0;
-            $totalTax = 0;
+            $recurrentBill = DB::transaction(function () use ($validated, $tenantId) {
+                $subtotal = 0;
+                $totalTax = 0;
 
-            foreach ($validated['items'] as $item) {
-                $itemTotal = $item['quantity'] * $item['unit_price'];
-                $tax = $itemTotal * (($item['tax_rate'] ?? 0) / 100);
-                $subtotal += $itemTotal;
-                $totalTax += $tax;
-            }
+                foreach ($validated['items'] as $item) {
+                    $itemTotal = $item['quantity'] * $item['unit_price'];
+                    $tax = $itemTotal * (($item['tax_rate'] ?? 0) / 100);
+                    $subtotal += $itemTotal;
+                    $totalTax += $tax;
+                }
 
-            $recurrentBill = RecurrentBill::create([
-                'tenant_id' => $tenantId,
-                'vendor_id' => $validated['vendor_id'],
-                'profile_name' => $validated['profile_name'],
-                'frequency' => $validated['frequency'],
-                'start_date' => $validated['start_date'],
-                'end_date' => $validated['end_date'] ?? null,
-                'next_bill_date' => $validated['start_date'],
-                'subtotal' => $subtotal,
-                'tax_amount' => $totalTax,
-                'total' => $subtotal + $totalTax,
-                'notes' => $validated['notes'] ?? null,
-                'status' => 'active',
-                'created_by' => auth()->id(),
-            ]);
-
-            foreach ($validated['items'] as $item) {
-                $itemTotal = $item['quantity'] * $item['unit_price'];
-                $tax = $itemTotal * (($item['tax_rate'] ?? 0) / 100);
-
-                RecurrentBillItem::create([
-                    'recurrent_bill_id' => $recurrentBill->id,
-                    'item_id' => $item['item_id'] ?? null,
-                    'description' => $item['description'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'tax_rate' => $item['tax_rate'] ?? 0,
-                    'tax_amount' => $tax,
-                    'total' => $itemTotal + $tax,
+                $recurrentBill = RecurrentBill::create([
+                    'tenant_id' => $tenantId,
+                    'vendor_id' => $validated['vendor_id'],
+                    'profile_name' => $validated['profile_name'],
+                    'frequency' => $validated['frequency'],
+                    'start_date' => $validated['start_date'],
+                    'end_date' => $validated['end_date'] ?? null,
+                    'next_bill_date' => $validated['start_date'],
+                    'subtotal' => $subtotal,
+                    'tax_amount' => $totalTax,
+                    'total' => $subtotal + $totalTax,
+                    'notes' => $validated['notes'] ?? null,
+                    'status' => 'active',
+                    'created_by' => auth()->id(),
                 ]);
-            }
 
-            DB::commit();
+                foreach ($validated['items'] as $item) {
+                    $itemTotal = $item['quantity'] * $item['unit_price'];
+                    $tax = $itemTotal * (($item['tax_rate'] ?? 0) / 100);
+
+                    RecurrentBillItem::create([
+                        'recurrent_bill_id' => $recurrentBill->id,
+                        'item_id' => $item['item_id'] ?? null,
+                        'description' => $item['description'],
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['unit_price'],
+                        'tax_rate' => $item['tax_rate'] ?? 0,
+                        'tax_amount' => $tax,
+                        'total' => $itemTotal + $tax,
+                    ]);
+                }
+
+                return $recurrentBill;
+            });
 
             return redirect()->route('recurrent-bills.show', $recurrentBill)->with('success', 'Recurrent bill profile created.');
         } catch (\Exception $e) {
-            DB::rollBack();
-
             return back()->withInput()->withErrors(['error' => 'Failed to create recurrent bill profile.']);
         }
     }
@@ -133,54 +131,50 @@ class RecurrentBillController extends Controller
             'items.*.tax_rate' => 'nullable|numeric|min:0|max:100',
         ]);
 
-        DB::beginTransaction();
-
         try {
-            $subtotal = 0;
-            $totalTax = 0;
+            DB::transaction(function () use ($validated, $recurrentBill) {
+                $subtotal = 0;
+                $totalTax = 0;
 
-            foreach ($validated['items'] as $item) {
-                $itemTotal = $item['quantity'] * $item['unit_price'];
-                $tax = $itemTotal * (($item['tax_rate'] ?? 0) / 100);
-                $subtotal += $itemTotal;
-                $totalTax += $tax;
-            }
+                foreach ($validated['items'] as $item) {
+                    $itemTotal = $item['quantity'] * $item['unit_price'];
+                    $tax = $itemTotal * (($item['tax_rate'] ?? 0) / 100);
+                    $subtotal += $itemTotal;
+                    $totalTax += $tax;
+                }
 
-            $recurrentBill->update([
-                'profile_name' => $validated['profile_name'],
-                'frequency' => $validated['frequency'],
-                'end_date' => $validated['end_date'] ?? null,
-                'subtotal' => $subtotal,
-                'tax_amount' => $totalTax,
-                'total' => $subtotal + $totalTax,
-                'notes' => $validated['notes'] ?? null,
-                'status' => $validated['status'] ?? $recurrentBill->status,
-            ]);
-
-            $recurrentBill->items()->delete();
-
-            foreach ($validated['items'] as $item) {
-                $itemTotal = $item['quantity'] * $item['unit_price'];
-                $tax = $itemTotal * (($item['tax_rate'] ?? 0) / 100);
-
-                RecurrentBillItem::create([
-                    'recurrent_bill_id' => $recurrentBill->id,
-                    'item_id' => $item['item_id'] ?? null,
-                    'description' => $item['description'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'tax_rate' => $item['tax_rate'] ?? 0,
-                    'tax_amount' => $tax,
-                    'total' => $itemTotal + $tax,
+                $recurrentBill->update([
+                    'profile_name' => $validated['profile_name'],
+                    'frequency' => $validated['frequency'],
+                    'end_date' => $validated['end_date'] ?? null,
+                    'subtotal' => $subtotal,
+                    'tax_amount' => $totalTax,
+                    'total' => $subtotal + $totalTax,
+                    'notes' => $validated['notes'] ?? null,
+                    'status' => $validated['status'] ?? $recurrentBill->status,
                 ]);
-            }
 
-            DB::commit();
+                $recurrentBill->items()->delete();
+
+                foreach ($validated['items'] as $item) {
+                    $itemTotal = $item['quantity'] * $item['unit_price'];
+                    $tax = $itemTotal * (($item['tax_rate'] ?? 0) / 100);
+
+                    RecurrentBillItem::create([
+                        'recurrent_bill_id' => $recurrentBill->id,
+                        'item_id' => $item['item_id'] ?? null,
+                        'description' => $item['description'],
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['unit_price'],
+                        'tax_rate' => $item['tax_rate'] ?? 0,
+                        'tax_amount' => $tax,
+                        'total' => $itemTotal + $tax,
+                    ]);
+                }
+            });
 
             return redirect()->route('recurrent-bills.show', $recurrentBill)->with('success', 'Recurrent bill profile updated.');
         } catch (\Exception $e) {
-            DB::rollBack();
-
             return back()->withInput()->withErrors(['error' => 'Failed to update recurrent bill profile.']);
         }
     }

@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Journal extends Model
 {
+    use \App\Traits\HasDocumentNumber;
     use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     /** Year-end closing journal: kept out of the profit and loss (A8). */
@@ -68,16 +69,10 @@ class Journal extends Model
         return $this->morphTo();
     }
 
-    public static function generateNumber($tenantId)
+    /** @return array{0: string, 1: string, 2: int} */
+    protected static function documentNumberFormat(): array
     {
-        $lastJournal = static::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->latest('id')
-            ->first();
-
-        $number = $lastJournal ? intval(substr($lastJournal->journal_number, 3)) + 1 : 1;
-
-        return 'JE-'.str_pad($number, 6, '0', STR_PAD_LEFT);
+        return ['journal_number', 'JE-', 6];
     }
 
     public function isBalanced(): bool

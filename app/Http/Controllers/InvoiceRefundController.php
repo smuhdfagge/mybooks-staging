@@ -52,34 +52,32 @@ class InvoiceRefundController extends Controller
         ]);
 
         try {
-            DB::beginTransaction();
+            $refund = DB::transaction(function () use ($invoice, $validated) {
+                $refund = InvoiceRefund::create([
+                    'tenant_id' => auth()->user()->tenant_id,
+                    'invoice_id' => $invoice->id,
+                    'customer_id' => $invoice->customer_id,
+                    'refund_number' => InvoiceRefund::generateNumber(auth()->user()->tenant_id),
+                    'refund_date' => $validated['refund_date'],
+                    'amount' => $validated['amount'],
+                    'refund_method' => $validated['refund_method'],
+                    'reason' => $validated['reason'] ?? null,
+                    'notes' => $validated['notes'] ?? null,
+                    'reference' => $validated['reference'] ?? null,
+                    'status' => 'pending',
+                    'created_by' => auth()->id(),
+                ]);
 
-            $refund = InvoiceRefund::create([
-                'tenant_id' => auth()->user()->tenant_id,
-                'invoice_id' => $invoice->id,
-                'customer_id' => $invoice->customer_id,
-                'refund_number' => InvoiceRefund::generateNumber(auth()->user()->tenant_id),
-                'refund_date' => $validated['refund_date'],
-                'amount' => $validated['amount'],
-                'refund_method' => $validated['refund_method'],
-                'reason' => $validated['reason'] ?? null,
-                'notes' => $validated['notes'] ?? null,
-                'reference' => $validated['reference'] ?? null,
-                'status' => 'pending',
-                'created_by' => auth()->id(),
-            ]);
+                // Process the refund immediately (or you could have an approval workflow)
+                $refund->process();
 
-            // Process the refund immediately (or you could have an approval workflow)
-            $refund->process();
-
-            DB::commit();
+                return $refund;
+            });
 
             return redirect()->route('invoices.show', $invoice)
                 ->with('success', "Refund {$refund->refund_number} has been processed successfully.");
 
         } catch (\Exception $e) {
-            DB::rollBack();
-
             return back()->withInput()
                 ->with('error', 'Failed to process refund: '.$e->getMessage());
         }
@@ -105,18 +103,14 @@ class InvoiceRefundController extends Controller
         }
 
         try {
-            DB::beginTransaction();
-
-            $refund->cancel();
-
-            DB::commit();
+            DB::transaction(function () use ($refund) {
+                $refund->cancel();
+            });
 
             return redirect()->route('invoices.show', $refund->invoice)
                 ->with('success', "Refund {$refund->refund_number} has been cancelled.");
 
         } catch (\Exception $e) {
-            DB::rollBack();
-
             return back()->with('error', 'Failed to cancel refund: '.$e->getMessage());
         }
     }

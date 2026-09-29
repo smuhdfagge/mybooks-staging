@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\StoreJournalRequest;
+use App\Http\Requests\UpdateJournalRequest;
 use App\Http\Resources\JournalResource;
-use App\Models\ChartOfAccount;
 use App\Models\Journal;
 use App\Models\JournalEntry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class JournalController extends BaseApiController
 {
@@ -79,20 +79,13 @@ class JournalController extends BaseApiController
     /**
      * Create a manual journal entry
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreJournalRequest $request): JsonResponse
     {
         $tenantId = $this->getTenantId();
 
-        $validated = $request->validate([
-            'journal_date' => 'required|date',
-            'reference' => 'nullable|string|max:100',
-            'description' => 'required|string|max:500',
-            'entries' => 'required|array|min:2',
-            'entries.*.account_id' => ['required', Rule::exists('chart_of_accounts', 'id')->where('tenant_id', $tenantId)],
-            'entries.*.description' => 'nullable|string|max:255',
-            'entries.*.debit' => 'required|numeric|min:0',
-            'entries.*.credit' => 'required|numeric|min:0',
-        ]);
+        // Each line holding a debit or a credit (not both) is checked by
+        // StoreJournalRequest, the same as on the web.
+        $validated = $request->validated();
 
         // Validate that debits equal credits
         $totalDebit = collect($validated['entries'])->sum('debit');
@@ -104,88 +97,52 @@ class JournalController extends BaseApiController
             ]);
         }
 
-        // Validate each entry has either debit or credit (not both, not neither)
-        foreach ($validated['entries'] as $index => $entry) {
-            if ($entry['debit'] > 0 && $entry['credit'] > 0) {
-                return $this->validationError([
-                    "entries.{$index}" => ['An entry cannot have both debit and credit amounts.'],
-                ]);
-            }
-            if ($entry['debit'] == 0 && $entry['credit'] == 0) {
-                return $this->validationError([
-                    "entries.{$index}" => ['An entry must have either a debit or credit amount.'],
-                ]);
-            }
-        }
-
-        // Validate accounts belong to tenant
-        $accountIds = collect($validated['entries'])->pluck('account_id');
-        $validAccounts = ChartOfAccount::where('tenant_id', $tenantId)
-            ->whereIn('id', $accountIds)
-            ->count();
-
-        if ($validAccounts !== $accountIds->count()) {
-            return $this->error('One or more accounts do not belong to your organization.', 422);
-        }
-
-        DB::beginTransaction();
         try {
-            $journal = Journal::create([
-                'tenant_id' => $tenantId,
-                'journal_number' => Journal::generateNumber($tenantId),
-                'journal_date' => $validated['journal_date'],
-                'reference' => $validated['reference'] ?? null,
-                'description' => $validated['description'],
-                'total_debit' => $totalDebit,
-                'total_credit' => $totalCredit,
-                'status' => 'draft',
-                'is_posted' => false,
-                'created_by' => auth()->id(),
-            ]);
-
-            foreach ($validated['entries'] as $entry) {
-                JournalEntry::create([
-                    'journal_id' => $journal->id,
-                    'account_id' => $entry['account_id'],
-                    'description' => $entry['description'] ?? $validated['description'],
-                    'debit' => $entry['debit'],
-                    'credit' => $entry['credit'],
+            $journal = DB::transaction(function () use ($validated, $tenantId, $totalDebit, $totalCredit) {
+                $journal = Journal::create([
+                    'tenant_id' => $tenantId,
+                    'journal_number' => Journal::generateNumber($tenantId),
+                    'journal_date' => $validated['journal_date'],
+                    'reference' => $validated['reference'] ?? null,
+                    'description' => $validated['description'],
+                    'total_debit' => $totalDebit,
+                    'total_credit' => $totalCredit,
+                    'status' => 'draft',
+                    'is_posted' => false,
+                    'created_by' => auth()->id(),
                 ]);
-            }
 
-            DB::commit();
+                foreach ($validated['entries'] as $entry) {
+                    JournalEntry::create([
+                        'journal_id' => $journal->id,
+                        'account_id' => $entry['account_id'],
+                        'description' => $entry['description'] ?? $validated['description'],
+                        'debit' => $entry['debit'] ?? 0,
+                        'credit' => $entry['credit'] ?? 0,
+                    ]);
+                }
 
-            $journal->load(['entries.account', 'createdBy']);
-
-            return $this->created(new JournalResource($journal), 'Journal entry created successfully');
+                return $journal;
+            });
         } catch (\Exception $e) {
-            DB::rollBack();
-
             return $this->error('Failed to create journal entry: '.$e->getMessage(), 500);
         }
+
+        $journal->load(['entries.account', 'createdBy']);
+
+        return $this->created(new JournalResource($journal), 'Journal entry created successfully');
     }
 
     /**
      * Update a journal entry (only if not posted)
      */
-    public function update(Request $request, Journal $journal): JsonResponse
+    public function update(UpdateJournalRequest $request, Journal $journal): JsonResponse
     {
         if ($journal->is_posted) {
             return $this->error('Cannot modify a posted journal entry.', 422);
         }
 
-        $tenantId = $this->getTenantId();
-
-        $validated = $request->validate([
-            'journal_date' => 'sometimes|date',
-            'reference' => 'nullable|string|max:100',
-            'description' => 'sometimes|string|max:500',
-            'entries' => 'sometimes|array|min:2',
-            'entries.*.account_id' => ['required_with:entries', Rule::exists('chart_of_accounts', 'id')->where('tenant_id', $tenantId)],
-            'entries.*.description' => 'nullable|string|max:255',
-            'entries.*.debit' => 'required_with:entries|numeric|min:0',
-            'entries.*.credit' => 'required_with:entries|numeric|min:0',
-        ]);
+        $validated = $request->validated();
 
         if (isset($validated['entries'])) {
             $totalDebit = collect($validated['entries'])->sum('debit');
@@ -197,29 +154,27 @@ class JournalController extends BaseApiController
                 ]);
             }
 
-            DB::beginTransaction();
             try {
-                $journal->entries()->delete();
+                DB::transaction(function () use ($validated, $journal, $totalDebit, $totalCredit) {
+                    $journal->entries()->delete();
 
-                foreach ($validated['entries'] as $entry) {
-                    JournalEntry::create([
-                        'journal_id' => $journal->id,
-                        'account_id' => $entry['account_id'],
-                        'description' => $entry['description'] ?? $journal->description,
-                        'debit' => $entry['debit'],
-                        'credit' => $entry['credit'],
-                    ]);
-                }
+                    foreach ($validated['entries'] as $entry) {
+                        JournalEntry::create([
+                            'journal_id' => $journal->id,
+                            'account_id' => $entry['account_id'],
+                            'description' => $entry['description'] ?? $journal->description,
+                            'debit' => $entry['debit'] ?? 0,
+                            'credit' => $entry['credit'] ?? 0,
+                        ]);
+                    }
 
-                $validated['total_debit'] = $totalDebit;
-                $validated['total_credit'] = $totalCredit;
-                unset($validated['entries']);
+                    $validated['total_debit'] = $totalDebit;
+                    $validated['total_credit'] = $totalCredit;
+                    unset($validated['entries']);
 
-                $journal->update($validated);
-                DB::commit();
+                    $journal->update($validated);
+                });
             } catch (\Exception $e) {
-                DB::rollBack();
-
                 return $this->error('Failed to update journal entry: '.$e->getMessage(), 500);
             }
         } else {
@@ -267,22 +222,17 @@ class JournalController extends BaseApiController
             return $this->error('Journal entry must be balanced before posting.', 422);
         }
 
-        DB::beginTransaction();
         try {
             // Same posting code as the web app (checks balance, updates
             // account balances, marks posted).
-            $journal->post();
-
-            DB::commit();
-
-            $journal->load(['entries.account', 'createdBy']);
-
-            return $this->success(new JournalResource($journal), 'Journal entry posted successfully');
+            DB::transaction(fn () => $journal->post());
         } catch (\Exception $e) {
-            DB::rollBack();
-
             return $this->error('Failed to post journal entry: '.$e->getMessage(), 500);
         }
+
+        $journal->load(['entries.account', 'createdBy']);
+
+        return $this->success(new JournalResource($journal), 'Journal entry posted successfully');
     }
 
     /**
@@ -300,53 +250,52 @@ class JournalController extends BaseApiController
 
         $tenantId = $this->getTenantId();
 
-        DB::beginTransaction();
         try {
-            $reversingJournal = Journal::create([
-                'tenant_id' => $tenantId,
-                'journal_number' => Journal::generateNumber($tenantId),
-                'journal_date' => now()->format('Y-m-d'),
-                'reference' => "Reversal of {$journal->journal_number}",
-                'description' => "Reversal: {$journal->description}",
-                'total_debit' => $journal->total_credit,
-                'total_credit' => $journal->total_debit,
-                'status' => 'posted',
-                'is_posted' => true,
-                'posted_at' => now(),
-                'created_by' => auth()->id(),
-            ]);
-
-            foreach ($journal->entries as $entry) {
-                JournalEntry::create([
-                    'journal_id' => $reversingJournal->id,
-                    'account_id' => $entry->account_id,
-                    'description' => "Reversal: {$entry->description}",
-                    'debit' => $entry->credit,
-                    'credit' => $entry->debit,
+            $reversingJournal = DB::transaction(function () use ($journal, $tenantId) {
+                $reversingJournal = Journal::create([
+                    'tenant_id' => $tenantId,
+                    'journal_number' => Journal::generateNumber($tenantId),
+                    'journal_date' => now()->format('Y-m-d'),
+                    'reference' => "Reversal of {$journal->journal_number}",
+                    'description' => "Reversal: {$journal->description}",
+                    'total_debit' => $journal->total_credit,
+                    'total_credit' => $journal->total_debit,
+                    'status' => 'posted',
+                    'is_posted' => true,
+                    'posted_at' => now(),
+                    'created_by' => auth()->id(),
                 ]);
 
-                // Update account balances
-                $account = $entry->account;
-                if ($account->isDebitBalance()) {
-                    $account->current_balance += ($entry->credit - $entry->debit);
-                } else {
-                    $account->current_balance += ($entry->debit - $entry->credit);
+                foreach ($journal->entries as $entry) {
+                    JournalEntry::create([
+                        'journal_id' => $reversingJournal->id,
+                        'account_id' => $entry->account_id,
+                        'description' => "Reversal: {$entry->description}",
+                        'debit' => $entry->credit,
+                        'credit' => $entry->debit,
+                    ]);
+
+                    // Update account balances
+                    $account = $entry->account;
+                    if ($account->isDebitBalance()) {
+                        $account->current_balance += ($entry->credit - $entry->debit);
+                    } else {
+                        $account->current_balance += ($entry->debit - $entry->credit);
+                    }
+                    $account->save();
                 }
-                $account->save();
-            }
 
-            $journal->update(['status' => 'reversed']);
+                $journal->update(['status' => 'reversed']);
 
-            DB::commit();
-
-            $reversingJournal->load(['entries.account', 'createdBy']);
-
-            return $this->success(new JournalResource($reversingJournal), 'Reversing journal entry created successfully');
+                return $reversingJournal;
+            });
         } catch (\Exception $e) {
-            DB::rollBack();
-
             return $this->error('Failed to create reversing entry: '.$e->getMessage(), 500);
         }
+
+        $reversingJournal->load(['entries.account', 'createdBy']);
+
+        return $this->success(new JournalResource($reversingJournal), 'Reversing journal entry created successfully');
     }
 
     /**

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\StoreCustomerRequest;
+use App\Http\Requests\UpdateCustomerRequest;
 use App\Http\Resources\CustomerResource;
 use App\Models\Customer;
 use Illuminate\Http\JsonResponse;
@@ -56,25 +58,9 @@ class CustomerController extends BaseApiController
     /**
      * Create a new customer
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreCustomerRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:50',
-            'company_name' => 'nullable|string|max:255',
-            'tax_number' => 'nullable|string|max:100',
-            'billing_address' => 'nullable|string',
-            'shipping_address' => 'nullable|string',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'country' => 'nullable|string|max:100',
-            'postal_code' => 'nullable|string|max:20',
-            'credit_limit' => 'nullable|numeric|min:0',
-            'payment_terms' => 'nullable|integer|min:0',
-            'notes' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $customer = Customer::create($validated);
 
@@ -84,25 +70,9 @@ class CustomerController extends BaseApiController
     /**
      * Update a customer
      */
-    public function update(Request $request, Customer $customer): JsonResponse
+    public function update(UpdateCustomerRequest $request, Customer $customer): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:50',
-            'company_name' => 'nullable|string|max:255',
-            'tax_number' => 'nullable|string|max:100',
-            'billing_address' => 'nullable|string',
-            'shipping_address' => 'nullable|string',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'country' => 'nullable|string|max:100',
-            'postal_code' => 'nullable|string|max:20',
-            'credit_limit' => 'nullable|numeric|min:0',
-            'payment_terms' => 'nullable|integer|min:0',
-            'notes' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $customer->update($validated);
 

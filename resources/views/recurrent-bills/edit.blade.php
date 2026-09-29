@@ -224,14 +224,14 @@
     <script nonce="{{ app('csp-nonce') }}">
         function recurrentBillForm() {
             return {
-                availableProducts: @json($items->map(fn($i) => [
+                availableProducts: @js($items->map(fn($i) => [
                     'id' => $i->id,
                     'name' => $i->name,
                     'price' => $i->cost_price ?? $i->selling_price,
                     'description' => $i->name,
                     'tax_rate' => $i->tax_rate ?? 0
                 ])),
-                items: @json($recurrentBill->items->map(fn($i) => [
+                items: @js($recurrentBill->items->map(fn($i) => [
                     'item_id' => $i->item_id ?? '',
                     'description' => $i->description,
                     'quantity' => floatval($i->quantity),

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class StockTransfer extends Model
 {
+    use \App\Traits\HasDocumentNumber;
     use BelongsToTenant, HasFactory, LogsActivity;
 
     const STATUS_DRAFT = 'draft';
@@ -62,16 +63,10 @@ class StockTransfer extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public static function generateNumber(int $tenantId): string
+    /** @return array{0: string, 1: string, 2: int} */
+    protected static function documentNumberFormat(): array
     {
-        $latest = static::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->latest('id')
-            ->first();
-
-        $nextNumber = $latest ? ((int) substr($latest->transfer_number, 3)) + 1 : 1;
-
-        return 'ST-'.str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+        return ['transfer_number', 'ST-', 5];
     }
 
     /**

@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\StoreEmployeeRequest;
+use App\Http\Requests\UpdateEmployeeRequest;
 use App\Http\Resources\EmployeeResource;
 use App\Models\Employee;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 
 class EmployeeController extends BaseApiController
 {
@@ -69,33 +71,13 @@ class EmployeeController extends BaseApiController
     /**
      * Create a new employee
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreEmployeeRequest $request): JsonResponse
     {
-        $tenantId = $this->getTenantId();
-
-        $validated = $request->validate([
-            'employee_id' => ['nullable', 'string', 'max:50', Rule::unique('employees', 'employee_id')->where('tenant_id', $tenantId)],
-            'first_name' => 'required|string|max:100',
-            'last_name' => 'required|string|max:100',
-            'email' => 'required|email|max:255',
-            'phone' => 'nullable|string|max:50',
-            'date_of_birth' => 'nullable|date',
-            'gender' => 'nullable|in:male,female,other',
-            'address' => 'nullable|string',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'country' => 'nullable|string|max:100',
-            'postal_code' => 'nullable|string|max:20',
-            'hire_date' => 'required|date',
-            'department_id' => ['nullable', Rule::exists('departments', 'id')->where('tenant_id', $tenantId)],
-            'designation_id' => ['nullable', Rule::exists('designations', 'id')->where('tenant_id', $tenantId)],
-            'status' => 'sometimes|in:active,inactive,terminated',
-            'salary' => 'nullable|numeric|min:0',
-            'salary_type' => 'nullable|in:hourly,monthly,yearly',
-            'bank_name' => 'nullable|string|max:255',
-            'bank_account_number' => 'nullable|string|max:50',
-            'tax_id' => 'nullable|string|max:50',
-        ]);
+        $validated = $request->validated();
+        if ($request->hasFile('photo')) {
+            $validated['photo_path'] = $request->file('photo')->store('employee-photos', 'public');
+        }
+        unset($validated['photo']);
 
         $validated['tenant_id'] = $this->getTenantId();
 
@@ -113,33 +95,16 @@ class EmployeeController extends BaseApiController
     /**
      * Update an employee
      */
-    public function update(Request $request, Employee $employee): JsonResponse
+    public function update(UpdateEmployeeRequest $request, Employee $employee): JsonResponse
     {
-        $tenantId = $this->getTenantId();
-
-        $validated = $request->validate([
-            'first_name' => 'sometimes|string|max:100',
-            'last_name' => 'sometimes|string|max:100',
-            'email' => 'sometimes|email|max:255',
-            'phone' => 'nullable|string|max:50',
-            'date_of_birth' => 'nullable|date',
-            'gender' => 'nullable|in:male,female,other',
-            'address' => 'nullable|string',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'country' => 'nullable|string|max:100',
-            'postal_code' => 'nullable|string|max:20',
-            'hire_date' => 'sometimes|date',
-            'termination_date' => 'nullable|date',
-            'department_id' => ['nullable', Rule::exists('departments', 'id')->where('tenant_id', auth()->user()->tenant_id)],
-            'designation_id' => ['nullable', Rule::exists('designations', 'id')->where('tenant_id', auth()->user()->tenant_id)],
-            'status' => 'sometimes|in:active,inactive,terminated',
-            'salary' => 'nullable|numeric|min:0',
-            'salary_type' => 'nullable|in:hourly,monthly,yearly',
-            'bank_name' => 'nullable|string|max:255',
-            'bank_account_number' => 'nullable|string|max:50',
-            'tax_id' => 'nullable|string|max:50',
-        ]);
+        $validated = $request->validated();
+        if ($request->hasFile('photo')) {
+            if ($employee->photo_path) {
+                Storage::disk('public')->delete($employee->photo_path);
+            }
+            $validated['photo_path'] = $request->file('photo')->store('employee-photos', 'public');
+        }
+        unset($validated['photo']);
 
         $employee->update($validated);
         $employee->load(['department', 'designation']);

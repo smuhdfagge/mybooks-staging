@@ -12,8 +12,6 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 class InvoiceController extends BaseApiController
 {
@@ -86,67 +84,10 @@ class InvoiceController extends BaseApiController
     /**
      * Create a new invoice
      */
-    public function store(Request $request): JsonResponse
+    public function store(\App\Http\Requests\StoreInvoiceRequest $request, \App\Actions\Invoices\SaveInvoice $save): JsonResponse
     {
-        $tenantId = $this->getTenantId();
-
-        $validated = $request->validate([
-            'customer_id' => ['required', Rule::exists('customers', 'id')->where('tenant_id', $tenantId)],
-            'sales_order_id' => ['nullable', Rule::exists('sales_orders', 'id')->where('tenant_id', $tenantId)],
-            'reference' => 'nullable|string|max:100',
-            'invoice_date' => 'required|date',
-            'due_date' => 'required|date|after_or_equal:invoice_date',
-            'status' => 'sometimes|in:draft,unpaid,partial,paid,overdue,cancelled',
-            'discount_amount' => 'nullable|numeric|min:0',
-            'discount_type' => 'nullable|in:fixed,percentage',
-            'notes' => 'nullable|string',
-            'terms' => 'nullable|string',
-            'items' => 'required|array|min:1',
-            'items.*.item_id' => ['nullable', Rule::exists('items', 'id')->where('tenant_id', $tenantId)],
-            'items.*.description' => 'required|string',
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.discount' => 'nullable|numeric|min:0',
-            'items.*.discount_type' => 'nullable|in:fixed,percentage',
-            'items.*.tax_rate' => 'nullable|numeric|min:0|max:100',
-        ]);
-
-        // Generate invoice number
-        $validated['invoice_number'] = Invoice::generateNumber($tenantId);
-        $validated['tenant_id'] = $tenantId;
-        $validated['created_by'] = auth()->id();
-
-        // Calculate totals: VAT after the discount, the same everywhere (A4).
-        $totals = \App\Services\Sales\DocumentTotals::calculate(
-            $validated['items'], $validated['discount_type'] ?? null, $validated['discount_amount'] ?? 0
-        );
-        $validated['items'] = $totals['lines'];
-        $validated['subtotal'] = $totals['subtotal'];
-        $validated['tax_amount'] = $totals['tax_amount'];
-        $validated['discount_amount'] = $totals['discount_amount'];
-        $validated['total'] = $totals['total'];
-        $validated['balance_due'] = $validated['total'];
-        $validated['amount_paid'] = 0;
-
-        // Invoice and its lines are saved together (M4), after checking there
-        // is enough stock, and the stock is reserved as the web form does.
-        $invoice = DB::transaction(function () use ($validated, $tenantId) {
-            $shortages = Invoice::stockShortages($validated['items'], $tenantId);
-            if ($shortages) {
-                throw ValidationException::withMessages($shortages);
-            }
-
-            $invoice = Invoice::create(collect($validated)->except('items')->toArray());
-
-            foreach ($validated['items'] as $item) {
-                $invoice->items()->create($item);
-            }
-
-            $invoice->reserveInventory();
-
-            return $invoice;
-        });
-
+        // Same rules and the same code as the web form (R3, Q5).
+        $invoice = $save->create($this->getTenantId(), $request->validated(), auth()->id());
         $invoice->load(['customer', 'items.item']);
 
         return $this->created(new InvoiceResource($invoice), 'Invoice created successfully');
@@ -155,78 +96,9 @@ class InvoiceController extends BaseApiController
     /**
      * Update an invoice
      */
-    public function update(Request $request, Invoice $invoice): JsonResponse
+    public function update(\App\Http\Requests\UpdateInvoiceRequest $request, Invoice $invoice, \App\Actions\Invoices\SaveInvoice $save): JsonResponse
     {
-        // Only allow updates on draft invoices
-        if ($invoice->status !== 'draft' && ! $request->user()->can('edit invoices')) {
-            return $this->forbidden('Cannot modify a non-draft invoice');
-        }
-
-        $tenantId = $this->getTenantId();
-
-        $validated = $request->validate([
-            'customer_id' => ['sometimes', Rule::exists('customers', 'id')->where('tenant_id', $tenantId)],
-            'reference' => 'nullable|string|max:100',
-            'invoice_date' => 'sometimes|date',
-            'due_date' => 'sometimes|date|after_or_equal:invoice_date',
-            'discount_amount' => 'nullable|numeric|min:0',
-            'discount_type' => 'nullable|in:fixed,percentage',
-            'notes' => 'nullable|string',
-            'terms' => 'nullable|string',
-            'items' => 'sometimes|array|min:1',
-            'items.*.id' => ['nullable', Rule::exists('invoice_items', 'id')->where('invoice_id', $invoice->id)],
-            'items.*.item_id' => ['nullable', Rule::exists('items', 'id')->where('tenant_id', $tenantId)],
-            'items.*.description' => 'required|string',
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.discount' => 'nullable|numeric|min:0',
-            'items.*.discount_type' => 'nullable|in:fixed,percentage',
-            'items.*.tax_rate' => 'nullable|numeric|min:0|max:100',
-        ]);
-
-        if (isset($validated['items'])) {
-            // Recalculate totals: VAT after the discount (A4).
-            $totals = \App\Services\Sales\DocumentTotals::calculate(
-                $validated['items'],
-                // No new discount sent: keep the invoice's current discount amount
-                // (it is stored as money, so treat it as fixed).
-                array_key_exists('discount_amount', $validated) ? ($validated['discount_type'] ?? null) : 'fixed',
-                array_key_exists('discount_amount', $validated) ? $validated['discount_amount'] : $invoice->discount_amount,
-            );
-            $validated['items'] = $totals['lines'];
-            $validated['subtotal'] = $totals['subtotal'];
-            $validated['tax_amount'] = $totals['tax_amount'];
-            $validated['discount_amount'] = $totals['discount_amount'];
-            $validated['total'] = $totals['total'];
-            $validated['balance_due'] = $validated['total'] - $invoice->amount_paid;
-
-        }
-
-        DB::transaction(function () use ($validated, $invoice, $tenantId) {
-            if (isset($validated['items'])) {
-                // Same stock rules as the web form: this invoice's own
-                // reservation is given back, then the new lines are reserved.
-                if (! $invoice->isReleased()) {
-                    $shortages = Invoice::stockShortages($validated['items'], $tenantId, $invoice);
-                    if ($shortages) {
-                        throw ValidationException::withMessages($shortages);
-                    }
-                    $invoice->load('items');
-                    $invoice->releaseInventoryReservation();
-                }
-
-                $invoice->items()->delete();
-                foreach ($validated['items'] as $item) {
-                    $invoice->items()->create($item);
-                }
-            }
-
-            $invoice->update(collect($validated)->except('items')->toArray());
-
-            if (isset($validated['items'])) {
-                $invoice->reserveInventory();
-            }
-        });
+        $invoice = $save->update($invoice, $request->validated());
         $invoice->load(['customer', 'items.item']);
 
         return $this->success(new InvoiceResource($invoice), 'Invoice updated successfully');
@@ -235,20 +107,13 @@ class InvoiceController extends BaseApiController
     /**
      * Delete an invoice
      */
-    public function destroy(Invoice $invoice): JsonResponse
+    public function destroy(Invoice $invoice, \App\Actions\Invoices\DeleteInvoice $delete): JsonResponse
     {
-        if ($invoice->payments()->exists()) {
-            return $this->error('Cannot delete invoice with payments', 422);
+        // Same rules as the web (R3).
+        if ($reason = $delete->blockedBecause($invoice)) {
+            return $this->error($reason, 422);
         }
-
-        DB::transaction(function () use ($invoice) {
-            // Give the reserved stock back, as the web delete does
-            $invoice->load('items');
-            $invoice->releaseInventoryReservation();
-
-            $invoice->items()->delete();
-            $invoice->delete();
-        });
+        $delete->handle($invoice);
 
         return $this->success(null, 'Invoice deleted successfully');
     }
@@ -327,56 +192,55 @@ class InvoiceController extends BaseApiController
             return $this->error('Only paid invoices can be released.', 422);
         }
 
-        DB::beginTransaction();
         try {
-            $waybillNumber = Invoice::generateWaybillNumber($invoice->tenant_id);
+            $waybillNumber = DB::transaction(function () use ($invoice) {
+                $waybillNumber = Invoice::generateWaybillNumber($invoice->tenant_id);
 
-            foreach ($invoice->items as $invoiceItem) {
-                if ($invoiceItem->item_id) {
-                    $inventory = Inventory::where('item_id', $invoiceItem->item_id)
-                        ->where('tenant_id', $invoice->tenant_id)
-                        ->lockForUpdate()
-                        ->first();
+                foreach ($invoice->items as $invoiceItem) {
+                    if ($invoiceItem->item_id) {
+                        $inventory = Inventory::where('item_id', $invoiceItem->item_id)
+                            ->where('tenant_id', $invoice->tenant_id)
+                            ->lockForUpdate()
+                            ->first();
 
-                    if ($inventory) {
-                        // Refuse rather than silently clamping stock at zero (M4)
-                        if ((float) $inventory->quantity < (float) $invoiceItem->quantity) {
-                            throw new \RuntimeException("Not enough stock to release {$invoiceItem->description}: {$inventory->quantity} on hand, {$invoiceItem->quantity} needed.");
+                        if ($inventory) {
+                            // Refuse rather than silently clamping stock at zero (M4)
+                            if ((float) $inventory->quantity < (float) $invoiceItem->quantity) {
+                                throw new \RuntimeException("Not enough stock to release {$invoiceItem->description}: {$inventory->quantity} on hand, {$invoiceItem->quantity} needed.");
+                            }
+                            $inventory->quantity = $inventory->quantity - $invoiceItem->quantity;
+                            $inventory->reserved_quantity = max(0, $inventory->reserved_quantity - $invoiceItem->quantity);
+                            $inventory->save();
+
+                            InventoryHistory::create([
+                                'tenant_id' => $invoice->tenant_id,
+                                'item_id' => $invoiceItem->item_id,
+                                'type' => 'out',
+                                'quantity' => -$invoiceItem->quantity,
+                                'reference_type' => 'invoice',
+                                'reference_id' => $invoice->id,
+                                'notes' => "Released via Invoice #{$invoice->invoice_number}, Waybill #{$waybillNumber}",
+                                'created_by' => auth()->id(),
+                            ]);
                         }
-                        $inventory->quantity = $inventory->quantity - $invoiceItem->quantity;
-                        $inventory->reserved_quantity = max(0, $inventory->reserved_quantity - $invoiceItem->quantity);
-                        $inventory->save();
-
-                        InventoryHistory::create([
-                            'tenant_id' => $invoice->tenant_id,
-                            'item_id' => $invoiceItem->item_id,
-                            'type' => 'out',
-                            'quantity' => -$invoiceItem->quantity,
-                            'reference_type' => 'invoice',
-                            'reference_id' => $invoice->id,
-                            'notes' => "Released via Invoice #{$invoice->invoice_number}, Waybill #{$waybillNumber}",
-                            'created_by' => auth()->id(),
-                        ]);
                     }
                 }
-            }
 
-            $invoice->update([
-                'released_at' => now(),
-                'waybill_number' => $waybillNumber,
-            ]);
+                $invoice->update([
+                    'released_at' => now(),
+                    'waybill_number' => $waybillNumber,
+                ]);
 
-            $invoice->logCustomActivity(ActivityLog::ACTION_RELEASED, "Invoice '{$invoice->invoice_number}' was released with waybill #{$waybillNumber}");
+                $invoice->logCustomActivity(ActivityLog::ACTION_RELEASED, "Invoice '{$invoice->invoice_number}' was released with waybill #{$waybillNumber}");
 
-            DB::commit();
+                return $waybillNumber;
+            });
 
             return $this->success([
                 'invoice' => new InvoiceResource($invoice->fresh(['customer', 'items.item'])),
                 'waybill_number' => $waybillNumber,
             ], 'Invoice released successfully');
         } catch (\Exception $e) {
-            DB::rollBack();
-
             return $this->error('Failed to release invoice: '.$e->getMessage(), 500);
         }
     }

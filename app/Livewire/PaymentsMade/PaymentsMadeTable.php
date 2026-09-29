@@ -5,7 +5,6 @@ namespace App\Livewire\PaymentsMade;
 use App\Livewire\Concerns\ChecksPermissions;
 use App\Models\PaymentMade;
 use App\Models\Vendor;
-use App\Services\BankService;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -140,16 +139,8 @@ class PaymentsMadeTable extends Component
                             continue;
                         }
 
-                        // Reverse bank balance
-                        app(BankService::class)->credit(
-                            $payment->bank_id,
-                            $payment->amount,
-                            "Payment made #{$payment->payment_number} deleted"
-                        );
-
-                        // The model's deleting event will handle journal entry cleanup
-                        // The model's deleted event will handle updating bill balances
-                        $payment->delete();
+                        // Same as the web and API delete (R3).
+                        app(\App\Actions\Payments\DeletePaymentMade::class)->handle($payment);
                         $deletedCount++;
                     }
                 });

@@ -5,7 +5,6 @@ namespace App\Livewire\PaymentsReceived;
 use App\Livewire\Concerns\ChecksPermissions;
 use App\Models\Customer;
 use App\Models\PaymentReceived;
-use App\Services\BankService;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -151,38 +150,16 @@ class PaymentsReceivedTable extends Component
                             continue;
                         }
 
-                        // Check if deposit has been applied to invoices
-                        if ($payment->is_deposit && $payment->depositApplications()->exists()) {
+                        // Same rules as the web and API delete (R3): bank balance
+                        // back, journal reversed, invoice balances recalculated.
+                        $delete = app(\App\Actions\Payments\DeletePaymentReceived::class);
+                        if ($delete->blockedBecause($payment)) {
                             $skippedCount++;
 
                             continue;
                         }
 
-                        // Reverse bank balance
-                        app(BankService::class)->debit(
-                            $payment->bank_id,
-                            $payment->amount,
-                            "Payment received #{$payment->payment_number} deleted"
-                        );
-
-                        // Reverse the payment effects on invoice if applicable
-                        if ($payment->invoice) {
-                            $invoice = $payment->invoice;
-                            $invoice->amount_paid -= $payment->amount;
-                            $invoice->balance_due += $payment->amount;
-
-                            // Update invoice status
-                            if ($invoice->balance_due >= $invoice->total) {
-                                $invoice->status = 'sent';
-                            } elseif ($invoice->balance_due > 0) {
-                                $invoice->status = 'partial';
-                            }
-                            $invoice->save();
-                        }
-
-                        // The model's deleting event will handle journal entry cleanup
-                        // The model's deleted event will handle updating invoice/deposit balances
-                        $payment->delete();
+                        $delete->handle($payment);
                         $deletedCount++;
                     }
                 });

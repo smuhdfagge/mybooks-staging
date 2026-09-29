@@ -45,59 +45,57 @@ class SalaryStructureController extends Controller
             'deductions.*.is_taxable' => 'nullable|boolean',
         ]);
 
-        DB::beginTransaction();
-
         try {
-            $structure = SalaryStructure::create([
-                'tenant_id' => $tenantId,
-                'name' => $validated['name'],
-                'basic_salary' => $validated['basic_salary'],
-                'effective_from' => $validated['effective_from'],
-                'effective_to' => $validated['effective_to'] ?? null,
-                'notes' => $validated['notes'] ?? null,
-                'is_active' => true,
-                'created_by' => auth()->id(),
-            ]);
+            $structure = DB::transaction(function () use ($validated, $tenantId) {
+                $structure = SalaryStructure::create([
+                    'tenant_id' => $tenantId,
+                    'name' => $validated['name'],
+                    'basic_salary' => $validated['basic_salary'],
+                    'effective_from' => $validated['effective_from'],
+                    'effective_to' => $validated['effective_to'] ?? null,
+                    'notes' => $validated['notes'] ?? null,
+                    'is_active' => true,
+                    'created_by' => auth()->id(),
+                ]);
 
-            // Create allowance items
-            if (! empty($validated['allowances'])) {
-                foreach ($validated['allowances'] as $index => $allowance) {
-                    if (! empty($allowance['name']) && isset($allowance['amount'])) {
-                        $structure->items()->create([
-                            'type' => 'allowance',
-                            'name' => $allowance['name'],
-                            'amount_type' => $allowance['amount_type'],
-                            'amount' => $allowance['amount'],
-                            'is_taxable' => $allowance['is_taxable'] ?? true,
-                            'sort_order' => $index,
-                        ]);
+                // Create allowance items
+                if (! empty($validated['allowances'])) {
+                    foreach ($validated['allowances'] as $index => $allowance) {
+                        if (! empty($allowance['name']) && isset($allowance['amount'])) {
+                            $structure->items()->create([
+                                'type' => 'allowance',
+                                'name' => $allowance['name'],
+                                'amount_type' => $allowance['amount_type'],
+                                'amount' => $allowance['amount'],
+                                'is_taxable' => $allowance['is_taxable'] ?? true,
+                                'sort_order' => $index,
+                            ]);
+                        }
                     }
                 }
-            }
 
-            // Create deduction items
-            if (! empty($validated['deductions'])) {
-                foreach ($validated['deductions'] as $index => $deduction) {
-                    if (! empty($deduction['name']) && isset($deduction['amount'])) {
-                        $structure->items()->create([
-                            'type' => 'deduction',
-                            'name' => $deduction['name'],
-                            'amount_type' => $deduction['amount_type'],
-                            'amount' => $deduction['amount'],
-                            'is_taxable' => $deduction['is_taxable'] ?? false,
-                            'sort_order' => $index,
-                        ]);
+                // Create deduction items
+                if (! empty($validated['deductions'])) {
+                    foreach ($validated['deductions'] as $index => $deduction) {
+                        if (! empty($deduction['name']) && isset($deduction['amount'])) {
+                            $structure->items()->create([
+                                'type' => 'deduction',
+                                'name' => $deduction['name'],
+                                'amount_type' => $deduction['amount_type'],
+                                'amount' => $deduction['amount'],
+                                'is_taxable' => $deduction['is_taxable'] ?? false,
+                                'sort_order' => $index,
+                            ]);
+                        }
                     }
                 }
-            }
 
-            DB::commit();
+                return $structure;
+            });
 
             return redirect()->route('salary-structures.show', $structure)
                 ->with('success', 'Salary structure created successfully.');
         } catch (\Exception $e) {
-            DB::rollBack();
-
             return back()->withInput()->withErrors(['error' => 'Failed to create salary structure.']);
         }
     }
@@ -148,63 +146,59 @@ class SalaryStructureController extends Controller
             'change_reason' => 'nullable|string|max:500',
         ]);
 
-        DB::beginTransaction();
-
         try {
-            // Snapshot the current state before making changes
-            $salaryStructure->load('items');
-            $salaryStructure->createVersionSnapshot($validated['change_reason'] ?? null);
+            DB::transaction(function () use ($validated, $salaryStructure) {
+                // Snapshot the current state before making changes
+                $salaryStructure->load('items');
+                $salaryStructure->createVersionSnapshot($validated['change_reason'] ?? null);
 
-            $salaryStructure->update([
-                'name' => $validated['name'],
-                'basic_salary' => $validated['basic_salary'],
-                'effective_from' => $validated['effective_from'],
-                'effective_to' => $validated['effective_to'] ?? null,
-                'is_active' => $validated['is_active'] ?? $salaryStructure->is_active,
-                'notes' => $validated['notes'] ?? null,
-                'version' => ($salaryStructure->version ?? 1) + 1,
-            ]);
+                $salaryStructure->update([
+                    'name' => $validated['name'],
+                    'basic_salary' => $validated['basic_salary'],
+                    'effective_from' => $validated['effective_from'],
+                    'effective_to' => $validated['effective_to'] ?? null,
+                    'is_active' => $validated['is_active'] ?? $salaryStructure->is_active,
+                    'notes' => $validated['notes'] ?? null,
+                    'version' => ($salaryStructure->version ?? 1) + 1,
+                ]);
 
-            // Delete existing items and recreate
-            $salaryStructure->items()->delete();
+                // Delete existing items and recreate
+                $salaryStructure->items()->delete();
 
-            if (! empty($validated['allowances'])) {
-                foreach ($validated['allowances'] as $index => $allowance) {
-                    if (! empty($allowance['name']) && isset($allowance['amount'])) {
-                        $salaryStructure->items()->create([
-                            'type' => 'allowance',
-                            'name' => $allowance['name'],
-                            'amount_type' => $allowance['amount_type'],
-                            'amount' => $allowance['amount'],
-                            'is_taxable' => $allowance['is_taxable'] ?? true,
-                            'sort_order' => $index,
-                        ]);
+                if (! empty($validated['allowances'])) {
+                    foreach ($validated['allowances'] as $index => $allowance) {
+                        if (! empty($allowance['name']) && isset($allowance['amount'])) {
+                            $salaryStructure->items()->create([
+                                'type' => 'allowance',
+                                'name' => $allowance['name'],
+                                'amount_type' => $allowance['amount_type'],
+                                'amount' => $allowance['amount'],
+                                'is_taxable' => $allowance['is_taxable'] ?? true,
+                                'sort_order' => $index,
+                            ]);
+                        }
                     }
                 }
-            }
 
-            if (! empty($validated['deductions'])) {
-                foreach ($validated['deductions'] as $index => $deduction) {
-                    if (! empty($deduction['name']) && isset($deduction['amount'])) {
-                        $salaryStructure->items()->create([
-                            'type' => 'deduction',
-                            'name' => $deduction['name'],
-                            'amount_type' => $deduction['amount_type'],
-                            'amount' => $deduction['amount'],
-                            'is_taxable' => $deduction['is_taxable'] ?? false,
-                            'sort_order' => $index,
-                        ]);
+                if (! empty($validated['deductions'])) {
+                    foreach ($validated['deductions'] as $index => $deduction) {
+                        if (! empty($deduction['name']) && isset($deduction['amount'])) {
+                            $salaryStructure->items()->create([
+                                'type' => 'deduction',
+                                'name' => $deduction['name'],
+                                'amount_type' => $deduction['amount_type'],
+                                'amount' => $deduction['amount'],
+                                'is_taxable' => $deduction['is_taxable'] ?? false,
+                                'sort_order' => $index,
+                            ]);
+                        }
                     }
                 }
-            }
-
-            DB::commit();
+            });
 
             return redirect()->route('salary-structures.show', $salaryStructure)
                 ->with('success', 'Salary structure updated successfully.');
         } catch (\Exception $e) {
-            DB::rollBack();
-
             return back()->withInput()->withErrors(['error' => 'Failed to update salary structure.']);
         }
     }

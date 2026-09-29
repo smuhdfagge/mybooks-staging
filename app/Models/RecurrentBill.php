@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class RecurrentBill extends Model
 {
-    use BelongsToTenant, HasFactory, SoftDeletes;
+    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'tenant_id',
@@ -100,5 +100,13 @@ class RecurrentBill extends Model
         }
 
         $this->save();
+    }
+
+    /**
+     * total = subtotal + tax_amount (see KeepsTotalsBalanced, Q2).
+     */
+    protected function documentTotalParts(): array
+    {
+        return [['subtotal', 'tax_amount'], []];
     }
 }

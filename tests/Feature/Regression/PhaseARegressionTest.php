@@ -22,9 +22,11 @@ class PhaseARegressionTest extends TestCase
 {
     private function employeeFor(Tenant $tenant, array $attrs = []): Employee
     {
+        // Only take a number when the test doesn't give one (numbers are used up when given out).
+        $attrs['employee_id'] ??= Employee::generateEmployeeId($tenant->id);
+
         return Employee::withoutGlobalScopes()->create(array_merge([
             'tenant_id' => $tenant->id,
-            'employee_id' => Employee::generateEmployeeId($tenant->id),
             'first_name' => 'Amina',
             'last_name' => 'Bello',
             'hire_date' => '2026-01-05',

@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\StoreItemRequest;
+use App\Http\Requests\UpdateItemRequest;
 use App\Http\Resources\ItemResource;
 use App\Models\Item;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 
 class ItemController extends BaseApiController
 {
@@ -73,25 +75,13 @@ class ItemController extends BaseApiController
     /**
      * Create a new item
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreItemRequest $request): JsonResponse
     {
-        $tenantId = $this->getTenantId();
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'sku' => 'nullable|string|max:100',
-            'description' => 'nullable|string',
-            'type' => 'required|in:product,service',
-            'unit' => 'nullable|string|max:50',
-            'category_id' => ['nullable', Rule::exists('item_categories', 'id')->where('tenant_id', $tenantId)],
-            'selling_price' => 'required|numeric|min:0',
-            'cost_price' => 'nullable|numeric|min:0',
-            'tax_rate' => 'nullable|numeric|min:0|max:100',
-            'is_taxable' => 'boolean',
-            'track_inventory' => 'boolean',
-            'reorder_level' => 'nullable|integer|min:0',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
+        if ($request->hasFile('image')) {
+            $validated['image_path'] = $request->file('image')->store('item-images', 'public');
+        }
+        unset($validated['image']);
 
         $item = Item::create($validated);
         $item->load(['category', 'inventory']);
@@ -102,25 +92,16 @@ class ItemController extends BaseApiController
     /**
      * Update an item
      */
-    public function update(Request $request, Item $item): JsonResponse
+    public function update(UpdateItemRequest $request, Item $item): JsonResponse
     {
-        $tenantId = $this->getTenantId();
-
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'sku' => 'nullable|string|max:100',
-            'description' => 'nullable|string',
-            'type' => 'sometimes|in:product,service',
-            'unit' => 'nullable|string|max:50',
-            'category_id' => ['nullable', Rule::exists('item_categories', 'id')->where('tenant_id', $tenantId)],
-            'selling_price' => 'sometimes|numeric|min:0',
-            'cost_price' => 'nullable|numeric|min:0',
-            'tax_rate' => 'nullable|numeric|min:0|max:100',
-            'is_taxable' => 'boolean',
-            'track_inventory' => 'boolean',
-            'reorder_level' => 'nullable|integer|min:0',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
+        if ($request->hasFile('image')) {
+            if ($item->image_path) {
+                Storage::disk('public')->delete($item->image_path);
+            }
+            $validated['image_path'] = $request->file('image')->store('item-images', 'public');
+        }
+        unset($validated['image']);
 
         $item->update($validated);
         $item->load(['category', 'inventory']);

@@ -4,6 +4,10 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Creating a customer, from the web form or the API (finding Q5).
+ * The rules already matched; the API also took is_active, so both do now.
+ */
 class StoreCustomerRequest extends FormRequest
 {
     public function authorize(): bool
@@ -28,6 +32,7 @@ class StoreCustomerRequest extends FormRequest
             'credit_limit' => ['nullable', 'numeric', 'min:0'],
             'payment_terms' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string'],
+            'is_active' => ['boolean'],
         ];
     }
 }
