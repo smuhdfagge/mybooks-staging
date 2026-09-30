@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ProcessExport;
 use App\Models\Export;
-use App\Services\ActivityLogService;
 use App\Services\ExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -88,24 +88,15 @@ class ExportController extends Controller
             'included_data' => $validated['included_data'] ?? null,
         ]);
 
-        // Process the export immediately (for small datasets)
-        // For larger datasets, this should be queued
-        $this->exportService->processExport($export);
-
-        if ($export->status === Export::STATUS_COMPLETED) {
-            // Log the export
-            ActivityLogService::logExport($validated['type'], ['format' => $validated['format']]);
-
-            return redirect()->route('exports.index')
-                ->with('success', 'Export completed successfully. You can download it below.');
-        }
+        // Built on the queue; it can be downloaded from the list when ready (P3).
+        ProcessExport::dispatch($export);
 
         return redirect()->route('exports.index')
-            ->with('error', 'Export failed: '.($export->error_message ?? 'Unknown error'));
+            ->with('success', 'Your export is being prepared. It will be ready to download below in a moment.');
     }
 
     /**
-     * Quick export - direct download without saving
+     * Quick export of a whole list as CSV or JSON
      */
     public function quickExport(Request $request)
     {
@@ -122,16 +113,10 @@ class ExportController extends Controller
             'status' => Export::STATUS_PENDING,
         ]);
 
-        $this->exportService->processExport($export);
+        ProcessExport::dispatch($export);
 
-        if ($export->status === Export::STATUS_COMPLETED && $export->isDownloadable()) {
-            // Log the quick export
-            ActivityLogService::logExport($validated['type'], ['format' => $validated['format']]);
-
-            return $this->download($export);
-        }
-
-        return back()->with('error', 'Quick export failed.');
+        return redirect()->route('exports.index')
+            ->with('success', 'Your export is being prepared. It will be ready to download below in a moment.');
     }
 
     /**
@@ -254,17 +239,9 @@ class ExportController extends Controller
             'included_data' => $validated['included_data'],
         ]);
 
-        $this->exportService->processExport($export);
-
-        if ($export->status === Export::STATUS_COMPLETED) {
-            // Log the backup activity
-            ActivityLogService::logBackup($validated['included_data'], $validated['format']);
-
-            return redirect()->route('exports.index')
-                ->with('success', 'Full backup completed successfully. You can download it below.');
-        }
+        ProcessExport::dispatch($export);
 
         return redirect()->route('exports.index')
-            ->with('error', 'Backup failed: '.($export->error_message ?? 'Unknown error'));
+            ->with('success', 'Your backup is being prepared. It will be ready to download below when it finishes.');
     }
 }

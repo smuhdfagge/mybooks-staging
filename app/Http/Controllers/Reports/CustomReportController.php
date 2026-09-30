@@ -13,6 +13,9 @@ use Illuminate\Http\Request;
  */
 class CustomReportController extends ReportController
 {
+    /** Most rows a custom report shows (P7). */
+    public const MAX_ROWS = 5000;
+
     /**
      * Custom Report Builder - List saved reports
      */
@@ -197,8 +200,15 @@ class CustomReportController extends ReportController
             }
         }
 
-        // Get data
-        $data = $query->get();
+        // Get data, up to a limit (P7): the report used to load every
+        // matching row. One extra row tells us the list was cut short.
+        $query->orderBy($query->getModel()->getQualifiedKeyName());
+        $data = $query->limit(static::MAX_ROWS + 1)->get();
+        $truncated = $data->count() > static::MAX_ROWS;
+        if ($truncated) {
+            $data = $data->take(static::MAX_ROWS)->values();
+        }
+        $maxRows = static::MAX_ROWS;
 
         // Apply grouping if needed
         $groupedData = null;
@@ -230,7 +240,7 @@ class CustomReportController extends ReportController
 
         return view('reports.custom.run', compact(
             'customReport', 'data', 'groupedData', 'aggregatedData',
-            'totals', 'sourceConfig', 'startDate', 'endDate'
+            'totals', 'sourceConfig', 'startDate', 'endDate', 'truncated', 'maxRows'
         ));
     }
 

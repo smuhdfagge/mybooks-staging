@@ -2,17 +2,18 @@
 
 namespace App\Livewire\ActivityLogs;
 
+use App\Jobs\ProcessExport;
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\ActivityLog;
 use App\Models\Export;
 use App\Models\User;
-use App\Services\ExportService;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class ActivityLogsTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -84,16 +85,12 @@ class ActivityLogsTable extends Component
             ],
         ]);
 
-        $exportService = new ExportService;
-        $exportService->processExport($export);
+        // Built on the queue (P3).
+        ProcessExport::dispatch($export);
 
-        if ($export->status === Export::STATUS_COMPLETED) {
-            session()->flash('success', 'Activity logs exported successfully. Check the Exports page to download.');
+        session()->flash('success', 'Your activity log export is being prepared. It will be ready to download on the Exports page in a moment.');
 
-            return redirect()->route('exports.index');
-        }
-
-        session()->flash('error', 'Export failed: '.($export->error_message ?? 'Unknown error'));
+        return redirect()->route('exports.index');
     }
 
     public function render()
@@ -132,7 +129,7 @@ class ActivityLogsTable extends Component
             $query->whereDate('created_at', '<=', $this->endDate);
         }
 
-        $logs = $query->paginate($this->perPage);
+        $logs = $query->paginate($this->pageSize());
 
         // Get filter options
         $users = User::where('tenant_id', $tenantId)->orderBy('name')->get();

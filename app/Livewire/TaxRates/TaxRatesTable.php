@@ -3,13 +3,14 @@
 namespace App\Livewire\TaxRates;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\TaxRate;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class TaxRatesTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -224,7 +225,7 @@ class TaxRatesTable extends Component
             $query->where('is_active', true);
         }
 
-        $taxRates = $query->paginate($this->perPage);
+        $taxRates = $query->paginate($this->pageSize());
 
         return view('livewire.tax-rates.tax-rates-table', compact('taxRates'));
     }

@@ -3,6 +3,7 @@
 namespace App\Livewire\PaymentsReceived;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\Customer;
 use App\Models\PaymentReceived;
 use Illuminate\Support\Facades\DB;
@@ -11,7 +12,7 @@ use Livewire\WithPagination;
 
 class PaymentsReceivedTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -210,7 +211,7 @@ class PaymentsReceivedTable extends Component
             ->when($this->dateFrom, fn ($q) => $q->whereDate('payment_date', '>=', $this->dateFrom))
             ->when($this->dateTo, fn ($q) => $q->whereDate('payment_date', '<=', $this->dateTo))
             ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->perPage);
+            ->paginate($this->pageSize());
 
         $customers = Customer::where('is_active', true)->get();
 

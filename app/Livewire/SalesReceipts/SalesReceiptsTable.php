@@ -3,6 +3,7 @@
 namespace App\Livewire\SalesReceipts;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\Customer;
 use App\Models\SalesReceipt;
 use Livewire\Component;
@@ -10,7 +11,7 @@ use Livewire\WithPagination;
 
 class SalesReceiptsTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -180,7 +181,7 @@ class SalesReceiptsTable extends Component
                 $query->whereDate('receipt_date', '<=', $this->dateTo);
             })
             ->orderBy('created_at', 'desc')
-            ->paginate($this->perPage);
+            ->paginate($this->pageSize());
 
         $customers = Customer::where('is_active', true)->orderBy('name')->get();
 

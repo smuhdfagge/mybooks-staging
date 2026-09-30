@@ -52,6 +52,12 @@
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Export History</h3>
+                        @if($exports->whereIn('status', ['pending', 'processing'])->isNotEmpty())
+                            {{-- Built on the queue (P3): reload until ready. --}}
+                            <span class="text-sm text-gray-500 dark:text-gray-400" x-data x-init="setTimeout(() => window.location.reload(), 5000)">
+                                Preparing your export. This page refreshes by itself.
+                            </span>
+                        @endif
                         @if($exports->where('expires_at', '<', now())->count() > 0)
                         <form action="{{ route('exports.cleanup') }}" method="POST" class="inline">
                             @csrf

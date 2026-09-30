@@ -3,6 +3,7 @@
 namespace App\Livewire\FixedAssets;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\FixedAsset;
 use App\Models\FixedAssetCategory;
 use Livewire\Component;
@@ -10,7 +11,7 @@ use Livewire\WithPagination;
 
 class FixedAssetsTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -219,7 +220,7 @@ class FixedAssetsTable extends Component
         }
 
         $assets = $query->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->perPage);
+            ->paginate($this->pageSize());
 
         $categories = FixedAssetCategory::where('tenant_id', $tenantId)
             ->orderBy('name')

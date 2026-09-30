@@ -3,6 +3,7 @@
 namespace App\Livewire\Inventory;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\Inventory;
 use App\Models\Item;
 use App\Models\ItemCategory;
@@ -11,7 +12,7 @@ use Livewire\WithPagination;
 
 class InventoryTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -221,7 +222,7 @@ class InventoryTable extends Component
         $query->orderBy($this->sortField, $this->sortDirection);
 
         return view('livewire.inventory.inventory-table', [
-            'items' => $query->paginate($this->perPage),
+            'items' => $query->paginate($this->pageSize()),
             'categories' => ItemCategory::where('is_active', true)->get(),
         ]);
     }

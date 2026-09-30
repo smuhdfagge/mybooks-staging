@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Reports;
 use App\Models\ChartOfAccount;
 use App\Models\Journal;
 use App\Models\JournalEntry;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Profit and loss, balance sheet, cash flow, trial balance and general ledger, with their exports.
@@ -15,6 +17,8 @@ use Illuminate\Http\Request;
  */
 class FinancialReportController extends ReportController
 {
+    private const LEDGER_PAGE_SIZE = 100;
+
     public function index()
     {
         return view('reports.index');
@@ -82,6 +86,7 @@ class FinancialReportController extends ReportController
 
     public function generalLedger(Request $request)
     {
+        $request->validate(['start_date' => 'nullable|date', 'end_date' => 'nullable|date']);
         $tenantId = auth()->user()->tenant_id;
         $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->get('end_date', now()->format('Y-m-d'));
@@ -95,6 +100,10 @@ class FinancialReportController extends ReportController
         $entries = collect();
         $selectedAccount = null;
         $openingBalance = 0;
+        $pageOpeningBalance = 0;
+        $totalDebit = 0;
+        $totalCredit = 0;
+        $closingBalance = 0;
 
         if ($accountId) {
             $selectedAccount = ChartOfAccount::where('tenant_id', $tenantId)->find($accountId);
@@ -103,40 +112,54 @@ class FinancialReportController extends ReportController
                 return back()->with('error', 'Account not found.');
             }
 
-            // Calculate opening balance (all entries before start date)
-            $openingEntries = JournalEntry::whereHas('journal', function ($q) use ($tenantId, $startDate) {
-                $q->where('tenant_id', $tenantId)
-                    ->where('journal_date', '<', $startDate)
-                    ->where('is_posted', true);
-            })
-                ->where('account_id', $accountId)
-                ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
+            // Opening balance: all posted lines before the start date,
+            // debits minus credits, so "Dr"/"Cr" in the view read correctly.
+            $opening = $this->ledgerLines($tenantId, $accountId, null, Carbon::parse($startDate)->subDay()->toDateString())
+                ->selectRaw('SUM(journal_entries.debit) as total_debit, SUM(journal_entries.credit) as total_credit')
+                ->toBase()
                 ->first();
+            $openingBalance = round((float) ($opening->total_debit ?? 0) - (float) ($opening->total_credit ?? 0), 2);
 
-            // Opening balance calculation based on account type
-            // Assets & Expenses have debit balances, Liabilities, Equity & Income have credit balances
-            $totalDebit = $openingEntries->total_debit ?? 0;
-            $totalCredit = $openingEntries->total_credit ?? 0;
+            // Totals for the whole period, not just the page shown.
+            $totals = $this->ledgerLines($tenantId, $accountId, $startDate, $endDate)
+                ->selectRaw('SUM(journal_entries.debit) as total_debit, SUM(journal_entries.credit) as total_credit')
+                ->toBase()
+                ->first();
+            $totalDebit = round((float) ($totals->total_debit ?? 0), 2);
+            $totalCredit = round((float) ($totals->total_credit ?? 0), 2);
+            $closingBalance = round($openingBalance + $totalDebit - $totalCredit, 2);
 
-            if ($selectedAccount->isDebitBalance()) {
-                $openingBalance = $totalDebit - $totalCredit;
-            } else {
-                $openingBalance = $totalCredit - $totalDebit;
+            // One page at a time, in date order (P7). It used to load every
+            // line unsorted, so the running balance could be wrong.
+            $entries = $this->ledgerLines($tenantId, $accountId, $startDate, $endDate)
+                ->select('journal_entries.*')
+                ->with('journal')
+                ->orderBy('journals.journal_date')
+                ->orderBy('journals.id')
+                ->orderBy('journal_entries.id')
+                ->paginate(self::LEDGER_PAGE_SIZE)
+                ->withQueryString();
+
+            // Running balance brought forward from the earlier pages.
+            $pageOpeningBalance = $openingBalance;
+            if ($entries->currentPage() > 1) {
+                $earlier = $this->ledgerLines($tenantId, $accountId, $startDate, $endDate)
+                    ->select('journal_entries.debit', 'journal_entries.credit')
+                    ->orderBy('journals.journal_date')
+                    ->orderBy('journals.id')
+                    ->orderBy('journal_entries.id')
+                    ->limit(($entries->currentPage() - 1) * $entries->perPage())
+                    ->toBase();
+                $before = DB::query()->fromSub($earlier, 'earlier')
+                    ->selectRaw('SUM(debit) as debit, SUM(credit) as credit')
+                    ->first();
+                $pageOpeningBalance = round($openingBalance + (float) ($before->debit ?? 0) - (float) ($before->credit ?? 0), 2);
             }
-
-            // Get entries within the selected period
-            $entries = JournalEntry::whereHas('journal', function ($q) use ($tenantId, $startDate, $endDate) {
-                $q->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
-                ->where('account_id', $accountId)
-                ->with(['journal'])
-                ->get();
         }
 
         return view('reports.general-ledger', compact(
-            'accounts', 'entries', 'selectedAccount', 'startDate', 'endDate', 'accountId', 'openingBalance'
+            'accounts', 'entries', 'selectedAccount', 'startDate', 'endDate', 'accountId', 'openingBalance',
+            'pageOpeningBalance', 'totalDebit', 'totalCredit', 'closingBalance'
         ));
     }
 
@@ -285,13 +308,13 @@ class FinancialReportController extends ReportController
 
         if ($accountId) {
             $selectedAccount = ChartOfAccount::where('tenant_id', $tenantId)->find($accountId);
-            $entries = JournalEntry::whereHas('journal', function ($q) use ($tenantId, $startDate, $endDate) {
-                $q->where('tenant_id', $tenantId)
-                    ->whereBetween('journal_date', [$startDate, $endDate])
-                    ->where('is_posted', true);
-            })
-                ->where('account_id', $accountId)
+            // In date order (P7).
+            $entries = $this->ledgerLines($tenantId, $accountId, $startDate, $endDate)
+                ->select('journal_entries.*')
                 ->with(['journal'])
+                ->orderBy('journals.journal_date')
+                ->orderBy('journals.id')
+                ->orderBy('journal_entries.id')
                 ->get();
         }
 
@@ -310,5 +333,22 @@ class FinancialReportController extends ReportController
             ->setTitle('General Ledger'.($selectedAccount ? ' - '.$selectedAccount->name : ''))
             ->setFilters(['Period' => "$startDate to $endDate", 'Account' => $selectedAccount?->name ?? 'All'])
             ->exportToPdf('reports.pdf.general-ledger', $data);
+    }
+
+    /**
+     * Posted journal lines of one account between two dates (either may be
+     * null), joined to their journal so they can be sorted by date.
+     */
+    private function ledgerLines($tenantId, $accountId, ?string $from, ?string $to)
+    {
+        return JournalEntry::query()
+            ->join('journals', 'journals.id', '=', 'journal_entries.journal_id')
+            ->where('journals.tenant_id', $tenantId)
+            ->where('journals.is_posted', true)
+            ->whereNull('journals.deleted_at')
+            ->where('journal_entries.account_id', $accountId)
+            ->when($from, fn ($q) => $q->where('journals.journal_date', '>=', $from))
+            // "Before the next day": SQLite keeps a time part on dates.
+            ->when($to, fn ($q) => $q->where('journals.journal_date', '<', Carbon::parse($to)->addDay()->toDateString()));
     }
 }

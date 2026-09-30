@@ -3,13 +3,14 @@
 namespace App\Livewire\Deductions;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\Deduction;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class DeductionsTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -176,7 +177,7 @@ class DeductionsTable extends Component
 
     public function render()
     {
-        $deductions = $this->buildQuery()->paginate($this->perPage);
+        $deductions = $this->buildQuery()->paginate($this->pageSize());
 
         return view('livewire.deductions.deductions-table', compact('deductions'));
     }

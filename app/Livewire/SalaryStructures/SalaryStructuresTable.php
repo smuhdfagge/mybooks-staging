@@ -3,13 +3,14 @@
 namespace App\Livewire\SalaryStructures;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\SalaryStructure;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class SalaryStructuresTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -185,7 +186,7 @@ class SalaryStructuresTable extends Component
 
     public function render()
     {
-        $salaryStructures = $this->buildQuery()->paginate($this->perPage);
+        $salaryStructures = $this->buildQuery()->paginate($this->pageSize());
 
         return view('livewire.salary-structures.salary-structures-table', compact('salaryStructures'));
     }

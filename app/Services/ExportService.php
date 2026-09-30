@@ -18,10 +18,17 @@ use App\Support\Csv;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\LazyCollection;
 use ZipArchive;
 
 class ExportService
 {
+    /** Rows read from the database at a time (P3). */
+    public const CHUNK = 500;
+
+    /** Longest PDF export; bigger lists should use CSV (P3). */
+    public const PDF_MAX_ROWS = 2000;
+
     protected int $tenantId;
 
     protected array $options;
@@ -137,17 +144,18 @@ class ExportService
             return $this->createZipBackup($export, $backupData);
         }
 
-        // JSON format
+        // JSON format, written row by row (P3)
         $filename = 'backup_'.date('Y-m-d_His').'.json';
         $path = $this->tenantId.'/'.$filename;
 
-        $content = json_encode($backupData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-        $this->storage()->put($path, $content);
+        $handle = $this->tempStream();
+        $this->writeJsonObject($handle, $backupData);
+        $size = $this->storeStream($path, $handle);
 
         $export->update([
             'filename' => $filename,
             'file_path' => $path,
-            'file_size' => strlen($content),
+            'file_size' => $size,
         ]);
 
         return true;
@@ -163,11 +171,13 @@ class ExportService
 
         try {
             // Create JSON file
-            file_put_contents($tempDir.'/backup.json', json_encode($backupData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            $json = fopen($tempDir.'/backup.json', 'w');
+            $this->writeJsonObject($json, $backupData);
+            fclose($json);
 
             // Create CSV files for each data type
             foreach ($backupData as $type => $data) {
-                if ($type === 'metadata' || empty($data)) {
+                if ($type === 'metadata' || ! $data instanceof LazyCollection || $data->isEmpty()) {
                     continue;
                 }
                 $this->writeCsvFile($tempDir.'/'.$type.'.csv', $data);
@@ -242,11 +252,6 @@ class ExportService
     {
         $data = $this->getDataForType($export->type);
 
-        if (empty($data)) {
-            // Create empty file with headers
-            $data = [];
-        }
-
         $filename = $export->type.'_'.date('Y-m-d_His');
         $path = (string) $this->tenantId;
 
@@ -271,7 +276,7 @@ class ExportService
     /**
      * Get data for export type
      */
-    protected function getDataForType(string $type): array
+    protected function getDataForType(string $type): LazyCollection
     {
         $dateFrom = $this->options['date_from'] ?? null;
         $dateTo = $this->options['date_to'] ?? null;
@@ -280,7 +285,7 @@ class ExportService
             case Export::TYPE_CUSTOMERS:
             case 'customers':
                 return Customer::where('tenant_id', $this->tenantId)
-                    ->get()
+                    ->lazyById(self::CHUNK)
                     ->map(fn ($c) => [
                         'id' => $c->id,
                         'name' => $c->name,
@@ -295,13 +300,12 @@ class ExportService
                         'tax_number' => $c->tax_number,
                         'is_active' => $c->is_active ? 'Yes' : 'No',
                         'created_at' => $c->created_at?->format('Y-m-d H:i:s'),
-                    ])
-                    ->toArray();
+                    ]);
 
             case Export::TYPE_VENDORS:
             case 'vendors':
                 return Vendor::where('tenant_id', $this->tenantId)
-                    ->get()
+                    ->lazyById(self::CHUNK)
                     ->map(fn ($v) => [
                         'id' => $v->id,
                         'name' => $v->name,
@@ -316,14 +320,13 @@ class ExportService
                         'tax_number' => $v->tax_number,
                         'is_active' => $v->is_active ? 'Yes' : 'No',
                         'created_at' => $v->created_at?->format('Y-m-d H:i:s'),
-                    ])
-                    ->toArray();
+                    ]);
 
             case Export::TYPE_ITEMS:
             case 'items':
                 return Item::where('tenant_id', $this->tenantId)
                     ->with(['category', 'inventory'])
-                    ->get()
+                    ->lazyById(self::CHUNK)
                     ->map(fn ($i) => [
                         'id' => $i->id,
                         'name' => $i->name,
@@ -340,8 +343,7 @@ class ExportService
                         'reorder_level' => $i->reorder_level,
                         'is_active' => $i->is_active ? 'Yes' : 'No',
                         'created_at' => $i->created_at?->format('Y-m-d H:i:s'),
-                    ])
-                    ->toArray();
+                    ]);
 
             case Export::TYPE_INVOICES:
             case 'invoices':
@@ -355,7 +357,7 @@ class ExportService
                     $query->whereDate('invoice_date', '<=', $dateTo);
                 }
 
-                return $query->get()
+                return $query->lazyById(self::CHUNK)
                     ->map(fn ($inv) => [
                         'id' => $inv->id,
                         'invoice_number' => $inv->invoice_number,
@@ -371,8 +373,7 @@ class ExportService
                         'reference' => $inv->reference,
                         'notes' => $inv->notes,
                         'created_at' => $inv->created_at?->format('Y-m-d H:i:s'),
-                    ])
-                    ->toArray();
+                    ]);
 
             case Export::TYPE_BILLS:
             case 'bills':
@@ -386,7 +387,7 @@ class ExportService
                     $query->whereDate('bill_date', '<=', $dateTo);
                 }
 
-                return $query->get()
+                return $query->lazyById(self::CHUNK)
                     ->map(fn ($bill) => [
                         'id' => $bill->id,
                         'bill_number' => $bill->bill_number,
@@ -401,8 +402,7 @@ class ExportService
                         'reference' => $bill->vendor_bill_number,
                         'notes' => $bill->notes,
                         'created_at' => $bill->created_at?->format('Y-m-d H:i:s'),
-                    ])
-                    ->toArray();
+                    ]);
 
             case Export::TYPE_EXPENSES:
             case 'expenses':
@@ -416,7 +416,7 @@ class ExportService
                     $query->whereDate('expense_date', '<=', $dateTo);
                 }
 
-                return $query->get()
+                return $query->lazyById(self::CHUNK)
                     ->map(fn ($exp) => [
                         'id' => $exp->id,
                         'expense_date' => $exp->expense_date?->format('Y-m-d'),
@@ -430,14 +430,13 @@ class ExportService
                         'payment_method' => $exp->payment_method,
                         'is_billable' => $exp->is_billable ? 'Yes' : 'No',
                         'created_at' => $exp->created_at?->format('Y-m-d H:i:s'),
-                    ])
-                    ->toArray();
+                    ]);
 
             case Export::TYPE_EMPLOYEES:
             case 'employees':
                 return Employee::where('tenant_id', $this->tenantId)
                     ->with(['department', 'designation'])
-                    ->get()
+                    ->lazyById(self::CHUNK)
                     ->map(fn ($emp) => [
                         'id' => $emp->id,
                         'employee_id' => $emp->employee_id,
@@ -452,8 +451,7 @@ class ExportService
                         'employment_type' => $emp->employment_type,
                         'status' => $emp->status,
                         'created_at' => $emp->created_at?->format('Y-m-d H:i:s'),
-                    ])
-                    ->toArray();
+                    ]);
 
             case Export::TYPE_PAYROLL:
             case 'payroll':
@@ -467,7 +465,7 @@ class ExportService
                     $query->whereDate('pay_date', '<=', $dateTo);
                 }
 
-                return $query->get()
+                return $query->lazyById(self::CHUNK)
                     ->map(fn ($pay) => [
                         'id' => $pay->id,
                         'employee' => $pay->employee?->first_name.' '.$pay->employee?->last_name,
@@ -480,8 +478,7 @@ class ExportService
                         'net_pay' => $pay->net_salary,
                         'status' => $pay->status,
                         'created_at' => $pay->created_at?->format('Y-m-d H:i:s'),
-                    ])
-                    ->toArray();
+                    ]);
 
             case Export::TYPE_JOURNALS:
             case 'journals':
@@ -495,7 +492,7 @@ class ExportService
                     $query->whereDate('journal_date', '<=', $dateTo);
                 }
 
-                return $query->get()
+                return $query->lazyById(self::CHUNK)
                     ->map(fn ($j) => [
                         'id' => $j->id,
                         'journal_number' => $j->journal_number,
@@ -506,14 +503,14 @@ class ExportService
                         'status' => $j->status,
                         'reference' => $j->reference,
                         'created_at' => $j->created_at?->format('Y-m-d H:i:s'),
-                    ])
-                    ->toArray();
+                    ]);
 
             case Export::TYPE_CHART_OF_ACCOUNTS:
             case 'chart_of_accounts':
                 return ChartOfAccount::where('tenant_id', $this->tenantId)
                     ->orderBy('account_code')
-                    ->get()
+                    ->orderBy('id')
+                    ->lazy(self::CHUNK)
                     ->map(fn ($acc) => [
                         'id' => $acc->id,
                         'account_code' => $acc->account_code,
@@ -525,14 +522,14 @@ class ExportService
                         'is_system' => $acc->is_system ? 'Yes' : 'No',
                         'current_balance' => $acc->current_balance,
                         'created_at' => $acc->created_at?->format('Y-m-d H:i:s'),
-                    ])
-                    ->toArray();
+                    ]);
 
             case Export::TYPE_ACTIVITY_LOGS:
             case 'activity_logs':
                 $query = ActivityLog::where('tenant_id', $this->tenantId)
                     ->with('user')
-                    ->orderBy('created_at', 'desc');
+                    ->orderBy('created_at', 'desc')
+                    ->orderBy('id', 'desc');
 
                 if ($dateFrom) {
                     $query->whereDate('created_at', '>=', $dateFrom);
@@ -541,7 +538,7 @@ class ExportService
                     $query->whereDate('created_at', '<=', $dateTo);
                 }
 
-                return $query->get()
+                return $query->lazy(self::CHUNK)
                     ->map(fn ($log) => [
                         'id' => $log->id,
                         'date_time' => $log->created_at?->format('Y-m-d H:i:s'),
@@ -556,29 +553,29 @@ class ExportService
                         'old_values' => $log->old_values ? json_encode($log->old_values) : null,
                         'new_values' => $log->new_values ? json_encode($log->new_values) : null,
                         'changed_fields' => $log->changed_fields ? implode(', ', $log->changed_fields) : null,
-                    ])
-                    ->toArray();
+                    ]);
 
             default:
-                return [];
+                return LazyCollection::empty();
         }
     }
 
     /**
      * Export to CSV
      */
-    protected function exportToCsv(Export $export, array $data, string $filename, string $path): bool
+    protected function exportToCsv(Export $export, LazyCollection $data, string $filename, string $path): bool
     {
         $fullFilename = $filename.'.csv';
         $fullPath = $path.'/'.$fullFilename;
 
-        $content = $this->arrayToCsv($data);
-        $this->storage()->put($fullPath, $content);
+        $handle = $this->tempStream();
+        $this->writeCsv($handle, $data);
+        $size = $this->storeStream($fullPath, $handle);
 
         $export->update([
             'filename' => $fullFilename,
             'file_path' => $fullPath,
-            'file_size' => strlen($content),
+            'file_size' => $size,
         ]);
 
         return true;
@@ -587,7 +584,7 @@ class ExportService
     /**
      * Export to XLSX (using CSV format as fallback without PhpSpreadsheet)
      */
-    protected function exportToXlsx(Export $export, array $data, string $filename, string $path): bool
+    protected function exportToXlsx(Export $export, LazyCollection $data, string $filename, string $path): bool
     {
         // Check if PhpSpreadsheet is available
         if (class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
@@ -595,48 +592,35 @@ class ExportService
         }
 
         // Fallback to CSV with .xlsx extension note
-        $fullFilename = $filename.'.csv';
-        $fullPath = $path.'/'.$fullFilename;
-
-        $content = $this->arrayToCsv($data);
-        $this->storage()->put($fullPath, $content);
-
-        $export->update([
-            'filename' => $fullFilename,
-            'file_path' => $fullPath,
-            'file_size' => strlen($content),
-        ]);
-
-        return true;
+        return $this->exportToCsv($export, $data, $filename, $path);
     }
 
     /**
      * Export to XLSX with PhpSpreadsheet
      */
-    protected function exportToXlsxWithSpreadsheet(Export $export, array $data, string $filename, string $path): bool
+    protected function exportToXlsxWithSpreadsheet(Export $export, LazyCollection $data, string $filename, string $path): bool
     {
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
 
-        if (! empty($data)) {
-            // Headers
-            $headers = array_keys($data[0]);
-            $col = 1;
-            foreach ($headers as $header) {
-                $sheet->setCellValueByColumnAndRow($col, 1, ucwords(str_replace('_', ' ', $header)));
-                $col++;
-            }
-
-            // Data
-            $row = 2;
-            foreach ($data as $item) {
+        $row = 1;
+        foreach ($data as $item) {
+            if ($row === 1) {
+                // Headers
                 $col = 1;
-                foreach ($item as $value) {
-                    $sheet->setCellValueByColumnAndRow($col, $row, $value);
+                foreach (array_keys($item) as $header) {
+                    $sheet->setCellValueByColumnAndRow($col, 1, ucwords(str_replace('_', ' ', $header)));
                     $col++;
                 }
-                $row++;
+                $row = 2;
             }
+
+            $col = 1;
+            foreach ($item as $value) {
+                $sheet->setCellValueByColumnAndRow($col, $row, $value);
+                $col++;
+            }
+            $row++;
         }
 
         $fullFilename = $filename.'.xlsx';
@@ -661,26 +645,25 @@ class ExportService
     /**
      * Export to JSON
      */
-    protected function exportToJson(Export $export, array $data, string $filename, string $path): bool
+    protected function exportToJson(Export $export, LazyCollection $data, string $filename, string $path): bool
     {
         $fullFilename = $filename.'.json';
         $fullPath = $path.'/'.$fullFilename;
 
-        $content = json_encode([
-            'metadata' => [
-                'exported_at' => now()->toIso8601String(),
-                'type' => $export->type,
-                'count' => count($data),
-            ],
-            'data' => $data,
-        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-
-        $this->storage()->put($fullPath, $content);
+        $handle = $this->tempStream();
+        fwrite($handle, "{\n\"data\": ");
+        $count = $this->writeJsonArray($handle, $data);
+        fwrite($handle, ",\n\"metadata\": ".json_encode([
+            'exported_at' => now()->toIso8601String(),
+            'type' => $export->type,
+            'count' => $count,
+        ], JSON_UNESCAPED_UNICODE)."\n}\n");
+        $size = $this->storeStream($fullPath, $handle);
 
         $export->update([
             'filename' => $fullFilename,
             'file_path' => $fullPath,
-            'file_size' => strlen($content),
+            'file_size' => $size,
         ]);
 
         return true;
@@ -689,13 +672,20 @@ class ExportService
     /**
      * Export to PDF using DomPDF
      */
-    protected function exportToPdf(Export $export, array $data, string $filename, string $path): bool
+    protected function exportToPdf(Export $export, LazyCollection $data, string $filename, string $path): bool
     {
         if (! class_exists('\Barryvdh\DomPDF\Facade\Pdf')) {
             throw new \Exception('DomPDF is not installed. Please install barryvdh/laravel-dompdf.');
         }
 
-        $html = $this->generateHtmlTable($export->type, $data);
+        // A PDF is built in memory, so it is capped (P3).
+        $rows = $data->take(static::PDF_MAX_ROWS + 1)->values()->all();
+        $truncated = count($rows) > static::PDF_MAX_ROWS;
+        if ($truncated) {
+            $rows = array_slice($rows, 0, static::PDF_MAX_ROWS);
+        }
+
+        $html = $this->generateHtmlTable($export->type, $rows, $truncated);
 
         $pdf = Pdf::loadHTML($html)
             ->setPaper('a4', 'landscape')
@@ -725,7 +715,7 @@ class ExportService
     /**
      * Generate HTML table for PDF export
      */
-    protected function generateHtmlTable(string $type, array $data): string
+    protected function generateHtmlTable(string $type, array $data, bool $truncated = false): string
     {
         $title = Export::getExportTypes()[$type] ?? ucwords(str_replace('_', ' ', $type));
 
@@ -743,6 +733,9 @@ class ExportService
 
         $html .= '<h1>'.$title.'</h1>';
         $html .= '<p class="meta">Exported on: '.now()->format('F j, Y g:i A').' | Total Records: '.count($data).'</p>';
+        if ($truncated) {
+            $html .= '<p class="meta">Only the first '.number_format(static::PDF_MAX_ROWS).' records are shown. Export as CSV to get them all.</p>';
+        }
 
         if (empty($data)) {
             $html .= '<p>No data available for export.</p>';
@@ -758,7 +751,7 @@ class ExportService
             foreach ($data as $row) {
                 $html .= '<tr>';
                 foreach ($row as $value) {
-                    $html .= '<td>'.htmlspecialchars($value ?? '').'</td>';
+                    $html .= '<td>'.htmlspecialchars((string) ($value ?? '')).'</td>';
                 }
                 $html .= '</tr>';
             }
@@ -772,52 +765,100 @@ class ExportService
     }
 
     /**
-     * Convert array to CSV string
+     * Temporary file that spills to disk, for building exports.
+     *
+     * @return resource
      */
-    protected function arrayToCsv(array $data): string
+    protected function tempStream()
     {
-        if (empty($data)) {
-            return '';
+        $handle = fopen('php://temp/maxmemory:'.(2 * 1024 * 1024), 'w+');
+        if ($handle === false) {
+            throw new \Exception('Cannot open a temporary file for the export');
         }
 
-        $output = fopen('php://temp', 'r+');
-
-        // Write headers
-        Csv::writeRow($output, array_keys($data[0]));
-
-        // Write data
-        foreach ($data as $row) {
-            Csv::writeRow($output, array_values($row));
-        }
-
-        rewind($output);
-        $csv = stream_get_contents($output);
-        fclose($output);
-
-        return $csv;
+        return $handle;
     }
 
     /**
-     * Write array to CSV file
+     * Saves a stream to the exports disk and returns its size in bytes.
+     *
+     * @param  resource  $handle
      */
-    protected function writeCsvFile(string $filepath, array $data): void
+    protected function storeStream(string $path, $handle): int
     {
-        if (empty($data)) {
-            file_put_contents($filepath, '');
-
-            return;
+        $size = (int) ftell($handle);
+        rewind($handle);
+        $this->storage()->put($path, $handle);
+        if (is_resource($handle)) {
+            fclose($handle);
         }
 
-        $handle = fopen($filepath, 'w');
+        return $size;
+    }
 
-        // Write headers
-        Csv::writeRow($handle, array_keys($data[0]));
-
-        // Write data
+    /**
+     * Writes rows as CSV, headers from the first row.
+     *
+     * @param  resource  $handle
+     */
+    protected function writeCsv($handle, iterable $data): void
+    {
+        $first = true;
         foreach ($data as $row) {
+            if ($first) {
+                Csv::writeRow($handle, array_keys($row));
+                $first = false;
+            }
             Csv::writeRow($handle, array_values($row));
         }
+    }
 
+    /**
+     * Writes rows as a JSON array one at a time and returns the row count.
+     *
+     * @param  resource  $handle
+     */
+    protected function writeJsonArray($handle, iterable $data): int
+    {
+        $count = 0;
+        fwrite($handle, '[');
+        foreach ($data as $row) {
+            fwrite($handle, ($count ? ",\n" : "\n").json_encode($row, JSON_UNESCAPED_UNICODE));
+            $count++;
+        }
+        fwrite($handle, $count ? "\n]" : ']');
+
+        return $count;
+    }
+
+    /**
+     * Writes a backup as one JSON object, streaming each list.
+     *
+     * @param  resource  $handle
+     */
+    protected function writeJsonObject($handle, array $sections): void
+    {
+        fwrite($handle, '{');
+        $first = true;
+        foreach ($sections as $key => $value) {
+            fwrite($handle, ($first ? "\n" : ",\n").json_encode((string) $key).': ');
+            if ($value instanceof LazyCollection) {
+                $this->writeJsonArray($handle, $value);
+            } else {
+                fwrite($handle, json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            }
+            $first = false;
+        }
+        fwrite($handle, "\n}\n");
+    }
+
+    /**
+     * Write rows to a CSV file
+     */
+    protected function writeCsvFile(string $filepath, iterable $data): void
+    {
+        $handle = fopen($filepath, 'w');
+        $this->writeCsv($handle, $data);
         fclose($handle);
     }
 

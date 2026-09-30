@@ -407,6 +407,11 @@ class SyncController extends BaseApiController
             $query->with($relations);
         }
 
+        // Customer and vendor balances in the same query (P4).
+        if (method_exists($modelClass, 'scopeWithBalances')) {
+            $query->withBalances();
+        }
+
         // One extra row tells us whether there is another page.
         $records = $query->orderBy('updated_at')
             ->orderBy('id')

@@ -35,7 +35,11 @@ class VendorController extends Controller
 
     public function show(Vendor $vendor)
     {
-        $vendor->load(['bills', 'expenses', 'payments']);
+        // Only what the page shows: counts plus the latest few (P7).
+        $vendor->loadCount('bills')->load([
+            'bills' => fn ($q) => $q->latest('bill_date')->latest('id')->limit(5),
+            'expenses' => fn ($q) => $q->latest('expense_date')->latest('id')->limit(5),
+        ]);
 
         return view('vendors.show', compact('vendor'));
     }

@@ -34,9 +34,9 @@
                 </div>
                 
                 <div id="customDateRange" class="{{ $period === 'custom' ? '' : 'hidden' }} flex items-center space-x-2">
-                    <input type="date" name="start_date" value="{{ request('start_date', $startDate) }}" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm text-sm">
+                    <input type="date" name="start_date" value="{{ $startDate }}" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm text-sm">
                     <span class="text-gray-500">to</span>
-                    <input type="date" name="end_date" value="{{ request('end_date', $endDate) }}" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm text-sm">
+                    <input type="date" name="end_date" value="{{ $endDate }}" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm text-sm">
                     <button type="submit" class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">Apply</button>
                 </div>
 
@@ -44,6 +44,10 @@
                     <span class="font-medium">{{ \Carbon\Carbon::parse($startDate)->format('M d, Y') }}</span>
                     <span>to</span>
                     <span class="font-medium">{{ \Carbon\Carbon::parse($endDate)->format('M d, Y') }}</span>
+                    @if($rangeCapped ?? false)
+                        <span class="block text-xs text-amber-600 dark:text-amber-400">Custom ranges are limited to 24 months, so the start date was moved.</span>
+                    @endif
+                    <span class="block text-xs">Figures refresh every 10 minutes.</span>
                 </div>
             </form>
         </div>

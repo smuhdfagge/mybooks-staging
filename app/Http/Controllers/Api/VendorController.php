@@ -16,7 +16,7 @@ class VendorController extends BaseApiController
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Vendor::query();
+        $query = Vendor::query()->withBalances(); // one query, not two per row (P4)
 
         // Search
         if ($search = $request->input('search')) {

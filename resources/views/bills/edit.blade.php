@@ -36,7 +36,8 @@
                             </div>
 
                             <div x-data="searchableSelect({
-                                items: {{ json_encode($vendors->map(fn($v) => ['id' => $v->id, 'name' => $v->name . ($v->company_name ? " ({$v->company_name})" : '')])) }},
+                                items: @js($vendorOptions),
+                                url: @js(route('lookup.vendors')),
                                 selected: '{{ old('vendor_id', $bill->vendor_id) }}',
                                 placeholder: 'Select Vendor'
                             })">
@@ -127,6 +128,9 @@
                                                     <input type="text" 
                                                         x-model="item.itemSearch" 
                                                         @click="item.itemDropdownOpen = true" 
+                                                        @focus="searchProducts(index)"
+                                                        @input="item.itemDropdownOpen = true"
+                                                        @input.debounce.300ms="searchProducts(index)"
                                                         @keydown.arrow-down.prevent="item.itemHighlightedIndex = Math.min(item.itemHighlightedIndex + 1, getFilteredProducts(index).length - 1)"
                                                         @keydown.arrow-up.prevent="item.itemHighlightedIndex = Math.max(item.itemHighlightedIndex - 1, 0)"
                                                         @keydown.enter.prevent="if(getFilteredProducts(index)[item.itemHighlightedIndex]) selectProduct(index, getFilteredProducts(index)[item.itemHighlightedIndex])"
@@ -264,14 +268,28 @@
 
     @push('scripts')
     <script nonce="{{ app('csp-nonce') }}">
+        // Search-as-you-type against the lookup routes (P9).
+        async function lookupJson(url, params) {
+            const response = await fetch(url + '?' + new URLSearchParams(params), {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
+            });
+            if (!response.ok) return [];
+            const body = await response.json();
+            return body.data || [];
+        }
+
         function searchableSelect(config) {
             return {
                 items: config.items || [],
+                url: config.url || null,
                 selected: config.selected || '',
                 selectedId: config.selected || '',
                 search: '',
                 open: false,
                 highlightedIndex: 0,
+                requestSeq: 0,
+                timer: null,
                 placeholder: config.placeholder || 'Select an option',
                 init() {
                     if (this.selected) {
@@ -280,8 +298,23 @@
                             this.search = selectedItem.name;
                         }
                     }
+                    if (this.url) {
+                        this.$watch('search', () => this.fetchOptions());
+                        this.$watch('open', (isOpen) => { if (isOpen) this.fetchOptions(); });
+                    }
+                },
+                fetchOptions() {
+                    clearTimeout(this.timer);
+                    this.timer = setTimeout(async () => {
+                        const seq = ++this.requestSeq;
+                        const rows = await lookupJson(this.url, { q: this.search, limit: 20 });
+                        if (seq !== this.requestSeq) return;
+                        this.items = rows.map(row => ({ id: String(row.id), name: row.name + (row.company_name ? ` (${row.company_name})` : '') }));
+                        this.highlightedIndex = 0;
+                    }, 250);
                 },
                 get filteredItems() {
+                    if (this.url) return this.items; // already filtered by the server
                     if (!this.search) return this.items;
                     return this.items.filter(item => 
                         item.name.toLowerCase().includes(this.search.toLowerCase())
@@ -298,13 +331,7 @@
 
         function billForm() {
             return {
-                availableProducts: @js($items->map(fn($i) => [
-                    'id' => $i->id,
-                    'name' => $i->name,
-                    'price' => $i->cost_price ?? $i->selling_price,
-                    'description' => $i->description,
-                    'tax_rate' => $i->tax_rate ?? 0
-                ])),
+                productsUrl: @js(route('lookup.items')),
                 items: @js($bill->items->map(fn($item) => [
                     'item_id' => $item->item_id ?? '',
                     'description' => $item->description,
@@ -312,7 +339,7 @@
                     'unit_price' => $item->unit_price,
                     'discount' => (float) $item->discount,
                     'tax_rate' => $item->tax_rate ?? 0,
-                    'itemSearch' => '',
+                    'itemSearch' => $item->item?->name ?? '',
                     'itemDropdownOpen' => false,
                     'itemHighlightedIndex' => 0
                 ])),
@@ -323,25 +350,25 @@
                 init() {
                     if (this.items.length === 0) {
                         this.items = [{ item_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 }];
-                    } else {
-                        this.items.forEach((item, index) => {
-                            if (item.item_id) {
-                                const product = this.availableProducts.find(p => p.id == item.item_id);
-                                if (product) {
-                                    item.itemSearch = product.name;
-                                }
-                            }
-                        });
                     }
                     this.calculateTotals();
                 },
 
+                // Items matching what was typed, from the server (P9).
+                searchProducts(index) {
+                    const line = this.items[index];
+                    if (!line) return;
+                    const seq = (line.searchSeq || 0) + 1;
+                    line.searchSeq = seq;
+                    lookupJson(this.productsUrl, { q: line.itemSearch || '', limit: 20 }).then(rows => {
+                        if (line.searchSeq !== seq) return;
+                        line.results = rows.map(p => ({ id: String(p.id), name: p.name, price: Number(p.purchase_price), description: p.description || p.name, tax_rate: Number(p.tax_rate || 0) }));
+                        line.itemHighlightedIndex = 0;
+                    });
+                },
+
                 getFilteredProducts(index) {
-                    const search = this.items[index].itemSearch || '';
-                    if (!search) return this.availableProducts;
-                    return this.availableProducts.filter(product => 
-                        product.name.toLowerCase().includes(search.toLowerCase())
-                    );
+                    return (this.items[index] && this.items[index].results) || [];
                 },
 
                 selectProduct(index, product) {

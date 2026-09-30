@@ -35,7 +35,11 @@ class CustomerController extends Controller
 
     public function show(Customer $customer)
     {
-        $customer->load(['invoices', 'salesOrders', 'payments']);
+        // Only what the page shows: counts plus the latest few (P7).
+        $customer->loadCount('invoices')->load([
+            'invoices' => fn ($q) => $q->latest('invoice_date')->latest('id')->limit(10),
+            'payments' => fn ($q) => $q->with('invoice')->latest('payment_date')->latest('id')->limit(5),
+        ]);
 
         return view('customers.show', compact('customer'));
     }

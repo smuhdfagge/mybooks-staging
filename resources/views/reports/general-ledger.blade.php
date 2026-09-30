@@ -72,11 +72,6 @@
                             </p>
                         </div>
                         <div class="text-right">
-                            @php
-                                $totalDebit = $entries->sum('debit');
-                                $totalCredit = $entries->sum('credit');
-                                $closingBalance = ($openingBalance ?? 0) + $totalDebit - $totalCredit;
-                            @endphp
                             <p class="text-sm text-gray-500 dark:text-gray-400">Closing Balance</p>
                             <p class="text-2xl font-bold {{ $closingBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
                                 {{ number_format(abs($closingBalance), 2) }} {{ $closingBalance >= 0 ? 'Dr' : 'Cr' }}
@@ -137,8 +132,17 @@
                                         {{ number_format(abs($openingBalance ?? 0), 2) }} {{ ($openingBalance ?? 0) >= 0 ? 'Dr' : 'Cr' }}
                                     </td>
                                 </tr>
-                                @php $runningBalance = $openingBalance ?? 0; @endphp
-                                @forelse($entries->sortBy('journal.journal_date') as $entry)
+                                @if($entries->currentPage() > 1)
+                                    <tr class="bg-gray-50 dark:bg-gray-700/50">
+                                        <td colspan="5" class="px-6 py-3 text-sm text-gray-600 dark:text-gray-300">Brought forward from earlier pages</td>
+                                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-medium {{ $pageOpeningBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                            {{ number_format(abs($pageOpeningBalance), 2) }} {{ $pageOpeningBalance >= 0 ? 'Dr' : 'Cr' }}
+                                        </td>
+                                    </tr>
+                                @endif
+                                {{-- Entries come sorted by date, one page at a time (P7). --}}
+                                @php $runningBalance = $pageOpeningBalance; @endphp
+                                @forelse($entries as $entry)
                                     @php
                                         $runningBalance += ($entry->debit - $entry->credit);
                                     @endphp
@@ -190,6 +194,10 @@
                             </tfoot>
                         </table>
                     </div>
+
+                    @if($entries->hasPages())
+                        <div class="mt-4">{{ $entries->links() }}</div>
+                    @endif
 
                     <!-- Balance Summary -->
                     <div class="mt-4 p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">

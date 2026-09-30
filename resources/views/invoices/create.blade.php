@@ -36,7 +36,8 @@
                             </div>
 
                             <div x-data="searchableSelect({
-                                items: @js($customers->map(fn ($customer) => ['id' => (string) $customer->id, 'name' => $customer->name . ($customer->company_name ? " (" . ($customer->company_name) . ")" : "")])->values()),
+                                items: @js($customerOptions),
+                                url: @js(route('lookup.customers')),
                                 selectedId: '{{ old('customer_id', request('customer_id')) }}'
                             })" class="relative">
                                 <label for="customer_search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Customer <span class="text-red-500">*</span></label>
@@ -153,13 +154,14 @@
                                                     <input 
                                                         type="text" 
                                                         x-model="item.itemSearch"
-                                                        @focus="item.itemDropdownOpen = true"
+                                                        @focus="item.itemDropdownOpen = true; searchProducts(index)"
                                                         @click="item.itemDropdownOpen = true"
                                                         @input="item.itemDropdownOpen = true"
+                                                        @input.debounce.300ms="searchProducts(index)"
                                                         @keydown.escape="item.itemDropdownOpen = false"
-                                                        @keydown.arrow-down.prevent="item.itemHighlightedIndex = Math.min(item.itemHighlightedIndex + 1, getFilteredProducts(item.itemSearch).length - 1)"
+                                                        @keydown.arrow-down.prevent="item.itemHighlightedIndex = Math.min(item.itemHighlightedIndex + 1, getFilteredProducts(index).length - 1)"
                                                         @keydown.arrow-up.prevent="item.itemHighlightedIndex = Math.max(item.itemHighlightedIndex - 1, 0)"
-                                                        @keydown.enter.prevent="selectProduct(index, getFilteredProducts(item.itemSearch)[item.itemHighlightedIndex])"
+                                                        @keydown.enter.prevent="selectProduct(index, getFilteredProducts(index)[item.itemHighlightedIndex])"
                                                         placeholder="Search items..."
                                                         autocomplete="off"
                                                         class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
@@ -178,7 +180,7 @@
                                                         x-transition:leave-start="opacity-100 scale-100"
                                                         x-transition:leave-end="opacity-0 scale-95"
                                                         class="absolute z-[100] bottom-full mb-1 w-full bg-white dark:bg-gray-700 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none text-sm">
-                                                        <template x-for="(product, pIndex) in getFilteredProducts(item.itemSearch)" :key="product.id">
+                                                        <template x-for="(product, pIndex) in getFilteredProducts(index)" :key="product.id">
                                                             <div 
                                                                 @click="selectProduct(index, product)"
                                                                 @mouseenter="item.itemHighlightedIndex = pIndex"
@@ -192,7 +194,7 @@
                                                                 </span>
                                                             </div>
                                                         </template>
-                                                        <div x-show="getFilteredProducts(item.itemSearch).length === 0" class="py-2 px-3 text-gray-500 dark:text-gray-400 text-sm">
+                                                        <div x-show="getFilteredProducts(index).length === 0" class="py-2 px-3 text-gray-500 dark:text-gray-400 text-sm">
                                                             No items found
                                                         </div>
                                                     </div>
@@ -327,13 +329,27 @@
 
     @push('scripts')
     <script nonce="{{ app('csp-nonce') }}">
+        // Search-as-you-type against the lookup routes (P9).
+        async function lookupJson(url, params) {
+            const response = await fetch(url + '?' + new URLSearchParams(params), {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
+            });
+            if (!response.ok) return [];
+            const body = await response.json();
+            return body.data || [];
+        }
+
         function searchableSelect(config) {
             return {
                 items: config.items || [],
+                url: config.url || null,
                 selectedId: config.selectedId || '',
                 search: '',
                 open: false,
                 highlightedIndex: 0,
+                requestSeq: 0,
+                timer: null,
 
                 init() {
                     // Set initial search text if there's a selected item
@@ -343,9 +359,25 @@
                             this.search = selected.name;
                         }
                     }
+                    if (this.url) {
+                        this.$watch('search', () => this.fetchOptions());
+                        this.$watch('open', (isOpen) => { if (isOpen) this.fetchOptions(); });
+                    }
+                },
+
+                fetchOptions() {
+                    clearTimeout(this.timer);
+                    this.timer = setTimeout(async () => {
+                        const seq = ++this.requestSeq;
+                        const rows = await lookupJson(this.url, { q: this.search, limit: 20 });
+                        if (seq !== this.requestSeq) return;
+                        this.items = rows.map(row => ({ id: String(row.id), name: row.name + (row.company_name ? ` (${row.company_name})` : '') }));
+                        this.highlightedIndex = 0;
+                    }, 250);
                 },
 
                 get filteredItems() {
+                    if (this.url) return this.items; // already filtered by the server
                     if (!this.search) return this.items;
                     return this.items.filter(item => 
                         item.name.toLowerCase().includes(this.search.toLowerCase())
@@ -381,7 +413,7 @@
         function invoiceForm() {
             return {
                 items: [{ item_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0, is_taxable: false, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 }],
-                availableProducts: @js($items->map(fn ($item) => ['id' => (string) $item->id, 'name' => $item->name . ($item->is_taxable ? " (Taxable)" : ""), 'price' => (float) $item->selling_price, 'desc' => (string) ($item->description ?? $item->name), 'taxable' => (bool) $item->is_taxable, 'tax' => (float) ($item->effective_tax_rate ?? 0)])->values()),
+                productsUrl: @js(route('lookup.items')),
                 discountType: '',
                 discountValue: 0,
                 subtotal: 0,
@@ -398,11 +430,22 @@
                     this.calculateTotals();
                 },
 
-                getFilteredProducts(search) {
-                    if (!search) return this.availableProducts;
-                    return this.availableProducts.filter(p => 
-                        p.name.toLowerCase().includes(search.toLowerCase())
-                    );
+                // Items in stock matching what was typed, from the server (P9).
+                searchProducts(index) {
+                    const line = this.items[index];
+                    if (!line) return;
+                    const seq = (line.searchSeq || 0) + 1;
+                    line.searchSeq = seq;
+                    const term = (line.itemSearch || '').replace(/ \(Taxable\)$/, '');
+                    lookupJson(this.productsUrl, { q: term, limit: 20, in_stock: 1 }).then(rows => {
+                        if (line.searchSeq !== seq) return;
+                        line.results = rows.map(p => ({ id: String(p.id), name: p.name + (p.is_taxable ? ' (Taxable)' : ''), price: Number(p.selling_price), desc: p.description || p.name, taxable: !!p.is_taxable, tax: Number(p.effective_tax_rate || 0) }));
+                        line.itemHighlightedIndex = 0;
+                    });
+                },
+
+                getFilteredProducts(index) {
+                    return (this.items[index] && this.items[index].results) || [];
                 },
 
                 selectProduct(index, product) {

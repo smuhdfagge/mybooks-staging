@@ -134,9 +134,23 @@ class Customer extends Model
         return $this->invoices()->sum('total');
     }
 
-    public function getOutstandingBalanceAttribute()
+    public function getOutstandingBalanceAttribute($value)
     {
+        // Already loaded by withBalances(): no query per row (P4).
+        if (array_key_exists('outstanding_balance', $this->attributes)) {
+            return $value ?? 0;
+        }
+
         return $this->invoices()->where('status', '!=', 'paid')->sum('balance_due');
+    }
+
+    /**
+     * Loads the outstanding balance with the list query instead of one
+     * query per customer (P4).
+     */
+    public function scopeWithBalances($query)
+    {
+        return $query->withSum(['invoices as outstanding_balance' => fn ($q) => $q->where('status', '!=', 'paid')], 'balance_due');
     }
 
     public function scopeActive($query)

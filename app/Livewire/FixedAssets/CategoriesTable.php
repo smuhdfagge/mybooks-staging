@@ -3,13 +3,14 @@
 namespace App\Livewire\FixedAssets;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\FixedAssetCategory;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class CategoriesTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -176,7 +177,7 @@ class CategoriesTable extends Component
         }
 
         $categories = $query->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->perPage);
+            ->paginate($this->pageSize());
 
         $depreciationMethods = FixedAssetCategory::getDepreciationMethods();
 

@@ -3,13 +3,14 @@
 namespace App\Livewire\Allowances;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\Allowance;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class AllowancesTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -176,7 +177,7 @@ class AllowancesTable extends Component
 
     public function render()
     {
-        $allowances = $this->buildQuery()->paginate($this->perPage);
+        $allowances = $this->buildQuery()->paginate($this->pageSize());
 
         return view('livewire.allowances.allowances-table', compact('allowances'));
     }

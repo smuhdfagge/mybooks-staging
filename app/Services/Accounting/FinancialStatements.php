@@ -306,9 +306,15 @@ class FinancialStatements
             ->where('j.journal_date', '>=', $from)
             ->where('j.journal_date', '<', $end)
             ->whereNotIn('je.account_id', $cashIds ?: [0])
-            ->whereExists(fn ($q) => $q->selectRaw('1')->from('journal_entries as cash')
-                ->whereColumn('cash.journal_id', 'je.journal_id')
-                ->whereIn('cash.account_id', $cashIds ?: [0]))
+            // Journals that touch a cash account, as a join rather than a
+            // correlated EXISTS run for every line (P8).
+            ->joinSub(
+                DB::table('journal_entries')->select('journal_id')->whereIn('account_id', $cashIds ?: [0])->distinct(),
+                'cash',
+                'cash.journal_id',
+                '=',
+                'je.journal_id'
+            )
             ->select('je.account_id', 'je.debit', 'je.credit')
             ->orderBy('je.id')
             ->lazy(1000)

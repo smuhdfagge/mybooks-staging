@@ -3,6 +3,7 @@
 namespace App\Livewire\Leaves;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\Employee;
 use App\Models\Leave;
 use App\Models\LeaveType;
@@ -11,7 +12,7 @@ use Livewire\WithPagination;
 
 class LeavesTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -256,7 +257,7 @@ class LeavesTable extends Component
             ->when($this->leaveType, fn ($q) => $q->where('leave_type_id', $this->leaveType))
             ->when($this->employee, fn ($q) => $q->where('employee_id', $this->employee))
             ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->perPage);
+            ->paginate($this->pageSize());
 
         $leaveTypes = LeaveType::where('is_active', true)->get();
         $employees = Employee::where('status', 'active')->get();
