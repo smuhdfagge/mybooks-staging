@@ -14,7 +14,10 @@ use App\Services\ExportService;
 use App\Services\ReportExportService;
 use App\Services\TwoFactorService;
 use App\Support\Csv;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Storage;
 use PragmaRX\Google2FA\Google2FA;
 use Tests\TestCase;
@@ -251,7 +254,10 @@ class PhaseDSecurityTest extends TestCase
     private function actingAsAdmin(): AdminUser
     {
         $admin = $this->makeAdmin();
-        $this->actingAs($admin, 'admin')->withSession(['admin_two_factor_verified' => true]);
+        $this->actingAs($admin, 'admin')->withSession([
+            'admin_two_factor_verified' => true,
+            'admin_password_hash' => \App\Http\Middleware\EnsureAdminTwoFactor::passwordFingerprint($admin),
+        ]);
 
         return $admin;
     }
@@ -356,5 +362,122 @@ class PhaseDSecurityTest extends TestCase
         $created = $logs->firstWhere('action', ActivityLog::ACTION_CREATED);
         $this->assertSame('second@mybooks.test', $created->new_values['email']);
         $this->assertArrayNotHasKey('password', $created->new_values);
+    }
+
+    // ── S5: password change ends other sign-ins ─────────────────
+
+    private const NEW_PASSWORD = 'N3w-Long-Passw0rd!';
+
+    /** The session value another device holds for this user. */
+    private function sessionFingerprint(User $user): string
+    {
+        return Auth::guard('web')->hashPasswordForCookie($user->fresh()->getAuthPassword());
+    }
+
+    /** Pretend to be the user's other browser, signed in before the change. */
+    private function assertOtherDeviceIsSignedOut(User $user, string $oldFingerprint): void
+    {
+        auth()->forgetGuards();
+        $this->flushSession();
+        $this->actingAs($user->fresh())
+            ->withSession(['password_hash_web' => $oldFingerprint, 'two_factor_verified' => true])
+            ->get(route('profile.edit'))
+            ->assertRedirect(route('login'));
+        $this->assertGuest();
+    }
+
+    private function addDatabaseSession(User $user, string $id): void
+    {
+        DB::table('sessions')->insert([
+            'id' => $id, 'user_id' => $user->id, 'ip_address' => '10.9.9.9', 'user_agent' => 'Other',
+            'payload' => '', 'last_activity' => time(),
+        ]);
+    }
+
+    public function test_s5_changing_your_password_signs_out_other_devices_and_api_tokens(): void
+    {
+        config(['session.driver' => 'database']);
+        $user = $this->createAuthenticatedUser();
+        $old = $this->sessionFingerprint($user);
+        $user->createToken('phone');
+        $this->addDatabaseSession($user, 'other-browser-session');
+
+        $this->put(route('password.update'), [
+            'current_password' => 'password',
+            'password' => self::NEW_PASSWORD,
+            'password_confirmation' => self::NEW_PASSWORD,
+        ])->assertSessionHasNoErrors();
+
+        // This browser stays signed in.
+        $this->get(route('profile.edit'))->assertOk();
+
+        $this->assertSame(0, $user->tokens()->count());
+        $this->assertFalse(DB::table('sessions')->where('id', 'other-browser-session')->exists());
+        $this->assertOtherDeviceIsSignedOut($user, $old);
+    }
+
+    public function test_s5_a_password_reset_ends_every_sign_in(): void
+    {
+        [$tenant] = $this->createTenantWithSubscription();
+        $user = $this->createUserForTenant($tenant);
+        $old = $this->sessionFingerprint($user);
+        $user->createToken('phone');
+        $token = Password::createToken($user);
+
+        $this->post(route('password.store'), [
+            'token' => $token, 'email' => $user->email,
+            'password' => self::NEW_PASSWORD, 'password_confirmation' => self::NEW_PASSWORD,
+        ])->assertRedirect(route('login'));
+
+        $this->assertSame(0, $user->tokens()->count());
+        $this->assertOtherDeviceIsSignedOut($user, $old);
+    }
+
+    public function test_s5_a_password_set_by_an_admin_signs_the_user_out(): void
+    {
+        $manager = $this->createAuthenticatedUser(['edit users']);
+        $staff = $this->createUserForTenant($this->tenant);
+        $old = $this->sessionFingerprint($staff);
+        $staff->createToken('phone');
+
+        $this->put(route('settings.users.update', $staff), [
+            'name' => $staff->name, 'email' => $staff->email, 'is_active' => 1,
+            'password' => self::NEW_PASSWORD, 'password_confirmation' => self::NEW_PASSWORD,
+        ])->assertRedirect(route('settings.users'));
+
+        $this->assertSame(0, $staff->tokens()->count());
+        // The manager who made the change is not affected.
+        $this->get(route('profile.edit'))->assertOk();
+        $this->assertAuthenticatedAs($manager);
+
+        $this->assertOtherDeviceIsSignedOut($staff, $old);
+    }
+
+    public function test_s5_changing_an_admin_password_ends_that_admins_other_sessions(): void
+    {
+        $admin = $this->makeAdmin();
+        $other = AdminUser::create([
+            'name' => 'Other', 'email' => 'other@mybooks.test', 'password' => 'old-Passw0rd!',
+            'role' => AdminUser::ROLE_ADMIN, 'is_active' => true, 'two_factor_confirmed_at' => now(),
+        ]);
+        $other->forceFill(['two_factor_confirmed_at' => now()])->save();
+        $otherFingerprint = \App\Http\Middleware\EnsureAdminTwoFactor::passwordFingerprint($other);
+
+        $this->actingAs($admin, 'admin')->withSession([
+            'admin_two_factor_verified' => true,
+            'admin_password_hash' => \App\Http\Middleware\EnsureAdminTwoFactor::passwordFingerprint($admin),
+        ])->put(route('admin.users.update', $other), [
+            'name' => 'Other', 'email' => 'other@mybooks.test', 'role' => AdminUser::ROLE_ADMIN,
+            'password' => self::NEW_PASSWORD, 'password_confirmation' => self::NEW_PASSWORD,
+        ])->assertRedirect(route('admin.users.index'));
+
+        // The other admin's existing session.
+        auth('admin')->logout();
+        $this->flushSession();
+        $this->actingAs($other->fresh(), 'admin')
+            ->withSession(['admin_two_factor_verified' => true, 'admin_password_hash' => $otherFingerprint])
+            ->get(route('admin.tenants.index'))
+            ->assertRedirect(route('admin.login'));
+        $this->assertGuest('admin');
     }
 }

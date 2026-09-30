@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\EnsureAdminTwoFactor;
 use App\Models\ActivityLog;
 use App\Models\AdminUser;
 use App\Services\AdminAuditService;
@@ -78,6 +79,7 @@ class AdminTwoFactorController extends Controller
         Auth::guard('admin')->login($admin);
         $request->session()->regenerate();
         $request->session()->put('admin_two_factor_verified', true);
+        EnsureAdminTwoFactor::rememberPassword($request, $admin);
 
         AdminAuditService::log(
             ActivityLog::ACTION_LOGIN,
@@ -152,6 +154,7 @@ class AdminTwoFactorController extends Controller
 
         $request->session()->forget('admin_two_factor_secret');
         $request->session()->put('admin_two_factor_verified', true);
+        EnsureAdminTwoFactor::rememberPassword($request, $admin);
 
         AdminAuditService::log(ActivityLog::ACTION_2FA_ENABLED, 'turned on two-factor authentication', $admin);
 

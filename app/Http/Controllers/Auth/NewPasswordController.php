@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Actions\Auth\SignOutOtherSessions;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
@@ -46,6 +47,9 @@ class NewPasswordController extends Controller
                     'password' => Hash::make($request->password),
                     'remember_token' => Str::random(60),
                 ])->save();
+
+                // Every existing sign-in and API token ends (S5).
+                app(SignOutOtherSessions::class)->handle($user);
 
                 event(new PasswordReset($user));
             }

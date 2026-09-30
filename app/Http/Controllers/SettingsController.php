@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Auth\SignOutOtherSessions;
 use App\Models\Country;
 use App\Models\NotificationSetting;
 use App\Models\Role;
@@ -206,6 +207,8 @@ class SettingsController extends Controller
 
         if (! empty($validated['password'])) {
             $user->update(['password' => Hash::make($validated['password'])]);
+            // The user is signed out everywhere else, API tokens included (S5).
+            app(SignOutOtherSessions::class)->handle($user, $request);
         }
 
         if (! $isSelf) {

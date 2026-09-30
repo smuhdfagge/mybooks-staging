@@ -25,6 +25,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
 
+        // A session holding an old password hash is signed out, so changing
+        // or resetting a password ends every other sign-in (S5).
+        $middleware->web(append: [\App\Http\Middleware\AuthenticateSession::class]);
+
         $middleware->alias([
             'permission' => \App\Http\Middleware\CheckPermission::class,
             'role' => \App\Http\Middleware\CheckRole::class,

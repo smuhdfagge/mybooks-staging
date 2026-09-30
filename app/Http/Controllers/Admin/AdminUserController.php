@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\EnsureAdminTwoFactor;
 use App\Http\Requests\Admin\StoreAdminUserRequest;
 use App\Http\Requests\Admin\UpdateAdminUserRequest;
 use App\Models\ActivityLog;
 use App\Models\AdminUser;
 use App\Services\AdminAuditService;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AdminUserController extends Controller
 {
@@ -84,9 +86,16 @@ class AdminUserController extends Controller
 
         if (! empty($validated['password'])) {
             $adminUser->password = Hash::make($validated['password']);
+            $adminUser->remember_token = Str::random(60);
         }
 
         $adminUser->save();
+
+        // Other sessions of this admin now fail the password check in
+        // EnsureAdminTwoFactor; keep our own session if we changed our own (S5).
+        if (! empty($validated['password']) && $adminUser->id === auth('admin')->id()) {
+            EnsureAdminTwoFactor::rememberPassword($request, $adminUser);
+        }
 
         AdminAuditService::logChange("updated admin '{$adminUser->email}'", $adminUser, $before);
 

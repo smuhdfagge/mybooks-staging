@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Auth\SignOutOtherSessions;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\ActivityLogService;
@@ -192,6 +193,9 @@ class AuthController extends BaseApiController
             'password' => Hash::make($request->password),
         ]);
 
+        // Other sessions and tokens end; the token making the change is kept (S5).
+        app(SignOutOtherSessions::class)->handle($user, $request);
+
         ActivityLogService::logPasswordChanged($user);
 
         return $this->success(null, 'Password updated successfully');
@@ -234,8 +238,8 @@ class AuthController extends BaseApiController
                     'remember_token' => Str::random(60),
                 ])->save();
 
-                // Revoke all existing tokens for security
-                $user->tokens()->delete();
+                // Revoke all existing tokens and sessions (S5)
+                app(SignOutOtherSessions::class)->handle($user);
 
                 event(new PasswordReset($user));
             }
