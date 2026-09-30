@@ -25,6 +25,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
 
+        // API errors are always JSON (I6).
+        $middleware->api(prepend: [\App\Http\Middleware\ForceJsonResponse::class]);
+
         $middleware->alias([
             'permission' => \App\Http\Middleware\CheckPermission::class,
             'role' => \App\Http\Middleware\CheckRole::class,
@@ -45,5 +48,18 @@ return Application::configure(basePath: dirname(__DIR__))
         // and the normal logging still happens.
         $exceptions->reportable(function (Throwable $e) {
             app(\App\Services\ErrorAlerter::class)->report($e);
+        });
+
+        // Everything under /api answers in the documented JSON error shape,
+        // even without an Accept header or a matching route (I6).
+        $exceptions->shouldRenderJsonWhen(
+            fn (\Illuminate\Http\Request $request) => $request->is('api/*') || $request->expectsJson()
+        );
+        $exceptions->render(function (Throwable $e, \Illuminate\Http\Request $request) {
+            if ($request->is('api/*') && ! $e instanceof \Illuminate\Http\Exceptions\HttpResponseException) {
+                return \App\Exceptions\ApiExceptionRenderer::render($e, $request);
+            }
+
+            return null;
         });
     })->create();

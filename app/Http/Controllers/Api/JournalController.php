@@ -124,8 +124,10 @@ class JournalController extends BaseApiController
 
                 return $journal;
             });
-        } catch (\Exception $e) {
-            return $this->error('Failed to create journal entry: '.$e->getMessage(), 500);
+        } catch (\App\Exceptions\BusinessRuleException|\App\Exceptions\UnbalancedJournalException $e) {
+            // A broken rule is the client's to fix (422); anything else goes to the
+            // API error handler, which reports it without showing internals (I6).
+            return $this->error($e->getMessage(), 422);
         }
 
         $journal->load(['entries.account', 'createdBy']);
@@ -174,8 +176,10 @@ class JournalController extends BaseApiController
 
                     $journal->update($validated);
                 });
-            } catch (\Exception $e) {
-                return $this->error('Failed to update journal entry: '.$e->getMessage(), 500);
+            } catch (\App\Exceptions\BusinessRuleException|\App\Exceptions\UnbalancedJournalException $e) {
+                // A broken rule is the client's to fix (422); anything else goes to the
+                // API error handler, which reports it without showing internals (I6).
+                return $this->error($e->getMessage(), 422);
             }
         } else {
             $journal->update($validated);
@@ -226,8 +230,10 @@ class JournalController extends BaseApiController
             // Same posting code as the web app (checks balance, updates
             // account balances, marks posted).
             DB::transaction(fn () => $journal->post());
-        } catch (\Exception $e) {
-            return $this->error('Failed to post journal entry: '.$e->getMessage(), 500);
+        } catch (\App\Exceptions\BusinessRuleException|\App\Exceptions\UnbalancedJournalException $e) {
+            // A broken rule is the client's to fix (422); anything else goes to the
+            // API error handler, which reports it without showing internals (I6).
+            return $this->error($e->getMessage(), 422);
         }
 
         $journal->load(['entries.account', 'createdBy']);
@@ -289,8 +295,10 @@ class JournalController extends BaseApiController
 
                 return $reversingJournal;
             });
-        } catch (\Exception $e) {
-            return $this->error('Failed to create reversing entry: '.$e->getMessage(), 500);
+        } catch (\App\Exceptions\BusinessRuleException|\App\Exceptions\UnbalancedJournalException $e) {
+            // A broken rule is the client's to fix (422); anything else goes to the
+            // API error handler, which reports it without showing internals (I6).
+            return $this->error($e->getMessage(), 422);
         }
 
         $reversingJournal->load(['entries.account', 'createdBy']);
