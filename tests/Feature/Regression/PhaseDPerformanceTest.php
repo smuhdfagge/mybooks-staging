@@ -23,6 +23,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -564,5 +565,72 @@ class PhaseDPerformanceTest extends TestCase
         $view = $controller->customReportRun(request(), $report);
         $this->assertCount(3, $view->getData()['data']);
         $this->assertTrue($view->getData()['truncated']);
+    }
+
+    // ── P8: indexes and joins ──────────────────────────────────
+
+    public function test_p8_index_migration_adds_the_indexes_and_can_run_again(): void
+    {
+        $migration = require database_path('migrations/2026_10_04_000500_add_performance_indexes.php');
+
+        $expected = [
+            'journals' => 'journals_tenant_posted_date_idx',
+            'journal_entries' => 'journal_entries_account_journal_idx',
+            'bills' => 'bills_tenant_bill_date_idx',
+            'invoices' => 'invoices_customer_status_idx',
+            'expenses' => 'expenses_tenant_status_date_idx',
+            'customers' => 'customers_tenant_updated_idx',
+            'payments_made' => 'payments_made_tenant_updated_idx',
+        ];
+        foreach ($expected as $table => $index) {
+            $this->assertTrue(Schema::hasIndex($table, $index), "{$table}.{$index}");
+        }
+
+        $migration->up(); // again: nothing to do, no error
+        $migration->down();
+        $this->assertFalse(Schema::hasIndex('journals', 'journals_tenant_posted_date_idx'));
+        $migration->up();
+        foreach ($expected as $table => $index) {
+            $this->assertTrue(Schema::hasIndex($table, $index), "{$table}.{$index}");
+        }
+    }
+
+    public function test_p8_ledger_reports_use_joins_not_correlated_exists(): void
+    {
+        $this->createAuthenticatedUser(['view reports']);
+        $token = $this->user->createToken('test')->plainTextToken;
+        $cash = ChartOfAccount::where('tenant_id', $this->tenant->id)->where('account_code', '1000')->firstOrFail();
+        $sales = ChartOfAccount::where('tenant_id', $this->tenant->id)->where('type', 'income')->firstOrFail();
+        foreach ([['2026-06-10', 300], ['2026-06-20', 200]] as $n => [$date, $amount]) {
+            $journalId = DB::table('journals')->insertGetId([
+                'tenant_id' => $this->tenant->id, 'journal_number' => 'S-'.$n, 'journal_date' => $date,
+                'status' => 'posted', 'is_posted' => true, 'created_at' => now(), 'updated_at' => now(),
+            ]);
+            DB::table('journal_entries')->insert([
+                ['journal_id' => $journalId, 'account_id' => $cash->id, 'debit' => $amount, 'credit' => 0, 'created_at' => now(), 'updated_at' => now()],
+                ['journal_id' => $journalId, 'account_id' => $sales->id, 'debit' => 0, 'credit' => $amount, 'created_at' => now(), 'updated_at' => now()],
+            ]);
+        }
+
+        $sql = [];
+        DB::listen(function ($query) use (&$sql) {
+            $sql[] = strtolower($query->sql);
+        });
+
+        $flow = $this->get(route('reports.cash-flow', ['start_date' => '2026-06-01', 'end_date' => '2026-06-30']))->assertOk();
+        $this->assertEquals(500, $flow->viewData('paymentsReceived'));
+
+        $ledger = $this->withToken($token)
+            ->getJson('/api/v1/reports/general-ledger?account_id='.$cash->id.'&start_date=2026-06-01&end_date=2026-06-20')
+            ->assertOk();
+        $this->assertCount(2, $ledger->json('data.entries'));
+        $this->assertEquals(500, $ledger->json('data.closing_balance'));
+
+        $actual = (new \ReflectionMethod(\App\Services\BudgetService::class, 'getAccountActual'))
+            ->invoke(app(\App\Services\BudgetService::class), $sales->id, Carbon::parse('2026-06-01'), Carbon::parse('2026-06-30 23:59:59'), 'income');
+        $this->assertEquals(500, $actual);
+
+        $exists = array_filter($sql, fn ($q) => str_contains($q, 'exists (') && str_contains($q, 'journal'));
+        $this->assertSame([], array_values($exists));
     }
 }
