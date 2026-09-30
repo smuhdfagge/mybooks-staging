@@ -62,18 +62,8 @@
                         </th>
                         <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Employee</th>
                         <th scope="col" class="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Leave Type</th>
-                        <th scope="col" wire:click="sortBy('start_date')" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                            Dates
-                            @if($sortField === 'start_date')
-                                <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                            @endif
-                        </th>
-                        <th scope="col" wire:click="sortBy('days')" class="hidden md:table-cell px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                            Days
-                            @if($sortField === 'days')
-                                <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                            @endif
-                        </th>
+                        <x-sort-header field="start_date" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Dates</x-sort-header>
+                        <x-sort-header field="days" :sort-field="$sortField" :sort-direction="$sortDirection" class="hidden md:table-cell px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Days</x-sort-header>
                         <th scope="col" class="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                         <th scope="col" class="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                     </tr>

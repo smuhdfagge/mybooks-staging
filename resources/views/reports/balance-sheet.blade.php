@@ -121,7 +121,7 @@
                             <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
                                 <!-- Cash & Bank -->
                                 <div x-data="{ open: false }">
-                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" @click="open = !open">
+                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                                         <span class="text-gray-600 dark:text-gray-400 flex items-center">
                                             <svg class="w-4 h-4 mr-1 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -142,7 +142,7 @@
 
                                 <!-- Accounts Receivable -->
                                 <div x-data="{ open: false }">
-                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" @click="open = !open">
+                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                                         <span class="text-gray-600 dark:text-gray-400 flex items-center">
                                             <svg class="w-4 h-4 mr-1 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -163,7 +163,7 @@
 
                                 <!-- Inventory -->
                                 <div x-data="{ open: false }">
-                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" @click="open = !open">
+                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                                         <span class="text-gray-600 dark:text-gray-400 flex items-center">
                                             <svg class="w-4 h-4 mr-1 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -185,7 +185,7 @@
                                 <!-- Other Current Assets -->
                                 @if($otherCurrentAssets != 0 || (isset($assetDetails['other_current']) && $assetDetails['other_current']->count() > 0))
                                 <div x-data="{ open: false }">
-                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" @click="open = !open">
+                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                                         <span class="text-gray-600 dark:text-gray-400 flex items-center">
                                             <svg class="w-4 h-4 mr-1 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -218,7 +218,7 @@
                             <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 uppercase tracking-wider">Fixed Assets</h4>
                             <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
                                 <div x-data="{ open: false }">
-                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" @click="open = !open">
+                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                                         <span class="text-gray-600 dark:text-gray-400 flex items-center">
                                             <svg class="w-4 h-4 mr-1 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -275,7 +275,7 @@
                             <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
                                 <!-- Accounts Payable -->
                                 <div x-data="{ open: false }">
-                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" @click="open = !open">
+                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                                         <span class="text-gray-600 dark:text-gray-400 flex items-center">
                                             <svg class="w-4 h-4 mr-1 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -297,7 +297,7 @@
                                 <!-- Credit Card Payable -->
                                 @if($creditCardPayable != 0 || (isset($liabilityDetails['credit_card']) && $liabilityDetails['credit_card']->count() > 0))
                                 <div x-data="{ open: false }">
-                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" @click="open = !open">
+                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                                         <span class="text-gray-600 dark:text-gray-400 flex items-center">
                                             <svg class="w-4 h-4 mr-1 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -320,7 +320,7 @@
                                 <!-- Other Current Liabilities -->
                                 @if($otherCurrentLiabilities != 0 || (isset($liabilityDetails['other_current']) && $liabilityDetails['other_current']->count() > 0))
                                 <div x-data="{ open: false }">
-                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" @click="open = !open">
+                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                                         <span class="text-gray-600 dark:text-gray-400 flex items-center">
                                             <svg class="w-4 h-4 mr-1 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -354,7 +354,7 @@
                             <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 uppercase tracking-wider">Long-term Liabilities</h4>
                             <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
                                 <div x-data="{ open: false }">
-                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" @click="open = !open">
+                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                                         <span class="text-gray-600 dark:text-gray-400 flex items-center">
                                             <svg class="w-4 h-4 mr-1 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -390,7 +390,7 @@
                             <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
                                 <!-- Owner's Capital -->
                                 <div x-data="{ open: false }">
-                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" @click="open = !open">
+                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                                         <span class="text-gray-600 dark:text-gray-400 flex items-center">
                                             <svg class="w-4 h-4 mr-1 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -411,7 +411,7 @@
 
                                 <!-- Retained Earnings -->
                                 <div x-data="{ open: false }">
-                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" @click="open = !open">
+                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                                         <span class="text-gray-600 dark:text-gray-400 flex items-center">
                                             <svg class="w-4 h-4 mr-1 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>

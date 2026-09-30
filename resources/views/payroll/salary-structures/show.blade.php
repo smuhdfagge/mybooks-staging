@@ -183,7 +183,7 @@
                 <div class="space-y-4">
                     @foreach($salaryStructure->versions as $version)
                     <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4" x-data="{ open: false }">
-                        <div class="flex items-center justify-between cursor-pointer" @click="open = !open">
+                        <div class="flex items-center justify-between cursor-pointer" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                             <div class="flex items-center gap-3">
                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">v{{ $version->version }}</span>
                                 <span class="text-sm text-gray-900 dark:text-gray-100">{{ $version->name }}</span>

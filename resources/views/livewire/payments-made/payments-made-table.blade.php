@@ -108,30 +108,15 @@
                         <input type="checkbox" wire:model.live="selectAll"
                             class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700 dark:checked:bg-indigo-500">
                     </th>
-                    <th scope="col" wire:click="sortBy('payment_number')" class="cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                        Payment #
-                        @if($sortField === 'payment_number')
-                            <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                        @endif
-                    </th>
+                    <x-sort-header field="payment_number" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Payment #</x-sort-header>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
                         Vendor
                     </th>
-                    <th scope="col" wire:click="sortBy('payment_date')" class="cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                        Date
-                        @if($sortField === 'payment_date')
-                            <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                        @endif
-                    </th>
+                    <x-sort-header field="payment_date" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Date</x-sort-header>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
                         Bill #
                     </th>
-                    <th scope="col" wire:click="sortBy('amount')" class="cursor-pointer px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                        Amount
-                        @if($sortField === 'amount')
-                            <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                        @endif
-                    </th>
+                    <x-sort-header field="amount" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Amount</x-sort-header>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
                         Method
                     </th>

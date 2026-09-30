@@ -31,22 +31,8 @@
                         <input type="checkbox" wire:model.live="selectAll"
                             class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                     </th>
-                    <th scope="col" wire:click="sortBy('code')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                        <div class="flex items-center gap-1">
-                            Code
-                            @if($sortField === 'code')
-                                <span>{!! $sortDirection === 'asc' ? '↑' : '↓' !!}</span>
-                            @endif
-                        </div>
-                    </th>
-                    <th scope="col" wire:click="sortBy('name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                        <div class="flex items-center gap-1">
-                            Name
-                            @if($sortField === 'name')
-                                <span>{!! $sortDirection === 'asc' ? '↑' : '↓' !!}</span>
-                            @endif
-                        </div>
-                    </th>
+                    <x-sort-header field="code" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Code</x-sort-header>
+                    <x-sort-header field="name" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Name</x-sort-header>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Depreciation Method
                     </th>

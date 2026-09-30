@@ -81,33 +81,13 @@
                                     <input type="checkbox" wire:model.live="selectAll"
                                            class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500">
                                 </th>
-                                <th scope="col" wire:click="sortBy('name')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:text-gray-700 dark:hover:text-gray-100">
-                                    Name
-                                    @if($sortField === 'name')
-                                        <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                                    @endif
-                                </th>
-                                <th scope="col" wire:click="sortBy('fiscal_year')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:text-gray-700 dark:hover:text-gray-100">
-                                    Fiscal Year
-                                    @if($sortField === 'fiscal_year')
-                                        <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                                    @endif
-                                </th>
-                                <th scope="col" wire:click="sortBy('status')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:text-gray-700 dark:hover:text-gray-100">
-                                    Status
-                                    @if($sortField === 'status')
-                                        <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                                    @endif
-                                </th>
+                                <x-sort-header field="name" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-100">Name</x-sort-header>
+                                <x-sort-header field="fiscal_year" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-100">Fiscal Year</x-sort-header>
+                                <x-sort-header field="status" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-100">Status</x-sort-header>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                     Line Items
                                 </th>
-                                <th scope="col" wire:click="sortBy('created_at')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:text-gray-700 dark:hover:text-gray-100">
-                                    Created
-                                    @if($sortField === 'created_at')
-                                        <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                                    @endif
-                                </th>
+                                <x-sort-header field="created_at" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-100">Created</x-sort-header>
                                 <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                     Actions
                                 </th>

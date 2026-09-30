@@ -103,30 +103,12 @@
                                     <input type="checkbox" wire:model.live="selectAll"
                                            class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500">
                                 </th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:text-gray-700 dark:hover:text-gray-100"
-                                    wire:click="sortBy('name')">
-                                    Account Name
-                                    @if($sortField === 'name')
-                                        <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                                    @endif
-                                </th>
+                                <x-sort-header field="name" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-100">Account Name</x-sort-header>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                     Bank
                                 </th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:text-gray-700 dark:hover:text-gray-100"
-                                    wire:click="sortBy('account_type')">
-                                    Type
-                                    @if($sortField === 'account_type')
-                                        <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                                    @endif
-                                </th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:text-gray-700 dark:hover:text-gray-100"
-                                    wire:click="sortBy('current_balance')">
-                                    Balance
-                                    @if($sortField === 'current_balance')
-                                        <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                                    @endif
-                                </th>
+                                <x-sort-header field="account_type" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-100">Type</x-sort-header>
+                                <x-sort-header field="current_balance" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-100">Balance</x-sort-header>
                                 <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                     Status
                                 </th>

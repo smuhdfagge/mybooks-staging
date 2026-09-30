@@ -142,4 +142,35 @@ class PhaseDUiTest extends TestCase
 
         $this->assertSame([], $offenders);
     }
+
+    // ── U11: keyboard sortable headers ──────────────────────────
+
+    public function test_u11_sort_headers_are_buttons_with_aria_sort(): void
+    {
+        $html = $this->page('invoices.index', ['view invoices']);
+
+        // Default sort is newest invoice date first.
+        $this->assertMatchesRegularExpression('/<th scope="col" aria-sort="descending"[^>]*>\s*<button type="button" wire:click="sortBy\(\'invoice_date\'\)"/', $html);
+        $this->assertMatchesRegularExpression('/<th scope="col" aria-sort="none"[^>]*>\s*<button type="button" wire:click="sortBy\(\'total\'\)"/', $html);
+    }
+
+    public function test_u11_no_header_or_row_is_clickable_without_a_keyboard_route(): void
+    {
+        $offenders = [];
+        $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(resource_path('views')));
+        foreach ($it as $file) {
+            if (! str_ends_with($file->getFilename(), '.blade.php')) {
+                continue;
+            }
+            $html = file_get_contents($file->getPathname());
+            // A click handler on a header cell, or on a div that toggles
+            // something, with no button role to reach it by keyboard.
+            if (preg_match('/<th\b[^>]*wire:click=/', $html)
+                || preg_match('/<div\b(?![^>]*role="button")[^>]*cursor-pointer[^>]*@click="open = !open"/', $html)) {
+                $offenders[] = str_replace(resource_path('views').'/', '', $file->getPathname());
+            }
+        }
+
+        $this->assertSame([], $offenders);
+    }
 }

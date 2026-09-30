@@ -75,37 +75,12 @@
                             <input type="checkbox" wire:model.live="selectAll"
                                 class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                         </th>
-                        <th scope="col" wire:click="sortBy('asset_number')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                            Asset # 
-                            @if($sortField === 'asset_number')
-                                <span>{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                            @endif
-                        </th>
-                        <th scope="col" wire:click="sortBy('name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                            Name
-                            @if($sortField === 'name')
-                                <span>{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                            @endif
-                        </th>
+                        <x-sort-header field="asset_number" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Asset #</x-sort-header>
+                        <x-sort-header field="name" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Name</x-sort-header>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Category</th>
-                        <th scope="col" wire:click="sortBy('purchase_date')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                            Purchase Date
-                            @if($sortField === 'purchase_date')
-                                <span>{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                            @endif
-                        </th>
-                        <th scope="col" wire:click="sortBy('purchase_cost')" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                            Cost
-                            @if($sortField === 'purchase_cost')
-                                <span>{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                            @endif
-                        </th>
-                        <th scope="col" wire:click="sortBy('book_value')" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                            Book Value
-                            @if($sortField === 'book_value')
-                                <span>{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                            @endif
-                        </th>
+                        <x-sort-header field="purchase_date" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Purchase Date</x-sort-header>
+                        <x-sort-header field="purchase_cost" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Cost</x-sort-header>
+                        <x-sort-header field="book_value" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Book Value</x-sort-header>
                         <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                         <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                     </tr>
