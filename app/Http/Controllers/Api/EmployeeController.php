@@ -139,7 +139,8 @@ class EmployeeController extends BaseApiController
             'total_employees' => $totalEmployees,
             'active_employees' => $activeEmployees,
             'inactive_employees' => $totalEmployees - $activeEmployees,
-            'total_monthly_salary' => (float) $totalSalary,
+            // Pay totals need payroll access, like salaries (I7).
+            'total_monthly_salary' => $request->user()->can('view payroll') ? (float) $totalSalary : null,
             'by_status' => [
                 'active' => $activeEmployees,
                 'inactive' => Employee::where('tenant_id', $tenantId)->where('status', 'inactive')->count(),

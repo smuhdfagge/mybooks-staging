@@ -151,4 +151,43 @@ class PhaseDApiOpsTest extends TestCase
         }
         $this->getJson('/api/v1/reports/tax-summary')->assertStatus(429);
     }
+
+    // ── I7: employee bank details are masked ────────────────────
+
+    private function employeeWithBank(): \App\Models\Employee
+    {
+        return \App\Models\Employee::withoutEvents(fn () => \App\Models\Employee::create([
+            'tenant_id' => $this->tenant->id, 'employee_id' => 'EMP-00001', 'first_name' => 'Aisha', 'last_name' => 'Bello',
+            'hire_date' => '2025-01-01', 'status' => 'active', 'salary' => 250000,
+            'bank_name' => 'Access Bank', 'bank_account_number' => '0123456789', 'tax_id' => 'TIN-99887766',
+        ]));
+    }
+
+    public function test_i7_employee_api_masks_bank_details_and_pay_without_payroll_access(): void
+    {
+        $this->createAuthenticatedUser(['view employees']);
+        $employee = $this->employeeWithBank();
+
+        $data = $this->getJson("/api/v1/employees/{$employee->id}")->assertOk()->json('data');
+        $this->assertSame('****6789', $data['bank_account_number']);
+        $this->assertSame('****7766', $data['tax_id']);
+        $this->assertNull($data['salary']);
+        $this->assertTrue($data['sensitive_masked']);
+
+        $list = $this->getJson('/api/v1/employees')->assertOk()->json('data.0');
+        $this->assertSame('****6789', $list['bank_account_number']);
+        $this->assertNull($this->getJson('/api/v1/employees/summary')->json('data.total_monthly_salary'));
+    }
+
+    public function test_i7_payroll_users_see_full_details(): void
+    {
+        $this->createAuthenticatedUser(['view employees', 'view payroll', 'edit payroll']);
+        $employee = $this->employeeWithBank();
+
+        $data = $this->getJson("/api/v1/employees/{$employee->id}")->assertOk()->json('data');
+        $this->assertSame('0123456789', $data['bank_account_number']);
+        $this->assertSame('TIN-99887766', $data['tax_id']);
+        $this->assertEquals(250000, $data['salary']);
+        $this->assertFalse($data['sensitive_masked']);
+    }
 }
