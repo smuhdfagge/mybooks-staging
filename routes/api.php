@@ -48,7 +48,7 @@ Route::prefix('v1')->group(function () {
             'version' => '1.0',
             'timestamp' => now()->toIso8601String(),
         ]);
-    })->name('api.health');
+    })->middleware('throttle:api-read')->name('api.health');
 
     // Authentication (with rate limiting for login)
     Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:auth-sensitive');
@@ -69,6 +69,7 @@ Route::prefix('v1')->group(function () {
     | Protected Routes (Authentication Required)
     |--------------------------------------------------------------------------
     */
+    // throttle:api limits every route here, reads and writes separately (I8).
     Route::middleware(['auth:sanctum', 'active', 'throttle:api', 'subscription', 'tenant'])->group(function () {
         // Auth routes (exempt from permission checks)
         Route::prefix('auth')->group(function () {
@@ -88,7 +89,7 @@ Route::prefix('v1')->group(function () {
         });
 
         // Reports
-        Route::middleware('permission:view reports')->prefix('reports')->group(function () {
+        Route::middleware(['permission:view reports', 'throttle:api-reports'])->prefix('reports')->group(function () {
             Route::get('profit-loss', [ReportController::class, 'profitLoss']);
             Route::get('balance-sheet', [ReportController::class, 'balanceSheet']);
             Route::get('cash-flow', [ReportController::class, 'cashFlow']);
@@ -179,7 +180,7 @@ Route::prefix('v1')->group(function () {
             Route::get('invoices/summary', [InvoiceController::class, 'summary'])->name('api.invoices.summary');
             Route::get('invoices', [InvoiceController::class, 'index'])->name('api.invoices.index');
             Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('api.invoices.show');
-            Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('api.invoices.pdf');
+            Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->middleware('throttle:api-export')->name('api.invoices.pdf');
         });
         Route::post('invoices', [InvoiceController::class, 'store'])->middleware(['permission:create invoices', 'throttle:api-write'])->name('api.invoices.store');
         Route::middleware('permission:edit invoices')->group(function () {

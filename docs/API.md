@@ -1522,10 +1522,14 @@ Paginated responses include metadata:
 
 API requests are rate-limited to prevent abuse and ensure fair usage:
 
-| Endpoint Type              | Rate Limit  | Window   |
-| -------------------------- | ----------- | -------- |
-| Login (`POST /auth/login`) | 10 requests | 1 minute |
-| All other endpoints        | 60 requests | 1 minute |
+| Endpoint Type                                   | Rate Limit   | Window   | Counted per    |
+| ----------------------------------------------- | ------------ | -------- | -------------- |
+| Login, forgot/reset password                    | 5 requests   | 1 minute | IP address     |
+| Reads (`GET`) when signed in                    | 120 requests | 1 minute | user           |
+| Writes (`POST`/`PUT`/`DELETE`) when signed in   | 30 requests  | 1 minute | user           |
+| Reports (`/reports/*`)                          | 30 requests  | 1 minute | user           |
+| Invoice PDF                                     | 10 requests  | 1 minute | user           |
+| Health check                                    | 120 requests | 1 minute | IP address     |
 
 Rate limit headers are included in responses:
 
@@ -1538,10 +1542,11 @@ When rate limited, you'll receive a `429 Too Many Requests` response:
 ```json
 {
     "success": false,
-    "message": "Too Many Attempts.",
-    "retry_after": 45
+    "message": "Too Many Attempts."
 }
 ```
+
+The `Retry-After` header says how many seconds to wait.
 
 ---
 

@@ -125,4 +125,30 @@ class PhaseDApiOpsTest extends TestCase
             ->assertExactJson(['success' => false, 'message' => 'Server error. Please try again later.']);
         $this->assertStringNotContainsString('secret', $response->getContent());
     }
+
+    // ── I8: every API group is rate limited ─────────────────────
+
+    public function test_i8_writes_without_their_own_limiter_are_still_limited(): void
+    {
+        $this->createAuthenticatedUser(['edit journals']);
+
+        // PUT journals/{id} had no write limiter, only the shared 60/min.
+        for ($i = 0; $i < 30; $i++) {
+            $this->putJson('/api/v1/journals/999999', [])->assertNotFound();
+        }
+        $this->putJson('/api/v1/journals/999999', [])->assertStatus(429)->assertJson(['success' => false]);
+
+        // Reads are counted separately, so they still work.
+        $this->getJson('/api/v1/auth/user')->assertOk();
+    }
+
+    public function test_i8_reports_have_their_own_limit(): void
+    {
+        $this->createAuthenticatedUser(['view reports']);
+
+        for ($i = 0; $i < 30; $i++) {
+            $this->getJson('/api/v1/reports/tax-summary')->assertOk();
+        }
+        $this->getJson('/api/v1/reports/tax-summary')->assertStatus(429);
+    }
 }
