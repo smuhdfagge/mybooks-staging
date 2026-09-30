@@ -299,4 +299,35 @@ class PhaseDApiOpsTest extends TestCase
         $this->assertTrue($commands->contains(fn ($c) => str_contains($c, 'queue:prune-failed')));
         $this->assertTrue($commands->contains(fn ($c) => str_contains($c, 'logs:verify')));
     }
+
+    // ── O5: .env.example lists every setting ────────────────────
+
+    public function test_o5_every_env_setting_used_in_config_is_in_env_example(): void
+    {
+        $example = (string) file_get_contents(base_path('.env.example'));
+        preg_match_all('/^#?\s*([A-Z][A-Z0-9_]*)=/m', $example, $m);
+        $listed = array_flip($m[1]);
+
+        $used = [];
+        $files = array_merge(glob(config_path('*.php')) ?: [], glob(database_path('seeders/*.php')) ?: []);
+        foreach ($files as $file) {
+            preg_match_all("/env\(\s*'([A-Z0-9_]+)'/", (string) file_get_contents($file), $found);
+            foreach ($found[1] as $key) {
+                $used[$key] = basename($file);
+            }
+        }
+
+        $missing = array_diff_key($used, $listed);
+        $this->assertSame([], $missing, 'Add these to .env.example: '.implode(', ', array_keys($missing)));
+    }
+
+    public function test_o5_env_examples_have_safe_defaults(): void
+    {
+        foreach (['.env.example', '.env.production.example'] as $name) {
+            $content = (string) file_get_contents(base_path($name));
+            $this->assertMatchesRegularExpression('/^APP_DEBUG=false$/m', $content, $name);
+            $this->assertMatchesRegularExpression('/^LOG_LEVEL=warning$/m', $content, $name);
+            $this->assertMatchesRegularExpression('/^SESSION_SECURE_COOKIE=true$/m', $content, $name);
+        }
+    }
 }

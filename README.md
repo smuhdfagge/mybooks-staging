@@ -30,7 +30,7 @@ php artisan db:seed     # roles, permissions, plans, countries, tax templates
 composer dev            # web server, queue worker, log viewer and Vite together
 ```
 
-The default `.env` uses SQLite. For MySQL or MariaDB set `DB_CONNECTION`, `DB_HOST`, `DB_DATABASE`, `DB_USERNAME` and `DB_PASSWORD`, then run `php artisan migrate`.
+`.env.example` has safe server defaults; on your own machine set `APP_DEBUG=true` (and `SESSION_SECURE_COOKIE=false` if you use plain http). The default `.env` uses SQLite. For MySQL or MariaDB set `DB_CONNECTION`, `DB_HOST`, `DB_DATABASE`, `DB_USERNAME` and `DB_PASSWORD`, then run `php artisan migrate`.
 
 Excel import needs one extra package: `composer require phpoffice/phpspreadsheet`. Without it, CSV import still works.
 
@@ -58,7 +58,7 @@ composer analyse           # PHPStan; new code must not add to phpstan-baseline.
 ## Deploying
 
 1. **Document root.** Point the web server at the `public/` folder. The `.htaccess` in the project root is only a fallback for hosting where that can't be changed. It refuses dotfiles, and refuses everything if `mod_rewrite` is missing, so `.env` is never served.
-2. **Environment.** Copy `.env.example` to `.env` and set at least:
+2. **Environment.** Copy `.env.production.example` to `.env` (every other setting is listed, with its default, in `.env.example`) and set at least:
    - `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL`, `APP_KEY` (`php artisan key:generate`)
    - database and mail settings
    - `PAYSTACK_SECRET_KEY` and `PAYSTACK_PUBLIC_KEY` for subscription payments. In the Paystack dashboard, set the webhook URL to `https://<your domain>/billing/paystack/webhook`.
