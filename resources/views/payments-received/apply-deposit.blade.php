@@ -47,9 +47,9 @@
                     <div class="space-y-4">
                         <!-- Invoice Selection -->
                         <div>
-                            <label for="invoice_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Invoice <span class="text-red-500">*</span></label>
+                            <label for="invoice_id" class="form-label">Invoice <span class="text-red-500">*</span></label>
                             <select name="invoice_id" id="invoice_id" required x-model="selectedInvoice" @change="updateMaxAmount()"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('invoice_id') border-red-500 @enderror">
+                                class="form-control @error('invoice_id') border-red-500 @enderror">
                                 <option value="">Select an invoice</option>
                                 @foreach($unpaidInvoices as $invoice)
                                 <option value="{{ $invoice->id }}" data-balance="{{ $invoice->balance_due }}">
@@ -64,11 +64,11 @@
 
                         <!-- Amount -->
                         <div>
-                            <label for="amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount to Apply <span class="text-red-500">*</span></label>
+                            <label for="amount" class="form-label">Amount to Apply <span class="text-red-500">*</span></label>
                             <div class="relative">
                                 <input type="number" name="amount" id="amount" step="0.01" min="0.01" 
                                     :max="maxAmount" x-model="amount" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('amount') border-red-500 @enderror">
+                                    class="form-control @error('amount') border-red-500 @enderror">
                             </div>
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" x-show="selectedInvoice">
                                 Maximum: <span x-text="formatMoney(maxAmount)"></span>
@@ -80,9 +80,9 @@
 
                         <!-- Notes -->
                         <div>
-                            <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+                            <label for="notes" class="form-label">Notes</label>
                             <textarea name="notes" id="notes" rows="2"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                class="form-control"
                                 placeholder="Optional notes about this application">{{ old('notes') }}</textarea>
                         </div>
                     </div>

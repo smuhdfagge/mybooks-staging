@@ -9,17 +9,17 @@
             <div class="p-4 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
                 {{-- Template Name --}}
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Template Name</label>
+                    <label class="form-label">Template Name</label>
                     <input type="text" wire:model.live="name"
-                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                        class="form-control text-sm">
                     @error('name') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                 </div>
 
                 {{-- Layout --}}
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Layout Style</label>
+                    <label class="form-label">Layout Style</label>
                     <select wire:model.live="layout"
-                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                        class="form-control text-sm">
                         @foreach($layoutOptions as $value => $label)
                             <option value="{{ $value }}">{{ $label }}</option>
                         @endforeach
@@ -102,7 +102,7 @@
                         <div>
                             <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Font Family</label>
                             <select wire:model.live="font_family"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs">
+                                class="form-control text-xs">
                                 @foreach($fontOptions as $value => $label)
                                     <option value="{{ $value }}">{{ $label }}</option>
                                 @endforeach
@@ -111,7 +111,7 @@
                         <div>
                             <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Font Size (px)</label>
                             <input type="number" wire:model.live="font_size" min="8" max="20"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs">
+                                class="form-control text-xs">
                         </div>
                     </div>
                 </div>
@@ -168,9 +168,9 @@
                 {{-- Footer Text --}}
                 @if($show_footer)
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Footer Message</label>
+                    <label class="form-label">Footer Message</label>
                     <input type="text" wire:model.live="footer_text"
-                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                        class="form-control text-sm">
                 </div>
                 @endif
 

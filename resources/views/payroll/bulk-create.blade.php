@@ -39,21 +39,11 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label for="pay_period_start" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pay Period Start <span class="text-red-500">*</span></label>
-                                <input type="date" name="pay_period_start" id="pay_period_start" value="{{ old('pay_period_start') }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('pay_period_start') border-red-500 @enderror">
-                                @error('pay_period_start')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="pay_period_start" label="Pay Period Start" type="date" :value="old('pay_period_start')" required />
                             </div>
 
                             <div>
-                                <label for="pay_period_end" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pay Period End <span class="text-red-500">*</span></label>
-                                <input type="date" name="pay_period_end" id="pay_period_end" value="{{ old('pay_period_end') }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('pay_period_end') border-red-500 @enderror">
-                                @error('pay_period_end')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="pay_period_end" label="Pay Period End" type="date" :value="old('pay_period_end')" required />
                             </div>
                         </div>
                     </div>

@@ -30,18 +30,13 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="md:col-span-2">
-                                <label for="profile_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profile Name <span class="text-red-500">*</span></label>
-                                <input type="text" name="profile_name" id="profile_name" value="{{ old('profile_name', $recurrentExpense->profile_name) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('profile_name') border-red-500 @enderror">
-                                @error('profile_name')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="profile_name" label="Profile Name" :value="old('profile_name', $recurrentExpense->profile_name)" required />
                             </div>
 
                             <div>
-                                <label for="expense_account_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expense Account <span class="text-red-500">*</span></label>
+                                <label for="expense_account_id" class="form-label">Expense Account <span class="text-red-500">*</span></label>
                                 <select name="expense_account_id" id="expense_account_id" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('expense_account_id') border-red-500 @enderror">
+                                    class="form-control @error('expense_account_id') border-red-500 @enderror">
                                     <option value="">Select Account</option>
                                     @foreach($expenseAccounts as $account)
                                         <option value="{{ $account->id }}" {{ old('expense_account_id', $recurrentExpense->expense_account_id) == $account->id ? 'selected' : '' }}>
@@ -55,7 +50,7 @@
                             </div>
 
                             <div>
-                                <label for="amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount <span class="text-red-500">*</span></label>
+                                <label for="amount" class="form-label">Amount <span class="text-red-500">*</span></label>
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400">@currencySymbol</span>
                                     <input type="number" name="amount" id="amount" value="{{ old('amount', $recurrentExpense->amount) }}" min="0.01" step="0.01" required
@@ -71,7 +66,7 @@
                                 selected: '{{ old('vendor_id', $recurrentExpense->vendor_id) }}',
                                 placeholder: 'Select Vendor (Optional)'
                             })">
-                                <label for="vendor_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor</label>
+                                <label for="vendor_id" class="form-label">Vendor</label>
                                 <input type="hidden" name="vendor_id" :value="selectedId">
                                 <div class="relative">
                                     <input type="text" 
@@ -82,7 +77,7 @@
                                         @keydown.enter.prevent="if(filteredItems[highlightedIndex]) selectItem(filteredItems[highlightedIndex])"
                                         @keydown.escape="open = false"
                                         placeholder="Select Vendor (Optional)"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('vendor_id') border-red-500 @enderror">
+                                        class="form-control @error('vendor_id') border-red-500 @enderror">
                                     <div x-show="open" 
                                         @click.away="open = false"
                                         class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
@@ -101,9 +96,9 @@
                             </div>
 
                             <div>
-                                <label for="paid_through_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Paid Through</label>
+                                <label for="paid_through_id" class="form-label">Paid Through</label>
                                 <select name="paid_through_id" id="paid_through_id"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('paid_through_id') border-red-500 @enderror">
+                                    class="form-control @error('paid_through_id') border-red-500 @enderror">
                                     <option value="">Select Account (Optional)</option>
                                     @foreach($paymentAccounts as $account)
                                         <option value="{{ $account->id }}" {{ old('paid_through_id', $recurrentExpense->paid_through_id) == $account->id ? 'selected' : '' }}>
@@ -128,9 +123,9 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
-                                <label for="frequency" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Frequency <span class="text-red-500">*</span></label>
+                                <label for="frequency" class="form-label">Frequency <span class="text-red-500">*</span></label>
                                 <select name="frequency" id="frequency" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('frequency') border-red-500 @enderror">
+                                    class="form-control @error('frequency') border-red-500 @enderror">
                                     <option value="weekly" {{ old('frequency', $recurrentExpense->frequency) == 'weekly' ? 'selected' : '' }}>Weekly</option>
                                     <option value="monthly" {{ old('frequency', $recurrentExpense->frequency) == 'monthly' ? 'selected' : '' }}>Monthly</option>
                                     <option value="quarterly" {{ old('frequency', $recurrentExpense->frequency) == 'quarterly' ? 'selected' : '' }}>Quarterly</option>
@@ -142,15 +137,13 @@
                             </div>
 
                             <div>
-                                <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
+                                <label for="start_date" class="form-label">Start Date</label>
                                 <input type="text" id="start_date" value="{{ $recurrentExpense->start_date->format('M d, Y') }}" disabled
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-600 dark:text-gray-300 shadow-sm">
                             </div>
 
                             <div>
-                                <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date</label>
-                                <input type="date" name="end_date" id="end_date" value="{{ old('end_date', $recurrentExpense->end_date?->format('Y-m-d')) }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('end_date') border-red-500 @enderror">
+                                <x-field name="end_date" label="End Date" type="date" :value="old('end_date', $recurrentExpense->end_date?->format('Y-m-d'))" />
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave empty for indefinite</p>
                                 @error('end_date')
                                     <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
@@ -158,9 +151,9 @@
                             </div>
 
                             <div>
-                                <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                                <label for="status" class="form-label">Status</label>
                                 <select name="status" id="status"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    class="form-control">
                                     <option value="active" {{ old('status', $recurrentExpense->status) == 'active' ? 'selected' : '' }}>Active</option>
                                     <option value="paused" {{ old('status', $recurrentExpense->status) == 'paused' ? 'selected' : '' }}>Paused</option>
                                     <option value="stopped" {{ old('status', $recurrentExpense->status) == 'stopped' ? 'selected' : '' }}>Stopped</option>
@@ -171,9 +164,7 @@
 
                     <!-- Additional Info -->
                     <div class="mb-8">
-                        <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                        <textarea name="description" id="description" rows="3"
-                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('description', $recurrentExpense->description) }}</textarea>
+                        <x-field name="description" label="Description" type="textarea" :value="old('description', $recurrentExpense->description)" rows="3" />
                     </div>
 
                     <!-- Actions -->

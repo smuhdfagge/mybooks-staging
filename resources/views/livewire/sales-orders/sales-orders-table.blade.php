@@ -6,15 +6,15 @@
     <!-- Filters -->
     <div class="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         <div>
-            <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
+            <label for="search" class="form-label">Search</label>
             <input type="text" id="search" wire:model.live.debounce.300ms="search" placeholder="Order #, Reference, Customer..."
                 class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
         </div>
 
         <div>
-            <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+            <label for="status" class="form-label">Status</label>
             <select id="status" wire:model.live="status"
-                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                class="form-control text-sm">
                 <option value="">All Statuses</option>
                 <option value="draft">Draft</option>
                 <option value="confirmed">Confirmed</option>
@@ -25,9 +25,9 @@
         </div>
 
         <div>
-            <label for="customer" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Customer</label>
+            <label for="customer" class="form-label">Customer</label>
             <select id="customer" wire:model.live="customer"
-                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                class="form-control text-sm">
                 <option value="">All Customers</option>
                 @foreach($customers as $cust)
                     <option value="{{ $cust->id }}">{{ $cust->name }}</option>
@@ -36,15 +36,15 @@
         </div>
 
         <div>
-            <label for="dateFrom" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">From Date</label>
+            <label for="dateFrom" class="form-label">From Date</label>
             <input type="date" id="dateFrom" wire:model.live="dateFrom"
-                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                class="form-control text-sm">
         </div>
 
         <div>
-            <label for="dateTo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">To Date</label>
+            <label for="dateTo" class="form-label">To Date</label>
             <input type="date" id="dateTo" wire:model.live="dateTo"
-                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                class="form-control text-sm">
         </div>
 
         <!-- Bulk Actions -->

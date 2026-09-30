@@ -113,7 +113,9 @@ class PhaseDUiTest extends TestCase
         $view = file_get_contents(resource_path('views/livewire/invoices/invoices-table.blade.php'));
         $this->assertMatchesRegularExpression('/wire:click="applyBulkAction" wire:loading\.attr="disabled"/', $view);
 
-        $button = file_get_contents(resource_path('views/components/primary-button.blade.php'));
+        // The primary button's disabled look (moved into .btn-primary by U4).
+        $button = file_get_contents(resource_path('views/components/primary-button.blade.php'))
+            .file_get_contents(resource_path('css/app.css'));
         $this->assertStringContainsString('disabled:opacity-50', $button);
     }
 
@@ -259,5 +261,53 @@ class PhaseDUiTest extends TestCase
         $this->assertMatchesRegularExpression('/<ul id="country-listbox" role="listbox"/', $html);
         $this->assertStringContainsString('role="option"', $html);
         $this->assertStringContainsString('<input type="hidden" name="country"', $html);
+    }
+
+    // ── U4: shared form components ──────────────────────────────
+
+    /** Permissions a named GET route needs, read from its middleware. */
+    private function permissionsFor(string $route): array
+    {
+        $perms = [];
+        foreach (app('router')->getRoutes()->getByName($route)->gatherMiddleware() as $mw) {
+            if (is_string($mw) && str_starts_with($mw, 'permission:')) {
+                $perms = array_merge($perms, explode('|', substr($mw, 11)));
+            }
+        }
+
+        return $perms;
+    }
+
+    public function test_u4_converted_forms_use_the_shared_field_card_and_button(): void
+    {
+        $html = $this->page('customers.create', $this->permissionsFor('customers.create'));
+
+        $this->assertStringContainsString('<label for="name" class="form-label">Customer Name <span class="text-red-500">*</span></label>', $html);
+        $this->assertMatchesRegularExpression('/<input type="text" name="name" id="name" value="" required(="required")? class="form-control">/', $html);
+        $this->assertStringContainsString('class="card"', $html);
+        $this->assertStringContainsString('class="btn-primary', $html);
+        // The long copied label/input class strings are gone from this form.
+        $this->assertStringNotContainsString('class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"', $html);
+    }
+
+    public function test_u4_every_converted_page_still_renders(): void
+    {
+        $routes = [
+            'customers.create', 'vendors.create', 'items.create', 'employees.create', 'expenses.create',
+            'departments.create', 'settings.company', 'salary-structures.create',
+            'recurrent-expenses.create', 'recurrent-bills.create', 'sales-orders.create', 'sales-receipts.create',
+            'purchase-orders.create', 'payments-made.create', 'payments-received.create', 'leaves.create',
+            'settings.users.create', 'journals.create', 'accounting-periods.create', 'payroll.create',
+        ];
+        $perms = [];
+        foreach ($routes as $route) {
+            $perms = array_merge($perms, $this->permissionsFor($route));
+        }
+        $this->createAuthenticatedUser(array_values(array_unique($perms)));
+
+        foreach ($routes as $route) {
+            $html = $this->get(route($route))->assertOk()->getContent();
+            $this->assertStringContainsString('class="form-control', $html, $route);
+        }
     }
 }

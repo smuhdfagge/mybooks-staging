@@ -8,3 +8,26 @@
         @apply opacity-60 cursor-wait;
     }
 }
+
+/* Shared form and button styles (U4): one input style, one label style and
+   one brand colour (indigo-600). Used by x-field, x-card and the buttons. */
+@layer components {
+    .form-label {
+        @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1;
+    }
+    .form-control {
+        @apply w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500;
+    }
+    .form-help {
+        @apply mt-1 text-xs text-gray-500 dark:text-gray-400;
+    }
+    .form-error {
+        @apply mt-1 text-sm text-red-600 dark:text-red-400;
+    }
+    .btn-primary {
+        @apply inline-flex items-center justify-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition ease-in-out duration-150;
+    }
+    .card {
+        @apply bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg;
+    }
+}

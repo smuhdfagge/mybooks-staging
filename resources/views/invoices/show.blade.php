@@ -323,19 +323,19 @@
                         <input type="hidden" name="customer_id" value="{{ $invoice->customer_id }}">
                         
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount</label>
+                            <label class="form-label">Amount</label>
                             <input type="number" name="amount" value="{{ $invoice->balance_due }}" min="0.01" max="{{ $invoice->balance_due }}" step="0.01" required
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                class="form-control">
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                            <label class="form-label">Date</label>
                             <input type="date" name="payment_date" value="{{ date('Y-m-d') }}" required
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                class="form-control">
                         </div>
                         
                         <div>
-                            <label for="payment_method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Method</label>
+                            <label for="payment_method" class="form-label">Method</label>
                             <x-searchable-select
                                 name="payment_method"
                                 :options="['cash' => 'Cash', 'bank_transfer' => 'Bank Transfer', 'check' => 'Check', 'credit_card' => 'Credit Card', 'other' => 'Other']"

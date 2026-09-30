@@ -31,27 +31,17 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Employee</label>
+                                <label class="form-label">Employee</label>
                                 <input type="text" value="{{ $payroll->employee?->first_name }} {{ $payroll->employee?->last_name }}" readonly
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-gray-400 shadow-sm bg-gray-100">
                             </div>
 
                             <div>
-                                <label for="pay_period_start" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pay Period Start <span class="text-red-500">*</span></label>
-                                <input type="date" name="pay_period_start" id="pay_period_start" value="{{ old('pay_period_start', $payroll->pay_period_start?->format('Y-m-d')) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('pay_period_start') border-red-500 @enderror">
-                                @error('pay_period_start')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="pay_period_start" label="Pay Period Start" type="date" :value="old('pay_period_start', $payroll->pay_period_start?->format('Y-m-d'))" required />
                             </div>
 
                             <div>
-                                <label for="pay_period_end" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pay Period End <span class="text-red-500">*</span></label>
-                                <input type="date" name="pay_period_end" id="pay_period_end" value="{{ old('pay_period_end', $payroll->pay_period_end?->format('Y-m-d')) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('pay_period_end') border-red-500 @enderror">
-                                @error('pay_period_end')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="pay_period_end" label="Pay Period End" type="date" :value="old('pay_period_end', $payroll->pay_period_end?->format('Y-m-d'))" required />
                             </div>
                         </div>
                     </div>
@@ -66,39 +56,19 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label for="basic_salary" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Basic Salary <span class="text-red-500">*</span></label>
-                                <input type="number" name="basic_salary" id="basic_salary" value="{{ old('basic_salary', $payroll->basic_salary) }}" step="0.01" min="0" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('basic_salary') border-red-500 @enderror">
-                                @error('basic_salary')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="basic_salary" label="Basic Salary" type="number" :value="old('basic_salary', $payroll->basic_salary)" required step="0.01" min="0" />
                             </div>
 
                             <div>
-                                <label for="allowances" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Allowances</label>
-                                <input type="number" name="allowances" id="allowances" value="{{ old('allowances', $payroll->allowances) }}" step="0.01" min="0"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('allowances') border-red-500 @enderror">
-                                @error('allowances')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="allowances" label="Allowances" type="number" :value="old('allowances', $payroll->allowances)" step="0.01" min="0" />
                             </div>
 
                             <div>
-                                <label for="overtime_hours" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Overtime Hours</label>
-                                <input type="number" name="overtime_hours" id="overtime_hours" value="{{ old('overtime_hours', $payroll->overtime_hours) }}" step="0.01" min="0"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('overtime_hours') border-red-500 @enderror">
-                                @error('overtime_hours')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="overtime_hours" label="Overtime Hours" type="number" :value="old('overtime_hours', $payroll->overtime_hours)" step="0.01" min="0" />
                             </div>
 
                             <div>
-                                <label for="overtime_amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Overtime Amount</label>
-                                <input type="number" name="overtime_amount" id="overtime_amount" value="{{ old('overtime_amount', $payroll->overtime_amount) }}" step="0.01" min="0"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('overtime_amount') border-red-500 @enderror">
-                                @error('overtime_amount')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="overtime_amount" label="Overtime Amount" type="number" :value="old('overtime_amount', $payroll->overtime_amount)" step="0.01" min="0" />
                             </div>
                         </div>
                     </div>
@@ -113,21 +83,11 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label for="tax_deduction" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tax Deduction</label>
-                                <input type="number" name="tax_deduction" id="tax_deduction" value="{{ old('tax_deduction', $payroll->tax_deduction) }}" step="0.01" min="0"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('tax_deduction') border-red-500 @enderror">
-                                @error('tax_deduction')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="tax_deduction" label="Tax Deduction" type="number" :value="old('tax_deduction', $payroll->tax_deduction)" step="0.01" min="0" />
                             </div>
 
                             <div>
-                                <label for="other_deductions" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Other Deductions</label>
-                                <input type="number" name="other_deductions" id="other_deductions" value="{{ old('other_deductions', $payroll->other_deductions) }}" step="0.01" min="0"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('other_deductions') border-red-500 @enderror">
-                                @error('other_deductions')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="other_deductions" label="Other Deductions" type="number" :value="old('other_deductions', $payroll->other_deductions)" step="0.01" min="0" />
                             </div>
                         </div>
                     </div>
@@ -141,12 +101,7 @@
                             Additional Information
                         </h3>
                         <div>
-                            <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-                            <textarea name="notes" id="notes" rows="3"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('notes') border-red-500 @enderror">{{ old('notes', $payroll->notes) }}</textarea>
-                            @error('notes')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
+                            <x-field name="notes" label="Notes" type="textarea" :value="old('notes', $payroll->notes)" rows="3" />
                         </div>
                     </div>
 

@@ -1,17 +1,17 @@
-@php($input = 'w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500')
+@php($input = 'form-control')
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
     <div class="sm:col-span-2">
-        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name <span class="text-red-500">*</span></label>
+        <label for="name" class="form-label">Name <span class="text-red-500">*</span></label>
         <input type="text" name="name" id="name" value="{{ old('name', $leaveType->name) }}" required placeholder="e.g. Annual leave" class="{{ $input }}">
         @error('name')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
     </div>
     <div>
-        <label for="code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Code</label>
+        <label for="code" class="form-label">Code</label>
         <input type="text" name="code" id="code" value="{{ old('code', $leaveType->code) }}" placeholder="e.g. AL" class="{{ $input }}">
         @error('code')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
     </div>
     <div>
-        <label for="days_per_year" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Days per year <span class="text-red-500">*</span></label>
+        <label for="days_per_year" class="form-label">Days per year <span class="text-red-500">*</span></label>
         <input type="number" min="0" max="366" name="days_per_year" id="days_per_year" value="{{ old('days_per_year', $leaveType->days_per_year ?? 0) }}" required class="{{ $input }}">
         @error('days_per_year')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
     </div>
@@ -31,12 +31,12 @@
         <label for="is_carry_forward" class="text-sm text-gray-700 dark:text-gray-300">Unused days carry forward</label>
     </div>
     <div>
-        <label for="max_carry_forward_days" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Most days carried forward</label>
+        <label for="max_carry_forward_days" class="form-label">Most days carried forward</label>
         <input type="number" min="0" max="366" name="max_carry_forward_days" id="max_carry_forward_days" value="{{ old('max_carry_forward_days', $leaveType->max_carry_forward_days ?? 0) }}" class="{{ $input }}">
         @error('max_carry_forward_days')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
     </div>
     <div class="sm:col-span-2">
-        <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+        <label for="description" class="form-label">Description</label>
         <textarea name="description" id="description" rows="3" class="{{ $input }}">{{ old('description', $leaveType->description) }}</textarea>
         @error('description')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
     </div>

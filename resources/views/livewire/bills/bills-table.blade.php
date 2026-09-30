@@ -8,16 +8,16 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
             <!-- Search -->
             <div>
-                <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
+                <label for="search" class="form-label">Search</label>
                 <input wire:model.live.debounce.300ms="search" type="text" id="search" placeholder="Bill #, Vendor..."
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                    class="form-control text-sm">
             </div>
 
             <!-- Vendor Filter -->
             <div>
-                <label for="vendor_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor</label>
+                <label for="vendor_id" class="form-label">Vendor</label>
                 <select wire:model.live="vendor_id" id="vendor_id"
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                    class="form-control text-sm">
                     <option value="">All Vendors</option>
                     @foreach($vendors as $vendor)
                         <option value="{{ $vendor->id }}">{{ $vendor->name }}</option>
@@ -27,9 +27,9 @@
 
             <!-- Status Filter -->
             <div>
-                <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                <label for="status" class="form-label">Status</label>
                 <select wire:model.live="status" id="status"
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                    class="form-control text-sm">
                     <option value="">All Statuses</option>
                     @foreach($statuses as $value => $label)
                         <option value="{{ $value }}">{{ $label }}</option>
@@ -39,16 +39,16 @@
 
             <!-- Date From -->
             <div>
-                <label for="dateFrom" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">From Date</label>
+                <label for="dateFrom" class="form-label">From Date</label>
                 <input wire:model.live="dateFrom" type="date" id="dateFrom"
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                    class="form-control text-sm">
             </div>
 
             <!-- Date To -->
             <div>
-                <label for="dateTo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">To Date</label>
+                <label for="dateTo" class="form-label">To Date</label>
                 <input wire:model.live="dateTo" type="date" id="dateTo"
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                    class="form-control text-sm">
             </div>
 
             <!-- Bulk Actions -->

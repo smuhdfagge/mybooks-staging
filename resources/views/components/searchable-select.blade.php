@@ -77,7 +77,7 @@
     pickActive() { const o = this.filtered[this.active]; if (o) this.choose(o.v); }
 }" @click.outside="close()" class="relative">
     @if($label)
-        <label for="{{ $id }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $label }}</label>
+        <label for="{{ $id }}" class="form-label">{{ $label }}</label>
     @endif
     <input type="hidden" name="{{ $name }}" :value="selected" x-ref="value" value="{{ $value }}">
     <div class="relative">

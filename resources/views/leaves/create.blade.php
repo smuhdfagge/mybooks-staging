@@ -22,9 +22,9 @@
                     <div class="space-y-6">
                         <!-- Employee -->
                         <div>
-                            <label for="employee_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Employee <span class="text-red-500">*</span></label>
+                            <label for="employee_id" class="form-label">Employee <span class="text-red-500">*</span></label>
                             <select name="employee_id" id="employee_id" required
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('employee_id') border-red-500 @enderror">
+                                class="form-control @error('employee_id') border-red-500 @enderror">
                                 <option value="">Select Employee</option>
                                 @foreach($employees as $employee)
                                     <option value="{{ $employee->id }}" {{ old('employee_id') == $employee->id ? 'selected' : '' }}>
@@ -39,9 +39,9 @@
 
                         <!-- Leave Type -->
                         <div>
-                            <label for="leave_type_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Leave Type <span class="text-red-500">*</span></label>
+                            <label for="leave_type_id" class="form-label">Leave Type <span class="text-red-500">*</span></label>
                             <select name="leave_type_id" id="leave_type_id" required
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('leave_type_id') border-red-500 @enderror">
+                                class="form-control @error('leave_type_id') border-red-500 @enderror">
                                 <option value="">Select Leave Type</option>
                                 @foreach($leaveTypes as $leaveType)
                                     <option value="{{ $leaveType->id }}" {{ old('leave_type_id') == $leaveType->id ? 'selected' : '' }}>
@@ -57,29 +57,19 @@
                         <!-- Date Range -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date <span class="text-red-500">*</span></label>
-                                <input type="date" name="start_date" id="start_date" value="{{ old('start_date') }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('start_date') border-red-500 @enderror">
-                                @error('start_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="start_date" label="Start Date" type="date" :value="old('start_date')" required />
                             </div>
 
                             <div>
-                                <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date <span class="text-red-500">*</span></label>
-                                <input type="date" name="end_date" id="end_date" value="{{ old('end_date') }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('end_date') border-red-500 @enderror">
-                                @error('end_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="end_date" label="End Date" type="date" :value="old('end_date')" required />
                             </div>
                         </div>
 
                         <!-- Reason -->
                         <div>
-                            <label for="reason" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason</label>
+                            <label for="reason" class="form-label">Reason</label>
                             <textarea name="reason" id="reason" rows="4"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('reason') border-red-500 @enderror"
+                                class="form-control @error('reason') border-red-500 @enderror"
                                 placeholder="Optional: Provide a reason for your leave request">{{ old('reason') }}</textarea>
                             @error('reason')
                                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>

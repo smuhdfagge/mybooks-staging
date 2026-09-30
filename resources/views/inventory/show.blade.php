@@ -120,9 +120,9 @@
                             @csrf
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label for="type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Adjustment Type</label>
+                                    <label for="type" class="form-label">Adjustment Type</label>
                                     <select name="type" id="type" required
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                        class="form-control">
                                         <option value="in">Stock In (Add)</option>
                                         <option value="out">Stock Out (Remove)</option>
                                         <option value="adjustment">Set Quantity (Override)</option>
@@ -130,16 +130,16 @@
                                 </div>
 
                                 <div>
-                                    <label for="quantity" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Quantity</label>
+                                    <label for="quantity" class="form-label">Quantity</label>
                                     <input type="number" name="quantity" id="quantity" min="0" step="0.0001" required
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        class="form-control"
                                         placeholder="Enter quantity">
                                 </div>
 
                                 <div class="md:col-span-2">
-                                    <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes / Reason</label>
+                                    <label for="notes" class="form-label">Notes / Reason</label>
                                     <textarea name="notes" id="notes" rows="2"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        class="form-control"
                                         placeholder="e.g., Purchase order #123, Damaged goods, Physical count adjustment"></textarea>
                                 </div>
 

@@ -8,7 +8,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
             <!-- Search -->
             <div class="sm:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
+                <label class="form-label">Search</label>
                 <input type="text" wire:model.live.debounce.300ms="search" 
                     placeholder="Search categories..."
                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
@@ -24,7 +24,7 @@
             
             <!-- Per Page -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Per Page</label>
+                <label class="form-label">Per Page</label>
                 <select wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="10">10</option>
                     <option value="15">15</option>

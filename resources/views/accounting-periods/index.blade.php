@@ -145,11 +145,11 @@
                 <form action="{{ route('accounting-periods.generate') }}" method="POST">
                     @csrf
                     <div class="mb-4">
-                        <label for="fiscal_year" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fiscal Year</label>
+                        <label for="fiscal_year" class="form-label">Fiscal Year</label>
                         <input type="number" name="fiscal_year" id="fiscal_year" value="{{ date('Y') }}" min="2000" max="2100" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
                     </div>
                     <div class="mb-4">
-                        <label for="start_month" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fiscal Year Starts In</label>
+                        <label for="start_month" class="form-label">Fiscal Year Starts In</label>
                         <select name="start_month" id="start_month" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="1">January</option>
                             <option value="2">February</option>

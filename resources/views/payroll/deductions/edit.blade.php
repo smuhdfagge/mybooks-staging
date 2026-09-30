@@ -21,7 +21,7 @@
                         <div class="space-y-6">
                             {{-- Name --}}
                             <div>
-                                <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name <span class="text-red-500">*</span></label>
+                                <label for="name" class="form-label">Name <span class="text-red-500">*</span></label>
                                 <input type="text" name="name" id="name" value="{{ old('name', $deduction->name) }}" required
                                     class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                 @error('name')
@@ -31,7 +31,7 @@
 
                             {{-- Amount Type --}}
                             <div>
-                                <label for="amount_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount Type <span class="text-red-500">*</span></label>
+                                <label for="amount_type" class="form-label">Amount Type <span class="text-red-500">*</span></label>
                                 <select name="amount_type" id="amount_type" required
                                     class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                     <option value="fixed" {{ old('amount_type', $deduction->amount_type) === 'fixed' ? 'selected' : '' }}>Fixed Amount</option>
@@ -44,7 +44,7 @@
 
                             {{-- Amount --}}
                             <div>
-                                <label for="amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount <span class="text-red-500">*</span></label>
+                                <label for="amount" class="form-label">Amount <span class="text-red-500">*</span></label>
                                 <input type="number" name="amount" id="amount" value="{{ old('amount', $deduction->amount) }}" required step="0.01" min="0"
                                     class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                 @error('amount')
@@ -54,7 +54,7 @@
 
                             {{-- Pre-Tax Deduction --}}
                             <div>
-                                <label for="is_taxable" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pre-Tax Deduction</label>
+                                <label for="is_taxable" class="form-label">Pre-Tax Deduction</label>
                                 <select name="is_taxable" id="is_taxable"
                                     class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                     <option value="0" {{ !old('is_taxable', $deduction->is_taxable) ? 'selected' : '' }}>No</option>
@@ -68,7 +68,7 @@
 
                             {{-- Status --}}
                             <div>
-                                <label for="is_active" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                                <label for="is_active" class="form-label">Status</label>
                                 <select name="is_active" id="is_active"
                                     class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                     <option value="1" {{ old('is_active', $deduction->is_active) ? 'selected' : '' }}>Active</option>
@@ -81,7 +81,7 @@
 
                             {{-- Description --}}
                             <div>
-                                <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                                <label for="description" class="form-label">Description</label>
                                 <textarea name="description" id="description" rows="3"
                                     class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">{{ old('description', $deduction->description) }}</textarea>
                                 @error('description')

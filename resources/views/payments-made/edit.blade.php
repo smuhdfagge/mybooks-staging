@@ -26,16 +26,14 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Payment Number (Read-only) -->
                         <div>
-                            <label for="payment_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Number</label>
+                            <label for="payment_number" class="form-label">Payment Number</label>
                             <input type="text" id="payment_number" value="{{ $paymentMade->payment_number }}" disabled
                                 class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-300 shadow-sm">
                         </div>
 
                         <!-- Payment Date -->
                         <div>
-                            <label for="payment_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Date <span class="text-red-500">*</span></label>
-                            <input type="date" name="payment_date" id="payment_date" value="{{ old('payment_date', $paymentMade->payment_date?->format('Y-m-d')) }}" required
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('payment_date') border-red-500 @enderror">
+                            <x-field name="payment_date" label="Payment Date" type="date" :value="old('payment_date', $paymentMade->payment_date?->format('Y-m-d'))" required />
                             @error('payment_date')
                                 <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
@@ -43,7 +41,7 @@
 
                         <!-- Vendor (Read-only) -->
                         <div>
-                            <label for="vendor" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor</label>
+                            <label for="vendor" class="form-label">Vendor</label>
                             <input type="text" id="vendor" value="{{ $paymentMade->vendor?->name ?? 'N/A' }}" disabled
                                 class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-300 shadow-sm">
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Vendor cannot be changed</p>
@@ -51,14 +49,14 @@
 
                         <!-- Bill (Read-only) -->
                         <div>
-                            <label for="bill" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bill</label>
+                            <label for="bill" class="form-label">Bill</label>
                             <input type="text" id="bill" value="{{ $paymentMade->bill?->bill_number ?? 'General Payment' }}" disabled
                                 class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-300 shadow-sm">
                         </div>
 
                         <!-- Amount -->
                         <div>
-                            <label for="amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount <span class="text-red-500">*</span></label>
+                            <label for="amount" class="form-label">Amount <span class="text-red-500">*</span></label>
                             <div class="relative">
                                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400">@currencySymbol</span>
                                 <input type="number" name="amount" id="amount" step="0.01" min="0.01" value="{{ old('amount', $paymentMade->amount) }}" required
@@ -71,9 +69,9 @@
 
                         <!-- Payment Method -->
                         <div x-data="{ paymentMethod: '{{ old('payment_method', $paymentMade->payment_method) }}' }">
-                            <label for="payment_method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Method <span class="text-red-500">*</span></label>
+                            <label for="payment_method" class="form-label">Payment Method <span class="text-red-500">*</span></label>
                             <select name="payment_method" id="payment_method" required x-model="paymentMethod"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('payment_method') border-red-500 @enderror">
+                                class="form-control @error('payment_method') border-red-500 @enderror">
                                 <option value="cash">Cash</option>
                                 <option value="bank_transfer">Bank Transfer</option>
                                 <option value="check">Check</option>
@@ -86,9 +84,9 @@
 
                             <!-- Bank Account -->
                             <div x-show="paymentMethod === 'bank_transfer'" x-transition class="mt-4">
-                                <label for="bank_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bank Account</label>
+                                <label for="bank_id" class="form-label">Bank Account</label>
                                 <select name="bank_id" id="bank_id"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('bank_id') border-red-500 @enderror">
+                                    class="form-control @error('bank_id') border-red-500 @enderror">
                                     <option value="">Select Bank Account</option>
                                     @foreach($banks as $bank)
                                         <option value="{{ $bank->id }}" {{ old('bank_id', $paymentMade->bank_id) == $bank->id ? 'selected' : '' }}>
@@ -105,17 +103,14 @@
 
                         <!-- Reference -->
                         <div class="md:col-span-2">
-                            <label for="reference" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reference Number</label>
-                            <input type="text" name="reference" id="reference" value="{{ old('reference', $paymentMade->reference) }}"
-                                placeholder="e.g., Check #, Transaction ID"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <x-field name="reference" label="Reference Number" :value="old('reference', $paymentMade->reference)" placeholder="e.g., Check #, Transaction ID" />
                         </div>
 
                         <!-- Notes -->
                         <div class="md:col-span-2">
-                            <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+                            <label for="notes" class="form-label">Notes</label>
                             <textarea name="notes" id="notes" rows="3"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                class="form-control"
                                 placeholder="Optional notes about this payment">{{ old('notes', $paymentMade->notes) }}</textarea>
                         </div>
                     </div>

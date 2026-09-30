@@ -30,7 +30,7 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                             <div>
-                                <label for="bill_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bill Number</label>
+                                <label for="bill_number" class="form-label">Bill Number</label>
                                 <input type="text" id="bill_number" value="{{ $bill->bill_number }}" disabled
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-600 dark:text-gray-300 shadow-sm">
                             </div>
@@ -40,7 +40,7 @@
                                 selected: '{{ old('vendor_id', $bill->vendor_id) }}',
                                 placeholder: 'Select Vendor'
                             })">
-                                <label for="vendor_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor <span class="text-red-500">*</span></label>
+                                <label for="vendor_id" class="form-label">Vendor <span class="text-red-500">*</span></label>
                                 <input type="hidden" name="vendor_id" :value="selectedId" required>
                                 <div class="relative">
                                     <input type="text" 
@@ -51,7 +51,7 @@
                                         @keydown.enter.prevent="if(filteredItems[highlightedIndex]) selectItem(filteredItems[highlightedIndex])"
                                         @keydown.escape="open = false"
                                         placeholder="Select Vendor"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('vendor_id') border-red-500 @enderror">
+                                        class="form-control @error('vendor_id') border-red-500 @enderror">
                                     <div x-show="open" 
                                         @click.away="open = false"
                                         class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
@@ -70,18 +70,18 @@
                             </div>
 
                             <div>
-                                <label for="bill_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bill Date <span class="text-red-500">*</span></label>
+                                <label for="bill_date" class="form-label">Bill Date <span class="text-red-500">*</span></label>
                                 <input type="date" name="bill_date" id="bill_date" value="{{ old('bill_date', $bill->bill_date->format('Y-m-d')) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('bill_date') border-red-500 @enderror">
+                                    class="form-control @error('bill_date') border-red-500 @enderror">
                                 @error('bill_date')
                                     <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
-                                <label for="due_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Due Date <span class="text-red-500">*</span></label>
+                                <label for="due_date" class="form-label">Due Date <span class="text-red-500">*</span></label>
                                 <input type="date" name="due_date" id="due_date" value="{{ old('due_date', $bill->due_date->format('Y-m-d')) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('due_date') border-red-500 @enderror">
+                                    class="form-control @error('due_date') border-red-500 @enderror">
                                 @error('due_date')
                                     <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
@@ -89,7 +89,7 @@
                         </div>
 
                         <div class="mb-6">
-                            <label for="reference" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor Bill Number / Reference</label>
+                            <label for="reference" class="form-label">Vendor Bill Number / Reference</label>
                             <input type="text" name="reference" id="reference" value="{{ old('reference', $bill->vendor_bill_number) }}"
                                 class="w-full md:w-1/2 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
@@ -132,7 +132,7 @@
                                                         @keydown.enter.prevent="if(getFilteredProducts(index)[item.itemHighlightedIndex]) selectProduct(index, getFilteredProducts(index)[item.itemHighlightedIndex])"
                                                         @keydown.escape="item.itemDropdownOpen = false"
                                                         placeholder="Select Item"
-                                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                        class="form-control text-sm">
                                                     <div x-show="item.itemDropdownOpen" 
                                                         @click.away="item.itemDropdownOpen = false"
                                                         class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
@@ -151,19 +151,19 @@
                                             <td class="py-2 pr-2">
                                                 <input type="number" :name="`items[${index}][quantity]`" x-model.number="item.quantity" min="0.01" step="0.01" required
                                                     @input="calculateTotals()"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
                                             <td class="py-2 pr-2">
                                                 <input type="number" :name="`items[${index}][unit_price]`" x-model.number="item.unit_price" min="0" step="0.01" required
                                                     @input="calculateTotals()"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
                                             <td class="py-2 pr-2">
                                                 {{-- Line discounts from a purchase order or the API are kept. --}}
                                                 <input type="hidden" :name="`items[${index}][discount]`" :value="item.discount || 0">
                                                 <input type="number" :name="`items[${index}][tax_rate]`" x-model.number="item.tax_rate" min="0" max="100" step="0.01"
                                                     @input="calculateTotals()"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
                                             <td class="py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(lineTotal(index))"></td>
                                             <td class="py-2 text-center">
@@ -200,9 +200,9 @@
                                 Notes
                             </h3>
                             <div>
-                                <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Internal Notes</label>
+                                <label for="notes" class="form-label">Internal Notes</label>
                                 <textarea name="notes" id="notes" rows="4"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('notes', $bill->notes) }}</textarea>
+                                    class="form-control">{{ old('notes', $bill->notes) }}</textarea>
                             </div>
                         </div>
                     </div>

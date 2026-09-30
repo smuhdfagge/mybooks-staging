@@ -193,12 +193,12 @@
                     <form method="GET" action="{{ route('payroll-batches.show', $payrollBatch) }}" class="mb-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 sm:p-4">
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
                             <div class="sm:col-span-2 lg:col-span-1">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
+                                <label class="form-label">Search</label>
                                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Name or Employee ID..."
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                                <label class="form-label">Status</label>
                                 <select name="status" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                                     <option value="">All Status</option>
                                     <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
@@ -208,7 +208,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department</label>
+                                <label class="form-label">Department</label>
                                 <select name="department" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                                     <option value="">All Departments</option>
                                     @foreach($departments as $id => $name)
@@ -217,7 +217,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Per Page</label>
+                                <label class="form-label">Per Page</label>
                                 <select name="per_page" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                                     <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10</option>
                                     <option value="15" {{ request('per_page', 15) == 15 ? 'selected' : '' }}>15</option>

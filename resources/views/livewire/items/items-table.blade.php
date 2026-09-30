@@ -8,7 +8,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
             <!-- Search -->
             <div class="sm:col-span-2 lg:col-span-1">
-                <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
+                <label for="search" class="form-label">Search</label>
                 <input type="text" id="search" wire:model.live.debounce.300ms="search" 
                     placeholder="Search items..."
                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
@@ -16,7 +16,7 @@
             
             <!-- Type Filter -->
             <div>
-                <label for="type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+                <label for="type" class="form-label">Type</label>
                 <select id="type" wire:model.live="type" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="">All Types</option>
                     <option value="product">Product</option>
@@ -45,7 +45,7 @@
                     this.search = '';
                 }
             }" @click.outside="open = false; search = ''" class="relative">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+                <label class="form-label">Category</label>
                 <button type="button" @click="open = !open"
                     class="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm text-left px-3 py-2 bg-white flex items-center justify-between">
                     <span x-text="selectedName" class="truncate"></span>
@@ -74,7 +74,7 @@
             
             <!-- Per Page -->
             <div>
-                <label for="perPage" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Per Page</label>
+                <label for="perPage" class="form-label">Per Page</label>
                 <select id="perPage" wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="10">10</option>
                     <option value="25">25</option>

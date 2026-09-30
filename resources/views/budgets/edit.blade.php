@@ -189,7 +189,7 @@
                             @csrf
                             
                             <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CSV or Excel File *</label>
+                                <label class="form-label">CSV or Excel File *</label>
                                 <input type="file" name="file" accept=".csv,.xlsx,.xls" required
                                        class="block w-full text-sm text-gray-500 dark:text-gray-400
                                               file:mr-4 file:py-2 file:px-4

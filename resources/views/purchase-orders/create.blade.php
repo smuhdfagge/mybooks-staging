@@ -28,7 +28,7 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                             <div>
-                                <label for="order_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Order Number</label>
+                                <label for="order_number" class="form-label">Order Number</label>
                                 <input type="text" id="order_number" value="{{ $orderNumber }}" disabled
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-600 dark:text-gray-300 shadow-sm">
                             </div>
@@ -37,7 +37,7 @@
                                 items: @js($vendors->map(fn ($vendor) => ['id' => (string) $vendor->id, 'name' => $vendor->name . ($vendor->company_name ? " (" . ($vendor->company_name) . ")" : "")])->values()),
                                 selectedId: '{{ old('vendor_id') }}'
                             })" class="relative">
-                                <label for="vendor_search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor <span class="text-red-500">*</span></label>
+                                <label for="vendor_search" class="form-label">Vendor <span class="text-red-500">*</span></label>
                                 <input type="hidden" name="vendor_id" :value="selectedId" required>
                                 <div class="relative">
                                     <input 
@@ -53,7 +53,7 @@
                                         @keydown.enter.prevent="selectHighlighted()"
                                         placeholder="Search vendors..."
                                         autocomplete="off"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('vendor_id') border-red-500 @enderror">
+                                        class="form-control @error('vendor_id') border-red-500 @enderror">
                                     <button type="button" @click="open = !open" class="absolute inset-y-0 right-0 flex items-center pr-2">
                                         <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
                                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -89,26 +89,16 @@
                             </div>
 
                             <div>
-                                <label for="order_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Order Date <span class="text-red-500">*</span></label>
-                                <input type="date" name="order_date" id="order_date" value="{{ old('order_date', date('Y-m-d')) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('order_date') border-red-500 @enderror">
-                                @error('order_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="order_date" label="Order Date" type="date" :value="old('order_date', date('Y-m-d'))" required />
                             </div>
 
                             <div>
-                                <label for="expected_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expected Date</label>
-                                <input type="date" name="expected_date" id="expected_date" value="{{ old('expected_date') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('expected_date') border-red-500 @enderror">
-                                @error('expected_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="expected_date" label="Expected Date" type="date" :value="old('expected_date')" />
                             </div>
                         </div>
 
                         <div class="mb-6">
-                            <label for="reference" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reference</label>
+                            <label for="reference" class="form-label">Reference</label>
                             <input type="text" name="reference" id="reference" value="{{ old('reference') }}"
                                 class="w-full md:w-1/2 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
@@ -156,7 +146,7 @@
                                                         @keydown.enter.prevent="selectProduct(index, getFilteredProducts(item.itemSearch)[item.itemHighlightedIndex])"
                                                         placeholder="Search items..."
                                                         autocomplete="off"
-                                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                        class="form-control text-sm">
                                                     <button type="button" @click="item.itemDropdownOpen = !item.itemDropdownOpen" class="absolute inset-y-0 right-0 flex items-center pr-2">
                                                         <svg class="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
                                                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -192,22 +182,22 @@
                                             <td class="py-2 pr-2">
                                                 <input type="number" :name="`items[${index}][quantity]`" x-model.number="item.quantity" min="0.01" step="0.01" required
                                                     @input="calculateTotals()"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
                                             <td class="py-2 pr-2">
                                                 <input type="number" :name="`items[${index}][unit_price]`" x-model.number="item.unit_price" min="0" step="0.01" required
                                                     @input="calculateTotals()"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
                                             <td class="py-2 pr-2">
                                                 <input type="number" :name="`items[${index}][discount]`" x-model.number="item.discount" min="0" step="0.01"
                                                     @input="calculateTotals()"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
                                             <td class="py-2 pr-2">
                                                 <input type="number" :name="`items[${index}][tax_rate]`" x-model.number="item.tax_rate" min="0" max="100" step="0.01"
                                                     @input="calculateTotals()"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
                                             <td class="py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(lineTotal(index))"></td>
                                             <td class="py-2 text-center">
@@ -244,14 +234,10 @@
                             </h3>
                             <div class="space-y-4">
                                 <div>
-                                    <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Internal Notes</label>
-                                    <textarea name="notes" id="notes" rows="3"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('notes') }}</textarea>
+                                    <x-field name="notes" label="Internal Notes" type="textarea" :value="old('notes')" rows="3" />
                                 </div>
                                 <div>
-                                    <label for="terms" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Terms & Conditions</label>
-                                    <textarea name="terms" id="terms" rows="3"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('terms') }}</textarea>
+                                    <x-field name="terms" label="Terms & Conditions" type="textarea" :value="old('terms')" rows="3" />
                                 </div>
                             </div>
                         </div>

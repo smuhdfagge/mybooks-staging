@@ -31,24 +31,19 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
-                                <label for="journal_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Journal Number</label>
+                                <label for="journal_number" class="form-label">Journal Number</label>
                                 <input type="text" id="journal_number" value="{{ $journal->journal_number }}" disabled
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-600 dark:text-gray-300 shadow-sm">
                             </div>
 
                             <div>
-                                <label for="journal_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Journal Date <span class="text-red-500">*</span></label>
-                                <input type="date" name="journal_date" id="journal_date" value="{{ old('journal_date', $journal->journal_date->format('Y-m-d')) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('journal_date') border-red-500 @enderror">
-                                @error('journal_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="journal_date" label="Journal Date" type="date" :value="old('journal_date', $journal->journal_date->format('Y-m-d'))" required />
                             </div>
 
                             <div>
-                                <label for="reference" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reference</label>
+                                <label for="reference" class="form-label">Reference</label>
                                 <input type="text" name="reference" id="reference" value="{{ old('reference', $journal->reference) }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('reference') border-red-500 @enderror"
+                                    class="form-control @error('reference') border-red-500 @enderror"
                                     placeholder="e.g., Check #123">
                                 @error('reference')
                                     <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
@@ -57,9 +52,9 @@
                         </div>
 
                         <div class="mt-4">
-                            <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description <span class="text-red-500">*</span></label>
+                            <label for="description" class="form-label">Description <span class="text-red-500">*</span></label>
                             <textarea name="description" id="description" rows="2" required maxlength="500"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('description') border-red-500 @enderror"
+                                class="form-control @error('description') border-red-500 @enderror"
                                 placeholder="Enter journal description...">{{ old('description', $journal->description) }}</textarea>
                             @error('description')
                                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>

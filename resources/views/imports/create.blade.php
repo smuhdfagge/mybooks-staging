@@ -64,7 +64,7 @@
                             What would you like to import? <span class="text-red-500">*</span>
                         </label>
                         <select name="type" id="type" required
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                class="form-control">
                             <option value="">Select import type...</option>
                             @foreach($importTypes as $value => $label)
                                 <option value="{{ $value }}" {{ ($type ?? old('type')) === $value ? 'selected' : '' }}>

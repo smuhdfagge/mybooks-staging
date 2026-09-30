@@ -29,19 +29,14 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                             <div>
-                                <label for="profile_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profile Name <span class="text-red-500">*</span></label>
-                                <input type="text" name="profile_name" id="profile_name" value="{{ old('profile_name') }}" required placeholder="e.g. Monthly Rent, Internet Bill"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('profile_name') border-red-500 @enderror">
-                                @error('profile_name')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="profile_name" label="Profile Name" :value="old('profile_name')" required placeholder="e.g. Monthly Rent, Internet Bill" />
                             </div>
 
                             <div x-data="searchableSelect({
                                 items: @js($vendors->map(fn ($vendor) => ['id' => (string) $vendor->id, 'name' => $vendor->name . ($vendor->company_name ? " (" . ($vendor->company_name) . ")" : "")])->values()),
                                 selectedId: '{{ old('vendor_id') }}'
                             })" class="relative">
-                                <label for="vendor_search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor <span class="text-red-500">*</span></label>
+                                <label for="vendor_search" class="form-label">Vendor <span class="text-red-500">*</span></label>
                                 <input type="hidden" name="vendor_id" :value="selectedId" required>
                                 <div class="relative">
                                     <input 
@@ -57,7 +52,7 @@
                                         @keydown.enter.prevent="selectHighlighted()"
                                         placeholder="Search vendors..."
                                         autocomplete="off"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('vendor_id') border-red-500 @enderror">
+                                        class="form-control @error('vendor_id') border-red-500 @enderror">
                                     <button type="button" @click="open = !open" class="absolute inset-y-0 right-0 flex items-center pr-2">
                                         <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
                                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -93,9 +88,9 @@
                             </div>
 
                             <div>
-                                <label for="frequency" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Frequency <span class="text-red-500">*</span></label>
+                                <label for="frequency" class="form-label">Frequency <span class="text-red-500">*</span></label>
                                 <select name="frequency" id="frequency" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('frequency') border-red-500 @enderror">
+                                    class="form-control @error('frequency') border-red-500 @enderror">
                                     <option value="">Select Frequency</option>
                                     <option value="weekly" {{ old('frequency') == 'weekly' ? 'selected' : '' }}>Weekly</option>
                                     <option value="monthly" {{ old('frequency') == 'monthly' ? 'selected' : '' }}>Monthly</option>
@@ -108,18 +103,11 @@
                             </div>
 
                             <div>
-                                <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date <span class="text-red-500">*</span></label>
-                                <input type="date" name="start_date" id="start_date" value="{{ old('start_date', date('Y-m-d')) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('start_date') border-red-500 @enderror">
-                                @error('start_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="start_date" label="Start Date" type="date" :value="old('start_date', date('Y-m-d'))" required />
                             </div>
 
                             <div>
-                                <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date</label>
-                                <input type="date" name="end_date" id="end_date" value="{{ old('end_date') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('end_date') border-red-500 @enderror">
+                                <x-field name="end_date" label="End Date" type="date" :value="old('end_date')" />
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave empty for indefinite</p>
                                 @error('end_date')
                                     <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
@@ -128,9 +116,7 @@
                         </div>
 
                         <div class="mb-6">
-                            <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-                            <textarea name="notes" id="notes" rows="2"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('notes') }}</textarea>
+                            <x-field name="notes" label="Notes" type="textarea" :value="old('notes')" rows="2" />
                         </div>
                     </div>
                 </div>
@@ -175,7 +161,7 @@
                                                         @keydown.enter.prevent="selectProduct(index, getFilteredProducts(item.itemSearch)[item.itemHighlightedIndex])"
                                                         placeholder="Search items..."
                                                         autocomplete="off"
-                                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                        class="form-control text-sm">
                                                     <button type="button" @click="item.itemDropdownOpen = !item.itemDropdownOpen" class="absolute inset-y-0 right-0 flex items-center pr-2">
                                                         <svg class="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
                                                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -211,17 +197,17 @@
                                             <td class="py-2 pr-2">
                                                 <input type="number" :name="`items[${index}][quantity]`" x-model.number="item.quantity" min="0.01" step="0.01" required
                                                     @input="calculateTotals()"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
                                             <td class="py-2 pr-2">
                                                 <input type="number" :name="`items[${index}][unit_price]`" x-model.number="item.unit_price" min="0" step="0.01" required
                                                     @input="calculateTotals()"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
                                             <td class="py-2 pr-2">
                                                 <input type="number" :name="`items[${index}][tax_rate]`" x-model.number="item.tax_rate" min="0" max="100" step="0.01"
                                                     @input="calculateTotals()"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
                                             <td class="py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(lineTotal(index))"></td>
                                             <td class="py-2 text-center">

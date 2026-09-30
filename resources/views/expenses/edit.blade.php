@@ -50,27 +50,17 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label for="expense_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expense Number</label>
+                                <label for="expense_number" class="form-label">Expense Number</label>
                                 <input type="text" id="expense_number" value="{{ $expense->expense_number }}" disabled
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-600 dark:text-gray-300 shadow-sm">
                             </div>
 
                             <div>
-                                <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expense Name <span class="text-red-500">*</span></label>
-                                <input type="text" name="name" id="name" value="{{ old('name', $expense->name) }}" required placeholder="e.g. Office Supplies, Travel, Utilities"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('name') border-red-500 @enderror">
-                                @error('name')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="name" label="Expense Name" :value="old('name', $expense->name)" required placeholder="e.g. Office Supplies, Travel, Utilities" />
                             </div>
 
                             <div>
-                                <label for="expense_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expense Date <span class="text-red-500">*</span></label>
-                                <input type="date" name="expense_date" id="expense_date" value="{{ old('expense_date', $expense->expense_date->format('Y-m-d')) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('expense_date') border-red-500 @enderror">
-                                @error('expense_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="expense_date" label="Expense Date" type="date" :value="old('expense_date', $expense->expense_date->format('Y-m-d'))" required />
                             </div>
 
                             <div>
@@ -88,7 +78,7 @@
                             </div>
 
                             <div>
-                                <label for="amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount <span class="text-red-500">*</span></label>
+                                <label for="amount" class="form-label">Amount <span class="text-red-500">*</span></label>
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400">@currencySymbol</span>
                                     <input type="number" name="amount" id="amount" value="{{ old('amount', $expense->amount) }}" min="0.01" step="0.01" required
@@ -104,7 +94,7 @@
                                 selected: '{{ old('vendor_id', $expense->vendor_id) }}',
                                 placeholder: 'Select Vendor (Optional)'
                             })">
-                                <label for="vendor_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor</label>
+                                <label for="vendor_id" class="form-label">Vendor</label>
                                 <input type="hidden" name="vendor_id" :value="selectedId">
                                 <div class="relative">
                                     <input type="text" 
@@ -115,7 +105,7 @@
                                         @keydown.enter.prevent="if(filteredItems[highlightedIndex]) selectItem(filteredItems[highlightedIndex])"
                                         @keydown.escape="open = false"
                                         placeholder="Select Vendor (Optional)"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('vendor_id') border-red-500 @enderror">
+                                        class="form-control @error('vendor_id') border-red-500 @enderror">
                                     <div x-show="open" 
                                         @click.away="open = false"
                                         class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
@@ -163,12 +153,7 @@
                             </div>
 
                             <div>
-                                <label for="reference" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reference / Receipt #</label>
-                                <input type="text" name="reference" id="reference" value="{{ old('reference', $expense->reference) }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('reference') border-red-500 @enderror">
-                                @error('reference')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="reference" label="Reference / Receipt #" :value="old('reference', $expense->reference)" />
                             </div>
 
                             <div>
@@ -191,12 +176,7 @@
                             Description
                         </h3>
                         <div>
-                            <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expense Description</label>
-                            <textarea name="description" id="description" rows="3"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('description') border-red-500 @enderror">{{ old('description', $expense->description) }}</textarea>
-                            @error('description')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
+                            <x-field name="description" label="Expense Description" type="textarea" :value="old('description', $expense->description)" rows="3" />
                         </div>
                     </div>
 

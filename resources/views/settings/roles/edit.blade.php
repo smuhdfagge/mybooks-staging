@@ -49,7 +49,7 @@
                     @method('PUT')
 
                     <div class="mb-6">
-                        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role Name <span class="text-red-500">*</span></label>
+                        <label for="name" class="form-label">Role Name <span class="text-red-500">*</span></label>
                         <input type="text" name="name" id="name" value="{{ old('name', $role->name) }}" required
                             class="w-full max-w-md rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('name') border-red-500 @enderror">
                         @error('name')

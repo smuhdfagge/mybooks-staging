@@ -62,12 +62,12 @@
                         <div>
                             <label for="from_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">From Date</label>
                             <input type="date" name="from_date" id="from_date" value="{{ $fromDate }}"
-                                   class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                   class="mt-1 block form-control sm:text-sm">
                         </div>
                         <div>
                             <label for="to_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">To Date</label>
                             <input type="date" name="to_date" id="to_date" value="{{ $toDate }}"
-                                   class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                   class="mt-1 block form-control sm:text-sm">
                         </div>
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition ease-in-out duration-150">
                             Filter
@@ -90,14 +90,14 @@
                                     <label for="statement_balance" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Bank Statement Closing Balance</label>
                                     <input type="number" step="0.01" name="statement_balance" id="statement_balance" required
                                            x-model="statementBalance"
-                                           class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                           class="mt-1 block form-control sm:text-sm"
                                            placeholder="Enter closing balance from bank statement">
                                 </div>
                                 <div>
                                     <label for="statement_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Statement Date</label>
                                     <input type="date" name="statement_date" id="statement_date" required
                                            value="{{ now()->format('Y-m-d') }}"
-                                           class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                           class="mt-1 block form-control sm:text-sm">
                                 </div>
                             </div>
 

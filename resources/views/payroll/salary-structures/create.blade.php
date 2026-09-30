@@ -39,42 +39,19 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="md:col-span-2">
-                                <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Structure Name <span class="text-red-500">*</span></label>
-                                <input type="text" name="name" id="name" required value="{{ old('name') }}" placeholder="e.g. Senior Developer, Manager Level 1"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('name') border-red-500 @enderror">
-                                @error('name')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="name" label="Structure Name" :value="old('name')" required placeholder="e.g. Senior Developer, Manager Level 1" />
                             </div>
 
                             <div>
-                                <label for="basic_salary" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Basic Salary <span class="text-red-500">*</span></label>
-                                <input type="number" name="basic_salary" id="basic_salary" step="0.01" min="0" x-model="basicSalary" required
-                                    value="{{ old('basic_salary') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('basic_salary') border-red-500 @enderror">
-                                @error('basic_salary')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="basic_salary" label="Basic Salary" type="number" :value="old('basic_salary')" required step="0.01" min="0" x-model="basicSalary" />
                             </div>
 
                             <div>
-                                <label for="effective_from" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Effective From <span class="text-red-500">*</span></label>
-                                <input type="date" name="effective_from" id="effective_from" required
-                                    value="{{ old('effective_from', now()->format('Y-m-d')) }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('effective_from') border-red-500 @enderror">
-                                @error('effective_from')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="effective_from" label="Effective From" type="date" :value="old('effective_from', now()->format('Y-m-d'))" required />
                             </div>
 
                             <div>
-                                <label for="effective_to" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Effective To</label>
-                                <input type="date" name="effective_to" id="effective_to"
-                                    value="{{ old('effective_to') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('effective_to') border-red-500 @enderror">
-                                @error('effective_to')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="effective_to" label="Effective To" type="date" :value="old('effective_to')" />
                             </div>
                         </div>
                     </div>
@@ -91,10 +68,10 @@
                         <template x-for="(allowance, index) in allowances" :key="index">
                             <div class="grid grid-cols-12 gap-3 mb-3 items-end">
                                 <div class="col-span-4">
-                                    <label x-show="index === 0" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Allowance</label>
+                                    <label x-show="index === 0" class="form-label">Allowance</label>
                                     <select :name="'allowances['+index+'][name]'" x-model="allowance.name"
                                         @change="onAllowanceSelected(index)"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                        class="form-control text-sm">
                                         <option value="">-- Select Allowance --</option>
                                         <template x-for="tpl in allowanceTemplates" :key="tpl.id">
                                             <option :value="tpl.name" x-text="tpl.name" :selected="allowance.name === tpl.name"></option>
@@ -102,22 +79,22 @@
                                     </select>
                                 </div>
                                 <div class="col-span-3">
-                                    <label x-show="index === 0" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+                                    <label x-show="index === 0" class="form-label">Type</label>
                                     <select :name="'allowances['+index+'][amount_type]'" x-model="allowance.amount_type"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                        class="form-control text-sm">
                                         <option value="fixed">Fixed Amount</option>
                                         <option value="percentage">% of Basic</option>
                                     </select>
                                 </div>
                                 <div class="col-span-2">
-                                    <label x-show="index === 0" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount</label>
+                                    <label x-show="index === 0" class="form-label">Amount</label>
                                     <input type="number" :name="'allowances['+index+'][amount]'" x-model="allowance.amount" step="0.01" min="0"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                        class="form-control text-sm">
                                 </div>
                                 <div class="col-span-2">
-                                    <label x-show="index === 0" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Taxable</label>
+                                    <label x-show="index === 0" class="form-label">Taxable</label>
                                     <select :name="'allowances['+index+'][is_taxable]'" x-model="allowance.is_taxable"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                        class="form-control text-sm">
                                         <option value="1">Yes</option>
                                         <option value="0">No</option>
                                     </select>
@@ -148,10 +125,10 @@
                         <template x-for="(deduction, index) in deductions" :key="index">
                             <div class="grid grid-cols-12 gap-3 mb-3 items-end">
                                 <div class="col-span-4">
-                                    <label x-show="index === 0" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deduction</label>
+                                    <label x-show="index === 0" class="form-label">Deduction</label>
                                     <select :name="'deductions['+index+'][name]'" x-model="deduction.name"
                                         @change="onDeductionSelected(index)"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                        class="form-control text-sm">
                                         <option value="">-- Select Deduction --</option>
                                         <template x-for="tpl in deductionTemplates" :key="tpl.id">
                                             <option :value="tpl.name" x-text="tpl.name" :selected="deduction.name === tpl.name"></option>
@@ -159,22 +136,22 @@
                                     </select>
                                 </div>
                                 <div class="col-span-3">
-                                    <label x-show="index === 0" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+                                    <label x-show="index === 0" class="form-label">Type</label>
                                     <select :name="'deductions['+index+'][amount_type]'" x-model="deduction.amount_type"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                        class="form-control text-sm">
                                         <option value="fixed">Fixed Amount</option>
                                         <option value="percentage">% of Gross</option>
                                     </select>
                                 </div>
                                 <div class="col-span-2">
-                                    <label x-show="index === 0" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount</label>
+                                    <label x-show="index === 0" class="form-label">Amount</label>
                                     <input type="number" :name="'deductions['+index+'][amount]'" x-model="deduction.amount" step="0.01" min="0"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                        class="form-control text-sm">
                                 </div>
                                 <div class="col-span-2">
-                                    <label x-show="index === 0" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" title="Pre-tax deductions (pension, NHF, health insurance) are taken off pay before PAYE is worked out">Pre-tax</label>
+                                    <label x-show="index === 0" class="form-label" title="Pre-tax deductions (pension, NHF, health insurance) are taken off pay before PAYE is worked out">Pre-tax</label>
                                     <select :name="'deductions['+index+'][is_taxable]'" x-model="deduction.is_taxable"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                        class="form-control text-sm">
                                         <option value="0">No</option>
                                         <option value="1">Yes</option>
                                     </select>
@@ -222,9 +199,7 @@
 
                     <!-- Notes -->
                     <div class="mb-8">
-                        <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-                        <textarea name="notes" id="notes" rows="3"
-                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('notes') }}</textarea>
+                        <x-field name="notes" label="Notes" type="textarea" :value="old('notes')" rows="3" />
                     </div>
 
                     <!-- Actions -->

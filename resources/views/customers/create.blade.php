@@ -15,7 +15,7 @@
 
     <div class="py-6">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+            <x-card>
                 <form action="{{ route('customers.store') }}" method="POST" class="p-6">
                     @csrf
 
@@ -29,48 +29,23 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Customer Name <span class="text-red-500">*</span></label>
-                                <input type="text" name="name" id="name" value="{{ old('name') }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('name') border-red-500 @enderror">
-                                @error('name')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="name" label="Customer Name" :value="old('name')" required />
                             </div>
 
                             <div>
-                                <label for="company_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Company Name</label>
-                                <input type="text" name="company_name" id="company_name" value="{{ old('company_name') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('company_name') border-red-500 @enderror">
-                                @error('company_name')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="company_name" label="Company Name" :value="old('company_name')" />
                             </div>
 
                             <div>
-                                <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email Address</label>
-                                <input type="email" name="email" id="email" value="{{ old('email') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('email') border-red-500 @enderror">
-                                @error('email')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="email" label="Email Address" type="email" :value="old('email')" />
                             </div>
 
                             <div>
-                                <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone Number</label>
-                                <input type="text" name="phone" id="phone" value="{{ old('phone') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('phone') border-red-500 @enderror">
-                                @error('phone')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="phone" label="Phone Number" :value="old('phone')" />
                             </div>
 
                             <div>
-                                <label for="tax_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tax Number / VAT ID</label>
-                                <input type="text" name="tax_number" id="tax_number" value="{{ old('tax_number') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('tax_number') border-red-500 @enderror">
-                                @error('tax_number')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="tax_number" label="Tax Number / VAT ID" :value="old('tax_number')" />
                             </div>
                         </div>
                     </div>
@@ -86,30 +61,15 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="md:col-span-2">
-                                <label for="billing_address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Billing Address</label>
-                                <textarea name="billing_address" id="billing_address" rows="2"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('billing_address') border-red-500 @enderror">{{ old('billing_address') }}</textarea>
-                                @error('billing_address')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="billing_address" label="Billing Address" type="textarea" :value="old('billing_address')" rows="2" />
                             </div>
 
                             <div class="md:col-span-2">
-                                <label for="shipping_address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Shipping Address</label>
-                                <textarea name="shipping_address" id="shipping_address" rows="2"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('shipping_address') border-red-500 @enderror">{{ old('shipping_address') }}</textarea>
-                                @error('shipping_address')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="shipping_address" label="Shipping Address" type="textarea" :value="old('shipping_address')" rows="2" />
                             </div>
 
                             <div>
-                                <label for="city" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City</label>
-                                <input type="text" name="city" id="city" value="{{ old('city') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('city') border-red-500 @enderror">
-                                @error('city')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="city" label="City" :value="old('city')" />
                             </div>
 
                             <div>
@@ -141,12 +101,7 @@
                             </div>
 
                             <div>
-                                <label for="postal_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Postal Code</label>
-                                <input type="text" name="postal_code" id="postal_code" value="{{ old('postal_code') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('postal_code') border-red-500 @enderror">
-                                @error('postal_code')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="postal_code" label="Postal Code" :value="old('postal_code')" />
                             </div>
                         </div>
                     </div>
@@ -161,10 +116,10 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label for="credit_limit" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Credit Limit</label>
+                                <label for="credit_limit" class="form-label">Credit Limit</label>
                                 <div class="relative">
                                     <input type="number" name="credit_limit" id="credit_limit" value="{{ old('credit_limit', 0) }}" min="0" step="0.01" placeholder="0.00"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('credit_limit') border-red-500 @enderror">
+                                        class="form-control @error('credit_limit') border-red-500 @enderror">
                                 </div>
                                 @error('credit_limit')
                                     <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
@@ -196,12 +151,7 @@
                             Additional Information
                         </h3>
                         <div>
-                            <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-                            <textarea name="notes" id="notes" rows="3"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('notes') border-red-500 @enderror">{{ old('notes') }}</textarea>
-                            @error('notes')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
+                            <x-field name="notes" label="Notes" type="textarea" :value="old('notes')" rows="3" />
                         </div>
                     </div>
 
@@ -210,15 +160,15 @@
                         <a href="{{ route('customers.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             Cancel
                         </a>
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <x-primary-button class="px-4">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>
                             Save Customer
-                        </button>
+                        </x-primary-button>
                     </div>
                 </form>
-            </div>
+            </x-card>
         </div>
     </div>
 </x-app-layout>

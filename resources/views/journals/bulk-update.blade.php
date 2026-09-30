@@ -107,21 +107,17 @@
                             
                             <div class="grid grid-cols-2 gap-4 mb-4">
                                 <div>
-                                    <label for="export_start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
-                                    <input type="date" name="start_date" id="export_start_date"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    <x-field name="start_date" label="Start Date" type="date" />
                                 </div>
                                 <div>
-                                    <label for="export_end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date</label>
-                                    <input type="date" name="end_date" id="export_end_date"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    <x-field name="end_date" label="End Date" type="date" />
                                 </div>
                             </div>
 
                             <div class="mb-4">
-                                <label for="export_format" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Export Format</label>
+                                <label for="export_format" class="form-label">Export Format</label>
                                 <select name="format" id="export_format"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    class="form-control">
                                     <option value="csv">CSV</option>
                                     <option value="xlsx">Excel (XLSX)</option>
                                 </select>
@@ -156,7 +152,7 @@
                             <input type="hidden" name="action" value="import">
                             
                             <div class="mb-4">
-                                <label for="import_file" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select CSV File</label>
+                                <label for="import_file" class="form-label">Select CSV File</label>
                                 <input type="file" name="file" id="import_file" accept=".csv,.xlsx"
                                     class="w-full text-sm text-gray-500 dark:text-gray-400
                                         file:mr-4 file:py-2 file:px-4

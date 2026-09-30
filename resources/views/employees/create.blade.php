@@ -49,54 +49,29 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label for="employee_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Employee ID</label>
+                                <label for="employee_id" class="form-label">Employee ID</label>
                                 <input type="text" name="employee_id" id="employee_id" value="{{ $employeeId }}" readonly
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-gray-400 shadow-sm bg-gray-100">
                             </div>
 
                             <div>
-                                <label for="first_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name <span class="text-red-500">*</span></label>
-                                <input type="text" name="first_name" id="first_name" value="{{ old('first_name') }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('first_name') border-red-500 @enderror">
-                                @error('first_name')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="first_name" label="First Name" :value="old('first_name')" required />
                             </div>
 
                             <div>
-                                <label for="last_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Last Name <span class="text-red-500">*</span></label>
-                                <input type="text" name="last_name" id="last_name" value="{{ old('last_name') }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('last_name') border-red-500 @enderror">
-                                @error('last_name')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="last_name" label="Last Name" :value="old('last_name')" required />
                             </div>
 
                             <div>
-                                <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email Address</label>
-                                <input type="email" name="email" id="email" value="{{ old('email') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('email') border-red-500 @enderror">
-                                @error('email')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="email" label="Email Address" type="email" :value="old('email')" />
                             </div>
 
                             <div>
-                                <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone Number</label>
-                                <input type="text" name="phone" id="phone" value="{{ old('phone') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('phone') border-red-500 @enderror">
-                                @error('phone')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="phone" label="Phone Number" :value="old('phone')" />
                             </div>
 
                             <div>
-                                <label for="date_of_birth" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date of Birth</label>
-                                <input type="date" name="date_of_birth" id="date_of_birth" value="{{ old('date_of_birth') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('date_of_birth') border-red-500 @enderror">
-                                @error('date_of_birth')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="date_of_birth" label="Date of Birth" type="date" :value="old('date_of_birth')" />
                             </div>
 
                             <div>
@@ -167,12 +142,7 @@
                             </div>
 
                             <div>
-                                <label for="hire_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hire Date <span class="text-red-500">*</span></label>
-                                <input type="date" name="hire_date" id="hire_date" value="{{ old('hire_date', date('Y-m-d')) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('hire_date') border-red-500 @enderror">
-                                @error('hire_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="hire_date" label="Hire Date" type="date" :value="old('hire_date', date('Y-m-d'))" required />
                             </div>
 
                             <div>
@@ -216,21 +186,11 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="md:col-span-2">
-                                <label for="address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address</label>
-                                <textarea name="address" id="address" rows="2"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('address') border-red-500 @enderror">{{ old('address') }}</textarea>
-                                @error('address')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="address" label="Address" type="textarea" :value="old('address')" rows="2" />
                             </div>
 
                             <div>
-                                <label for="city" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City</label>
-                                <input type="text" name="city" id="city" value="{{ old('city') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('city') border-red-500 @enderror">
-                                @error('city')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="city" label="City" :value="old('city')" />
                             </div>
 
                             <div>
@@ -262,12 +222,7 @@
                             </div>
 
                             <div>
-                                <label for="postal_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Postal Code</label>
-                                <input type="text" name="postal_code" id="postal_code" value="{{ old('postal_code') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('postal_code') border-red-500 @enderror">
-                                @error('postal_code')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="postal_code" label="Postal Code" :value="old('postal_code')" />
                             </div>
                         </div>
                     </div>
@@ -282,44 +237,22 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label for="bank_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bank Name</label>
-                                <input type="text" name="bank_name" id="bank_name" value="{{ old('bank_name') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('bank_name') border-red-500 @enderror">
-                                @error('bank_name')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="bank_name" label="Bank Name" :value="old('bank_name')" />
                             </div>
 
                             <div>
-                                <label for="bank_account_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account Number</label>
-                                <input type="text" name="bank_account_number" id="bank_account_number" value="{{ old('bank_account_number') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('bank_account_number') border-red-500 @enderror">
-                                @error('bank_account_number')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="bank_account_number" label="Account Number" :value="old('bank_account_number')" />
                             </div>
 
                             <div>
-                                <label for="bank_routing_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Routing Number</label>
-                                <input type="text" name="bank_routing_number" id="bank_routing_number" value="{{ old('bank_routing_number') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('bank_routing_number') border-red-500 @enderror">
-                                @error('bank_routing_number')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="bank_routing_number" label="Routing Number" :value="old('bank_routing_number')" />
                             </div>
 
                             <div>
-                                <label for="tax_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tax ID / SSN</label>
-                                <input type="text" name="tax_id" id="tax_id" value="{{ old('tax_id') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('tax_id') border-red-500 @enderror">
-                                @error('tax_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="tax_id" label="Tax ID / SSN" :value="old('tax_id')" />
                             </div>
                             <div>
-                                <label for="annual_rent" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Annual rent paid (for PAYE rent relief)</label>
-                                <input type="number" step="0.01" min="0" name="annual_rent" id="annual_rent" value="{{ old('annual_rent') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('annual_rent') border-red-500 @enderror">
+                                <x-field name="annual_rent" label="Annual rent paid (for PAYE rent relief)" type="number" :value="old('annual_rent')" step="0.01" min="0" />
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Nigeria: 20% of this, up to ₦500,000 a year, comes off pay before PAYE. Keep the tenancy receipt.</p>
                                 @error('annual_rent')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -338,21 +271,11 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label for="emergency_contact_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contact Name</label>
-                                <input type="text" name="emergency_contact_name" id="emergency_contact_name" value="{{ old('emergency_contact_name') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('emergency_contact_name') border-red-500 @enderror">
-                                @error('emergency_contact_name')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="emergency_contact_name" label="Contact Name" :value="old('emergency_contact_name')" />
                             </div>
 
                             <div>
-                                <label for="emergency_contact_phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contact Phone</label>
-                                <input type="text" name="emergency_contact_phone" id="emergency_contact_phone" value="{{ old('emergency_contact_phone') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('emergency_contact_phone') border-red-500 @enderror">
-                                @error('emergency_contact_phone')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="emergency_contact_phone" label="Contact Phone" :value="old('emergency_contact_phone')" />
                             </div>
                         </div>
                     </div>
@@ -367,7 +290,7 @@
                         </h3>
                         <div>
                             <textarea name="notes" id="notes" rows="3"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('notes') border-red-500 @enderror">{{ old('notes') }}</textarea>
+                                class="form-control @error('notes') border-red-500 @enderror">{{ old('notes') }}</textarea>
                             @error('notes')
                                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror

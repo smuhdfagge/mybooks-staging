@@ -142,7 +142,7 @@
                                 <form action="{{ route('accounting-periods.close', $accountingPeriod) }}" method="POST" class="mb-4">
                                     @csrf
                                     <div class="mb-3">
-                                        <label for="closing_notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Closing Notes (Optional)</label>
+                                        <label for="closing_notes" class="form-label">Closing Notes (Optional)</label>
                                         <textarea name="closing_notes" id="closing_notes" rows="2" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm" placeholder="Enter any notes for this period closing..."></textarea>
                                     </div>
                                     <div class="mb-3">
@@ -181,7 +181,7 @@
                                     <form action="{{ route('accounting-periods.lock', $accountingPeriod) }}" method="POST">
                                         @csrf
                                         <div class="mb-3">
-                                            <label for="lock_notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Year-End Notes (Optional)</label>
+                                            <label for="lock_notes" class="form-label">Year-End Notes (Optional)</label>
                                             <textarea name="closing_notes" id="lock_notes" rows="2" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm" placeholder="Enter year-end closing notes..."></textarea>
                                         </div>
                                         <div class="mb-3">

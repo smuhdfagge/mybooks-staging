@@ -25,7 +25,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Payment Number -->
                         <div>
-                            <label for="payment_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Number</label>
+                            <label for="payment_number" class="form-label">Payment Number</label>
                             <input type="text" id="payment_number" value="{{ $paymentNumber }}" disabled
                                 class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-300 shadow-sm">
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Auto-generated</p>
@@ -33,9 +33,7 @@
 
                         <!-- Payment Date -->
                         <div>
-                            <label for="payment_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Date <span class="text-red-500">*</span></label>
-                            <input type="date" name="payment_date" id="payment_date" value="{{ old('payment_date', date('Y-m-d')) }}" required
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('payment_date') border-red-500 @enderror">
+                            <x-field name="payment_date" label="Payment Date" type="date" :value="old('payment_date', date('Y-m-d'))" required />
                             @error('payment_date')
                                 <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
@@ -47,7 +45,7 @@
                             selectedId: '{{ old('customer_id', $invoice?->customer_id) }}',
                             onSelect: (id) => { selectedCustomer = id; filterInvoices(); filterDeposits(); }
                         })" class="relative">
-                            <label for="customer_search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Customer <span class="text-red-500">*</span></label>
+                            <label for="customer_search" class="form-label">Customer <span class="text-red-500">*</span></label>
                             <input type="hidden" name="customer_id" :value="selectedId" required>
                             <div class="relative">
                                 <input 
@@ -63,7 +61,7 @@
                                     @keydown.enter.prevent="selectHighlighted()"
                                     placeholder="Search customers..."
                                     autocomplete="off"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('customer_id') border-red-500 @enderror">
+                                    class="form-control @error('customer_id') border-red-500 @enderror">
                                 <button type="button" @click="open = !open" class="absolute inset-y-0 right-0 flex items-center pr-2">
                                     <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
                                         <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -100,9 +98,9 @@
 
                         <!-- Invoice (Optional) -->
                         <div>
-                            <label for="invoice_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Invoice (Optional)</label>
+                            <label for="invoice_id" class="form-label">Invoice (Optional)</label>
                             <select name="invoice_id" id="invoice_id" x-model="selectedInvoice" @change="updateAmount()"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                class="form-control">
                                 <option value="">No specific invoice</option>
                                 <template x-for="inv in filteredInvoices" :key="inv.id">
                                     <option :value="inv.id" x-text="inv.invoice_number + ' - ' + formatMoney(inv.balance_due) + ' due'"></option>
@@ -115,10 +113,10 @@
 
                         <!-- Amount -->
                         <div>
-                            <label for="amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount <span class="text-red-500">*</span></label>
+                            <label for="amount" class="form-label">Amount <span class="text-red-500">*</span></label>
                             <div class="relative">
                                 <input type="number" name="amount" id="amount" step="0.01" min="0.01" value="{{ old('amount', $invoice?->balance_due) }}" required placeholder="0.00"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('amount') border-red-500 @enderror">
+                                    class="form-control @error('amount') border-red-500 @enderror">
                             </div>
                             @error('amount')
                                 <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
@@ -127,9 +125,9 @@
 
                         <!-- Payment Method -->
                         <div x-data="{ paymentMethod: '{{ old('payment_method', '') }}' }">
-                            <label for="payment_method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Method <span class="text-red-500">*</span></label>
+                            <label for="payment_method" class="form-label">Payment Method <span class="text-red-500">*</span></label>
                             <select name="payment_method" id="payment_method" required x-model="paymentMethod"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('payment_method') border-red-500 @enderror">
+                                class="form-control @error('payment_method') border-red-500 @enderror">
                                 <option value="">Select Method</option>
                                 <option value="cash">Cash</option>
                                 <option value="bank_transfer">Bank Transfer</option>
@@ -143,9 +141,9 @@
 
                             <!-- Bank Account -->
                             <div x-show="paymentMethod === 'bank_transfer'" x-transition class="mt-4">
-                                <label for="bank_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bank Account</label>
+                                <label for="bank_id" class="form-label">Bank Account</label>
                                 <select name="bank_id" id="bank_id"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('bank_id') border-red-500 @enderror">
+                                    class="form-control @error('bank_id') border-red-500 @enderror">
                                     <option value="">Select Bank Account</option>
                                     @foreach($banks as $bank)
                                         <option value="{{ $bank->id }}" {{ old('bank_id') == $bank->id ? 'selected' : '' }}>
@@ -162,10 +160,7 @@
 
                         <!-- Reference -->
                         <div class="md:col-span-2">
-                            <label for="reference" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reference Number</label>
-                            <input type="text" name="reference" id="reference" value="{{ old('reference') }}"
-                                placeholder="e.g., Check #, Transaction ID"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <x-field name="reference" label="Reference Number" :value="old('reference')" placeholder="e.g., Check #, Transaction ID" />
                         </div>
 
                         <!-- Is Deposit Checkbox -->
@@ -202,9 +197,9 @@
                                 </div>
                                 <div x-show="useDeposit" class="mt-3 space-y-3">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Deposit</label>
+                                        <label class="form-label">Select Deposit</label>
                                         <select name="apply_deposit_id" x-model="selectedDepositId" @change="updateDepositAmount()"
-                                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                            class="form-control">
                                             <option value="">Select a deposit to apply</option>
                                             <template x-for="dep in availableDeposits" :key="dep.id">
                                                 <option :value="dep.id" x-text="dep.payment_number + ' - ' + formatMoney(dep.unused_amount) + ' available'"></option>
@@ -212,10 +207,10 @@
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount to Apply from Deposit</label>
+                                        <label class="form-label">Amount to Apply from Deposit</label>
                                         <input type="number" name="deposit_amount" id="deposit_amount" step="0.01" min="0" 
                                             :max="maxDepositAmount" x-model="depositAmountToApply"
-                                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                            class="form-control">
                                         <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" x-show="selectedDepositId">
                                             Maximum: <span x-text="formatMoney(maxDepositAmount)"></span>
                                         </p>
@@ -226,9 +221,9 @@
 
                         <!-- Notes -->
                         <div class="md:col-span-2">
-                            <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+                            <label for="notes" class="form-label">Notes</label>
                             <textarea name="notes" id="notes" rows="3"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                class="form-control"
                                 placeholder="Optional notes about this payment">{{ old('notes') }}</textarea>
                         </div>
                     </div>

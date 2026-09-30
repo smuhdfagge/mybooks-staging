@@ -26,9 +26,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <!-- Name -->
                         <div>
-                            <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name <span class="text-red-500">*</span></label>
-                            <input type="text" name="name" id="name" value="{{ old('name', $user->name) }}" required
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('name') border-red-500 @enderror">
+                            <x-field name="name" label="Name" :value="old('name', $user->name)" required />
                             @error('name')
                                 <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
@@ -36,9 +34,7 @@
 
                         <!-- Email -->
                         <div>
-                            <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email <span class="text-red-500">*</span></label>
-                            <input type="email" name="email" id="email" value="{{ old('email', $user->email) }}" required
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('email') border-red-500 @enderror">
+                            <x-field name="email" label="Email" type="email" :value="old('email', $user->email)" required />
                             @error('email')
                                 <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
@@ -46,9 +42,7 @@
 
                         <!-- Phone -->
                         <div>
-                            <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
-                            <input type="text" name="phone" id="phone" value="{{ old('phone', $user->phone) }}"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('phone') border-red-500 @enderror">
+                            <x-field name="phone" label="Phone" :value="old('phone', $user->phone)" />
                             @error('phone')
                                 <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
@@ -56,9 +50,9 @@
 
                         <!-- Status -->
                         <div>
-                            <label for="is_active" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                            <label for="is_active" class="form-label">Status</label>
                             <select name="is_active" id="is_active" {{ $isSelf ? 'disabled' : '' }}
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                class="form-control">
                                 <option value="1" {{ old('is_active', $user->is_active ?? true) ? 'selected' : '' }}>Active</option>
                                 <option value="0" {{ !old('is_active', $user->is_active ?? true) ? 'selected' : '' }}>Inactive</option>
                             </select>
@@ -66,9 +60,7 @@
 
                         <!-- Password -->
                         <div>
-                            <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New Password</label>
-                            <input type="password" name="password" id="password"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('password') border-red-500 @enderror">
+                            <x-field name="password" label="New Password" type="password" />
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave blank to keep current password</p>
                             @error('password')
                                 <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
@@ -77,9 +69,7 @@
 
                         <!-- Confirm Password -->
                         <div>
-                            <label for="password_confirmation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirm Password</label>
-                            <input type="password" name="password_confirmation" id="password_confirmation"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <x-field name="password_confirmation" label="Confirm Password" type="password" />
                         </div>
                     </div>
 

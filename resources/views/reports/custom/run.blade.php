@@ -42,12 +42,12 @@
                 <div class="p-6">
                     <form method="GET" action="{{ route('reports.custom.run', $customReport) }}" class="flex flex-wrap items-end gap-4">
                         <div>
-                            <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
+                            <label for="start_date" class="form-label">Start Date</label>
                             <input type="date" name="start_date" id="start_date" value="{{ $startDate }}"
                                 class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
                         </div>
                         <div>
-                            <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date</label>
+                            <label for="end_date" class="form-label">End Date</label>
                             <input type="date" name="end_date" id="end_date" value="{{ $endDate }}"
                                 class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
                         </div>

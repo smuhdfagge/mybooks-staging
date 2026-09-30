@@ -24,7 +24,7 @@
                         <!-- Invoice Header -->
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                             <div>
-                                <label for="invoice_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Invoice Number</label>
+                                <label for="invoice_number" class="form-label">Invoice Number</label>
                                 <input type="text" id="invoice_number" value="{{ $invoice->invoice_number }}" disabled
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-300 shadow-sm">
                             </div>
@@ -34,7 +34,7 @@
                                 selected: '{{ old('customer_id', $invoice->customer_id) }}',
                                 placeholder: 'Select Customer'
                             })">
-                                <label for="customer_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Customer <span class="text-red-500">*</span></label>
+                                <label for="customer_id" class="form-label">Customer <span class="text-red-500">*</span></label>
                                 <input type="hidden" name="customer_id" :value="selectedId" required>
                                 <div class="relative">
                                     <input type="text" 
@@ -45,7 +45,7 @@
                                         @keydown.enter.prevent="if(filteredItems[highlightedIndex]) selectItem(filteredItems[highlightedIndex])"
                                         @keydown.escape="open = false"
                                         placeholder="Select Customer"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('customer_id') border-red-500 @enderror">
+                                        class="form-control @error('customer_id') border-red-500 @enderror">
                                     <div x-show="open" 
                                         @click.away="open = false"
                                         class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
@@ -64,18 +64,18 @@
                             </div>
 
                             <div>
-                                <label for="invoice_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Invoice Date <span class="text-red-500">*</span></label>
+                                <label for="invoice_date" class="form-label">Invoice Date <span class="text-red-500">*</span></label>
                                 <input type="date" name="invoice_date" id="invoice_date" value="{{ old('invoice_date', $invoice->invoice_date->format('Y-m-d')) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('invoice_date') border-red-500 @enderror">
+                                    class="form-control @error('invoice_date') border-red-500 @enderror">
                                 @error('invoice_date')
                                     <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
-                                <label for="due_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Due Date <span class="text-red-500">*</span></label>
+                                <label for="due_date" class="form-label">Due Date <span class="text-red-500">*</span></label>
                                 <input type="date" name="due_date" id="due_date" value="{{ old('due_date', $invoice->due_date->format('Y-m-d')) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('due_date') border-red-500 @enderror">
+                                    class="form-control @error('due_date') border-red-500 @enderror">
                                 @error('due_date')
                                     <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
@@ -84,14 +84,14 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>
-                                <label for="reference" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reference / PO Number</label>
+                                <label for="reference" class="form-label">Reference / PO Number</label>
                                 <input type="text" name="reference" id="reference" value="{{ old('reference', $invoice->reference) }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    class="form-control">
                             </div>
                             <div>
-                                <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                                <label for="status" class="form-label">Status</label>
                                 <select name="status" id="status"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    class="form-control">
                                     <option value="draft" {{ old('status', $invoice->status) == 'draft' ? 'selected' : '' }}>Draft</option>
                                     <option value="sent" {{ old('status', $invoice->status) == 'sent' ? 'selected' : '' }}>Sent</option>
                                     <option value="viewed" {{ old('status', $invoice->status) == 'viewed' ? 'selected' : '' }}>Viewed</option>
@@ -136,7 +136,7 @@
                                                         @keydown.enter.prevent="if(getFilteredProducts(index)[item.itemHighlightedIndex]) selectProduct(index, getFilteredProducts(index)[item.itemHighlightedIndex])"
                                                         @keydown.escape="item.itemDropdownOpen = false"
                                                         placeholder="Select Item"
-                                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm mb-1">
+                                                        class="form-control text-sm mb-1">
                                                     <div x-show="item.itemDropdownOpen" 
                                                         @click.away="item.itemDropdownOpen = false"
                                                         class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
@@ -150,22 +150,22 @@
                                                     </div>
                                                 </div>
                                                 <input type="text" :name="`items[${index}][description]`" x-model="item.description" required placeholder="Description"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
                                             <td class="py-2 pr-2">
                                                 <input type="number" :name="`items[${index}][quantity]`" x-model.number="item.quantity" min="0.01" step="0.01" required
                                                     @input="calculateTotals()"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
                                             <td class="py-2 pr-2">
                                                 <input type="number" :name="`items[${index}][unit_price]`" x-model.number="item.unit_price" min="0" step="0.01" required
                                                     @input="calculateTotals()"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
                                             <td class="py-2 pr-2">
                                                 <input type="number" :name="`items[${index}][tax_rate]`" x-model.number="item.tax_rate" min="0" max="100" step="0.01"
                                                     @input="calculateTotals()"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
                                             <td class="py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(lineTotal(index))"></td>
                                             <td class="py-2 text-center">
@@ -196,14 +196,14 @@
                     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6">
                             <div class="mb-4">
-                                <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes (visible on invoice)</label>
+                                <label for="notes" class="form-label">Notes (visible on invoice)</label>
                                 <textarea name="notes" id="notes" rows="3"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('notes', $invoice->notes) }}</textarea>
+                                    class="form-control">{{ old('notes', $invoice->notes) }}</textarea>
                             </div>
                             <div>
-                                <label for="terms" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Terms & Conditions</label>
+                                <label for="terms" class="form-label">Terms & Conditions</label>
                                 <textarea name="terms" id="terms" rows="3"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('terms', $invoice->terms) }}</textarea>
+                                    class="form-control">{{ old('terms', $invoice->terms) }}</textarea>
                             </div>
                         </div>
                     </div>

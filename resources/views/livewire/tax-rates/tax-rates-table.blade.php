@@ -7,12 +7,12 @@
     <div class="mb-4 sm:mb-6 bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-4">
         <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
+                <label class="form-label">Search</label>
                 <input type="text" wire:model.live.debounce.300ms="search" placeholder="Search by name or code..."
                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Applies To</label>
+                <label class="form-label">Applies To</label>
                 <select wire:model.live="appliesTo"
                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="">All</option>

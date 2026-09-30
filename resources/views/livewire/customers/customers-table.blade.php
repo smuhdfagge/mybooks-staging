@@ -28,7 +28,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <!-- Search -->
             <div class="sm:col-span-2 lg:col-span-1">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
+                <label class="form-label">Search</label>
                 <input type="text" wire:model.live.debounce.300ms="search" 
                     placeholder="Search customers..."
                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
@@ -36,7 +36,7 @@
             
             <!-- Status Filter -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                <label class="form-label">Status</label>
                 <select wire:model.live="status" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="">All Status</option>
                     <option value="active">Active</option>
@@ -46,7 +46,7 @@
             
             <!-- Per Page -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Per Page</label>
+                <label class="form-label">Per Page</label>
                 <select wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="10">10</option>
                     <option value="25">25</option>
@@ -57,7 +57,7 @@
 
             <!-- Bulk Actions -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bulk Actions</label>
+                <label class="form-label">Bulk Actions</label>
                 <div class="flex space-x-2">
                     <select wire:model="bulkAction" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                         <option value="">Select Action</option>

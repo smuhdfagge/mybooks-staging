@@ -65,7 +65,7 @@
                                                max="{{ $maxRefundable }}"
                                                step="0.01"
                                                required
-                                               class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                               class="block form-control">
                                     </div>
                                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Max: {{ number_format($maxRefundable, 2) }}</p>
                                     @error('amount')
@@ -83,7 +83,7 @@
                                            value="{{ old('refund_date', date('Y-m-d')) }}"
                                            max="{{ date('Y-m-d') }}"
                                            required
-                                           class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                           class="mt-1 block form-control">
                                     @error('refund_date')
                                         <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                     @enderror
@@ -99,7 +99,7 @@
                                     <select name="refund_method" 
                                             id="refund_method" 
                                             required
-                                            class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                            class="mt-1 block form-control">
                                         <option value="">Select Method</option>
                                         @foreach($methods as $value => $label)
                                             <option value="{{ $value }}" {{ old('refund_method') === $value ? 'selected' : '' }}>
@@ -118,7 +118,7 @@
                                     </label>
                                     <select name="reason" 
                                             id="reason"
-                                            class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                            class="mt-1 block form-control">
                                         <option value="">Select Reason</option>
                                         @foreach($reasons as $value => $label)
                                             <option value="{{ $value }}" {{ old('reason') === $value ? 'selected' : '' }}>
@@ -142,7 +142,7 @@
                                        id="reference" 
                                        value="{{ old('reference') }}"
                                        placeholder="e.g., Check number, transaction ID"
-                                       class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                       class="mt-1 block form-control">
                                 @error('reference')
                                     <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
@@ -157,7 +157,7 @@
                                           id="notes" 
                                           rows="3"
                                           placeholder="Additional details about this refund..."
-                                          class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('notes') }}</textarea>
+                                          class="mt-1 block form-control">{{ old('notes') }}</textarea>
                                 @error('notes')
                                     <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
