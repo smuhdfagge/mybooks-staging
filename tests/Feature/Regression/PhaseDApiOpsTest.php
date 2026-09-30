@@ -582,7 +582,7 @@ class PhaseDApiOpsTest extends TestCase
         \App\Models\DataRequest::record('access', $tenant, $owner);
         $admin = \App\Models\AdminUser::create(['name' => 'Ops', 'email' => 'ops@example.com', 'password' => 'Secret-123!', 'is_active' => true, 'role' => 'admin']);
 
-        $this->actingAs($admin, 'admin')->get(route('admin.data-requests.index'))->assertOk()->assertSee($tenant->name);
+        $this->actingAsPlatformAdmin($admin)->get(route('admin.data-requests.index'))->assertOk()->assertSee($tenant->name);
         $this->post(route('admin.data-requests.store'), ['type' => 'erasure', 'requester' => 'A customer by email'])->assertRedirect();
         $logged = \App\Models\DataRequest::where('type', 'erasure')->sole();
         $this->patch(route('admin.data-requests.complete', $logged))->assertRedirect();

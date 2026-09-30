@@ -64,6 +64,19 @@ return new class extends Migration
                 continue;
             }
 
+            // MySQL/MariaDB drop the index they made for a foreign key once a
+            // wider index can serve it, so give each such key its own index
+            // back before removing the wider one.
+            if (Schema::getConnection()->getDriverName() !== 'sqlite') {
+                $foreignColumns = collect(Schema::getForeignKeys($table))
+                    ->map(fn ($fk) => $fk['columns'][0] ?? null)->filter()->all();
+                foreach ($indexes as $columns) {
+                    if (in_array($columns[0], $foreignColumns, true) && ! Schema::hasIndex($table, [$columns[0]])) {
+                        Schema::table($table, fn (Blueprint $t) => $t->index([$columns[0]]));
+                    }
+                }
+            }
+
             foreach (array_keys($indexes) as $name) {
                 if (Schema::hasIndex($table, $name)) {
                     Schema::table($table, fn (Blueprint $t) => $t->dropIndex($name));

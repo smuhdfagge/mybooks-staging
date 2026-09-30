@@ -95,6 +95,9 @@ class PhaseDControllerTest extends TestCase
         $this->createAuthenticatedUser(['view reports']);
 
         $this->get(route('analytics.index'))->assertOk();
+        // Sign out first: creating a business while signed in files its
+        // default accounts under the signed-in business.
+        auth()->logout();
         $this->createAuthenticatedUser(['view dashboard']);
         $this->get(route('analytics.index'))->assertForbidden();
     }
@@ -272,9 +275,11 @@ class PhaseDControllerTest extends TestCase
         $this->post(route('admin.login'), ['email' => 'ops@example.com', 'password' => 'wrong'])->assertSessionHasErrors();
         $this->assertGuest('admin');
 
-        $this->actingAs($admin, 'admin')->get(route('admin.users.index'))->assertOk()->assertSee('ops@example.com');
+        $this->actingAsPlatformAdmin($admin)->get(route('admin.users.index'))->assertOk()->assertSee('ops@example.com');
 
         $viewer = \App\Models\AdminUser::create(['name' => 'View', 'email' => 'view@example.com', 'password' => 'Secret-123!', 'is_active' => true, 'role' => 'viewer']);
-        $this->actingAs($viewer, 'admin')->get(route('admin.users.index'))->assertForbidden();
+        // A fresh sign-in: the session still holds the first admin's password check (S5).
+        $this->flushSession();
+        $this->actingAsPlatformAdmin($viewer)->get(route('admin.users.index'))->assertForbidden();
     }
 }

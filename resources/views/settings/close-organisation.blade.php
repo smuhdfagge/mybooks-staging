@@ -7,13 +7,7 @@
 
     <div class="py-6">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            @if (session('success'))
-                <div class="rounded-md bg-green-50 dark:bg-green-900/30 p-4 text-sm text-green-800 dark:text-green-300">{{ session('success') }}</div>
-            @endif
-            @if (session('error'))
-                <div class="rounded-md bg-red-50 dark:bg-red-900/30 p-4 text-sm text-red-800 dark:text-red-300">{{ session('error') }}</div>
-            @endif
-
+            {{-- Success and error messages are shown by the layout (U9). --}}
             @if ($tenant->isClosing())
                 <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6 border-l-4 border-red-500">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">{{ $tenant->name }} is closing</h3>

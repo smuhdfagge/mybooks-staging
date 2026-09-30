@@ -56,7 +56,7 @@
                     <tr>
                         <td class="px-4 py-3 whitespace-nowrap">{{ $dataRequest->created_at?->format('j M Y') }}</td>
                         <td class="px-4 py-3">{{ $types[$dataRequest->type] ?? $dataRequest->type }}</td>
-                        <td class="px-4 py-3">{{ $dataRequest->tenant_name ?? '—' }} @if($dataRequest->tenant_id)<span class="text-gray-400">#{{ $dataRequest->tenant_id }}</span>@endif</td>
+                        <td class="px-4 py-3">{{ $dataRequest->tenant_name ?? '—' }} @if($dataRequest->tenant_id)<span class="text-gray-500 dark:text-gray-400">#{{ $dataRequest->tenant_id }}</span>@endif</td>
                         <td class="px-4 py-3">{{ $dataRequest->requester ?? '—' }}</td>
                         <td class="px-4 py-3">{{ ucfirst($dataRequest->status) }}</td>
                         <td class="px-4 py-3 whitespace-nowrap">
