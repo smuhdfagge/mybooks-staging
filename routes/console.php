@@ -80,6 +80,19 @@ Schedule::command('model:prune', ['--model' => [\App\Models\IdempotencyKey::clas
     ->withoutOverlapping()
     ->onOneServer();
 
+// Housekeeping (O6): forget failed jobs after 30 days, and check the
+// activity log's tamper-evidence chain every week.
+Schedule::command('queue:prune-failed', ['--hours' => 720])
+    ->dailyAt('03:20')
+    ->onOneServer();
+
+Schedule::command('logs:verify')
+    ->weeklyOn(0, '04:00')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->appendOutputTo(storage_path('logs/log-verify.log'))
+    ->onFailure(fn () => \Illuminate\Support\Facades\Log::error('Activity log integrity check failed; see storage/logs/log-verify.log.'));
+
 /*
 |--------------------------------------------------------------------------
 | Billing

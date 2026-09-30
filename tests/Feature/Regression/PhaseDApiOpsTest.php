@@ -244,4 +244,59 @@ class PhaseDApiOpsTest extends TestCase
         $events = collect(app(\Illuminate\Console\Scheduling\Schedule::class)->events())->map->command;
         $this->assertTrue($events->contains(fn ($c) => str_contains((string) $c, 'model:prune') && str_contains((string) $c, 'IdempotencyKey')));
     }
+
+    // ── O6: a real health check ─────────────────────────────────
+
+    private function lastBackup(?\Carbon\Carbon $at): void
+    {
+        $this->mock(\App\Services\BackupService::class, fn ($m) => $m->shouldReceive('lastSuccess')->andReturn($at));
+    }
+
+    public function test_o6_health_reports_each_part_and_200_when_all_is_well(): void
+    {
+        config(['mybooks.backup.enabled' => true]);
+        $this->lastBackup(now()->subHours(3));
+
+        $this->get('/api/v1/health')->assertOk()
+            ->assertJson(['status' => 'ok', 'checks' => [
+                'database' => ['status' => 'ok'], 'cache' => ['status' => 'ok'], 'queue' => ['status' => 'ok'],
+                'storage' => ['status' => 'ok'], 'backup' => ['status' => 'ok', 'age_hours' => 3],
+            ]]);
+    }
+
+    public function test_o6_health_is_503_when_the_backup_is_stale(): void
+    {
+        config(['mybooks.backup.enabled' => true]);
+        $this->lastBackup(now()->subHours(40));
+
+        $this->get('/api/v1/health')->assertStatus(503)
+            ->assertJson(['status' => 'error', 'checks' => ['backup' => ['status' => 'fail']]]);
+    }
+
+    public function test_o6_health_is_503_when_the_queue_is_stuck_and_warns_on_failed_jobs(): void
+    {
+        config(['mybooks.backup.enabled' => false, 'queue.default' => 'database']);
+        DB::table('failed_jobs')->insert([
+            'uuid' => 'u-1', 'connection' => 'database', 'queue' => 'default', 'payload' => '{}', 'exception' => 'x', 'failed_at' => now(),
+        ]);
+
+        $this->get('/api/v1/health')->assertOk()
+            ->assertJson(['checks' => ['queue' => ['status' => 'warn', 'failed_last_24h' => 1]]]);
+
+        DB::table('jobs')->insert([
+            'queue' => 'default', 'payload' => '{}', 'attempts' => 0, 'reserved_at' => null,
+            'available_at' => now()->subMinutes(30)->getTimestamp(), 'created_at' => now()->subMinutes(30)->getTimestamp(),
+        ]);
+
+        $this->get('/api/v1/health')->assertStatus(503)
+            ->assertJson(['checks' => ['queue' => ['status' => 'fail', 'pending' => 1]]]);
+    }
+
+    public function test_o6_housekeeping_jobs_are_scheduled(): void
+    {
+        $commands = collect(app(\Illuminate\Console\Scheduling\Schedule::class)->events())->map(fn ($e) => (string) $e->command);
+
+        $this->assertTrue($commands->contains(fn ($c) => str_contains($c, 'queue:prune-failed')));
+        $this->assertTrue($commands->contains(fn ($c) => str_contains($c, 'logs:verify')));
+    }
 }

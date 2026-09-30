@@ -41,13 +41,18 @@ use Illuminate\Support\Facades\Route;
 */
 Route::prefix('v1')->group(function () {
     // Health Check
-    Route::get('health', function () {
+    // Checks the database, cache, queue, storage and backups (O6): 200 when
+    // everything works, 503 when something is broken.
+    Route::get('health', function (\App\Services\HealthCheck $health) {
+        $result = $health->run();
+
         return response()->json([
-            'status' => 'ok',
+            'status' => $result['healthy'] ? 'ok' : 'error',
             'service' => 'MyBooks API',
             'version' => '1.0',
             'timestamp' => now()->toIso8601String(),
-        ]);
+            'checks' => $result['checks'],
+        ], $result['healthy'] ? 200 : 503);
     })->middleware('throttle:api-read')->name('api.health');
 
     // Authentication (with rate limiting for login)
