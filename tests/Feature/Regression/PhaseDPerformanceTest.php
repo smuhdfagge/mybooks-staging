@@ -633,4 +633,67 @@ class PhaseDPerformanceTest extends TestCase
         $exists = array_filter($sql, fn ($q) => str_contains($q, 'exists (') && str_contains($q, 'journal'));
         $this->assertSame([], array_values($exists));
     }
+
+    // ── P9: search-as-you-type on the document forms ───────────
+
+    public function test_p9_invoice_and_bill_forms_do_not_load_every_customer_vendor_and_item(): void
+    {
+        $this->createAuthenticatedUser(['create invoices', 'edit invoices', 'create bills', 'edit bills']);
+        $tid = $this->tenant->id;
+        $chosen = Customer::factory()->create(['tenant_id' => $tid, 'name' => 'Chosen Customer']);
+        Customer::factory()->create(['tenant_id' => $tid, 'name' => 'Other Customer Zed']);
+        $vendor = Vendor::factory()->create(['tenant_id' => $tid, 'name' => 'Chosen Vendor']);
+        Vendor::factory()->create(['tenant_id' => $tid, 'name' => 'Other Vendor Zed']);
+        $item = \App\Models\Item::factory()->create(['tenant_id' => $tid, 'name' => 'Line Widget']);
+        \App\Models\Item::factory()->create(['tenant_id' => $tid, 'name' => 'Unused Gadget Zed']);
+
+        $create = $this->get(route('invoices.create', ['customer_id' => $chosen->id]))->assertOk();
+        $create->assertSee('Chosen Customer')->assertDontSee('Other Customer Zed')->assertDontSee('Unused Gadget Zed');
+        $create->assertSee('lookup\\/customers', false)->assertSee('lookup\\/items', false);
+
+        $invoice = Invoice::withoutEvents(fn () => Invoice::factory()->create(['tenant_id' => $tid, 'customer_id' => $chosen->id]));
+        \App\Models\InvoiceItem::withoutEvents(fn () => \App\Models\InvoiceItem::create([
+            'invoice_id' => $invoice->id, 'item_id' => $item->id, 'description' => 'x', 'quantity' => 1, 'unit_price' => 10, 'total' => 10,
+        ]));
+        $this->get(route('invoices.edit', $invoice))->assertOk()
+            ->assertSee('Chosen Customer')->assertSee('Line Widget')
+            ->assertDontSee('Other Customer Zed')->assertDontSee('Unused Gadget Zed');
+
+        $this->get(route('bills.create', ['vendor_id' => $vendor->id]))->assertOk()
+            ->assertSee('Chosen Vendor')->assertDontSee('Other Vendor Zed')->assertDontSee('Unused Gadget Zed')
+            ->assertSee('lookup\\/vendors', false);
+
+        $bill = Bill::withoutEvents(fn () => Bill::factory()->create(['tenant_id' => $tid, 'vendor_id' => $vendor->id]));
+        $this->get(route('bills.edit', $bill))->assertOk()
+            ->assertSee('Chosen Vendor')->assertDontSee('Other Vendor Zed')->assertDontSee('Unused Gadget Zed');
+    }
+
+    public function test_p9_lookup_routes_work_for_people_who_can_create_documents(): void
+    {
+        $this->createAuthenticatedUser(['create invoices', 'create bills']); // no "view customers" etc.
+        $tid = $this->tenant->id;
+        Customer::factory()->create(['tenant_id' => $tid, 'name' => 'Acme Stores', 'company_name' => 'Acme Ltd']);
+        Customer::factory()->create(['tenant_id' => $tid, 'name' => 'Bello Foods']);
+        Vendor::factory()->create(['tenant_id' => $tid, 'name' => 'Kano Supplies']);
+        \App\Models\Item::factory()->create([
+            'tenant_id' => $tid, 'name' => 'Consulting', 'type' => 'service', 'track_inventory' => true,
+            'is_taxable' => true, 'tax_rate' => 7.5, 'selling_price' => 1000, 'cost_price' => 400, 'description' => 'Hourly',
+        ]);
+
+        $this->getJson(route('lookup.customers', ['q' => 'acme']))->assertOk()
+            ->assertJsonCount(1, 'data')->assertJsonPath('data.0.company_name', 'Acme Ltd');
+        $this->getJson(route('lookup.vendors', ['q' => 'kano']))->assertOk()->assertJsonCount(1, 'data');
+
+        // A service counts as in stock even when it is set to track inventory.
+        $item = $this->getJson(route('lookup.items', ['q' => 'consult', 'in_stock' => 1]))->assertOk()
+            ->assertJsonCount(1, 'data')->json('data.0');
+        $this->assertEquals(7.5, $item['effective_tax_rate']);
+        $this->assertEquals(400, $item['purchase_price']);
+        $this->assertSame('Hourly', $item['description']);
+
+        // Still refused without any of the permissions.
+        $this->user->syncPermissions([]);
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        $this->getJson(route('lookup.customers'))->assertForbidden();
+    }
 }

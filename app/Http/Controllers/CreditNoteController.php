@@ -4,9 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CreditNote;
 use App\Models\CreditNoteItem;
-use App\Models\Customer;
 use App\Models\Invoice;
-use App\Models\Item;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -21,8 +19,8 @@ class CreditNoteController extends Controller
     public function create(Request $request)
     {
         $tenantId = auth()->user()->tenant_id;
-        $customers = Customer::where('is_active', true)->get();
-        $items = Item::where('is_active', true)->get();
+        // Customers and items are searched as you type through the
+        // lookup routes (P9), so they are not all loaded here.
         $creditNoteNumber = CreditNote::previewNumber($tenantId);
 
         $invoice = null;
@@ -32,7 +30,7 @@ class CreditNoteController extends Controller
 
         $reasons = CreditNote::REASONS;
 
-        return view('credit-notes.create', compact('customers', 'items', 'creditNoteNumber', 'invoice', 'reasons'));
+        return view('credit-notes.create', compact('creditNoteNumber', 'invoice', 'reasons'));
     }
 
     public function store(Request $request)

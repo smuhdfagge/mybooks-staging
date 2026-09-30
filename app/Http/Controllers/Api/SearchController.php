@@ -200,7 +200,7 @@ class SearchController extends BaseApiController
         $inStock = $request->boolean('in_stock', false);
 
         $items = Item::where('tenant_id', $this->getTenantId())
-            ->with('inventory:id,item_id,quantity,reserved_quantity')
+            ->with(['inventory:id,item_id,quantity,reserved_quantity', 'taxRate', 'taxGroup.taxRates'])
             ->when($query, function ($q) use ($query) {
                 $q->where(function ($sq) use ($query) {
                     $sq->where('name', 'like', "%{$query}%")
@@ -212,6 +212,7 @@ class SearchController extends BaseApiController
             ->when($inStock, function ($q) {
                 $q->where(function ($sq) {
                     $sq->where('track_inventory', false)
+                        ->orWhere('type', 'service')
                         ->orWhereHas('inventory', fn ($iq) => $iq->whereRaw('quantity - COALESCE(reserved_quantity, 0) > 0'));
                 });
             })
@@ -231,6 +232,10 @@ class SearchController extends BaseApiController
             'is_taxable' => $i->is_taxable,
             'track_inventory' => $i->track_inventory,
             'available_quantity' => $i->inventory ? (float) $i->inventory->available_quantity : null,
+            // Used by the invoice and bill forms' item search (P9).
+            'description' => $i->description,
+            'effective_tax_rate' => (float) ($i->effective_tax_rate ?? 0),
+            'purchase_price' => (float) ($i->cost_price ?? $i->selling_price),
         ]));
     }
 

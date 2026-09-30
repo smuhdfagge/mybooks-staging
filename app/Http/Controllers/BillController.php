@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreBillRequest;
 use App\Http\Requests\UpdateBillRequest;
 use App\Models\Bill;
-use App\Models\Item;
 use App\Models\PurchaseOrder;
 use App\Models\Vendor;
 use Illuminate\Http\Request;
@@ -19,8 +18,6 @@ class BillController extends Controller
 
     public function create(Request $request)
     {
-        $vendors = Vendor::where('is_active', true)->get();
-        $items = Item::where('is_active', true)->get();
         $billNumber = Bill::previewNumber(auth()->user()->tenant_id);
 
         // "Convert to bill" from a purchase order fills the form from the
@@ -50,7 +47,12 @@ class BillController extends Controller
             ])->values()->all();
         }
 
-        return view('bills.create', compact('vendors', 'items', 'billNumber', 'purchaseOrder', 'prefillItems'));
+        // Vendors and items are searched as you type (P9); only a vendor
+        // already chosen is loaded here.
+        $vendorId = old('vendor_id', $request->input('vendor_id', $purchaseOrder?->vendor_id));
+        $vendorOptions = $this->vendorOptions($vendorId ? Vendor::whereKey($vendorId)->get() : collect());
+
+        return view('bills.create', compact('vendorOptions', 'billNumber', 'purchaseOrder', 'prefillItems'));
     }
 
     public function store(StoreBillRequest $request, \App\Actions\Bills\SaveBill $save)
@@ -74,11 +76,11 @@ class BillController extends Controller
             return redirect()->route('bills.show', $bill)->with('error', 'Paid bills cannot be edited.');
         }
 
-        $bill->load('items');
-        $vendors = Vendor::where('is_active', true)->get();
-        $items = Item::where('is_active', true)->get();
+        // Only the bill's own vendor and items are loaded (P9).
+        $bill->load(['vendor', 'items.item']);
+        $vendorOptions = $this->vendorOptions(collect([$bill->vendor])->filter());
 
-        return view('bills.edit', compact('bill', 'vendors', 'items'));
+        return view('bills.edit', compact('bill', 'vendorOptions'));
     }
 
     public function update(UpdateBillRequest $request, Bill $bill, \App\Actions\Bills\SaveBill $save)
@@ -100,5 +102,18 @@ class BillController extends Controller
         $delete->handle($bill);
 
         return redirect()->route('bills.index')->with('success', 'Bill deleted.');
+    }
+
+    /**
+     * Vendors as options for the searchable vendor box.
+     *
+     * @return array<int, array{id: string, name: string}>
+     */
+    private function vendorOptions($vendors): array
+    {
+        return $vendors->map(fn ($v) => [
+            'id' => (string) $v->id,
+            'name' => $v->name.($v->company_name ? " ({$v->company_name})" : ''),
+        ])->values()->all();
     }
 }
