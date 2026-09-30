@@ -243,4 +243,21 @@ class PhaseDUiTest extends TestCase
         $this->assertStringNotContainsString('₦', $form);
         $this->assertDoesNotMatchRegularExpression('/x-text="[^"]*toFixed\(2\)/', $form);
     }
+
+    // ── U5: accessible searchable dropdown ──────────────────────
+
+    public function test_u5_searchable_select_is_an_aria_combobox(): void
+    {
+        $html = $this->page('customers.create', ['create customers']);
+
+        $this->assertStringContainsString('<label for="country"', $html);
+        $this->assertMatchesRegularExpression('/<input type="text" id="country" role="combobox"[^>]*aria-controls="country-listbox"/s', $html);
+        $this->assertStringContainsString(':aria-expanded="open.toString()"', $html);
+        $this->assertStringContainsString(':aria-activedescendant=', $html);
+        $this->assertStringContainsString('@keydown.arrow-down.prevent="move(1)"', $html);
+        $this->assertStringContainsString('@keydown.escape=', $html);
+        $this->assertMatchesRegularExpression('/<ul id="country-listbox" role="listbox"/', $html);
+        $this->assertStringContainsString('role="option"', $html);
+        $this->assertStringContainsString('<input type="hidden" name="country"', $html);
+    }
 }

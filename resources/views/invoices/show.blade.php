@@ -335,7 +335,7 @@
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Method</label>
+                            <label for="payment_method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Method</label>
                             <x-searchable-select
                                 name="payment_method"
                                 :options="['cash' => 'Cash', 'bank_transfer' => 'Bank Transfer', 'check' => 'Check', 'credit_card' => 'Credit Card', 'other' => 'Other']"
