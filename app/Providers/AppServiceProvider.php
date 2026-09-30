@@ -78,6 +78,16 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($request->ip());
         });
 
+        // Resending the verification email: per user, also capped per hour (S8)
+        RateLimiter::for('verification-email', function (Request $request) {
+            $key = $request->user()?->id ?: $request->ip();
+
+            return [
+                Limit::perMinute(2)->by('minute:'.$key),
+                Limit::perHour(6)->by('hour:'.$key),
+            ];
+        });
+
         // Export/backup: 10 req/min per user (expensive operations)
         RateLimiter::for('api-export', function (Request $request) {
             return Limit::perMinute(10)->by(

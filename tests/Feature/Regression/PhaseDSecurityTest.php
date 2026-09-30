@@ -8,6 +8,7 @@ use App\Models\ChartOfAccount;
 use App\Models\Customer;
 use App\Models\Export;
 use App\Models\Journal;
+use App\Models\Plan;
 use App\Models\User;
 use App\Notifications\EmailAddressChangedNotification;
 use App\Services\BankFileExporters\CsvBankExporter;
@@ -15,12 +16,14 @@ use App\Services\ExportService;
 use App\Services\ReportExportService;
 use App\Services\TwoFactorService;
 use App\Support\Csv;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Livewire;
 use PragmaRX\Google2FA\Google2FA;
 use Tests\TestCase;
 
@@ -527,5 +530,50 @@ class PhaseDSecurityTest extends TestCase
         Notification::assertSentOnDemand(EmailAddressChangedNotification::class, function ($n, $channels, $notifiable) use ($old) {
             return $notifiable->routes['mail'] === $old && $n->newEmail === 'me@new.test' && ! $n->changedByAdmin;
         });
+    }
+
+    // ── S8: sign-up limits ──────────────────────────────────────
+
+    private function signUpThroughWizard(Plan $plan, int $n)
+    {
+        return Livewire::test(\App\Livewire\Auth\RegisterWizard::class)
+            ->set('plan_id', $plan->id)
+            ->set('company_name', "Bot Co {$n}")
+            ->set('company_email', "co{$n}@bots.test")
+            ->set('name', "Bot {$n}")
+            ->set('email', "bot{$n}@bots.test")
+            ->set('password', self::NEW_PASSWORD)
+            ->set('password_confirmation', self::NEW_PASSWORD)
+            ->set('currentStep', 3)
+            ->call('register');
+    }
+
+    public function test_s8_the_registration_wizard_limits_sign_ups_per_address(): void
+    {
+        Notification::fake();
+        $plan = Plan::factory()->create(['is_active' => true]);
+
+        foreach (range(1, 3) as $n) {
+            $this->signUpThroughWizard($plan, $n)->assertHasNoErrors();
+            auth()->logout();
+        }
+
+        $this->signUpThroughWizard($plan, 4)->assertHasErrors('email');
+
+        $this->assertSame(3, User::where('email', 'like', '%@bots.test')->count());
+        $this->assertFalse(\App\Models\Tenant::where('email', 'co4@bots.test')->exists());
+        Notification::assertSentTimes(VerifyEmail::class, 3);
+    }
+
+    public function test_s8_resending_the_verification_email_is_capped(): void
+    {
+        Notification::fake();
+        $this->createAuthenticatedUser([], ['email_verified_at' => null]);
+
+        $this->post(route('verification.send'))->assertRedirect();
+        $this->post(route('verification.send'))->assertRedirect();
+        $this->post(route('verification.send'))->assertStatus(429);
+
+        Notification::assertSentTimes(VerifyEmail::class, 2);
     }
 }
