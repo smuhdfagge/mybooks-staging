@@ -92,4 +92,25 @@ class PhaseDUiTest extends TestCase
 
         $this->assertSame([], $offenders);
     }
+
+    // ── U13: no double posting ──────────────────────────────────
+
+    public function test_u13_posting_forms_disable_their_buttons_while_sending(): void
+    {
+        $html = $this->page('items.create', ['create items']);
+
+        // The shared page script handles every posting form.
+        $this->assertStringContainsString("form.setAttribute('data-submitting', '')", $html);
+        $this->assertStringContainsString('button.disabled = true', $html);
+        $this->assertMatchesRegularExpression('/<form[^>]+method="POST"/i', $html);
+    }
+
+    public function test_u13_livewire_bulk_actions_are_disabled_while_running(): void
+    {
+        $view = file_get_contents(resource_path('views/livewire/invoices/invoices-table.blade.php'));
+        $this->assertMatchesRegularExpression('/wire:click="applyBulkAction" wire:loading\.attr="disabled"/', $view);
+
+        $button = file_get_contents(resource_path('views/components/primary-button.blade.php'));
+        $this->assertStringContainsString('disabled:opacity-50', $button);
+    }
 }

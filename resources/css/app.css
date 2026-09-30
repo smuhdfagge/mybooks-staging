@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* A form's submit buttons while it is sending (U13). */
+@layer components {
+    [data-busy] {
+        @apply opacity-60 cursor-wait;
+    }
+}

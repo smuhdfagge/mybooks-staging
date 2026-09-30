@@ -57,7 +57,7 @@
                         <option value="mark_cancelled">Mark as Cancelled</option>
                         <option value="delete">Delete</option>
                     </select>
-                    <button wire:click="applyBulkAction" wire:confirm="Are you sure you want to perform this action on the selected invoices?"
+                    <button wire:click="applyBulkAction" wire:loading.attr="disabled" wire:confirm="Are you sure you want to perform this action on the selected invoices?"
                         class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                         Apply
                     </button>

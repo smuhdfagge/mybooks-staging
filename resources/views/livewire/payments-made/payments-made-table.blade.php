@@ -90,7 +90,7 @@
                 <option value="">Bulk Actions</option>
                 <option value="delete">Delete Selected</option>
             </select>
-            <button wire:click="applyBulkAction" 
+            <button wire:click="applyBulkAction" wire:loading.attr="disabled" 
                 wire:confirm="Are you sure you want to perform this action on the selected payments?"
                 class="inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
                 @if(empty($selectedItems)) disabled @endif>

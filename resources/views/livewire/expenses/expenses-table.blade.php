@@ -35,7 +35,7 @@
                                     <option value="{{ $value }}">{{ $label }}</option>
                                 @endforeach
                             </select>
-                            <button wire:click="applyBulkAction" class="px-3 py-2 bg-gray-600 text-white text-sm rounded-md hover:bg-gray-700 disabled:opacity-50" @if(empty($selectedItems)) disabled @endif>
+                            <button wire:click="applyBulkAction" wire:loading.attr="disabled" class="px-3 py-2 bg-gray-600 text-white text-sm rounded-md hover:bg-gray-700 disabled:opacity-50" @if(empty($selectedItems)) disabled @endif>
                                 Apply
                             </button>
                             @if(count($selectedItems) > 0)
@@ -190,7 +190,7 @@
                                             @if($isAdmin)
                                                 <!-- Approve (only for pending_approval) -->
                                                 @if($expense->canBeApproved())
-                                                    <button wire:click="approveExpense({{ $expense->id }})" class="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300" title="Approve" aria-label="Approve">
+                                                    <button wire:click="approveExpense({{ $expense->id }})" wire:loading.attr="disabled" class="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300" title="Approve" aria-label="Approve">
                                                         <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                                         </svg>
@@ -287,7 +287,7 @@
                     </div>
                 </div>
                 <div class="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
-                    <button wire:click="deleteExpense" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:w-auto sm:text-sm">
+                    <button wire:click="deleteExpense" wire:loading.attr="disabled" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:w-auto sm:text-sm">
                         Delete
                     </button>
                     <button wire:click="cancelDelete" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm">

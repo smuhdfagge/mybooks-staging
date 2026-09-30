@@ -87,7 +87,7 @@
                         <option value="deactivate">Deactivate</option>
                         <option value="delete">Delete</option>
                     </select>
-                    <button wire:click="applyBulkAction"
+                    <button wire:click="applyBulkAction" wire:loading.attr="disabled"
                             class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
                         Apply
                     </button>

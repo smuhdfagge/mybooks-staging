@@ -65,7 +65,7 @@
                         <option value="deactivate">Deactivate</option>
                         <option value="delete">Delete</option>
                     </select>
-                    <button type="button" wire:click="applyBulkAction" wire:confirm="Are you sure you want to apply this action to the selected customers?"
+                    <button type="button" wire:click="applyBulkAction" wire:loading.attr="disabled" wire:confirm="Are you sure you want to apply this action to the selected customers?"
                         class="px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
                         {{ count($selectedItems) === 0 ? 'disabled' : '' }}>
                         Apply

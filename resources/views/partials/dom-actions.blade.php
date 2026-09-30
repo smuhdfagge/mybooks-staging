@@ -14,6 +14,10 @@
           data-arg="csv"                passes a fixed argument
           data-pass-value               passes the element's current value
 
+    Forms that post (not GET) have their submit buttons disabled while they
+    send, so a double click can't save twice (U13). Opt out with
+    data-no-disable on the form (e.g. a download that keeps the page open).
+
     Included once per full page: layouts, and the standalone print pages.
 --}}
 <script nonce="{{ app('csp-nonce') }}">
@@ -40,6 +44,53 @@
             event.stopImmediatePropagation();
         }
     }, true);
+
+    // Disable submit buttons once a posting form is really sent (U13). This
+    // runs in the bubbling phase, after data-confirm and any page handler, so
+    // a cancelled or JavaScript-handled submit is left alone. Disabling waits
+    // a tick so the clicked button's name/value is still sent.
+    var SUBMITS = 'button[type=submit], button:not([type]), input[type=submit]';
+
+    function setBusy(form, busy) {
+        form.querySelectorAll(SUBMITS).forEach(function (button) {
+            if (busy && !button.disabled) {
+                button.disabled = true;
+                button.setAttribute('data-busy', '');
+            } else if (!busy && button.hasAttribute('data-busy')) {
+                button.disabled = false;
+                button.removeAttribute('data-busy');
+            }
+        });
+        form.toggleAttribute('aria-busy', busy);
+    }
+
+    document.addEventListener('submit', function (event) {
+        var form = event.target;
+        if (event.defaultPrevented || !form.matches || !form.matches('form')) { return; }
+        if ((form.getAttribute('method') || 'get').toLowerCase() === 'get') { return; }
+        if (form.hasAttribute('data-no-disable') || form.target === '_blank') { return; }
+
+        if (form.hasAttribute('data-submitting')) {
+            event.preventDefault(); // second click while the first is sending
+            return;
+        }
+        form.setAttribute('data-submitting', '');
+        setTimeout(function () { setBusy(form, true); }, 0);
+        // Downloads leave the page in place: free the form again after a while.
+        setTimeout(function () {
+            form.removeAttribute('data-submitting');
+            setBusy(form, false);
+        }, 15000);
+    });
+
+    // Coming back with the browser's Back button restores a frozen page.
+    window.addEventListener('pageshow', function (event) {
+        if (!event.persisted) { return; }
+        document.querySelectorAll('form[data-submitting]').forEach(function (form) {
+            form.removeAttribute('data-submitting');
+            setBusy(form, false);
+        });
+    });
 
     document.addEventListener('click', function (event) {
         var el = event.target.closest && event.target.closest('[data-confirm]:not(form), [data-print], [data-show], [data-hide], [data-set-value], [data-submit-closest-form], [data-call]');
