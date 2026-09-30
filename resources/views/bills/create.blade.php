@@ -134,7 +134,7 @@
                         </h3>
                         
                         <div class="overflow-visible">
-                            <table class="min-w-full">
+                            <table class="min-w-full line-items">
                                 <thead>
                                     <tr class="border-b border-gray-200 dark:border-gray-700">
                                         <th class="text-left text-sm font-medium text-gray-700 dark:text-gray-300 pb-2 w-1/3">Description</th>
@@ -148,10 +148,10 @@
                                 <tbody>
                                     <template x-for="(item, index) in items" :key="index">
                                         <tr class="border-b border-gray-200 dark:border-gray-700">
-                                            <td class="py-2 pr-2">
+                                            <td class="py-2 pr-2" data-label="Description" data-cell="main">
                                                 <div class="relative mb-1">
                                                     <input type="hidden" :name="`items[${index}][item_id]`" x-model="item.item_id">
-                                                    <input 
+                                                    <input aria-label="Item" 
                                                         type="text" 
                                                         x-model="item.itemSearch"
                                                         @focus="item.itemDropdownOpen = true"
@@ -164,7 +164,7 @@
                                                         placeholder="Search items..."
                                                         autocomplete="off"
                                                         class="form-control text-sm">
-                                                    <button type="button" @click="item.itemDropdownOpen = !item.itemDropdownOpen" class="absolute inset-y-0 right-0 flex items-center pr-2">
+                                                    <button type="button" aria-label="Show items" @click="item.itemDropdownOpen = !item.itemDropdownOpen" class="absolute inset-y-0 right-0 flex items-center pr-2">
                                                         <svg class="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
                                                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                                                         </svg>
@@ -193,29 +193,29 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <input type="text" :name="`items[${index}][description]`" x-model="item.description" required placeholder="Description"
+                                                <input aria-label="Description" type="text" :name="`items[${index}][description]`" x-model="item.description" required placeholder="Description"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                             </td>
-                                            <td class="py-2 pr-2">
-                                                <input type="number" :name="`items[${index}][quantity]`" x-model.number="item.quantity" min="0.01" step="0.01" required
+                                            <td class="py-2 pr-2" data-label="Qty">
+                                                <input aria-label="Quantity" type="number" :name="`items[${index}][quantity]`" x-model.number="item.quantity" min="0.01" step="0.01" required
                                                     @input="calculateTotals()"
                                                     class="form-control text-sm">
                                             </td>
-                                            <td class="py-2 pr-2">
-                                                <input type="number" :name="`items[${index}][unit_price]`" x-model.number="item.unit_price" min="0" step="0.01" required
+                                            <td class="py-2 pr-2" data-label="Price">
+                                                <input aria-label="Unit price" type="number" :name="`items[${index}][unit_price]`" x-model.number="item.unit_price" min="0" step="0.01" required
                                                     @input="calculateTotals()"
                                                     class="form-control text-sm">
                                             </td>
-                                            <td class="py-2 pr-2">
+                                            <td class="py-2 pr-2" data-label="Tax %">
                                                 {{-- Line discounts from a purchase order or the API are kept. --}}
                                                 <input type="hidden" :name="`items[${index}][discount]`" :value="item.discount || 0">
-                                                <input type="number" :name="`items[${index}][tax_rate]`" x-model.number="item.tax_rate" min="0" max="100" step="0.01"
+                                                <input aria-label="Tax rate (%)" type="number" :name="`items[${index}][tax_rate]`" x-model.number="item.tax_rate" min="0" max="100" step="0.01"
                                                     @input="calculateTotals()"
                                                     class="form-control text-sm">
                                             </td>
-                                            <td class="py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(lineTotal(index))"></td>
-                                            <td class="py-2 text-center">
-                                                <button type="button" @click="removeItem(index)" x-show="items.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
+                                            <td class="py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(lineTotal(index))" data-label="Total"></td>
+                                            <td class="py-2 text-center" data-cell="actions">
+                                                <button type="button" @click="removeItem(index)" x-show="items.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" aria-label="Remove line">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                                     </svg>

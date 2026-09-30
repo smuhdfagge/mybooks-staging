@@ -31,3 +31,53 @@
         @apply bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg;
     }
 }
+
+/* Line items on phones (U3): below the md breakpoint each row of a
+   .line-items table becomes a card, with the column name shown above each
+   box (from data-label). From md up it stays a normal table. */
+@media (max-width: 767.98px) {
+    .line-items,
+    .line-items tbody {
+        display: block;
+        width: 100%;
+    }
+    .line-items thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+    }
+    .line-items tbody tr {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.5rem 0.75rem;
+        margin-bottom: 0.75rem;
+        padding: 0.75rem;
+        @apply rounded-lg border border-gray-200 dark:border-gray-700;
+    }
+    .line-items tbody td {
+        display: block;
+        padding: 0 !important;
+        text-align: left !important;
+    }
+    .line-items tbody td[data-cell="main"],
+    .line-items tbody td[data-cell="actions"] {
+        grid-column: 1 / -1;
+    }
+    .line-items tbody td[data-cell="actions"] {
+        text-align: right !important;
+    }
+    .line-items tbody td[data-label]::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 0.25rem;
+        @apply text-xs font-medium text-gray-600 dark:text-gray-300;
+    }
+    .line-items input,
+    .line-items select {
+        min-height: 2.5rem;
+        font-size: 1rem; /* stops iOS zooming into the box */
+    }
+}

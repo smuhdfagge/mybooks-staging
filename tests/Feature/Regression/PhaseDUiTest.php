@@ -372,4 +372,35 @@ class PhaseDUiTest extends TestCase
         $this->assertSame(1, substr_count($html, 'data-error-summary'));
         $this->assertStringContainsString('<a href="#name" class="underline hover:no-underline">The customer name field is required.</a>', $html);
     }
+
+    // ── U3: line items on a phone ───────────────────────────────
+
+    public function test_u3_line_item_rows_stack_on_phones_and_every_box_is_named(): void
+    {
+        $routes = ['invoices.create', 'bills.create', 'sales-orders.create', 'purchase-orders.create', 'sales-receipts.create', 'recurrent-bills.create'];
+        $perms = [];
+        foreach ($routes as $route) {
+            $perms = array_merge($perms, $this->permissionsFor($route));
+        }
+        $this->createAuthenticatedUser(array_values(array_unique($perms)));
+
+        foreach ($routes as $route) {
+            $html = $this->get(route($route))->assertOk()->getContent();
+            $this->assertMatchesRegularExpression('/<table class="[^"]*\bline-items\b/', $html, $route);
+
+            // The row template: each cell carries its column name for the phone layout ...
+            $start = strpos($html, 'x-for="(item, index) in items"');
+            $row = substr($html, $start, strpos($html, '</template>', strpos($html, '</tr>', $start)) - $start);
+            $this->assertStringContainsString('data-label="Qty"', $row, $route);
+            $this->assertStringContainsString('data-cell="actions"', $row, $route);
+            // ... and every box and the remove button have a name for screen readers.
+            $this->assertStringContainsString('aria-label="Quantity"', $row, $route);
+            $this->assertStringContainsString('aria-label="Unit price"', $row, $route);
+            $this->assertStringContainsString('aria-label="Remove line"', $row, $route);
+            $this->assertSame([], $this->unlabelledControls($row), $route);
+        }
+
+        $css = file_get_contents(resource_path('css/app.css'));
+        $this->assertMatchesRegularExpression('/@media \(max-width: 767\.98px\)\s*\{\s*\.line-items/', $css);
+    }
 }
