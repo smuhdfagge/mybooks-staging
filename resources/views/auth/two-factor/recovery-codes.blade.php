@@ -16,16 +16,17 @@
                         </div>
                     @endif
 
+                    @if (count($recoveryCodes))
                     <div class="mb-6">
                         <div class="flex items-start space-x-3 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
                             <svg class="h-6 w-6 text-amber-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                             </svg>
                             <div>
-                                <p class="font-medium text-amber-800 dark:text-amber-300">Store these recovery codes in a safe place</p>
+                                <p class="font-medium text-amber-800 dark:text-amber-300">Store these recovery codes in a safe place now</p>
                                 <p class="text-sm text-amber-700 dark:text-amber-400 mt-1">
-                                    Each recovery code can only be used once. If you lose access to your authenticator app,
-                                    you can use one of these codes to regain access to your account.
+                                    This is the only time they will be shown. Each recovery code can only be used once.
+                                    If you lose access to your authenticator app, you can use one of these codes to regain access to your account.
                                 </p>
                             </div>
                         </div>
@@ -40,6 +41,12 @@
                             @endforeach
                         </div>
                     </div>
+                    @else
+                    <div class="mb-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg text-sm text-gray-700 dark:text-gray-300">
+                        <p>You have <strong>{{ $codesLeft }}</strong> unused recovery {{ Str::plural('code', $codesLeft) }}.</p>
+                        <p class="mt-2">For your security, recovery codes are only shown once, when they are created. If you have lost them, regenerate a new set below; the old codes will stop working.</p>
+                    </div>
+                    @endif
 
                     <div class="flex items-center justify-between">
                         <a href="{{ route('profile.edit') }}"

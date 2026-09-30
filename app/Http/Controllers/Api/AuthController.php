@@ -58,13 +58,20 @@ class AuthController extends BaseApiController
                 ], 'Two-factor authentication required', 200);
             }
 
-            // Verify 2FA code
+            // Verify 2FA code: per-account limit, and no reusing a code (S7)
             $twoFactor = app(\App\Services\TwoFactorService::class);
-            $secret = $twoFactor->getDecryptedSecret($user);
 
-            if (! $secret || ! $twoFactor->verify($secret, $request->two_factor_code)) {
+            if ($twoFactor->tooManyAttempts($user)) {
+                return $this->error('Too many two-factor attempts. Please try again later.', 429);
+            }
+
+            if (! $twoFactor->verifyForUser($user, (string) $request->two_factor_code)) {
+                $twoFactor->recordFailedAttempt($user);
+
                 return $this->error('Invalid two-factor authentication code.', 422);
             }
+
+            $twoFactor->clearAttempts($user);
         }
 
         // Revoke old tokens for this device
