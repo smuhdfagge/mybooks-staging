@@ -55,7 +55,7 @@
                                 <div class="flex items-center justify-center w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full">
                                     <span class="text-gray-500 dark:text-gray-400 font-semibold">3</span>
                                 </div>
-                                <span class="ml-2 text-sm font-medium text-gray-400 dark:text-gray-500">Import</span>
+                                <span class="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400">Import</span>
                             </div>
                         </div>
                     </div>

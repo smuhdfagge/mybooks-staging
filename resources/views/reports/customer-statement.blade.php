@@ -196,10 +196,10 @@
                                     -
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-sm text-right {{ $transaction['debit'] > 0 ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-400' }}">
+                            <td class="px-4 py-3 text-sm text-right {{ $transaction['debit'] > 0 ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400' }}">
                                 {{ $transaction['debit'] > 0 ? number_format($transaction['debit'], 2) : '-' }}
                             </td>
-                            <td class="px-4 py-3 text-sm text-right {{ $transaction['credit'] > 0 ? 'font-medium text-green-600 dark:text-green-400' : 'text-gray-400' }}">
+                            <td class="px-4 py-3 text-sm text-right {{ $transaction['credit'] > 0 ? 'font-medium text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400' }}">
                                 {{ $transaction['credit'] > 0 ? number_format($transaction['credit'], 2) : '-' }}
                             </td>
                             <td class="px-4 py-3 text-sm text-right font-medium {{ $transaction['balance'] > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white' }}">

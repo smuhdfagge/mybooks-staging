@@ -113,4 +113,33 @@ class PhaseDUiTest extends TestCase
         $button = file_get_contents(resource_path('views/components/primary-button.blade.php'));
         $this->assertStringContainsString('disabled:opacity-50', $button);
     }
+
+    // ── U10: text contrast ──────────────────────────────────────
+
+    public function test_u10_muted_text_uses_the_shade_that_passes_contrast(): void
+    {
+        // gray-400 on white (2.5:1) and gray-500 on dark grey (3.0:1) fail
+        // WCAG AA; text-gray-500 dark:text-gray-400 passes on both (4.8:1, 5.9:1).
+        // Sidebars, sign-in and public pages sit on dark backgrounds, and icons
+        // are not text, so they are skipped.
+        $offenders = [];
+        $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(resource_path('views')));
+        foreach ($it as $file) {
+            $path = str_replace(resource_path('views').'/', '', $file->getPathname());
+            if (! str_ends_with($path, '.blade.php') || preg_match('#sidebar|public-footer|(^|/)auth/|welcome|^pages/|^errors/#', $path)) {
+                continue;
+            }
+            foreach (file($file->getPathname()) as $n => $line) {
+                if (str_contains($line, '<svg') || str_contains($line, '<path')) {
+                    continue;
+                }
+                $bare = preg_match('/(?<![\w:-])text-gray-400(?=[\s"\'])/', $line) && ! preg_match('/dark:text-gray-\d/', $line);
+                if ($bare || preg_match('/(?<![\w:-])text-gray-400 dark:text-gray-500/', $line)) {
+                    $offenders[] = $path.':'.($n + 1);
+                }
+            }
+        }
+
+        $this->assertSame([], $offenders);
+    }
 }

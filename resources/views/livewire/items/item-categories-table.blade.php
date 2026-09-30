@@ -75,7 +75,7 @@
                                         {{ $category->parent->name }}
                                     </a>
                                 @else
-                                    <span class="text-gray-400 dark:text-gray-500">—</span>
+                                    <span class="text-gray-500 dark:text-gray-400">—</span>
                                 @endif
                             </td>
                             <td class="hidden md:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-400">

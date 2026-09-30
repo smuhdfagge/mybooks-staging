@@ -67,7 +67,7 @@
                                 :class="{ 'bg-blue-50 dark:bg-gray-600 font-medium': selected === cat.id }"
                                 x-text="cat.name"></li>
                         </template>
-                        <li x-show="filtered.length === 0" class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500">No categories found</li>
+                        <li x-show="filtered.length === 0" class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">No categories found</li>
                     </ul>
                 </div>
             </div>
@@ -182,7 +182,7 @@
                                         {{ $item->inventory?->quantity ?? 0 }}
                                     </span>
                                 @else
-                                    <span class="text-gray-400">-</span>
+                                    <span class="text-gray-500 dark:text-gray-400">-</span>
                                 @endif
                             </td>
                             <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-center">

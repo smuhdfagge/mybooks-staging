@@ -103,7 +103,7 @@
             </form>
         </div>
 
-        <p class="text-center text-indigo-200 dark:text-gray-500 text-sm mt-6">
+        <p class="text-center text-indigo-200 dark:text-gray-400 text-sm mt-6">
             &copy; {{ date('Y') }} MyBooks. Admin Portal.
         </p>
     </div>

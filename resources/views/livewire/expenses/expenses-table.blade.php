@@ -138,7 +138,7 @@
                                                 {{ $expense->vendor->name }}
                                             </a>
                                         @else
-                                            <span class="text-gray-400 dark:text-gray-500">—</span>
+                                            <span class="text-gray-500 dark:text-gray-400">—</span>
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -235,7 +235,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
                                             </svg>
                                             <p class="text-gray-500 dark:text-gray-400 text-lg font-medium">No expenses found</p>
-                                            <p class="text-gray-400 dark:text-gray-500 text-sm mt-1">Get started by recording your first expense.</p>
+                                            <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Get started by recording your first expense.</p>
                                             <a href="{{ route('expenses.create') }}" class="mt-4 inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
                                                 Record Expense
                                             </a>

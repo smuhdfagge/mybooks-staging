@@ -193,7 +193,7 @@
                                         <dt class="text-sm text-gray-500 dark:text-gray-400">
                                             {{ $allowance['name'] }}
                                             @if(($allowance['amount_type'] ?? '') === 'percentage')
-                                                <span class="text-xs text-gray-400">({{ $allowance['rate'] }}%)</span>
+                                                <span class="text-xs text-gray-500 dark:text-gray-400">({{ $allowance['rate'] }}%)</span>
                                             @endif
                                         </dt>
                                         <dd class="text-sm font-medium text-green-600 dark:text-green-400">+{{ number_format($allowance['amount'], 2) }}</dd>
@@ -235,7 +235,7 @@
                                         <dt class="text-sm text-gray-500 dark:text-gray-400">
                                             {{ $deduction['name'] }}
                                             @if(($deduction['amount_type'] ?? '') === 'percentage')
-                                                <span class="text-xs text-gray-400">({{ $deduction['rate'] }}%)</span>
+                                                <span class="text-xs text-gray-500 dark:text-gray-400">({{ $deduction['rate'] }}%)</span>
                                             @endif
                                         </dt>
                                         <dd class="text-sm font-medium text-red-600 dark:text-red-400">-{{ number_format($deduction['amount'], 2) }}</dd>

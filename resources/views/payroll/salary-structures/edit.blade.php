@@ -231,7 +231,7 @@
                     <!-- Change Reason -->
                     <div class="mb-8">
                         <label for="change_reason" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Reason for Change <span class="text-gray-400 font-normal">(optional — recorded in version history)</span>
+                            Reason for Change <span class="text-gray-500 dark:text-gray-400 font-normal">(optional — recorded in version history)</span>
                         </label>
                         <input type="text" name="change_reason" id="change_reason" maxlength="500"
                             value="{{ old('change_reason') }}"

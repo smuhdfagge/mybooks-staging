@@ -203,7 +203,7 @@
                                                     @endphp
                                                     
                                                     @if(is_null($value))
-                                                        <span class="text-gray-400">-</span>
+                                                        <span class="text-gray-500 dark:text-gray-400">-</span>
                                                     @elseif($colConfig && ($colConfig['type'] ?? '') === 'decimal')
                                                         {{ number_format($value, 2) }}
                                                     @elseif($colConfig && ($colConfig['type'] ?? '') === 'date')

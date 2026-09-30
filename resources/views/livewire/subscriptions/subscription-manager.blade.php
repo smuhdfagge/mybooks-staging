@@ -51,7 +51,7 @@
                                         @endif">
                                         {{ $currentSubscription->isCancelled() ? 'Cancelled' : ucfirst(str_replace('_', ' ', $currentSubscription->status)) }}
                                     </span>
-                                    <span class="mx-2 text-gray-400">•</span>
+                                    <span class="mx-2 text-gray-500 dark:text-gray-400">•</span>
                                     <span class="text-sm text-gray-600 dark:text-gray-400">{{ ucfirst($currentSubscription->billing_cycle) }} billing</span>
                                 </div>
                             </div>

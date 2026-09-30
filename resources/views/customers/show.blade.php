@@ -372,7 +372,7 @@
                                                 @if($deposit->unused_amount > 0)
                                                     <span class="text-green-600 dark:text-green-400 font-medium">{{ number_format($deposit->unused_amount, 2) }}</span>
                                                 @else
-                                                    <span class="text-gray-400 dark:text-gray-500">Used</span>
+                                                    <span class="text-gray-500 dark:text-gray-400">Used</span>
                                                 @endif
                                             </td>
                                         </tr>

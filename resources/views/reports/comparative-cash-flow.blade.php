@@ -180,7 +180,7 @@
                                     </span>
                                 </td>
                                 @else
-                                <td colspan="2" class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-400">-</td>
+                                <td colspan="2" class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">-</td>
                                 @endif
                             </tr>
 
@@ -204,7 +204,7 @@
                                     </span>
                                 </td>
                                 @else
-                                <td colspan="2" class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-400">-</td>
+                                <td colspan="2" class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">-</td>
                                 @endif
                             </tr>
 
@@ -235,7 +235,7 @@
                                     </span>
                                 </td>
                                 @else
-                                <td colspan="2" class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-400">-</td>
+                                <td colspan="2" class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">-</td>
                                 @endif
                             </tr>
 
@@ -259,7 +259,7 @@
                                     </span>
                                 </td>
                                 @else
-                                <td colspan="2" class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-400">-</td>
+                                <td colspan="2" class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">-</td>
                                 @endif
                             </tr>
 
@@ -283,7 +283,7 @@
                                     </span>
                                 </td>
                                 @else
-                                <td colspan="2" class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-400">-</td>
+                                <td colspan="2" class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">-</td>
                                 @endif
                             </tr>
 
@@ -307,7 +307,7 @@
                                     </span>
                                 </td>
                                 @else
-                                <td colspan="2" class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-400">-</td>
+                                <td colspan="2" class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">-</td>
                                 @endif
                             </tr>
 
@@ -331,7 +331,7 @@
                                     </span>
                                 </td>
                                 @else
-                                <td colspan="2" class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-400">-</td>
+                                <td colspan="2" class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">-</td>
                                 @endif
                             </tr>
                         </tbody>

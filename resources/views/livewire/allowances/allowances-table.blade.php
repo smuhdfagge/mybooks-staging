@@ -89,7 +89,7 @@
                                 @if($allowance->is_taxable)
                                     <span class="text-yellow-600 dark:text-yellow-400">Yes</span>
                                 @else
-                                    <span class="text-gray-400">No</span>
+                                    <span class="text-gray-500 dark:text-gray-400">No</span>
                                 @endif
                             </td>
                             <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-center">

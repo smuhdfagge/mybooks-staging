@@ -50,7 +50,7 @@
                     <div class="text-sm text-gray-500 dark:text-gray-400">Unreconciled Items</div>
                     <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ $summary['unreconciled_count'] }}</div>
                     @if($summary['last_reconciled_date'])
-                        <div class="text-xs text-gray-400 mt-1">Last: {{ $summary['last_reconciled_date']->format('M d, Y') }}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Last: {{ $summary['last_reconciled_date']->format('M d, Y') }}</div>
                     @endif
                 </div>
             </div>

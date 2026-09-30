@@ -127,7 +127,7 @@
                                                         <span class="text-gray-500 dark:text-gray-400">{{ $export->expires_at->diffForHumans() }}</span>
                                                     @endif
                                                 @else
-                                                    <span class="text-gray-400 dark:text-gray-500">-</span>
+                                                    <span class="text-gray-500 dark:text-gray-400">-</span>
                                                 @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

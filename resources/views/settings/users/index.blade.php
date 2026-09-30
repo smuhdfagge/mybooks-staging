@@ -90,7 +90,7 @@
                                                         {{ $role->name }}
                                                     </span>
                                                 @empty
-                                                    <span class="text-sm text-gray-400 dark:text-gray-500">No roles</span>
+                                                    <span class="text-sm text-gray-500 dark:text-gray-400">No roles</span>
                                                 @endforelse
                                             </div>
                                         </td>

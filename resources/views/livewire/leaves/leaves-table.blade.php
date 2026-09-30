@@ -99,7 +99,7 @@
                             <td class="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $leave->leaveType->name ?? '-' }}</td>
                             <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                 <div>{{ $leave->start_date->format('M d, Y') }}</div>
-                                <div class="text-xs text-gray-400">to {{ $leave->end_date->format('M d, Y') }}</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">to {{ $leave->end_date->format('M d, Y') }}</div>
                             </td>
                             <td class="hidden md:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500 dark:text-gray-400">{{ $leave->days }}</td>
                             <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-center">

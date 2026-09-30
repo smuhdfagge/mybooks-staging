@@ -127,10 +127,10 @@
                                     <td class="px-6 py-4 text-sm font-medium text-blue-700 dark:text-blue-300">
                                         Opening Balance
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-400 dark:text-gray-500">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
                                         -
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-400 dark:text-gray-500">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
                                         -
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium {{ ($openingBalance ?? 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
@@ -154,10 +154,10 @@
                                         <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">
                                             {{ $entry->description ?? $entry->journal->description ?? '-' }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm {{ $entry->debit > 0 ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-400 dark:text-gray-500' }}">
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm {{ $entry->debit > 0 ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-500 dark:text-gray-400' }}">
                                             {{ $entry->debit > 0 ? number_format($entry->debit, 2) : '-' }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm {{ $entry->credit > 0 ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-400 dark:text-gray-500' }}">
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm {{ $entry->credit > 0 ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-500 dark:text-gray-400' }}">
                                             {{ $entry->credit > 0 ? number_format($entry->credit, 2) : '-' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium {{ $runningBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">

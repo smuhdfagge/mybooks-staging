@@ -43,7 +43,7 @@
     <input type="hidden" name="{{ $name }}" :value="selected">
     <button type="button" @click="open = !open"
         class="w-full rounded-md border shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm text-left px-3 py-2 bg-white dark:bg-gray-700 dark:text-gray-300 flex items-center justify-between {{ $hasError ? 'border-red-500' : 'border-gray-300 dark:border-gray-600' }}">
-        <span x-text="selectedLabel || '{{ $placeholder }}'" class="truncate" :class="{ 'text-gray-400 dark:text-gray-500': !selected }"></span>
+        <span x-text="selectedLabel || '{{ $placeholder }}'" class="truncate" :class="{ 'text-gray-500 dark:text-gray-400': !selected }"></span>
         <svg class="w-4 h-4 text-gray-400 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
         </svg>
@@ -62,7 +62,7 @@
                     :class="{ 'bg-indigo-50 dark:bg-gray-600 font-medium': selected === opt.v }"
                     x-text="opt.l"></li>
             </template>
-            <li x-show="filtered.length === 0" class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500">No results found</li>
+            <li x-show="filtered.length === 0" class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">No results found</li>
         </ul>
     </div>
 </div>

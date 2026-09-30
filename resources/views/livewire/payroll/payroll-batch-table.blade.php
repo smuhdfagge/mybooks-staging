@@ -106,7 +106,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                                     </svg>
                                     <p class="text-gray-500 dark:text-gray-400 text-lg font-medium">No payroll batches found</p>
-                                    <p class="text-gray-400 dark:text-gray-500 mt-1">Click "Generate Payroll" to create a new batch.</p>
+                                    <p class="text-gray-500 dark:text-gray-400 mt-1">Click "Generate Payroll" to create a new batch.</p>
                                     <a href="{{ route('payroll.generate-form') }}" class="mt-4 inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
                                         Generate Payroll
                                     </a>
