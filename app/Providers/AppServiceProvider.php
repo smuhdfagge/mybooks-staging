@@ -52,9 +52,19 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // ── API Rate Limiters ─────────────────────────────────────
-        // Standard API: 60 req/min per user (fallback to IP)
+        // Every signed-in API route: reads 120/min and writes 30/min per user,
+        // counted separately, so no route is left without a limit (I8).
         RateLimiter::for('api', function (Request $request) {
-            return Limit::perMinute(60)->by(
+            $who = $request->user()?->id ?: $request->ip();
+
+            return $request->isMethodSafe()
+                ? Limit::perMinute(120)->by('read:'.$who)
+                : Limit::perMinute(30)->by('write:'.$who);
+        });
+
+        // Reports read the whole ledger: 30/min per user (I8).
+        RateLimiter::for('api-reports', function (Request $request) {
+            return Limit::perMinute(30)->by(
                 $request->user()?->id ?: $request->ip()
             );
         });

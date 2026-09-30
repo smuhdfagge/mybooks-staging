@@ -200,6 +200,14 @@ class SettingsController extends Controller
         $isSelf = $user->id === auth()->id() && ! auth()->user()->isSuperAdmin();
 
         $oldEmail = $user->email;
+        // The last active admin keeps the admin role and stays active, or
+        // nobody could manage the business (O7).
+        if (! $isSelf && $user->isLastActiveAdmin()) {
+            $keepsAdmin = $this->rolesFromIds($validated['roles'] ?? [])->contains(fn ($role) => $role->name === 'admin');
+            if (! $keepsAdmin || ! ($validated['is_active'] ?? true)) {
+                return back()->withInput()->with('error', 'This is the only admin of the business. Make another user an admin first.');
+            }
+        }
 
         $user->update([
             'name' => $validated['name'],
@@ -237,6 +245,10 @@ class SettingsController extends Controller
 
         if ($user->id === auth()->id()) {
             return redirect()->back()->with('error', 'You cannot delete your own account.');
+        }
+
+        if ($user->isLastActiveAdmin()) {
+            return redirect()->back()->with('error', 'This is the only admin of the business. Make another user an admin first.');
         }
 
         $user->delete();

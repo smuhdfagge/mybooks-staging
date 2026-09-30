@@ -28,6 +28,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // A session holding an old password hash is signed out, so changing
         // or resetting a password ends every other sign-in (S5).
         $middleware->web(append: [\App\Http\Middleware\AuthenticateSession::class]);
+        // API errors are always JSON (I6).
+        $middleware->api(prepend: [\App\Http\Middleware\ForceJsonResponse::class]);
 
         $middleware->alias([
             'permission' => \App\Http\Middleware\CheckPermission::class,
@@ -42,6 +44,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant' => \App\Http\Middleware\VerifyTenantOwnership::class,
             'active' => \App\Http\Middleware\EnsureAccountActive::class,
             'feature' => \App\Http\Middleware\EnsureFeatureEnabled::class,
+            'idempotent' => \App\Http\Middleware\EnsureIdempotency::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -50,5 +53,18 @@ return Application::configure(basePath: dirname(__DIR__))
         // and the normal logging still happens.
         $exceptions->reportable(function (Throwable $e) {
             app(\App\Services\ErrorAlerter::class)->report($e);
+        });
+
+        // Everything under /api answers in the documented JSON error shape,
+        // even without an Accept header or a matching route (I6).
+        $exceptions->shouldRenderJsonWhen(
+            fn (\Illuminate\Http\Request $request) => $request->is('api/*') || $request->expectsJson()
+        );
+        $exceptions->render(function (Throwable $e, \Illuminate\Http\Request $request) {
+            if ($request->is('api/*') && ! $e instanceof \Illuminate\Http\Exceptions\HttpResponseException) {
+                return \App\Exceptions\ApiExceptionRenderer::render($e, $request);
+            }
+
+            return null;
         });
     })->create();

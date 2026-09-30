@@ -41,14 +41,19 @@ use Illuminate\Support\Facades\Route;
 */
 Route::prefix('v1')->group(function () {
     // Health Check
-    Route::get('health', function () {
+    // Checks the database, cache, queue, storage and backups (O6): 200 when
+    // everything works, 503 when something is broken.
+    Route::get('health', function (\App\Services\HealthCheck $health) {
+        $result = $health->run();
+
         return response()->json([
-            'status' => 'ok',
+            'status' => $result['healthy'] ? 'ok' : 'error',
             'service' => 'MyBooks API',
             'version' => '1.0',
             'timestamp' => now()->toIso8601String(),
-        ]);
-    })->name('api.health');
+            'checks' => $result['checks'],
+        ], $result['healthy'] ? 200 : 503);
+    })->middleware('throttle:api-read')->name('api.health');
 
     // Authentication (with rate limiting for login)
     Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:auth-sensitive');
@@ -69,7 +74,10 @@ Route::prefix('v1')->group(function () {
     | Protected Routes (Authentication Required)
     |--------------------------------------------------------------------------
     */
-    Route::middleware(['auth:sanctum', 'active', 'throttle:api', 'subscription', 'tenant'])->group(function () {
+    // throttle:api limits every route here, reads and writes separately (I8).
+    // 'idempotent' replays the first result of a write sent again with the
+    // same Idempotency-Key header (I5).
+    Route::middleware(['auth:sanctum', 'active', 'throttle:api', 'subscription', 'tenant', 'idempotent'])->group(function () {
         // Auth routes (exempt from permission checks)
         Route::prefix('auth')->group(function () {
             Route::post('logout', [AuthController::class, 'logout']);
@@ -88,7 +96,7 @@ Route::prefix('v1')->group(function () {
         });
 
         // Reports
-        Route::middleware('permission:view reports')->prefix('reports')->group(function () {
+        Route::middleware(['permission:view reports', 'throttle:api-reports'])->prefix('reports')->group(function () {
             Route::get('profit-loss', [ReportController::class, 'profitLoss']);
             Route::get('balance-sheet', [ReportController::class, 'balanceSheet']);
             Route::get('cash-flow', [ReportController::class, 'cashFlow']);
@@ -179,7 +187,7 @@ Route::prefix('v1')->group(function () {
             Route::get('invoices/summary', [InvoiceController::class, 'summary'])->name('api.invoices.summary');
             Route::get('invoices', [InvoiceController::class, 'index'])->name('api.invoices.index');
             Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('api.invoices.show');
-            Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('api.invoices.pdf');
+            Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->middleware('throttle:api-export')->name('api.invoices.pdf');
         });
         Route::post('invoices', [InvoiceController::class, 'store'])->middleware(['permission:create invoices', 'throttle:api-write'])->name('api.invoices.store');
         Route::middleware('permission:edit invoices')->group(function () {

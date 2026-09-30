@@ -200,6 +200,23 @@
                     </div>
                 </form>
             </div>
+
+            @if($tenant->isOwnedBy(auth()->user()))
+                {{-- Owner only (O7) --}}
+                <div class="mt-6 bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6 flex items-center justify-between gap-4">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">Close organisation</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            @if($tenant->isClosing())
+                                This business's data will be erased on {{ $tenant->closure_purge_at?->format('j F Y') }}.
+                            @else
+                                Close this business and erase its data after {{ \App\Models\Tenant::CLOSURE_GRACE_DAYS }} days.
+                            @endif
+                        </p>
+                    </div>
+                    <a href="{{ route('settings.close-organisation') }}" class="text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400">Manage</a>
+                </div>
+            @endif
         </div>
     </div>
 </x-app-layout>

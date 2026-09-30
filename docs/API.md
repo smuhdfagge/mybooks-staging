@@ -1522,10 +1522,14 @@ Paginated responses include metadata:
 
 API requests are rate-limited to prevent abuse and ensure fair usage:
 
-| Endpoint Type              | Rate Limit  | Window   |
-| -------------------------- | ----------- | -------- |
-| Login (`POST /auth/login`) | 10 requests | 1 minute |
-| All other endpoints        | 60 requests | 1 minute |
+| Endpoint Type                                   | Rate Limit   | Window   | Counted per    |
+| ----------------------------------------------- | ------------ | -------- | -------------- |
+| Login, forgot/reset password                    | 5 requests   | 1 minute | IP address     |
+| Reads (`GET`) when signed in                    | 120 requests | 1 minute | user           |
+| Writes (`POST`/`PUT`/`DELETE`) when signed in   | 30 requests  | 1 minute | user           |
+| Reports (`/reports/*`)                          | 30 requests  | 1 minute | user           |
+| Invoice PDF                                     | 10 requests  | 1 minute | user           |
+| Health check                                    | 120 requests | 1 minute | IP address     |
 
 Rate limit headers are included in responses:
 
@@ -1538,10 +1542,22 @@ When rate limited, you'll receive a `429 Too Many Requests` response:
 ```json
 {
     "success": false,
-    "message": "Too Many Attempts.",
-    "retry_after": 45
+    "message": "Too Many Attempts."
 }
 ```
+
+The `Retry-After` header says how many seconds to wait.
+
+---
+
+## Idempotency-Key
+
+Any `POST`, `PUT` or `DELETE` may send an `Idempotency-Key` header (any unique string up to 255 characters, e.g. a UUID). If the request succeeds, its response is kept for 24 hours. Sending the same request again with the same key returns that stored response (with the header `Idempotent-Replayed: true`) instead of creating a second invoice, payment or journal. Use this when retrying after a time-out.
+
+-   Reusing a key for a different request gets `422`.
+-   A retry while the first request is still running gets `409`; wait and retry.
+-   Failed requests are not kept, so the key can be reused after fixing the request.
+-   Keys belong to the signed-in user.
 
 ---
 

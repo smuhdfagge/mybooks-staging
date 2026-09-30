@@ -155,7 +155,7 @@
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                        @forelse($schedule->take(12) as $period)
+                                        @forelse(collect($schedule)->take(12) as $period)
                                         <tr>
                                             <td class="px-4 py-2 text-sm text-gray-900 dark:text-white">{{ $period['period'] }}</td>
                                             <td class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">{{ $period['date']->format('M Y') }}</td>

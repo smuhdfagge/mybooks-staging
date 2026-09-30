@@ -172,6 +172,29 @@
                                 <li class="flex items-start"><svg class="w-5 h-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>To comply with legal requirements, court orders, or regulatory authorities</li>
                             </ul>
                             <p class="mt-4">All third parties are required to follow data protection standards consistent with this Policy.</p>
+
+                            <h3 id="sub-processors" class="mt-6 text-lg font-semibold text-gray-900 dark:text-white">Sub-processors</h3>
+                            <p>These companies process personal data on our behalf:</p>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full text-sm border border-gray-200 dark:border-gray-700">
+                                    <thead class="bg-gray-50 dark:bg-gray-800">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left font-medium text-gray-900 dark:text-white">Sub-processor</th>
+                                            <th class="px-3 py-2 text-left font-medium text-gray-900 dark:text-white">What for</th>
+                                            <th class="px-3 py-2 text-left font-medium text-gray-900 dark:text-white">Where</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                        @foreach (config('mybooks.sub_processors', []) as $processor)
+                                            <tr>
+                                                <td class="px-3 py-2">{{ $processor['name'] }}</td>
+                                                <td class="px-3 py-2">{{ $processor['purpose'] }}</td>
+                                                <td class="px-3 py-2">{{ $processor['location'] }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
@@ -188,6 +211,7 @@
                                 <li class="flex items-start"><svg class="w-5 h-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Required to meet legal, regulatory, or accounting obligations</li>
                             </ul>
                             <p class="mt-4">Data may be securely deleted or anonymized once it is no longer required.</p>
+                            <p id="closing-a-business">The owner of a business can close it from Settings &rarr; Company Profile &rarr; Close organisation. Its data is erased {{ \App\Models\Tenant::CLOSURE_GRACE_DAYS }} days later unless the owner cancels, and copies in backups are removed as those backups expire ({{ config('mybooks.backup.keep_days') }} days). We keep a record that the request was made and carried out.</p>
                         </div>
                     </div>
 

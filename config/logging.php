@@ -60,6 +60,7 @@ return [
         ],
 
         'single' => [
+            'tap' => [App\Logging\MaskEmailAddresses::class], // no email addresses in logs (O7)
             'driver' => 'single',
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
@@ -67,6 +68,7 @@ return [
         ],
 
         'daily' => [
+            'tap' => [App\Logging\MaskEmailAddresses::class], // no email addresses in logs (O7)
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
@@ -75,6 +77,7 @@ return [
         ],
 
         'slack' => [
+            'tap' => [App\Logging\MaskEmailAddresses::class], // no email addresses in logs (O7)
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),
             'username' => env('LOG_SLACK_USERNAME', 'Laravel Log'),
@@ -84,6 +87,7 @@ return [
         ],
 
         'papertrail' => [
+            'tap' => [App\Logging\MaskEmailAddresses::class], // no email addresses in logs (O7)
             'driver' => 'monolog',
             'level' => env('LOG_LEVEL', 'debug'),
             'handler' => env('LOG_PAPERTRAIL_HANDLER', SyslogUdpHandler::class),
@@ -96,6 +100,7 @@ return [
         ],
 
         'stderr' => [
+            'tap' => [App\Logging\MaskEmailAddresses::class], // no email addresses in logs (O7)
             'driver' => 'monolog',
             'level' => env('LOG_LEVEL', 'debug'),
             'handler' => StreamHandler::class,
@@ -107,6 +112,7 @@ return [
         ],
 
         'syslog' => [
+            'tap' => [App\Logging\MaskEmailAddresses::class], // no email addresses in logs (O7)
             'driver' => 'syslog',
             'level' => env('LOG_LEVEL', 'debug'),
             'facility' => env('LOG_SYSLOG_FACILITY', LOG_USER),
@@ -114,6 +120,7 @@ return [
         ],
 
         'errorlog' => [
+            'tap' => [App\Logging\MaskEmailAddresses::class], // no email addresses in logs (O7)
             'driver' => 'errorlog',
             'level' => env('LOG_LEVEL', 'debug'),
             'replace_placeholders' => true,

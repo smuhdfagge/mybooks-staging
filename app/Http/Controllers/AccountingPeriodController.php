@@ -55,7 +55,8 @@ class AccountingPeriodController extends Controller
             'name' => $validated['name'],
             'start_date' => $validated['start_date'],
             'end_date' => $validated['end_date'],
-            'fiscal_year' => $validated['fiscal_year'],
+            // Optional in the form; default to the start date's year (O4).
+            'fiscal_year' => $validated['fiscal_year'] ?? (int) date('Y', (int) strtotime($validated['start_date'])),
             'status' => AccountingPeriod::STATUS_OPEN,
         ]);
 
