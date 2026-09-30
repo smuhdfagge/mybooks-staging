@@ -273,9 +273,9 @@
 
     @push('scripts')
     @can('revenue-chart dashboard-widgets')
-    <script nonce="{{ app('csp-nonce') }}" src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script nonce="{{ app('csp-nonce') }}">
-        document.addEventListener('DOMContentLoaded', function() {
+        // Chart.js comes from our own bundle (U14).
+        document.addEventListener('DOMContentLoaded', () => window.loadChart().then(function (Chart) {
             const ctx = document.getElementById('revenueExpenseChart').getContext('2d');
             const isDarkMode = document.documentElement.classList.contains('dark');
             
@@ -376,7 +376,7 @@
                     }
                 }
             });
-        });
+        }));
     </script>
     @endcan
     @endpush

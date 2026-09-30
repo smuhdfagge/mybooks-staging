@@ -9,3 +9,10 @@ import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.e
 if (window.livewireScriptConfig !== undefined) {
     Livewire.start();
 }
+
+// Chart.js is bundled rather than taken from a CDN (U14), and loaded only on
+// pages that draw charts: window.loadChart().then(Chart => new Chart(...)).
+window.loadChart = () => import('chart.js/auto').then(({ default: Chart }) => {
+    window.Chart = Chart;
+    return Chart;
+});

@@ -8,7 +8,6 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <script nonce="{{ app('csp-nonce') }}" defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
         <style>
             [x-cloak] { display: none !important; }
             @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-20px); } }

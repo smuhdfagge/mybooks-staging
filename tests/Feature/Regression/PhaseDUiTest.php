@@ -32,4 +32,30 @@ class PhaseDUiTest extends TestCase
         // With nothing saved, the device setting is used.
         $this->assertStringContainsString('prefers-color-scheme: dark', $head);
     }
+
+    // ── U14: Chart.js bundled, one Alpine ───────────────────────
+
+    public function test_u14_charts_do_not_load_chart_js_from_a_cdn(): void
+    {
+        $html = $this->page('dashboard', ['view dashboard', 'revenue-chart dashboard-widgets']);
+        $this->assertStringNotContainsString('cdn.jsdelivr.net', $html);
+        $this->assertStringContainsString('window.loadChart()', $html);
+
+        // The analytics page runs MySQL-only queries, so check its view.
+        $analytics = file_get_contents(resource_path('views/analytics/index.blade.php'));
+        $this->assertStringNotContainsString('cdn.jsdelivr.net', $analytics);
+        $this->assertStringContainsString('window.loadChart()', $analytics);
+
+        $this->assertStringContainsString("import('chart.js/auto')", file_get_contents(resource_path('js/app.js')));
+    }
+
+    public function test_u14_home_page_loads_alpine_once(): void
+    {
+        $html = $this->get('/')->assertOk()->getContent();
+
+        // Alpine comes with Livewire in the app bundle; a second copy from a
+        // CDN made both start on the same page.
+        $this->assertDoesNotMatchRegularExpression('/<script[^>]+alpinejs/i', $html);
+        $this->assertStringNotContainsString('cdn.jsdelivr.net', $html);
+    }
 }

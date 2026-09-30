@@ -397,14 +397,16 @@
     </div>
 
     @push('scripts')
-    <script nonce="{{ app('csp-nonce') }}" src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script nonce="{{ app('csp-nonce') }}">
         function analyticsApp() {
             return {
                 initCharts() {
-                    this.initRevenueTrendChart();
-                    this.initInvoiceStatusChart();
-                    this.initPaymentMethodChart();
+                    // Chart.js comes from our own bundle (U14).
+                    window.loadChart().then(() => {
+                        this.initRevenueTrendChart();
+                        this.initInvoiceStatusChart();
+                        this.initPaymentMethodChart();
+                    });
                 },
 
                 initRevenueTrendChart() {
