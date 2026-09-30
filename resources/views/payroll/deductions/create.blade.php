@@ -20,61 +20,61 @@
                         <div class="space-y-6">
                             {{-- Name --}}
                             <div>
-                                <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name <span class="text-red-500">*</span></label>
+                                <label for="name" class="form-label">Name <span class="text-red-500">*</span></label>
                                 <input type="text" name="name" id="name" value="{{ old('name') }}" required
                                     class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                    placeholder="e.g. Income Tax">
+                                    placeholder="e.g. Income Tax" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                                 @error('name')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    <p id="name-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             {{-- Amount Type --}}
                             <div>
-                                <label for="amount_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount Type <span class="text-red-500">*</span></label>
+                                <label for="amount_type" class="form-label">Amount Type <span class="text-red-500">*</span></label>
                                 <select name="amount_type" id="amount_type" required
-                                    class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" @error('amount_type') aria-invalid="true" aria-describedby="amount_type-error" @enderror>
                                     <option value="fixed" {{ old('amount_type') === 'fixed' ? 'selected' : '' }}>Fixed Amount</option>
                                     <option value="percentage" {{ old('amount_type') === 'percentage' ? 'selected' : '' }}>% of Basic Salary</option>
                                 </select>
                                 @error('amount_type')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    <p id="amount_type-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             {{-- Amount --}}
                             <div>
-                                <label for="amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount <span class="text-red-500">*</span></label>
+                                <label for="amount" class="form-label">Amount <span class="text-red-500">*</span></label>
                                 <input type="number" name="amount" id="amount" value="{{ old('amount') }}" required step="0.01" min="0"
                                     class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                    placeholder="0.00">
+                                    placeholder="0.00" @error('amount') aria-invalid="true" aria-describedby="amount-error" @enderror>
                                 @error('amount')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    <p id="amount-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             {{-- Pre-Tax Deduction --}}
                             <div>
-                                <label for="is_taxable" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pre-Tax Deduction</label>
+                                <label for="is_taxable" class="form-label">Pre-Tax Deduction</label>
                                 <select name="is_taxable" id="is_taxable"
-                                    class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" @error('is_taxable') aria-invalid="true" aria-describedby="is_taxable-error" @enderror>
                                     <option value="0" {{ old('is_taxable', '0') === '0' ? 'selected' : '' }}>No</option>
                                     <option value="1" {{ old('is_taxable') === '1' ? 'selected' : '' }}>Yes</option>
                                 </select>
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Pre-tax deductions are applied before tax calculation.</p>
                                 @error('is_taxable')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    <p id="is_taxable-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             {{-- Description --}}
                             <div>
-                                <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                                <label for="description" class="form-label">Description</label>
                                 <textarea name="description" id="description" rows="3"
                                     class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                    placeholder="Optional description">{{ old('description') }}</textarea>
+                                    placeholder="Optional description" @error('description') aria-invalid="true" aria-describedby="description-error" @enderror>{{ old('description') }}</textarea>
                                 @error('description')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    <p id="description-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>

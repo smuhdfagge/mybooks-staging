@@ -15,11 +15,6 @@
 
     <div class="py-6">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            @if(session('error'))
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                    <span class="block sm:inline">{{ session('error') }}</span>
-                </div>
-            @endif
 
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <form action="{{ route('chart-of-accounts.update', $chartOfAccount) }}" method="POST" class="p-6">
@@ -36,22 +31,22 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label for="account_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account Code <span class="text-red-500">*</span></label>
+                                <label for="account_code" class="form-label">Account Code <span class="text-red-500">*</span></label>
                                 <input type="text" name="account_code" id="account_code" value="{{ old('account_code', $chartOfAccount->account_code) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('account_code') border-red-500 @enderror"
-                                    placeholder="e.g., 1000, 2000, 3000">
+                                    class="form-control @error('account_code') border-red-500 @enderror"
+                                    placeholder="e.g., 1000, 2000, 3000" @error('account_code') aria-invalid="true" aria-describedby="account_code-error" @enderror>
                                 @error('account_code')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="account_code-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
-                                <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account Name <span class="text-red-500">*</span></label>
+                                <label for="name" class="form-label">Account Name <span class="text-red-500">*</span></label>
                                 <input type="text" name="name" id="name" value="{{ old('name', $chartOfAccount->name) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('name') border-red-500 @enderror"
-                                    placeholder="e.g., Cash, Accounts Receivable">
+                                    class="form-control @error('name') border-red-500 @enderror"
+                                    placeholder="e.g., Cash, Accounts Receivable" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                                 @error('name')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="name-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -65,17 +60,17 @@
                                     search-placeholder="Search types..."
                                     :has-error="$errors->has('type')" />
                                 @error('type')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="type-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
-                                <label for="sub_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sub Type</label>
+                                <label for="sub_type" class="form-label">Sub Type</label>
                                 <input type="text" name="sub_type" id="sub_type" value="{{ old('sub_type', $chartOfAccount->sub_type) }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('sub_type') border-red-500 @enderror"
-                                    placeholder="e.g., Current Asset, Fixed Asset">
+                                    class="form-control @error('sub_type') border-red-500 @enderror"
+                                    placeholder="e.g., Current Asset, Fixed Asset" @error('sub_type') aria-invalid="true" aria-describedby="sub_type-error" @enderror>
                                 @error('sub_type')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="sub_type-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -89,7 +84,7 @@
                                     search-placeholder="Search accounts..."
                                     :has-error="$errors->has('parent_id')" />
                                 @error('parent_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="parent_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -114,12 +109,12 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Opening Balance</label>
+                                <label class="form-label">Opening Balance</label>
                                 <input type="text" value="{{ number_format($chartOfAccount->opening_balance, 2) }}" disabled
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-600 dark:text-gray-300 shadow-sm">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Current Balance</label>
+                                <label class="form-label">Current Balance</label>
                                 <input type="text" value="{{ number_format($chartOfAccount->current_balance, 2) }}" disabled
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-600 dark:text-gray-300 shadow-sm">
                             </div>
@@ -135,12 +130,12 @@
                             Description
                         </h3>
                         <div>
-                            <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account Description</label>
+                            <label for="description" class="form-label">Account Description</label>
                             <textarea name="description" id="description" rows="3"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('description') border-red-500 @enderror"
-                                placeholder="Describe the purpose of this account...">{{ old('description', $chartOfAccount->description) }}</textarea>
+                                class="form-control @error('description') border-red-500 @enderror"
+                                placeholder="Describe the purpose of this account..." @error('description') aria-invalid="true" aria-describedby="description-error" @enderror>{{ old('description', $chartOfAccount->description) }}</textarea>
                             @error('description')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="description-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>

@@ -38,9 +38,9 @@
                     placeholder="you@example.com"
                     required 
                     autofocus 
-                    autocomplete="username" />
+                    autocomplete="username" @error('email') aria-invalid="true" aria-describedby="email-error" @enderror/>
             </div>
-            <x-input-error :messages="$errors->get('email')" class="mt-2 text-sm text-red-400" />
+            <x-input-error id="email-error" :messages="$errors->get('email')" class="mt-2 text-sm text-red-400" />
         </div>
 
         <!-- Password -->
@@ -60,9 +60,9 @@
                     class="block w-full pl-10 pr-4 py-3 border-2 border-slate-500 rounded-xl text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 input-focus-ring transition duration-200 font-medium"
                     placeholder="••••••••"
                     required 
-                    autocomplete="current-password" />
+                    autocomplete="current-password" @error('password') aria-invalid="true" aria-describedby="password-error" @enderror/>
             </div>
-            <x-input-error :messages="$errors->get('password')" class="mt-2 text-sm text-red-400" />
+            <x-input-error id="password-error" :messages="$errors->get('password')" class="mt-2 text-sm text-red-400" />
         </div>
 
         <!-- Remember Me & Forgot Password -->

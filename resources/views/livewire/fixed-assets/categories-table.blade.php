@@ -6,15 +6,15 @@
     <!-- Filters -->
     <div class="mb-4 flex flex-col sm:flex-row gap-4">
         <div class="flex-1">
-            <input wire:model.live.debounce.300ms="search" type="text" 
+            <input aria-label="Search categories" wire:model.live.debounce.300ms="search" type="text" 
                 placeholder="Search categories..." 
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
         </div>
         <div class="flex items-center gap-4">
             <!-- Bulk Actions -->
             <x-bulk-actions :actions="['delete' => 'Delete']" :selectedCount="count($selectedItems)" />
-            <label class="text-sm text-gray-600 dark:text-gray-400">Show:</label>
-            <select wire:model.live="perPage" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <label for="perPage" class="text-sm text-gray-600 dark:text-gray-400">Show:</label>
+            <select id="perPage" wire:model.live="perPage" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 <option value="10">10</option>
                 <option value="25">25</option>
                 <option value="50">50</option>
@@ -28,25 +28,11 @@
             <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
                     <th scope="col" class="px-4 py-3 text-left">
-                        <input type="checkbox" wire:model.live="selectAll"
+                        <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
                             class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                     </th>
-                    <th scope="col" wire:click="sortBy('code')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                        <div class="flex items-center gap-1">
-                            Code
-                            @if($sortField === 'code')
-                                <span>{!! $sortDirection === 'asc' ? '↑' : '↓' !!}</span>
-                            @endif
-                        </div>
-                    </th>
-                    <th scope="col" wire:click="sortBy('name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                        <div class="flex items-center gap-1">
-                            Name
-                            @if($sortField === 'name')
-                                <span>{!! $sortDirection === 'asc' ? '↑' : '↓' !!}</span>
-                            @endif
-                        </div>
-                    </th>
+                    <x-sort-header field="code" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Code</x-sort-header>
+                    <x-sort-header field="name" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Name</x-sort-header>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Depreciation Method
                     </th>
@@ -65,7 +51,7 @@
                 @forelse($categories as $category)
                     <tr wire:key="category-{{ $category->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td class="px-4 py-4">
-                            <input type="checkbox" wire:model.live="selectedItems" value="{{ $category->id }}"
+                            <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $category->id }}"
                                 class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">

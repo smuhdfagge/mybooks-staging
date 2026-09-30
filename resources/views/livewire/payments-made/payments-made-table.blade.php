@@ -86,11 +86,11 @@
             @if(count($selectedItems) > 0)
                 <span class="text-sm text-gray-600 dark:text-gray-400">{{ count($selectedItems) }} selected</span>
             @endif
-            <select wire:model="bulkAction" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400">
+            <select aria-label="Bulk action" wire:model="bulkAction" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400">
                 <option value="">Bulk Actions</option>
                 <option value="delete">Delete Selected</option>
             </select>
-            <button wire:click="applyBulkAction" 
+            <button wire:click="applyBulkAction" wire:loading.attr="disabled" 
                 wire:confirm="Are you sure you want to perform this action on the selected payments?"
                 class="inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
                 @if(empty($selectedItems)) disabled @endif>
@@ -105,33 +105,18 @@
             <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
                     <th scope="col" class="w-12 px-6 py-3">
-                        <input type="checkbox" wire:model.live="selectAll"
+                        <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
                             class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700 dark:checked:bg-indigo-500">
                     </th>
-                    <th scope="col" wire:click="sortBy('payment_number')" class="cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                        Payment #
-                        @if($sortField === 'payment_number')
-                            <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                        @endif
-                    </th>
+                    <x-sort-header field="payment_number" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Payment #</x-sort-header>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
                         Vendor
                     </th>
-                    <th scope="col" wire:click="sortBy('payment_date')" class="cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                        Date
-                        @if($sortField === 'payment_date')
-                            <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                        @endif
-                    </th>
+                    <x-sort-header field="payment_date" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Date</x-sort-header>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
                         Bill #
                     </th>
-                    <th scope="col" wire:click="sortBy('amount')" class="cursor-pointer px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                        Amount
-                        @if($sortField === 'amount')
-                            <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                        @endif
-                    </th>
+                    <x-sort-header field="amount" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Amount</x-sort-header>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
                         Method
                     </th>
@@ -147,7 +132,7 @@
                 @forelse($payments as $payment)
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td class="px-6 py-4">
-                            <input type="checkbox" wire:model.live="selectedItems" value="{{ $payment->id }}"
+                            <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $payment->id }}"
                                 class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700 dark:checked:bg-indigo-500">
                         </td>
                         <td class="whitespace-nowrap px-6 py-4">
@@ -161,7 +146,7 @@
                                     {{ $payment->vendor->company_name ?: $payment->vendor->contact_name }}
                                 </a>
                             @else
-                                <span class="text-gray-400 dark:text-gray-500">-</span>
+                                <span class="text-gray-500 dark:text-gray-400">-</span>
                             @endif
                         </td>
                         <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
@@ -173,11 +158,11 @@
                                     {{ $payment->bill->bill_number }}
                                 </a>
                             @else
-                                <span class="text-gray-400 dark:text-gray-500">-</span>
+                                <span class="text-gray-500 dark:text-gray-400">-</span>
                             @endif
                         </td>
                         <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium text-gray-900 dark:text-gray-100">
-                            ${{ number_format($payment->amount, 2) }}
+                            @money($payment->amount)
                         </td>
                         <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                             {{ ucfirst($payment->payment_method ?? '-') }}

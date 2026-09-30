@@ -221,12 +221,12 @@
                         <div class="text-center p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
                             <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Output Tax</p>
                             <p class="text-2xl font-bold text-red-600 dark:text-red-400">{{ number_format($totalOutputTax, 2) }}</p>
-                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Tax charged on sales</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Tax charged on sales</p>
                         </div>
                         <div class="text-center p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
                             <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Input Tax</p>
                             <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ number_format($totalInputTax, 2) }}</p>
-                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Tax paid on purchases</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Tax paid on purchases</p>
                         </div>
                         <div class="text-center p-4 border-2 {{ $netTaxPayable >= 0 ? 'border-orange-300 dark:border-orange-600 bg-orange-50 dark:bg-orange-900/20' : 'border-blue-300 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20' }} rounded-lg">
                             <p class="text-sm {{ $netTaxPayable >= 0 ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400' }} mb-2">

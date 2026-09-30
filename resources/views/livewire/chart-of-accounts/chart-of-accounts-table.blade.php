@@ -10,7 +10,7 @@
                 <div class="mb-6 flex flex-col sm:flex-row gap-4 justify-between">
                     <div class="flex flex-col sm:flex-row gap-4">
                         <div class="relative">
-                            <input type="text" wire:model.live.debounce.300ms="search" placeholder="Search accounts..."
+                            <input aria-label="Search accounts" type="text" wire:model.live.debounce.300ms="search" placeholder="Search accounts..."
                                 class="w-full sm:w-80 pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -18,7 +18,7 @@
                                 </svg>
                             </div>
                         </div>
-                        <select wire:model.live="typeFilter" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <select aria-label="Type filter" wire:model.live="typeFilter" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="">All Types</option>
                             @foreach($types as $key => $label)
                                 <option value="{{ $key }}">{{ $label }}</option>
@@ -37,8 +37,8 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18M3 18h18M3 6h18"/></svg>
                             </button>
                         </div>
-                        <label class="text-sm text-gray-600 dark:text-gray-400">Show:</label>
-                        <select wire:model.live="perPage" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <label for="perPage" class="text-sm text-gray-600 dark:text-gray-400">Show:</label>
+                        <select id="perPage" wire:model.live="perPage" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="10">10</option>
                             <option value="25">25</option>
                             <option value="50">50</option>
@@ -187,14 +187,14 @@
                                             {{ number_format($account->current_balance, 2) }}
                                         </span>
                                         <div class="flex items-center gap-1">
-                                            <a href="{{ route('chart-of-accounts.show', $account) }}" class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" title="View" aria-label="View {{ $account->name }}">
+                                            <a href="{{ route('chart-of-accounts.show', $account) }}" class="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" title="View" aria-label="View {{ $account->name }}">
                                                 <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                                 </svg>
                                             </a>
                                             @if(!$account->is_system)
-                                            <a href="{{ route('chart-of-accounts.edit', $account) }}" class="p-1 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400" title="Edit" aria-label="Edit {{ $account->name }}">
+                                            <a href="{{ route('chart-of-accounts.edit', $account) }}" class="p-1 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400" title="Edit" aria-label="Edit {{ $account->name }}">
                                                 <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                                 </svg>
@@ -230,51 +230,15 @@
                         <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr>
                                 <th scope="col" class="px-4 py-3 text-left">
-                                    <input type="checkbox" wire:model.live="selectAll"
+                                    <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
                                         class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                                 </th>
-                                <th scope="col" wire:click="sortBy('account_code')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                                    <div class="flex items-center space-x-1">
-                                        <span>Code</span>
-                                        @if($sortField === 'account_code')
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7' }}"/>
-                                            </svg>
-                                        @endif
-                                    </div>
-                                </th>
-                                <th scope="col" wire:click="sortBy('name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                                    <div class="flex items-center space-x-1">
-                                        <span>Account Name</span>
-                                        @if($sortField === 'name')
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7' }}"/>
-                                            </svg>
-                                        @endif
-                                    </div>
-                                </th>
-                                <th scope="col" wire:click="sortBy('type')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                                    <div class="flex items-center space-x-1">
-                                        <span>Type</span>
-                                        @if($sortField === 'type')
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7' }}"/>
-                                            </svg>
-                                        @endif
-                                    </div>
-                                </th>
+                                <x-sort-header field="account_code" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Code</x-sort-header>
+                                <x-sort-header field="name" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Account Name</x-sort-header>
+                                <x-sort-header field="type" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Type</x-sort-header>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Parent Account</th>
                                 <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                                <th scope="col" wire:click="sortBy('current_balance')" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                                    <div class="flex items-center justify-end space-x-1">
-                                        <span>Balance</span>
-                                        @if($sortField === 'current_balance')
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7' }}"/>
-                                            </svg>
-                                        @endif
-                                    </div>
-                                </th>
+                                <x-sort-header field="current_balance" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Balance</x-sort-header>
                                 <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
@@ -282,7 +246,7 @@
                             @forelse($accounts as $account)
                                 <tr wire:key="account-{{ $account->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                     <td class="px-4 py-4">
-                                        <input type="checkbox" wire:model.live="selectedItems" value="{{ $account->id }}"
+                                        <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $account->id }}"
                                             class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -318,7 +282,7 @@
                                                 {{ $account->parent->name }}
                                             </a>
                                         @else
-                                            <span class="text-gray-400 dark:text-gray-500">—</span>
+                                            <span class="text-gray-500 dark:text-gray-400">—</span>
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">

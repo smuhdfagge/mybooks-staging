@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+{{-- The sign-in pages are a fixed dark design (dark card on a dark gradient), not a
+     dark mode, so they stay dark whatever the theme setting (U12). --}}
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
     <head>
         <meta charset="utf-8">

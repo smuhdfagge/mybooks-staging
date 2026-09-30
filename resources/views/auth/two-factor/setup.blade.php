@@ -104,9 +104,9 @@
                                     placeholder="000000"
                                     maxlength="6"
                                     required
-                                    autofocus />
+                                    autofocus @error('code') aria-invalid="true" aria-describedby="code-error" @enderror/>
                                 @error('code')
-                                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                    <p id="code-error" class="text-red-500 text-sm mt-1">{{ $message }}</p>
                                 @enderror
                             </div>
 

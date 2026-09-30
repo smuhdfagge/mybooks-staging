@@ -19,7 +19,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <!-- Customer Selection -->
                     <div>
-                        <label for="customer_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label for="customer_id" class="form-label">
                             Customer <span class="text-red-500">*</span>
                         </label>
                         <select name="customer_id" id="customer_id" required
@@ -35,7 +35,7 @@
 
                     <!-- Start Date -->
                     <div>
-                        <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label for="start_date" class="form-label">
                             Start Date
                         </label>
                         <input type="date" name="start_date" id="start_date" 
@@ -45,7 +45,7 @@
 
                     <!-- End Date -->
                     <div>
-                        <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label for="end_date" class="form-label">
                             End Date
                         </label>
                         <input type="date" name="end_date" id="end_date" 
@@ -196,10 +196,10 @@
                                     -
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-sm text-right {{ $transaction['debit'] > 0 ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-400' }}">
+                            <td class="px-4 py-3 text-sm text-right {{ $transaction['debit'] > 0 ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400' }}">
                                 {{ $transaction['debit'] > 0 ? number_format($transaction['debit'], 2) : '-' }}
                             </td>
-                            <td class="px-4 py-3 text-sm text-right {{ $transaction['credit'] > 0 ? 'font-medium text-green-600 dark:text-green-400' : 'text-gray-400' }}">
+                            <td class="px-4 py-3 text-sm text-right {{ $transaction['credit'] > 0 ? 'font-medium text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400' }}">
                                 {{ $transaction['credit'] > 0 ? number_format($transaction['credit'], 2) : '-' }}
                             </td>
                             <td class="px-4 py-3 text-sm text-right font-medium {{ $transaction['balance'] > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white' }}">

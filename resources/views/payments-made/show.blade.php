@@ -31,7 +31,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-red-100 text-sm font-medium">Amount Paid</p>
-                        <p class="text-4xl font-bold mt-1">₦{{ number_format($paymentMade->amount, 2) }}</p>
+                        <p class="text-4xl font-bold mt-1">@money($paymentMade->amount)</p>
                     </div>
                     <div class="bg-white/20 rounded-full p-4">
                         <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -81,7 +81,7 @@
                             @endif
                             <div class="flex justify-between py-2">
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Amount</dt>
-                                <dd class="text-lg font-bold text-red-600 dark:text-red-400">₦{{ number_format($paymentMade->amount, 2) }}</dd>
+                                <dd class="text-lg font-bold text-red-600 dark:text-red-400">@money($paymentMade->amount)</dd>
                             </div>
                         </dl>
                     </div>
@@ -131,7 +131,7 @@
                             <div class="flex justify-between py-2">
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Bill Balance</dt>
                                 <dd class="text-sm {{ $paymentMade->bill->balance_due > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }} font-medium">
-                                    ₦{{ number_format($paymentMade->bill->balance_due, 2) }}
+                                    @money($paymentMade->bill->balance_due)
                                     @if($paymentMade->bill->balance_due <= 0)
                                         <span class="ml-1 text-xs">(Paid)</span>
                                     @endif
@@ -189,10 +189,10 @@
                                         <span class="font-mono text-xs text-gray-500 dark:text-gray-400 mr-2">{{ $entry->account->account_code }}</span>
                                         {{ $entry->account->name }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $entry->debit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500' }}">
+                                    <td class="px-4 py-3 text-sm text-right {{ $entry->debit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                                         {{ $entry->debit > 0 ? number_format($entry->debit, 2) : '-' }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $entry->credit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500' }}">
+                                    <td class="px-4 py-3 text-sm text-right {{ $entry->credit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                                         {{ $entry->credit > 0 ? number_format($entry->credit, 2) : '-' }}
                                     </td>
                                 </tr>

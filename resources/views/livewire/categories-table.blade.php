@@ -24,7 +24,7 @@
 
     <!-- Search and Filter -->
     <div class="mb-6">
-        <input 
+        <input aria-label="Search categories" 
             type="text" 
             wire:model.live.debounce.300ms="search" 
             placeholder="Search categories..."
@@ -37,18 +37,8 @@
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" wire:click="sortBy('code')">
-                        Code
-                        @if($sortField === 'code')
-                            <span>{!! $sortDirection === 'asc' ? '↑' : '↓' !!}</span>
-                        @endif
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" wire:click="sortBy('name')">
-                        Name
-                        @if($sortField === 'name')
-                            <span>{!! $sortDirection === 'asc' ? '↑' : '↓' !!}</span>
-                        @endif
-                    </th>
+                    <x-sort-header field="code" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Code</x-sort-header>
+                    <x-sort-header field="name" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</x-sort-header>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Description
                     </th>

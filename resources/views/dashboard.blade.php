@@ -273,9 +273,9 @@
 
     @push('scripts')
     @can('revenue-chart dashboard-widgets')
-    <script nonce="{{ app('csp-nonce') }}" src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script nonce="{{ app('csp-nonce') }}">
-        document.addEventListener('DOMContentLoaded', function() {
+        // Chart.js comes from our own bundle (U14).
+        document.addEventListener('DOMContentLoaded', () => window.loadChart().then(function (Chart) {
             const ctx = document.getElementById('revenueExpenseChart').getContext('2d');
             const isDarkMode = document.documentElement.classList.contains('dark');
             
@@ -336,7 +336,7 @@
                             displayColors: true,
                             callbacks: {
                                 label: function(context) {
-                                    return context.dataset.label + ': ₦' + context.parsed.y.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                    return context.dataset.label + ': ' + window.formatMoney(context.parsed.y);
                                 }
                             }
                         }
@@ -364,19 +364,20 @@
                                     size: 11
                                 },
                                 callback: function(value) {
+                                    const symbol = @js(\App\Support\Money::symbol());
                                     if (value >= 1000000) {
-                                        return '₦' + (value / 1000000).toFixed(1) + 'M';
+                                        return symbol + (value / 1000000).toFixed(1) + 'M';
                                     } else if (value >= 1000) {
-                                        return '₦' + (value / 1000).toFixed(0) + 'K';
+                                        return symbol + (value / 1000).toFixed(0) + 'K';
                                     }
-                                    return '₦' + value;
+                                    return symbol + value;
                                 }
                             }
                         }
                     }
                 }
             });
-        });
+        }));
     </script>
     @endcan
     @endpush

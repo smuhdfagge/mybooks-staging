@@ -22,22 +22,22 @@
                     <div>
                         <x-input-label for="name" :value="__('Group Name')" />
                         <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name')" required placeholder="e.g., Combined Tax" />
-                        <x-input-error :messages="$errors->get('name')" class="mt-2" />
+                        <x-input-error id="name-error" :messages="$errors->get('name')" class="mt-2" />
                     </div>
 
                     <!-- Code -->
                     <div>
                         <x-input-label for="code" :value="__('Code')" />
                         <x-text-input id="code" name="code" type="text" class="mt-1 block w-full" :value="old('code')" maxlength="20" placeholder="e.g., COMB" />
-                        <x-input-error :messages="$errors->get('code')" class="mt-2" />
+                        <x-input-error id="code-error" :messages="$errors->get('code')" class="mt-2" />
                     </div>
                 </div>
 
                 <!-- Description -->
                 <div class="mt-6">
                     <x-input-label for="description" :value="__('Description')" />
-                    <textarea name="description" id="description" rows="3" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm" placeholder="Optional description">{{ old('description') }}</textarea>
-                    <x-input-error :messages="$errors->get('description')" class="mt-2" />
+                    <textarea name="description" id="description" rows="3" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm" placeholder="Optional description" @error('description') aria-invalid="true" aria-describedby="description-error" @enderror>{{ old('description') }}</textarea>
+                    <x-input-error id="description-error" :messages="$errors->get('description')" class="mt-2" />
                 </div>
 
                 <!-- Tax Rates Selection -->
@@ -72,7 +72,7 @@
                             <a href="{{ route('tax-rates.create') }}" class="text-blue-600 dark:text-blue-400 hover:underline">Create a tax rate first</a>
                         </div>
                     @endif
-                    <x-input-error :messages="$errors->get('tax_rates')" class="mt-2" />
+                    <x-input-error id="tax_rates-error" :messages="$errors->get('tax_rates')" class="mt-2" />
                 </div>
 
                 <!-- Options -->

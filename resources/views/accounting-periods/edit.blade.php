@@ -14,15 +14,6 @@
         <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
-                    @if($errors->any())
-                        <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                            <ul class="list-disc list-inside">
-                                @foreach($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
 
                     @if($accountingPeriod->isClosed())
                         <div class="mb-4 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
@@ -35,37 +26,36 @@
                         @method('PUT')
                         
                         <div class="mb-4">
-                            <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Period Name *</label>
+                            <label for="name" class="form-label">Period Name *</label>
                             <input type="text" name="name" id="name" value="{{ old('name', $accountingPeriod->name) }}" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
                         </div>
 
                         @if(!$accountingPeriod->isClosed())
                         <div class="grid grid-cols-2 gap-4 mb-4">
                             <div>
-                                <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date *</label>
+                                <label for="start_date" class="form-label">Start Date *</label>
                                 <input type="date" name="start_date" id="start_date" value="{{ old('start_date', $accountingPeriod->start_date->format('Y-m-d')) }}" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
                             </div>
                             <div>
-                                <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date *</label>
+                                <label for="end_date" class="form-label">End Date *</label>
                                 <input type="date" name="end_date" id="end_date" value="{{ old('end_date', $accountingPeriod->end_date->format('Y-m-d')) }}" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
                             </div>
                         </div>
                         @else
                         <div class="grid grid-cols-2 gap-4 mb-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
+                                <label class="form-label">Start Date</label>
                                 <p class="text-sm text-gray-900 dark:text-gray-100 py-2">{{ $accountingPeriod->start_date->format('F d, Y') }}</p>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date</label>
+                                <label class="form-label">End Date</label>
                                 <p class="text-sm text-gray-900 dark:text-gray-100 py-2">{{ $accountingPeriod->end_date->format('F d, Y') }}</p>
                             </div>
                         </div>
                         @endif
 
                         <div class="mb-6">
-                            <label for="fiscal_year" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fiscal Year</label>
-                            <input type="number" name="fiscal_year" id="fiscal_year" value="{{ old('fiscal_year', $accountingPeriod->fiscal_year) }}" min="2000" max="2100" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <x-field name="fiscal_year" label="Fiscal Year" type="number" :value="old('fiscal_year', $accountingPeriod->fiscal_year)" min="2000" max="2100" />
                         </div>
 
                         <div class="flex justify-end gap-3">

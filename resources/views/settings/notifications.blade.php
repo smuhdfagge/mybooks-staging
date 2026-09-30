@@ -234,7 +234,7 @@
                                     <input type="text" name="email_from_name" id="email_from_name"
                                         value="{{ old('email_from_name', $settings->email_from_name) }}"
                                         placeholder="{{ auth()->user()->tenant->name }}"
-                                        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        class="mt-1 block form-control sm:text-sm">
                                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave blank to use company name</p>
                                 </div>
 
@@ -243,7 +243,7 @@
                                     <input type="email" name="email_from_address" id="email_from_address"
                                         value="{{ old('email_from_address', $settings->email_from_address) }}"
                                         placeholder="{{ config('mail.from.address') }}"
-                                        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        class="mt-1 block form-control sm:text-sm">
                                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave blank to use system default</p>
                                 </div>
 
@@ -252,7 +252,7 @@
                                     <input type="email" name="email_reply_to" id="email_reply_to"
                                         value="{{ old('email_reply_to', $settings->email_reply_to) }}"
                                         placeholder="{{ auth()->user()->tenant->email }}"
-                                        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        class="mt-1 block form-control sm:text-sm">
                                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Customer replies will be sent to this address</p>
                                 </div>
                             </div>
@@ -282,7 +282,7 @@
                                 <label for="test_email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email Address</label>
                                 <input type="email" name="test_email" id="test_email"
                                     value="{{ auth()->user()->email }}"
-                                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    class="mt-1 block form-control sm:text-sm"
                                     required>
                             </div>
                             <button type="submit"

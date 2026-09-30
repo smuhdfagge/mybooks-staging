@@ -28,23 +28,23 @@
                             <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Report Name *</label>
                             <input type="text" name="name" id="name" required value="{{ old('name', $report->name) }}"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
-                                placeholder="e.g., Monthly Sales Summary">
+                                placeholder="e.g., Monthly Sales Summary" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                             @error('name')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="name-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
                         </div>
 
                         <div>
                             <label for="data_source" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Data Source *</label>
                             <select name="data_source" id="data_source" required x-model="dataSource" @change="loadColumns()"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm" @error('data_source') aria-invalid="true" aria-describedby="data_source-error" @enderror>
                                 <option value="">Select a data source</option>
                                 @foreach($dataSources as $key => $source)
                                     <option value="{{ $key }}">{{ $source['label'] }}</option>
                                 @endforeach
                             </select>
                             @error('data_source')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="data_source-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -88,7 +88,7 @@
                     </div>
 
                     @error('columns')
-                        <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                        <p id="columns-error" class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                     @enderror
                 </div>
             </div>
@@ -100,7 +100,7 @@
                     <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Select a date field to enable date range filtering when running the report.</p>
                     
                     <div class="max-w-xs">
-                        <select name="date_field" x-model="selectedDateField"
+                        <select aria-label="Selected date field" name="date_field" x-model="selectedDateField"
                             class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                             <option value="">No date filter</option>
                             <template x-for="field in dateFields" :key="field">
@@ -131,7 +131,7 @@
                     <div class="space-y-3">
                         <template x-for="(filter, index) in filters" :key="index">
                             <div class="flex flex-wrap items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                                <select :name="'filters[' + index + '][column]'" x-model="filter.column" required
+                                <select aria-label="Column" :name="'filters[' + index + '][column]'" x-model="filter.column" required
                                     class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm">
                                     <option value="">Select column</option>
                                     <template x-for="(config, column) in availableColumns" :key="column">
@@ -139,14 +139,14 @@
                                     </template>
                                 </select>
                                 
-                                <select :name="'filters[' + index + '][operator]'" x-model="filter.operator" required
+                                <select aria-label="Operator" :name="'filters[' + index + '][operator]'" x-model="filter.operator" required
                                     class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm">
                                     @foreach($operators as $key => $label)
                                         <option value="{{ $key }}">{{ $label }}</option>
                                     @endforeach
                                 </select>
                                 
-                                <input type="text" :name="'filters[' + index + '][value]'" x-model="filter.value" placeholder="Value"
+                                <input aria-label="Value" type="text" :name="'filters[' + index + '][value]'" x-model="filter.value" placeholder="Value"
                                     x-show="!['is_null', 'is_not_null'].includes(filter.operator)"
                                     class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm flex-1 min-w-[150px]">
                                 
@@ -172,7 +172,7 @@
                     <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Group results by a specific field.</p>
                     
                     <div class="max-w-xs">
-                        <select name="group_by" x-model="selectedGroupBy"
+                        <select aria-label="Selected group by" name="group_by" x-model="selectedGroupBy"
                             class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                             <option value="">No grouping</option>
                             <template x-for="field in groupFields" :key="field">
@@ -203,7 +203,7 @@
                     <div class="space-y-3">
                         <template x-for="(agg, index) in aggregations" :key="index">
                             <div class="flex flex-wrap items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                                <select :name="'aggregations[' + index + '][function]'" x-model="agg.function" required
+                                <select aria-label="Function" :name="'aggregations[' + index + '][function]'" x-model="agg.function" required
                                     class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm">
                                     @foreach($aggregations as $key => $label)
                                         <option value="{{ $key }}">{{ $label }}</option>
@@ -212,7 +212,7 @@
                                 
                                 <span class="text-gray-500 dark:text-gray-400">of</span>
                                 
-                                <select :name="'aggregations[' + index + '][column]'" x-model="agg.column" required
+                                <select aria-label="Column" :name="'aggregations[' + index + '][column]'" x-model="agg.column" required
                                     class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm">
                                     <option value="">Select column</option>
                                     <template x-for="(config, column) in numericColumns" :key="column">
@@ -255,7 +255,7 @@
                     <div class="space-y-3">
                         <template x-for="(sort, index) in sortBy" :key="index">
                             <div class="flex flex-wrap items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                                <select :name="'sort_by[' + index + '][column]'" x-model="sort.column" required
+                                <select aria-label="Column" :name="'sort_by[' + index + '][column]'" x-model="sort.column" required
                                     class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm">
                                     <option value="">Select column</option>
                                     <template x-for="column in selectedColumns" :key="column">
@@ -263,7 +263,7 @@
                                     </template>
                                 </select>
                                 
-                                <select :name="'sort_by[' + index + '][direction]'" x-model="sort.direction" required
+                                <select aria-label="Direction" :name="'sort_by[' + index + '][direction]'" x-model="sort.direction" required
                                     class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm">
                                     <option value="asc">Ascending</option>
                                     <option value="desc">Descending</option>

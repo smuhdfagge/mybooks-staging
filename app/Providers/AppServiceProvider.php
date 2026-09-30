@@ -15,6 +15,7 @@ use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
@@ -50,6 +51,10 @@ class AppServiceProvider extends ServiceProvider
         Model::handleLazyLoadingViolationUsing(function ($model, string $relation) {
             Log::warning('Lazy loading '.get_class($model).'::'.$relation.' (possible N+1 query)');
         });
+
+        // One way to show money in views (U8): @money($amount[, 'USD']) and @currencySymbol.
+        Blade::directive('money', fn (string $expression) => "<?php echo e(\\App\\Support\\Money::format({$expression})); ?>");
+        Blade::directive('currencySymbol', fn () => '<?php echo e(\\App\\Support\\Money::symbol()); ?>');
 
         // Configure password strength defaults (NIST 800-63B compliant)
         Password::defaults(function () {

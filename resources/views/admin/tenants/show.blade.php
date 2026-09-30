@@ -250,8 +250,8 @@
                         @method('PUT')
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Plan</label>
-                                <select name="plan_id" class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <label for="plan_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Plan</label>
+                                <select id="plan_id" name="plan_id" class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                     @foreach($plans as $plan)
                                         <option value="{{ $plan->id }}" {{ $tenant->activeSubscription?->plan_id == $plan->id ? 'selected' : '' }}>
                                             {{ $plan->name }} - ₦{{ number_format($plan->monthly_price) }}/mo
@@ -260,15 +260,15 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Billing Cycle</label>
-                                <select name="billing_cycle" class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <label for="billing_cycle" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Billing Cycle</label>
+                                <select id="billing_cycle" name="billing_cycle" class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                     <option value="monthly" {{ $tenant->activeSubscription?->billing_cycle === 'monthly' ? 'selected' : '' }}>Monthly</option>
                                     <option value="annual" {{ $tenant->activeSubscription?->billing_cycle === 'annual' ? 'selected' : '' }}>Annual (Save 17%)</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
-                                <select name="status" class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                                <select id="status" name="status" class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                     <option value="active" {{ $tenant->activeSubscription?->status === 'active' ? 'selected' : '' }}>Active</option>
                                     <option value="trialing" {{ $tenant->activeSubscription?->status === 'trialing' ? 'selected' : '' }}>Trial</option>
                                     <option value="past_due" {{ $tenant->activeSubscription?->status === 'past_due' ? 'selected' : '' }}>Past Due</option>
@@ -293,8 +293,8 @@
                         @method('PATCH')
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Extend By</label>
-                                <select name="extension_days" class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <label for="extension_days" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Extend By</label>
+                                <select id="extension_days" name="extension_days" class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                     <option value="7">7 Days</option>
                                     <option value="14">14 Days</option>
                                     <option value="30" selected>30 Days (1 Month)</option>

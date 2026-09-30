@@ -40,7 +40,7 @@
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Quantity on Hand</p>
                             <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ $inventory->quantity ?? 0 }}</p>
-                            <p class="text-xs text-gray-400 dark:text-gray-500">{{ $item->unit ?? 'units' }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $item->unit ?? 'units' }}</p>
                         </div>
                     </div>
                 </div>
@@ -55,7 +55,7 @@
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Reserved</p>
                             <p class="text-2xl font-bold text-orange-600 dark:text-orange-400">{{ $inventory->reserved_quantity ?? 0 }}</p>
-                            <p class="text-xs text-gray-400 dark:text-gray-500">{{ $item->unit ?? 'units' }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $item->unit ?? 'units' }}</p>
                         </div>
                     </div>
                 </div>
@@ -70,7 +70,7 @@
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Available</p>
                             <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ ($inventory->quantity ?? 0) - ($inventory->reserved_quantity ?? 0) }}</p>
-                            <p class="text-xs text-gray-400 dark:text-gray-500">{{ $item->unit ?? 'units' }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $item->unit ?? 'units' }}</p>
                         </div>
                     </div>
                 </div>
@@ -85,7 +85,7 @@
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Stock Value</p>
                             <p class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ number_format(($inventory->quantity ?? 0) * ($item->cost_price ?? 0), 2) }}</p>
-                            <p class="text-xs text-gray-400 dark:text-gray-500">at cost price</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">at cost price</p>
                         </div>
                     </div>
                 </div>
@@ -120,9 +120,9 @@
                             @csrf
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label for="type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Adjustment Type</label>
+                                    <label for="type" class="form-label">Adjustment Type</label>
                                     <select name="type" id="type" required
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                        class="form-control">
                                         <option value="in">Stock In (Add)</option>
                                         <option value="out">Stock Out (Remove)</option>
                                         <option value="adjustment">Set Quantity (Override)</option>
@@ -130,16 +130,16 @@
                                 </div>
 
                                 <div>
-                                    <label for="quantity" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Quantity</label>
+                                    <label for="quantity" class="form-label">Quantity</label>
                                     <input type="number" name="quantity" id="quantity" min="0" step="0.0001" required
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        class="form-control"
                                         placeholder="Enter quantity">
                                 </div>
 
                                 <div class="md:col-span-2">
-                                    <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes / Reason</label>
+                                    <label for="notes" class="form-label">Notes / Reason</label>
                                     <textarea name="notes" id="notes" rows="2"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        class="form-control"
                                         placeholder="e.g., Purchase order #123, Damaged goods, Physical count adjustment"></textarea>
                                 </div>
 
@@ -277,7 +277,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                         </svg>
                         <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">No inventory history yet.</p>
-                        <p class="text-xs text-gray-400 dark:text-gray-500">Adjustments and transactions will appear here.</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Adjustments and transactions will appear here.</p>
                     </div>
                     @endif
                 </div>

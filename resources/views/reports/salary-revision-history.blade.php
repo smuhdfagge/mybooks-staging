@@ -85,7 +85,7 @@
                                         @elseif($change < 0)
                                             <span class="text-red-600 dark:text-red-400">{{ number_format($change, 2) }}</span>
                                         @else
-                                            <span class="text-gray-400">—</span>
+                                            <span class="text-gray-500 dark:text-gray-400">—</span>
                                         @endif
                                     </td>
                                 </tr>
