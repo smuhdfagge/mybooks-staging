@@ -3,6 +3,7 @@
 namespace App\Livewire\PaymentsMade;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\PaymentMade;
 use App\Models\Vendor;
 use Illuminate\Support\Facades\DB;
@@ -11,7 +12,7 @@ use Livewire\WithPagination;
 
 class PaymentsMadeTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -193,7 +194,7 @@ class PaymentsMadeTable extends Component
             ->when($this->dateFrom, fn ($q) => $q->whereDate('payment_date', '>=', $this->dateFrom))
             ->when($this->dateTo, fn ($q) => $q->whereDate('payment_date', '<=', $this->dateTo))
             ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->perPage);
+            ->paginate($this->pageSize());
 
         $vendors = Vendor::where('is_active', true)->orderBy('company_name')->get();
 

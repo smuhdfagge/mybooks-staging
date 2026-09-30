@@ -3,13 +3,14 @@
 namespace App\Livewire\Vendors;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\Vendor;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class VendorsTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -187,7 +188,7 @@ class VendorsTable extends Component
             }))
             ->when($this->status !== '', fn ($q) => $q->where('is_active', $this->status === 'active'))
             ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->perPage);
+            ->paginate($this->pageSize());
 
         return view('livewire.vendors.vendors-table', [
             'vendors' => $vendors,

@@ -428,4 +428,37 @@ class PhaseDPerformanceTest extends TestCase
         $again = $this->countQueries(fn () => $this->get(route('dashboard'))->assertOk());
         $this->assertLessThanOrEqual($first - 7, $again, "first={$first} again={$again}");
     }
+
+    // ── P6: page sizes ─────────────────────────────────────────
+
+    public function test_p6_list_tables_only_accept_the_offered_page_sizes(): void
+    {
+        $this->createSuperAdmin();
+        Customer::factory()->count(12)->create(['tenant_id' => $this->tenant->id]);
+
+        // 100,000 rows asked for: back to the default of 10.
+        $table = Livewire::test(CustomersTable::class)->set('perPage', 100000);
+        $table->assertSet('perPage', 10);
+        $this->assertSame(10, $table->viewData('customers')->perPage());
+        $this->assertCount(10, $table->viewData('customers')->items());
+
+        // An offered size is kept.
+        $table->set('perPage', 50);
+        $this->assertSame(50, $table->viewData('customers')->perPage());
+
+        // Every list table with a page size uses the same rule.
+        $checked = 0;
+        foreach ((new \Symfony\Component\Finder\Finder)->files()->in(app_path('Livewire'))->name('*.php') as $file) {
+            $class = 'App\\Livewire\\'.str_replace(['/', '.php'], ['\\', ''], $file->getRelativePathname());
+            if (! class_exists($class) || ! property_exists($class, 'perPage')) {
+                continue;
+            }
+            $default = (new \ReflectionClass($class))->getDefaultProperties()['perPage'];
+            $this->assertContains($default, CustomersTable::PAGE_SIZES, $class);
+
+            Livewire::test($class)->set('perPage', 5000)->assertSet('perPage', $default);
+            $checked++;
+        }
+        $this->assertGreaterThanOrEqual(28, $checked);
+    }
 }

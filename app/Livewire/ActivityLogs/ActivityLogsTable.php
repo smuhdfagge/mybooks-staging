@@ -4,6 +4,7 @@ namespace App\Livewire\ActivityLogs;
 
 use App\Jobs\ProcessExport;
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\ActivityLog;
 use App\Models\Export;
 use App\Models\User;
@@ -12,7 +13,7 @@ use Livewire\WithPagination;
 
 class ActivityLogsTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -128,7 +129,7 @@ class ActivityLogsTable extends Component
             $query->whereDate('created_at', '<=', $this->endDate);
         }
 
-        $logs = $query->paginate($this->perPage);
+        $logs = $query->paginate($this->pageSize());
 
         // Get filter options
         $users = User::where('tenant_id', $tenantId)->orderBy('name')->get();

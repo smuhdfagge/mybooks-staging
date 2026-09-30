@@ -3,6 +3,7 @@
 namespace App\Livewire\Journals;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\Journal;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -10,7 +11,7 @@ use Livewire\WithPagination;
 
 class JournalsTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -225,7 +226,7 @@ class JournalsTable extends Component
                 $query->where('status', $this->statusFilter);
             })
             ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->perPage);
+            ->paginate($this->pageSize());
 
         return view('livewire.journals.journals-table', [
             'journals' => $journals,

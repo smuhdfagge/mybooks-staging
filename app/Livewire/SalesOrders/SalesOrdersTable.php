@@ -3,6 +3,7 @@
 namespace App\Livewire\SalesOrders;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\Customer;
 use App\Models\SalesOrder;
 use Livewire\Component;
@@ -10,7 +11,7 @@ use Livewire\WithPagination;
 
 class SalesOrdersTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -219,7 +220,7 @@ class SalesOrdersTable extends Component
                 $query->whereDate('order_date', '<=', $this->dateTo);
             })
             ->orderBy('created_at', 'desc')
-            ->paginate($this->perPage);
+            ->paginate($this->pageSize());
 
         $customers = Customer::where('is_active', true)->orderBy('name')->get();
 
