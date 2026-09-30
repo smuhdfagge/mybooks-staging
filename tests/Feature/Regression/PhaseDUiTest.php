@@ -58,4 +58,38 @@ class PhaseDUiTest extends TestCase
         $this->assertDoesNotMatchRegularExpression('/<script[^>]+alpinejs/i', $html);
         $this->assertStringNotContainsString('cdn.jsdelivr.net', $html);
     }
+
+    // ── U9: messages shown once ─────────────────────────────────
+
+    public function test_u9_success_and_error_messages_are_shown_once(): void
+    {
+        $this->createAuthenticatedUser([
+            'view purchase-orders', 'view sales-receipts', 'create journals', 'view journals',
+        ]);
+
+        foreach (['purchase-orders.index', 'sales-receipts.index', 'journals.create'] as $route) {
+            $html = $this->withSession(['success' => 'Saved-once-ok', 'error' => 'Failed-once-ok'])
+                ->get(route($route))->assertOk()->getContent();
+
+            $this->assertSame(1, substr_count($html, 'Saved-once-ok'), $route);
+            $this->assertSame(1, substr_count($html, 'Failed-once-ok'), $route);
+        }
+    }
+
+    public function test_u9_only_the_layout_renders_session_messages(): void
+    {
+        $offenders = [];
+        $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(resource_path('views')));
+        foreach ($it as $file) {
+            $path = $file->getPathname();
+            if (! str_ends_with($path, '.blade.php') || preg_match('#/(layouts|auth|admin|pages|livewire)/#', $path)) {
+                continue;
+            }
+            if (preg_match('/\{\{\s*session\(\'(success|error)\'\)/', file_get_contents($path))) {
+                $offenders[] = str_replace(resource_path('views').'/', '', $path);
+            }
+        }
+
+        $this->assertSame([], $offenders);
+    }
 }

@@ -21,20 +21,12 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-            {{-- Flash Messages --}}
-            @if(session('success'))
-                <div class="mb-4 bg-green-50 dark:bg-green-900/50 border-l-4 border-green-400 p-4 rounded">
-                    <p class="text-sm text-green-700 dark:text-green-300">{{ session('success') }}</p>
-                </div>
-            @endif
-            @if(session('error'))
+            {{-- The message itself is shown by the layout (U9); this adds the figure. --}}
+            @if(session('error') && session('reconciliation_difference'))
                 <div class="mb-4 bg-red-50 dark:bg-red-900/50 border-l-4 border-red-400 p-4 rounded">
-                    <p class="text-sm text-red-700 dark:text-red-300">{{ session('error') }}</p>
-                    @if(session('reconciliation_difference'))
-                        <p class="text-sm text-red-600 dark:text-red-400 mt-1">
-                            Difference: {{ $bank->currency }} {{ number_format(session('reconciliation_difference'), 2) }}
-                        </p>
-                    @endif
+                    <p class="text-sm text-red-700 dark:text-red-300">
+                        Difference: {{ $bank->currency }} {{ number_format(session('reconciliation_difference'), 2) }}
+                    </p>
                 </div>
             @endif
 

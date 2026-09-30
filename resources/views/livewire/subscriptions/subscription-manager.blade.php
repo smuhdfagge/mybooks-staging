@@ -5,7 +5,8 @@
             <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage your subscription plan and billing</p>
         </div>
 
-        @if (session()->has('success'))
+        {{-- On a full page load the layout shows the message; here only after an action (U9). --}}
+        @if (\Livewire\Livewire::isLivewireRequest() && session()->has('success'))
             <div class="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                 <div class="flex">
                     <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
@@ -16,7 +17,7 @@
             </div>
         @endif
 
-        @if (session()->has('error'))
+        @if (\Livewire\Livewire::isLivewireRequest() && session()->has('error'))
             <div class="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
                 <p class="text-sm text-red-800 dark:text-red-200">{{ session('error') }}</p>
             </div>
