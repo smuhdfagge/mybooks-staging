@@ -390,4 +390,202 @@ class PhaseDApiOpsTest extends TestCase
         }
         $this->assertEqualsWithDelta(550000, (float) $run->gross_salary, 0.001);
     }
+
+    // ── O7: Nigeria Data Protection Act ─────────────────────────
+
+    private function adminRole(): \App\Models\Role
+    {
+        return \App\Models\Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => null]);
+    }
+
+    /**
+     * A business with data in parent tables, child tables without
+     * tenant_id, and user-keyed tables.
+     *
+     * @return array{0: \App\Models\Tenant, 1: \App\Models\User}
+     */
+    private function businessWithData(): array
+    {
+        [$tenant] = $this->createTenantWithSubscription();
+        $user = $this->createUserForTenant($tenant, ['view customers']);
+        $user->assignRole($this->adminRole());
+        $user->createToken('phone');
+        $role = \App\Models\Role::create(['name' => 'clerk-'.$tenant->id, 'guard_name' => 'web', 'tenant_id' => $tenant->id]);
+        $role->givePermissionTo('view customers');
+
+        $customer = Customer::factory()->create(['tenant_id' => $tenant->id]);
+        $invoice = \App\Models\Invoice::withoutEvents(fn () => \App\Models\Invoice::factory()->create(['tenant_id' => $tenant->id, 'customer_id' => $customer->id]));
+        DB::table('invoice_items')->insert(['invoice_id' => $invoice->id, 'description' => 'Goods', 'quantity' => 1, 'unit_price' => 100, 'total' => 100]);
+        $journal = \App\Models\Journal::withoutEvents(fn () => \App\Models\Journal::factory()->create(['tenant_id' => $tenant->id]));
+        $account = \App\Models\ChartOfAccount::factory()->create(['tenant_id' => $tenant->id]);
+        DB::table('journal_entries')->insert(['journal_id' => $journal->id, 'account_id' => $account->id, 'debit' => 100, 'credit' => 0]);
+        DB::table('sessions')->insert(['id' => 'sess-'.$tenant->id, 'user_id' => $user->id, 'payload' => 'x', 'last_activity' => time()]);
+
+        return [$tenant, $user];
+    }
+
+    /** @return array<string, int> */
+    private function rowCounts(): array
+    {
+        $counts = [];
+        foreach (\Illuminate\Support\Facades\Schema::getTableListing(\Illuminate\Support\Facades\Schema::getCurrentSchemaName(), false) as $table) {
+            $counts[$table] = DB::table($table)->count();
+        }
+
+        return $counts;
+    }
+
+    public function test_o7_purge_erases_one_business_and_leaves_the_other_untouched(): void
+    {
+        [$a, $userA] = $this->businessWithData();
+        [$b, $userB] = $this->businessWithData();
+        $purger = app(\App\Services\TenantPurger::class);
+        $this->assertSame([], $purger->unclassifiedTables(), 'every table is classified');
+
+        // Rows B owns, table by table, before the purge.
+        $ownedByB = [];
+        foreach ($purger->tenantTables() as $table) {
+            $ownedByB[$table] = DB::table($table)->where('tenant_id', $b->id)->count();
+        }
+        $before = $this->rowCounts();
+
+        $deleted = $purger->purge($a);
+
+        foreach ($purger->tenantTables() as $table) {
+            $this->assertSame(0, DB::table($table)->where('tenant_id', $a->id)->count(), "{$table} still has A's rows");
+            $this->assertSame($ownedByB[$table], DB::table($table)->where('tenant_id', $b->id)->count(), "{$table} lost B's rows");
+        }
+        $this->assertNull(DB::table('tenants')->where('id', $a->id)->first());
+        $this->assertNotNull(DB::table('tenants')->where('id', $b->id)->first());
+
+        // Children and user-keyed rows: A's are gone, B's are still there.
+        $this->assertSame(1, DB::table('invoice_items')->count());
+        $this->assertSame(1, DB::table('journal_entries')->count());
+        $this->assertSame(0, DB::table('personal_access_tokens')->where('tokenable_id', $userA->id)->count());
+        $this->assertSame(1, DB::table('personal_access_tokens')->where('tokenable_id', $userB->id)->count());
+        $this->assertSame(0, DB::table('model_has_roles')->where('model_id', $userA->id)->count());
+        $this->assertTrue($userB->fresh()->hasRole('admin'));
+        $this->assertSame(['sess-'.$b->id], DB::table('sessions')->pluck('id')->all());
+
+        // Shared tables (plans, permissions, ...) are not touched at all.
+        $after = $this->rowCounts();
+        foreach (\App\Services\TenantPurger::SHARED_TABLES as $table) {
+            if ($table !== 'tenants' && isset($before[$table])) {
+                $this->assertSame($before[$table], $after[$table], "{$table} count");
+            }
+        }
+        $this->assertNotEmpty($deleted);
+    }
+
+    public function test_o7_owner_closes_the_business_and_it_is_erased_after_30_days(): void
+    {
+        [$tenant, $owner] = $this->businessWithData();
+        [$other] = $this->businessWithData();
+
+        // Another admin of the same business is not the owner.
+        $second = $this->createUserForTenant($tenant);
+        $second->assignRole($this->adminRole());
+        $this->actingAs($second)->post(route('settings.close-organisation.store'), [
+            'password' => 'password', 'confirm_name' => $tenant->name,
+        ])->assertForbidden();
+
+        $this->actingAs($owner);
+        $this->post(route('settings.close-organisation.store'), ['password' => 'password', 'confirm_name' => 'wrong'])
+            ->assertSessionHasErrors('confirm_name');
+        $this->post(route('settings.close-organisation.store'), ['password' => 'password', 'confirm_name' => $tenant->name])
+            ->assertSessionHasNoErrors();
+
+        $tenant->refresh();
+        $this->assertTrue($tenant->isClosing());
+        $this->assertEqualsWithDelta(now()->addDays(30)->getTimestamp(), $tenant->closure_purge_at->getTimestamp(), 5);
+        $request = \App\Models\DataRequest::where('tenant_id', $tenant->id)->sole();
+        $this->assertSame(['closure', 'scheduled'], [$request->type, $request->status]);
+
+        // Nothing happens before the 30 days are up.
+        $this->travel(29)->days();
+        $this->artisan('tenants:purge-closed')->assertSuccessful();
+        $this->assertNotNull(DB::table('tenants')->where('id', $tenant->id)->first());
+
+        $this->travel(2)->days();
+        $this->artisan('tenants:purge-closed')->assertSuccessful();
+        $this->assertNull(DB::table('tenants')->where('id', $tenant->id)->first());
+        $this->assertSame(0, DB::table('customers')->where('tenant_id', $tenant->id)->count());
+        $this->assertSame(1, DB::table('customers')->where('tenant_id', $other->id)->count());
+        $this->assertSame('completed', $request->fresh()->status, 'the log survives the erasure');
+
+        $events = collect(app(\Illuminate\Console\Scheduling\Schedule::class)->events())->map(fn ($e) => (string) $e->command);
+        $this->assertTrue($events->contains(fn ($c) => str_contains($c, 'tenants:purge-closed')));
+    }
+
+    public function test_o7_closing_can_be_cancelled_within_30_days(): void
+    {
+        [$tenant, $owner] = $this->businessWithData();
+        $this->actingAs($owner)->post(route('settings.close-organisation.store'), ['password' => 'password', 'confirm_name' => $tenant->name]);
+        $this->get(route('settings.close-organisation'))->assertOk()->assertSee('Cancel closing');
+
+        $this->delete(route('settings.close-organisation.cancel'))->assertRedirect();
+        $this->assertFalse($tenant->fresh()->isClosing());
+        $this->assertSame('cancelled', \App\Models\DataRequest::where('tenant_id', $tenant->id)->sole()->status);
+
+        $this->travel(31)->days();
+        $this->artisan('tenants:purge-closed')->assertSuccessful();
+        $this->assertNotNull(DB::table('tenants')->where('id', $tenant->id)->first());
+    }
+
+    public function test_o7_the_last_admin_cannot_be_deleted_or_demoted(): void
+    {
+        [$tenant, $admin] = $this->businessWithData();
+        $manager = $this->createUserForTenant($tenant, ['delete users', 'edit users']);
+
+        // Deleting their own account from the profile page.
+        $this->actingAs($admin)->delete(route('profile.destroy'), ['password' => 'password'])
+            ->assertSessionHasErrorsIn('userDeletion', 'password');
+        $this->assertNotNull($admin->fresh());
+
+        // Someone else deleting, demoting or deactivating them.
+        $this->actingAs($manager)->delete(route('settings.users.destroy', $admin))->assertSessionHas('error');
+        $this->assertNotNull($admin->fresh());
+        $this->put(route('settings.users.update', $admin), ['name' => 'A', 'email' => $admin->email, 'is_active' => true, 'roles' => []])
+            ->assertSessionHas('error');
+        $this->assertTrue($admin->fresh()->hasRole('admin'));
+
+        // With a second admin, the first can go.
+        $manager->assignRole($this->adminRole());
+        $this->delete(route('settings.users.destroy', $admin))->assertSessionHas('success');
+    }
+
+    public function test_o7_email_addresses_are_masked_in_log_files(): void
+    {
+        $path = storage_path('logs/o7-mask-test.log');
+        @unlink($path);
+        config(['logging.channels.o7' => [
+            'driver' => 'single', 'path' => $path, 'level' => 'debug',
+            'tap' => [\App\Logging\MaskEmailAddresses::class], 'replace_placeholders' => true,
+        ]]);
+        $this->assertSame([\App\Logging\MaskEmailAddresses::class], config('logging.channels.daily.tap'));
+
+        \Illuminate\Support\Facades\Log::channel('o7')->info('Invoice sent to aisha.bello@example.com', ['to' => 'musa@kano.ng']);
+        $content = (string) file_get_contents($path);
+        @unlink($path);
+
+        $this->assertStringNotContainsString('aisha.bello@example.com', $content);
+        $this->assertStringNotContainsString('musa@kano.ng', $content);
+        $this->assertStringContainsString('a***@example.com', $content);
+    }
+
+    public function test_o7_privacy_page_lists_sub_processors_and_admins_see_the_request_log(): void
+    {
+        $this->get(route('privacy-policy'))->assertOk()
+            ->assertSee('Sub-processors')->assertSee('Paystack')->assertSee('Tawk.to')->assertSee('Email delivery provider');
+
+        [$tenant, $owner] = $this->businessWithData();
+        \App\Models\DataRequest::record('access', $tenant, $owner);
+        $admin = \App\Models\AdminUser::create(['name' => 'Ops', 'email' => 'ops@example.com', 'password' => 'Secret-123!', 'is_active' => true, 'role' => 'admin']);
+
+        $this->actingAs($admin, 'admin')->get(route('admin.data-requests.index'))->assertOk()->assertSee($tenant->name);
+        $this->post(route('admin.data-requests.store'), ['type' => 'erasure', 'requester' => 'A customer by email'])->assertRedirect();
+        $logged = \App\Models\DataRequest::where('type', 'erasure')->sole();
+        $this->patch(route('admin.data-requests.complete', $logged))->assertRedirect();
+        $this->assertSame('completed', $logged->fresh()->status);
+    }
 }

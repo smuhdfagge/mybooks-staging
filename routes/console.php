@@ -67,6 +67,13 @@ Schedule::command('transactions:process-recurring')
 |--------------------------------------------------------------------------
 */
 
+// Erase businesses closed by their owner more than 30 days ago (O7)
+Schedule::command('tenants:purge-closed')
+    ->dailyAt('02:30')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->appendOutputTo(storage_path('logs/tenant-purge.log'));
+
 // Run data retention purge on the 1st of every month at 2:00 AM
 Schedule::command('retention:purge --force')
     ->monthlyOn(1, '02:00')

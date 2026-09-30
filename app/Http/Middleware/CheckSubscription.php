@@ -16,6 +16,7 @@ class CheckSubscription
         'profile.update',
         'profile.destroy',
         'settings.subscription',
+        'settings.close-organisation', // an owner can close even when unpaid (O7)
         'logout',
     ];
 

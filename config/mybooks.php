@@ -75,6 +75,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Sub-processors (finding O7)
+    |--------------------------------------------------------------------------
+    |
+    | Companies that process personal data for MyBooks, listed on the privacy
+    | page as the Nigeria Data Protection Act expects. Keep this up to date
+    | when a provider changes (for example the email or hosting provider).
+    |
+    */
+
+    'sub_processors' => [
+        ['name' => 'Paystack Payments Ltd', 'purpose' => 'Subscription payments (card and bank details are handled by Paystack, not stored by MyBooks)', 'location' => 'Nigeria'],
+        ['name' => 'Email delivery provider (SMTP)', 'purpose' => 'Sending invoices, reminders, password resets and other emails', 'location' => 'Varies by provider'],
+        ['name' => 'Tawk.to Inc.', 'purpose' => 'Live chat support on the website and app', 'location' => 'United States'],
+        ['name' => 'Hosting provider', 'purpose' => 'Servers, database and file storage, and backups', 'location' => 'Varies by provider'],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Data Retention Policies
     |--------------------------------------------------------------------------
     |

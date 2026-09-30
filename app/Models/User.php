@@ -61,6 +61,23 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->is_super_admin === true;
     }
 
+    /**
+     * The only active admin left in their business. They can't be deleted,
+     * deactivated or lose the admin role, or nobody could manage it (O7).
+     */
+    public function isLastActiveAdmin(): bool
+    {
+        if ($this->tenant_id === null || ! $this->hasRole('admin')) {
+            return false;
+        }
+
+        return ! static::where('tenant_id', $this->tenant_id)
+            ->whereKeyNot($this->id)
+            ->where('is_active', true)
+            ->whereHas('roles', fn ($q) => $q->where('name', 'admin'))
+            ->exists();
+    }
+
     public function belongsToTenant($tenantId)
     {
         return $this->tenant_id === $tenantId;

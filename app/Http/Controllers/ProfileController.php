@@ -48,6 +48,13 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
+        // The last admin can't leave the business with nobody to run it (O7).
+        if ($user->isLastActiveAdmin()) {
+            return Redirect::route('profile.edit')->withErrors([
+                'password' => 'You are the only admin of this business. Make another user an admin first, or close the organisation from Settings.',
+            ], 'userDeletion');
+        }
+
         Auth::logout();
 
         $user->delete();
