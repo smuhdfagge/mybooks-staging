@@ -390,7 +390,11 @@ class AnalyticsController extends Controller
             ->withCount(['invoices' => function ($q) use ($startDate, $endDate) {
                 $q->whereBetween('invoice_date', [$startDate, $endDate]);
             }])
-            ->having('invoices_sum_total', '>', 0)
+            // Customers with invoiced sales in the period. HAVING without
+            // GROUP BY fails on SQLite (found by the O4 page test).
+            ->whereHas('invoices', function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('invoice_date', [$startDate, $endDate])->where('total', '>', 0);
+            })
             ->orderByDesc('invoices_sum_total')
             ->limit($limit)
             ->get();
