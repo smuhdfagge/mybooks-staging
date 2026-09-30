@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AdminUser;
 use App\Models\User;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
@@ -37,9 +38,9 @@ class TwoFactorService
     /**
      * Generate a QR code SVG for the user to scan.
      */
-    public function generateQrCodeSvg(User $user, string $secret): string
+    public function generateQrCodeSvg(User|AdminUser $user, string $secret): string
     {
-        $companyName = config('app.name', 'MyBooks');
+        $companyName = config('app.name', 'MyBooks').($user instanceof AdminUser ? ' Admin' : '');
 
         $qrCodeUrl = $this->engine->getQRCodeUrl(
             $companyName,
@@ -76,7 +77,7 @@ class TwoFactorService
      * accepted (or an older one) is refused, so it can't be replayed within
      * its window (S7).
      */
-    public function verifyForUser(User $user, string $code): bool
+    public function verifyForUser(User|AdminUser $user, string $code): bool
     {
         $secret = $this->getDecryptedSecret($user);
 
@@ -119,7 +120,7 @@ class TwoFactorService
     /**
      * Use up a recovery code. Returns false when it doesn't match.
      */
-    public function useRecoveryCode(User $user, string $code): bool
+    public function useRecoveryCode(User|AdminUser $user, string $code): bool
     {
         $hashes = $this->recoveryCodeHashes($user);
         $code = $this->normaliseRecoveryCode($code);
@@ -136,40 +137,40 @@ class TwoFactorService
         return false;
     }
 
-    public function recoveryCodesLeft(User $user): int
+    public function recoveryCodesLeft(User|AdminUser $user): int
     {
         return count($this->recoveryCodeHashes($user));
     }
 
     // ── Per-account attempt limit (S7) ──────────────────────────
 
-    public function tooManyAttempts(User $user): bool
+    public function tooManyAttempts(User|AdminUser $user): bool
     {
         return RateLimiter::tooManyAttempts($this->throttleKey($user), self::MAX_ATTEMPTS);
     }
 
-    public function secondsUntilUnlocked(User $user): int
+    public function secondsUntilUnlocked(User|AdminUser $user): int
     {
         return RateLimiter::availableIn($this->throttleKey($user));
     }
 
-    public function recordFailedAttempt(User $user): void
+    public function recordFailedAttempt(User|AdminUser $user): void
     {
         RateLimiter::hit($this->throttleKey($user), self::DECAY_SECONDS);
     }
 
-    public function clearAttempts(User $user): void
+    public function clearAttempts(User|AdminUser $user): void
     {
         RateLimiter::clear($this->throttleKey($user));
     }
 
-    protected function throttleKey(User $user): string
+    protected function throttleKey(User|AdminUser $user): string
     {
         return 'two-factor:'.$user->getTable().':'.$user->getKey();
     }
 
     /** @return array<int, string> */
-    protected function recoveryCodeHashes(User $user): array
+    protected function recoveryCodeHashes(User|AdminUser $user): array
     {
         $codes = json_decode((string) $user->two_factor_recovery_codes, true);
 
@@ -202,7 +203,7 @@ class TwoFactorService
     /**
      * Get the decrypted secret from a user.
      */
-    public function getDecryptedSecret(User $user): ?string
+    public function getDecryptedSecret(User|AdminUser $user): ?string
     {
         if (empty($user->two_factor_secret)) {
             return null;

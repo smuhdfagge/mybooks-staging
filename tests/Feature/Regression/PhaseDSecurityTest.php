@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Regression;
 
+use App\Models\ActivityLog;
+use App\Models\AdminUser;
 use App\Models\ChartOfAccount;
 use App\Models\Customer;
 use App\Models\Export;
@@ -10,6 +12,7 @@ use App\Models\User;
 use App\Services\BankFileExporters\CsvBankExporter;
 use App\Services\ExportService;
 use App\Services\ReportExportService;
+use App\Services\TwoFactorService;
 use App\Support\Csv;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
@@ -219,5 +222,139 @@ class PhaseDSecurityTest extends TestCase
         $this->flushSession();
         $this->challenge($user, ['recovery_code' => 'AAAA1111-BBBB2222'])->assertSessionHas('error', 'Invalid recovery code.');
         $this->assertGuest();
+    }
+
+    // ── S2: admin panel second factor and audit trail ───────────
+
+    private function makeAdmin(bool $withTwoFactor = true): AdminUser
+    {
+        $admin = AdminUser::create([
+            'name' => 'Platform Admin',
+            'email' => 'root@mybooks.test',
+            'password' => 'correct-horse-battery',
+            'role' => AdminUser::ROLE_SUPER_ADMIN,
+            'is_active' => true,
+        ]);
+
+        if ($withTwoFactor) {
+            $admin->forceFill([
+                'two_factor_secret' => Crypt::encryptString(self::SECRET),
+                'two_factor_recovery_codes' => app(TwoFactorService::class)->hashRecoveryCodes(['AAAA1111-BBBB2222']),
+                'two_factor_confirmed_at' => now(),
+            ])->save();
+        }
+
+        return $admin;
+    }
+
+    /** Signed in to the admin panel with 2FA completed. */
+    private function actingAsAdmin(): AdminUser
+    {
+        $admin = $this->makeAdmin();
+        $this->actingAs($admin, 'admin')->withSession(['admin_two_factor_verified' => true]);
+
+        return $admin;
+    }
+
+    public function test_s2_admin_sign_in_needs_the_second_factor_and_has_no_remember_me(): void
+    {
+        $admin = $this->makeAdmin();
+
+        $this->get(route('admin.login'))->assertOk()->assertDontSee('name="remember"', false);
+
+        $this->post(route('admin.login'), ['email' => $admin->email, 'password' => 'correct-horse-battery', 'remember' => 'on'])
+            ->assertRedirect(route('admin.two-factor.challenge'));
+        $this->assertGuest('admin');
+        $this->get(route('admin.tenants.index'))->assertRedirect(route('admin.login'));
+        $this->get(route('admin.two-factor.challenge'))->assertOk()->assertSee('Two-factor authentication');
+
+        $this->post(route('admin.two-factor.verify'), ['code' => '000000'])->assertSessionHas('error');
+        $this->assertGuest('admin');
+
+        $this->post(route('admin.two-factor.verify'), ['code' => (new Google2FA)->getCurrentOtp(self::SECRET)])
+            ->assertRedirect(route('admin.tenants.index'));
+        $this->assertAuthenticatedAs($admin, 'admin');
+        $this->assertNull($admin->fresh()->remember_token);
+        $this->get(route('admin.tenants.index'))->assertOk();
+    }
+
+    public function test_s2_an_admin_without_2fa_must_set_it_up_before_anything_else(): void
+    {
+        $admin = $this->makeAdmin(withTwoFactor: false);
+
+        $this->post(route('admin.login'), ['email' => $admin->email, 'password' => 'correct-horse-battery'])
+            ->assertRedirect(route('admin.two-factor.setup'));
+        $this->get(route('admin.tenants.index'))->assertRedirect(route('admin.two-factor.setup'));
+        $this->get(route('admin.users.index'))->assertRedirect(route('admin.two-factor.setup'));
+
+        $this->get(route('admin.two-factor.setup'))->assertOk();
+        $secret = session('admin_two_factor_secret');
+        $this->post(route('admin.two-factor.confirm'), ['code' => (new Google2FA)->getCurrentOtp($secret)])
+            ->assertRedirect(route('admin.two-factor.recovery-codes'));
+        $this->get(route('admin.two-factor.recovery-codes'))->assertOk()->assertSee('only time they');
+
+        $this->assertNotNull($admin->fresh()->two_factor_confirmed_at);
+        $this->get(route('admin.tenants.index'))->assertOk();
+    }
+
+    public function test_s2_an_admin_session_without_the_second_factor_is_signed_out(): void
+    {
+        // e.g. an old remember-me cookie: signed in, but 2FA never done.
+        $admin = $this->makeAdmin();
+        $this->actingAs($admin, 'admin');
+
+        $this->get(route('admin.tenants.index'))->assertRedirect(route('admin.login'));
+        $this->assertGuest('admin');
+    }
+
+    public function test_s2_admin_account_locks_after_repeated_wrong_passwords_from_any_address(): void
+    {
+        $admin = $this->makeAdmin();
+
+        foreach (range(1, 5) as $i) {
+            $this->withServerVariables(['REMOTE_ADDR' => "10.1.0.{$i}"])
+                ->post(route('admin.login'), ['email' => $admin->email, 'password' => 'wrong']);
+        }
+
+        $this->withServerVariables(['REMOTE_ADDR' => '10.2.0.1'])
+            ->post(route('admin.login'), ['email' => $admin->email, 'password' => 'correct-horse-battery'])
+            ->assertSessionHasErrors('email');
+        $this->assertFalse(session()->has('admin_two_factor:id'));
+
+        $this->assertSame(4, ActivityLog::where('admin_user_id', $admin->id)->where('action', ActivityLog::ACTION_LOGIN_FAILED)->count());
+        $this->assertTrue(ActivityLog::where('admin_user_id', $admin->id)->where('action', ActivityLog::ACTION_ACCOUNT_LOCKED)->exists());
+    }
+
+    public function test_s2_admin_changes_are_logged_with_who_and_before_and_after(): void
+    {
+        [$tenant, , $subscription] = $this->createTenantWithSubscription(['is_active' => true]);
+        $admin = $this->actingAsAdmin();
+        $oldEnd = $subscription->ends_at->toDateTimeString();
+
+        $this->patch(route('admin.tenants.toggle-status', $tenant))->assertRedirect();
+        $this->patch(route('admin.tenants.extend-subscription', $tenant), ['extension_days' => 30])->assertRedirect();
+        $this->post(route('admin.users.store'), [
+            'name' => 'Second Admin', 'email' => 'second@mybooks.test', 'role' => AdminUser::ROLE_VIEWER,
+            'password' => 'Another-long-Passw0rd!', 'password_confirmation' => 'Another-long-Passw0rd!',
+        ])->assertRedirect(route('admin.users.index'));
+
+        $logs = ActivityLog::where('admin_user_id', $admin->id)->orderBy('id')->get();
+
+        $suspend = $logs->firstWhere('model_type', \App\Models\Tenant::class);
+        $this->assertNotNull($suspend);
+        $this->assertNull($suspend->tenant_id); // not shown in the business's own log
+        $this->assertStringContainsString('root@mybooks.test', $suspend->description);
+        $this->assertEquals(['is_active' => 1], array_map('intval', $suspend->old_values));
+        $this->assertEquals(['is_active' => 0], array_map('intval', $suspend->new_values));
+        $this->assertNotEmpty($suspend->integrity_hash);
+
+        $extend = $logs->firstWhere('model_type', \App\Models\Subscription::class);
+        $this->assertNotNull($extend);
+        $this->assertStringStartsWith(substr($oldEnd, 0, 10), (string) $extend->old_values['ends_at']);
+        $this->assertNotEquals($extend->old_values['ends_at'], $extend->new_values['ends_at']);
+
+        $created = $logs->firstWhere('action', ActivityLog::ACTION_CREATED);
+        $this->assertSame('second@mybooks.test', $created->new_values['email']);
+        $this->assertArrayNotHasKey('password', $created->new_values);
     }
 }

@@ -15,6 +15,7 @@ class ActivityLog extends Model
     protected $fillable = [
         'tenant_id',
         'user_id',
+        'admin_user_id',
         'user_name',
         'action',
         'model_type',

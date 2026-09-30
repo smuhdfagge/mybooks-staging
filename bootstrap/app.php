@@ -31,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin.auth' => \App\Http\Middleware\AdminAuthenticate::class,
             'admin.guest' => \App\Http\Middleware\RedirectIfAdminAuthenticated::class,
             'admin.role' => \App\Http\Middleware\AdminRole::class,
+            'admin.two-factor' => \App\Http\Middleware\EnsureAdminTwoFactor::class,
             'subscription' => \App\Http\Middleware\CheckSubscription::class,
             'plan' => \App\Http\Middleware\CheckPlanAccess::class,
             'two-factor' => \App\Http\Middleware\EnsureTwoFactorVerified::class,
