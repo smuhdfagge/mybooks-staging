@@ -65,11 +65,11 @@
                         </div>
 
                         <!-- Add Account Modal -->
-                        <div x-show="showAddAccount" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
+                        <div x-show="showAddAccount" x-cloak class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="budget-add-account-title" @keydown.escape.window="showAddAccount = false">
                             <div class="flex items-center justify-center min-h-screen px-4">
                                 <div class="fixed inset-0 bg-gray-500 bg-opacity-75" @click="showAddAccount = false"></div>
-                                <div class="relative bg-white dark:bg-gray-800 rounded-lg max-w-lg w-full p-6">
-                                    <h4 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Add Account to Budget</h4>
+                                <div class="relative bg-white dark:bg-gray-800 rounded-lg max-w-lg w-full p-6" x-trap.inert.noscroll="showAddAccount">
+                                    <h4 id="budget-add-account-title" class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Add Account to Budget</h4>
                                     <select x-model="selectedAccountId" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 mb-4">
                                         <option value="">Select an account...</option>
                                         <optgroup label="Income Accounts">
@@ -179,11 +179,11 @@
             </form>
 
             <!-- Import Lines Modal (outside main form to avoid nested forms) -->
-            <div x-show="showImportModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
+            <div x-show="showImportModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="budget-import-title" @keydown.escape.window="showImportModal = false">
                 <div class="flex items-center justify-center min-h-screen px-4">
                     <div class="fixed inset-0 bg-gray-500 bg-opacity-75" @click="showImportModal = false"></div>
-                    <div class="relative bg-white dark:bg-gray-800 rounded-lg max-w-lg w-full p-6">
-                        <h4 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Import Budget Line Items</h4>
+                    <div class="relative bg-white dark:bg-gray-800 rounded-lg max-w-lg w-full p-6" x-trap.inert.noscroll="showImportModal">
+                        <h4 id="budget-import-title" class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Import Budget Line Items</h4>
                         
                         <form action="{{ route('budgets.import', $budget) }}" method="POST" enctype="multipart/form-data">
                             @csrf

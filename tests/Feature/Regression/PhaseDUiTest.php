@@ -173,4 +173,42 @@ class PhaseDUiTest extends TestCase
 
         $this->assertSame([], $offenders);
     }
+
+    // ── U7: dialogs trap focus and close with Escape ────────────
+
+    public function test_u7_generate_periods_uses_the_shared_modal(): void
+    {
+        $html = $this->page('accounting-periods.index', ['view chart-of-accounts']);
+
+        $this->assertStringContainsString('data-modal="generate-periods"', $html);
+        $this->assertMatchesRegularExpression('/data-modal="generate-periods"\s+role="dialog"\s+aria-modal="true"\s+aria-labelledby="modal-generate-periods-title"/', $html);
+        $this->assertStringContainsString('id="modal-generate-periods-title"', $html);
+        $this->assertStringContainsString('x-trap.inert.noscroll="show"', $html);
+        $this->assertStringContainsString('x-on:keydown.escape.window', $html);
+        $this->assertStringContainsString('data-open-modal="generate-periods"', $html);
+        $this->assertStringNotContainsString('id="generateModal"', $html);
+    }
+
+    public function test_u7_every_dialog_traps_focus_and_closes_with_escape(): void
+    {
+        $offenders = [];
+        $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(resource_path('views')));
+        foreach ($it as $file) {
+            if (! str_ends_with($file->getFilename(), '.blade.php')) {
+                continue;
+            }
+            $path = str_replace(resource_path('views').'/', '', $file->getPathname());
+            $html = file_get_contents($file->getPathname());
+            // Hand-built pop-ups shown by toggling "hidden" on an id.
+            if (preg_match('/id="\w*Modal"[^>]*class="[^"]*hidden[^"]*fixed inset-0/', $html)) {
+                $offenders[] = $path.' (hidden-class modal)';
+            }
+            // Any dialog must trap focus and listen for Escape.
+            if (preg_match('/aria-modal="true"/', $html) && ! (str_contains($html, 'x-trap') && str_contains($html, 'escape'))) {
+                $offenders[] = $path;
+            }
+        }
+
+        $this->assertSame([], $offenders);
+    }
 }

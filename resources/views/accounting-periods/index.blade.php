@@ -5,7 +5,7 @@
                 Accounting Periods
             </h2>
             <div class="flex gap-2">
-                <button type="button" data-show="generateModal" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
+                <button type="button" data-open-modal="generate-periods" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                     </svg>
@@ -53,7 +53,7 @@
                             <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No accounting periods</h3>
                             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new accounting period or generating periods for a fiscal year.</p>
                             <div class="mt-6 flex justify-center gap-3">
-                                <button type="button" data-show="generateModal" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
+                                <button type="button" data-open-modal="generate-periods" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
                                     Generate Fiscal Year
                                 </button>
                                 <a href="{{ route('accounting-periods.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
@@ -139,10 +139,9 @@
     </div>
 
     <!-- Generate Periods Modal -->
-    <div id="generateModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
-            <div class="mt-3">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Generate Monthly Periods</h3>
+    <x-modal name="generate-periods" title="Generate Monthly Periods" maxWidth="md">
+        <div class="px-6 pb-5">
+            <div class="mt-4">
                 <form action="{{ route('accounting-periods.generate') }}" method="POST">
                     @csrf
                     <div class="mb-4">
@@ -167,7 +166,7 @@
                         </select>
                     </div>
                     <div class="flex justify-end gap-3 mt-6">
-                        <button type="button" data-hide="generateModal" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500">
+                        <button type="button" data-close-modal="generate-periods" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500">
                             Cancel
                         </button>
                         <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
@@ -177,5 +176,5 @@
                 </form>
             </div>
         </div>
-    </div>
+    </x-modal>
 </x-app-layout>

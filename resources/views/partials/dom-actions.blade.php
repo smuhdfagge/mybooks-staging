@@ -8,6 +8,7 @@
       data-confirm="Delete this?"     on a form (asks on submit) or a button/link (asks on click)
       data-print                      prints the page
       data-show="id" / data-hide="id" removes / adds the "hidden" class on that element
+      data-open-modal="name" / data-close-modal="name"   opens / closes an <x-modal name="name">
       data-set-value="id" data-value="123"   puts a value into an input
       data-submit-closest-form        submits the surrounding form (e.g. logout links)
       data-call="fnName"              calls window.fnName on click (or on change for inputs/selects)
@@ -93,7 +94,7 @@
     });
 
     document.addEventListener('click', function (event) {
-        var el = event.target.closest && event.target.closest('[data-confirm]:not(form), [data-print], [data-show], [data-hide], [data-set-value], [data-submit-closest-form], [data-call]');
+        var el = event.target.closest && event.target.closest('[data-confirm]:not(form), [data-print], [data-show], [data-hide], [data-set-value], [data-submit-closest-form], [data-call], [data-open-modal], [data-close-modal]');
         if (!el) { return; }
 
         if (el.matches('[data-confirm]:not(form)') && !window.confirm(el.dataset.confirm)) {
@@ -112,6 +113,12 @@
         if (el.dataset.hide) {
             var hidden = document.getElementById(el.dataset.hide);
             if (hidden) { hidden.classList.add('hidden'); }
+        }
+        if (el.dataset.openModal) {
+            window.dispatchEvent(new CustomEvent('open-modal', { detail: el.dataset.openModal }));
+        }
+        if (el.dataset.closeModal) {
+            window.dispatchEvent(new CustomEvent('close-modal', { detail: el.dataset.closeModal }));
         }
         if (el.dataset.setValue) {
             var input = document.getElementById(el.dataset.setValue);
