@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>Admin Login - MyBooks</title>
+    <title>Admin Two-Factor - MyBooks</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style nonce="{{ app('csp-nonce') }}">[x-cloak] { display: none !important; }</style>
     
     <script nonce="{{ app('csp-nonce') }}">
         // Refresh page if it's been idle for more than 2 hours to get fresh CSRF token
@@ -46,9 +47,11 @@
             <p class="text-indigo-200 dark:text-gray-400 mt-2">Tenant Management Portal</p>
         </div>
 
-        <!-- Login Card -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Sign in to your account</h2>
+        <!-- Two-factor Card (S2) -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8" x-data="{ useRecovery: false }">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Two-factor authentication</h2>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-6" x-show="!useRecovery">Enter the 6-digit code from your authenticator app.</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-6" x-show="useRecovery" x-cloak>Enter one of your recovery codes.</p>
 
             @if(session('error'))
                 <div class="mb-4 p-4 bg-red-100 dark:bg-red-900/50 border border-red-200 dark:border-red-700 rounded-lg">
@@ -56,43 +59,32 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('admin.login') }}">
+            <form method="POST" action="{{ route('admin.two-factor.verify') }}" x-show="!useRecovery">
                 @csrf
-
-                <div class="space-y-5">
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email address</label>
-                        <input type="email" 
-                               name="email" 
-                               id="email" 
-                               value="{{ old('email') }}"
-                               required 
-                               autofocus
-                               class="mt-1 w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                               placeholder="admin@example.com">
-                        @error('email')
-                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
-                        <input type="password" 
-                               name="password" 
-                               id="password" 
-                               required
-                               class="mt-1 w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                               placeholder="••••••••">
-                        @error('password')
-                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <button type="submit" class="w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition duration-200">
-                        Sign in
-                    </button>
-                </div>
+                <input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required autofocus
+                       class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center font-mono text-2xl tracking-widest focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                       placeholder="000000">
+                <button type="submit" class="mt-5 w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-lg shadow-lg transition duration-200">
+                    Verify
+                </button>
             </form>
+
+            <form method="POST" action="{{ route('admin.two-factor.verify') }}" x-show="useRecovery" x-cloak>
+                @csrf
+                <input type="text" name="recovery_code" required
+                       class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center font-mono tracking-widest focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                       placeholder="XXXXXXXX-XXXXXXXX">
+                <button type="submit" class="mt-5 w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-lg shadow-lg transition duration-200">
+                    Verify recovery code
+                </button>
+            </form>
+
+            <div class="mt-4 text-center">
+                <button type="button" @click="useRecovery = !useRecovery" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+                    <span x-show="!useRecovery">Use a recovery code instead</span>
+                    <span x-show="useRecovery" x-cloak>Use authenticator app instead</span>
+                </button>
+            </div>
         </div>
 
         <p class="text-center text-indigo-200 dark:text-gray-500 text-sm mt-6">

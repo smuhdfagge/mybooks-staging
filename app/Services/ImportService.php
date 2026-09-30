@@ -18,6 +18,7 @@ use App\Models\ItemCategory;
 use App\Models\Journal;
 use App\Models\JournalEntry;
 use App\Models\Vendor;
+use App\Support\Csv;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -153,7 +154,8 @@ class ImportService
                 }
 
                 if (count($row) === count($headers)) {
-                    $data[] = array_combine($headers, $row);
+                    // Our own exports mark formula-like cells; take the mark off (S4).
+                    $data[] = array_combine($headers, array_map([Csv::class, 'unescapeCell'], $row));
                 }
             }
             fclose($handle);

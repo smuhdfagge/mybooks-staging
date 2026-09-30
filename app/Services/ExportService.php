@@ -14,6 +14,7 @@ use App\Models\Item;
 use App\Models\Journal;
 use App\Models\Payroll;
 use App\Models\Vendor;
+use App\Support\Csv;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -782,11 +783,11 @@ class ExportService
         $output = fopen('php://temp', 'r+');
 
         // Write headers
-        fputcsv($output, array_keys($data[0]));
+        Csv::writeRow($output, array_keys($data[0]));
 
         // Write data
         foreach ($data as $row) {
-            fputcsv($output, array_values($row));
+            Csv::writeRow($output, array_values($row));
         }
 
         rewind($output);
@@ -810,11 +811,11 @@ class ExportService
         $handle = fopen($filepath, 'w');
 
         // Write headers
-        fputcsv($handle, array_keys($data[0]));
+        Csv::writeRow($handle, array_keys($data[0]));
 
         // Write data
         foreach ($data as $row) {
-            fputcsv($handle, array_values($row));
+            Csv::writeRow($handle, array_values($row));
         }
 
         fclose($handle);

@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ExtendSubscriptionRequest;
 use App\Http\Requests\Admin\UpdateSubscriptionRequest;
+use App\Models\ActivityLog;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\Tenant;
+use App\Services\AdminAuditService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -137,14 +139,16 @@ class AdminTenantController extends Controller
         $subscription = $tenant->activeSubscription;
 
         if ($subscription) {
+            $before = $subscription->getAttributes();
             $subscription->update($validated);
+            AdminAuditService::logChange("changed the subscription of business '{$tenant->name}' (#{$tenant->id})", $subscription, $before);
         } else {
             $plan = Plan::findOrFail($validated['plan_id']);
             $endDate = $validated['billing_cycle'] === 'monthly'
                 ? now()->addMonth()
                 : now()->addYear();
 
-            Subscription::create([
+            $subscription = Subscription::create([
                 'tenant_id' => $tenant->id,
                 'plan_id' => $validated['plan_id'],
                 'billing_cycle' => $validated['billing_cycle'],
@@ -152,6 +156,13 @@ class AdminTenantController extends Controller
                 'starts_at' => now(),
                 'ends_at' => $endDate,
             ]);
+            AdminAuditService::log(
+                ActivityLog::ACTION_CREATED,
+                "created a subscription for business '{$tenant->name}' (#{$tenant->id})",
+                $subscription,
+                null,
+                $subscription->only(['tenant_id', 'plan_id', 'billing_cycle', 'status', 'starts_at', 'ends_at']),
+            );
         }
 
         return back()->with('success', 'Subscription updated successfully.');
@@ -172,11 +183,18 @@ class AdminTenantController extends Controller
             return back()->with('error', 'This tenant has no subscription to extend.');
         }
 
+        $before = $subscription->getAttributes();
         $from = $subscription->ends_at && $subscription->ends_at->isFuture() ? $subscription->ends_at : now();
         $subscription->ends_at = Carbon::parse($from)->addDays($validated['extension_days']);
         $subscription->status = Subscription::STATUS_ACTIVE;
         $subscription->starts_at ??= now();
         $subscription->save();
+
+        AdminAuditService::logChange(
+            "extended the subscription of business '{$tenant->name}' (#{$tenant->id}) by {$validated['extension_days']} days",
+            $subscription,
+            $before
+        );
 
         return back()->with('success', "Subscription extended by {$validated['extension_days']} days.");
     }
@@ -186,10 +204,12 @@ class AdminTenantController extends Controller
      */
     public function toggleStatus(Tenant $tenant)
     {
+        $before = $tenant->getAttributes();
         $tenant->is_active = ! $tenant->is_active;
         $tenant->save();
 
         $status = $tenant->is_active ? 'activated' : 'deactivated';
+        AdminAuditService::logChange("{$status} business '{$tenant->name}' (#{$tenant->id})", $tenant, $before);
 
         return back()->with('success', "Tenant {$status} successfully.");
     }
@@ -205,8 +225,10 @@ class AdminTenantController extends Controller
             return back()->with('error', 'No active subscription to cancel.');
         }
 
+        $before = $subscription->getAttributes();
         $subscription->status = 'cancelled';
         $subscription->save();
+        AdminAuditService::logChange("cancelled the subscription of business '{$tenant->name}' (#{$tenant->id})", $subscription, $before);
 
         return back()->with('success', 'Subscription cancelled successfully.');
     }

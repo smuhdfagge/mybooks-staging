@@ -279,7 +279,13 @@
                 const cols = row.querySelectorAll('th, td');
                 let rowData = [];
                 cols.forEach(col => {
-                    let text = col.innerText.replace(/"/g, '""').trim();
+                    let text = col.innerText.trim();
+                    // Same rule as App\Support\Csv: a cell starting with = + - @
+                    // would run as a formula in Excel, unless it is a plain number (S4).
+                    if (/^[=+\-@\t\r]/.test(text) && !/^[+-]?(\d{1,3}(,\d{3})+|\d*)(\.\d+)?$/.test(text)) {
+                        text = "'" + text;
+                    }
+                    text = text.replace(/"/g, '""');
                     rowData.push('"' + text + '"');
                 });
                 csv.push(rowData.join(','));

@@ -261,7 +261,6 @@
 
         function addRow() {
             const tbody = document.getElementById('entriesBody');
-            const accountOptions = accountsJson.map(a => `<option value="${a.id}">${a.account_code} - ${a.name}</option>`).join('');
             
             const row = document.createElement('tr');
             row.className = 'entry-row';
@@ -270,7 +269,6 @@
                     <select name="entries[${rowIndex}][account_id]" required
                         class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         <option value="">Select Account</option>
-                        ${accountOptions}
                     </select>
                 </td>
                 <td class="px-4 py-2">
@@ -296,6 +294,10 @@
                     </button>
                 </td>
             `;
+            // Account names go in as text, never as HTML (S3).
+            const select = row.querySelector('select');
+            accountsJson.forEach(a => select.add(new Option(`${a.account_code} - ${a.name}`, a.id)));
+
             tbody.appendChild(row);
             rowIndex++;
 
