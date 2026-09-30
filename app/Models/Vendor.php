@@ -53,14 +53,34 @@ class Vendor extends Model
         return $this->hasMany(PaymentMade::class);
     }
 
-    public function getTotalPurchasesAttribute()
+    public function getTotalPurchasesAttribute($value)
     {
+        // Already loaded by withBalances(): no query per row (P4).
+        if (array_key_exists('total_purchases', $this->attributes)) {
+            return $value ?? 0;
+        }
+
         return $this->bills()->sum('total');
     }
 
-    public function getOutstandingBalanceAttribute()
+    public function getOutstandingBalanceAttribute($value)
     {
+        if (array_key_exists('outstanding_balance', $this->attributes)) {
+            return $value ?? 0;
+        }
+
         return $this->bills()->where('status', '!=', 'paid')->sum('balance_due');
+    }
+
+    /**
+     * Loads total purchases and the outstanding balance with the list
+     * query instead of two queries per vendor (P4).
+     */
+    public function scopeWithBalances($query)
+    {
+        return $query
+            ->withSum('bills as total_purchases', 'total')
+            ->withSum(['bills as outstanding_balance' => fn ($q) => $q->where('status', '!=', 'paid')], 'balance_due');
     }
 
     public function scopeActive($query)

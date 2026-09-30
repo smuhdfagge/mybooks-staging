@@ -220,6 +220,7 @@ class CustomersTable extends Component
     public function render()
     {
         $customers = Customer::query()
+            ->withBalances()
             ->when($this->search, fn ($q) => $q->where(function ($query) {
                 $query->where('name', 'like', "%{$this->search}%")
                     ->orWhere('email', 'like', "%{$this->search}%")

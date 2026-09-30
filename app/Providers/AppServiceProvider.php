@@ -13,9 +13,11 @@ use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -41,6 +43,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // In local development, log a warning whenever a relation is
+        // lazy-loaded, so N+1 queries are noticed early (P4). It only
+        // logs; nothing is blocked.
+        Model::preventLazyLoading($this->app->isLocal());
+        Model::handleLazyLoadingViolationUsing(function ($model, string $relation) {
+            Log::warning('Lazy loading '.get_class($model).'::'.$relation.' (possible N+1 query)');
+        });
+
         // Configure password strength defaults (NIST 800-63B compliant)
         Password::defaults(function () {
             return Password::min(8)

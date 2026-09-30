@@ -16,7 +16,7 @@ class CustomerController extends BaseApiController
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Customer::query();
+        $query = Customer::query()->withBalances(); // one query, not two per row (P4)
 
         // Search
         if ($search = $request->input('search')) {

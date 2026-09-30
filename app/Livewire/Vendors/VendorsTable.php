@@ -179,6 +179,7 @@ class VendorsTable extends Component
     public function render()
     {
         $vendors = Vendor::query()
+            ->withBalances()
             ->when($this->search, fn ($q) => $q->where(function ($query) {
                 $query->where('company_name', 'like', "%{$this->search}%")
                     ->orWhere('contact_name', 'like', "%{$this->search}%")

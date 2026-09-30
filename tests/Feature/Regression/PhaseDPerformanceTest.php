@@ -4,11 +4,14 @@ namespace Tests\Feature\Regression;
 
 use App\Jobs\ProcessExport;
 use App\Jobs\ProcessImport;
+use App\Livewire\Customers\CustomersTable;
 use App\Models\ActivityLog;
+use App\Models\Bill;
 use App\Models\Customer;
 use App\Models\Export;
 use App\Models\Import;
 use App\Models\Invoice;
+use App\Models\Vendor;
 use App\Services\ExportService;
 use App\Services\ImportService;
 use Illuminate\Support\Carbon;
@@ -16,6 +19,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
@@ -295,5 +299,76 @@ class PhaseDPerformanceTest extends TestCase
         $this->assertSame(3, $service->rows);
         $this->assertTrue($service->truncated);
         $this->assertSame(2000, ExportService::PDF_MAX_ROWS);
+    }
+
+    // ── P4: customer and vendor balances ───────────────────────
+
+    /** Adds customers with one unpaid (1,000) and one paid invoice each. */
+    private function addCustomers(int $count): void
+    {
+        for ($i = 0; $i < $count; $i++) {
+            $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+            Invoice::withoutEvents(function () use ($customer) {
+                Invoice::factory()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'status' => 'unpaid', 'total' => 1000, 'balance_due' => 1000]);
+                Invoice::factory()->paid()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id]);
+            });
+        }
+    }
+
+    /** Adds vendors with one unpaid (500) and one paid (537.50) bill each. */
+    private function addVendors(int $count): void
+    {
+        for ($i = 0; $i < $count; $i++) {
+            $vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+            Bill::withoutEvents(function () use ($vendor) {
+                Bill::factory()->create(['tenant_id' => $this->tenant->id, 'vendor_id' => $vendor->id, 'status' => 'unpaid', 'total' => 500, 'balance_due' => 500]);
+                Bill::factory()->paid()->create(['tenant_id' => $this->tenant->id, 'vendor_id' => $vendor->id]);
+            });
+        }
+    }
+
+    public function test_p4_customer_list_loads_balances_without_a_query_per_row(): void
+    {
+        $this->createAuthenticatedUser(['view customers']);
+        $this->addCustomers(2);
+        Livewire::test(CustomersTable::class); // warm up
+
+        $few = $this->countQueries(fn () => Livewire::test(CustomersTable::class)->assertSee('1,000.00'));
+        $this->addCustomers(6);
+        $many = $this->countQueries(fn () => Livewire::test(CustomersTable::class)->assertSee('1,000.00'));
+
+        $this->assertSame($few, $many, "2 customers: {$few} queries, 8 customers: {$many}");
+    }
+
+    public function test_p4_vendor_api_and_sync_load_balances_without_a_query_per_row(): void
+    {
+        $this->createAuthenticatedUser(['view vendors', 'view customers']);
+        $token = $this->user->createToken('test')->plainTextToken;
+        $this->addVendors(2);
+        $this->addCustomers(2);
+        $this->withToken($token)->getJson('/api/v1/vendors')->assertOk(); // warm up
+
+        $few = $this->countQueries(fn () => $this->withToken($token)->getJson('/api/v1/vendors')->assertOk());
+        $fewSync = $this->countQueries(fn () => $this->withToken($token)->getJson('/api/v1/sync?entities=customers,vendors')->assertOk());
+        $this->addVendors(8);
+        $this->addCustomers(8);
+        $response = null;
+        $many = $this->countQueries(function () use ($token, &$response) {
+            $response = $this->withToken($token)->getJson('/api/v1/vendors')->assertOk();
+        });
+        $sync = null;
+        $manySync = $this->countQueries(function () use ($token, &$sync) {
+            $sync = $this->withToken($token)->getJson('/api/v1/sync?entities=customers,vendors')->assertOk();
+        });
+
+        $this->assertSame($few, $many, "vendors API: {$few} then {$many} queries");
+        $this->assertSame($fewSync, $manySync, "sync: {$fewSync} then {$manySync} queries");
+
+        // Same figures as before: all bills in the total, paid ones left out of the balance.
+        $vendor = $response->json('data.0');
+        $this->assertEquals(1037.5, $vendor['total_purchases']);
+        $this->assertEquals(500, $vendor['outstanding_balance']);
+        $this->assertEquals(1000, $sync->json('data.data.customers.0.total_outstanding'));
+        $this->assertEquals(500, $sync->json('data.data.vendors.0.outstanding_balance'));
     }
 }
