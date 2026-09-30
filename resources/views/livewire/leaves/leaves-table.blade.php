@@ -8,12 +8,12 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4">
             <div class="sm:col-span-2 lg:col-span-1">
                 <label class="form-label">Search</label>
-                <input type="text" wire:model.live.debounce.300ms="search" placeholder="Search by employee..."
+                <input aria-label="Search by employee" type="text" wire:model.live.debounce.300ms="search" placeholder="Search by employee..."
                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
             </div>
             <div>
-                <label class="form-label">Employee</label>
-                <select wire:model.live="employee" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <label for="employee" class="form-label">Employee</label>
+                <select id="employee" wire:model.live="employee" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="">All Employees</option>
                     @foreach($employees ?? [] as $emp)
                         <option value="{{ $emp->id }}">{{ $emp->first_name }} {{ $emp->last_name }}</option>
@@ -21,8 +21,8 @@
                 </select>
             </div>
             <div>
-                <label class="form-label">Leave Type</label>
-                <select wire:model.live="leaveType" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <label for="leaveType" class="form-label">Leave Type</label>
+                <select id="leaveType" wire:model.live="leaveType" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="">All Types</option>
                     @foreach($leaveTypes ?? [] as $type)
                         <option value="{{ $type->id }}">{{ $type->name }}</option>
@@ -30,8 +30,8 @@
                 </select>
             </div>
             <div>
-                <label class="form-label">Status</label>
-                <select wire:model.live="status" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <label for="status" class="form-label">Status</label>
+                <select id="status" wire:model.live="status" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="">All Status</option>
                     <option value="pending">Pending</option>
                     <option value="approved">Approved</option>
@@ -39,8 +39,8 @@
                 </select>
             </div>
             <div>
-                <label class="form-label">Per Page</label>
-                <select wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <label for="perPage" class="form-label">Per Page</label>
+                <select id="perPage" wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="10">10</option>
                     <option value="25">25</option>
                     <option value="50">50</option>
@@ -57,7 +57,7 @@
                 <thead class="bg-gray-50 dark:bg-gray-700">
                     <tr>
                         <th scope="col" class="px-4 py-3 text-left">
-                            <input type="checkbox" wire:model.live="selectAll"
+                            <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
                                 class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                         </th>
                         <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Employee</th>
@@ -72,7 +72,7 @@
                     @forelse($leaves as $leave)
                         <tr wire:key="leave-{{ $leave->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700">
                             <td class="px-4 py-4">
-                                <input type="checkbox" wire:model.live="selectedItems" value="{{ $leave->id }}"
+                                <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $leave->id }}"
                                     class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                             </td>
                             <td class="px-4 sm:px-6 py-4">

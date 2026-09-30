@@ -36,14 +36,14 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                                 </svg>
                                 <input type="file" name="photo" accept="image/*" class="hidden" id="photo-upload"
-                                    @change="const file = $event.target.files[0]; if(file) { const reader = new FileReader(); reader.onload = e => preview = e.target.result; reader.readAsDataURL(file); }">
+                                    @change="const file = $event.target.files[0]; if(file) { const reader = new FileReader(); reader.onload = e => preview = e.target.result; reader.readAsDataURL(file); }" @error('photo') aria-invalid="true" aria-describedby="photo-error" @enderror>
                             </div>
                             <div>
                                 <label for="photo-upload" class="cursor-pointer inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition">
                                     Upload Photo
                                 </label>
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">JPG, PNG or GIF. Max 2MB.</p>
-                                @error('photo') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                @error('photo') <p id="photo-error" class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                             </div>
                         </div>
 
@@ -84,7 +84,7 @@
                                     search-placeholder="Search..."
                                     :has-error="$errors->has('gender')" />
                                 @error('gender')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="gender-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -98,7 +98,7 @@
                                     search-placeholder="Search..."
                                     :has-error="$errors->has('marital_status')" />
                                 @error('marital_status')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="marital_status-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -123,7 +123,7 @@
                                     search-placeholder="Search departments..."
                                     :has-error="$errors->has('department_id')" />
                                 @error('department_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="department_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -137,7 +137,7 @@
                                     search-placeholder="Search designations..."
                                     :has-error="$errors->has('designation_id')" />
                                 @error('designation_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="designation_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -155,7 +155,7 @@
                                     search-placeholder="Search..."
                                     :has-error="$errors->has('employment_type')" />
                                 @error('employment_type')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="employment_type-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -169,7 +169,7 @@
                                     search-placeholder="Search structures..."
                                     :has-error="$errors->has('salary_structure_id')" />
                                 @error('salary_structure_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="salary_structure_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -203,7 +203,7 @@
                                     search-placeholder="Search states..."
                                     :has-error="$errors->has('state')" />
                                 @error('state')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="state-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -217,7 +217,7 @@
                                     search-placeholder="Search countries..."
                                     :has-error="$errors->has('country')" />
                                 @error('country')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="country-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -255,7 +255,7 @@
                                 <x-field name="annual_rent" label="Annual rent paid (for PAYE rent relief)" type="number" :value="old('annual_rent')" step="0.01" min="0" />
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Nigeria: 20% of this, up to ₦500,000 a year, comes off pay before PAYE. Keep the tenancy receipt.</p>
                                 @error('annual_rent')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    <p id="annual_rent-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -289,10 +289,10 @@
                             Additional Notes
                         </h3>
                         <div>
-                            <textarea name="notes" id="notes" rows="3"
-                                class="form-control @error('notes') border-red-500 @enderror">{{ old('notes') }}</textarea>
+                            <textarea name="notes" id="notes" rows="3" aria-label="Additional notes"
+                                class="form-control @error('notes') border-red-500 @enderror" @error('notes') aria-invalid="true" aria-describedby="notes-error" @enderror>{{ old('notes') }}</textarea>
                             @error('notes')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="notes-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>

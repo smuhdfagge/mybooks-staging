@@ -5,12 +5,12 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div class="sm:col-span-2 lg:col-span-1">
                 <label class="form-label">Search</label>
-                <input type="text" wire:model.live.debounce.300ms="search" placeholder="Search batch number..."
+                <input aria-label="Search batch number" type="text" wire:model.live.debounce.300ms="search" placeholder="Search batch number..."
                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
             </div>
             <div>
-                <label class="form-label">Status</label>
-                <select wire:model.live="status" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <label for="status" class="form-label">Status</label>
+                <select id="status" wire:model.live="status" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="">All Status</option>
                     <option value="draft">Draft</option>
                     <option value="approved">Approved</option>
@@ -19,8 +19,8 @@
                 </select>
             </div>
             <div>
-                <label class="form-label">Per Page</label>
-                <select wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <label for="perPage" class="form-label">Per Page</label>
+                <select id="perPage" wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="10">10</option>
                     <option value="25">25</option>
                     <option value="50">50</option>

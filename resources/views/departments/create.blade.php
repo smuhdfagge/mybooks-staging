@@ -46,7 +46,7 @@
                                     search-placeholder="Search departments..."
                                     :has-error="$errors->has('parent_id')" />
                                 @error('parent_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="parent_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -60,7 +60,7 @@
                                     search-placeholder="Search employees..."
                                     :has-error="$errors->has('manager_id')" />
                                 @error('manager_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="manager_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 

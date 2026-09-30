@@ -7,12 +7,12 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div class="sm:col-span-2 lg:col-span-1">
                 <label class="form-label">Search</label>
-                <input type="text" wire:model.live.debounce.300ms="search" placeholder="Search invoices..."
+                <input aria-label="Search invoices" type="text" wire:model.live.debounce.300ms="search" placeholder="Search invoices..."
                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
             </div>
             <div>
-                <label class="form-label">Status</label>
-                <select wire:model.live="status" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <label for="status" class="form-label">Status</label>
+                <select id="status" wire:model.live="status" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="">All Status</option>
                     <option value="draft">Draft</option>
                     <option value="sent">Sent</option>
@@ -23,8 +23,8 @@
                 </select>
             </div>
             <div>
-                <label class="form-label">Date Range</label>
-                <select wire:model.live="dateRange" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <label for="dateRange" class="form-label">Date Range</label>
+                <select id="dateRange" wire:model.live="dateRange" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="">All Time</option>
                     <option value="today">Today</option>
                     <option value="week">This Week</option>
@@ -33,8 +33,8 @@
                 </select>
             </div>
             <div>
-                <label class="form-label">Per Page</label>
-                <select wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <label for="perPage" class="form-label">Per Page</label>
+                <select id="perPage" wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="10">10</option>
                     <option value="25">25</option>
                     <option value="50">50</option>
@@ -51,7 +51,7 @@
                     <span class="font-semibold">{{ count($selectedItems) }}</span> invoice(s) selected
                 </span>
                 <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                    <select wire:model="bulkAction" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                    <select aria-label="Bulk action" wire:model="bulkAction" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                         <option value="">Select Action</option>
                         <option value="mark_sent">Mark as Sent</option>
                         <option value="mark_cancelled">Mark as Cancelled</option>
@@ -76,7 +76,7 @@
                 <thead class="bg-gray-50 dark:bg-gray-700">
                     <tr>
                         <th scope="col" class="px-4 sm:px-6 py-3 text-left">
-                            <input type="checkbox" wire:model.live="selectAll" 
+                            <input aria-label="Select all" type="checkbox" wire:model.live="selectAll" 
                                 class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-blue-600 shadow-sm focus:ring-blue-500">
                         </th>
                         <x-sort-header field="invoice_number" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Invoice #</x-sort-header>
@@ -92,7 +92,7 @@
                     @forelse($invoices as $invoice)
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 {{ in_array($invoice->id, $selectedItems) ? 'bg-blue-50 dark:bg-blue-900/20' : '' }}">
                             <td class="px-4 sm:px-6 py-4">
-                                <input type="checkbox" wire:model.live="selectedItems" value="{{ $invoice->id }}"
+                                <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $invoice->id }}"
                                     class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-blue-600 shadow-sm focus:ring-blue-500">
                             </td>
                             <td class="px-4 sm:px-6 py-4">

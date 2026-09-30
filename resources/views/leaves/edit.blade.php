@@ -60,9 +60,9 @@
                             <label for="reason" class="form-label">Reason</label>
                             <textarea name="reason" id="reason" rows="4"
                                 class="form-control @error('reason') border-red-500 @enderror"
-                                placeholder="Optional: Provide a reason for your leave request">{{ old('reason', $leave->reason) }}</textarea>
+                                placeholder="Optional: Provide a reason for your leave request" @error('reason') aria-invalid="true" aria-describedby="reason-error" @enderror>{{ old('reason', $leave->reason) }}</textarea>
                             @error('reason')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="reason-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>

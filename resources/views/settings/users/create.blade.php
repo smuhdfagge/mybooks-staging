@@ -27,7 +27,7 @@
                         <div>
                             <x-field name="name" label="Name" :value="old('name')" required />
                             @error('name')
-                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="name-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -35,7 +35,7 @@
                         <div>
                             <x-field name="email" label="Email" type="email" :value="old('email')" required />
                             @error('email')
-                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="email-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -43,7 +43,7 @@
                         <div>
                             <x-field name="phone" label="Phone" :value="old('phone')" />
                             @error('phone')
-                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="phone-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -51,7 +51,7 @@
                         <div>
                             <x-field name="password" label="Password" type="password" required />
                             @error('password')
-                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="password-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
                         </div>
 

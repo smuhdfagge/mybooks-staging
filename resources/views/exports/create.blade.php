@@ -35,7 +35,7 @@
                             <div>
                                 <label for="type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Data to Export <span class="text-red-500">*</span></label>
                                 <select name="type" id="type" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 @error('type') border-red-500 @enderror">
+                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 @error('type') border-red-500 @enderror" @error('type') aria-invalid="true" aria-describedby="type-error" @enderror>
                                     @foreach($exportTypes as $value => $label)
                                         @if($value !== 'full_backup')
                                             <option value="{{ $value }}" {{ old('type', $type) == $value ? 'selected' : '' }}>{{ $label }}</option>
@@ -43,7 +43,7 @@
                                     @endforeach
                                 </select>
                                 @error('type')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="type-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -53,7 +53,7 @@
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                                     @foreach($formats as $value => $label)
                                         <label class="relative flex items-center justify-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                                            <input type="radio" name="format" value="{{ $value }}" class="sr-only peer" {{ old('format', 'csv') == $value ? 'checked' : '' }}>
+                                            <input type="radio" name="format" value="{{ $value }}" class="sr-only peer" {{ old('format', 'csv') == $value ? 'checked' : '' }} @error('format') aria-invalid="true" aria-describedby="format-error" @enderror>
                                             <div class="text-center peer-checked:text-blue-600 dark:peer-checked:text-blue-400">
                                                 <div class="text-2xl mb-1">
                                                     @if($value === 'csv')
@@ -73,7 +73,7 @@
                                     @endforeach
                                 </div>
                                 @error('format')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="format-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -85,19 +85,19 @@
                                     <div>
                                         <label for="date_from" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">From</label>
                                         <input type="date" name="date_from" id="date_from" value="{{ old('date_from') }}"
-                                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" @error('date_from') aria-invalid="true" aria-describedby="date_from-error" @enderror>
                                     </div>
                                     <div>
                                         <label for="date_to" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">To</label>
                                         <input type="date" name="date_to" id="date_to" value="{{ old('date_to') }}"
-                                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" @error('date_to') aria-invalid="true" aria-describedby="date_to-error" @enderror>
                                     </div>
                                 </div>
                                 @error('date_from')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="date_from-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                                 @error('date_to')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="date_to-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>

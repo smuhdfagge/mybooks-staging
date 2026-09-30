@@ -65,11 +65,11 @@
                                                max="{{ $maxRefundable }}"
                                                step="0.01"
                                                required
-                                               class="block form-control">
+                                               class="block form-control" @error('amount') aria-invalid="true" aria-describedby="amount-error" @enderror>
                                     </div>
                                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Max: {{ number_format($maxRefundable, 2) }}</p>
                                     @error('amount')
-                                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                        <p id="amount-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                     @enderror
                                 </div>
 
@@ -83,9 +83,9 @@
                                            value="{{ old('refund_date', date('Y-m-d')) }}"
                                            max="{{ date('Y-m-d') }}"
                                            required
-                                           class="mt-1 block form-control">
+                                           class="mt-1 block form-control" @error('refund_date') aria-invalid="true" aria-describedby="refund_date-error" @enderror>
                                     @error('refund_date')
-                                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                        <p id="refund_date-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                     @enderror
                                 </div>
                             </div>
@@ -99,7 +99,7 @@
                                     <select name="refund_method" 
                                             id="refund_method" 
                                             required
-                                            class="mt-1 block form-control">
+                                            class="mt-1 block form-control" @error('refund_method') aria-invalid="true" aria-describedby="refund_method-error" @enderror>
                                         <option value="">Select Method</option>
                                         @foreach($methods as $value => $label)
                                             <option value="{{ $value }}" {{ old('refund_method') === $value ? 'selected' : '' }}>
@@ -108,7 +108,7 @@
                                         @endforeach
                                     </select>
                                     @error('refund_method')
-                                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                        <p id="refund_method-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                     @enderror
                                 </div>
 
@@ -118,7 +118,7 @@
                                     </label>
                                     <select name="reason" 
                                             id="reason"
-                                            class="mt-1 block form-control">
+                                            class="mt-1 block form-control" @error('reason') aria-invalid="true" aria-describedby="reason-error" @enderror>
                                         <option value="">Select Reason</option>
                                         @foreach($reasons as $value => $label)
                                             <option value="{{ $value }}" {{ old('reason') === $value ? 'selected' : '' }}>
@@ -127,7 +127,7 @@
                                         @endforeach
                                     </select>
                                     @error('reason')
-                                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                        <p id="reason-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                     @enderror
                                 </div>
                             </div>
@@ -142,9 +142,9 @@
                                        id="reference" 
                                        value="{{ old('reference') }}"
                                        placeholder="e.g., Check number, transaction ID"
-                                       class="mt-1 block form-control">
+                                       class="mt-1 block form-control" @error('reference') aria-invalid="true" aria-describedby="reference-error" @enderror>
                                 @error('reference')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="reference-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -157,9 +157,9 @@
                                           id="notes" 
                                           rows="3"
                                           placeholder="Additional details about this refund..."
-                                          class="mt-1 block form-control">{{ old('notes') }}</textarea>
+                                          class="mt-1 block form-control" @error('notes') aria-invalid="true" aria-describedby="notes-error" @enderror>{{ old('notes') }}</textarea>
                                 @error('notes')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="notes-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 

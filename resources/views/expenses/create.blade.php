@@ -52,7 +52,7 @@
                                     search-placeholder="Search accounts..."
                                     :has-error="$errors->has('expense_account_id')" />
                                 @error('expense_account_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="expense_account_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -60,10 +60,10 @@
                                 <label for="amount" class="form-label">Amount <span class="text-red-500">*</span></label>
                                 <div class="relative">
                                     <input type="number" name="amount" id="amount" value="{{ old('amount') }}" min="0.01" step="0.01" required placeholder="0.00"
-                                        class="form-control @error('amount') border-red-500 @enderror">
+                                        class="form-control @error('amount') border-red-500 @enderror" @error('amount') aria-invalid="true" aria-describedby="amount-error" @enderror>
                                 </div>
                                 @error('amount')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="amount-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -72,7 +72,7 @@
                                 selectedId: '{{ old('vendor_id', request('vendor_id')) }}'
                             })" class="relative">
                                 <label for="vendor_search" class="form-label">Vendor</label>
-                                <input type="hidden" name="vendor_id" :value="selectedId">
+                                <input type="hidden" name="vendor_id" :value="selectedId" @error('vendor_id') aria-invalid="true" aria-describedby="vendor_id-error" @enderror>
                                 <div class="relative">
                                     <input 
                                         type="text" 
@@ -118,7 +118,7 @@
                                     </div>
                                 </div>
                                 @error('vendor_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="vendor_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -132,7 +132,7 @@
                                     search-placeholder="Search accounts..."
                                     :has-error="$errors->has('paid_through_id')" />
                                 @error('paid_through_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="paid_through_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -147,7 +147,7 @@
                                     :has-error="$errors->has('bank_id')" />
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Select which bank account to pay from</p>
                                 @error('bank_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="bank_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 

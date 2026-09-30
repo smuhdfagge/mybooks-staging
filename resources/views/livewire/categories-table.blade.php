@@ -24,7 +24,7 @@
 
     <!-- Search and Filter -->
     <div class="mb-6">
-        <input 
+        <input aria-label="Search categories" 
             type="text" 
             wire:model.live.debounce.300ms="search" 
             placeholder="Search categories..."

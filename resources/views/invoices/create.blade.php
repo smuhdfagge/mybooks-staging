@@ -40,7 +40,7 @@
                                 selectedId: '{{ old('customer_id', request('customer_id')) }}'
                             })" class="relative">
                                 <label for="customer_search" class="form-label">Customer <span class="text-red-500">*</span></label>
-                                <input type="hidden" name="customer_id" :value="selectedId" required>
+                                <input type="hidden" name="customer_id" :value="selectedId" required @error('customer_id') aria-invalid="true" aria-describedby="customer_id-error" @enderror>
                                 <div class="relative">
                                     <input 
                                         type="text" 
@@ -91,25 +91,25 @@
                                     </div>
                                 </div>
                                 @error('customer_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="customer_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
                                 <label for="invoice_date" class="form-label">Invoice Date <span class="text-red-500">*</span></label>
                                 <input type="date" name="invoice_date" id="invoice_date" value="{{ old('invoice_date', date('Y-m-d')) }}" required
-                                    class="form-control @error('invoice_date') border-red-500 @enderror">
+                                    class="form-control @error('invoice_date') border-red-500 @enderror" @error('invoice_date') aria-invalid="true" aria-describedby="invoice_date-error" @enderror>
                                 @error('invoice_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="invoice_date-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
                                 <label for="due_date" class="form-label">Due Date <span class="text-red-500">*</span></label>
                                 <input type="date" name="due_date" id="due_date" value="{{ old('due_date', date('Y-m-d', strtotime('+30 days'))) }}" required
-                                    class="form-control @error('due_date') border-red-500 @enderror">
+                                    class="form-control @error('due_date') border-red-500 @enderror" @error('due_date') aria-invalid="true" aria-describedby="due_date-error" @enderror>
                                 @error('due_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="due_date-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>

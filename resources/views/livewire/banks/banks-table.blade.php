@@ -49,24 +49,24 @@
                 <!-- Filters -->
                 <div class="flex flex-col md:flex-row gap-4 mb-6">
                     <div class="flex-1">
-                        <input wire:model.live.debounce.300ms="search" type="text" placeholder="Search bank accounts..."
+                        <input aria-label="Search bank accounts" wire:model.live.debounce.300ms="search" type="text" placeholder="Search bank accounts..."
                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        <select wire:model.live="typeFilter"
+                        <select aria-label="Type filter" wire:model.live="typeFilter"
                                 class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                             <option value="">All Types</option>
                             @foreach($accountTypes as $value => $label)
                                 <option value="{{ $value }}">{{ $label }}</option>
                             @endforeach
                         </select>
-                        <select wire:model.live="statusFilter"
+                        <select aria-label="Status filter" wire:model.live="statusFilter"
                                 class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                             <option value="">All Status</option>
                             <option value="active">Active</option>
                             <option value="inactive">Inactive</option>
                         </select>
-                        <select wire:model.live="perPage"
+                        <select aria-label="Per page" wire:model.live="perPage"
                                 class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                             <option value="10">10</option>
                             <option value="15">15</option>
@@ -80,7 +80,7 @@
                 @if(count($selectedItems) > 0)
                 <div class="mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg flex flex-wrap items-center gap-4">
                     <span class="text-sm text-gray-600 dark:text-gray-300">{{ count($selectedItems) }} selected</span>
-                    <select wire:model="bulkAction"
+                    <select aria-label="Bulk action" wire:model="bulkAction"
                             class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                         <option value="">Select Action</option>
                         <option value="activate">Activate</option>
@@ -100,7 +100,7 @@
                         <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr>
                                 <th scope="col" class="px-4 py-3 w-10">
-                                    <input type="checkbox" wire:model.live="selectAll"
+                                    <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
                                            class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500">
                                 </th>
                                 <x-sort-header field="name" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-100">Account Name</x-sort-header>
@@ -121,7 +121,7 @@
                             @forelse($banks as $bank)
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                 <td class="px-4 py-3">
-                                    <input type="checkbox" wire:model.live="selectedItems" value="{{ $bank->id }}"
+                                    <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $bank->id }}"
                                            class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500">
                                 </td>
                                 <td class="px-4 py-3">

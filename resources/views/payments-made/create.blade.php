@@ -35,7 +35,7 @@
                         <div>
                             <x-field name="payment_date" label="Payment Date" type="date" :value="old('payment_date', date('Y-m-d'))" required />
                             @error('payment_date')
-                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="payment_date-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -46,7 +46,7 @@
                             onSelect: (id) => { selectedVendor = id; filterBills(); }
                         })" class="relative">
                             <label for="vendor_search" class="form-label">Vendor <span class="text-red-500">*</span></label>
-                            <input type="hidden" name="vendor_id" :value="selectedId" required>
+                            <input type="hidden" name="vendor_id" :value="selectedId" required @error('vendor_id') aria-invalid="true" aria-describedby="vendor_id-error" @enderror>
                             <div class="relative">
                                 <input 
                                     type="text" 
@@ -92,7 +92,7 @@
                                 </div>
                             </div>
                             @error('vendor_id')
-                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="vendor_id-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -116,10 +116,10 @@
                             <label for="amount" class="form-label">Amount <span class="text-red-500">*</span></label>
                             <div class="relative">
                                 <input type="number" name="amount" id="amount" step="0.01" min="0.01" value="{{ old('amount', $bill?->balance_due) }}" required placeholder="0.00"
-                                    class="form-control @error('amount') border-red-500 @enderror">
+                                    class="form-control @error('amount') border-red-500 @enderror" @error('amount') aria-invalid="true" aria-describedby="amount-error" @enderror>
                             </div>
                             @error('amount')
-                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="amount-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -127,7 +127,7 @@
                         <div x-data="{ paymentMethod: '{{ old('payment_method', '') }}' }">
                             <label for="payment_method" class="form-label">Payment Method <span class="text-red-500">*</span></label>
                             <select name="payment_method" id="payment_method" required x-model="paymentMethod"
-                                class="form-control @error('payment_method') border-red-500 @enderror">
+                                class="form-control @error('payment_method') border-red-500 @enderror" @error('payment_method') aria-invalid="true" aria-describedby="payment_method-error" @enderror>
                                 <option value="">Select Method</option>
                                 <option value="cash">Cash</option>
                                 <option value="bank_transfer">Bank Transfer</option>
@@ -136,14 +136,14 @@
                                 <option value="other">Other</option>
                             </select>
                             @error('payment_method')
-                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="payment_method-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
 
                             <!-- Bank Account -->
                             <div x-show="paymentMethod === 'bank_transfer'" x-transition class="mt-4">
                                 <label for="bank_id" class="form-label">Bank Account</label>
                                 <select name="bank_id" id="bank_id"
-                                    class="form-control @error('bank_id') border-red-500 @enderror">
+                                    class="form-control @error('bank_id') border-red-500 @enderror" @error('bank_id') aria-invalid="true" aria-describedby="bank_id-error" @enderror>
                                     <option value="">Select Bank Account</option>
                                     @foreach($banks as $bank)
                                         <option value="{{ $bank->id }}" {{ old('bank_id') == $bank->id ? 'selected' : '' }}>
@@ -153,7 +153,7 @@
                                 </select>
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Select which bank account to pay from</p>
                                 @error('bank_id')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="bank_id-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>

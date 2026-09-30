@@ -40,7 +40,7 @@
                                 selectedId: '{{ old('customer_id') }}'
                             })" class="relative">
                                 <label for="customer_search" class="form-label">Customer</label>
-                                <input type="hidden" name="customer_id" :value="selectedId">
+                                <input type="hidden" name="customer_id" :value="selectedId" @error('customer_id') aria-invalid="true" aria-describedby="customer_id-error" @enderror>
                                 <div class="relative">
                                     <input 
                                         type="text" 
@@ -86,7 +86,7 @@
                                     </div>
                                 </div>
                                 @error('customer_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="customer_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -97,7 +97,7 @@
                             <div>
                                 <label for="payment_method" class="form-label">Payment Method <span class="text-red-500">*</span></label>
                                 <select name="payment_method" id="payment_method" required
-                                    class="form-control @error('payment_method') border-red-500 @enderror">
+                                    class="form-control @error('payment_method') border-red-500 @enderror" @error('payment_method') aria-invalid="true" aria-describedby="payment_method-error" @enderror>
                                     <option value="">Select Method</option>
                                     <option value="cash" {{ old('payment_method') == 'cash' ? 'selected' : '' }}>Cash</option>
                                     <option value="check" {{ old('payment_method') == 'check' ? 'selected' : '' }}>Check</option>
@@ -106,7 +106,7 @@
                                     <option value="other" {{ old('payment_method') == 'other' ? 'selected' : '' }}>Other</option>
                                 </select>
                                 @error('payment_method')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="payment_method-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>

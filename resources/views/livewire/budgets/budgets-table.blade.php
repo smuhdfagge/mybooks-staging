@@ -18,11 +18,11 @@
                 <!-- Filters -->
                 <div class="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
-                        <input wire:model.live.debounce.300ms="search" type="text" placeholder="Search budgets..."
+                        <input aria-label="Search budgets" wire:model.live.debounce.300ms="search" type="text" placeholder="Search budgets..."
                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                     </div>
                     <div>
-                        <select wire:model.live="yearFilter"
+                        <select aria-label="Year filter" wire:model.live="yearFilter"
                                 class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                             <option value="">All Years</option>
                             @foreach($availableYears as $year)
@@ -31,7 +31,7 @@
                         </select>
                     </div>
                     <div>
-                        <select wire:model.live="statusFilter"
+                        <select aria-label="Status filter" wire:model.live="statusFilter"
                                 class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                             <option value="">All Statuses</option>
                             @foreach($statuses as $value => $label)
@@ -40,7 +40,7 @@
                         </select>
                     </div>
                     <div>
-                        <select wire:model.live="perPage"
+                        <select aria-label="Per page" wire:model.live="perPage"
                                 class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                             <option value="10">10 per page</option>
                             <option value="15">15 per page</option>
@@ -53,7 +53,7 @@
                 <!-- Bulk Actions -->
                 @can('edit budgets')
                 <div class="mb-4 flex items-center gap-4">
-                    <select wire:model="bulkAction"
+                    <select aria-label="Bulk action" wire:model="bulkAction"
                             class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         <option value="">Bulk Actions</option>
                         <option value="activate">Activate Selected</option>
@@ -78,7 +78,7 @@
                         <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr>
                                 <th scope="col" class="px-4 py-3 text-left">
-                                    <input type="checkbox" wire:model.live="selectAll"
+                                    <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
                                            class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500">
                                 </th>
                                 <x-sort-header field="name" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-100">Name</x-sort-header>
@@ -97,7 +97,7 @@
                             @forelse($budgets as $budget)
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                 <td class="px-4 py-4">
-                                    <input type="checkbox" wire:model.live="selectedItems" value="{{ $budget->id }}"
+                                    <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $budget->id }}"
                                            class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500">
                                 </td>
                                 <td class="px-4 py-4">

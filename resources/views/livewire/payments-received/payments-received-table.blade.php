@@ -28,12 +28,12 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-3">
             <div>
                 <label class="form-label">Search</label>
-                <input type="text" wire:model.live.debounce.300ms="search" placeholder="Search payments..."
+                <input aria-label="Search payments" type="text" wire:model.live.debounce.300ms="search" placeholder="Search payments..."
                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
             </div>
             <div>
-                <label class="form-label">Customer</label>
-                <select wire:model.live="customer" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <label for="customer" class="form-label">Customer</label>
+                <select id="customer" wire:model.live="customer" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="">All Customers</option>
                     @foreach($customers as $cust)
                         <option value="{{ $cust->id }}">{{ $cust->name }}</option>
@@ -41,16 +41,16 @@
                 </select>
             </div>
             <div>
-                <label class="form-label">Type</label>
-                <select wire:model.live="paymentType" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <label for="paymentType" class="form-label">Type</label>
+                <select id="paymentType" wire:model.live="paymentType" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="">All Types</option>
                     <option value="regular">Regular Payments</option>
                     <option value="deposit">Customer Deposits</option>
                 </select>
             </div>
             <div>
-                <label class="form-label">Payment Method</label>
-                <select wire:model.live="paymentMethod" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <label for="paymentMethod" class="form-label">Payment Method</label>
+                <select id="paymentMethod" wire:model.live="paymentMethod" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="">All Methods</option>
                     @foreach($paymentMethods as $method)
                         <option value="{{ $method }}">{{ ucfirst($method) }}</option>
@@ -60,18 +60,18 @@
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div>
-                <label class="form-label">From Date</label>
-                <input type="date" wire:model.live="dateFrom"
+                <label for="dateFrom" class="form-label">From Date</label>
+                <input id="dateFrom" type="date" wire:model.live="dateFrom"
                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
             </div>
             <div>
-                <label class="form-label">To Date</label>
-                <input type="date" wire:model.live="dateTo"
+                <label for="dateTo" class="form-label">To Date</label>
+                <input id="dateTo" type="date" wire:model.live="dateTo"
                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
             </div>
             <div>
-                <label class="form-label">Per Page</label>
-                <select wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <label for="perPage" class="form-label">Per Page</label>
+                <select id="perPage" wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="10">10</option>
                     <option value="25">25</option>
                     <option value="50">50</option>
@@ -79,9 +79,9 @@
                 </select>
             </div>
             <div>
-                <label class="form-label">Bulk Actions</label>
+                <label for="bulkAction" class="form-label">Bulk Actions</label>
                 <div class="flex space-x-2">
-                    <select wire:model="bulkAction" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                    <select id="bulkAction" wire:model="bulkAction" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                         <option value="">Select Action</option>
                         <option value="delete">Delete</option>
                     </select>
@@ -104,7 +104,7 @@
                 <thead class="bg-gray-50 dark:bg-gray-700">
                     <tr>
                         <th scope="col" class="px-4 py-3 text-left">
-                            <input type="checkbox" wire:model.live="selectAll"
+                            <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
                                 class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                         </th>
                         <x-sort-header field="payment_number" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Payment #</x-sort-header>
@@ -120,7 +120,7 @@
                     @forelse($payments as $payment)
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                             <td class="px-4 py-4">
-                                <input type="checkbox" wire:model.live="selectedItems" value="{{ $payment->id }}"
+                                <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $payment->id }}"
                                     class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                             </td>
                             <td class="px-4 sm:px-6 py-4">

@@ -31,7 +31,7 @@
                             <div>
                                 <label for="employee_id" class="form-label">Employee <span class="text-red-500">*</span></label>
                                 <select name="employee_id" id="employee_id" required
-                                    class="form-control @error('employee_id') border-red-500 @enderror">
+                                    class="form-control @error('employee_id') border-red-500 @enderror" @error('employee_id') aria-invalid="true" aria-describedby="employee_id-error" @enderror>
                                     <option value="">Select Employee</option>
                                     @foreach($employees as $employee)
                                         <option value="{{ $employee->id }}" {{ old('employee_id') == $employee->id ? 'selected' : '' }}>
@@ -40,7 +40,7 @@
                                     @endforeach
                                 </select>
                                 @error('employee_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="employee_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 

@@ -147,9 +147,9 @@
                                     <label for="first_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">First Name</label>
                                     <input type="text" name="first_name" id="first_name" required
                                         class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                        placeholder="John">
+                                        placeholder="John" @error('first_name') aria-invalid="true" aria-describedby="first_name-error" @enderror>
                                     @error('first_name')
-                                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                        <p id="first_name-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                     @enderror
                                 </div>
 
@@ -158,9 +158,9 @@
                                     <label for="last_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Last Name</label>
                                     <input type="text" name="last_name" id="last_name" required
                                         class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                        placeholder="Doe">
+                                        placeholder="Doe" @error('last_name') aria-invalid="true" aria-describedby="last_name-error" @enderror>
                                     @error('last_name')
-                                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                        <p id="last_name-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                     @enderror
                                 </div>
                             </div>
@@ -170,9 +170,9 @@
                                 <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
                                 <input type="email" name="email" id="email" required
                                     class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                    placeholder="john@example.com">
+                                    placeholder="john@example.com" @error('email') aria-invalid="true" aria-describedby="email-error" @enderror>
                                 @error('email')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="email-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -181,9 +181,9 @@
                                 <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone Number <span class="text-gray-400">(optional)</span></label>
                                 <input type="tel" name="phone" id="phone"
                                     class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                    placeholder="+1 (234) 567-890">
+                                    placeholder="+1 (234) 567-890" @error('phone') aria-invalid="true" aria-describedby="phone-error" @enderror>
                                 @error('phone')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="phone-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -191,7 +191,7 @@
                             <div>
                                 <label for="subject" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Subject</label>
                                 <select name="subject" id="subject" required
-                                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition" @error('subject') aria-invalid="true" aria-describedby="subject-error" @enderror>
                                     <option value="">Select a subject</option>
                                     <option value="general">General Inquiry</option>
                                     <option value="support">Technical Support</option>
@@ -202,7 +202,7 @@
                                     <option value="other">Other</option>
                                 </select>
                                 @error('subject')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="subject-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -211,9 +211,9 @@
                                 <label for="message" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message</label>
                                 <textarea name="message" id="message" rows="5" required
                                     class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none"
-                                    placeholder="Tell us how we can help you..."></textarea>
+                                    placeholder="Tell us how we can help you..." @error('message') aria-invalid="true" aria-describedby="message-error" @enderror></textarea>
                                 @error('message')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="message-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 

@@ -85,7 +85,7 @@
             aria-autocomplete="list" aria-controls="{{ $listId }}"
             :aria-expanded="open.toString()"
             :aria-activedescendant="open && active >= 0 ? optionId(active) : null"
-            @if($hasError) aria-invalid="true" @endif
+            @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
             :value="open ? search : selectedLabel"
             :placeholder="open ? @js($searchPlaceholder) : (selectedLabel || placeholder)"
             @input="typed($event.target.value)"

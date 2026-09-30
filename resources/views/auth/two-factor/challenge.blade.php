@@ -35,9 +35,9 @@
                     placeholder="000000"
                     maxlength="6"
                     required
-                    autofocus />
+                    autofocus @error('code') aria-invalid="true" aria-describedby="code-error" @enderror/>
                 @error('code')
-                    <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                    <p id="code-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
 
@@ -59,9 +59,9 @@
                     name="recovery_code"
                     class="block w-full px-4 py-3 border-2 border-slate-500 rounded-xl text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition duration-200 font-mono text-center tracking-widest"
                     placeholder="XXXX-XXXX"
-                    required />
+                    required @error('recovery_code') aria-invalid="true" aria-describedby="recovery_code-error" @enderror/>
                 @error('recovery_code')
-                    <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                    <p id="recovery_code-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
 

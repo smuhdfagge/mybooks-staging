@@ -37,7 +37,7 @@
                                 <div class="grid grid-cols-2 gap-4">
                                     @foreach($backupFormats as $value => $label)
                                         <label class="relative flex items-start p-4 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                                            <input type="radio" name="format" value="{{ $value }}" class="mt-1 peer" {{ old('format', 'zip') == $value ? 'checked' : '' }}>
+                                            <input type="radio" name="format" value="{{ $value }}" class="mt-1 peer" {{ old('format', 'zip') == $value ? 'checked' : '' }} @error('format') aria-invalid="true" aria-describedby="format-error" @enderror>
                                             <div class="ml-3">
                                                 <div class="text-sm font-medium text-gray-700 dark:text-gray-300">
                                                     @if($value === 'zip')
@@ -52,7 +52,7 @@
                                     @endforeach
                                 </div>
                                 @error('format')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="format-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -79,7 +79,7 @@
                                     </div>
                                 </div>
                                 @error('included_data')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="included_data-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>

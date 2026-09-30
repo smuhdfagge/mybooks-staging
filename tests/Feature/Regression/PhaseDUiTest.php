@@ -310,4 +310,66 @@ class PhaseDUiTest extends TestCase
             $this->assertStringContainsString('class="form-control', $html, $route);
         }
     }
+
+    // ── U6: labels and error links ──────────────────────────────
+
+    /** Visible form controls in $html that no label names. */
+    private function unlabelledControls(string $html): array
+    {
+        preg_match_all('/<label[^>]*\bfor="([^"]+)"/', $html, $m);
+        $labelled = array_flip($m[1]);
+        $missing = [];
+        preg_match_all('/<(input|select|textarea)\b((?:[^>"]|"[^"]*")*)>/', $html, $controls, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
+        foreach ($controls as [[$tag, $offset], , [$attrs]]) {
+            if (preg_match('/type="(hidden|submit|button)"/', $attrs) || preg_match('/aria-label(ledby)?="[^"]+"/', $attrs)) {
+                continue;
+            }
+            // Wrapped in its label.
+            $before = substr($html, 0, $offset);
+            if (strrpos($before, '<label') > (int) strrpos($before, '</label>')) {
+                continue;
+            }
+            if (preg_match('/\sid="([^"]+)"/', $attrs, $id) && isset($labelled[$id[1]])) {
+                continue;
+            }
+            $missing[] = substr($tag, 0, 120);
+        }
+
+        return $missing;
+    }
+
+    public function test_u6_form_and_list_controls_all_have_labels(): void
+    {
+        $routes = ['customers.create', 'vendors.create', 'items.create', 'expenses.create', 'employees.create', 'invoices.index', 'bills.index'];
+        $perms = [];
+        foreach ($routes as $route) {
+            $perms = array_merge($perms, $this->permissionsFor($route));
+        }
+        $this->createAuthenticatedUser(array_values(array_unique($perms)));
+
+        foreach ($routes as $route) {
+            $html = $this->get(route($route))->assertOk()->getContent();
+            $this->assertSame([], $this->unlabelledControls($html), $route);
+        }
+    }
+
+    public function test_u6_errors_are_tied_to_their_fields_and_summarised(): void
+    {
+        $this->createAuthenticatedUser($this->permissionsFor('customers.create'));
+
+        $html = $this->withSession(['errors' => (new \Illuminate\Support\ViewErrorBag)->put('default', new \Illuminate\Support\MessageBag([
+            'name' => ['The customer name field is required.'],
+            'country' => ['Pick a country.'],
+        ]))])->get(route('customers.create'))->assertOk()->getContent();
+
+        // The field says it is invalid and points at its message.
+        $this->assertMatchesRegularExpression('/<input type="text" name="name" id="name"[^>]*aria-invalid="true"[^>]*aria-describedby="name-error"/', $html);
+        $this->assertStringContainsString('<p id="name-error" class="form-error">The customer name field is required.</p>', $html);
+        $this->assertMatchesRegularExpression('/id="country" role="combobox"(?:[^>"]|"[^"]*")*aria-invalid="true" aria-describedby="country-error"/', $html);
+        $this->assertStringContainsString('<p id="country-error"', $html);
+
+        // One summary at the top, linking to the fields.
+        $this->assertSame(1, substr_count($html, 'data-error-summary'));
+        $this->assertStringContainsString('<a href="#name" class="underline hover:no-underline">The customer name field is required.</a>', $html);
+    }
 }

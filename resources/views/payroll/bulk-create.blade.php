@@ -15,15 +15,6 @@
 
     <div class="py-6">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            @if($errors->any())
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                    <ul class="list-disc list-inside">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
 
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <form action="{{ route('payroll.bulk-store') }}" method="POST" class="p-6">
@@ -65,7 +56,7 @@
                         </div>
 
                         @error('employee_ids')
-                            <p class="mb-4 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            <p id="employee_ids-error" class="mb-4 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto p-2 border border-gray-200 dark:border-gray-700 rounded-md">

@@ -19,7 +19,7 @@
                             <div>
                                 <x-field name="name" label="Company Name" :value="old('name', $tenant->name)" required />
                                 @error('name')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="name-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -27,7 +27,7 @@
                             <div>
                                 <x-field name="email" label="Email" type="email" :value="old('email', $tenant->email)" required />
                                 @error('email')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="email-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -35,7 +35,7 @@
                             <div>
                                 <x-field name="phone" label="Phone" :value="old('phone', $tenant->phone)" />
                                 @error('phone')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="phone-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -43,7 +43,7 @@
                             <div>
                                 <x-field name="website" label="Website" type="url" :value="old('website', $tenant->website)" placeholder="https://example.com" />
                                 @error('website')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="website-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -57,7 +57,7 @@
                             <div class="md:col-span-2">
                                 <x-field name="address" label="Street Address" type="textarea" :value="old('address', $tenant->address)" rows="2" />
                                 @error('address')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="address-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -65,7 +65,7 @@
                             <div>
                                 <x-field name="city" label="City" :value="old('city', $tenant->city)" />
                                 @error('city')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="city-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -80,7 +80,7 @@
                                     search-placeholder="Search states..."
                                     :has-error="$errors->has('state')" />
                                 @error('state')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="state-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -95,7 +95,7 @@
                                     search-placeholder="Search countries..."
                                     :has-error="$errors->has('country')" />
                                 @error('country')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="country-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -103,7 +103,7 @@
                             <div>
                                 <x-field name="postal_code" label="Postal Code" :value="old('postal_code', $tenant->postal_code)" />
                                 @error('postal_code')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="postal_code-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -117,7 +117,7 @@
                             <div>
                                 <x-field name="tax_number" label="Tax Number / VAT ID" :value="old('tax_number', $tenant->tax_number)" />
                                 @error('tax_number')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="tax_number-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -125,7 +125,7 @@
                             <div>
                                 <label for="currency" class="form-label">Currency</label>
                                 <select name="currency" id="currency"
-                                    class="form-control @error('currency') border-red-500 @enderror">
+                                    class="form-control @error('currency') border-red-500 @enderror" @error('currency') aria-invalid="true" aria-describedby="currency-error" @enderror>
                                     <option value="NGN" {{ old('currency', $tenant->currency) == 'NGN' ? 'selected' : '' }}>NGN - Naira</option>
                                     <option value="USD" {{ old('currency', $tenant->currency) == 'USD' ? 'selected' : '' }}>USD - US Dollar</option>
                                     <option value="EUR" {{ old('currency', $tenant->currency) == 'EUR' ? 'selected' : '' }}>EUR - Euro</option>
@@ -137,7 +137,7 @@
                                     <option value="CNY" {{ old('currency', $tenant->currency) == 'CNY' ? 'selected' : '' }}>CNY - Chinese Yuan</option>
                                 </select>
                                 @error('currency')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="currency-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -145,7 +145,7 @@
                             <div>
                                 <x-field name="fiscal_year_start" label="Fiscal Year Start" type="date" :value="old('fiscal_year_start', $tenant->fiscal_year_start?->format('Y-m-d'))" />
                                 @error('fiscal_year_start')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="fiscal_year_start-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -163,10 +163,10 @@
                             <div class="flex-1">
                                 <label for="logo" class="form-label">Upload New Logo</label>
                                 <input type="file" name="logo" id="logo" accept="image/*"
-                                    class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 dark:file:bg-indigo-900 file:text-indigo-700 dark:file:text-indigo-300 hover:file:bg-indigo-100 dark:hover:file:bg-indigo-800">
+                                    class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 dark:file:bg-indigo-900 file:text-indigo-700 dark:file:text-indigo-300 hover:file:bg-indigo-100 dark:hover:file:bg-indigo-800" @error('logo') aria-invalid="true" aria-describedby="logo-error" @enderror>
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">PNG, JPG, GIF up to 2MB</p>
                                 @error('logo')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="logo-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>

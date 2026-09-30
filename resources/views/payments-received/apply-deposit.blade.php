@@ -49,7 +49,7 @@
                         <div>
                             <label for="invoice_id" class="form-label">Invoice <span class="text-red-500">*</span></label>
                             <select name="invoice_id" id="invoice_id" required x-model="selectedInvoice" @change="updateMaxAmount()"
-                                class="form-control @error('invoice_id') border-red-500 @enderror">
+                                class="form-control @error('invoice_id') border-red-500 @enderror" @error('invoice_id') aria-invalid="true" aria-describedby="invoice_id-error" @enderror>
                                 <option value="">Select an invoice</option>
                                 @foreach($unpaidInvoices as $invoice)
                                 <option value="{{ $invoice->id }}" data-balance="{{ $invoice->balance_due }}">
@@ -58,7 +58,7 @@
                                 @endforeach
                             </select>
                             @error('invoice_id')
-                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="invoice_id-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -68,13 +68,13 @@
                             <div class="relative">
                                 <input type="number" name="amount" id="amount" step="0.01" min="0.01" 
                                     :max="maxAmount" x-model="amount" required
-                                    class="form-control @error('amount') border-red-500 @enderror">
+                                    class="form-control @error('amount') border-red-500 @enderror" @error('amount') aria-invalid="true" aria-describedby="amount-error" @enderror>
                             </div>
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" x-show="selectedInvoice">
                                 Maximum: <span x-text="formatMoney(maxAmount)"></span>
                             </p>
                             @error('amount')
-                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="amount-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
                         </div>
 

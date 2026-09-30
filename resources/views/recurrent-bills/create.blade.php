@@ -37,7 +37,7 @@
                                 selectedId: '{{ old('vendor_id') }}'
                             })" class="relative">
                                 <label for="vendor_search" class="form-label">Vendor <span class="text-red-500">*</span></label>
-                                <input type="hidden" name="vendor_id" :value="selectedId" required>
+                                <input type="hidden" name="vendor_id" :value="selectedId" required @error('vendor_id') aria-invalid="true" aria-describedby="vendor_id-error" @enderror>
                                 <div class="relative">
                                     <input 
                                         type="text" 
@@ -83,14 +83,14 @@
                                     </div>
                                 </div>
                                 @error('vendor_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="vendor_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
                                 <label for="frequency" class="form-label">Frequency <span class="text-red-500">*</span></label>
                                 <select name="frequency" id="frequency" required
-                                    class="form-control @error('frequency') border-red-500 @enderror">
+                                    class="form-control @error('frequency') border-red-500 @enderror" @error('frequency') aria-invalid="true" aria-describedby="frequency-error" @enderror>
                                     <option value="">Select Frequency</option>
                                     <option value="weekly" {{ old('frequency') == 'weekly' ? 'selected' : '' }}>Weekly</option>
                                     <option value="monthly" {{ old('frequency') == 'monthly' ? 'selected' : '' }}>Monthly</option>
@@ -98,7 +98,7 @@
                                     <option value="yearly" {{ old('frequency') == 'yearly' ? 'selected' : '' }}>Yearly</option>
                                 </select>
                                 @error('frequency')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="frequency-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -110,7 +110,7 @@
                                 <x-field name="end_date" label="End Date" type="date" :value="old('end_date')" />
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave empty for indefinite</p>
                                 @error('end_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="end_date-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>

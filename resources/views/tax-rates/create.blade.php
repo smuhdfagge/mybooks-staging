@@ -22,58 +22,58 @@
                     <div>
                         <x-input-label for="name" :value="__('Tax Name')" />
                         <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name')" required placeholder="e.g., VAT, GST, Sales Tax" />
-                        <x-input-error :messages="$errors->get('name')" class="mt-2" />
+                        <x-input-error id="name-error" :messages="$errors->get('name')" class="mt-2" />
                     </div>
 
                     <!-- Code -->
                     <div>
                         <x-input-label for="code" :value="__('Code')" />
                         <x-text-input id="code" name="code" type="text" class="mt-1 block w-full" :value="old('code')" maxlength="20" placeholder="e.g., VAT, GST, ST" />
-                        <x-input-error :messages="$errors->get('code')" class="mt-2" />
+                        <x-input-error id="code-error" :messages="$errors->get('code')" class="mt-2" />
                     </div>
 
                     <!-- Rate -->
                     <div>
                         <x-input-label for="rate" :value="__('Rate (%)')" />
                         <x-text-input id="rate" name="rate" type="number" step="0.0001" min="0" max="100" class="mt-1 block w-full" :value="old('rate')" required placeholder="e.g., 7.5" />
-                        <x-input-error :messages="$errors->get('rate')" class="mt-2" />
+                        <x-input-error id="rate-error" :messages="$errors->get('rate')" class="mt-2" />
                     </div>
 
                     <!-- Tax Number -->
                     <div>
                         <x-input-label for="tax_number" :value="__('Tax Registration Number')" />
                         <x-text-input id="tax_number" name="tax_number" type="text" class="mt-1 block w-full" :value="old('tax_number')" placeholder="Your tax registration number" />
-                        <x-input-error :messages="$errors->get('tax_number')" class="mt-2" />
+                        <x-input-error id="tax_number-error" :messages="$errors->get('tax_number')" class="mt-2" />
                     </div>
 
                     <!-- Type -->
                     <div>
                         <x-input-label for="type" :value="__('Type')" />
-                        <select name="type" id="type" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm">
+                        <select name="type" id="type" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm" @error('type') aria-invalid="true" aria-describedby="type-error" @enderror>
                             <option value="exclusive" {{ old('type', 'exclusive') == 'exclusive' ? 'selected' : '' }}>Exclusive (added to price)</option>
                             <option value="inclusive" {{ old('type') == 'inclusive' ? 'selected' : '' }}>Inclusive (included in price)</option>
                         </select>
                         <p class="text-gray-500 dark:text-gray-400 text-xs mt-1">Exclusive: Tax added on top. Inclusive: Tax included in price.</p>
-                        <x-input-error :messages="$errors->get('type')" class="mt-2" />
+                        <x-input-error id="type-error" :messages="$errors->get('type')" class="mt-2" />
                     </div>
 
                     <!-- Applies To -->
                     <div>
                         <x-input-label for="applies_to" :value="__('Applies To')" />
-                        <select name="applies_to" id="applies_to" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm">
+                        <select name="applies_to" id="applies_to" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm" @error('applies_to') aria-invalid="true" aria-describedby="applies_to-error" @enderror>
                             <option value="both" {{ old('applies_to', 'both') == 'both' ? 'selected' : '' }}>Both Sales & Purchases</option>
                             <option value="sales" {{ old('applies_to') == 'sales' ? 'selected' : '' }}>Sales Only</option>
                             <option value="purchases" {{ old('applies_to') == 'purchases' ? 'selected' : '' }}>Purchases Only</option>
                         </select>
-                        <x-input-error :messages="$errors->get('applies_to')" class="mt-2" />
+                        <x-input-error id="applies_to-error" :messages="$errors->get('applies_to')" class="mt-2" />
                     </div>
                 </div>
 
                 <!-- Description -->
                 <div class="mt-6">
                     <x-input-label for="description" :value="__('Description')" />
-                    <textarea name="description" id="description" rows="3" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm" placeholder="Optional description">{{ old('description') }}</textarea>
-                    <x-input-error :messages="$errors->get('description')" class="mt-2" />
+                    <textarea name="description" id="description" rows="3" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm" placeholder="Optional description" @error('description') aria-invalid="true" aria-describedby="description-error" @enderror>{{ old('description') }}</textarea>
+                    <x-input-error id="description-error" :messages="$errors->get('description')" class="mt-2" />
                 </div>
 
                 <!-- Options -->

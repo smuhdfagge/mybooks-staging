@@ -3,7 +3,7 @@
 <div>
     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bulk Actions</label>
     <div class="flex space-x-2">
-        <select wire:model="bulkAction" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+        <select aria-label="Bulk action" wire:model="bulkAction" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
             <option value="">Select Action</option>
             @foreach($actions as $value => $label)
                 <option value="{{ $value }}">{{ $label }}</option>

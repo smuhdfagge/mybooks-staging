@@ -78,7 +78,7 @@
                                     search-placeholder="Search states..."
                                     :has-error="$errors->has('state')" />
                                 @error('state')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="state-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -92,7 +92,7 @@
                                     search-placeholder="Search countries..."
                                     :has-error="$errors->has('country')" />
                                 @error('country')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="country-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -121,7 +121,7 @@
                                     search-placeholder="Search terms..."
                                     :has-error="$errors->has('payment_terms')" />
                                 @error('payment_terms')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="payment_terms-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>

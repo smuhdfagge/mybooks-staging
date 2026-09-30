@@ -28,9 +28,9 @@
                         <div>
                             <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Budget Name *</label>
                             <input type="text" name="name" id="name" value="{{ old('name', $budget->name) }}" required
-                                   class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                   class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                             @error('name')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="name-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
                         </div>
                         <div>
@@ -70,7 +70,7 @@
                                 <div class="fixed inset-0 bg-gray-500 bg-opacity-75" @click="showAddAccount = false"></div>
                                 <div class="relative bg-white dark:bg-gray-800 rounded-lg max-w-lg w-full p-6" x-trap.inert.noscroll="showAddAccount">
                                     <h4 id="budget-add-account-title" class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Add Account to Budget</h4>
-                                    <select x-model="selectedAccountId" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 mb-4">
+                                    <select aria-label="Selected account" x-model="selectedAccountId" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 mb-4">
                                         <option value="">Select an account...</option>
                                         <optgroup label="Income Accounts">
                                             @foreach($accounts['income'] ?? [] as $account)
@@ -189,8 +189,8 @@
                             @csrf
                             
                             <div class="mb-4">
-                                <label class="form-label">CSV or Excel File *</label>
-                                <input type="file" name="file" accept=".csv,.xlsx,.xls" required
+                                <label for="file" class="form-label">CSV or Excel File *</label>
+                                <input id="file" type="file" name="file" accept=".csv,.xlsx,.xls" required
                                        class="block w-full text-sm text-gray-500 dark:text-gray-400
                                               file:mr-4 file:py-2 file:px-4
                                               file:rounded-md file:border-0

@@ -36,7 +36,7 @@
                             <div>
                                 <label for="expense_account_id" class="form-label">Expense Account <span class="text-red-500">*</span></label>
                                 <select name="expense_account_id" id="expense_account_id" required
-                                    class="form-control @error('expense_account_id') border-red-500 @enderror">
+                                    class="form-control @error('expense_account_id') border-red-500 @enderror" @error('expense_account_id') aria-invalid="true" aria-describedby="expense_account_id-error" @enderror>
                                     <option value="">Select Account</option>
                                     @foreach($expenseAccounts as $account)
                                         <option value="{{ $account->id }}" {{ old('expense_account_id', $recurrentExpense->expense_account_id) == $account->id ? 'selected' : '' }}>
@@ -45,7 +45,7 @@
                                     @endforeach
                                 </select>
                                 @error('expense_account_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="expense_account_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -54,10 +54,10 @@
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400">@currencySymbol</span>
                                     <input type="number" name="amount" id="amount" value="{{ old('amount', $recurrentExpense->amount) }}" min="0.01" step="0.01" required
-                                        class="w-full pl-8 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('amount') border-red-500 @enderror">
+                                        class="w-full pl-8 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('amount') border-red-500 @enderror" @error('amount') aria-invalid="true" aria-describedby="amount-error" @enderror>
                                 </div>
                                 @error('amount')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="amount-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -67,7 +67,7 @@
                                 placeholder: 'Select Vendor (Optional)'
                             })">
                                 <label for="vendor_id" class="form-label">Vendor</label>
-                                <input type="hidden" name="vendor_id" :value="selectedId">
+                                <input type="hidden" name="vendor_id" :value="selectedId" @error('vendor_id') aria-invalid="true" aria-describedby="vendor_id-error" @enderror>
                                 <div class="relative">
                                     <input type="text" 
                                         x-model="search" 
@@ -91,14 +91,14 @@
                                     </div>
                                 </div>
                                 @error('vendor_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="vendor_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
                                 <label for="paid_through_id" class="form-label">Paid Through</label>
                                 <select name="paid_through_id" id="paid_through_id"
-                                    class="form-control @error('paid_through_id') border-red-500 @enderror">
+                                    class="form-control @error('paid_through_id') border-red-500 @enderror" @error('paid_through_id') aria-invalid="true" aria-describedby="paid_through_id-error" @enderror>
                                     <option value="">Select Account (Optional)</option>
                                     @foreach($paymentAccounts as $account)
                                         <option value="{{ $account->id }}" {{ old('paid_through_id', $recurrentExpense->paid_through_id) == $account->id ? 'selected' : '' }}>
@@ -107,7 +107,7 @@
                                     @endforeach
                                 </select>
                                 @error('paid_through_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="paid_through_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -125,14 +125,14 @@
                             <div>
                                 <label for="frequency" class="form-label">Frequency <span class="text-red-500">*</span></label>
                                 <select name="frequency" id="frequency" required
-                                    class="form-control @error('frequency') border-red-500 @enderror">
+                                    class="form-control @error('frequency') border-red-500 @enderror" @error('frequency') aria-invalid="true" aria-describedby="frequency-error" @enderror>
                                     <option value="weekly" {{ old('frequency', $recurrentExpense->frequency) == 'weekly' ? 'selected' : '' }}>Weekly</option>
                                     <option value="monthly" {{ old('frequency', $recurrentExpense->frequency) == 'monthly' ? 'selected' : '' }}>Monthly</option>
                                     <option value="quarterly" {{ old('frequency', $recurrentExpense->frequency) == 'quarterly' ? 'selected' : '' }}>Quarterly</option>
                                     <option value="yearly" {{ old('frequency', $recurrentExpense->frequency) == 'yearly' ? 'selected' : '' }}>Yearly</option>
                                 </select>
                                 @error('frequency')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="frequency-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -146,7 +146,7 @@
                                 <x-field name="end_date" label="End Date" type="date" :value="old('end_date', $recurrentExpense->end_date?->format('Y-m-d'))" />
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave empty for indefinite</p>
                                 @error('end_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="end_date-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 

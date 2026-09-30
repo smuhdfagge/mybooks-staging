@@ -11,7 +11,7 @@
     <div class="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
         <form method="GET" action="{{ route('admin.tenants.list') }}" class="flex flex-wrap gap-4">
             <div class="flex-1 min-w-[200px]">
-                <input type="text" 
+                <input aria-label="Search by name or email" type="text" 
                        name="search" 
                        value="{{ request('search') }}" 
                        placeholder="Search by name or email..."

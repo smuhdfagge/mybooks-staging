@@ -15,15 +15,6 @@
 
     <div class="py-6">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            @if($errors->any())
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                    <ul class="list-disc list-inside">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
 
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <form action="{{ route('salary-structures.store') }}" method="POST" class="p-6" x-data="salaryStructureForm()">
@@ -69,7 +60,7 @@
                             <div class="grid grid-cols-12 gap-3 mb-3 items-end">
                                 <div class="col-span-4">
                                     <label x-show="index === 0" class="form-label">Allowance</label>
-                                    <select :name="'allowances['+index+'][name]'" x-model="allowance.name"
+                                    <select aria-label="Name" :name="'allowances['+index+'][name]'" x-model="allowance.name"
                                         @change="onAllowanceSelected(index)"
                                         class="form-control text-sm">
                                         <option value="">-- Select Allowance --</option>
@@ -80,7 +71,7 @@
                                 </div>
                                 <div class="col-span-3">
                                     <label x-show="index === 0" class="form-label">Type</label>
-                                    <select :name="'allowances['+index+'][amount_type]'" x-model="allowance.amount_type"
+                                    <select aria-label="Amount type" :name="'allowances['+index+'][amount_type]'" x-model="allowance.amount_type"
                                         class="form-control text-sm">
                                         <option value="fixed">Fixed Amount</option>
                                         <option value="percentage">% of Basic</option>
@@ -88,12 +79,12 @@
                                 </div>
                                 <div class="col-span-2">
                                     <label x-show="index === 0" class="form-label">Amount</label>
-                                    <input type="number" :name="'allowances['+index+'][amount]'" x-model="allowance.amount" step="0.01" min="0"
+                                    <input aria-label="Amount" type="number" :name="'allowances['+index+'][amount]'" x-model="allowance.amount" step="0.01" min="0"
                                         class="form-control text-sm">
                                 </div>
                                 <div class="col-span-2">
                                     <label x-show="index === 0" class="form-label">Taxable</label>
-                                    <select :name="'allowances['+index+'][is_taxable]'" x-model="allowance.is_taxable"
+                                    <select aria-label="Is taxable" :name="'allowances['+index+'][is_taxable]'" x-model="allowance.is_taxable"
                                         class="form-control text-sm">
                                         <option value="1">Yes</option>
                                         <option value="0">No</option>
@@ -126,7 +117,7 @@
                             <div class="grid grid-cols-12 gap-3 mb-3 items-end">
                                 <div class="col-span-4">
                                     <label x-show="index === 0" class="form-label">Deduction</label>
-                                    <select :name="'deductions['+index+'][name]'" x-model="deduction.name"
+                                    <select aria-label="Name" :name="'deductions['+index+'][name]'" x-model="deduction.name"
                                         @change="onDeductionSelected(index)"
                                         class="form-control text-sm">
                                         <option value="">-- Select Deduction --</option>
@@ -137,7 +128,7 @@
                                 </div>
                                 <div class="col-span-3">
                                     <label x-show="index === 0" class="form-label">Type</label>
-                                    <select :name="'deductions['+index+'][amount_type]'" x-model="deduction.amount_type"
+                                    <select aria-label="Amount type" :name="'deductions['+index+'][amount_type]'" x-model="deduction.amount_type"
                                         class="form-control text-sm">
                                         <option value="fixed">Fixed Amount</option>
                                         <option value="percentage">% of Gross</option>
@@ -145,12 +136,12 @@
                                 </div>
                                 <div class="col-span-2">
                                     <label x-show="index === 0" class="form-label">Amount</label>
-                                    <input type="number" :name="'deductions['+index+'][amount]'" x-model="deduction.amount" step="0.01" min="0"
+                                    <input aria-label="Amount" type="number" :name="'deductions['+index+'][amount]'" x-model="deduction.amount" step="0.01" min="0"
                                         class="form-control text-sm">
                                 </div>
                                 <div class="col-span-2">
                                     <label x-show="index === 0" class="form-label" title="Pre-tax deductions (pension, NHF, health insurance) are taken off pay before PAYE is worked out">Pre-tax</label>
-                                    <select :name="'deductions['+index+'][is_taxable]'" x-model="deduction.is_taxable"
+                                    <select aria-label="Is taxable" :name="'deductions['+index+'][is_taxable]'" x-model="deduction.is_taxable"
                                         class="form-control text-sm">
                                         <option value="0">No</option>
                                         <option value="1">Yes</option>

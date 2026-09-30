@@ -44,9 +44,9 @@
                                 <label for="reference" class="form-label">Reference</label>
                                 <input type="text" name="reference" id="reference" value="{{ old('reference', $journal->reference) }}"
                                     class="form-control @error('reference') border-red-500 @enderror"
-                                    placeholder="e.g., Check #123">
+                                    placeholder="e.g., Check #123" @error('reference') aria-invalid="true" aria-describedby="reference-error" @enderror>
                                 @error('reference')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="reference-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -55,9 +55,9 @@
                             <label for="description" class="form-label">Description <span class="text-red-500">*</span></label>
                             <textarea name="description" id="description" rows="2" required maxlength="500"
                                 class="form-control @error('description') border-red-500 @enderror"
-                                placeholder="Enter journal description...">{{ old('description', $journal->description) }}</textarea>
+                                placeholder="Enter journal description..." @error('description') aria-invalid="true" aria-describedby="description-error" @enderror>{{ old('description', $journal->description) }}</textarea>
                             @error('description')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="description-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>
@@ -98,17 +98,17 @@
                                                 </select>
                                             </td>
                                             <td class="px-4 py-2">
-                                                <input type="text" name="entries[{{ $index }}][description]" value="{{ $entry['description'] ?? '' }}"
+                                                <input aria-label="Line description" type="text" name="entries[{{ $index }}][description]" value="{{ $entry['description'] ?? '' }}"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                                     placeholder="Line description">
                                             </td>
                                             <td class="px-4 py-2">
-                                                <input type="number" name="entries[{{ $index }}][debit]" value="{{ $entry['debit'] ?? '' }}" min="0" step="0.01"
+                                                <input aria-label="Debit" type="number" name="entries[{{ $index }}][debit]" value="{{ $entry['debit'] ?? '' }}" min="0" step="0.01"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right debit-input"
                                                     placeholder="0.00">
                                             </td>
                                             <td class="px-4 py-2">
-                                                <input type="number" name="entries[{{ $index }}][credit]" value="{{ $entry['credit'] ?? '' }}" min="0" step="0.01"
+                                                <input aria-label="Credit" type="number" name="entries[{{ $index }}][credit]" value="{{ $entry['credit'] ?? '' }}" min="0" step="0.01"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right credit-input"
                                                     placeholder="0.00">
                                             </td>
@@ -195,17 +195,17 @@
                     </select>
                 </td>
                 <td class="px-4 py-2">
-                    <input type="text" name="entries[${rowIndex}][description]"
+                    <input aria-label="Line description" type="text" name="entries[${rowIndex}][description]"
                         class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         placeholder="Line description">
                 </td>
                 <td class="px-4 py-2">
-                    <input type="number" name="entries[${rowIndex}][debit]" min="0" step="0.01"
+                    <input aria-label="Debit" type="number" name="entries[${rowIndex}][debit]" min="0" step="0.01"
                         class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right debit-input"
                         placeholder="0.00">
                 </td>
                 <td class="px-4 py-2">
-                    <input type="number" name="entries[${rowIndex}][credit]" min="0" step="0.01"
+                    <input aria-label="Credit" type="number" name="entries[${rowIndex}][credit]" min="0" step="0.01"
                         class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right credit-input"
                         placeholder="0.00">
                 </td>

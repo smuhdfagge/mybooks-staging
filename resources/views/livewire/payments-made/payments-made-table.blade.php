@@ -86,7 +86,7 @@
             @if(count($selectedItems) > 0)
                 <span class="text-sm text-gray-600 dark:text-gray-400">{{ count($selectedItems) }} selected</span>
             @endif
-            <select wire:model="bulkAction" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400">
+            <select aria-label="Bulk action" wire:model="bulkAction" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400">
                 <option value="">Bulk Actions</option>
                 <option value="delete">Delete Selected</option>
             </select>
@@ -105,7 +105,7 @@
             <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
                     <th scope="col" class="w-12 px-6 py-3">
-                        <input type="checkbox" wire:model.live="selectAll"
+                        <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
                             class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700 dark:checked:bg-indigo-500">
                     </th>
                     <x-sort-header field="payment_number" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Payment #</x-sort-header>
@@ -132,7 +132,7 @@
                 @forelse($payments as $payment)
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td class="px-6 py-4">
-                            <input type="checkbox" wire:model.live="selectedItems" value="{{ $payment->id }}"
+                            <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $payment->id }}"
                                 class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700 dark:checked:bg-indigo-500">
                         </td>
                         <td class="whitespace-nowrap px-6 py-4">

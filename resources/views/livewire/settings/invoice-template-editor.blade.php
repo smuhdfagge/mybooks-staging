@@ -9,16 +9,16 @@
             <div class="p-4 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
                 {{-- Template Name --}}
                 <div>
-                    <label class="form-label">Template Name</label>
-                    <input type="text" wire:model.live="name"
+                    <label for="name" class="form-label">Template Name</label>
+                    <input id="name" type="text" wire:model.live="name"
                         class="form-control text-sm">
-                    @error('name') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                    @error('name') <p id="name-error" class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                 </div>
 
                 {{-- Layout --}}
                 <div>
-                    <label class="form-label">Layout Style</label>
-                    <select wire:model.live="layout"
+                    <label for="layout" class="form-label">Layout Style</label>
+                    <select id="layout" wire:model.live="layout"
                         class="form-control text-sm">
                         @foreach($layoutOptions as $value => $label)
                             <option value="{{ $value }}">{{ $label }}</option>
@@ -34,59 +34,59 @@
                     </h4>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Primary</label>
+                            <label for="primary_color" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Primary</label>
                             <div class="flex items-center gap-2">
-                                <input type="color" wire:model.live="primary_color" class="h-8 w-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer">
-                                <input type="text" wire:model.live="primary_color" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm text-xs" maxlength="7">
+                                <input id="primary_color" type="color" wire:model.live="primary_color" class="h-8 w-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer">
+                                <input aria-label="Primary color" type="text" wire:model.live="primary_color" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm text-xs" maxlength="7">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Secondary</label>
+                            <label for="secondary_color" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Secondary</label>
                             <div class="flex items-center gap-2">
-                                <input type="color" wire:model.live="secondary_color" class="h-8 w-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer">
-                                <input type="text" wire:model.live="secondary_color" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm text-xs" maxlength="7">
+                                <input id="secondary_color" type="color" wire:model.live="secondary_color" class="h-8 w-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer">
+                                <input aria-label="Secondary color" type="text" wire:model.live="secondary_color" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm text-xs" maxlength="7">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Accent</label>
+                            <label for="accent_color" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Accent</label>
                             <div class="flex items-center gap-2">
-                                <input type="color" wire:model.live="accent_color" class="h-8 w-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer">
-                                <input type="text" wire:model.live="accent_color" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm text-xs" maxlength="7">
+                                <input id="accent_color" type="color" wire:model.live="accent_color" class="h-8 w-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer">
+                                <input aria-label="Accent color" type="text" wire:model.live="accent_color" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm text-xs" maxlength="7">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Header BG</label>
+                            <label for="header_bg_color" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Header BG</label>
                             <div class="flex items-center gap-2">
-                                <input type="color" wire:model.live="header_bg_color" class="h-8 w-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer">
-                                <input type="text" wire:model.live="header_bg_color" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm text-xs" maxlength="7">
+                                <input id="header_bg_color" type="color" wire:model.live="header_bg_color" class="h-8 w-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer">
+                                <input aria-label="Header bg color" type="text" wire:model.live="header_bg_color" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm text-xs" maxlength="7">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Header Text</label>
+                            <label for="header_text_color" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Header Text</label>
                             <div class="flex items-center gap-2">
-                                <input type="color" wire:model.live="header_text_color" class="h-8 w-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer">
-                                <input type="text" wire:model.live="header_text_color" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm text-xs" maxlength="7">
+                                <input id="header_text_color" type="color" wire:model.live="header_text_color" class="h-8 w-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer">
+                                <input aria-label="Header text color" type="text" wire:model.live="header_text_color" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm text-xs" maxlength="7">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Table Header</label>
+                            <label for="table_header_bg" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Table Header</label>
                             <div class="flex items-center gap-2">
-                                <input type="color" wire:model.live="table_header_bg" class="h-8 w-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer">
-                                <input type="text" wire:model.live="table_header_bg" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm text-xs" maxlength="7">
+                                <input id="table_header_bg" type="color" wire:model.live="table_header_bg" class="h-8 w-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer">
+                                <input aria-label="Table header bg" type="text" wire:model.live="table_header_bg" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm text-xs" maxlength="7">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Footer BG</label>
+                            <label for="footer_bg_color" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Footer BG</label>
                             <div class="flex items-center gap-2">
-                                <input type="color" wire:model.live="footer_bg_color" class="h-8 w-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer">
-                                <input type="text" wire:model.live="footer_bg_color" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm text-xs" maxlength="7">
+                                <input id="footer_bg_color" type="color" wire:model.live="footer_bg_color" class="h-8 w-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer">
+                                <input aria-label="Footer bg color" type="text" wire:model.live="footer_bg_color" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm text-xs" maxlength="7">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Footer Text</label>
+                            <label for="footer_text_color" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Footer Text</label>
                             <div class="flex items-center gap-2">
-                                <input type="color" wire:model.live="footer_text_color" class="h-8 w-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer">
-                                <input type="text" wire:model.live="footer_text_color" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm text-xs" maxlength="7">
+                                <input id="footer_text_color" type="color" wire:model.live="footer_text_color" class="h-8 w-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer">
+                                <input aria-label="Footer text color" type="text" wire:model.live="footer_text_color" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm text-xs" maxlength="7">
                             </div>
                         </div>
                     </div>
@@ -100,8 +100,8 @@
                     </h4>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Font Family</label>
-                            <select wire:model.live="font_family"
+                            <label for="font_family" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Font Family</label>
+                            <select id="font_family" wire:model.live="font_family"
                                 class="form-control text-xs">
                                 @foreach($fontOptions as $value => $label)
                                     <option value="{{ $value }}">{{ $label }}</option>
@@ -109,8 +109,8 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Font Size (px)</label>
-                            <input type="number" wire:model.live="font_size" min="8" max="20"
+                            <label for="font_size" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Font Size (px)</label>
+                            <input id="font_size" type="number" wire:model.live="font_size" min="8" max="20"
                                 class="form-control text-xs">
                         </div>
                     </div>
@@ -121,8 +121,8 @@
                     <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">Header Border</h4>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Style</label>
-                            <select wire:model.live="border_style"
+                            <label for="border_style" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Style</label>
+                            <select id="border_style" wire:model.live="border_style"
                                 class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm text-xs">
                                 <option value="solid">Solid</option>
                                 <option value="dashed">Dashed</option>
@@ -131,8 +131,8 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Width (px)</label>
-                            <input type="number" wire:model.live="border_width" min="0" max="10"
+                            <label for="border_width" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Width (px)</label>
+                            <input id="border_width" type="number" wire:model.live="border_width" min="0" max="10"
                                 class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm text-xs">
                         </div>
                     </div>
@@ -168,8 +168,8 @@
                 {{-- Footer Text --}}
                 @if($show_footer)
                 <div>
-                    <label class="form-label">Footer Message</label>
-                    <input type="text" wire:model.live="footer_text"
+                    <label for="footer_text" class="form-label">Footer Message</label>
+                    <input id="footer_text" type="text" wire:model.live="footer_text"
                         class="form-control text-sm">
                 </div>
                 @endif

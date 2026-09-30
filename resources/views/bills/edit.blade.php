@@ -41,7 +41,7 @@
                                 placeholder: 'Select Vendor'
                             })">
                                 <label for="vendor_id" class="form-label">Vendor <span class="text-red-500">*</span></label>
-                                <input type="hidden" name="vendor_id" :value="selectedId" required>
+                                <input type="hidden" name="vendor_id" :value="selectedId" required @error('vendor_id') aria-invalid="true" aria-describedby="vendor_id-error" @enderror>
                                 <div class="relative">
                                     <input type="text" 
                                         x-model="search" 
@@ -65,25 +65,25 @@
                                     </div>
                                 </div>
                                 @error('vendor_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="vendor_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
                                 <label for="bill_date" class="form-label">Bill Date <span class="text-red-500">*</span></label>
                                 <input type="date" name="bill_date" id="bill_date" value="{{ old('bill_date', $bill->bill_date->format('Y-m-d')) }}" required
-                                    class="form-control @error('bill_date') border-red-500 @enderror">
+                                    class="form-control @error('bill_date') border-red-500 @enderror" @error('bill_date') aria-invalid="true" aria-describedby="bill_date-error" @enderror>
                                 @error('bill_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="bill_date-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
                                 <label for="due_date" class="form-label">Due Date <span class="text-red-500">*</span></label>
                                 <input type="date" name="due_date" id="due_date" value="{{ old('due_date', $bill->due_date->format('Y-m-d')) }}" required
-                                    class="form-control @error('due_date') border-red-500 @enderror">
+                                    class="form-control @error('due_date') border-red-500 @enderror" @error('due_date') aria-invalid="true" aria-describedby="due_date-error" @enderror>
                                 @error('due_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="due_date-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>

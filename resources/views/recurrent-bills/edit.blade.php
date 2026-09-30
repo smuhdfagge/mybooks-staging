@@ -42,14 +42,14 @@
                             <div>
                                 <label for="frequency" class="form-label">Frequency <span class="text-red-500">*</span></label>
                                 <select name="frequency" id="frequency" required
-                                    class="form-control @error('frequency') border-red-500 @enderror">
+                                    class="form-control @error('frequency') border-red-500 @enderror" @error('frequency') aria-invalid="true" aria-describedby="frequency-error" @enderror>
                                     <option value="weekly" {{ old('frequency', $recurrentBill->frequency) == 'weekly' ? 'selected' : '' }}>Weekly</option>
                                     <option value="monthly" {{ old('frequency', $recurrentBill->frequency) == 'monthly' ? 'selected' : '' }}>Monthly</option>
                                     <option value="quarterly" {{ old('frequency', $recurrentBill->frequency) == 'quarterly' ? 'selected' : '' }}>Quarterly</option>
                                     <option value="yearly" {{ old('frequency', $recurrentBill->frequency) == 'yearly' ? 'selected' : '' }}>Yearly</option>
                                 </select>
                                 @error('frequency')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="frequency-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -63,7 +63,7 @@
                                 <x-field name="end_date" label="End Date" type="date" :value="old('end_date', $recurrentBill->end_date?->format('Y-m-d'))" />
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave empty for indefinite</p>
                                 @error('end_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="end_date-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 

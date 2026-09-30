@@ -232,6 +232,9 @@
                     </div>
                     @endif
 
+                    {{-- Form errors, listed once for the whole page (U6) --}}
+                    <x-error-summary />
+
                     <!-- Main content -->
                     <div class="w-full">
                         {{ $slot }}

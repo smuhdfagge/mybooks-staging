@@ -32,9 +32,9 @@
                                 <label for="name" class="form-label">Designation Name <span class="text-red-500">*</span></label>
                                 <input type="text" name="name" id="name" value="{{ old('name') }}" required
                                     class="form-control @error('name') border-red-500 @enderror"
-                                    placeholder="e.g., Software Engineer, Manager, Accountant">
+                                    placeholder="e.g., Software Engineer, Manager, Accountant" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                                 @error('name')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="name-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -42,9 +42,9 @@
                                 <label for="description" class="form-label">Description</label>
                                 <textarea name="description" id="description" rows="3"
                                     class="form-control @error('description') border-red-500 @enderror"
-                                    placeholder="Brief description of this designation's responsibilities...">{{ old('description') }}</textarea>
+                                    placeholder="Brief description of this designation's responsibilities..." @error('description') aria-invalid="true" aria-describedby="description-error" @enderror>{{ old('description') }}</textarea>
                                 @error('description')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="description-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>

@@ -24,7 +24,7 @@
                         <div>
                             <label for="employee_id" class="form-label">Employee <span class="text-red-500">*</span></label>
                             <select name="employee_id" id="employee_id" required
-                                class="form-control @error('employee_id') border-red-500 @enderror">
+                                class="form-control @error('employee_id') border-red-500 @enderror" @error('employee_id') aria-invalid="true" aria-describedby="employee_id-error" @enderror>
                                 <option value="">Select Employee</option>
                                 @foreach($employees as $employee)
                                     <option value="{{ $employee->id }}" {{ old('employee_id') == $employee->id ? 'selected' : '' }}>
@@ -33,7 +33,7 @@
                                 @endforeach
                             </select>
                             @error('employee_id')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="employee_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -41,7 +41,7 @@
                         <div>
                             <label for="leave_type_id" class="form-label">Leave Type <span class="text-red-500">*</span></label>
                             <select name="leave_type_id" id="leave_type_id" required
-                                class="form-control @error('leave_type_id') border-red-500 @enderror">
+                                class="form-control @error('leave_type_id') border-red-500 @enderror" @error('leave_type_id') aria-invalid="true" aria-describedby="leave_type_id-error" @enderror>
                                 <option value="">Select Leave Type</option>
                                 @foreach($leaveTypes as $leaveType)
                                     <option value="{{ $leaveType->id }}" {{ old('leave_type_id') == $leaveType->id ? 'selected' : '' }}>
@@ -50,7 +50,7 @@
                                 @endforeach
                             </select>
                             @error('leave_type_id')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="leave_type_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -70,9 +70,9 @@
                             <label for="reason" class="form-label">Reason</label>
                             <textarea name="reason" id="reason" rows="4"
                                 class="form-control @error('reason') border-red-500 @enderror"
-                                placeholder="Optional: Provide a reason for your leave request">{{ old('reason') }}</textarea>
+                                placeholder="Optional: Provide a reason for your leave request" @error('reason') aria-invalid="true" aria-describedby="reason-error" @enderror>{{ old('reason') }}</textarea>
                             @error('reason')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="reason-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>

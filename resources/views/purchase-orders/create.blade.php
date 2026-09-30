@@ -38,7 +38,7 @@
                                 selectedId: '{{ old('vendor_id') }}'
                             })" class="relative">
                                 <label for="vendor_search" class="form-label">Vendor <span class="text-red-500">*</span></label>
-                                <input type="hidden" name="vendor_id" :value="selectedId" required>
+                                <input type="hidden" name="vendor_id" :value="selectedId" required @error('vendor_id') aria-invalid="true" aria-describedby="vendor_id-error" @enderror>
                                 <div class="relative">
                                     <input 
                                         type="text" 
@@ -84,7 +84,7 @@
                                     </div>
                                 </div>
                                 @error('vendor_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="vendor_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 

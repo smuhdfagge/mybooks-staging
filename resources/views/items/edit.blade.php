@@ -43,9 +43,9 @@
                                         {{ $item->image_path ? 'Change Image' : 'Upload Image' }}
                                     </label>
                                     <input type="file" name="image" accept="image/*" class="hidden" id="item-image-upload"
-                                        @change="const file = $event.target.files[0]; if(file) { const reader = new FileReader(); reader.onload = e => preview = e.target.result; reader.readAsDataURL(file); }">
+                                        @change="const file = $event.target.files[0]; if(file) { const reader = new FileReader(); reader.onload = e => preview = e.target.result; reader.readAsDataURL(file); }" @error('image') aria-invalid="true" aria-describedby="image-error" @enderror>
                                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">JPG, PNG, GIF or WebP. Max 2MB.</p>
-                                    @error('image') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                    @error('image') <p id="image-error" class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                                 </div>
                             </div>
                         </div>
@@ -62,7 +62,7 @@
                             <div>
                                 <label for="category_id" class="form-label">Category</label>
                                 <select name="category_id" id="category_id"
-                                    class="form-control @error('category_id') border-red-500 @enderror">
+                                    class="form-control @error('category_id') border-red-500 @enderror" @error('category_id') aria-invalid="true" aria-describedby="category_id-error" @enderror>
                                     <option value="">-- No Category --</option>
                                     @foreach($categories as $category)
                                         <option value="{{ $category->id }}" {{ old('category_id', $item->category_id) == $category->id ? 'selected' : '' }}>
@@ -71,19 +71,19 @@
                                     @endforeach
                                 </select>
                                 @error('category_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="category_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
                                 <label for="type" class="form-label">Type <span class="text-red-500">*</span></label>
                                 <select name="type" id="type" required
-                                    class="form-control @error('type') border-red-500 @enderror">
+                                    class="form-control @error('type') border-red-500 @enderror" @error('type') aria-invalid="true" aria-describedby="type-error" @enderror>
                                     <option value="product" {{ old('type', $item->type) == 'product' ? 'selected' : '' }}>Product</option>
                                     <option value="service" {{ old('type', $item->type) == 'service' ? 'selected' : '' }}>Service</option>
                                 </select>
                                 @error('type')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="type-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -106,10 +106,10 @@
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400">@currencySymbol</span>
                                     <input type="number" name="selling_price" id="selling_price" value="{{ old('selling_price', $item->selling_price) }}" min="0" step="0.01" required
-                                        class="w-full pl-8 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('selling_price') border-red-500 @enderror">
+                                        class="w-full pl-8 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('selling_price') border-red-500 @enderror" @error('selling_price') aria-invalid="true" aria-describedby="selling_price-error" @enderror>
                                 </div>
                                 @error('selling_price')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="selling_price-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -118,10 +118,10 @@
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400">@currencySymbol</span>
                                     <input type="number" name="cost_price" id="cost_price" value="{{ old('cost_price', $item->cost_price) }}" min="0" step="0.01"
-                                        class="w-full pl-8 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('cost_price') border-red-500 @enderror">
+                                        class="w-full pl-8 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('cost_price') border-red-500 @enderror" @error('cost_price') aria-invalid="true" aria-describedby="cost_price-error" @enderror>
                                 </div>
                                 @error('cost_price')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="cost_price-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -129,11 +129,11 @@
                                 <label for="tax_rate" class="form-label">Tax Rate (%)</label>
                                 <div class="relative">
                                     <input type="number" name="tax_rate" id="tax_rate" value="{{ old('tax_rate', $item->tax_rate) }}" min="0" max="100" step="0.01"
-                                        class="w-full pr-8 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('tax_rate') border-red-500 @enderror">
+                                        class="w-full pr-8 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('tax_rate') border-red-500 @enderror" @error('tax_rate') aria-invalid="true" aria-describedby="tax_rate-error" @enderror>
                                     <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 dark:text-gray-400">%</span>
                                 </div>
                                 @error('tax_rate')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="tax_rate-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -159,7 +159,7 @@
                                 <x-field name="reorder_level" label="Reorder Level" type="number" :value="old('reorder_level', $item->reorder_level)" min="0" />
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Alert when stock falls below this level</p>
                                 @error('reorder_level')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="reorder_level-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 

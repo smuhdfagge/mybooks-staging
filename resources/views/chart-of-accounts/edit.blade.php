@@ -34,9 +34,9 @@
                                 <label for="account_code" class="form-label">Account Code <span class="text-red-500">*</span></label>
                                 <input type="text" name="account_code" id="account_code" value="{{ old('account_code', $chartOfAccount->account_code) }}" required
                                     class="form-control @error('account_code') border-red-500 @enderror"
-                                    placeholder="e.g., 1000, 2000, 3000">
+                                    placeholder="e.g., 1000, 2000, 3000" @error('account_code') aria-invalid="true" aria-describedby="account_code-error" @enderror>
                                 @error('account_code')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="account_code-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -44,9 +44,9 @@
                                 <label for="name" class="form-label">Account Name <span class="text-red-500">*</span></label>
                                 <input type="text" name="name" id="name" value="{{ old('name', $chartOfAccount->name) }}" required
                                     class="form-control @error('name') border-red-500 @enderror"
-                                    placeholder="e.g., Cash, Accounts Receivable">
+                                    placeholder="e.g., Cash, Accounts Receivable" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                                 @error('name')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="name-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -60,7 +60,7 @@
                                     search-placeholder="Search types..."
                                     :has-error="$errors->has('type')" />
                                 @error('type')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="type-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -68,9 +68,9 @@
                                 <label for="sub_type" class="form-label">Sub Type</label>
                                 <input type="text" name="sub_type" id="sub_type" value="{{ old('sub_type', $chartOfAccount->sub_type) }}"
                                     class="form-control @error('sub_type') border-red-500 @enderror"
-                                    placeholder="e.g., Current Asset, Fixed Asset">
+                                    placeholder="e.g., Current Asset, Fixed Asset" @error('sub_type') aria-invalid="true" aria-describedby="sub_type-error" @enderror>
                                 @error('sub_type')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="sub_type-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -84,7 +84,7 @@
                                     search-placeholder="Search accounts..."
                                     :has-error="$errors->has('parent_id')" />
                                 @error('parent_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="parent_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -133,9 +133,9 @@
                             <label for="description" class="form-label">Account Description</label>
                             <textarea name="description" id="description" rows="3"
                                 class="form-control @error('description') border-red-500 @enderror"
-                                placeholder="Describe the purpose of this account...">{{ old('description', $chartOfAccount->description) }}</textarea>
+                                placeholder="Describe the purpose of this account..." @error('description') aria-invalid="true" aria-describedby="description-error" @enderror>{{ old('description', $chartOfAccount->description) }}</textarea>
                             @error('description')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="description-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>

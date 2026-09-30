@@ -7,6 +7,7 @@
     <x-field name="type" label="Type" type="select"> <option ...> </x-field>
 
     Other attributes (step, min, placeholder, x-model, ...) go on the control.
+    With an error the control gets aria-invalid and aria-describedby (U6).
 --}}
 @props([
     'name',
@@ -21,8 +22,11 @@
 @php
     $id = $id ?? trim(preg_replace('/[^A-Za-z0-9_-]+/', '-', $name), '-');
     $errorKey = trim(str_replace(['[]', '[', ']'], ['', '.', ''], $name), '.');
-    $error = $errors->first($errorKey);
+    $error = isset($errors) ? $errors->first($errorKey) : null;
     $controlClass = 'form-control'.($error ? ' border-red-500' : '');
+    // Screen readers read the help and the error with the field (U6).
+    $describedBy = trim(($help ? $id.'-help ' : '').($error ? $id.'-error' : ''));
+    $aria = array_filter(['aria-invalid' => $error ? 'true' : null, 'aria-describedby' => $describedBy ?: null]);
 @endphp
 
 @if($label)
@@ -30,13 +34,13 @@
 @endif
 
 @if($type === 'textarea')
-    <textarea name="{{ $name }}" id="{{ $id }}" @required($required) {{ $attributes->merge(['class' => $controlClass]) }}>{{ $value }}</textarea>
+    <textarea name="{{ $name }}" id="{{ $id }}" @required($required) {{ $attributes->merge(['class' => $controlClass] + $aria) }}>{{ $value }}</textarea>
 @elseif($type === 'select')
-    <select name="{{ $name }}" id="{{ $id }}" @required($required) {{ $attributes->merge(['class' => $controlClass]) }}>
+    <select name="{{ $name }}" id="{{ $id }}" @required($required) {{ $attributes->merge(['class' => $controlClass] + $aria) }}>
         {{ $slot }}
     </select>
 @else
-    <input type="{{ $type }}" name="{{ $name }}" id="{{ $id }}" value="{{ $value }}" @required($required) {{ $attributes->merge(['class' => $controlClass]) }}>
+    <input type="{{ $type }}" name="{{ $name }}" id="{{ $id }}" value="{{ $value }}" @required($required) {{ $attributes->merge(['class' => $controlClass] + $aria) }}>
 @endif
 
 @if($help)

@@ -35,7 +35,7 @@
                             <div>
                                 <label for="expense_account_id" class="form-label">Expense Account <span class="text-red-500">*</span></label>
                                 <select name="expense_account_id" id="expense_account_id" required
-                                    class="form-control @error('expense_account_id') border-red-500 @enderror">
+                                    class="form-control @error('expense_account_id') border-red-500 @enderror" @error('expense_account_id') aria-invalid="true" aria-describedby="expense_account_id-error" @enderror>
                                     <option value="">Select Account</option>
                                     @foreach($expenseAccounts as $account)
                                         <option value="{{ $account->id }}" {{ old('expense_account_id') == $account->id ? 'selected' : '' }}>
@@ -44,7 +44,7 @@
                                     @endforeach
                                 </select>
                                 @error('expense_account_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="expense_account_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -52,10 +52,10 @@
                                 <label for="amount" class="form-label">Amount <span class="text-red-500">*</span></label>
                                 <div class="relative">
                                     <input type="number" name="amount" id="amount" value="{{ old('amount') }}" min="0.01" step="0.01" required placeholder="0.00"
-                                        class="form-control @error('amount') border-red-500 @enderror">
+                                        class="form-control @error('amount') border-red-500 @enderror" @error('amount') aria-invalid="true" aria-describedby="amount-error" @enderror>
                                 </div>
                                 @error('amount')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="amount-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -64,7 +64,7 @@
                                 selectedId: '{{ old('vendor_id') }}'
                             })" class="relative">
                                 <label for="vendor_search" class="form-label">Vendor</label>
-                                <input type="hidden" name="vendor_id" :value="selectedId">
+                                <input type="hidden" name="vendor_id" :value="selectedId" @error('vendor_id') aria-invalid="true" aria-describedby="vendor_id-error" @enderror>
                                 <div class="relative">
                                     <input 
                                         type="text" 
@@ -110,14 +110,14 @@
                                     </div>
                                 </div>
                                 @error('vendor_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="vendor_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
                                 <label for="paid_through_id" class="form-label">Paid Through</label>
                                 <select name="paid_through_id" id="paid_through_id"
-                                    class="form-control @error('paid_through_id') border-red-500 @enderror">
+                                    class="form-control @error('paid_through_id') border-red-500 @enderror" @error('paid_through_id') aria-invalid="true" aria-describedby="paid_through_id-error" @enderror>
                                     <option value="">Select Account (Optional)</option>
                                     @foreach($paymentAccounts as $account)
                                         <option value="{{ $account->id }}" {{ old('paid_through_id') == $account->id ? 'selected' : '' }}>
@@ -126,7 +126,7 @@
                                     @endforeach
                                 </select>
                                 @error('paid_through_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="paid_through_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -144,7 +144,7 @@
                             <div>
                                 <label for="frequency" class="form-label">Frequency <span class="text-red-500">*</span></label>
                                 <select name="frequency" id="frequency" required
-                                    class="form-control @error('frequency') border-red-500 @enderror">
+                                    class="form-control @error('frequency') border-red-500 @enderror" @error('frequency') aria-invalid="true" aria-describedby="frequency-error" @enderror>
                                     <option value="">Select Frequency</option>
                                     <option value="weekly" {{ old('frequency') == 'weekly' ? 'selected' : '' }}>Weekly</option>
                                     <option value="monthly" {{ old('frequency') == 'monthly' ? 'selected' : '' }}>Monthly</option>
@@ -152,7 +152,7 @@
                                     <option value="yearly" {{ old('frequency') == 'yearly' ? 'selected' : '' }}>Yearly</option>
                                 </select>
                                 @error('frequency')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="frequency-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -164,7 +164,7 @@
                                 <x-field name="end_date" label="End Date" type="date" :value="old('end_date')" />
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave empty for indefinite</p>
                                 @error('end_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="end_date-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>

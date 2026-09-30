@@ -249,8 +249,8 @@
                         
                         <!-- Plan Selection -->
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Plan</label>
-                            <select wire:model.live="selectedPlanId" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <label for="selectedPlanId" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Plan</label>
+                            <select id="selectedPlanId" wire:model.live="selectedPlanId" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 @foreach($plans as $plan)
                                     <option value="{{ $plan->id }}">{{ $plan->name }} - ₦{{ number_format($plan->monthly_price) }}/mo ({{ $plan->max_users }} users)</option>
                                 @endforeach
@@ -326,8 +326,8 @@
                                     </p>
                                 </div>
                                 <div class="mt-4">
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Reason for cancellation (optional)</label>
-                                    <textarea wire:model="cancellationReason" rows="3" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="Tell us why you're leaving..."></textarea>
+                                    <label for="cancellationReason" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Reason for cancellation (optional)</label>
+                                    <textarea id="cancellationReason" wire:model="cancellationReason" rows="3" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="Tell us why you're leaving..."></textarea>
                                 </div>
                             </div>
                         </div>

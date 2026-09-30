@@ -323,14 +323,14 @@
                         <input type="hidden" name="customer_id" value="{{ $invoice->customer_id }}">
                         
                         <div>
-                            <label class="form-label">Amount</label>
-                            <input type="number" name="amount" value="{{ $invoice->balance_due }}" min="0.01" max="{{ $invoice->balance_due }}" step="0.01" required
+                            <label for="amount" class="form-label">Amount</label>
+                            <input id="amount" type="number" name="amount" value="{{ $invoice->balance_due }}" min="0.01" max="{{ $invoice->balance_due }}" step="0.01" required
                                 class="form-control">
                         </div>
                         
                         <div>
-                            <label class="form-label">Date</label>
-                            <input type="date" name="payment_date" value="{{ date('Y-m-d') }}" required
+                            <label for="payment_date" class="form-label">Date</label>
+                            <input id="payment_date" type="date" name="payment_date" value="{{ date('Y-m-d') }}" required
                                 class="form-control">
                         </div>
                         
