@@ -403,4 +403,16 @@ class PhaseDUiTest extends TestCase
         $css = file_get_contents(resource_path('css/app.css'));
         $this->assertMatchesRegularExpression('/@media \(max-width: 767\.98px\)\s*\{\s*\.line-items/', $css);
     }
+
+    public function test_the_expense_edit_page_opens(): void
+    {
+        // Its vendor list escaped quotes inside {{ }}, a PHP syntax error,
+        // so the page never opened.
+        $this->createAuthenticatedUser(['view expenses', 'create expenses', 'edit expenses']);
+        \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Dangote', 'company_name' => 'Dangote Ltd']);
+        $account = \App\Models\ChartOfAccount::withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->where('type', 'expense')->firstOrFail();
+        $expense = \App\Models\Expense::factory()->create(['tenant_id' => $this->tenant->id, 'expense_account_id' => $account->id, 'status' => 'draft']);
+
+        $this->get(route('expenses.edit', $expense))->assertOk()->assertSee('Dangote (Dangote Ltd)', false);
+    }
 }
