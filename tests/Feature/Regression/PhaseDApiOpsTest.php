@@ -330,4 +330,18 @@ class PhaseDApiOpsTest extends TestCase
             $this->assertMatchesRegularExpression('/^SESSION_SECURE_COOKIE=true$/m', $content, $name);
         }
     }
+
+    // ── O3: CI covers MariaDB, PHP 8.4 and a dependency audit ───
+
+    public function test_o3_ci_runs_mariadb_php_84_and_composer_audit(): void
+    {
+        $ci = \Symfony\Component\Yaml\Yaml::parseFile(base_path('.github/workflows/php.yml'));
+
+        $this->assertEqualsCanonicalizing(['8.2', '8.4'], $ci['jobs']['tests']['strategy']['matrix']['php']);
+        $this->assertArrayHasKey('mariadb', $ci['jobs']['mariadb']['services']);
+        $this->assertSame('mariadb', $ci['jobs']['mariadb']['env']['DB_CONNECTION']);
+
+        $runs = collect($ci['jobs']['tests']['steps'])->pluck('run')->filter()->implode("\n");
+        $this->assertStringContainsString('composer audit', $runs);
+    }
 }
