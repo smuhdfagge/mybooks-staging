@@ -70,7 +70,9 @@ Route::prefix('v1')->group(function () {
     |--------------------------------------------------------------------------
     */
     // throttle:api limits every route here, reads and writes separately (I8).
-    Route::middleware(['auth:sanctum', 'active', 'throttle:api', 'subscription', 'tenant'])->group(function () {
+    // 'idempotent' replays the first result of a write sent again with the
+    // same Idempotency-Key header (I5).
+    Route::middleware(['auth:sanctum', 'active', 'throttle:api', 'subscription', 'tenant', 'idempotent'])->group(function () {
         // Auth routes (exempt from permission checks)
         Route::prefix('auth')->group(function () {
             Route::post('logout', [AuthController::class, 'logout']);

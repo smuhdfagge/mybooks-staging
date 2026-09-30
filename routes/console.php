@@ -74,6 +74,12 @@ Schedule::command('retention:purge --force')
     ->onOneServer()
     ->appendOutputTo(storage_path('logs/retention-purge.log'));
 
+// Drop API idempotency keys older than 24 hours (I5)
+Schedule::command('model:prune', ['--model' => [\App\Models\IdempotencyKey::class]])
+    ->dailyAt('03:15')
+    ->withoutOverlapping()
+    ->onOneServer();
+
 /*
 |--------------------------------------------------------------------------
 | Billing

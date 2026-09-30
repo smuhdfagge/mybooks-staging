@@ -40,6 +40,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant' => \App\Http\Middleware\VerifyTenantOwnership::class,
             'active' => \App\Http\Middleware\EnsureAccountActive::class,
             'feature' => \App\Http\Middleware\EnsureFeatureEnabled::class,
+            'idempotent' => \App\Http\Middleware\EnsureIdempotency::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

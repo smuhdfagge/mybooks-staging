@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Regression;
 
+use App\Models\Customer;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
@@ -189,5 +190,58 @@ class PhaseDApiOpsTest extends TestCase
         $this->assertSame('TIN-99887766', $data['tax_id']);
         $this->assertEquals(250000, $data['salary']);
         $this->assertFalse($data['sensitive_masked']);
+    }
+
+    // ── I5: Idempotency-Key on API writes ───────────────────────
+
+    public function test_i5_a_retry_with_the_same_key_replays_instead_of_creating_twice(): void
+    {
+        $this->createAuthenticatedUser(['create customers']);
+        $body = ['name' => 'Dangote Retail', 'email' => 'buyer@example.com'];
+        $headers = ['Idempotency-Key' => 'retry-123'];
+
+        $first = $this->postJson('/api/v1/customers', $body, $headers)->assertCreated();
+        $second = $this->postJson('/api/v1/customers', $body, $headers)->assertCreated()
+            ->assertHeader('Idempotent-Replayed', 'true');
+
+        $this->assertSame($first->json('data.id'), $second->json('data.id'));
+        $this->assertSame(1, Customer::where('tenant_id', $this->tenant->id)->count());
+
+        // The same key for a different request is refused.
+        $this->postJson('/api/v1/customers', ['name' => 'Someone else'], $headers)->assertStatus(422);
+        // Without a key, requests behave as before.
+        $this->postJson('/api/v1/customers', $body)->assertCreated();
+        $this->assertSame(2, Customer::where('tenant_id', $this->tenant->id)->count());
+    }
+
+    public function test_i5_keys_are_per_user_and_failed_requests_are_not_kept(): void
+    {
+        $this->createAuthenticatedUser(['create customers']);
+        $headers = ['Idempotency-Key' => 'k-1'];
+
+        $this->postJson('/api/v1/customers', [], $headers)->assertStatus(422);
+        // After fixing the request the client can reuse the key.
+        $this->postJson('/api/v1/customers', ['name' => 'Fixed'], $headers)->assertCreated();
+
+        $other = $this->createUserForTenant($this->tenant, ['create customers']);
+        $this->actingAs($other);
+        $this->postJson('/api/v1/customers', ['name' => 'Fixed'], $headers)->assertCreated()
+            ->assertHeaderMissing('Idempotent-Replayed');
+        $this->assertSame(2, Customer::where('tenant_id', $this->tenant->id)->count());
+    }
+
+    public function test_i5_old_keys_are_pruned_on_schedule(): void
+    {
+        $this->createAuthenticatedUser();
+        $old = \App\Models\IdempotencyKey::create(['user_id' => $this->user->id, 'key' => 'old', 'route' => 'POST x', 'request_hash' => str_repeat('a', 64), 'status_code' => 201]);
+        $old->forceFill(['created_at' => now()->subHours(25)])->save();
+        \App\Models\IdempotencyKey::create(['user_id' => $this->user->id, 'key' => 'new', 'route' => 'POST x', 'request_hash' => str_repeat('a', 64), 'status_code' => 201]);
+
+        $this->artisan('model:prune', ['--model' => [\App\Models\IdempotencyKey::class]])->assertSuccessful();
+
+        $this->assertSame(['new'], \App\Models\IdempotencyKey::pluck('key')->all());
+
+        $events = collect(app(\Illuminate\Console\Scheduling\Schedule::class)->events())->map->command;
+        $this->assertTrue($events->contains(fn ($c) => str_contains((string) $c, 'model:prune') && str_contains((string) $c, 'IdempotencyKey')));
     }
 }
