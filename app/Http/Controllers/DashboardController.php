@@ -7,9 +7,13 @@ use App\Models\Employee;
 use App\Models\Expense;
 use App\Models\Inventory;
 use App\Models\Invoice;
+use App\Support\SqlDate;
+use Illuminate\Support\Facades\Cache;
 
 class DashboardController extends Controller
 {
+    private const CACHE_SECONDS = 300;
+
     public function index()
     {
         $user = auth()->user();
@@ -17,84 +21,65 @@ class DashboardController extends Controller
 
         $data = [];
 
+        // Totals are cached per business for 5 minutes, and month filters
+        // use date ranges so the date indexes can be used (P5).
+        $monthStart = now()->startOfMonth()->toDateString();
+        $nextMonth = now()->startOfMonth()->addMonth()->toDateString();
+        $cache = fn (string $key, callable $callback) => Cache::remember("dashboard:{$tenantId}:{$key}", self::CACHE_SECONDS, $callback);
+
         // Total Revenue card
         if ($user->can('total-revenue dashboard-widgets')) {
-            $data['totalRevenue'] = Invoice::where('tenant_id', $tenantId)
-                ->whereIn('status', ['paid', 'partial'])
-                ->sum('amount_paid');
+            [$data['totalRevenue'], $data['monthlyRevenue']] = $cache('revenue:'.$monthStart, function () use ($tenantId, $monthStart, $nextMonth) {
+                $row = Invoice::where('tenant_id', $tenantId)
+                    ->whereIn('status', ['paid', 'partial'])
+                    ->selectRaw('SUM(amount_paid) as total, SUM(CASE WHEN invoice_date >= ? AND invoice_date < ? THEN amount_paid ELSE 0 END) as this_month', [$monthStart, $nextMonth])
+                    ->toBase()
+                    ->first();
 
-            $data['monthlyRevenue'] = Invoice::where('tenant_id', $tenantId)
-                ->whereIn('status', ['paid', 'partial'])
-                ->whereMonth('invoice_date', now()->month)
-                ->whereYear('invoice_date', now()->year)
-                ->sum('amount_paid');
+                return [$row->total ?? 0, $row->this_month ?? 0];
+            });
         }
 
         // Outstanding Receivables card
         if ($user->can('outstanding-receivables dashboard-widgets')) {
-            $data['accountsReceivable'] = Invoice::where('tenant_id', $tenantId)
-                ->whereIn('status', ['unpaid', 'partial', 'overdue'])
-                ->sum('balance_due');
+            [$data['accountsReceivable'], $data['overdueInvoices']] = $cache('receivables', function () use ($tenantId) {
+                $receivable = Invoice::where('tenant_id', $tenantId)
+                    ->whereIn('status', ['unpaid', 'partial', 'overdue'])
+                    ->sum('balance_due');
 
-            $data['overdueInvoices'] = Invoice::where('tenant_id', $tenantId)
-                ->where(function ($query) {
-                    $query->where('status', 'overdue')
-                        ->orWhere(function ($q) {
-                            $q->whereIn('status', ['unpaid', 'partial'])
-                                ->where('due_date', '<', now());
-                        });
-                })
-                ->count();
+                $overdue = Invoice::where('tenant_id', $tenantId)
+                    ->where(function ($query) {
+                        $query->where('status', 'overdue')
+                            ->orWhere(function ($q) {
+                                $q->whereIn('status', ['unpaid', 'partial'])
+                                    ->where('due_date', '<', now());
+                            });
+                    })
+                    ->count();
+
+                return [$receivable, $overdue];
+            });
         }
 
         // Monthly Expenses card
         if ($user->can('monthly-expenses dashboard-widgets')) {
-            $data['monthlyExpenses'] = Expense::where('tenant_id', $tenantId)
+            $data['monthlyExpenses'] = $cache('expenses:'.$monthStart, fn () => Expense::where('tenant_id', $tenantId)
                 ->where('status', Expense::STATUS_PAID)
-                ->whereMonth('expense_date', now()->month)
-                ->whereYear('expense_date', now()->year)
-                ->sum('total');
+                ->where('expense_date', '>=', $monthStart)
+                ->where('expense_date', '<', $nextMonth)
+                ->sum('total'));
         }
 
         // Employees count card
         if ($user->can('employees-count dashboard-widgets')) {
-            $data['totalEmployees'] = Employee::where('tenant_id', $tenantId)
+            $data['totalEmployees'] = $cache('employees', fn () => Employee::where('tenant_id', $tenantId)
                 ->where('status', 'active')
-                ->count();
+                ->count());
         }
 
-        // Revenue vs Expenses chart
+        // Revenue vs Expenses chart: three grouped queries instead of 36
         if ($user->can('revenue-chart dashboard-widgets')) {
-            $currentYear = now()->year;
-            $monthlyTrends = [];
-            $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-            for ($month = 1; $month <= 12; $month++) {
-                $revenue = Invoice::where('tenant_id', $tenantId)
-                    ->whereIn('status', ['paid', 'partial'])
-                    ->whereMonth('invoice_date', $month)
-                    ->whereYear('invoice_date', $currentYear)
-                    ->sum('amount_paid');
-
-                $expenses = Expense::where('tenant_id', $tenantId)
-                    ->where('status', Expense::STATUS_PAID)
-                    ->whereMonth('expense_date', $month)
-                    ->whereYear('expense_date', $currentYear)
-                    ->sum('total');
-
-                $billsPaid = Bill::where('tenant_id', $tenantId)
-                    ->whereMonth('bill_date', $month)
-                    ->whereYear('bill_date', $currentYear)
-                    ->sum('amount_paid');
-
-                $monthlyTrends[] = [
-                    'month' => $months[$month - 1],
-                    'revenue' => (float) $revenue,
-                    'expenses' => (float) ($expenses + $billsPaid),
-                ];
-            }
-
-            $data['monthlyTrends'] = $monthlyTrends;
+            $data['monthlyTrends'] = $cache('trends:'.now()->year, fn () => $this->monthlyTrends($tenantId, now()->year));
         }
 
         // Recent Invoices widget
@@ -129,5 +114,55 @@ class DashboardController extends Controller
         }
 
         return view('dashboard', $data);
+    }
+
+    /**
+     * Revenue and expenses for each month of the year, in three queries.
+     *
+     * @return array<int, array{month: string, revenue: float, expenses: float}>
+     */
+    private function monthlyTrends($tenantId, int $year): array
+    {
+        $from = "{$year}-01-01";
+        $to = ($year + 1).'-01-01';
+
+        $revenue = Invoice::where('tenant_id', $tenantId)
+            ->whereIn('status', ['paid', 'partial'])
+            ->where('invoice_date', '>=', $from)
+            ->where('invoice_date', '<', $to)
+            ->selectRaw(SqlDate::month('invoice_date').' as ym, SUM(amount_paid) as total')
+            ->groupBy('ym')
+            ->toBase()
+            ->pluck('total', 'ym');
+
+        $expenses = Expense::where('tenant_id', $tenantId)
+            ->where('status', Expense::STATUS_PAID)
+            ->where('expense_date', '>=', $from)
+            ->where('expense_date', '<', $to)
+            ->selectRaw(SqlDate::month('expense_date').' as ym, SUM(total) as total')
+            ->groupBy('ym')
+            ->toBase()
+            ->pluck('total', 'ym');
+
+        $bills = Bill::where('tenant_id', $tenantId)
+            ->where('bill_date', '>=', $from)
+            ->where('bill_date', '<', $to)
+            ->selectRaw(SqlDate::month('bill_date').' as ym, SUM(amount_paid) as total')
+            ->groupBy('ym')
+            ->toBase()
+            ->pluck('total', 'ym');
+
+        $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        $trends = [];
+        foreach ($months as $i => $label) {
+            $key = sprintf('%d-%02d', $year, $i + 1);
+            $trends[] = [
+                'month' => $label,
+                'revenue' => (float) ($revenue[$key] ?? 0),
+                'expenses' => (float) ($expenses[$key] ?? 0) + (float) ($bills[$key] ?? 0),
+            ];
+        }
+
+        return $trends;
     }
 }

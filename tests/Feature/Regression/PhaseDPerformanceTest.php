@@ -8,6 +8,7 @@ use App\Livewire\Customers\CustomersTable;
 use App\Models\ActivityLog;
 use App\Models\Bill;
 use App\Models\Customer;
+use App\Models\Expense;
 use App\Models\Export;
 use App\Models\Import;
 use App\Models\Invoice;
@@ -370,5 +371,61 @@ class PhaseDPerformanceTest extends TestCase
         $this->assertEquals(500, $vendor['outstanding_balance']);
         $this->assertEquals(1000, $sync->json('data.data.customers.0.total_outstanding'));
         $this->assertEquals(500, $sync->json('data.data.vendors.0.outstanding_balance'));
+    }
+
+    // ── P5: dashboard ──────────────────────────────────────────
+
+    private const DASHBOARD_PERMISSIONS = [
+        'view dashboard', 'total-revenue dashboard-widgets', 'outstanding-receivables dashboard-widgets',
+        'monthly-expenses dashboard-widgets', 'employees-count dashboard-widgets', 'revenue-chart dashboard-widgets',
+        'recent-invoices dashboard-widgets', 'pending-bills dashboard-widgets', 'low-stock dashboard-widgets',
+    ];
+
+    public function test_p5_dashboard_uses_grouped_queries_and_a_short_cache(): void
+    {
+        Carbon::setTestNow('2026-06-15 12:00:00');
+        $this->createAuthenticatedUser(self::DASHBOARD_PERMISSIONS);
+        $tid = $this->tenant->id;
+        $customer = Customer::factory()->create(['tenant_id' => $tid]);
+        $vendor = Vendor::factory()->create(['tenant_id' => $tid]);
+
+        Invoice::withoutEvents(function () use ($tid, $customer) {
+            $inv = fn (string $date, string $status, float $paid) => Invoice::factory()->create([
+                'tenant_id' => $tid, 'customer_id' => $customer->id, 'invoice_date' => $date, 'status' => $status,
+                'total' => 5000, 'amount_paid' => $paid, 'balance_due' => 5000 - $paid,
+            ]);
+            $inv('2026-06-01', 'paid', 5000);
+            $inv('2026-06-30', 'partial', 1000);
+            $inv('2026-02-10', 'paid', 5000);
+            $inv('2025-06-10', 'paid', 5000); // last year: in the total, not the chart
+        });
+        Expense::withoutEvents(function () use ($tid) {
+            Expense::factory()->paid()->create(['tenant_id' => $tid, 'expense_date' => '2026-06-05', 'total' => 700]);
+            Expense::factory()->create(['tenant_id' => $tid, 'expense_date' => '2026-06-05', 'total' => 999]); // draft
+            Expense::factory()->paid()->create(['tenant_id' => $tid, 'expense_date' => '2026-02-05', 'total' => 300]);
+        });
+        Bill::withoutEvents(fn () => Bill::factory()->create([
+            'tenant_id' => $tid, 'vendor_id' => $vendor->id, 'bill_date' => '2026-02-20', 'amount_paid' => 200,
+        ]));
+
+        Cache::flush();
+        $fresh = null;
+        $first = $this->countQueries(function () use (&$fresh) {
+            $fresh = $this->get(route('dashboard'))->assertOk();
+        });
+
+        $this->assertEquals(16000, $fresh->viewData('totalRevenue'));
+        $this->assertEquals(6000, $fresh->viewData('monthlyRevenue'));
+        $this->assertEquals(700, $fresh->viewData('monthlyExpenses'));
+        $trends = collect($fresh->viewData('monthlyTrends'))->keyBy('month');
+        $this->assertCount(12, $trends);
+        $this->assertEquals(['month' => 'Jun', 'revenue' => 6000.0, 'expenses' => 700.0], $trends['Jun']);
+        $this->assertEquals(['month' => 'Feb', 'revenue' => 5000.0, 'expenses' => 500.0], $trends['Feb']);
+        $this->assertEquals(0, $trends['Jan']['revenue']);
+
+        // Old code: about 50 queries on every visit.
+        $this->assertLessThan(30, $first, "first={$first}");
+        $again = $this->countQueries(fn () => $this->get(route('dashboard'))->assertOk());
+        $this->assertLessThanOrEqual($first - 7, $again, "first={$first} again={$again}");
     }
 }
