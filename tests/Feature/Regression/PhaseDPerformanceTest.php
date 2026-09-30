@@ -2,12 +2,15 @@
 
 namespace Tests\Feature\Regression;
 
+use App\Http\Controllers\Reports\CustomReportController;
 use App\Jobs\ProcessExport;
 use App\Jobs\ProcessImport;
 use App\Livewire\Customers\CustomersTable;
 use App\Models\ActivityLog;
 use App\Models\Bill;
+use App\Models\ChartOfAccount;
 use App\Models\Customer;
+use App\Models\CustomReport;
 use App\Models\Expense;
 use App\Models\Export;
 use App\Models\Import;
@@ -15,6 +18,7 @@ use App\Models\Invoice;
 use App\Models\Vendor;
 use App\Services\ExportService;
 use App\Services\ImportService;
+use App\Services\ReportExportService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -460,5 +464,105 @@ class PhaseDPerformanceTest extends TestCase
             $checked++;
         }
         $this->assertGreaterThanOrEqual(28, $checked);
+    }
+
+    // ── P7: unbounded listings ─────────────────────────────────
+
+    /** Posts one line to the account on the date (debit if positive). */
+    private function postLine(ChartOfAccount $account, string $date, float $amount, int $n): void
+    {
+        $journalId = DB::table('journals')->insertGetId([
+            'tenant_id' => $this->tenant->id, 'journal_number' => 'T-'.$n, 'journal_date' => $date,
+            'description' => 'Line '.$n, 'status' => 'posted', 'is_posted' => true,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        DB::table('journal_entries')->insert([
+            'journal_id' => $journalId, 'account_id' => $account->id, 'description' => 'Line '.$n,
+            'debit' => max($amount, 0), 'credit' => max(-$amount, 0), 'created_at' => now(), 'updated_at' => now(),
+        ]);
+    }
+
+    public function test_p7_general_ledger_is_paged_in_date_order_with_a_correct_running_balance(): void
+    {
+        $this->createAuthenticatedUser(['view reports']);
+        $account = ChartOfAccount::where('tenant_id', $this->tenant->id)->where('account_code', '1000')->firstOrFail();
+
+        $this->postLine($account, '2025-12-20', 1000, 0); // before the period
+        // 150 lines, one a day, saved newest first so id order is not date order.
+        for ($i = 150; $i >= 1; $i--) {
+            $this->postLine($account, Carbon::parse('2026-01-01')->addDays($i - 1)->toDateString(), $i % 2 ? 10 : -4, $i);
+        }
+
+        $params = ['account_id' => $account->id, 'start_date' => '2026-01-01', 'end_date' => '2026-06-30'];
+        $page1 = $this->get(route('reports.general-ledger', $params))->assertOk();
+        $entries = $page1->viewData('entries');
+        $this->assertSame(100, $entries->count());
+        $this->assertSame(150, $entries->total());
+        $this->assertSame('Line 1', $entries->first()->description);
+        $dates = $entries->map(fn ($e) => $e->journal->journal_date->toDateString())->all();
+        $sorted = $dates;
+        sort($sorted);
+        $this->assertSame($sorted, $dates);
+
+        // 75 debits of 10 and 75 credits of 4 over the whole period.
+        $this->assertEquals(1000, $page1->viewData('openingBalance'));
+        $this->assertEquals(750, $page1->viewData('totalDebit'));
+        $this->assertEquals(300, $page1->viewData('totalCredit'));
+        $this->assertEquals(1450, $page1->viewData('closingBalance'));
+
+        // Page 2 carries on from where page 1 ended (lines 1-100: 50 x 10 - 50 x 4).
+        $page2 = $this->get(route('reports.general-ledger', $params + ['page' => 2]))->assertOk();
+        $this->assertEquals(1300, $page2->viewData('pageOpeningBalance'));
+        $this->assertSame('Line 101', $page2->viewData('entries')->first()->description);
+        $page2->assertSee('1,450.00 Dr');
+    }
+
+    public function test_p7_general_ledger_shows_a_credit_balance_as_credit(): void
+    {
+        $this->createAuthenticatedUser(['view reports']);
+        $sales = ChartOfAccount::where('tenant_id', $this->tenant->id)->where('type', 'income')->firstOrFail();
+        $this->postLine($sales, '2026-05-10', -1000, 1);
+        $this->postLine($sales, '2026-06-10', -250, 2);
+
+        $this->get(route('reports.general-ledger', ['account_id' => $sales->id, 'start_date' => '2026-06-01', 'end_date' => '2026-06-30']))
+            ->assertOk()
+            ->assertSee('1,000.00 Cr')
+            ->assertSee('1,250.00 Cr')
+            ->assertDontSee('1,000.00 Dr');
+    }
+
+    public function test_p7_custom_reports_and_contact_pages_are_limited(): void
+    {
+        $this->createAuthenticatedUser(['view reports', 'view customers', 'view vendors']);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        Invoice::withoutEvents(fn () => Invoice::factory()->count(15)->create([
+            'tenant_id' => $this->tenant->id, 'customer_id' => $customer->id,
+        ]));
+
+        $page = $this->get(route('customers.show', $customer))->assertOk();
+        $shown = $page->viewData('customer');
+        $this->assertSame(15, $shown->invoices_count);
+        $this->assertCount(10, $shown->invoices);
+
+        $vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        Bill::withoutEvents(fn () => Bill::factory()->count(7)->create(['tenant_id' => $this->tenant->id, 'vendor_id' => $vendor->id]));
+        $shownVendor = $this->get(route('vendors.show', $vendor))->assertOk()->viewData('vendor');
+        $this->assertSame(7, $shownVendor->bills_count);
+        $this->assertCount(5, $shownVendor->bills);
+
+        $report = CustomReport::create([
+            'tenant_id' => $this->tenant->id, 'created_by' => $this->user->id, 'name' => 'All customers',
+            'data_source' => 'customers', 'columns' => ['name'],
+        ]);
+        $controller = new class(app(ReportExportService::class)) extends CustomReportController
+        {
+            public const MAX_ROWS = 3;
+        };
+        $this->assertSame(5000, CustomReportController::MAX_ROWS);
+        Customer::factory()->count(4)->create(['tenant_id' => $this->tenant->id]);
+
+        $view = $controller->customReportRun(request(), $report);
+        $this->assertCount(3, $view->getData()['data']);
+        $this->assertTrue($view->getData()['truncated']);
     }
 }

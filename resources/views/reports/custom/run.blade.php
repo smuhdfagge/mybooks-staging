@@ -78,6 +78,11 @@
                         </svg>
                         <span>Total Records: <strong class="text-gray-700 dark:text-gray-300">{{ number_format($data->count()) }}</strong></span>
                     </div>
+                    @if($truncated ?? false)
+                        <div class="flex items-center text-amber-700 dark:text-amber-400">
+                            <span>Only the first {{ number_format($maxRows) }} records are shown, and totals cover only these. Narrow the dates or add a filter to see the rest.</span>
+                        </div>
+                    @endif
                     @if($customReport->group_by)
                         <div class="flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
