@@ -344,4 +344,50 @@ class PhaseDApiOpsTest extends TestCase
         $runs = collect($ci['jobs']['tests']['steps'])->pluck('run')->filter()->implode("\n");
         $this->assertStringContainsString('composer audit', $runs);
     }
+
+    // ── P-payroll: bulk create deducts tax like a payroll run ───
+
+    private function ngOfficer(): \App\Models\Employee
+    {
+        $this->tenant->update(['country' => 'NG']);
+        \App\Models\StatutoryTaxTemplate::where('country_code', 'NGA')->where('tax_year', 2026)->sole()->applyToTenant($this->tenant->id);
+
+        $employee = \App\Models\Employee::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id, 'employee_id' => 'EMP-00001', 'first_name' => 'Aisha', 'last_name' => 'Musa',
+            'hire_date' => '2026-01-01', 'status' => 'active', 'salary' => 500000, 'annual_rent' => 1200000,
+        ]);
+        $structure = \App\Models\SalaryStructure::create([
+            'tenant_id' => $this->tenant->id, 'name' => 'Officer', 'basic_salary' => 500000, 'effective_from' => '2026-01-01', 'is_active' => true,
+        ]);
+        $structure->items()->create(['type' => 'allowance', 'name' => 'Transport', 'amount_type' => 'fixed', 'amount' => 50000, 'is_taxable' => true, 'sort_order' => 0]);
+        $structure->items()->create(['type' => 'deduction', 'name' => 'Pension (8%)', 'amount_type' => 'percentage', 'amount' => 8, 'is_taxable' => true, 'sort_order' => 1]);
+        $employee->update(['salary_structure_id' => $structure->id]);
+
+        return $employee;
+    }
+
+    public function test_p_payroll_bulk_create_deducts_paye_like_a_payroll_run(): void
+    {
+        $this->createAuthenticatedUser(['create payroll', 'view payroll', 'delete payroll']);
+        $employee = $this->ngOfficer();
+
+        $this->post(route('payroll.bulk-store'), [
+            'pay_period_start' => '2026-03-01', 'pay_period_end' => '2026-03-31', 'employee_ids' => [$employee->id],
+        ])->assertSessionHasNoErrors()->assertRedirect(route('payroll.index'));
+        $bulk = \App\Models\Payroll::where('employee_id', $employee->id)->sole();
+
+        $this->assertGreaterThan(0, (float) $bulk->tax_deduction, 'PAYE is deducted');
+        $this->assertLessThan((float) $bulk->gross_salary, (float) $bulk->net_salary);
+
+        // The same employee and month through the payroll run gives the same payslip.
+        $bulkFigures = $bulk->only(['basic_salary', 'allowances', 'gross_salary', 'tax_deduction', 'other_deductions', 'total_deductions', 'net_salary']);
+        $bulk->forceDelete();
+        $this->post(route('payroll.generate'), ['month' => '2026-03', 'employee_ids' => [$employee->id]])->assertSessionHasNoErrors();
+        $run = \App\Models\Payroll::where('employee_id', $employee->id)->sole();
+
+        foreach ($bulkFigures as $field => $value) {
+            $this->assertEqualsWithDelta((float) $run->{$field}, (float) $value, 0.001, $field);
+        }
+        $this->assertEqualsWithDelta(550000, (float) $run->gross_salary, 0.001);
+    }
 }

@@ -110,8 +110,8 @@
                             <div class="ml-3">
                                 <h4 class="text-sm font-medium text-blue-800 dark:text-blue-300">Bulk Payroll Creation</h4>
                                 <p class="mt-1 text-sm text-blue-700 dark:text-blue-400">
-                                    Payroll records will be created for each selected employee using their base salary. 
-                                    You can edit individual payroll records to add allowances, overtime, bonuses, and deductions after creation.
+                                    Payroll records are worked out the same way as a payroll run: the employee's salary structure (or base salary if none),
+                                    pension, NHF and rent relief, PAYE and loan repayments. You can edit individual records to add overtime or bonuses after creation.
                                 </p>
                             </div>
                         </div>
