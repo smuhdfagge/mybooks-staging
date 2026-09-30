@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ProcessImport;
 use App\Models\Import;
-use App\Services\ActivityLogService;
 use App\Services\ImportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -134,37 +134,11 @@ class ImportController extends Controller
             'status' => Import::STATUS_PROCESSING,
         ]);
 
-        // Process the import
-        $this->importService->processImport($import);
+        // Runs on the queue; the import page shows progress (P3).
+        ProcessImport::dispatch($import);
 
-        // Log the activity
-        ActivityLogService::log(
-            'import',
-            "Imported {$import->type}: {$import->successful_rows} successful, {$import->failed_rows} failed",
-            Import::class,
-            $import->id,
-            $import->original_filename,
-            [
-                'type' => $import->type,
-                'total_rows' => $import->total_rows,
-                'successful' => $import->successful_rows,
-                'failed' => $import->failed_rows,
-            ]
-        );
-
-        if ($import->status === Import::STATUS_COMPLETED) {
-            $message = "Import completed successfully. {$import->successful_rows} records imported.";
-            if ($import->failed_rows > 0) {
-                $message .= " {$import->failed_rows} records failed.";
-            }
-            if ($import->skipped_rows > 0) {
-                $message .= " {$import->skipped_rows} records skipped (duplicates).";
-            }
-
-            return redirect()->route('imports.show', $import)->with('success', $message);
-        }
-
-        return redirect()->route('imports.show', $import)->with('error', 'Import failed: '.$import->error_message);
+        return redirect()->route('imports.show', $import)
+            ->with('success', 'Your import has started. This page shows its progress and the results when it finishes.');
     }
 
     /**
@@ -262,13 +236,10 @@ class ImportController extends Controller
             'skipped_rows' => 0,
         ]);
 
-        $this->importService->processImport($import);
+        ProcessImport::dispatch($import);
 
-        if ($import->status === Import::STATUS_COMPLETED) {
-            return redirect()->route('imports.show', $import)->with('success', 'Import completed successfully.');
-        }
-
-        return redirect()->route('imports.show', $import)->with('error', 'Import failed: '.$import->error_message);
+        return redirect()->route('imports.show', $import)
+            ->with('success', 'The import is running again. This page shows its progress.');
     }
 
     /**
