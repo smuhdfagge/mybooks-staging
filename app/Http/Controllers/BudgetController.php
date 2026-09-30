@@ -8,6 +8,7 @@ use App\Models\ChartOfAccount;
 use App\Models\Import;
 use App\Services\BudgetService;
 use App\Services\ImportService;
+use App\Support\Csv;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -413,9 +414,9 @@ class BudgetController extends Controller
 
         $callback = function () use ($sampleData, $headers) {
             $file = fopen('php://output', 'w');
-            fputcsv($file, $headers);
+            Csv::writeRow($file, $headers);
             foreach ($sampleData as $row) {
-                fputcsv($file, array_values($row));
+                Csv::writeRow($file, array_values($row));
             }
             fclose($file);
         };

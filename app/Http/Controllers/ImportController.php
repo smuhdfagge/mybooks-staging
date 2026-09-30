@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Import;
 use App\Services\ActivityLogService;
 use App\Services\ImportService;
+use App\Support\Csv;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -202,9 +203,9 @@ class ImportController extends Controller
 
             $callback = function () use ($sampleData, $headers) {
                 $file = fopen('php://output', 'w');
-                fputcsv($file, $headers);
+                Csv::writeRow($file, $headers);
                 foreach ($sampleData as $row) {
-                    fputcsv($file, array_values($row));
+                    Csv::writeRow($file, array_values($row));
                 }
                 fclose($file);
             };
