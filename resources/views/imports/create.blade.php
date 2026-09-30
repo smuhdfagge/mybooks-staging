@@ -18,15 +18,6 @@
 
     <div class="py-6">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
-            @if($errors->any())
-                <div class="mb-4 p-4 bg-red-100 dark:bg-red-900/50 border border-red-200 dark:border-red-700 rounded-lg">
-                    <ul class="list-disc list-inside text-red-700 dark:text-red-300">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
 
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <form action="{{ route('imports.upload') }}" method="POST" enctype="multipart/form-data" class="p-6">
@@ -46,14 +37,14 @@
                                 <div class="flex items-center justify-center w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full">
                                     <span class="text-gray-500 dark:text-gray-400 font-semibold">2</span>
                                 </div>
-                                <span class="ml-2 text-sm font-medium text-gray-400 dark:text-gray-500">Map Columns</span>
+                                <span class="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400">Map Columns</span>
                             </div>
                             <div class="w-24 h-1 mx-4 bg-gray-200 dark:bg-gray-700"></div>
                             <div class="flex items-center">
                                 <div class="flex items-center justify-center w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full">
                                     <span class="text-gray-500 dark:text-gray-400 font-semibold">3</span>
                                 </div>
-                                <span class="ml-2 text-sm font-medium text-gray-400 dark:text-gray-500">Import</span>
+                                <span class="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400">Import</span>
                             </div>
                         </div>
                     </div>
@@ -64,7 +55,7 @@
                             What would you like to import? <span class="text-red-500">*</span>
                         </label>
                         <select name="type" id="type" required
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                class="form-control">
                             <option value="">Select import type...</option>
                             @foreach($importTypes as $value => $label)
                                 <option value="{{ $value }}" {{ ($type ?? old('type')) === $value ? 'selected' : '' }}>

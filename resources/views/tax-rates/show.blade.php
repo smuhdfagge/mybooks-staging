@@ -90,12 +90,12 @@
                         </div>
                         <div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">Tax amount ({{ $taxRate->formatted_rate }})</p>
-                            <p class="text-xl font-semibold text-blue-600 dark:text-blue-400">${{ number_format($taxRate->calculateTax(100), 2) }}</p>
+                            <p class="text-xl font-semibold text-blue-600 dark:text-blue-400">@money($taxRate->calculateTax(100))</p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">{{ $taxRate->type == 'exclusive' ? 'Total with tax' : 'Net amount' }}</p>
                             <p class="text-xl font-semibold text-green-600 dark:text-green-400">
-                                ${{ number_format($taxRate->type == 'exclusive' ? $taxRate->getGrossAmount(100) : $taxRate->getNetAmount(100), 2) }}
+                                @money($taxRate->type == 'exclusive' ? $taxRate->getGrossAmount(100) : $taxRate->getNetAmount(100))
                             </p>
                         </div>
                     </div>

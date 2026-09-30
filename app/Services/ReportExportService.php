@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\Csv;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
@@ -102,12 +103,12 @@ class ReportExportService
 
             // Write headers
             if (! empty($headers)) {
-                fputcsv($file, $headers);
+                Csv::writeRow($file, $headers);
             }
 
             // Write data rows
             foreach ($rows as $row) {
-                fputcsv($file, is_array($row) ? $row : (array) $row);
+                Csv::writeRow($file, is_array($row) ? $row : (array) $row);
             }
 
             fclose($file);

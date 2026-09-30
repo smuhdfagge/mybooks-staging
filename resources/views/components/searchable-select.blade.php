@@ -1,3 +1,16 @@
+{{--
+    Searchable dropdown (U5), built as an ARIA combobox: a text box with
+    role="combobox" that filters a role="listbox" list. Keyboard: type to
+    filter, Up/Down to move, Enter to pick, Escape to close, Home/End.
+    The highlighted option is announced through aria-activedescendant.
+
+    <x-searchable-select name="country" label="Country" :options="$list" :value="old('country')"
+                         :has-error="$errors->has('country')" />
+
+    options: a plain list (value = label) or [value => label]. The chosen
+    value is posted in a hidden input named "name". Give "id" to point an
+    outside <label for> at it; it defaults to the field name.
+--}}
 @props([
     'name',
     'label' => '',
@@ -6,6 +19,7 @@
     'placeholder' => 'Select...',
     'searchPlaceholder' => 'Search...',
     'hasError' => false,
+    'id' => null,
 ])
 
 @php
@@ -13,56 +27,91 @@
     $isList = array_is_list($options);
     foreach ($options as $key => $opt) {
         $normalized[] = $isList
-            ? ['v' => (string)$opt, 'l' => (string)$opt]
-            : ['v' => (string)$key, 'l' => (string)$opt];
+            ? ['v' => (string) $opt, 'l' => (string) $opt]
+            : ['v' => (string) $key, 'l' => (string) $opt];
     }
+    $id = $id ?? trim(preg_replace('/[^A-Za-z0-9_-]+/', '-', $name), '-');
+    $listId = $id.'-listbox';
 @endphp
 
 <div x-data="{
     open: false,
     search: '',
-    selected: @js((string)$value),
+    active: -1,
+    selected: @js((string) $value),
     options: @js($normalized),
+    placeholder: @js($placeholder),
     get filtered() {
-        if (!this.search) return this.options;
-        return this.options.filter(o => o.l.toLowerCase().includes(this.search.toLowerCase()));
+        if (!this.search) return [{ v: '', l: this.placeholder }].concat(this.options);
+        const q = this.search.toLowerCase();
+        return this.options.filter(o => o.l.toLowerCase().includes(q));
     },
     get selectedLabel() {
         const found = this.options.find(o => o.v === this.selected);
         return found ? found.l : '';
     },
+    optionId(i) { return @js($listId) + '-' + i; },
+    show() {
+        this.open = true;
+        this.active = Math.max(0, this.filtered.findIndex(o => o.v === this.selected));
+        this.reveal();
+    },
+    close() { this.open = false; this.search = ''; this.active = -1; },
+    move(to) {
+        if (!this.open) { this.show(); return; }
+        const n = this.filtered.length;
+        if (!n) return;
+        this.active = to === 'first' ? 0 : to === 'last' ? n - 1 : (this.active + to + n) % n;
+        this.reveal();
+    },
+    reveal() {
+        this.$nextTick(() => { const el = document.getElementById(this.optionId(this.active)); if (el) el.scrollIntoView({ block: 'nearest' }); });
+    },
+    typed(text) { this.search = text; this.open = true; this.active = this.filtered.length ? 0 : -1; },
     choose(val) {
         this.selected = val;
-        this.open = false;
-        this.search = '';
-    }
-}" @click.outside="open = false; search = ''" class="relative">
+        this.close();
+        this.$refs.value.value = val;
+        this.$refs.value.dispatchEvent(new Event('change', { bubbles: true }));
+    },
+    pickActive() { const o = this.filtered[this.active]; if (o) this.choose(o.v); }
+}" @click.outside="close()" class="relative">
     @if($label)
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $label }}</label>
+        <label for="{{ $id }}" class="form-label">{{ $label }}</label>
     @endif
-    <input type="hidden" name="{{ $name }}" :value="selected">
-    <button type="button" @click="open = !open"
-        class="w-full rounded-md border shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm text-left px-3 py-2 bg-white dark:bg-gray-700 dark:text-gray-300 flex items-center justify-between {{ $hasError ? 'border-red-500' : 'border-gray-300 dark:border-gray-600' }}">
-        <span x-text="selectedLabel || '{{ $placeholder }}'" class="truncate" :class="{ 'text-gray-400 dark:text-gray-500': !selected }"></span>
-        <svg class="w-4 h-4 text-gray-400 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <input type="hidden" name="{{ $name }}" :value="selected" x-ref="value" value="{{ $value }}">
+    <div class="relative">
+        <input type="text" id="{{ $id }}" role="combobox" autocomplete="off"
+            aria-autocomplete="list" aria-controls="{{ $listId }}"
+            :aria-expanded="open.toString()"
+            :aria-activedescendant="open && active >= 0 ? optionId(active) : null"
+            @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
+            :value="open ? search : selectedLabel"
+            :placeholder="open ? @js($searchPlaceholder) : (selectedLabel || placeholder)"
+            @input="typed($event.target.value)"
+            @click="open ? close() : show()"
+            @keydown.arrow-down.prevent="move(1)"
+            @keydown.arrow-up.prevent="move(-1)"
+            @keydown.home="open && ($event.preventDefault(), move('first'))"
+            @keydown.end="open && ($event.preventDefault(), move('last'))"
+            @keydown.enter="open && ($event.preventDefault(), pickActive())"
+            @keydown.escape="open && ($event.stopPropagation(), close())"
+            @keydown.tab="close()"
+            class="w-full rounded-md border shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm pl-3 pr-8 py-2 bg-white dark:bg-gray-700 dark:text-gray-300 placeholder-gray-500 dark:placeholder-gray-400 {{ $hasError ? 'border-red-500' : 'border-gray-300 dark:border-gray-600' }}">
+        <svg aria-hidden="true" class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
         </svg>
-    </button>
-    <div x-show="open" x-cloak x-transition.opacity class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg">
-        <div class="p-2">
-            <input type="text" x-model="search" placeholder="{{ $searchPlaceholder }}"
-                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white text-sm px-2 py-1.5 focus:border-indigo-500 focus:ring-indigo-500"
-                @click.stop x-ref="searchInput">
-        </div>
-        <ul class="max-h-48 overflow-y-auto py-1">
-            <li @click="choose('')" class="px-3 py-2 text-sm cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-600 dark:text-gray-200"
-                :class="{ 'bg-indigo-50 dark:bg-gray-600 font-medium': !selected }">{{ $placeholder }}</li>
-            <template x-for="opt in filtered" :key="opt.v">
-                <li @click="choose(opt.v)" class="px-3 py-2 text-sm cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-600 dark:text-gray-200"
-                    :class="{ 'bg-indigo-50 dark:bg-gray-600 font-medium': selected === opt.v }"
-                    x-text="opt.l"></li>
-            </template>
-            <li x-show="filtered.length === 0" class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500">No results found</li>
-        </ul>
     </div>
+    <ul id="{{ $listId }}" role="listbox" @if($label) aria-label="{{ $label }}" @endif
+        x-show="open" x-cloak
+        class="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg">
+        <template x-for="(opt, i) in filtered" :key="opt.v + '|' + i">
+            <li :id="optionId(i)" role="option" :aria-selected="(selected === opt.v).toString()"
+                @mousedown.prevent @click="choose(opt.v)" @mousemove="active = i"
+                class="px-3 py-2 text-sm cursor-pointer dark:text-gray-200"
+                :class="{ 'bg-indigo-100 dark:bg-gray-600': active === i, 'font-medium': selected === opt.v }"
+                x-text="opt.l"></li>
+        </template>
+        <li x-show="filtered.length === 0" role="presentation" class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">No results found</li>
+    </ul>
 </div>

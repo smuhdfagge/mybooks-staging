@@ -3,6 +3,7 @@
 namespace App\Services\BankFileExporters;
 
 use App\Contracts\BankFileExporter;
+use App\Support\Csv;
 use Illuminate\Support\Collection;
 
 /**
@@ -30,7 +31,7 @@ class CsvBankExporter implements BankFileExporter
     {
         $output = fopen('php://temp', 'r+');
 
-        fputcsv($output, [
+        Csv::writeRow($output, [
             'Employee Name',
             'Bank Name',
             'Account Number',
@@ -42,7 +43,7 @@ class CsvBankExporter implements BankFileExporter
         ]);
 
         foreach ($disbursements as $record) {
-            fputcsv($output, [
+            Csv::writeRow($output, [
                 $record['employee_name'],
                 $record['bank_name'] ?? '',
                 $record['account_number'],

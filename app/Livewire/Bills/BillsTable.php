@@ -3,6 +3,7 @@
 namespace App\Livewire\Bills;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\Bill;
 use App\Models\Vendor;
 use Illuminate\Support\Facades\DB;
@@ -11,7 +12,7 @@ use Livewire\WithPagination;
 
 class BillsTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -272,7 +273,7 @@ class BillsTable extends Component
                 $query->whereDate('bill_date', '<=', $this->dateTo);
             })
             ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->perPage);
+            ->paginate($this->pageSize());
 
         $vendors = Vendor::orderBy('name')->get();
 

@@ -188,10 +188,10 @@
                                                 {{ ucfirst($account->type) }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm {{ $account->total_debit > 0 ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-400 dark:text-gray-500' }}">
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm {{ $account->total_debit > 0 ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-500 dark:text-gray-400' }}">
                                             {{ $account->total_debit > 0 ? number_format($account->total_debit, 2) : '-' }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm {{ $account->total_credit > 0 ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-400 dark:text-gray-500' }}">
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm {{ $account->total_credit > 0 ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-500 dark:text-gray-400' }}">
                                             {{ $account->total_credit > 0 ? number_format($account->total_credit, 2) : '-' }}
                                         </td>
                                     </tr>

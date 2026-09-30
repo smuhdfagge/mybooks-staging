@@ -6,7 +6,7 @@
                     {{ $bank->name }} - Transactions
                 </h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    Current Balance: ₦{{ number_format($bank->current_balance, 2) }}
+                    Current Balance: @money($bank->current_balance, $bank->currency)
                 </p>
             </div>
             <a href="{{ route('banks.show', $bank) }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition ease-in-out duration-150">
@@ -68,7 +68,7 @@
                                                 {{ $transaction['party'] }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium {{ $transaction['type'] === 'deposit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
-                                                {{ $transaction['type'] === 'deposit' ? '+' : '-' }}₦{{ number_format($transaction['amount'], 2) }}
+                                                {{ $transaction['type'] === 'deposit' ? '+' : '-' }}@money($transaction['amount'], $bank->currency)
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
                                                 <a href="{{ $transaction['route'] }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">

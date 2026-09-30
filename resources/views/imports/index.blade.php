@@ -121,7 +121,7 @@
                                                     </div>
                                                     <span class="text-xs text-gray-500">{{ $import->processed_rows }}/{{ $import->total_rows }}</span>
                                                 @else
-                                                    <span class="text-gray-400">-</span>
+                                                    <span class="text-gray-500 dark:text-gray-400">-</span>
                                                 @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">

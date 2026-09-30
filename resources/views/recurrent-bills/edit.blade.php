@@ -30,54 +30,47 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                             <div>
-                                <label for="profile_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profile Name <span class="text-red-500">*</span></label>
-                                <input type="text" name="profile_name" id="profile_name" value="{{ old('profile_name', $recurrentBill->profile_name) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('profile_name') border-red-500 @enderror">
-                                @error('profile_name')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="profile_name" label="Profile Name" :value="old('profile_name', $recurrentBill->profile_name)" required />
                             </div>
 
                             <div>
-                                <label for="vendor" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor</label>
+                                <label for="vendor" class="form-label">Vendor</label>
                                 <input type="text" id="vendor" value="{{ $recurrentBill->vendor->name ?? 'Unknown' }}" disabled
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-600 dark:text-gray-300 shadow-sm">
                             </div>
 
                             <div>
-                                <label for="frequency" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Frequency <span class="text-red-500">*</span></label>
+                                <label for="frequency" class="form-label">Frequency <span class="text-red-500">*</span></label>
                                 <select name="frequency" id="frequency" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('frequency') border-red-500 @enderror">
+                                    class="form-control @error('frequency') border-red-500 @enderror" @error('frequency') aria-invalid="true" aria-describedby="frequency-error" @enderror>
                                     <option value="weekly" {{ old('frequency', $recurrentBill->frequency) == 'weekly' ? 'selected' : '' }}>Weekly</option>
                                     <option value="monthly" {{ old('frequency', $recurrentBill->frequency) == 'monthly' ? 'selected' : '' }}>Monthly</option>
                                     <option value="quarterly" {{ old('frequency', $recurrentBill->frequency) == 'quarterly' ? 'selected' : '' }}>Quarterly</option>
                                     <option value="yearly" {{ old('frequency', $recurrentBill->frequency) == 'yearly' ? 'selected' : '' }}>Yearly</option>
                                 </select>
                                 @error('frequency')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="frequency-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
-                                <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
+                                <label for="start_date" class="form-label">Start Date</label>
                                 <input type="text" id="start_date" value="{{ $recurrentBill->start_date->format('M d, Y') }}" disabled
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-600 dark:text-gray-300 shadow-sm">
                             </div>
 
                             <div>
-                                <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date</label>
-                                <input type="date" name="end_date" id="end_date" value="{{ old('end_date', $recurrentBill->end_date?->format('Y-m-d')) }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('end_date') border-red-500 @enderror">
+                                <x-field name="end_date" label="End Date" type="date" :value="old('end_date', $recurrentBill->end_date?->format('Y-m-d'))" />
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave empty for indefinite</p>
                                 @error('end_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="end_date-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
-                                <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                                <label for="status" class="form-label">Status</label>
                                 <select name="status" id="status"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    class="form-control">
                                     <option value="active" {{ old('status', $recurrentBill->status) == 'active' ? 'selected' : '' }}>Active</option>
                                     <option value="paused" {{ old('status', $recurrentBill->status) == 'paused' ? 'selected' : '' }}>Paused</option>
                                     <option value="stopped" {{ old('status', $recurrentBill->status) == 'stopped' ? 'selected' : '' }}>Stopped</option>
@@ -86,9 +79,7 @@
                         </div>
 
                         <div class="mb-6">
-                            <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-                            <textarea name="notes" id="notes" rows="2"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('notes', $recurrentBill->notes) }}</textarea>
+                            <x-field name="notes" label="Notes" type="textarea" :value="old('notes', $recurrentBill->notes)" rows="2" />
                         </div>
                     </div>
                 </div>
@@ -104,7 +95,7 @@
                         </h3>
                         
                         <div class="overflow-x-auto">
-                            <table class="min-w-full">
+                            <table class="min-w-full line-items">
                                 <thead>
                                     <tr class="border-b border-gray-200 dark:border-gray-700">
                                         <th class="text-left text-sm font-medium text-gray-700 dark:text-gray-300 pb-2 w-1/3">Description</th>
@@ -118,10 +109,10 @@
                                 <tbody>
                                     <template x-for="(item, index) in items" :key="index">
                                         <tr class="border-b border-gray-200 dark:border-gray-700">
-                                            <td class="py-2 pr-2">
+                                            <td class="py-2 pr-2" data-label="Description" data-cell="main">
                                                 <div class="relative mb-1">
                                                     <input type="hidden" :name="`items[${index}][item_id]`" x-model="item.item_id">
-                                                    <input type="text" 
+                                                    <input aria-label="Select Item" type="text" 
                                                         x-model="item.itemSearch" 
                                                         @click="item.itemDropdownOpen = true" 
                                                         @keydown.arrow-down.prevent="item.itemHighlightedIndex = Math.min(item.itemHighlightedIndex + 1, getFilteredProducts(index).length - 1)"
@@ -129,7 +120,7 @@
                                                         @keydown.enter.prevent="if(getFilteredProducts(index)[item.itemHighlightedIndex]) selectProduct(index, getFilteredProducts(index)[item.itemHighlightedIndex])"
                                                         @keydown.escape="item.itemDropdownOpen = false"
                                                         placeholder="Select Item"
-                                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                        class="form-control text-sm">
                                                     <div x-show="item.itemDropdownOpen" 
                                                         @click.away="item.itemDropdownOpen = false"
                                                         class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
@@ -142,27 +133,27 @@
                                                         <div x-show="getFilteredProducts(index).length === 0" class="px-3 py-2 text-gray-500 dark:text-gray-400 text-sm">No results found</div>
                                                     </div>
                                                 </div>
-                                                <input type="text" :name="`items[${index}][description]`" x-model="item.description" required placeholder="Description"
+                                                <input aria-label="Description" type="text" :name="`items[${index}][description]`" x-model="item.description" required placeholder="Description"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                             </td>
-                                            <td class="py-2 pr-2">
-                                                <input type="number" :name="`items[${index}][quantity]`" x-model.number="item.quantity" min="0.01" step="0.01" required
+                                            <td class="py-2 pr-2" data-label="Qty">
+                                                <input aria-label="Quantity" type="number" :name="`items[${index}][quantity]`" x-model.number="item.quantity" min="0.01" step="0.01" required
                                                     @input="calculateTotals()"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
-                                            <td class="py-2 pr-2">
-                                                <input type="number" :name="`items[${index}][unit_price]`" x-model.number="item.unit_price" min="0" step="0.01" required
+                                            <td class="py-2 pr-2" data-label="Price">
+                                                <input aria-label="Unit price" type="number" :name="`items[${index}][unit_price]`" x-model.number="item.unit_price" min="0" step="0.01" required
                                                     @input="calculateTotals()"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
-                                            <td class="py-2 pr-2">
-                                                <input type="number" :name="`items[${index}][tax_rate]`" x-model.number="item.tax_rate" min="0" max="100" step="0.01"
+                                            <td class="py-2 pr-2" data-label="Tax %">
+                                                <input aria-label="Tax rate (%)" type="number" :name="`items[${index}][tax_rate]`" x-model.number="item.tax_rate" min="0" max="100" step="0.01"
                                                     @input="calculateTotals()"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
-                                            <td class="py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100" x-text="'₦' + lineTotal(index).toFixed(2)"></td>
-                                            <td class="py-2 text-center">
-                                                <button type="button" @click="removeItem(index)" x-show="items.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
+                                            <td class="py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(lineTotal(index))" data-label="Total"></td>
+                                            <td class="py-2 text-center" data-cell="actions">
+                                                <button type="button" @click="removeItem(index)" x-show="items.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" aria-label="Remove line">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                                     </svg>
@@ -190,15 +181,15 @@
                             <div class="w-full md:w-80 space-y-3">
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600 dark:text-gray-400">Subtotal</span>
-                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="'₦' + subtotal.toFixed(2)"></span>
+                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(subtotal)"></span>
                                 </div>
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600 dark:text-gray-400">Tax</span>
-                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="'₦' + totalTax.toFixed(2)"></span>
+                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(totalTax)"></span>
                                 </div>
                                 <div class="flex justify-between text-lg font-bold border-t border-gray-200 dark:border-gray-700 pt-3">
                                     <span class="text-gray-900 dark:text-gray-100">Total</span>
-                                    <span class="text-gray-900 dark:text-gray-100" x-text="'₦' + grandTotal.toFixed(2)"></span>
+                                    <span class="text-gray-900 dark:text-gray-100" x-text="formatMoney(grandTotal)"></span>
                                 </div>
                             </div>
                         </div>

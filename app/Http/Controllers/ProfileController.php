@@ -3,9 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\ActivityLog;
+use App\Models\User;
+use App\Notifications\EmailAddressChangedNotification;
+use App\Services\ActivityLogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 
@@ -26,13 +31,25 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $oldEmail = $user->email;
+        $user->fill($request->safe()->only(['name', 'email']));
+        $emailChanged = $user->isDirty('email');
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($emailChanged) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        $user->save();
+
+        if ($emailChanged) {
+            // Tell the old address, in case this wasn't the owner (S6).
+            Notification::route('mail', $oldEmail)
+                ->notify(new EmailAddressChangedNotification($user->name, $oldEmail, $user->email));
+            if ($user->tenant_id) {
+                ActivityLogService::log(ActivityLog::ACTION_UPDATED, "Email changed from {$oldEmail} to {$user->email}", User::class, $user->id, $user->name);
+            }
+        }
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
@@ -47,6 +64,13 @@ class ProfileController extends Controller
         ]);
 
         $user = $request->user();
+
+        // The last admin can't leave the business with nobody to run it (O7).
+        if ($user->isLastActiveAdmin()) {
+            return Redirect::route('profile.edit')->withErrors([
+                'password' => 'You are the only admin of this business. Make another user an admin first, or close the organisation from Settings.',
+            ], 'userDeletion');
+        }
 
         Auth::logout();
 

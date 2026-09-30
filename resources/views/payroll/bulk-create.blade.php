@@ -15,15 +15,6 @@
 
     <div class="py-6">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            @if($errors->any())
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                    <ul class="list-disc list-inside">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
 
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <form action="{{ route('payroll.bulk-store') }}" method="POST" class="p-6">
@@ -39,21 +30,11 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label for="pay_period_start" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pay Period Start <span class="text-red-500">*</span></label>
-                                <input type="date" name="pay_period_start" id="pay_period_start" value="{{ old('pay_period_start') }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('pay_period_start') border-red-500 @enderror">
-                                @error('pay_period_start')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="pay_period_start" label="Pay Period Start" type="date" :value="old('pay_period_start')" required />
                             </div>
 
                             <div>
-                                <label for="pay_period_end" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pay Period End <span class="text-red-500">*</span></label>
-                                <input type="date" name="pay_period_end" id="pay_period_end" value="{{ old('pay_period_end') }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('pay_period_end') border-red-500 @enderror">
-                                @error('pay_period_end')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="pay_period_end" label="Pay Period End" type="date" :value="old('pay_period_end')" required />
                             </div>
                         </div>
                     </div>
@@ -75,7 +56,7 @@
                         </div>
 
                         @error('employee_ids')
-                            <p class="mb-4 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            <p id="employee_ids-error" class="mb-4 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto p-2 border border-gray-200 dark:border-gray-700 rounded-md">
@@ -110,8 +91,8 @@
                             <div class="ml-3">
                                 <h4 class="text-sm font-medium text-blue-800 dark:text-blue-300">Bulk Payroll Creation</h4>
                                 <p class="mt-1 text-sm text-blue-700 dark:text-blue-400">
-                                    Payroll records will be created for each selected employee using their base salary. 
-                                    You can edit individual payroll records to add allowances, overtime, bonuses, and deductions after creation.
+                                    Payroll records are worked out the same way as a payroll run: the employee's salary structure (or base salary if none),
+                                    pension, NHF and rent relief, PAYE and loan repayments. You can edit individual records to add overtime or bonuses after creation.
                                 </p>
                             </div>
                         </div>

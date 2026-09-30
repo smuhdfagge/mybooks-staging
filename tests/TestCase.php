@@ -109,4 +109,21 @@ abstract class TestCase extends BaseTestCase
 
         return $user;
     }
+
+    /**
+     * Sign in to the admin panel as an admin who has finished two-factor
+     * sign-in (S2 requires 2FA for every platform admin).
+     */
+    protected function actingAsPlatformAdmin(\App\Models\AdminUser $admin): static
+    {
+        $admin->forceFill([
+            'two_factor_secret' => \Illuminate\Support\Facades\Crypt::encryptString('JBSWY3DPEHPK3PXP'),
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        return $this->actingAs($admin, 'admin')->withSession([
+            'admin_two_factor_verified' => true,
+            'admin_password_hash' => \App\Http\Middleware\EnsureAdminTwoFactor::passwordFingerprint($admin),
+        ]);
+    }
 }

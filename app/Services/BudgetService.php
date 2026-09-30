@@ -72,11 +72,13 @@ class BudgetService
      */
     protected function getAccountActual(int $accountId, Carbon $startDate, Carbon $endDate, string $accountType): float
     {
-        $data = JournalEntry::whereHas('journal', function ($query) use ($startDate, $endDate) {
-            $query->whereBetween('journal_date', [$startDate, $endDate]);
-        })
-            ->where('account_id', $accountId)
-            ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
+        // A join, not a correlated EXISTS per line (P8).
+        $data = JournalEntry::query()
+            ->join('journals', 'journals.id', '=', 'journal_entries.journal_id')
+            ->whereNull('journals.deleted_at')
+            ->whereBetween('journals.journal_date', [$startDate, $endDate])
+            ->where('journal_entries.account_id', $accountId)
+            ->selectRaw('SUM(journal_entries.debit) as total_debit, SUM(journal_entries.credit) as total_credit')
             ->first();
 
         // For expense accounts: actual = debits - credits

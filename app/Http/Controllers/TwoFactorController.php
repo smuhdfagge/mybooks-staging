@@ -70,7 +70,9 @@ class TwoFactorController extends Controller
                 ->with('error', 'Session expired. Please try setting up 2FA again.');
         }
 
-        if (! $this->twoFactor->verify($secret, $request->code)) {
+        $step = $this->twoFactor->verify($secret, $request->code);
+
+        if ($step === null) {
             return back()->with('error', 'Invalid verification code. Please try again.');
         }
 
@@ -79,15 +81,18 @@ class TwoFactorController extends Controller
 
         $user->forceFill([
             'two_factor_secret' => Crypt::encryptString($secret),
-            'two_factor_recovery_codes' => Crypt::encryptString(json_encode($recoveryCodes)),
+            'two_factor_recovery_codes' => $this->twoFactor->hashRecoveryCodes($recoveryCodes),
             'two_factor_confirmed_at' => now(),
+            'two_factor_last_used_at' => $step,
         ])->save();
 
         session()->forget('two_factor_secret');
 
         ActivityLogService::log2FAEnabled($user);
 
+        // Codes are stored hashed, so this is the only time they can be shown (S7).
         return redirect()->route('two-factor.recovery-codes')
+            ->with('two_factor_new_recovery_codes', $recoveryCodes)
             ->with('success', 'Two-factor authentication has been enabled. Save your recovery codes.');
     }
 
@@ -108,6 +113,7 @@ class TwoFactorController extends Controller
             'two_factor_secret' => null,
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,
+            'two_factor_last_used_at' => null,
         ])->save();
 
         ActivityLogService::log2FADisabled($request->user());
@@ -117,14 +123,14 @@ class TwoFactorController extends Controller
     }
 
     /**
-     * Show recovery codes.
+     * Show recovery codes. New codes are shown once, straight after they are
+     * made; after that only how many are left (S7).
      */
     public function recoveryCodes(Request $request): View
     {
-        $codes = $this->twoFactor->getRecoveryCodes($request->user());
-
         return view('auth.two-factor.recovery-codes', [
-            'recoveryCodes' => $codes,
+            'recoveryCodes' => session('two_factor_new_recovery_codes', []),
+            'codesLeft' => $this->twoFactor->recoveryCodesLeft($request->user()),
         ]);
     }
 
@@ -136,10 +142,11 @@ class TwoFactorController extends Controller
         $recoveryCodes = $this->twoFactor->generateRecoveryCodes();
 
         $request->user()->forceFill([
-            'two_factor_recovery_codes' => Crypt::encryptString(json_encode($recoveryCodes)),
+            'two_factor_recovery_codes' => $this->twoFactor->hashRecoveryCodes($recoveryCodes),
         ])->save();
 
         return redirect()->route('two-factor.recovery-codes')
+            ->with('two_factor_new_recovery_codes', $recoveryCodes)
             ->with('success', 'Recovery codes have been regenerated.');
     }
 
@@ -171,30 +178,28 @@ class TwoFactorController extends Controller
 
         $user = \App\Models\User::findOrFail($userId);
 
-        // Try TOTP code
-        if ($request->filled('code')) {
-            $secret = $this->twoFactor->getDecryptedSecret($user);
-
-            if (! $secret || ! $this->twoFactor->verify($secret, $request->code)) {
-                return back()->with('error', 'Invalid authentication code.');
-            }
-        }
-        // Try recovery code
-        elseif ($request->filled('recovery_code')) {
-            $recoveryCodes = $this->twoFactor->getRecoveryCodes($user);
-
-            if (! in_array($request->recovery_code, $recoveryCodes)) {
-                return back()->with('error', 'Invalid recovery code.');
-            }
-
-            // Remove used recovery code
-            $remainingCodes = array_values(array_diff($recoveryCodes, [$request->recovery_code]));
-            $user->forceFill([
-                'two_factor_recovery_codes' => Crypt::encryptString(json_encode($remainingCodes)),
-            ])->save();
-        } else {
+        if (! $request->filled('code') && ! $request->filled('recovery_code')) {
             return back()->with('error', 'Please enter a code.');
         }
+
+        // Per-account limit on top of the per-IP route throttle (S7).
+        if ($this->twoFactor->tooManyAttempts($user)) {
+            $minutes = (int) ceil($this->twoFactor->secondsUntilUnlocked($user) / 60);
+
+            return back()->with('error', "Too many attempts. Please try again in {$minutes} minute(s).");
+        }
+
+        $valid = $request->filled('code')
+            ? $this->twoFactor->verifyForUser($user, (string) $request->code)
+            : $this->twoFactor->useRecoveryCode($user, (string) $request->recovery_code);
+
+        if (! $valid) {
+            $this->twoFactor->recordFailedAttempt($user);
+
+            return back()->with('error', $request->filled('code') ? 'Invalid authentication code.' : 'Invalid recovery code.');
+        }
+
+        $this->twoFactor->clearAttempts($user);
 
         // Complete login
         session()->forget(['two_factor:user_id', 'two_factor:remember']);

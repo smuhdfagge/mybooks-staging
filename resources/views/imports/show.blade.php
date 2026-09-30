@@ -76,6 +76,13 @@
                         </div>
                     </div>
 
+                    @if(in_array($import->status, ['pending', 'processing']))
+                        {{-- Runs on the queue (P3): reload until it finishes. --}}
+                        <p class="mt-6 text-sm text-gray-600 dark:text-gray-400" x-data x-init="setTimeout(() => window.location.reload(), 5000)">
+                            The import is running in the background. This page refreshes by itself until it finishes.
+                        </p>
+                    @endif
+
                     <!-- Progress Bar -->
                     @if($import->isInProgress())
                         <div class="mt-6">

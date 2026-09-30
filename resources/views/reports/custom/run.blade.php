@@ -42,12 +42,12 @@
                 <div class="p-6">
                     <form method="GET" action="{{ route('reports.custom.run', $customReport) }}" class="flex flex-wrap items-end gap-4">
                         <div>
-                            <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
+                            <label for="start_date" class="form-label">Start Date</label>
                             <input type="date" name="start_date" id="start_date" value="{{ $startDate }}"
                                 class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
                         </div>
                         <div>
-                            <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date</label>
+                            <label for="end_date" class="form-label">End Date</label>
                             <input type="date" name="end_date" id="end_date" value="{{ $endDate }}"
                                 class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
                         </div>
@@ -78,6 +78,11 @@
                         </svg>
                         <span>Total Records: <strong class="text-gray-700 dark:text-gray-300">{{ number_format($data->count()) }}</strong></span>
                     </div>
+                    @if($truncated ?? false)
+                        <div class="flex items-center text-amber-700 dark:text-amber-400">
+                            <span>Only the first {{ number_format($maxRows) }} records are shown, and totals cover only these. Narrow the dates or add a filter to see the rest.</span>
+                        </div>
+                    @endif
                     @if($customReport->group_by)
                         <div class="flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -203,7 +208,7 @@
                                                     @endphp
                                                     
                                                     @if(is_null($value))
-                                                        <span class="text-gray-400">-</span>
+                                                        <span class="text-gray-500 dark:text-gray-400">-</span>
                                                     @elseif($colConfig && ($colConfig['type'] ?? '') === 'decimal')
                                                         {{ number_format($value, 2) }}
                                                     @elseif($colConfig && ($colConfig['type'] ?? '') === 'date')
@@ -279,7 +284,13 @@
                 const cols = row.querySelectorAll('th, td');
                 let rowData = [];
                 cols.forEach(col => {
-                    let text = col.innerText.replace(/"/g, '""').trim();
+                    let text = col.innerText.trim();
+                    // Same rule as App\Support\Csv: a cell starting with = + - @
+                    // would run as a formula in Excel, unless it is a plain number (S4).
+                    if (/^[=+\-@\t\r]/.test(text) && !/^[+-]?(\d{1,3}(,\d{3})+|\d*)(\.\d+)?$/.test(text)) {
+                        text = "'" + text;
+                    }
+                    text = text.replace(/"/g, '""');
                     rowData.push('"' + text + '"');
                 });
                 csv.push(rowData.join(','));

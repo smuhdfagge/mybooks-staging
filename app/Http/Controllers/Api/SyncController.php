@@ -28,6 +28,9 @@ use Illuminate\Http\Request;
 
 class SyncController extends BaseApiController
 {
+    /** Most rows sent per entity per request (I2). */
+    private const MAX_PAGE = 1000;
+
     /**
      * Permission needed to sync each entity. Sync used to check only
      * "view settings", so anyone with that could download invoices, bills,
@@ -72,6 +75,9 @@ class SyncController extends BaseApiController
         $request->validate([
             'updated_since' => 'nullable|date',
             'entities' => 'nullable|string', // comma-separated: customers,vendors,items
+            'cursors' => 'nullable|array', // cursors[customers]=... from a previous page (I2)
+            'cursors.*' => 'nullable|string',
+            'limit' => 'nullable|integer|min:1|max:'.self::MAX_PAGE,
         ]);
 
         $tenantId = $this->getTenantId();
@@ -85,120 +91,157 @@ class SyncController extends BaseApiController
             : array_keys(self::PERMISSIONS);
         $requestedEntities = $this->allowedEntities($request, $requestedEntities);
 
-        $data = [];
+        $pages = [];
         $syncTimestamp = now()->toIso8601String();
+        $limit = (int) $request->input('limit', self::MAX_PAGE);
 
         // Customers
         if (in_array('customers', $requestedEntities)) {
-            $data['customers'] = $this->getSyncData(
+            $pages['customers'] = $this->getSyncPage(
                 Customer::class,
                 CustomerResource::class,
                 $tenantId,
-                $updatedSince
+                $updatedSince,
+                [],
+                $request->input('cursors.customers'),
+                $limit
             );
         }
 
         // Vendors
         if (in_array('vendors', $requestedEntities)) {
-            $data['vendors'] = $this->getSyncData(
+            $pages['vendors'] = $this->getSyncPage(
                 Vendor::class,
                 VendorResource::class,
                 $tenantId,
-                $updatedSince
+                $updatedSince,
+                [],
+                $request->input('cursors.vendors'),
+                $limit
             );
         }
 
         // Items
         if (in_array('items', $requestedEntities)) {
-            $data['items'] = $this->getSyncData(
+            $pages['items'] = $this->getSyncPage(
                 Item::class,
                 ItemResource::class,
                 $tenantId,
                 $updatedSince,
-                ['category', 'inventory']
+                ['category', 'inventory'],
+                $request->input('cursors.items'),
+                $limit
             );
         }
 
         // Chart of Accounts
         if (in_array('accounts', $requestedEntities)) {
-            $data['accounts'] = $this->getSyncData(
+            $pages['accounts'] = $this->getSyncPage(
                 ChartOfAccount::class,
                 ChartOfAccountResource::class,
                 $tenantId,
-                $updatedSince
+                $updatedSince,
+                [],
+                $request->input('cursors.accounts'),
+                $limit
             );
         }
 
         // Tax Rates
         if (in_array('tax_rates', $requestedEntities)) {
-            $data['tax_rates'] = $this->getSyncData(
+            $pages['tax_rates'] = $this->getSyncPage(
                 TaxRate::class,
                 TaxRateResource::class,
                 $tenantId,
-                $updatedSince
+                $updatedSince,
+                [],
+                $request->input('cursors.tax_rates'),
+                $limit
             );
         }
 
         // Invoices (with items and customer)
         if (in_array('invoices', $requestedEntities)) {
-            $data['invoices'] = $this->getSyncData(
+            $pages['invoices'] = $this->getSyncPage(
                 Invoice::class,
                 InvoiceResource::class,
                 $tenantId,
                 $updatedSince,
-                ['customer', 'items.item']
+                ['customer', 'items.item'],
+                $request->input('cursors.invoices'),
+                $limit
             );
         }
 
         // Bills (with items and vendor)
         if (in_array('bills', $requestedEntities)) {
-            $data['bills'] = $this->getSyncData(
+            $pages['bills'] = $this->getSyncPage(
                 Bill::class,
                 BillResource::class,
                 $tenantId,
                 $updatedSince,
-                ['vendor', 'items.item']
+                ['vendor', 'items.item'],
+                $request->input('cursors.bills'),
+                $limit
             );
         }
 
         // Expenses
         if (in_array('expenses', $requestedEntities)) {
-            $data['expenses'] = $this->getSyncData(
+            $pages['expenses'] = $this->getSyncPage(
                 Expense::class,
                 ExpenseResource::class,
                 $tenantId,
                 $updatedSince,
-                ['vendor', 'expenseAccount']
+                ['vendor', 'expenseAccount'],
+                $request->input('cursors.expenses'),
+                $limit
             );
         }
 
         // Payments Received
         if (in_array('payments_received', $requestedEntities)) {
-            $data['payments_received'] = $this->getSyncData(
+            $pages['payments_received'] = $this->getSyncPage(
                 PaymentReceived::class,
                 PaymentReceivedResource::class,
                 $tenantId,
                 $updatedSince,
-                ['customer', 'invoice']
+                ['customer', 'invoice'],
+                $request->input('cursors.payments_received'),
+                $limit
             );
         }
 
         // Payments Made
         if (in_array('payments_made', $requestedEntities)) {
-            $data['payments_made'] = $this->getSyncData(
+            $pages['payments_made'] = $this->getSyncPage(
                 PaymentMade::class,
                 PaymentMadeResource::class,
                 $tenantId,
                 $updatedSince,
-                ['vendor', 'bill']
+                ['vendor', 'bill'],
+                $request->input('cursors.payments_made'),
+                $limit
             );
         }
 
+        $data = array_map(fn ($page) => $page['data'], $pages);
+        $paging = array_map(fn ($page) => [
+            'count' => count($page['data']),
+            'has_more' => $page['has_more'],
+            'next_cursor' => $page['next_cursor'],
+        ], $pages);
+        $hasMore = in_array(true, array_column($pages, 'has_more'), true);
+
         return $this->success([
-            'sync_timestamp' => $syncTimestamp,
+            'sync_timestamp' => $hasMore ? $this->resumeTimestamp($pages) : $syncTimestamp,
             'is_full_sync' => $updatedSince === null,
+            'has_more' => $hasMore,
+            'paging' => $paging,
             'data' => $data,
-        ], $updatedSince ? 'Incremental sync completed' : 'Full sync completed');
+        ], $hasMore
+            ? 'Partial sync: more records to fetch'
+            : ($updatedSince ? 'Incremental sync completed' : 'Full sync completed'));
     }
 
     /**
@@ -208,12 +251,15 @@ class SyncController extends BaseApiController
     {
         $request->validate([
             'updated_since' => 'nullable|date',
+            'cursor' => 'nullable|string',
+            'limit' => 'nullable|integer|min:1|max:'.self::MAX_PAGE,
         ]);
 
         $tenantId = $this->getTenantId();
         $updatedSince = $request->get('updated_since')
             ? Carbon::parse($request->get('updated_since'))
             : null;
+        $syncTimestamp = now()->toIso8601String();
 
         $entityConfig = $this->getEntityConfig($entity);
 
@@ -225,20 +271,24 @@ class SyncController extends BaseApiController
             return $this->forbidden("You do not have permission to sync {$entity}");
         }
 
-        $data = $this->getSyncData(
+        $page = $this->getSyncPage(
             $entityConfig['model'],
             $entityConfig['resource'],
             $tenantId,
             $updatedSince,
-            $entityConfig['relations'] ?? []
+            $entityConfig['relations'] ?? [],
+            $request->input('cursor'),
+            (int) $request->input('limit', self::MAX_PAGE)
         );
 
         return $this->success([
-            'sync_timestamp' => now()->toIso8601String(),
+            'sync_timestamp' => $page['has_more'] ? $this->resumeTimestamp([$page]) : $syncTimestamp,
             'is_full_sync' => $updatedSince === null,
             'entity' => $entity,
-            'count' => count($data),
-            'data' => $data,
+            'count' => count($page['data']),
+            'has_more' => $page['has_more'],
+            'next_cursor' => $page['next_cursor'],
+            'data' => $page['data'],
         ]);
     }
 
@@ -321,18 +371,35 @@ class SyncController extends BaseApiController
     }
 
     /**
-     * Helper: Get sync data for a model
+     * Get one page of sync data for a model, oldest change first.
+     *
+     * Sync used to return the newest 1,000 rows with a "synced up to" time,
+     * so a phone that saved that time never got the older rows (I2). Now
+     * rows come in (updated_at, id) order and a cursor points past the last
+     * row sent, so every row is reached however many share a timestamp.
+     *
+     * @return array{data: array<int, mixed>, has_more: bool, next_cursor: ?string, last_updated_at: ?string}
      */
-    private function getSyncData(
+    private function getSyncPage(
         string $modelClass,
         string $resourceClass,
         int $tenantId,
         ?Carbon $updatedSince,
-        array $relations = []
+        array $relations = [],
+        ?string $cursor = null,
+        int $limit = self::MAX_PAGE
     ): array {
+        $limit = min(max($limit, 1), self::MAX_PAGE);
         $query = $modelClass::where('tenant_id', $tenantId);
 
-        if ($updatedSince) {
+        $after = $cursor !== null && $cursor !== '' ? $this->decodeCursor($cursor) : null;
+        if ($after !== null) {
+            // The cursor already lies after updated_since, so it replaces it.
+            $query->where(function ($q) use ($after) {
+                $q->where('updated_at', '>', $after['u'])
+                    ->orWhere(fn ($q) => $q->where('updated_at', $after['u'])->where('id', '>', $after['i']));
+            });
+        } elseif ($updatedSince) {
             $query->where('updated_at', '>=', $updatedSince);
         }
 
@@ -340,12 +407,67 @@ class SyncController extends BaseApiController
             $query->with($relations);
         }
 
-        // Limit results to prevent memory issues
-        $records = $query->orderBy('updated_at', 'desc')
-            ->limit(1000)
+        // Customer and vendor balances in the same query (P4).
+        if (method_exists($modelClass, 'scopeWithBalances')) {
+            $query->withBalances();
+        }
+
+        // One extra row tells us whether there is another page.
+        $records = $query->orderBy('updated_at')
+            ->orderBy('id')
+            ->limit($limit + 1)
             ->get();
 
-        return $resourceClass::collection($records)->resolve();
+        $hasMore = $records->count() > $limit;
+        if ($hasMore) {
+            $records = $records->take($limit);
+        }
+        $last = $records->last();
+        $lastUpdated = $last?->getRawOriginal('updated_at');
+
+        return [
+            'data' => $resourceClass::collection($records)->resolve(),
+            'has_more' => $hasMore,
+            'next_cursor' => $hasMore && $last !== null ? $this->encodeCursor((string) $lastUpdated, (int) $last->getKey()) : null,
+            'last_updated_at' => $lastUpdated !== null ? (string) $lastUpdated : null,
+        ];
+    }
+
+    /**
+     * On a partial page, "sync_timestamp" is the oldest point still to be
+     * fetched, so an older client that only saves the timestamp resumes
+     * from there instead of skipping rows (I2).
+     *
+     * @param  array<int|string, array{has_more: bool, last_updated_at: ?string}>  $pages
+     */
+    private function resumeTimestamp(array $pages): ?string
+    {
+        $times = array_filter(array_map(
+            fn ($page) => $page['has_more'] ? $page['last_updated_at'] : null,
+            $pages
+        ));
+
+        return $times === [] ? null : Carbon::parse(min($times))->toIso8601String();
+    }
+
+    private function encodeCursor(string $updatedAt, int $id): string
+    {
+        return rtrim(strtr(base64_encode((string) json_encode(['u' => $updatedAt, 'i' => $id])), '+/', '-_'), '=');
+    }
+
+    /**
+     * @return array{u: string, i: int}
+     */
+    private function decodeCursor(string $cursor): array
+    {
+        $decoded = json_decode((string) base64_decode(strtr($cursor, '-_', '+/'), true), true);
+
+        if (! is_array($decoded) || ! is_string($decoded['u'] ?? null) || ! is_int($decoded['i'] ?? null)
+            || strtotime($decoded['u']) === false) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['cursor' => 'The cursor is invalid.']);
+        }
+
+        return ['u' => $decoded['u'], 'i' => $decoded['i']];
     }
 
     /**

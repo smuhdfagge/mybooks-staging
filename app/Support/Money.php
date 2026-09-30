@@ -94,6 +94,36 @@ final class Money
         return $shares;
     }
 
+    /**
+     * Show an amount for people to read (U8): currency symbol, thousands
+     * separators and 2 decimals, rounded as above. Uses the signed-in
+     * business's currency unless one is given. In Blade: @money($amount).
+     */
+    public static function format(float|int|string|null $amount, ?string $currency = null): string
+    {
+        $minor = self::toMinor($amount);
+
+        return ($minor < 0 ? '-' : '').self::symbol($currency).number_format(abs($minor) / 100, 2);
+    }
+
+    /** Symbol for a currency code (the business's by default). In Blade: @currencySymbol. */
+    public static function symbol(?string $currency = null): string
+    {
+        $code = $currency ?? self::currency();
+        $match = collect(config('mybooks.currencies', []))->firstWhere('code', $code);
+
+        return $match['symbol'] ?? $code.' ';
+    }
+
+    /** The signed-in business's currency code. */
+    public static function currency(): string
+    {
+        $user = auth()->user();
+        $tenant = $user instanceof \App\Models\User ? $user->tenant : null;
+
+        return $tenant->currency ?? 'NGN';
+    }
+
     /** Whole kobo (cents). */
     public static function toMinor(float|int|string|null $amount): int
     {

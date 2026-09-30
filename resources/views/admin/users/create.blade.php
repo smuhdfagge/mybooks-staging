@@ -30,9 +30,9 @@
                                value="{{ old('name') }}"
                                required
                                class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                               placeholder="John Doe">
+                               placeholder="John Doe" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                         @error('name')
-                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            <p id="name-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
                     </div>
 
@@ -44,9 +44,9 @@
                                value="{{ old('email') }}"
                                required
                                class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                               placeholder="admin@example.com">
+                               placeholder="admin@example.com" @error('email') aria-invalid="true" aria-describedby="email-error" @enderror>
                         @error('email')
-                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            <p id="email-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
                     </div>
 
@@ -57,9 +57,9 @@
                                id="password" 
                                required
                                class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                               placeholder="••••••••">
+                               placeholder="••••••••" @error('password') aria-invalid="true" aria-describedby="password-error" @enderror>
                         @error('password')
-                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            <p id="password-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
                     </div>
 

@@ -5,7 +5,8 @@
             <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage your subscription plan and billing</p>
         </div>
 
-        @if (session()->has('success'))
+        {{-- On a full page load the layout shows the message; here only after an action (U9). --}}
+        @if (\Livewire\Livewire::isLivewireRequest() && session()->has('success'))
             <div class="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                 <div class="flex">
                     <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
@@ -16,7 +17,7 @@
             </div>
         @endif
 
-        @if (session()->has('error'))
+        @if (\Livewire\Livewire::isLivewireRequest() && session()->has('error'))
             <div class="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
                 <p class="text-sm text-red-800 dark:text-red-200">{{ session('error') }}</p>
             </div>
@@ -50,7 +51,7 @@
                                         @endif">
                                         {{ $currentSubscription->isCancelled() ? 'Cancelled' : ucfirst(str_replace('_', ' ', $currentSubscription->status)) }}
                                     </span>
-                                    <span class="mx-2 text-gray-400">•</span>
+                                    <span class="mx-2 text-gray-500 dark:text-gray-400">•</span>
                                     <span class="text-sm text-gray-600 dark:text-gray-400">{{ ucfirst($currentSubscription->billing_cycle) }} billing</span>
                                 </div>
                             </div>
@@ -236,7 +237,7 @@
 
     <!-- Change Plan Modal -->
     @if($showUpgradeModal)
-        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" x-data x-trap.inert.noscroll="true" @keydown.escape.window="$wire.closeUpgradeModal()">
             <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
                 <div class="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-75 transition-opacity" wire:click="closeUpgradeModal"></div>
 
@@ -248,8 +249,8 @@
                         
                         <!-- Plan Selection -->
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Plan</label>
-                            <select wire:model.live="selectedPlanId" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <label for="selectedPlanId" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Plan</label>
+                            <select id="selectedPlanId" wire:model.live="selectedPlanId" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 @foreach($plans as $plan)
                                     <option value="{{ $plan->id }}">{{ $plan->name }} - ₦{{ number_format($plan->monthly_price) }}/mo ({{ $plan->max_users }} users)</option>
                                 @endforeach
@@ -288,7 +289,7 @@
                         @endif
                     </div>
                     <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button wire:click="changePlan" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        <button wire:click="changePlan" wire:loading.attr="disabled" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
                             Continue to payment
                         </button>
                         <button wire:click="closeUpgradeModal" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-600 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
@@ -302,7 +303,7 @@
 
     <!-- Cancel Subscription Modal -->
     @if($showCancelModal)
-        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" x-data x-trap.inert.noscroll="true" @keydown.escape.window="$wire.closeCancelModal()">
             <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
                 <div class="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-75 transition-opacity" wire:click="closeCancelModal"></div>
 
@@ -325,14 +326,14 @@
                                     </p>
                                 </div>
                                 <div class="mt-4">
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Reason for cancellation (optional)</label>
-                                    <textarea wire:model="cancellationReason" rows="3" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="Tell us why you're leaving..."></textarea>
+                                    <label for="cancellationReason" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Reason for cancellation (optional)</label>
+                                    <textarea id="cancellationReason" wire:model="cancellationReason" rows="3" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="Tell us why you're leaving..."></textarea>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button wire:click="cancelSubscription" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        <button wire:click="cancelSubscription" wire:loading.attr="disabled" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
                             Yes, Cancel Subscription
                         </button>
                         <button wire:click="closeCancelModal" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-600 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">

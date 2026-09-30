@@ -15,7 +15,7 @@
 
     <div class="py-6">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+            <x-card>
                 <form action="{{ route('items.store') }}" method="POST" class="p-6" enctype="multipart/form-data">
                     @csrf
 
@@ -43,36 +43,26 @@
                                         Upload Image
                                     </label>
                                     <input type="file" name="image" accept="image/*" class="hidden" id="item-image-upload"
-                                        @change="const file = $event.target.files[0]; if(file) { const reader = new FileReader(); reader.onload = e => preview = e.target.result; reader.readAsDataURL(file); }">
+                                        @change="const file = $event.target.files[0]; if(file) { const reader = new FileReader(); reader.onload = e => preview = e.target.result; reader.readAsDataURL(file); }" @error('image') aria-invalid="true" aria-describedby="image-error" @enderror>
                                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">JPG, PNG, GIF or WebP. Max 2MB.</p>
-                                    @error('image') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                    @error('image') <p id="image-error" class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                                 </div>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="md:col-span-2">
-                                <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Item Name <span class="text-red-500">*</span></label>
-                                <input type="text" name="name" id="name" value="{{ old('name') }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('name') border-red-500 @enderror">
-                                @error('name')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="name" label="Item Name" :value="old('name')" required />
                             </div>
 
                             <div>
-                                <label for="sku" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">SKU / Item Code</label>
-                                <input type="text" name="sku" id="sku" value="{{ old('sku') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('sku') border-red-500 @enderror">
-                                @error('sku')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="sku" label="SKU / Item Code" :value="old('sku')" />
                             </div>
 
                             <div>
-                                <label for="category_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+                                <label for="category_id" class="form-label">Category</label>
                                 <select name="category_id" id="category_id"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('category_id') border-red-500 @enderror">
+                                    class="form-control @error('category_id') border-red-500 @enderror" @error('category_id') aria-invalid="true" aria-describedby="category_id-error" @enderror>
                                     <option value="">-- No Category --</option>
                                     @foreach($categories as $category)
                                         <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
@@ -81,38 +71,28 @@
                                     @endforeach
                                 </select>
                                 @error('category_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="category_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
-                                <label for="type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type <span class="text-red-500">*</span></label>
+                                <label for="type" class="form-label">Type <span class="text-red-500">*</span></label>
                                 <select name="type" id="type" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('type') border-red-500 @enderror">
+                                    class="form-control @error('type') border-red-500 @enderror" @error('type') aria-invalid="true" aria-describedby="type-error" @enderror>
                                     <option value="product" {{ old('type', 'product') == 'product' ? 'selected' : '' }}>Product</option>
                                     <option value="service" {{ old('type') == 'service' ? 'selected' : '' }}>Service</option>
                                 </select>
                                 @error('type')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="type-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
-                                <label for="unit" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Unit of Measure</label>
-                                <input type="text" name="unit" id="unit" value="{{ old('unit') }}" placeholder="e.g., pcs, kg, hrs"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('unit') border-red-500 @enderror">
-                                @error('unit')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="unit" label="Unit of Measure" :value="old('unit')" placeholder="e.g., pcs, kg, hrs" />
                             </div>
 
                             <div class="md:col-span-2">
-                                <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                                <textarea name="description" id="description" rows="3"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('description') border-red-500 @enderror">{{ old('description') }}</textarea>
-                                @error('description')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="description" label="Description" type="textarea" :value="old('description')" rows="3" />
                             </div>
                         </div>
                     </div>
@@ -127,36 +107,36 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
-                                <label for="selling_price" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Selling Price <span class="text-red-500">*</span></label>
+                                <label for="selling_price" class="form-label">Selling Price <span class="text-red-500">*</span></label>
                                 <div class="relative">
                                     <input type="number" name="selling_price" id="selling_price" value="{{ old('selling_price', '0.00') }}" min="0" step="0.01" required
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('selling_price') border-red-500 @enderror">
+                                        class="form-control @error('selling_price') border-red-500 @enderror" @error('selling_price') aria-invalid="true" aria-describedby="selling_price-error" @enderror>
                                 </div>
                                 @error('selling_price')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="selling_price-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
-                                <label for="cost_price" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cost Price</label>
+                                <label for="cost_price" class="form-label">Cost Price</label>
                                 <div class="relative">
                                     <input type="number" name="cost_price" id="cost_price" value="{{ old('cost_price', '0.00') }}" min="0" step="0.01"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('cost_price') border-red-500 @enderror">
+                                        class="form-control @error('cost_price') border-red-500 @enderror" @error('cost_price') aria-invalid="true" aria-describedby="cost_price-error" @enderror>
                                 </div>
                                 @error('cost_price')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="cost_price-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
-                                <label for="tax_rate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tax Rate (%)</label>
+                                <label for="tax_rate" class="form-label">Tax Rate (%)</label>
                                 <div class="relative">
                                     <input type="number" name="tax_rate" id="tax_rate" value="{{ old('tax_rate', '0') }}" min="0" max="100" step="0.01"
-                                        class="w-full pr-8 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('tax_rate') border-red-500 @enderror">
+                                        class="w-full pr-8 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('tax_rate') border-red-500 @enderror" @error('tax_rate') aria-invalid="true" aria-describedby="tax_rate-error" @enderror>
                                     <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 dark:text-gray-400">%</span>
                                 </div>
                                 @error('tax_rate')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="tax_rate-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -184,12 +164,10 @@
                             </div>
 
                             <div>
-                                <label for="reorder_level" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reorder Level</label>
-                                <input type="number" name="reorder_level" id="reorder_level" value="{{ old('reorder_level', 0) }}" min="0"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('reorder_level') border-red-500 @enderror">
+                                <x-field name="reorder_level" label="Reorder Level" type="number" :value="old('reorder_level', 0)" min="0" />
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Alert when stock falls below this level</p>
                                 @error('reorder_level')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="reorder_level-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -200,15 +178,15 @@
                         <a href="{{ route('items.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             Cancel
                         </a>
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <x-primary-button class="px-4">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>
                             Save Item
-                        </button>
+                        </x-primary-button>
                     </div>
                 </form>
-            </div>
+            </x-card>
         </div>
     </div>
 </x-app-layout>

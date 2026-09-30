@@ -30,17 +30,18 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                             <div>
-                                <label for="invoice_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Invoice Number</label>
+                                <label for="invoice_number" class="form-label">Invoice Number</label>
                                 <input type="text" id="invoice_number" value="{{ $invoiceNumber }}" disabled
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-600 dark:text-gray-300 shadow-sm">
                             </div>
 
                             <div x-data="searchableSelect({
-                                items: @js($customers->map(fn ($customer) => ['id' => (string) $customer->id, 'name' => $customer->name . ($customer->company_name ? " (" . ($customer->company_name) . ")" : "")])->values()),
+                                items: @js($customerOptions),
+                                url: @js(route('lookup.customers')),
                                 selectedId: '{{ old('customer_id', request('customer_id')) }}'
                             })" class="relative">
-                                <label for="customer_search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Customer <span class="text-red-500">*</span></label>
-                                <input type="hidden" name="customer_id" :value="selectedId" required>
+                                <label for="customer_search" class="form-label">Customer <span class="text-red-500">*</span></label>
+                                <input type="hidden" name="customer_id" :value="selectedId" required @error('customer_id') aria-invalid="true" aria-describedby="customer_id-error" @enderror>
                                 <div class="relative">
                                     <input 
                                         type="text" 
@@ -55,7 +56,7 @@
                                         @keydown.enter.prevent="selectHighlighted()"
                                         placeholder="Search customers..."
                                         autocomplete="off"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('customer_id') border-red-500 @enderror">
+                                        class="form-control @error('customer_id') border-red-500 @enderror">
                                     <button type="button" @click="open = !open" class="absolute inset-y-0 right-0 flex items-center pr-2">
                                         <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
                                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -91,31 +92,31 @@
                                     </div>
                                 </div>
                                 @error('customer_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="customer_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
-                                <label for="invoice_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Invoice Date <span class="text-red-500">*</span></label>
+                                <label for="invoice_date" class="form-label">Invoice Date <span class="text-red-500">*</span></label>
                                 <input type="date" name="invoice_date" id="invoice_date" value="{{ old('invoice_date', date('Y-m-d')) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('invoice_date') border-red-500 @enderror">
+                                    class="form-control @error('invoice_date') border-red-500 @enderror" @error('invoice_date') aria-invalid="true" aria-describedby="invoice_date-error" @enderror>
                                 @error('invoice_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="invoice_date-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
-                                <label for="due_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Due Date <span class="text-red-500">*</span></label>
+                                <label for="due_date" class="form-label">Due Date <span class="text-red-500">*</span></label>
                                 <input type="date" name="due_date" id="due_date" value="{{ old('due_date', date('Y-m-d', strtotime('+30 days'))) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('due_date') border-red-500 @enderror">
+                                    class="form-control @error('due_date') border-red-500 @enderror" @error('due_date') aria-invalid="true" aria-describedby="due_date-error" @enderror>
                                 @error('due_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="due_date-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
 
                         <div class="mb-6">
-                            <label for="reference" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reference / PO Number</label>
+                            <label for="reference" class="form-label">Reference / PO Number</label>
                             <input type="text" name="reference" id="reference" value="{{ old('reference') }}"
                                 class="w-full md:w-1/2 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
@@ -133,7 +134,7 @@
                         </h3>
                         
                         <div class="overflow-visible">
-                            <table class="min-w-full">
+                            <table class="min-w-full line-items">
                                 <thead>
                                     <tr class="border-b border-gray-200 dark:border-gray-700">
                                         <th class="text-left text-sm font-medium text-gray-700 dark:text-gray-300 pb-2 w-1/3">Description</th>
@@ -147,23 +148,24 @@
                                 <tbody>
                                     <template x-for="(item, index) in items" :key="index">
                                         <tr class="border-b border-gray-200 dark:border-gray-700">
-                                            <td class="py-2 pr-2">
+                                            <td class="py-2 pr-2" data-label="Description" data-cell="main">
                                                 <div class="relative mb-1">
                                                     <input type="hidden" :name="`items[${index}][item_id]`" x-model="item.item_id">
-                                                    <input 
+                                                    <input aria-label="Item" 
                                                         type="text" 
                                                         x-model="item.itemSearch"
-                                                        @focus="item.itemDropdownOpen = true"
+                                                        @focus="item.itemDropdownOpen = true; searchProducts(index)"
                                                         @click="item.itemDropdownOpen = true"
                                                         @input="item.itemDropdownOpen = true"
+                                                        @input.debounce.300ms="searchProducts(index)"
                                                         @keydown.escape="item.itemDropdownOpen = false"
-                                                        @keydown.arrow-down.prevent="item.itemHighlightedIndex = Math.min(item.itemHighlightedIndex + 1, getFilteredProducts(item.itemSearch).length - 1)"
+                                                        @keydown.arrow-down.prevent="item.itemHighlightedIndex = Math.min(item.itemHighlightedIndex + 1, getFilteredProducts(index).length - 1)"
                                                         @keydown.arrow-up.prevent="item.itemHighlightedIndex = Math.max(item.itemHighlightedIndex - 1, 0)"
-                                                        @keydown.enter.prevent="selectProduct(index, getFilteredProducts(item.itemSearch)[item.itemHighlightedIndex])"
+                                                        @keydown.enter.prevent="selectProduct(index, getFilteredProducts(index)[item.itemHighlightedIndex])"
                                                         placeholder="Search items..."
                                                         autocomplete="off"
-                                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                                                    <button type="button" @click="item.itemDropdownOpen = !item.itemDropdownOpen" class="absolute inset-y-0 right-0 flex items-center pr-2">
+                                                        class="form-control text-sm">
+                                                    <button type="button" aria-label="Show items" @click="item.itemDropdownOpen = !item.itemDropdownOpen" class="absolute inset-y-0 right-0 flex items-center pr-2">
                                                         <svg class="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
                                                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                                                         </svg>
@@ -178,7 +180,7 @@
                                                         x-transition:leave-start="opacity-100 scale-100"
                                                         x-transition:leave-end="opacity-0 scale-95"
                                                         class="absolute z-[100] bottom-full mb-1 w-full bg-white dark:bg-gray-700 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none text-sm">
-                                                        <template x-for="(product, pIndex) in getFilteredProducts(item.itemSearch)" :key="product.id">
+                                                        <template x-for="(product, pIndex) in getFilteredProducts(index)" :key="product.id">
                                                             <div 
                                                                 @click="selectProduct(index, product)"
                                                                 @mouseenter="item.itemHighlightedIndex = pIndex"
@@ -192,32 +194,32 @@
                                                                 </span>
                                                             </div>
                                                         </template>
-                                                        <div x-show="getFilteredProducts(item.itemSearch).length === 0" class="py-2 px-3 text-gray-500 dark:text-gray-400 text-sm">
+                                                        <div x-show="getFilteredProducts(index).length === 0" class="py-2 px-3 text-gray-500 dark:text-gray-400 text-sm">
                                                             No items found
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <input type="text" :name="`items[${index}][description]`" x-model="item.description" required placeholder="Description"
+                                                <input aria-label="Description" type="text" :name="`items[${index}][description]`" x-model="item.description" required placeholder="Description"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                             </td>
-                                            <td class="py-2 pr-2">
-                                                <input type="number" :name="`items[${index}][quantity]`" x-model.number="item.quantity" min="0.01" step="0.01" required
+                                            <td class="py-2 pr-2" data-label="Qty">
+                                                <input aria-label="Quantity" type="number" :name="`items[${index}][quantity]`" x-model.number="item.quantity" min="0.01" step="0.01" required
                                                     @input="calculateTotals()"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
-                                            <td class="py-2 pr-2">
-                                                <input type="number" :name="`items[${index}][unit_price]`" x-model.number="item.unit_price" min="0" step="0.01" required
+                                            <td class="py-2 pr-2" data-label="Price">
+                                                <input aria-label="Unit price" type="number" :name="`items[${index}][unit_price]`" x-model.number="item.unit_price" min="0" step="0.01" required
                                                     @input="calculateTotals()"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
-                                            <td class="py-2 pr-2">
-                                                <input type="number" :name="`items[${index}][tax_rate]`" x-model.number="item.tax_rate" min="0" max="100" step="0.01"
+                                            <td class="py-2 pr-2" data-label="Tax %">
+                                                <input aria-label="Tax rate (%)" type="number" :name="`items[${index}][tax_rate]`" x-model.number="item.tax_rate" min="0" max="100" step="0.01"
                                                     @input="calculateTotals()"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
-                                            <td class="py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100" x-text="lineTotal(index).toFixed(2)"></td>
-                                            <td class="py-2 text-center">
-                                                <button type="button" @click="removeItem(index)" x-show="items.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
+                                            <td class="py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(lineTotal(index))" data-label="Total"></td>
+                                            <td class="py-2 text-center" data-cell="actions">
+                                                <button type="button" @click="removeItem(index)" x-show="items.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" aria-label="Remove line">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                                     </svg>
@@ -250,14 +252,14 @@
                                 Notes & Terms
                             </h3>
                             <div class="mb-4">
-                                <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes (visible on invoice)</label>
+                                <label for="notes" class="form-label">Notes (visible on invoice)</label>
                                 <textarea name="notes" id="notes" rows="3"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('notes') }}</textarea>
+                                    class="form-control">{{ old('notes') }}</textarea>
                             </div>
                             <div>
-                                <label for="terms" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Terms & Conditions</label>
+                                <label for="terms" class="form-label">Terms & Conditions</label>
                                 <textarea name="terms" id="terms" rows="3"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('terms', 'Payment is due within the specified terms. Late payments may incur additional charges.') }}</textarea>
+                                    class="form-control">{{ old('terms', 'Payment is due within the specified terms. Late payments may incur additional charges.') }}</textarea>
                             </div>
                         </div>
                     </div>
@@ -275,7 +277,7 @@
                             <div class="space-y-3">
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600 dark:text-gray-400">Subtotal</span>
-                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="subtotal.toFixed(2)">0.00</span>
+                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(subtotal)">@money(0)</span>
                                 </div>
 
                                 <div class="flex items-center justify-between text-sm">
@@ -285,23 +287,23 @@
                                             class="text-xs rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 py-1">
                                             <option value="">None</option>
                                             <option value="percentage">%</option>
-                                            <option value="fixed">₦</option>
+                                            <option value="fixed">@currencySymbol</option>
                                         </select>
                                         <input type="number" name="discount_amount" x-model.number="discountValue" x-show="discountType" min="0" step="0.01"
                                             @input="calculateTotals()"
                                             class="w-20 text-xs rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 py-1">
                                     </div>
-                                    <span class="font-medium text-red-600 dark:text-red-400" x-text="'-' + discount.toFixed(2)">-0.00</span>
+                                    <span class="font-medium text-red-600 dark:text-red-400" x-text="'-' + formatMoney(discount)">-@money(0)</span>
                                 </div>
 
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600 dark:text-gray-400">Tax</span>
-                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="totalTax.toFixed(2)">0.00</span>
+                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(totalTax)">@money(0)</span>
                                 </div>
 
                                 <div class="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between">
                                     <span class="text-lg font-bold text-gray-900 dark:text-gray-100">Total</span>
-                                    <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400" x-text="total.toFixed(2)">0.00</span>
+                                    <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400" x-text="formatMoney(total)">@money(0)</span>
                                 </div>
                             </div>
                         </div>
@@ -327,13 +329,27 @@
 
     @push('scripts')
     <script nonce="{{ app('csp-nonce') }}">
+        // Search-as-you-type against the lookup routes (P9).
+        async function lookupJson(url, params) {
+            const response = await fetch(url + '?' + new URLSearchParams(params), {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
+            });
+            if (!response.ok) return [];
+            const body = await response.json();
+            return body.data || [];
+        }
+
         function searchableSelect(config) {
             return {
                 items: config.items || [],
+                url: config.url || null,
                 selectedId: config.selectedId || '',
                 search: '',
                 open: false,
                 highlightedIndex: 0,
+                requestSeq: 0,
+                timer: null,
 
                 init() {
                     // Set initial search text if there's a selected item
@@ -343,9 +359,25 @@
                             this.search = selected.name;
                         }
                     }
+                    if (this.url) {
+                        this.$watch('search', () => this.fetchOptions());
+                        this.$watch('open', (isOpen) => { if (isOpen) this.fetchOptions(); });
+                    }
+                },
+
+                fetchOptions() {
+                    clearTimeout(this.timer);
+                    this.timer = setTimeout(async () => {
+                        const seq = ++this.requestSeq;
+                        const rows = await lookupJson(this.url, { q: this.search, limit: 20 });
+                        if (seq !== this.requestSeq) return;
+                        this.items = rows.map(row => ({ id: String(row.id), name: row.name + (row.company_name ? ` (${row.company_name})` : '') }));
+                        this.highlightedIndex = 0;
+                    }, 250);
                 },
 
                 get filteredItems() {
+                    if (this.url) return this.items; // already filtered by the server
                     if (!this.search) return this.items;
                     return this.items.filter(item => 
                         item.name.toLowerCase().includes(this.search.toLowerCase())
@@ -381,7 +413,7 @@
         function invoiceForm() {
             return {
                 items: [{ item_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0, is_taxable: false, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 }],
-                availableProducts: @js($items->map(fn ($item) => ['id' => (string) $item->id, 'name' => $item->name . ($item->is_taxable ? " (Taxable)" : ""), 'price' => (float) $item->selling_price, 'desc' => (string) ($item->description ?? $item->name), 'taxable' => (bool) $item->is_taxable, 'tax' => (float) ($item->effective_tax_rate ?? 0)])->values()),
+                productsUrl: @js(route('lookup.items')),
                 discountType: '',
                 discountValue: 0,
                 subtotal: 0,
@@ -398,11 +430,22 @@
                     this.calculateTotals();
                 },
 
-                getFilteredProducts(search) {
-                    if (!search) return this.availableProducts;
-                    return this.availableProducts.filter(p => 
-                        p.name.toLowerCase().includes(search.toLowerCase())
-                    );
+                // Items in stock matching what was typed, from the server (P9).
+                searchProducts(index) {
+                    const line = this.items[index];
+                    if (!line) return;
+                    const seq = (line.searchSeq || 0) + 1;
+                    line.searchSeq = seq;
+                    const term = (line.itemSearch || '').replace(/ \(Taxable\)$/, '');
+                    lookupJson(this.productsUrl, { q: term, limit: 20, in_stock: 1 }).then(rows => {
+                        if (line.searchSeq !== seq) return;
+                        line.results = rows.map(p => ({ id: String(p.id), name: p.name + (p.is_taxable ? ' (Taxable)' : ''), price: Number(p.selling_price), desc: p.description || p.name, taxable: !!p.is_taxable, tax: Number(p.effective_tax_rate || 0) }));
+                        line.itemHighlightedIndex = 0;
+                    });
+                },
+
+                getFilteredProducts(index) {
+                    return (this.items[index] && this.items[index].results) || [];
                 },
 
                 selectProduct(index, product) {

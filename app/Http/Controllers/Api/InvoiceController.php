@@ -206,7 +206,7 @@ class InvoiceController extends BaseApiController
                         if ($inventory) {
                             // Refuse rather than silently clamping stock at zero (M4)
                             if ((float) $inventory->quantity < (float) $invoiceItem->quantity) {
-                                throw new \RuntimeException("Not enough stock to release {$invoiceItem->description}: {$inventory->quantity} on hand, {$invoiceItem->quantity} needed.");
+                                throw new \App\Exceptions\BusinessRuleException("Not enough stock to release {$invoiceItem->description}: {$inventory->quantity} on hand, {$invoiceItem->quantity} needed.");
                             }
                             $inventory->quantity = $inventory->quantity - $invoiceItem->quantity;
                             $inventory->reserved_quantity = max(0, $inventory->reserved_quantity - $invoiceItem->quantity);
@@ -240,8 +240,10 @@ class InvoiceController extends BaseApiController
                 'invoice' => new InvoiceResource($invoice->fresh(['customer', 'items.item'])),
                 'waybill_number' => $waybillNumber,
             ], 'Invoice released successfully');
-        } catch (\Exception $e) {
-            return $this->error('Failed to release invoice: '.$e->getMessage(), 500);
+        } catch (\App\Exceptions\BusinessRuleException|\App\Exceptions\UnbalancedJournalException $e) {
+            // A broken rule is the client's to fix (422); anything else goes to the
+            // API error handler, which reports it without showing internals (I6).
+            return $this->error($e->getMessage(), 422);
         }
     }
 

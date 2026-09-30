@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Auth\SignOutOtherSessions;
 use App\Models\Country;
 use App\Models\NotificationSetting;
 use App\Models\Role;
 use App\Models\State;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Notifications\EmailAddressChangedNotification;
 use App\Notifications\TestEmailNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -197,6 +199,16 @@ class SettingsController extends Controller
         // Users cannot change their own roles or deactivate themselves (H4).
         $isSelf = $user->id === auth()->id() && ! auth()->user()->isSuperAdmin();
 
+        $oldEmail = $user->email;
+        // The last active admin keeps the admin role and stays active, or
+        // nobody could manage the business (O7).
+        if (! $isSelf && $user->isLastActiveAdmin()) {
+            $keepsAdmin = $this->rolesFromIds($validated['roles'] ?? [])->contains(fn ($role) => $role->name === 'admin');
+            if (! $keepsAdmin || ! ($validated['is_active'] ?? true)) {
+                return back()->withInput()->with('error', 'This is the only admin of the business. Make another user an admin first.');
+            }
+        }
+
         $user->update([
             'name' => $validated['name'],
             'email' => $validated['email'],
@@ -204,8 +216,16 @@ class SettingsController extends Controller
             'is_active' => $isSelf ? $user->is_active : ($validated['is_active'] ?? true),
         ]);
 
+        if ($user->email !== $oldEmail) {
+            // Tell the old address about the change (S6).
+            Notification::route('mail', $oldEmail)
+                ->notify(new EmailAddressChangedNotification($user->name, $oldEmail, $user->email, changedByAdmin: true));
+        }
+
         if (! empty($validated['password'])) {
             $user->update(['password' => Hash::make($validated['password'])]);
+            // The user is signed out everywhere else, API tokens included (S5).
+            app(SignOutOtherSessions::class)->handle($user, $request);
         }
 
         if (! $isSelf) {
@@ -225,6 +245,10 @@ class SettingsController extends Controller
 
         if ($user->id === auth()->id()) {
             return redirect()->back()->with('error', 'You cannot delete your own account.');
+        }
+
+        if ($user->isLastActiveAdmin()) {
+            return redirect()->back()->with('error', 'This is the only admin of the business. Make another user an admin first.');
         }
 
         $user->delete();

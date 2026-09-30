@@ -3,13 +3,14 @@
 namespace App\Livewire\Items;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\ItemCategory;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class ItemCategoriesTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -223,7 +224,7 @@ class ItemCategoriesTable extends Component
             $query->where('is_active', true);
         }
 
-        $categories = $query->paginate($this->perPage);
+        $categories = $query->paginate($this->pageSize());
 
         return view('livewire.items.item-categories-table', [
             'categories' => $categories,

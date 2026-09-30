@@ -8,9 +8,6 @@
 
     <div class="py-6">
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            @if(session('success'))
-                <div class="p-4 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">{{ session('success') }}</div>
-            @endif
 
             <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">What payroll owes</h3>
@@ -42,27 +39,27 @@
                 <form method="POST" action="{{ route('payroll.liabilities.remit') }}" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     @csrf
                     <div>
-                        <label for="account_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Paying</label>
-                        <select id="account_code" name="account_code" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" required>
+                        <label for="account_code" class="form-label">Paying</label>
+                        <select id="account_code" name="account_code" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" required @error('account_code') aria-invalid="true" aria-describedby="account_code-error" @enderror>
                             @foreach($accounts as $account)
                                 @continue($account->account_code === \App\Services\AccountCodeService::resolve(auth()->user()->tenant_id, 'accrued_salaries'))
                                 <option value="{{ $account->account_code }}" @selected(old('account_code') === $account->account_code)>{{ $account->name }} ({{ number_format($account->current_balance, 2) }} owed)</option>
                             @endforeach
                         </select>
-                        @error('account_code')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                        @error('account_code')<p id="account_code-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                     </div>
                     <div>
-                        <label for="amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount</label>
-                        <input id="amount" type="number" name="amount" step="0.01" min="0.01" value="{{ old('amount') }}" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" required>
-                        @error('amount')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                        <label for="amount" class="form-label">Amount</label>
+                        <input id="amount" type="number" name="amount" step="0.01" min="0.01" value="{{ old('amount') }}" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" required @error('amount') aria-invalid="true" aria-describedby="amount-error" @enderror>
+                        @error('amount')<p id="amount-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                     </div>
                     <div>
-                        <label for="date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date paid</label>
-                        <input id="date" type="date" name="date" value="{{ old('date', now()->toDateString()) }}" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" required>
-                        @error('date')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                        <label for="date" class="form-label">Date paid</label>
+                        <input id="date" type="date" name="date" value="{{ old('date', now()->toDateString()) }}" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" required @error('date') aria-invalid="true" aria-describedby="date-error" @enderror>
+                        @error('date')<p id="date-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                     </div>
                     <div>
-                        <label for="payment_method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Paid by</label>
+                        <label for="payment_method" class="form-label">Paid by</label>
                         <select id="payment_method" name="payment_method" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200">
                             @foreach($methods as $value => $label)
                                 <option value="{{ $value }}" @selected(old('payment_method', 'bank_transfer') === $value)>{{ $label }}</option>
@@ -70,7 +67,7 @@
                         </select>
                     </div>
                     <div class="sm:col-span-2">
-                        <label for="reference" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reference (receipt or remittance number)</label>
+                        <label for="reference" class="form-label">Reference (receipt or remittance number)</label>
                         <input id="reference" type="text" name="reference" maxlength="100" value="{{ old('reference') }}" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200">
                     </div>
                     <div class="sm:col-span-2">

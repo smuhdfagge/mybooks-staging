@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\EnsureAdminTwoFactor;
 use App\Http\Requests\Admin\StoreAdminUserRequest;
 use App\Http\Requests\Admin\UpdateAdminUserRequest;
+use App\Models\ActivityLog;
 use App\Models\AdminUser;
+use App\Services\AdminAuditService;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AdminUserController extends Controller
 {
@@ -35,13 +39,21 @@ class AdminUserController extends Controller
     {
         $validated = $request->validated();
 
-        AdminUser::create([
+        $adminUser = AdminUser::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role' => $validated['role'],
             'is_active' => true,
         ]);
+
+        AdminAuditService::log(
+            ActivityLog::ACTION_CREATED,
+            "created admin '{$adminUser->email}' with role '{$adminUser->role}'",
+            $adminUser,
+            null,
+            $adminUser->only(['name', 'email', 'role', 'is_active']),
+        );
 
         return redirect()->route('admin.users.index')
             ->with('success', 'Admin user created successfully.');
@@ -67,15 +79,25 @@ class AdminUserController extends Controller
             return back()->with('error', 'You cannot change your own role.');
         }
 
+        $before = $adminUser->getAttributes();
         $adminUser->name = $validated['name'];
         $adminUser->email = $validated['email'];
         $adminUser->role = $validated['role'];
 
         if (! empty($validated['password'])) {
             $adminUser->password = Hash::make($validated['password']);
+            $adminUser->remember_token = Str::random(60);
         }
 
         $adminUser->save();
+
+        // Other sessions of this admin now fail the password check in
+        // EnsureAdminTwoFactor; keep our own session if we changed our own (S5).
+        if (! empty($validated['password']) && $adminUser->id === auth('admin')->id()) {
+            EnsureAdminTwoFactor::rememberPassword($request, $adminUser);
+        }
+
+        AdminAuditService::logChange("updated admin '{$adminUser->email}'", $adminUser, $before);
 
         return redirect()->route('admin.users.index')
             ->with('success', 'Admin user updated successfully.');
@@ -91,10 +113,12 @@ class AdminUserController extends Controller
             return back()->with('error', 'You cannot deactivate your own account.');
         }
 
+        $before = $adminUser->getAttributes();
         $adminUser->is_active = ! $adminUser->is_active;
         $adminUser->save();
 
         $status = $adminUser->is_active ? 'activated' : 'deactivated';
+        AdminAuditService::logChange("{$status} admin '{$adminUser->email}'", $adminUser, $before);
 
         return back()->with('success', "Admin user {$status} successfully.");
     }
@@ -114,6 +138,12 @@ class AdminUserController extends Controller
             return back()->with('error', 'Cannot delete the last active admin user.');
         }
 
+        AdminAuditService::log(
+            ActivityLog::ACTION_DELETED,
+            "deleted admin '{$adminUser->email}'",
+            $adminUser,
+            $adminUser->only(['name', 'email', 'role', 'is_active']),
+        );
         $adminUser->delete();
 
         return redirect()->route('admin.users.index')

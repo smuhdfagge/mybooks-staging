@@ -17,41 +17,33 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Company Name -->
                             <div>
-                                <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Company Name <span class="text-red-500">*</span></label>
-                                <input type="text" name="name" id="name" value="{{ old('name', $tenant->name) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('name') border-red-500 @enderror">
+                                <x-field name="name" label="Company Name" :value="old('name', $tenant->name)" required />
                                 @error('name')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="name-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <!-- Email -->
                             <div>
-                                <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email <span class="text-red-500">*</span></label>
-                                <input type="email" name="email" id="email" value="{{ old('email', $tenant->email) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('email') border-red-500 @enderror">
+                                <x-field name="email" label="Email" type="email" :value="old('email', $tenant->email)" required />
                                 @error('email')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="email-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <!-- Phone -->
                             <div>
-                                <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
-                                <input type="text" name="phone" id="phone" value="{{ old('phone', $tenant->phone) }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('phone') border-red-500 @enderror">
+                                <x-field name="phone" label="Phone" :value="old('phone', $tenant->phone)" />
                                 @error('phone')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="phone-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <!-- Website -->
                             <div>
-                                <label for="website" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Website</label>
-                                <input type="url" name="website" id="website" value="{{ old('website', $tenant->website) }}" placeholder="https://example.com"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('website') border-red-500 @enderror">
+                                <x-field name="website" label="Website" type="url" :value="old('website', $tenant->website)" placeholder="https://example.com" />
                                 @error('website')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="website-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -63,21 +55,17 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Address -->
                             <div class="md:col-span-2">
-                                <label for="address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Street Address</label>
-                                <textarea name="address" id="address" rows="2"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('address') border-red-500 @enderror">{{ old('address', $tenant->address) }}</textarea>
+                                <x-field name="address" label="Street Address" type="textarea" :value="old('address', $tenant->address)" rows="2" />
                                 @error('address')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="address-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <!-- City -->
                             <div>
-                                <label for="city" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City</label>
-                                <input type="text" name="city" id="city" value="{{ old('city', $tenant->city) }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('city') border-red-500 @enderror">
+                                <x-field name="city" label="City" :value="old('city', $tenant->city)" />
                                 @error('city')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="city-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -92,7 +80,7 @@
                                     search-placeholder="Search states..."
                                     :has-error="$errors->has('state')" />
                                 @error('state')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="state-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -107,17 +95,15 @@
                                     search-placeholder="Search countries..."
                                     :has-error="$errors->has('country')" />
                                 @error('country')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="country-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <!-- Postal Code -->
                             <div>
-                                <label for="postal_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Postal Code</label>
-                                <input type="text" name="postal_code" id="postal_code" value="{{ old('postal_code', $tenant->postal_code) }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('postal_code') border-red-500 @enderror">
+                                <x-field name="postal_code" label="Postal Code" :value="old('postal_code', $tenant->postal_code)" />
                                 @error('postal_code')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="postal_code-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -129,19 +115,17 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Tax Number -->
                             <div>
-                                <label for="tax_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tax Number / VAT ID</label>
-                                <input type="text" name="tax_number" id="tax_number" value="{{ old('tax_number', $tenant->tax_number) }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('tax_number') border-red-500 @enderror">
+                                <x-field name="tax_number" label="Tax Number / VAT ID" :value="old('tax_number', $tenant->tax_number)" />
                                 @error('tax_number')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="tax_number-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <!-- Currency -->
                             <div>
-                                <label for="currency" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Currency</label>
+                                <label for="currency" class="form-label">Currency</label>
                                 <select name="currency" id="currency"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('currency') border-red-500 @enderror">
+                                    class="form-control @error('currency') border-red-500 @enderror" @error('currency') aria-invalid="true" aria-describedby="currency-error" @enderror>
                                     <option value="NGN" {{ old('currency', $tenant->currency) == 'NGN' ? 'selected' : '' }}>NGN - Naira</option>
                                     <option value="USD" {{ old('currency', $tenant->currency) == 'USD' ? 'selected' : '' }}>USD - US Dollar</option>
                                     <option value="EUR" {{ old('currency', $tenant->currency) == 'EUR' ? 'selected' : '' }}>EUR - Euro</option>
@@ -153,17 +137,15 @@
                                     <option value="CNY" {{ old('currency', $tenant->currency) == 'CNY' ? 'selected' : '' }}>CNY - Chinese Yuan</option>
                                 </select>
                                 @error('currency')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="currency-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <!-- Fiscal Year Start -->
                             <div>
-                                <label for="fiscal_year_start" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fiscal Year Start</label>
-                                <input type="date" name="fiscal_year_start" id="fiscal_year_start" value="{{ old('fiscal_year_start', $tenant->fiscal_year_start?->format('Y-m-d')) }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('fiscal_year_start') border-red-500 @enderror">
+                                <x-field name="fiscal_year_start" label="Fiscal Year Start" type="date" :value="old('fiscal_year_start', $tenant->fiscal_year_start?->format('Y-m-d'))" />
                                 @error('fiscal_year_start')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="fiscal_year_start-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -179,12 +161,12 @@
                                 </div>
                             @endif
                             <div class="flex-1">
-                                <label for="logo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Upload New Logo</label>
+                                <label for="logo" class="form-label">Upload New Logo</label>
                                 <input type="file" name="logo" id="logo" accept="image/*"
-                                    class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 dark:file:bg-indigo-900 file:text-indigo-700 dark:file:text-indigo-300 hover:file:bg-indigo-100 dark:hover:file:bg-indigo-800">
+                                    class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 dark:file:bg-indigo-900 file:text-indigo-700 dark:file:text-indigo-300 hover:file:bg-indigo-100 dark:hover:file:bg-indigo-800" @error('logo') aria-invalid="true" aria-describedby="logo-error" @enderror>
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">PNG, JPG, GIF up to 2MB</p>
                                 @error('logo')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="logo-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -200,6 +182,23 @@
                     </div>
                 </form>
             </div>
+
+            @if($tenant->isOwnedBy(auth()->user()))
+                {{-- Owner only (O7) --}}
+                <div class="mt-6 bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6 flex items-center justify-between gap-4">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">Close organisation</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            @if($tenant->isClosing())
+                                This business's data will be erased on {{ $tenant->closure_purge_at?->format('j F Y') }}.
+                            @else
+                                Close this business and erase its data after {{ \App\Models\Tenant::CLOSURE_GRACE_DAYS }} days.
+                            @endif
+                        </p>
+                    </div>
+                    <a href="{{ route('settings.close-organisation') }}" class="text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400">Manage</a>
+                </div>
+            @endif
         </div>
     </div>
 </x-app-layout>

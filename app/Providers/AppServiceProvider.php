@@ -13,9 +13,12 @@ use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -41,6 +44,18 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // In local development, log a warning whenever a relation is
+        // lazy-loaded, so N+1 queries are noticed early (P4). It only
+        // logs; nothing is blocked.
+        Model::preventLazyLoading($this->app->isLocal());
+        Model::handleLazyLoadingViolationUsing(function ($model, string $relation) {
+            Log::warning('Lazy loading '.get_class($model).'::'.$relation.' (possible N+1 query)');
+        });
+
+        // One way to show money in views (U8): @money($amount[, 'USD']) and @currencySymbol.
+        Blade::directive('money', fn (string $expression) => "<?php echo e(\\App\\Support\\Money::format({$expression})); ?>");
+        Blade::directive('currencySymbol', fn () => '<?php echo e(\\App\\Support\\Money::symbol()); ?>');
+
         // Configure password strength defaults (NIST 800-63B compliant)
         Password::defaults(function () {
             return Password::min(8)
@@ -52,9 +67,19 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // ── API Rate Limiters ─────────────────────────────────────
-        // Standard API: 60 req/min per user (fallback to IP)
+        // Every signed-in API route: reads 120/min and writes 30/min per user,
+        // counted separately, so no route is left without a limit (I8).
         RateLimiter::for('api', function (Request $request) {
-            return Limit::perMinute(60)->by(
+            $who = $request->user()?->id ?: $request->ip();
+
+            return $request->isMethodSafe()
+                ? Limit::perMinute(120)->by('read:'.$who)
+                : Limit::perMinute(30)->by('write:'.$who);
+        });
+
+        // Reports read the whole ledger: 30/min per user (I8).
+        RateLimiter::for('api-reports', function (Request $request) {
+            return Limit::perMinute(30)->by(
                 $request->user()?->id ?: $request->ip()
             );
         });
@@ -76,6 +101,16 @@ class AppServiceProvider extends ServiceProvider
         // Sensitive operations (auth, password): 5 req/min per IP
         RateLimiter::for('auth-sensitive', function (Request $request) {
             return Limit::perMinute(5)->by($request->ip());
+        });
+
+        // Resending the verification email: per user, also capped per hour (S8)
+        RateLimiter::for('verification-email', function (Request $request) {
+            $key = $request->user()?->id ?: $request->ip();
+
+            return [
+                Limit::perMinute(2)->by('minute:'.$key),
+                Limit::perHour(6)->by('hour:'.$key),
+            ];
         });
 
         // Export/backup: 10 req/min per user (expensive operations)

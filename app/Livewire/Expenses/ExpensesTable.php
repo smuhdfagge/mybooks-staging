@@ -3,6 +3,7 @@
 namespace App\Livewire\Expenses;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\Expense;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -10,7 +11,7 @@ use Livewire\WithPagination;
 
 class ExpensesTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -450,7 +451,7 @@ class ExpensesTable extends Component
                 $query->where('status', $this->statusFilter);
             })
             ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->perPage);
+            ->paginate($this->pageSize());
 
         $isAdmin = auth()->user()->hasRole('admin') || auth()->user()->isSuperAdmin();
 

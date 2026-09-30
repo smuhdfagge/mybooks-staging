@@ -6,15 +6,15 @@
     <!-- Filters -->
     <div class="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div>
-            <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
+            <label for="search" class="form-label">Search</label>
             <input wire:model.live.debounce.300ms="search" type="text" id="search" placeholder="Search items..."
-                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                class="form-control">
         </div>
         
         <div>
-            <label for="categoryFilter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+            <label for="categoryFilter" class="form-label">Category</label>
             <select wire:model.live="categoryFilter" id="categoryFilter"
-                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                class="form-control">
                 <option value="">All Categories</option>
                 @foreach($categories as $category)
                     <option value="{{ $category->id }}">{{ $category->name }}</option>
@@ -23,9 +23,9 @@
         </div>
         
         <div>
-            <label for="stockFilter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Stock Status</label>
+            <label for="stockFilter" class="form-label">Stock Status</label>
             <select wire:model.live="stockFilter" id="stockFilter"
-                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                class="form-control">
                 <option value="">All Items</option>
                 <option value="in_stock">In Stock</option>
                 <option value="low_stock">Low Stock</option>
@@ -34,9 +34,9 @@
         </div>
 
         <div>
-            <label for="perPage" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Per Page</label>
+            <label for="perPage" class="form-label">Per Page</label>
             <select wire:model.live="perPage" id="perPage"
-                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                class="form-control">
                 <option value="15">15</option>
                 <option value="25">25</option>
                 <option value="50">50</option>
@@ -55,23 +55,10 @@
                 <thead class="bg-gray-50 dark:bg-gray-700">
                     <tr>
                         <th scope="col" class="px-4 py-3 text-left">
-                            <input type="checkbox" wire:model.live="selectAll"
+                            <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
                                 class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                         </th>
-                        <th scope="col" wire:click="sortBy('name')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-                            <div class="flex items-center gap-1">
-                                Item
-                                @if($sortField === 'name')
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        @if($sortDirection === 'asc')
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
-                                        @else
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                        @endif
-                                    </svg>
-                                @endif
-                            </div>
-                        </th>
+                        <x-sort-header field="name" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">Item</x-sort-header>
                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">SKU</th>
                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Category</th>
                         <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">On Hand</th>
@@ -95,7 +82,7 @@
                         @endphp
                         <tr wire:key="item-{{ $item->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors {{ $isOutOfStock ? 'bg-red-50 dark:bg-red-900/20' : ($isLowStock ? 'bg-yellow-50 dark:bg-yellow-900/20' : '') }}">
                             <td class="px-4 py-4">
-                                <input type="checkbox" wire:model.live="selectedItems" value="{{ $item->id }}"
+                                <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $item->id }}"
                                     class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                             </td>
                             <td class="px-4 py-4">

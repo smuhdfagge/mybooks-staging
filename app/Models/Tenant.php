@@ -55,7 +55,36 @@ class Tenant extends Model
         'fiscal_year_start' => 'date',
         'prices_include_tax' => 'boolean',
         'tax_per_line_item' => 'boolean',
+        'closure_requested_at' => 'datetime',
+        'closure_purge_at' => 'datetime',
     ];
+
+    /** Days between closing a business and erasing its data (O7). */
+    public const CLOSURE_GRACE_DAYS = 30;
+
+    /**
+     * The owner: the first active admin of the business (the person who
+     * registered it, unless they have left). Only the owner can close it (O7).
+     */
+    public function owner(): ?User
+    {
+        return $this->users()
+            ->where('is_active', true)
+            ->whereHas('roles', fn ($q) => $q->where('name', 'admin'))
+            ->orderBy('id')
+            ->first();
+    }
+
+    public function isOwnedBy(?User $user): bool
+    {
+        return $user !== null && $user->tenant_id === $this->id && $this->owner()?->id === $user->id;
+    }
+
+    /** Closed by its owner and waiting to be erased (O7). */
+    public function isClosing(): bool
+    {
+        return $this->closure_purge_at !== null;
+    }
 
     /** @return BelongsTo<TaxRate, $this> */
     public function defaultSalesTax(): BelongsTo

@@ -7,6 +7,7 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\SignupThrottle;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -34,6 +35,9 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        // Same sign-up limit as the registration wizard (S8).
+        SignupThrottle::check((string) $request->ip());
+
         $request->validate([
             // Plan validation
             'plan_id' => ['required', 'exists:plans,id'],
@@ -106,6 +110,8 @@ class RegisteredUserController extends Controller
 
             return $user;
         });
+
+        SignupThrottle::recordSignup((string) $request->ip());
 
         event(new Registered($user));
 

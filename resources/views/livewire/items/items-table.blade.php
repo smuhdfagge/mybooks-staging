@@ -8,7 +8,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
             <!-- Search -->
             <div class="sm:col-span-2 lg:col-span-1">
-                <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
+                <label for="search" class="form-label">Search</label>
                 <input type="text" id="search" wire:model.live.debounce.300ms="search" 
                     placeholder="Search items..."
                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
@@ -16,7 +16,7 @@
             
             <!-- Type Filter -->
             <div>
-                <label for="type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+                <label for="type" class="form-label">Type</label>
                 <select id="type" wire:model.live="type" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="">All Types</option>
                     <option value="product">Product</option>
@@ -45,7 +45,7 @@
                     this.search = '';
                 }
             }" @click.outside="open = false; search = ''" class="relative">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+                <label class="form-label">Category</label>
                 <button type="button" @click="open = !open"
                     class="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm text-left px-3 py-2 bg-white flex items-center justify-between">
                     <span x-text="selectedName" class="truncate"></span>
@@ -55,7 +55,7 @@
                 </button>
                 <div x-show="open" x-cloak x-transition.opacity class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg">
                     <div class="p-2">
-                        <input type="text" x-model="search" placeholder="Search categories..." 
+                        <input aria-label="Search categories" type="text" x-model="search" placeholder="Search categories..." 
                             class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white text-sm px-2 py-1.5 focus:border-blue-500 focus:ring-blue-500"
                             @click.stop>
                     </div>
@@ -67,14 +67,14 @@
                                 :class="{ 'bg-blue-50 dark:bg-gray-600 font-medium': selected === cat.id }"
                                 x-text="cat.name"></li>
                         </template>
-                        <li x-show="filtered.length === 0" class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500">No categories found</li>
+                        <li x-show="filtered.length === 0" class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">No categories found</li>
                     </ul>
                 </div>
             </div>
             
             <!-- Per Page -->
             <div>
-                <label for="perPage" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Per Page</label>
+                <label for="perPage" class="form-label">Per Page</label>
                 <select id="perPage" wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="10">10</option>
                     <option value="25">25</option>
@@ -95,53 +95,14 @@
                 <thead class="bg-gray-50 dark:bg-gray-700">
                     <tr>
                         <th scope="col" class="px-4 py-3 text-left">
-                            <input type="checkbox" wire:model.live="selectAll"
+                            <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
                                 class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                         </th>
-                        <th scope="col" wire:click="sortBy('name')" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                            <div class="flex items-center space-x-1">
-                                <span>Name</span>
-                                @if($sortField === 'name')
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                        @if($sortDirection === 'asc')
-                                            <path fill-rule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L10 4.414l-3.293 3.293a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                                        @else
-                                            <path fill-rule="evenodd" d="M14.707 12.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 15.586l3.293-3.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                        @endif
-                                    </svg>
-                                @endif
-                            </div>
-                        </th>
-                        <th scope="col" wire:click="sortBy('sku')" class="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                            <div class="flex items-center space-x-1">
-                                <span>SKU</span>
-                                @if($sortField === 'sku')
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                        @if($sortDirection === 'asc')
-                                            <path fill-rule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L10 4.414l-3.293 3.293a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                                        @else
-                                            <path fill-rule="evenodd" d="M14.707 12.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 15.586l3.293-3.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                        @endif
-                                    </svg>
-                                @endif
-                            </div>
-                        </th>
+                        <x-sort-header field="name" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Name</x-sort-header>
+                        <x-sort-header field="sku" :sort-field="$sortField" :sort-direction="$sortDirection" class="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">SKU</x-sort-header>
                         <th scope="col" class="hidden md:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
                         <th scope="col" class="hidden lg:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Category</th>
-                        <th scope="col" wire:click="sortBy('selling_price')" class="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                            <div class="flex items-center justify-end space-x-1">
-                                <span>Price</span>
-                                @if($sortField === 'selling_price')
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                        @if($sortDirection === 'asc')
-                                            <path fill-rule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L10 4.414l-3.293 3.293a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                                        @else
-                                            <path fill-rule="evenodd" d="M14.707 12.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 15.586l3.293-3.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                        @endif
-                                    </svg>
-                                @endif
-                            </div>
-                        </th>
+                        <x-sort-header field="selling_price" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Price</x-sort-header>
                         <th scope="col" class="hidden sm:table-cell px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Stock</th>
                         <th scope="col" class="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                         <th scope="col" class="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
@@ -151,7 +112,7 @@
                     @forelse($items as $item)
                         <tr wire:key="item-{{ $item->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700">
                             <td class="px-4 py-4">
-                                <input type="checkbox" wire:model.live="selectedItems" value="{{ $item->id }}"
+                                <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $item->id }}"
                                     class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                             </td>
                             <td class="px-4 sm:px-6 py-4">
@@ -182,7 +143,7 @@
                                         {{ $item->inventory?->quantity ?? 0 }}
                                     </span>
                                 @else
-                                    <span class="text-gray-400">-</span>
+                                    <span class="text-gray-500 dark:text-gray-400">-</span>
                                 @endif
                             </td>
                             <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-center">

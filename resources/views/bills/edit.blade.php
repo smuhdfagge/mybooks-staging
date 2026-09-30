@@ -30,18 +30,19 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                             <div>
-                                <label for="bill_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bill Number</label>
+                                <label for="bill_number" class="form-label">Bill Number</label>
                                 <input type="text" id="bill_number" value="{{ $bill->bill_number }}" disabled
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-600 dark:text-gray-300 shadow-sm">
                             </div>
 
                             <div x-data="searchableSelect({
-                                items: {{ json_encode($vendors->map(fn($v) => ['id' => $v->id, 'name' => $v->name . ($v->company_name ? " ({$v->company_name})" : '')])) }},
+                                items: @js($vendorOptions),
+                                url: @js(route('lookup.vendors')),
                                 selected: '{{ old('vendor_id', $bill->vendor_id) }}',
                                 placeholder: 'Select Vendor'
                             })">
-                                <label for="vendor_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor <span class="text-red-500">*</span></label>
-                                <input type="hidden" name="vendor_id" :value="selectedId" required>
+                                <label for="vendor_id" class="form-label">Vendor <span class="text-red-500">*</span></label>
+                                <input type="hidden" name="vendor_id" :value="selectedId" required @error('vendor_id') aria-invalid="true" aria-describedby="vendor_id-error" @enderror>
                                 <div class="relative">
                                     <input type="text" 
                                         x-model="search" 
@@ -51,7 +52,7 @@
                                         @keydown.enter.prevent="if(filteredItems[highlightedIndex]) selectItem(filteredItems[highlightedIndex])"
                                         @keydown.escape="open = false"
                                         placeholder="Select Vendor"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('vendor_id') border-red-500 @enderror">
+                                        class="form-control @error('vendor_id') border-red-500 @enderror">
                                     <div x-show="open" 
                                         @click.away="open = false"
                                         class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
@@ -65,31 +66,31 @@
                                     </div>
                                 </div>
                                 @error('vendor_id')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="vendor_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
-                                <label for="bill_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bill Date <span class="text-red-500">*</span></label>
+                                <label for="bill_date" class="form-label">Bill Date <span class="text-red-500">*</span></label>
                                 <input type="date" name="bill_date" id="bill_date" value="{{ old('bill_date', $bill->bill_date->format('Y-m-d')) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('bill_date') border-red-500 @enderror">
+                                    class="form-control @error('bill_date') border-red-500 @enderror" @error('bill_date') aria-invalid="true" aria-describedby="bill_date-error" @enderror>
                                 @error('bill_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="bill_date-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
-                                <label for="due_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Due Date <span class="text-red-500">*</span></label>
+                                <label for="due_date" class="form-label">Due Date <span class="text-red-500">*</span></label>
                                 <input type="date" name="due_date" id="due_date" value="{{ old('due_date', $bill->due_date->format('Y-m-d')) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('due_date') border-red-500 @enderror">
+                                    class="form-control @error('due_date') border-red-500 @enderror" @error('due_date') aria-invalid="true" aria-describedby="due_date-error" @enderror>
                                 @error('due_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="due_date-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
 
                         <div class="mb-6">
-                            <label for="reference" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor Bill Number / Reference</label>
+                            <label for="reference" class="form-label">Vendor Bill Number / Reference</label>
                             <input type="text" name="reference" id="reference" value="{{ old('reference', $bill->vendor_bill_number) }}"
                                 class="w-full md:w-1/2 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
@@ -107,7 +108,7 @@
                         </h3>
                         
                         <div class="overflow-x-auto">
-                            <table class="min-w-full">
+                            <table class="min-w-full line-items">
                                 <thead>
                                     <tr class="border-b border-gray-200 dark:border-gray-700">
                                         <th class="text-left text-sm font-medium text-gray-700 dark:text-gray-300 pb-2 w-1/3">Description</th>
@@ -121,18 +122,21 @@
                                 <tbody>
                                     <template x-for="(item, index) in items" :key="index">
                                         <tr class="border-b border-gray-200 dark:border-gray-700">
-                                            <td class="py-2 pr-2">
+                                            <td class="py-2 pr-2" data-label="Description" data-cell="main">
                                                 <div class="relative mb-1">
                                                     <input type="hidden" :name="`items[${index}][item_id]`" x-model="item.item_id">
-                                                    <input type="text" 
+                                                    <input aria-label="Select Item" type="text" 
                                                         x-model="item.itemSearch" 
                                                         @click="item.itemDropdownOpen = true" 
+                                                        @focus="searchProducts(index)"
+                                                        @input="item.itemDropdownOpen = true"
+                                                        @input.debounce.300ms="searchProducts(index)"
                                                         @keydown.arrow-down.prevent="item.itemHighlightedIndex = Math.min(item.itemHighlightedIndex + 1, getFilteredProducts(index).length - 1)"
                                                         @keydown.arrow-up.prevent="item.itemHighlightedIndex = Math.max(item.itemHighlightedIndex - 1, 0)"
                                                         @keydown.enter.prevent="if(getFilteredProducts(index)[item.itemHighlightedIndex]) selectProduct(index, getFilteredProducts(index)[item.itemHighlightedIndex])"
                                                         @keydown.escape="item.itemDropdownOpen = false"
                                                         placeholder="Select Item"
-                                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                        class="form-control text-sm">
                                                     <div x-show="item.itemDropdownOpen" 
                                                         @click.away="item.itemDropdownOpen = false"
                                                         class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
@@ -145,29 +149,29 @@
                                                         <div x-show="getFilteredProducts(index).length === 0" class="px-3 py-2 text-gray-500 dark:text-gray-400 text-sm">No results found</div>
                                                     </div>
                                                 </div>
-                                                <input type="text" :name="`items[${index}][description]`" x-model="item.description" required placeholder="Description"
+                                                <input aria-label="Description" type="text" :name="`items[${index}][description]`" x-model="item.description" required placeholder="Description"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                             </td>
-                                            <td class="py-2 pr-2">
-                                                <input type="number" :name="`items[${index}][quantity]`" x-model.number="item.quantity" min="0.01" step="0.01" required
+                                            <td class="py-2 pr-2" data-label="Qty">
+                                                <input aria-label="Quantity" type="number" :name="`items[${index}][quantity]`" x-model.number="item.quantity" min="0.01" step="0.01" required
                                                     @input="calculateTotals()"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
-                                            <td class="py-2 pr-2">
-                                                <input type="number" :name="`items[${index}][unit_price]`" x-model.number="item.unit_price" min="0" step="0.01" required
+                                            <td class="py-2 pr-2" data-label="Price">
+                                                <input aria-label="Unit price" type="number" :name="`items[${index}][unit_price]`" x-model.number="item.unit_price" min="0" step="0.01" required
                                                     @input="calculateTotals()"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
-                                            <td class="py-2 pr-2">
+                                            <td class="py-2 pr-2" data-label="Tax %">
                                                 {{-- Line discounts from a purchase order or the API are kept. --}}
                                                 <input type="hidden" :name="`items[${index}][discount]`" :value="item.discount || 0">
-                                                <input type="number" :name="`items[${index}][tax_rate]`" x-model.number="item.tax_rate" min="0" max="100" step="0.01"
+                                                <input aria-label="Tax rate (%)" type="number" :name="`items[${index}][tax_rate]`" x-model.number="item.tax_rate" min="0" max="100" step="0.01"
                                                     @input="calculateTotals()"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                                    class="form-control text-sm">
                                             </td>
-                                            <td class="py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100" x-text="lineTotal(index).toFixed(2)"></td>
-                                            <td class="py-2 text-center">
-                                                <button type="button" @click="removeItem(index)" x-show="items.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
+                                            <td class="py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(lineTotal(index))" data-label="Total"></td>
+                                            <td class="py-2 text-center" data-cell="actions">
+                                                <button type="button" @click="removeItem(index)" x-show="items.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" aria-label="Remove line">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                                     </svg>
@@ -200,9 +204,9 @@
                                 Notes
                             </h3>
                             <div>
-                                <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Internal Notes</label>
+                                <label for="notes" class="form-label">Internal Notes</label>
                                 <textarea name="notes" id="notes" rows="4"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('notes', $bill->notes) }}</textarea>
+                                    class="form-control">{{ old('notes', $bill->notes) }}</textarea>
                             </div>
                         </div>
                     </div>
@@ -220,17 +224,17 @@
                             <div class="space-y-3">
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600 dark:text-gray-400">Subtotal</span>
-                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="subtotal.toFixed(2)">0.00</span>
+                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(subtotal)">@money(0)</span>
                                 </div>
 
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600 dark:text-gray-400">Tax</span>
-                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="totalTax.toFixed(2)">0.00</span>
+                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(totalTax)">@money(0)</span>
                                 </div>
 
                                 <div class="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between">
                                     <span class="text-lg font-bold text-gray-900 dark:text-gray-100">Total</span>
-                                    <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400" x-text="total.toFixed(2)">0.00</span>
+                                    <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400" x-text="formatMoney(total)">@money(0)</span>
                                 </div>
 
                                 @if($bill->amount_paid > 0)
@@ -264,14 +268,28 @@
 
     @push('scripts')
     <script nonce="{{ app('csp-nonce') }}">
+        // Search-as-you-type against the lookup routes (P9).
+        async function lookupJson(url, params) {
+            const response = await fetch(url + '?' + new URLSearchParams(params), {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
+            });
+            if (!response.ok) return [];
+            const body = await response.json();
+            return body.data || [];
+        }
+
         function searchableSelect(config) {
             return {
                 items: config.items || [],
+                url: config.url || null,
                 selected: config.selected || '',
                 selectedId: config.selected || '',
                 search: '',
                 open: false,
                 highlightedIndex: 0,
+                requestSeq: 0,
+                timer: null,
                 placeholder: config.placeholder || 'Select an option',
                 init() {
                     if (this.selected) {
@@ -280,8 +298,23 @@
                             this.search = selectedItem.name;
                         }
                     }
+                    if (this.url) {
+                        this.$watch('search', () => this.fetchOptions());
+                        this.$watch('open', (isOpen) => { if (isOpen) this.fetchOptions(); });
+                    }
+                },
+                fetchOptions() {
+                    clearTimeout(this.timer);
+                    this.timer = setTimeout(async () => {
+                        const seq = ++this.requestSeq;
+                        const rows = await lookupJson(this.url, { q: this.search, limit: 20 });
+                        if (seq !== this.requestSeq) return;
+                        this.items = rows.map(row => ({ id: String(row.id), name: row.name + (row.company_name ? ` (${row.company_name})` : '') }));
+                        this.highlightedIndex = 0;
+                    }, 250);
                 },
                 get filteredItems() {
+                    if (this.url) return this.items; // already filtered by the server
                     if (!this.search) return this.items;
                     return this.items.filter(item => 
                         item.name.toLowerCase().includes(this.search.toLowerCase())
@@ -298,13 +331,7 @@
 
         function billForm() {
             return {
-                availableProducts: @js($items->map(fn($i) => [
-                    'id' => $i->id,
-                    'name' => $i->name,
-                    'price' => $i->cost_price ?? $i->selling_price,
-                    'description' => $i->description,
-                    'tax_rate' => $i->tax_rate ?? 0
-                ])),
+                productsUrl: @js(route('lookup.items')),
                 items: @js($bill->items->map(fn($item) => [
                     'item_id' => $item->item_id ?? '',
                     'description' => $item->description,
@@ -312,7 +339,7 @@
                     'unit_price' => $item->unit_price,
                     'discount' => (float) $item->discount,
                     'tax_rate' => $item->tax_rate ?? 0,
-                    'itemSearch' => '',
+                    'itemSearch' => $item->item?->name ?? '',
                     'itemDropdownOpen' => false,
                     'itemHighlightedIndex' => 0
                 ])),
@@ -323,25 +350,25 @@
                 init() {
                     if (this.items.length === 0) {
                         this.items = [{ item_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 }];
-                    } else {
-                        this.items.forEach((item, index) => {
-                            if (item.item_id) {
-                                const product = this.availableProducts.find(p => p.id == item.item_id);
-                                if (product) {
-                                    item.itemSearch = product.name;
-                                }
-                            }
-                        });
                     }
                     this.calculateTotals();
                 },
 
+                // Items matching what was typed, from the server (P9).
+                searchProducts(index) {
+                    const line = this.items[index];
+                    if (!line) return;
+                    const seq = (line.searchSeq || 0) + 1;
+                    line.searchSeq = seq;
+                    lookupJson(this.productsUrl, { q: line.itemSearch || '', limit: 20 }).then(rows => {
+                        if (line.searchSeq !== seq) return;
+                        line.results = rows.map(p => ({ id: String(p.id), name: p.name, price: Number(p.purchase_price), description: p.description || p.name, tax_rate: Number(p.tax_rate || 0) }));
+                        line.itemHighlightedIndex = 0;
+                    });
+                },
+
                 getFilteredProducts(index) {
-                    const search = this.items[index].itemSearch || '';
-                    if (!search) return this.availableProducts;
-                    return this.availableProducts.filter(product => 
-                        product.name.toLowerCase().includes(search.toLowerCase())
-                    );
+                    return (this.items[index] && this.items[index].results) || [];
                 },
 
                 selectProduct(index, product) {

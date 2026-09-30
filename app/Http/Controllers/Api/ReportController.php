@@ -505,13 +505,17 @@ class ReportController extends BaseApiController
         }
 
         // Opening balance (all entries before start date)
-        $openingEntries = JournalEntry::whereHas('journal', function ($q) use ($tenantId, $startDate) {
-            $q->where('tenant_id', $tenantId)
-                ->where('journal_date', '<', $startDate)
-                ->where('is_posted', true);
-        })
-            ->where('account_id', $accountId)
-            ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
+        // Joins, not a correlated EXISTS per line (P8).
+        $lines = fn () => JournalEntry::query()
+            ->join('journals', 'journals.id', '=', 'journal_entries.journal_id')
+            ->where('journals.tenant_id', $tenantId)
+            ->where('journals.is_posted', true)
+            ->whereNull('journals.deleted_at')
+            ->where('journal_entries.account_id', $accountId);
+
+        $openingEntries = $lines()
+            ->where('journals.journal_date', '<', $startDate)
+            ->selectRaw('SUM(journal_entries.debit) as total_debit, SUM(journal_entries.credit) as total_credit')
             ->first();
 
         $totalDebit = $openingEntries->total_debit ?? 0;
@@ -521,16 +525,15 @@ class ReportController extends BaseApiController
             : $totalCredit - $totalDebit;
 
         // Entries within the selected period
-        $entries = JournalEntry::whereHas('journal', function ($q) use ($tenantId, $startDate, $endDate) {
-            $q->where('tenant_id', $tenantId)
-                ->whereBetween('journal_date', [$startDate, $endDate])
-                ->where('is_posted', true);
-        })
-            ->where('account_id', $accountId)
+        $entries = $lines()
+            ->where('journals.journal_date', '>=', $startDate)
+            ->where('journals.journal_date', '<', Carbon::parse($endDate)->addDay()->toDateString())
+            ->select('journal_entries.*')
             ->with(['journal:id,journal_number,journal_date,description'])
+            ->orderBy('journals.journal_date')
+            ->orderBy('journals.id')
+            ->orderBy('journal_entries.id')
             ->get()
-            ->sortBy('journal.journal_date')
-            ->values()
             ->map(fn ($entry) => [
                 'date' => $entry->journal->journal_date?->format('Y-m-d'),
                 'journal_number' => $entry->journal->journal_number,

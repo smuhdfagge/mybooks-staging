@@ -6,15 +6,15 @@
     <!-- Filters -->
     <div class="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         <div>
-            <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
+            <label for="search" class="form-label">Search</label>
             <input type="text" id="search" wire:model.live.debounce.300ms="search" placeholder="Order #, Reference, Vendor..."
                 class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
         </div>
 
         <div>
-            <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+            <label for="status" class="form-label">Status</label>
             <select id="status" wire:model.live="status"
-                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                class="form-control text-sm">
                 <option value="">All Statuses</option>
                 <option value="draft">Draft</option>
                 <option value="confirmed">Confirmed</option>
@@ -25,9 +25,9 @@
         </div>
 
         <div>
-            <label for="vendor" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor</label>
+            <label for="vendor" class="form-label">Vendor</label>
             <select id="vendor" wire:model.live="vendor"
-                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                class="form-control text-sm">
                 <option value="">All Vendors</option>
                 @foreach($vendors as $v)
                     <option value="{{ $v->id }}">{{ $v->name }}</option>
@@ -36,15 +36,15 @@
         </div>
 
         <div>
-            <label for="dateFrom" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">From Date</label>
+            <label for="dateFrom" class="form-label">From Date</label>
             <input type="date" id="dateFrom" wire:model.live="dateFrom"
-                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                class="form-control text-sm">
         </div>
 
         <div>
-            <label for="dateTo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">To Date</label>
+            <label for="dateTo" class="form-label">To Date</label>
             <input type="date" id="dateTo" wire:model.live="dateTo"
-                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                class="form-control text-sm">
         </div>
 
         <!-- Bulk Actions -->
@@ -65,7 +65,7 @@
             <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
                     <th scope="col" class="px-4 py-3 text-left">
-                        <input type="checkbox" wire:model.live="selectAll"
+                        <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
                             class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                     </th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Order #</th>
@@ -81,7 +81,7 @@
                 @forelse($orders as $order)
                     <tr wire:key="order-{{ $order->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                         <td class="px-4 py-4">
-                            <input type="checkbox" wire:model.live="selectedItems" value="{{ $order->id }}"
+                            <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $order->id }}"
                                 class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
@@ -105,7 +105,7 @@
                             {{ $order->expected_date?->format('M d, Y') ?? '-' }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 text-right font-medium">
-                            {{ number_format($order->total, 2) }}
+                            @money($order->total)
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full

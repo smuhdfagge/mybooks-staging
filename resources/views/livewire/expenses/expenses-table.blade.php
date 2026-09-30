@@ -10,7 +10,7 @@
                 <div class="mb-6 flex flex-col sm:flex-row gap-4 justify-between">
                     <div class="flex flex-col sm:flex-row gap-4">
                         <div class="relative">
-                            <input type="text" wire:model.live.debounce.300ms="search" placeholder="Search expenses..."
+                            <input aria-label="Search expenses" type="text" wire:model.live.debounce.300ms="search" placeholder="Search expenses..."
                                 class="w-full sm:w-80 pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -19,7 +19,7 @@
                             </div>
                         </div>
                         <!-- Status Filter -->
-                        <select wire:model.live="statusFilter" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <select aria-label="Status filter" wire:model.live="statusFilter" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="">All Statuses</option>
                             @foreach($statuses as $value => $label)
                                 <option value="{{ $value }}">{{ $label }}</option>
@@ -29,21 +29,21 @@
                     <div class="flex items-center gap-4">
                         <!-- Bulk Actions -->
                         <div class="flex items-center gap-2">
-                            <select wire:model="bulkAction" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <select aria-label="Bulk action" wire:model="bulkAction" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">Bulk Actions</option>
                                 @foreach($bulkActions as $value => $label)
                                     <option value="{{ $value }}">{{ $label }}</option>
                                 @endforeach
                             </select>
-                            <button wire:click="applyBulkAction" class="px-3 py-2 bg-gray-600 text-white text-sm rounded-md hover:bg-gray-700 disabled:opacity-50" @if(empty($selectedItems)) disabled @endif>
+                            <button wire:click="applyBulkAction" wire:loading.attr="disabled" class="px-3 py-2 bg-gray-600 text-white text-sm rounded-md hover:bg-gray-700 disabled:opacity-50" @if(empty($selectedItems)) disabled @endif>
                                 Apply
                             </button>
                             @if(count($selectedItems) > 0)
                                 <span class="text-sm text-gray-500 dark:text-gray-400">{{ count($selectedItems) }} selected</span>
                             @endif
                         </div>
-                        <label class="text-sm text-gray-600 dark:text-gray-400">Show:</label>
-                        <select wire:model.live="perPage" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <label for="perPage" class="text-sm text-gray-600 dark:text-gray-400">Show:</label>
+                        <select id="perPage" wire:model.live="perPage" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="10">10</option>
                             <option value="25">25</option>
                             <option value="50">50</option>
@@ -57,60 +57,15 @@
                         <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr>
                                 <th scope="col" class="px-4 py-3 text-left">
-                                    <input type="checkbox" wire:model.live="selectAll"
+                                    <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
                                         class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                                 </th>
-                                <th scope="col" wire:click="sortBy('expense_date')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                                    <div class="flex items-center space-x-1">
-                                        <span>Date</span>
-                                        @if($sortField === 'expense_date')
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7' }}"/>
-                                            </svg>
-                                        @endif
-                                    </div>
-                                </th>
-                                <th scope="col" wire:click="sortBy('expense_number')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                                    <div class="flex items-center space-x-1">
-                                        <span>Number</span>
-                                        @if($sortField === 'expense_number')
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7' }}"/>
-                                            </svg>
-                                        @endif
-                                    </div>
-                                </th>
-                                <th scope="col" wire:click="sortBy('name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                                    <div class="flex items-center space-x-1">
-                                        <span>Name</span>
-                                        @if($sortField === 'name')
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7' }}"/>
-                                            </svg>
-                                        @endif
-                                    </div>
-                                </th>
+                                <x-sort-header field="expense_date" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Date</x-sort-header>
+                                <x-sort-header field="expense_number" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Number</x-sort-header>
+                                <x-sort-header field="name" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Name</x-sort-header>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Vendor</th>
-                                <th scope="col" wire:click="sortBy('status')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                                    <div class="flex items-center space-x-1">
-                                        <span>Status</span>
-                                        @if($sortField === 'status')
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7' }}"/>
-                                            </svg>
-                                        @endif
-                                    </div>
-                                </th>
-                                <th scope="col" wire:click="sortBy('amount')" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                                    <div class="flex items-center justify-end space-x-1">
-                                        <span>Amount</span>
-                                        @if($sortField === 'amount')
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7' }}"/>
-                                            </svg>
-                                        @endif
-                                    </div>
-                                </th>
+                                <x-sort-header field="status" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Status</x-sort-header>
+                                <x-sort-header field="amount" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Amount</x-sort-header>
                                 <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
@@ -118,7 +73,7 @@
                             @forelse($expenses as $expense)
                                 <tr wire:key="expense-{{ $expense->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                     <td class="px-4 py-4">
-                                        <input type="checkbox" wire:model.live="selectedItems" value="{{ $expense->id }}"
+                                        <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $expense->id }}"
                                             class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
@@ -138,7 +93,7 @@
                                                 {{ $expense->vendor->name }}
                                             </a>
                                         @else
-                                            <span class="text-gray-400 dark:text-gray-500">—</span>
+                                            <span class="text-gray-500 dark:text-gray-400">—</span>
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -156,7 +111,7 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 text-right">
-                                        {{ number_format($expense->amount, 2) }}
+                                        @money($expense->amount)
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <div class="flex items-center justify-end space-x-2">
@@ -190,7 +145,7 @@
                                             @if($isAdmin)
                                                 <!-- Approve (only for pending_approval) -->
                                                 @if($expense->canBeApproved())
-                                                    <button wire:click="approveExpense({{ $expense->id }})" class="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300" title="Approve" aria-label="Approve">
+                                                    <button wire:click="approveExpense({{ $expense->id }})" wire:loading.attr="disabled" class="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300" title="Approve" aria-label="Approve">
                                                         <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                                         </svg>
@@ -235,7 +190,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
                                             </svg>
                                             <p class="text-gray-500 dark:text-gray-400 text-lg font-medium">No expenses found</p>
-                                            <p class="text-gray-400 dark:text-gray-500 text-sm mt-1">Get started by recording your first expense.</p>
+                                            <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Get started by recording your first expense.</p>
                                             <a href="{{ route('expenses.create') }}" class="mt-4 inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
                                                 Record Expense
                                             </a>
@@ -259,7 +214,7 @@
 
     <!-- Delete Confirmation Modal -->
     @if($confirmingDeletion)
-    <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" x-data x-trap.inert.noscroll="true" @keydown.escape.window="$wire.cancelDelete()">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <!-- Background overlay -->
             <div class="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-75 transition-opacity" wire:click="cancelDelete"></div>
@@ -287,7 +242,7 @@
                     </div>
                 </div>
                 <div class="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
-                    <button wire:click="deleteExpense" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:w-auto sm:text-sm">
+                    <button wire:click="deleteExpense" wire:loading.attr="disabled" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:w-auto sm:text-sm">
                         Delete
                     </button>
                     <button wire:click="cancelDelete" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm">
@@ -301,7 +256,7 @@
 
     <!-- Rejection Modal -->
     @if($showRejectionModal)
-    <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" x-data x-trap.inert.noscroll="true" @keydown.escape.window="$wire.closeRejectModal()">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <!-- Background overlay -->
             <div class="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-75 transition-opacity" wire:click="closeRejectModal"></div>
@@ -328,7 +283,7 @@
                                     id="rejection_reason"
                                     wire:model="rejectionReason"
                                     rows="3"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    class="form-control"
                                     placeholder="Enter reason for rejection..."
                                 ></textarea>
                             </div>

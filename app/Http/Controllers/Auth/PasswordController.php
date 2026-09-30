@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Actions\Auth\SignOutOtherSessions;
 use App\Http\Controllers\Controller;
 use App\Services\ActivityLogService;
 use Illuminate\Http\RedirectResponse;
@@ -24,6 +25,9 @@ class PasswordController extends Controller
         $request->user()->update([
             'password' => Hash::make($validated['password']),
         ]);
+
+        // Other devices and API tokens are signed out (S5).
+        app(SignOutOtherSessions::class)->handle($request->user(), $request);
 
         ActivityLogService::logPasswordChanged($request->user());
 

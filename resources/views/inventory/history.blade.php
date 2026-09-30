@@ -40,7 +40,7 @@
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Current Stock</p>
                             <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ $item->inventory->quantity ?? 0 }}</p>
-                            <p class="text-xs text-gray-400 dark:text-gray-500">{{ $item->unit ?? 'units' }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $item->unit ?? 'units' }}</p>
                         </div>
                     </div>
                 </div>
@@ -55,7 +55,7 @@
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Stock Value</p>
                             <p class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ number_format(($item->inventory->quantity ?? 0) * ($item->cost_price ?? 0), 2) }}</p>
-                            <p class="text-xs text-gray-400 dark:text-gray-500">at cost price</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">at cost price</p>
                         </div>
                     </div>
                 </div>
@@ -70,7 +70,7 @@
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Stock In</p>
                             <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ $history->where('type', 'in')->sum('quantity') + $history->where('type', 'purchase')->sum('quantity') }}</p>
-                            <p class="text-xs text-gray-400 dark:text-gray-500">all time</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">all time</p>
                         </div>
                     </div>
                 </div>
@@ -85,7 +85,7 @@
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Stock Out</p>
                             <p class="text-2xl font-bold text-red-600 dark:text-red-400">{{ $history->where('type', 'out')->sum('quantity') + $history->where('type', 'sale')->sum('quantity') }}</p>
-                            <p class="text-xs text-gray-400 dark:text-gray-500">all time</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">all time</p>
                         </div>
                     </div>
                 </div>

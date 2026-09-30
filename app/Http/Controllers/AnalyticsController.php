@@ -7,13 +7,20 @@ use App\Models\Invoice;
 use App\Models\Item;
 use App\Models\PaymentReceived;
 use App\Models\SalesOrder;
+use App\Support\SqlDate;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class AnalyticsController extends Controller
 {
+    /** Longest custom range, in months (P2). */
+    private const MAX_RANGE_MONTHS = 24;
+
+    private const CACHE_SECONDS = 600;
+
     /**
      * Display the advanced analytics dashboard.
      */
@@ -28,36 +35,41 @@ class AnalyticsController extends Controller
         $endDate = $dates['end'];
         $previousStartDate = $dates['previous_start'];
         $previousEndDate = $dates['previous_end'];
+        $rangeCapped = $dates['capped'];
 
-        // Get all analytics data
-        $kpis = $this->getKeyPerformanceIndicators($tenantId, $startDate, $endDate, $previousStartDate, $previousEndDate);
-        $revenueTrends = $this->getRevenueTrends($tenantId, $startDate, $endDate, $period);
-        $salesByCustomer = $this->getSalesByCustomer($tenantId, $startDate, $endDate);
-        $topSellingItems = $this->getTopSellingItems($tenantId, $startDate, $endDate);
-        $invoiceStatusDistribution = $this->getInvoiceStatusDistribution($tenantId, $startDate, $endDate);
-        $paymentMethodDistribution = $this->getPaymentMethodDistribution($tenantId, $startDate, $endDate);
-        $customerAcquisition = $this->getCustomerAcquisition($tenantId, $startDate, $endDate);
-        $averageOrderValue = $this->getAverageOrderValueTrend($tenantId, $startDate, $endDate, $period);
-        $overdueAnalysis = $this->getOverdueAnalysis($tenantId);
-        $customerRetention = $this->getCustomerRetention($tenantId, $startDate, $endDate);
-        $dailySalesHeatmap = $this->getDailySalesHeatmap($tenantId, $startDate, $endDate);
+        // Cached per business and range for 10 minutes (P2).
+        $data = Cache::remember(
+            $this->cacheKey($tenantId, 'page', $period, $dates),
+            self::CACHE_SECONDS,
+            fn () => [
+                'kpis' => $this->getKeyPerformanceIndicators($tenantId, $startDate, $endDate, $previousStartDate, $previousEndDate),
+                'revenueTrends' => $this->getRevenueTrends($tenantId, $startDate, $endDate, $period),
+                'salesByCustomer' => $this->getSalesByCustomer($tenantId, $startDate, $endDate),
+                'topSellingItems' => $this->getTopSellingItems($tenantId, $startDate, $endDate),
+                'invoiceStatusDistribution' => $this->getInvoiceStatusDistribution($tenantId, $startDate, $endDate),
+                'paymentMethodDistribution' => $this->getPaymentMethodDistribution($tenantId, $startDate, $endDate),
+                'customerAcquisition' => $this->getCustomerAcquisition($tenantId, $startDate, $endDate),
+                'averageOrderValue' => $this->getAverageOrderValueTrend($tenantId, $startDate, $endDate, $period),
+                'overdueAnalysis' => $this->getOverdueAnalysis($tenantId),
+                'customerRetention' => $this->getCustomerRetention($tenantId, $startDate, $endDate),
+                'dailySalesHeatmap' => $this->getDailySalesHeatmap($tenantId, $startDate, $endDate),
+            ]
+        );
 
-        return view('analytics.index', compact(
+        return view('analytics.index', array_merge($data, compact(
             'period',
             'startDate',
             'endDate',
-            'kpis',
-            'revenueTrends',
-            'salesByCustomer',
-            'topSellingItems',
-            'invoiceStatusDistribution',
-            'paymentMethodDistribution',
-            'customerAcquisition',
-            'averageOrderValue',
-            'overdueAnalysis',
-            'customerRetention',
-            'dailySalesHeatmap'
-        ));
+            'rangeCapped'
+        )));
+    }
+
+    /**
+     * Cache key for one business, chart and date range.
+     */
+    private function cacheKey($tenantId, string $what, string $period, array $dates): string
+    {
+        return "analytics:{$tenantId}:{$what}:{$period}:{$dates['start']}:{$dates['end']}";
     }
 
     /**
@@ -66,6 +78,7 @@ class AnalyticsController extends Controller
     private function getDateRange(string $period, Request $request): array
     {
         $now = Carbon::now();
+        $capped = false;
 
         switch ($period) {
             case 'today':
@@ -129,8 +142,22 @@ class AnalyticsController extends Controller
                 $previousEnd = $now->copy()->subYears(2)->endOfYear();
                 break;
             case 'custom':
-                $start = Carbon::parse($request->get('start_date', $now->copy()->startOfMonth()));
-                $end = Carbon::parse($request->get('end_date', $now));
+                try {
+                    $start = Carbon::parse($request->get('start_date', $now->copy()->startOfMonth()))->startOfDay();
+                    $end = Carbon::parse($request->get('end_date', $now))->startOfDay();
+                } catch (\Throwable) {
+                    $start = $now->copy()->startOfMonth();
+                    $end = $now->copy()->startOfDay();
+                }
+                if ($start->gt($end)) {
+                    [$start, $end] = [$end, $start];
+                }
+                // An unlimited range ran thousands of queries (P2).
+                $earliest = $end->copy()->subMonthsNoOverflow(self::MAX_RANGE_MONTHS)->addDay();
+                if ($start->lt($earliest)) {
+                    $start = $earliest;
+                    $capped = true;
+                }
                 $daysDiff = $start->diffInDays($end);
                 $previousStart = $start->copy()->subDays($daysDiff + 1);
                 $previousEnd = $start->copy()->subDay();
@@ -147,6 +174,7 @@ class AnalyticsController extends Controller
             'end' => $end->format('Y-m-d'),
             'previous_start' => $previousStart->format('Y-m-d'),
             'previous_end' => $previousEnd->format('Y-m-d'),
+            'capped' => $capped,
         ];
     }
 
@@ -278,93 +306,60 @@ class AnalyticsController extends Controller
             $format = 'M';
         }
 
-        $data = [];
-        $labels = [];
-        $revenueData = [];
-        $invoiceCountData = [];
-        $paymentsData = [];
-
+        // Build the chart periods first, then fill them from two grouped
+        // queries instead of 2-3 queries per period (P2).
+        $buckets = [];
         if ($groupBy === 'hour') {
+            // invoice_date and payment_date hold dates only, so the whole
+            // day lands in the midnight slot, as it did before.
             for ($hour = 0; $hour < 24; $hour++) {
-                $hourStart = $start->copy()->hour($hour)->startOfHour();
-                $hourEnd = $start->copy()->hour($hour)->endOfHour();
-
-                $labels[] = sprintf('%02d:00', $hour);
-
-                $revenueData[] = (float) Invoice::where('tenant_id', $tenantId)
-                    ->whereBetween('invoice_date', [$hourStart, $hourEnd])
-                    ->whereIn('status', ['paid', 'partial'])
-                    ->sum('amount_paid');
-
-                $invoiceCountData[] = Invoice::where('tenant_id', $tenantId)
-                    ->whereBetween('invoice_date', [$hourStart, $hourEnd])
-                    ->count();
-
-                $paymentsData[] = (float) PaymentReceived::where('tenant_id', $tenantId)
-                    ->whereBetween('payment_date', [$hourStart, $hourEnd])
-                    ->sum('amount');
+                $day = $hour === 0 ? $start->format('Y-m-d') : null;
+                $buckets[] = [sprintf('%02d:00', $hour), $day, $day];
             }
         } elseif ($groupBy === 'day') {
-            $period = CarbonPeriod::create($start, $end);
-            foreach ($period as $date) {
-                $labels[] = $date->format($format);
-
-                $revenueData[] = (float) Invoice::where('tenant_id', $tenantId)
-                    ->whereDate('invoice_date', $date)
-                    ->whereIn('status', ['paid', 'partial'])
-                    ->sum('amount_paid');
-
-                $invoiceCountData[] = Invoice::where('tenant_id', $tenantId)
-                    ->whereDate('invoice_date', $date)
-                    ->count();
-
-                $paymentsData[] = (float) PaymentReceived::where('tenant_id', $tenantId)
-                    ->whereDate('payment_date', $date)
-                    ->sum('amount');
+            foreach (CarbonPeriod::create($start, $end) as $date) {
+                $buckets[] = [$date->format($format), $date->format('Y-m-d'), $date->format('Y-m-d')];
             }
         } elseif ($groupBy === 'week') {
             $current = $start->copy()->startOfWeek();
             while ($current <= $end) {
-                $weekEnd = $current->copy()->endOfWeek();
-                $labels[] = 'W'.$current->weekOfYear;
-
-                $revenueData[] = (float) Invoice::where('tenant_id', $tenantId)
-                    ->whereBetween('invoice_date', [$current, $weekEnd])
-                    ->whereIn('status', ['paid', 'partial'])
-                    ->sum('amount_paid');
-
-                $invoiceCountData[] = Invoice::where('tenant_id', $tenantId)
-                    ->whereBetween('invoice_date', [$current, $weekEnd])
-                    ->count();
-
-                $paymentsData[] = (float) PaymentReceived::where('tenant_id', $tenantId)
-                    ->whereBetween('payment_date', [$current, $weekEnd])
-                    ->sum('amount');
-
+                $buckets[] = ['W'.$current->weekOfYear, $current->format('Y-m-d'), $current->copy()->endOfWeek()->format('Y-m-d')];
                 $current->addWeek();
             }
         } else {
-            // Monthly grouping
             $current = $start->copy()->startOfMonth();
             while ($current <= $end) {
-                $monthEnd = $current->copy()->endOfMonth();
-                $labels[] = $current->format('M Y');
-
-                $revenueData[] = (float) Invoice::where('tenant_id', $tenantId)
-                    ->whereBetween('invoice_date', [$current, $monthEnd])
-                    ->whereIn('status', ['paid', 'partial'])
-                    ->sum('amount_paid');
-
-                $invoiceCountData[] = Invoice::where('tenant_id', $tenantId)
-                    ->whereBetween('invoice_date', [$current, $monthEnd])
-                    ->count();
-
-                $paymentsData[] = (float) PaymentReceived::where('tenant_id', $tenantId)
-                    ->whereBetween('payment_date', [$current, $monthEnd])
-                    ->sum('amount');
-
+                $buckets[] = [$current->format('M Y'), $current->format('Y-m-d'), $current->copy()->endOfMonth()->format('Y-m-d')];
                 $current->addMonth();
             }
+        }
+
+        $days = array_filter(array_column($buckets, 1));
+        $from = min($days);
+        $to = max(array_filter(array_column($buckets, 2)));
+        $daily = $this->dailySalesTotals($tenantId, $from, $to);
+
+        $labels = [];
+        $revenueData = [];
+        $invoiceCountData = [];
+        $paymentsData = [];
+        foreach ($buckets as [$label, $bucketFrom, $bucketTo]) {
+            $labels[] = $label;
+            $revenue = 0.0;
+            $count = 0;
+            $payments = 0.0;
+            if ($bucketFrom !== null) {
+                foreach ($daily as $day => $totals) {
+                    if ($day >= $bucketFrom && $day <= $bucketTo) {
+                        $revenue += $totals['revenue'];
+                        $count += $totals['count'];
+                        $payments += $totals['payments'];
+                    }
+                }
+            }
+            $revenueData[] = $revenue;
+            $invoiceCountData[] = $count;
+            $paymentsData[] = $payments;
         }
 
         return [
@@ -373,6 +368,48 @@ class AnalyticsController extends Controller
             'invoice_count' => $invoiceCountData,
             'payments' => $paymentsData,
         ];
+    }
+
+    /**
+     * Paid revenue, invoice count and payments per day, in two queries.
+     *
+     * @return array<string, array{revenue: float, count: int, payments: float}>
+     */
+    private function dailySalesTotals($tenantId, string $from, string $to): array
+    {
+        $toExclusive = Carbon::parse($to)->addDay()->format('Y-m-d');
+        $daily = [];
+
+        $invoices = Invoice::where('tenant_id', $tenantId)
+            ->where('invoice_date', '>=', $from)
+            ->where('invoice_date', '<', $toExclusive)
+            ->selectRaw("invoice_date as day, COUNT(*) as invoice_count, SUM(CASE WHEN status IN ('paid', 'partial') THEN amount_paid ELSE 0 END) as revenue")
+            ->groupBy('invoice_date')
+            ->toBase()
+            ->get();
+
+        foreach ($invoices as $row) {
+            $day = substr((string) $row->day, 0, 10);
+            $daily[$day] ??= ['revenue' => 0.0, 'count' => 0, 'payments' => 0.0];
+            $daily[$day]['revenue'] += (float) $row->revenue;
+            $daily[$day]['count'] += (int) $row->invoice_count;
+        }
+
+        $payments = PaymentReceived::where('tenant_id', $tenantId)
+            ->where('payment_date', '>=', $from)
+            ->where('payment_date', '<', $toExclusive)
+            ->selectRaw('payment_date as day, SUM(amount) as total')
+            ->groupBy('payment_date')
+            ->toBase()
+            ->get();
+
+        foreach ($payments as $row) {
+            $day = substr((string) $row->day, 0, 10);
+            $daily[$day] ??= ['revenue' => 0.0, 'count' => 0, 'payments' => 0.0];
+            $daily[$day]['payments'] += (float) $row->total;
+        }
+
+        return $daily;
     }
 
     /**
@@ -390,10 +427,17 @@ class AnalyticsController extends Controller
             ->withCount(['invoices' => function ($q) use ($startDate, $endDate) {
                 $q->whereBetween('invoice_date', [$startDate, $endDate]);
             }])
-            ->having('invoices_sum_total', '>', 0)
+            // Customers with invoiced sales in the period. HAVING without
+            // GROUP BY fails on SQLite (found by the O4 page test).
+            ->whereHas('invoices', function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('invoice_date', [$startDate, $endDate])->where('total', '>', 0);
+            })
             ->orderByDesc('invoices_sum_total')
             ->limit($limit)
-            ->get();
+            ->get()
+            // Filtered here, not with HAVING, which SQLite rejects without GROUP BY.
+            ->filter(fn ($customer) => (float) $customer->getAttribute('invoices_sum_total') > 0)
+            ->values();
 
         return $customers->map(function ($customer) {
             return [
@@ -541,36 +585,61 @@ class AnalyticsController extends Controller
         $start = Carbon::parse($startDate);
         $end = Carbon::parse($endDate);
 
+        $months = $this->monthsBetween($start, $end);
+        $from = $start->copy()->startOfMonth()->format('Y-m-d');
+        $toExclusive = $end->copy()->endOfMonth()->addDay()->format('Y-m-d');
+
+        // One grouped query each instead of two per month (P2).
+        $newByMonth = Customer::where('tenant_id', $tenantId)
+            ->where('created_at', '>=', $from)
+            ->where('created_at', '<', $toExclusive)
+            ->selectRaw(SqlDate::month('created_at').' as ym, COUNT(*) as total')
+            ->groupBy('ym')
+            ->toBase()
+            ->pluck('total', 'ym');
+
+        // A first-time buyer is a customer whose earliest invoice falls in the month.
+        $firstInvoices = Invoice::where('tenant_id', $tenantId)
+            ->whereIn('customer_id', Customer::where('tenant_id', $tenantId)->select('id'))
+            ->selectRaw('customer_id, MIN(invoice_date) as first_date')
+            ->groupBy('customer_id')
+            ->toBase();
+
+        $firstByMonth = DB::query()
+            ->fromSub($firstInvoices, 'firsts')
+            ->where('first_date', '>=', $from)
+            ->where('first_date', '<', $toExclusive)
+            ->selectRaw(SqlDate::month('first_date').' as ym, COUNT(*) as total')
+            ->groupBy('ym')
+            ->pluck('total', 'ym');
+
         $data = [];
-        $current = $start->copy()->startOfMonth();
-
-        while ($current <= $end) {
-            $monthEnd = $current->copy()->endOfMonth();
-
-            $newCustomers = Customer::where('tenant_id', $tenantId)
-                ->whereBetween('created_at', [$current, $monthEnd])
-                ->count();
-
-            // Customers who made their first purchase this month
-            $firstTimeBuyers = Customer::where('tenant_id', $tenantId)
-                ->whereHas('invoices', function ($q) use ($current, $monthEnd) {
-                    $q->whereBetween('invoice_date', [$current, $monthEnd]);
-                })
-                ->whereDoesntHave('invoices', function ($q) use ($current) {
-                    $q->where('invoice_date', '<', $current);
-                })
-                ->count();
-
+        foreach ($months as $key => $label) {
             $data[] = [
-                'month' => $current->format('M Y'),
-                'new_customers' => $newCustomers,
-                'first_time_buyers' => $firstTimeBuyers,
+                'month' => $label,
+                'new_customers' => (int) ($newByMonth[$key] ?? 0),
+                'first_time_buyers' => (int) ($firstByMonth[$key] ?? 0),
             ];
-
-            $current->addMonth();
         }
 
         return $data;
+    }
+
+    /**
+     * Months from the start month to the end month, keyed "YYYY-MM".
+     *
+     * @return array<string, string>
+     */
+    private function monthsBetween(Carbon $start, Carbon $end): array
+    {
+        $months = [];
+        $current = $start->copy()->startOfMonth();
+        while ($current <= $end) {
+            $months[$current->format('Y-m')] = $current->format('M Y');
+            $current->addMonth();
+        }
+
+        return $months;
     }
 
     /**
@@ -581,27 +650,29 @@ class AnalyticsController extends Controller
         $start = Carbon::parse($startDate);
         $end = Carbon::parse($endDate);
 
+        $months = $this->monthsBetween($start, $end);
+
+        // One grouped query instead of two per month (P2).
+        $rows = Invoice::where('tenant_id', $tenantId)
+            ->where('invoice_date', '>=', $start->copy()->startOfMonth()->format('Y-m-d'))
+            ->where('invoice_date', '<', $end->copy()->endOfMonth()->addDay()->format('Y-m-d'))
+            ->selectRaw(SqlDate::month('invoice_date').' as ym, COUNT(*) as invoice_count, SUM(total) as total_value')
+            ->groupBy('ym')
+            ->toBase()
+            ->get()
+            ->keyBy('ym');
+
         $data = [];
-        $current = $start->copy()->startOfMonth();
-
-        while ($current <= $end) {
-            $monthEnd = $current->copy()->endOfMonth();
-
-            $invoices = Invoice::where('tenant_id', $tenantId)
-                ->whereBetween('invoice_date', [$current, $monthEnd]);
-
-            $count = $invoices->count();
-            $total = $invoices->sum('total');
-            $avgValue = $count > 0 ? $total / $count : 0;
+        foreach ($months as $key => $label) {
+            $count = (int) ($rows[$key]->invoice_count ?? 0);
+            $total = (float) ($rows[$key]->total_value ?? 0);
 
             $data[] = [
-                'month' => $current->format('M Y'),
-                'avg_value' => round($avgValue, 2),
+                'month' => $label,
+                'avg_value' => round($count > 0 ? $total / $count : 0, 2),
                 'invoice_count' => $count,
-                'total_value' => (float) $total,
+                'total_value' => $total,
             ];
-
-            $current->addMonth();
         }
 
         return $data;
@@ -817,8 +888,8 @@ class AnalyticsController extends Controller
         $salesByDayHour = Invoice::where('tenant_id', $tenantId)
             ->whereBetween('invoice_date', [$startDate, $endDate])
             ->select(
-                DB::raw('DAYOFWEEK(invoice_date) as day_of_week'),
-                DB::raw('HOUR(created_at) as hour'),
+                DB::raw(SqlDate::dayOfWeek('invoice_date').' as day_of_week'),
+                DB::raw(SqlDate::hour('created_at').' as hour'),
                 DB::raw('COUNT(*) as count'),
                 DB::raw('SUM(total) as total')
             )
@@ -863,6 +934,17 @@ class AnalyticsController extends Controller
         $period = $request->get('period', 'this_month');
         $dates = $this->getDateRange($period, $request);
 
+        $data = Cache::remember(
+            $this->cacheKey($tenantId, 'chart-'.$type, $period, $dates),
+            self::CACHE_SECONDS,
+            fn () => $this->chartDataFor($type, $tenantId, $period, $dates)
+        );
+
+        return response()->json(['data' => $data]);
+    }
+
+    private function chartDataFor(string $type, $tenantId, string $period, array $dates): array
+    {
         switch ($type) {
             case 'revenue':
                 $data = $this->getRevenueTrends($tenantId, $dates['start'], $dates['end'], $period);
@@ -880,6 +962,6 @@ class AnalyticsController extends Controller
                 $data = [];
         }
 
-        return response()->json(['data' => $data]);
+        return $data;
     }
 }

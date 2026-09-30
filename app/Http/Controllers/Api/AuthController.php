@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Auth\SignOutOtherSessions;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\ActivityLogService;
@@ -58,13 +59,20 @@ class AuthController extends BaseApiController
                 ], 'Two-factor authentication required', 200);
             }
 
-            // Verify 2FA code
+            // Verify 2FA code: per-account limit, and no reusing a code (S7)
             $twoFactor = app(\App\Services\TwoFactorService::class);
-            $secret = $twoFactor->getDecryptedSecret($user);
 
-            if (! $secret || ! $twoFactor->verify($secret, $request->two_factor_code)) {
+            if ($twoFactor->tooManyAttempts($user)) {
+                return $this->error('Too many two-factor attempts. Please try again later.', 429);
+            }
+
+            if (! $twoFactor->verifyForUser($user, (string) $request->two_factor_code)) {
+                $twoFactor->recordFailedAttempt($user);
+
                 return $this->error('Invalid two-factor authentication code.', 422);
             }
+
+            $twoFactor->clearAttempts($user);
         }
 
         // Revoke old tokens for this device
@@ -185,6 +193,9 @@ class AuthController extends BaseApiController
             'password' => Hash::make($request->password),
         ]);
 
+        // Other sessions and tokens end; the token making the change is kept (S5).
+        app(SignOutOtherSessions::class)->handle($user, $request);
+
         ActivityLogService::logPasswordChanged($user);
 
         return $this->success(null, 'Password updated successfully');
@@ -227,8 +238,8 @@ class AuthController extends BaseApiController
                     'remember_token' => Str::random(60),
                 ])->save();
 
-                // Revoke all existing tokens for security
-                $user->tokens()->delete();
+                // Revoke all existing tokens and sessions (S5)
+                app(SignOutOtherSessions::class)->handle($user);
 
                 event(new PasswordReset($user));
             }

@@ -16,11 +16,6 @@
     <div class="py-6">
         <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
             <x-form-auto-save formKey="journal-create">
-            @if(session('error'))
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                    <span class="block sm:inline">{{ session('error') }}</span>
-                </div>
-            @endif
 
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <form action="{{ route('journals.store') }}" method="POST" class="p-6" id="journalForm">
@@ -36,38 +31,33 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
-                                <label for="journal_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Journal Number</label>
+                                <label for="journal_number" class="form-label">Journal Number</label>
                                 <input type="text" id="journal_number" value="{{ $journalNumber }}" disabled
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-600 dark:text-gray-300 shadow-sm">
                             </div>
 
                             <div>
-                                <label for="journal_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Journal Date <span class="text-red-500">*</span></label>
-                                <input type="date" name="journal_date" id="journal_date" value="{{ old('journal_date', date('Y-m-d')) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('journal_date') border-red-500 @enderror">
-                                @error('journal_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="journal_date" label="Journal Date" type="date" :value="old('journal_date', date('Y-m-d'))" required />
                             </div>
 
                             <div>
-                                <label for="reference" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reference</label>
+                                <label for="reference" class="form-label">Reference</label>
                                 <input type="text" name="reference" id="reference" value="{{ old('reference') }}"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('reference') border-red-500 @enderror"
-                                    placeholder="e.g., Check #123">
+                                    class="form-control @error('reference') border-red-500 @enderror"
+                                    placeholder="e.g., Check #123" @error('reference') aria-invalid="true" aria-describedby="reference-error" @enderror>
                                 @error('reference')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="reference-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
 
                         <div class="mt-4">
-                            <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description <span class="text-red-500">*</span></label>
+                            <label for="description" class="form-label">Description <span class="text-red-500">*</span></label>
                             <textarea name="description" id="description" rows="2" required maxlength="500"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('description') border-red-500 @enderror"
-                                placeholder="Enter journal description...">{{ old('description') }}</textarea>
+                                class="form-control @error('description') border-red-500 @enderror"
+                                placeholder="Enter journal description..." @error('description') aria-invalid="true" aria-describedby="description-error" @enderror>{{ old('description') }}</textarea>
                             @error('description')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="description-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>
@@ -108,17 +98,17 @@
                                                     </select>
                                                 </td>
                                                 <td class="px-4 py-2">
-                                                    <input type="text" name="entries[{{ $index }}][description]" value="{{ $entry['description'] ?? '' }}"
+                                                    <input aria-label="Line description" type="text" name="entries[{{ $index }}][description]" value="{{ $entry['description'] ?? '' }}"
                                                         class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                                         placeholder="Line description">
                                                 </td>
                                                 <td class="px-4 py-2">
-                                                    <input type="number" name="entries[{{ $index }}][debit]" value="{{ $entry['debit'] ?? '' }}" min="0" step="0.01"
+                                                    <input aria-label="Debit" type="number" name="entries[{{ $index }}][debit]" value="{{ $entry['debit'] ?? '' }}" min="0" step="0.01"
                                                         class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right debit-input"
                                                         placeholder="0.00">
                                                 </td>
                                                 <td class="px-4 py-2">
-                                                    <input type="number" name="entries[{{ $index }}][credit]" value="{{ $entry['credit'] ?? '' }}" min="0" step="0.01"
+                                                    <input aria-label="Credit" type="number" name="entries[{{ $index }}][credit]" value="{{ $entry['credit'] ?? '' }}" min="0" step="0.01"
                                                         class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right credit-input"
                                                         placeholder="0.00">
                                                 </td>
@@ -143,17 +133,17 @@
                                                 </select>
                                             </td>
                                             <td class="px-4 py-2">
-                                                <input type="text" name="entries[0][description]"
+                                                <input aria-label="Line description" type="text" name="entries[0][description]"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                                     placeholder="Line description">
                                             </td>
                                             <td class="px-4 py-2">
-                                                <input type="number" name="entries[0][debit]" min="0" step="0.01"
+                                                <input aria-label="Debit" type="number" name="entries[0][debit]" min="0" step="0.01"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right debit-input"
                                                     placeholder="0.00">
                                             </td>
                                             <td class="px-4 py-2">
-                                                <input type="number" name="entries[0][credit]" min="0" step="0.01"
+                                                <input aria-label="Credit" type="number" name="entries[0][credit]" min="0" step="0.01"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right credit-input"
                                                     placeholder="0.00">
                                             </td>
@@ -176,17 +166,17 @@
                                                 </select>
                                             </td>
                                             <td class="px-4 py-2">
-                                                <input type="text" name="entries[1][description]"
+                                                <input aria-label="Line description" type="text" name="entries[1][description]"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                                     placeholder="Line description">
                                             </td>
                                             <td class="px-4 py-2">
-                                                <input type="number" name="entries[1][debit]" min="0" step="0.01"
+                                                <input aria-label="Debit" type="number" name="entries[1][debit]" min="0" step="0.01"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right debit-input"
                                                     placeholder="0.00">
                                             </td>
                                             <td class="px-4 py-2">
-                                                <input type="number" name="entries[1][credit]" min="0" step="0.01"
+                                                <input aria-label="Credit" type="number" name="entries[1][credit]" min="0" step="0.01"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right credit-input"
                                                     placeholder="0.00">
                                             </td>
@@ -261,7 +251,6 @@
 
         function addRow() {
             const tbody = document.getElementById('entriesBody');
-            const accountOptions = accountsJson.map(a => `<option value="${a.id}">${a.account_code} - ${a.name}</option>`).join('');
             
             const row = document.createElement('tr');
             row.className = 'entry-row';
@@ -270,21 +259,20 @@
                     <select name="entries[${rowIndex}][account_id]" required
                         class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         <option value="">Select Account</option>
-                        ${accountOptions}
                     </select>
                 </td>
                 <td class="px-4 py-2">
-                    <input type="text" name="entries[${rowIndex}][description]"
+                    <input aria-label="Line description" type="text" name="entries[${rowIndex}][description]"
                         class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         placeholder="Line description">
                 </td>
                 <td class="px-4 py-2">
-                    <input type="number" name="entries[${rowIndex}][debit]" min="0" step="0.01"
+                    <input aria-label="Debit" type="number" name="entries[${rowIndex}][debit]" min="0" step="0.01"
                         class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right debit-input"
                         placeholder="0.00">
                 </td>
                 <td class="px-4 py-2">
-                    <input type="number" name="entries[${rowIndex}][credit]" min="0" step="0.01"
+                    <input aria-label="Credit" type="number" name="entries[${rowIndex}][credit]" min="0" step="0.01"
                         class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right credit-input"
                         placeholder="0.00">
                 </td>
@@ -296,6 +284,10 @@
                     </button>
                 </td>
             `;
+            // Account names go in as text, never as HTML (S3).
+            const select = row.querySelector('select');
+            accountsJson.forEach(a => select.add(new Option(`${a.account_code} - ${a.name}`, a.id)));
+
             tbody.appendChild(row);
             rowIndex++;
 

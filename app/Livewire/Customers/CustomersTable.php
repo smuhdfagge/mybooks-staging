@@ -3,13 +3,14 @@
 namespace App\Livewire\Customers;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\Customer;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class CustomersTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -220,6 +221,7 @@ class CustomersTable extends Component
     public function render()
     {
         $customers = Customer::query()
+            ->withBalances()
             ->when($this->search, fn ($q) => $q->where(function ($query) {
                 $query->where('name', 'like', "%{$this->search}%")
                     ->orWhere('email', 'like', "%{$this->search}%")
@@ -227,7 +229,7 @@ class CustomersTable extends Component
             }))
             ->when($this->status !== '', fn ($q) => $q->where('is_active', $this->status === 'active'))
             ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->perPage);
+            ->paginate($this->pageSize());
 
         return view('livewire.customers.customers-table', [
             'customers' => $customers,

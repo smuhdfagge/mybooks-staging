@@ -156,6 +156,17 @@ Route::post('/billing/paystack/webhook', [App\Http\Controllers\BillingController
 */
 Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', 'tenant'])->group(function () {
 
+    // Search-as-you-type for the invoice, bill and credit note forms (P9),
+    // so the forms no longer load every customer, vendor and item.
+    Route::prefix('lookup')->name('lookup.')->middleware('throttle:120,1')->group(function () {
+        Route::get('customers', [\App\Http\Controllers\Api\SearchController::class, 'customers'])
+            ->middleware('permission:view customers,create invoices,edit invoices')->name('customers');
+        Route::get('vendors', [\App\Http\Controllers\Api\SearchController::class, 'vendors'])
+            ->middleware('permission:view vendors,create bills,edit bills')->name('vendors');
+        Route::get('items', [\App\Http\Controllers\Api\SearchController::class, 'items'])
+            ->middleware('permission:view items,create invoices,edit invoices,create bills,edit bills')->name('items');
+    });
+
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->middleware('permission:view dashboard')
@@ -1054,6 +1065,12 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
             Route::post('/invoice-templates/{invoiceTemplate}/set-default', [InvoiceTemplateController::class, 'setDefault'])->name('invoice-templates.set-default');
             Route::delete('/invoice-templates/{invoiceTemplate}', [InvoiceTemplateController::class, 'destroy'])->name('invoice-templates.destroy');
         });
+
+        // Close organisation (O7): owner only, checked in the controller.
+        Route::get('/close-organisation', [\App\Http\Controllers\CloseOrganisationController::class, 'show'])->name('close-organisation');
+        Route::post('/close-organisation', [\App\Http\Controllers\CloseOrganisationController::class, 'store'])
+            ->middleware('throttle:5,1')->name('close-organisation.store');
+        Route::delete('/close-organisation', [\App\Http\Controllers\CloseOrganisationController::class, 'cancel'])->name('close-organisation.cancel');
 
         // Subscription Management
         Route::get('/subscription', function () {

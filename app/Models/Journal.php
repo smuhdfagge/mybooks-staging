@@ -96,11 +96,11 @@ class Journal extends Model
     public function post()
     {
         if (! $this->entries()->exists()) {
-            throw new \Exception('Journal has no lines to post.');
+            throw new \App\Exceptions\BusinessRuleException('Journal has no lines to post.');
         }
 
         if (! $this->isBalanced()) {
-            throw new \Exception('Journal entries must be balanced before posting.');
+            throw new \App\Exceptions\BusinessRuleException('Journal entries must be balanced before posting.');
         }
 
         foreach ($this->entries as $entry) {

@@ -128,17 +128,17 @@
                                     {{ $tax['name'] }} ({{ rtrim(rtrim(number_format($tax['rate'], 4), '0'), '.') }}%)
                                     @if($tax['is_compound']) <span class="text-purple-600 dark:text-purple-400 text-xs">(compound)</span> @endif
                                 </span>
-                                <span class="font-medium text-gray-900 dark:text-gray-100">${{ number_format($tax['amount'], 2) }}</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">@money($tax['amount'])</span>
                             </div>
                         @endforeach
                         
                         <div class="pt-2 border-t border-gray-300 dark:border-gray-600 flex justify-between">
                             <span class="font-semibold text-gray-900 dark:text-gray-100">Total Tax</span>
-                            <span class="font-semibold text-blue-600 dark:text-blue-400">${{ number_format($totalTax, 2) }}</span>
+                            <span class="font-semibold text-blue-600 dark:text-blue-400">@money($totalTax)</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="font-semibold text-gray-900 dark:text-gray-100">Grand Total</span>
-                            <span class="font-semibold text-green-600 dark:text-green-400">${{ number_format(100 + $totalTax, 2) }}</span>
+                            <span class="font-semibold text-green-600 dark:text-green-400">@money(100 + $totalTax)</span>
                         </div>
                     </div>
                 </div>

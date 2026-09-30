@@ -20,11 +20,6 @@
 
     <div class="py-6">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            @if(session('error'))
-            <div class="mb-4 bg-red-100 dark:bg-red-900/50 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-4 py-3 rounded">
-                {{ session('error') }}
-            </div>
-            @endif
 
             <!-- Deposit Info Card -->
             <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow-lg p-6 mb-6 text-white">
@@ -52,9 +47,9 @@
                     <div class="space-y-4">
                         <!-- Invoice Selection -->
                         <div>
-                            <label for="invoice_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Invoice <span class="text-red-500">*</span></label>
+                            <label for="invoice_id" class="form-label">Invoice <span class="text-red-500">*</span></label>
                             <select name="invoice_id" id="invoice_id" required x-model="selectedInvoice" @change="updateMaxAmount()"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('invoice_id') border-red-500 @enderror">
+                                class="form-control @error('invoice_id') border-red-500 @enderror" @error('invoice_id') aria-invalid="true" aria-describedby="invoice_id-error" @enderror>
                                 <option value="">Select an invoice</option>
                                 @foreach($unpaidInvoices as $invoice)
                                 <option value="{{ $invoice->id }}" data-balance="{{ $invoice->balance_due }}">
@@ -63,31 +58,31 @@
                                 @endforeach
                             </select>
                             @error('invoice_id')
-                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="invoice_id-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
                         </div>
 
                         <!-- Amount -->
                         <div>
-                            <label for="amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount to Apply <span class="text-red-500">*</span></label>
+                            <label for="amount" class="form-label">Amount to Apply <span class="text-red-500">*</span></label>
                             <div class="relative">
                                 <input type="number" name="amount" id="amount" step="0.01" min="0.01" 
                                     :max="maxAmount" x-model="amount" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('amount') border-red-500 @enderror">
+                                    class="form-control @error('amount') border-red-500 @enderror" @error('amount') aria-invalid="true" aria-describedby="amount-error" @enderror>
                             </div>
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" x-show="selectedInvoice">
-                                Maximum: <span x-text="'$' + maxAmount.toFixed(2)"></span>
+                                Maximum: <span x-text="formatMoney(maxAmount)"></span>
                             </p>
                             @error('amount')
-                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="amount-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
                         </div>
 
                         <!-- Notes -->
                         <div>
-                            <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+                            <label for="notes" class="form-label">Notes</label>
                             <textarea name="notes" id="notes" rows="2"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                class="form-control"
                                 placeholder="Optional notes about this application">{{ old('notes') }}</textarea>
                         </div>
                     </div>

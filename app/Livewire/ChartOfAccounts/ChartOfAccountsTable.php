@@ -3,13 +3,14 @@
 namespace App\Livewire\ChartOfAccounts;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\ChartOfAccount;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class ChartOfAccountsTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -203,7 +204,7 @@ class ChartOfAccountsTable extends Component
                 $query->where('type', $this->typeFilter);
             })
             ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->perPage);
+            ->paginate($this->pageSize());
 
         $types = ChartOfAccount::getTypes();
 

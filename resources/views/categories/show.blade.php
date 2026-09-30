@@ -35,17 +35,17 @@
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category Name</label>
+                            <label class="form-label">Category Name</label>
                             <p class="text-gray-900 dark:text-gray-100">{{ $category->name }}</p>
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category Code</label>
+                            <label class="form-label">Category Code</label>
                             <p class="text-gray-900 dark:text-gray-100">{{ $category->code ?? 'N/A' }}</p>
                         </div>
 
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                            <label class="form-label">Description</label>
                             <p class="text-gray-900 dark:text-gray-100">{{ $category->description ?? 'N/A' }}</p>
                         </div>
                     </div>
@@ -59,12 +59,12 @@
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Default Useful Life</label>
+                            <label class="form-label">Default Useful Life</label>
                             <p class="text-gray-900 dark:text-gray-100">{{ $category->default_useful_life ?? 'N/A' }} years</p>
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Default Depreciation Method</label>
+                            <label class="form-label">Default Depreciation Method</label>
                             <p class="text-gray-900 dark:text-gray-100">
                                 {{ $category->default_depreciation_method ? ucfirst(str_replace('_', ' ', $category->default_depreciation_method)) : 'N/A' }}
                             </p>
@@ -80,7 +80,7 @@
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Asset Account</label>
+                            <label class="form-label">Asset Account</label>
                             <p class="text-gray-900 dark:text-gray-100">
                                 @if($category->assetAccount)
                                     {{ $category->assetAccount->account_code }} - {{ $category->assetAccount->account_name }}
@@ -91,7 +91,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Accumulated Depreciation Account</label>
+                            <label class="form-label">Accumulated Depreciation Account</label>
                             <p class="text-gray-900 dark:text-gray-100">
                                 @if($category->accumulatedDepreciationAccount)
                                     {{ $category->accumulatedDepreciationAccount->account_code }} - {{ $category->accumulatedDepreciationAccount->account_name }}
@@ -102,7 +102,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Depreciation Expense Account</label>
+                            <label class="form-label">Depreciation Expense Account</label>
                             <p class="text-gray-900 dark:text-gray-100">
                                 @if($category->depreciationExpenseAccount)
                                     {{ $category->depreciationExpenseAccount->account_code }} - {{ $category->depreciationExpenseAccount->account_name }}
@@ -113,7 +113,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gain/Loss on Disposal Account</label>
+                            <label class="form-label">Gain/Loss on Disposal Account</label>
                             <p class="text-gray-900 dark:text-gray-100">
                                 @if($category->gainLossAccount)
                                     {{ $category->gainLossAccount->account_code }} - {{ $category->gainLossAccount->account_name }}
@@ -165,10 +165,10 @@
                                             {{ $asset->name }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100">
-                                            ${{ number_format($asset->purchase_cost, 2) }}
+                                            @money($asset->purchase_cost)
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-900 dark:text-gray-100">
-                                            ${{ number_format($asset->book_value, 2) }}
+                                            @money($asset->book_value)
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 

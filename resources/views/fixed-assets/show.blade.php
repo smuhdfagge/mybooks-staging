@@ -13,7 +13,7 @@
                 </a>
                 @can('edit fixed-assets')
                     @if($fixedAsset->canDispose())
-                    <button data-call="openDisposeModal" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700">
+                    <button type="button" data-open-modal="dispose-asset" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                         </svg>
@@ -21,7 +21,7 @@
                     </button>
                     @endif
                     @if($fixedAsset->canDepreciate())
-                    <button data-call="openDepreciationModal" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
+                    <button type="button" data-open-modal="record-depreciation" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
                         Record Depreciation
                     </button>
                     @endif
@@ -155,7 +155,7 @@
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                        @forelse($schedule->take(12) as $period)
+                                        @forelse(collect($schedule)->take(12) as $period)
                                         <tr>
                                             <td class="px-4 py-2 text-sm text-gray-900 dark:text-white">{{ $period['period'] }}</td>
                                             <td class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">{{ $period['date']->format('M Y') }}</td>
@@ -303,10 +303,9 @@
     </div>
 
     <!-- Depreciation Modal -->
-    <div id="depreciationModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
-            <div class="mt-3">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Record Depreciation</h3>
+    <x-modal name="record-depreciation" title="Record Depreciation" maxWidth="md">
+        <div class="px-6 pb-5">
+            <div class="mt-4">
                 <form action="{{ route('fixed-assets.depreciate', $fixedAsset) }}" method="POST">
                     @csrf
                     <div class="mb-4">
@@ -320,7 +319,7 @@
                             class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
                     </div>
                     <div class="flex justify-end gap-3">
-                        <button type="button" data-call="closeDepreciationModal" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-400">
+                        <button type="button" data-close-modal="record-depreciation" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-400">
                             Cancel
                         </button>
                         <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
@@ -330,13 +329,12 @@
                 </form>
             </div>
         </div>
-    </div>
+    </x-modal>
 
     <!-- Dispose Modal -->
-    <div id="disposeModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
-            <div class="mt-3">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Dispose Asset</h3>
+    <x-modal name="dispose-asset" title="Dispose Asset" maxWidth="md">
+        <div class="px-6 pb-5">
+            <div class="mt-4">
                 <form action="{{ route('fixed-assets.dispose', $fixedAsset) }}" method="POST">
                     @csrf
                     <div class="mb-4">
@@ -367,7 +365,7 @@
                             class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
                     </div>
                     <div class="flex justify-end gap-3">
-                        <button type="button" data-call="closeDisposeModal" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-400">
+                        <button type="button" data-close-modal="dispose-asset" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-400">
                             Cancel
                         </button>
                         <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
@@ -377,20 +375,5 @@
                 </form>
             </div>
         </div>
-    </div>
-
-    <script nonce="{{ app('csp-nonce') }}">
-        function openDepreciationModal() {
-            document.getElementById('depreciationModal').classList.remove('hidden');
-        }
-        function closeDepreciationModal() {
-            document.getElementById('depreciationModal').classList.add('hidden');
-        }
-        function openDisposeModal() {
-            document.getElementById('disposeModal').classList.remove('hidden');
-        }
-        function closeDisposeModal() {
-            document.getElementById('disposeModal').classList.add('hidden');
-        }
-    </script>
+    </x-modal>
 </x-app-layout>

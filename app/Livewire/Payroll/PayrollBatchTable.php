@@ -2,13 +2,14 @@
 
 namespace App\Livewire\Payroll;
 
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\PayrollBatch;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class PayrollBatchTable extends Component
 {
-    use WithPagination;
+    use LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -58,7 +59,7 @@ class PayrollBatchTable extends Component
             }))
             ->when($this->status, fn ($q) => $q->where('status', $this->status))
             ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->perPage);
+            ->paginate($this->pageSize());
 
         return view('livewire.payroll.payroll-batch-table', [
             'batches' => $batches,

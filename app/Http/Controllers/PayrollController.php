@@ -218,36 +218,29 @@ class PayrollController extends Controller
             'pay_period_end' => 'required|date|after:pay_period_start',
             'employee_ids' => 'required|array|min:1',
             'employee_ids.*' => Rule::exists('employees', 'id')->where('tenant_id', $tenantId),
+            'tax_rate' => 'nullable|numeric|min:0|max:100',
         ]);
 
+        $taxService = app(PayrollTaxService::class);
+
         try {
-            $employees = DB::transaction(function () use ($validated, $tenantId) {
-                $employees = Employee::whereIn('id', $validated['employee_ids'])->get();
+            $employees = DB::transaction(function () use ($validated, $tenantId, $taxService) {
+                $employees = Employee::whereIn('id', $validated['employee_ids'])->with(['salaryStructure.items'])->get();
 
                 foreach ($employees as $employee) {
-                    $basicSalary = $employee->salary ?? 0;
-                    $grossSalary = $basicSalary;
-                    $netSalary = $grossSalary;
-
-                    Payroll::create([
+                    // Same figures as a payroll run: allowances, pre-tax
+                    // reliefs, PAYE, other deductions and loans. Bulk create
+                    // used to set gross = net with no tax at all (P-payroll).
+                    Payroll::create(array_merge([
                         'tenant_id' => $tenantId,
                         'payroll_number' => Payroll::generateNumber($tenantId),
                         'employee_id' => $employee->id,
                         'pay_period_start' => $validated['pay_period_start'],
                         'pay_period_end' => $validated['pay_period_end'],
                         'pay_date' => $validated['pay_period_end'],
-                        'basic_salary' => $basicSalary,
-                        'allowances' => 0,
-                        'overtime_hours' => 0,
-                        'overtime_amount' => 0,
-                        'gross_salary' => $grossSalary,
-                        'tax_deduction' => 0,
-                        'other_deductions' => 0,
-                        'total_deductions' => 0,
-                        'net_salary' => $netSalary,
                         'status' => 'draft',
                         'created_by' => auth()->id(),
-                    ]);
+                    ], $taxService->payslipFigures($employee, $tenantId, (float) ($validated['tax_rate'] ?? 0), [], $validated['pay_period_end'])));
                 }
 
                 return $employees;
@@ -337,124 +330,20 @@ class PayrollController extends Controller
                             continue;
                         }
 
-                        $basicSalary = $structure->basic_salary;
-                        $allowanceDetails = [];
-                        $totalAllowances = 0;
-
-                        foreach ($structure->allowances as $item) {
-                            $calculated = $item->amount_type === 'percentage'
-                                ? round($basicSalary * $item->amount / 100, 2)
-                                : $item->amount;
-                            $allowanceDetails[] = [
-                                'name' => $item->name,
-                                'amount_type' => $item->amount_type,
-                                'rate' => $item->amount,
-                                'amount' => $calculated,
-                                'is_taxable' => $item->is_taxable,
-                            ];
-                            $totalAllowances += $calculated;
-                        }
-
-                        $grossSalary = $basicSalary + $totalAllowances;
-
-                        // Calculate taxable amount (exclude non-taxable allowances)
-                        $taxableAmount = $grossSalary;
-                        foreach ($allowanceDetails as $ad) {
-                            if (! $ad['is_taxable']) {
-                                $taxableAmount -= $ad['amount'];
-                            }
-                        }
-
-                        $deductionDetails = [];
-                        $totalOtherDeductions = 0;
-
-                        foreach ($structure->deductions as $item) {
-                            $calculated = $item->amount_type === 'percentage'
-                                ? round($grossSalary * $item->amount / 100, 2)
-                                : $item->amount;
-                            $deductionDetails[] = [
-                                'name' => $item->name,
-                                'amount_type' => $item->amount_type,
-                                'rate' => $item->amount,
-                                'amount' => $calculated,
-                                'pre_tax' => (bool) $item->is_taxable,
-                            ];
-                            $totalOtherDeductions += $calculated;
-
-                            // Pre-tax deductions (pension, NHF, health insurance) are reliefs.
-                            if ($item->is_taxable) {
-                                $taxableAmount -= $calculated;
-                            }
-                        }
-
-                        // Rent relief (Nigeria Tax Act 2025) also comes off before tax.
-                        $taxableAmount -= $taxService->monthlyRentRelief($employee);
-
-                        // Progressive tax calculation with flat-rate fallback
-                        $taxResult = $taxService->calculateTax(max(0, $taxableAmount), $tenantId, $flatTaxRate, 'monthly');
-                        $taxDeduction = $taxResult['tax'];
-
-                        // Include active loan/advance deductions
-                        $activeLoans = \App\Models\EmployeeLoan::getActiveDeductionsForEmployee(
-                            $employee->id,
-                            $payPeriodEnd->toDateString()
-                        );
-                        foreach ($activeLoans as $loan) {
-                            $loanAmount = min((float) $loan->installment_amount, (float) $loan->outstanding_balance);
-                            if ($loanAmount > 0) {
-                                $deductionDetails[] = [
-                                    'name' => ucfirst($loan->type).': '.($loan->description ?: $loan->loan_number),
-                                    'amount_type' => 'fixed',
-                                    'rate' => $loanAmount,
-                                    'amount' => $loanAmount,
-                                    '_loan_id' => $loan->id,
-                                ];
-                                $totalOtherDeductions += $loanAmount;
-                            }
-                        }
-
-                        $totalDeductions = $taxDeduction + $totalOtherDeductions;
-                        $netSalary = $grossSalary - $totalDeductions;
-
-                        // Employer contributions (not deducted from employee)
-                        $employerResult = $taxService->calculateEmployerContributions($grossSalary, $employerContributionRules);
-
-                        Payroll::create([
+                        Payroll::create(array_merge([
                             'tenant_id' => $tenantId,
                             'payroll_batch_id' => $batch->id,
                             'payroll_number' => Payroll::generateNumber($tenantId),
                             'employee_id' => $employee->id,
-                            'salary_structure_id' => $structure->id,
-                            'salary_structure_snapshot' => $structure->toSnapshot(),
                             'pay_period_start' => $payPeriodStart->toDateString(),
                             'pay_period_end' => $payPeriodEnd->toDateString(),
                             'pay_date' => $payPeriodEnd->toDateString(),
-                            'basic_salary' => $basicSalary,
-                            'allowances' => $totalAllowances,
-                            'allowance_details' => $allowanceDetails,
-                            'overtime_hours' => 0,
-                            'overtime_amount' => 0,
-                            'gross_salary' => $grossSalary,
-                            'tax_deduction' => $taxDeduction,
-                            'other_deductions' => $totalOtherDeductions,
-                            'deduction_details' => array_merge($deductionDetails, [
-                                ['name' => '_tax_method', 'method' => $taxResult['method'], 'breakdown' => $taxResult['breakdown']],
-                            ]),
-                            'employer_contributions' => $employerResult['total'],
-                            'employer_contribution_details' => $employerResult['details'],
-                            'total_deductions' => $totalDeductions,
-                            'net_salary' => $netSalary,
                             'status' => 'draft',
                             'created_by' => auth()->id(),
-                        ]);
+                        ], $taxService->payslipFigures($employee, $tenantId, (float) $flatTaxRate, $employerContributionRules, $payPeriodEnd->toDateString())));
 
                         $created++;
-
-                        // Clear sensitive salary variables after each employee
-                        unset($basicSalary, $grossSalary, $netSalary, $taxableAmount);
-                        unset($allowanceDetails, $deductionDetails, $taxResult, $employerResult);
-                        unset($totalAllowances, $totalOtherDeductions, $totalDeductions);
-                        unset($taxDeduction, $structure);
+                        unset($structure);
                     }
 
                     // Release chunk from memory before loading next

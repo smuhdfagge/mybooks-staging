@@ -10,7 +10,7 @@
                 <div class="mb-6 flex flex-col sm:flex-row gap-4 justify-between">
                     <div class="flex flex-col sm:flex-row gap-4">
                         <div class="relative">
-                            <input type="text" wire:model.live.debounce.300ms="search" placeholder="Search journals..."
+                            <input aria-label="Search journals" type="text" wire:model.live.debounce.300ms="search" placeholder="Search journals..."
                                 class="w-full sm:w-80 pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -18,7 +18,7 @@
                                 </svg>
                             </div>
                         </div>
-                        <select wire:model.live="statusFilter" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <select aria-label="Status filter" wire:model.live="statusFilter" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="">All Status</option>
                             <option value="draft">Draft</option>
                             <option value="posted">Posted</option>
@@ -27,8 +27,8 @@
                         <x-bulk-actions :actions="['post' => 'Post', 'void' => 'Void', 'delete' => 'Delete']" :selectedCount="count($selectedItems)" />
                     </div>
                     <div class="flex items-center gap-2">
-                        <label class="text-sm text-gray-600 dark:text-gray-400">Show:</label>
-                        <select wire:model.live="perPage" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <label for="perPage" class="text-sm text-gray-600 dark:text-gray-400">Show:</label>
+                        <select id="perPage" wire:model.live="perPage" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="10">10</option>
                             <option value="25">25</option>
                             <option value="50">50</option>
@@ -52,42 +52,15 @@
                         <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr>
                                 <th scope="col" class="px-4 py-3 text-left">
-                                    <input type="checkbox" wire:model.live="selectAll"
+                                    <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
                                         class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                                 </th>
-                                <th scope="col" wire:click="sortBy('journal_date')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                                    <div class="flex items-center space-x-1">
-                                        <span>Date</span>
-                                        @if($sortField === 'journal_date')
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7' }}"/>
-                                            </svg>
-                                        @endif
-                                    </div>
-                                </th>
-                                <th scope="col" wire:click="sortBy('journal_number')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                                    <div class="flex items-center space-x-1">
-                                        <span>Number</span>
-                                        @if($sortField === 'journal_number')
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7' }}"/>
-                                            </svg>
-                                        @endif
-                                    </div>
-                                </th>
+                                <x-sort-header field="journal_date" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Date</x-sort-header>
+                                <x-sort-header field="journal_number" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Number</x-sort-header>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Reference</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Description</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                                <th scope="col" wire:click="sortBy('total_debit')" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                                    <div class="flex items-center justify-end space-x-1">
-                                        <span>Amount</span>
-                                        @if($sortField === 'total_debit')
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7' }}"/>
-                                            </svg>
-                                        @endif
-                                    </div>
-                                </th>
+                                <x-sort-header field="total_debit" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Amount</x-sort-header>
                                 <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
@@ -95,7 +68,7 @@
                             @forelse($journals as $journal)
                                 <tr wire:key="journal-{{ $journal->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                     <td class="px-4 py-4">
-                                        <input type="checkbox" wire:model.live="selectedItems" value="{{ $journal->id }}"
+                                        <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $journal->id }}"
                                             class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">

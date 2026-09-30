@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" x-data="{ dark: localStorage.getItem('adminDark') === 'true' }" :class="{ 'dark': dark }">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" x-data="{ dark: document.documentElement.classList.contains('dark') }" :class="{ 'dark': dark }">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    @include('partials.theme-init', ['key' => 'adminDark'])
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>Admin Login - MyBooks</title>
@@ -69,9 +70,9 @@
                                required 
                                autofocus
                                class="mt-1 w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                               placeholder="admin@example.com">
+                               placeholder="admin@example.com" @error('email') aria-invalid="true" aria-describedby="email-error" @enderror>
                         @error('email')
-                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            <p id="email-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
                     </div>
 
@@ -82,17 +83,10 @@
                                id="password" 
                                required
                                class="mt-1 w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                               placeholder="••••••••">
+                               placeholder="••••••••" @error('password') aria-invalid="true" aria-describedby="password-error" @enderror>
                         @error('password')
-                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            <p id="password-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
-                    </div>
-
-                    <div class="flex items-center justify-between">
-                        <label class="flex items-center">
-                            <input type="checkbox" name="remember" class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700">
-                            <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Remember me</span>
-                        </label>
                     </div>
 
                     <button type="submit" class="w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition duration-200">
@@ -102,7 +96,7 @@
             </form>
         </div>
 
-        <p class="text-center text-indigo-200 dark:text-gray-500 text-sm mt-6">
+        <p class="text-center text-indigo-200 dark:text-gray-400 text-sm mt-6">
             &copy; {{ date('Y') }} MyBooks. Admin Portal.
         </p>
     </div>

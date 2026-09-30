@@ -5,17 +5,17 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <!-- Search -->
             <div>
-                <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
+                <label for="search" class="form-label">Search</label>
                 <input type="text" wire:model.live.debounce.300ms="search" id="search" 
                     placeholder="Search logs..."
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    class="form-control">
             </div>
 
             <!-- User Filter -->
             <div>
-                <label for="userId" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">User</label>
+                <label for="userId" class="form-label">User</label>
                 <select wire:model.live="userId" id="userId" 
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    class="form-control">
                     <option value="">All Users</option>
                     @foreach($users as $user)
                         <option value="{{ $user->id }}">{{ $user->name }}</option>
@@ -25,9 +25,9 @@
 
             <!-- Action Filter -->
             <div>
-                <label for="action" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Action</label>
+                <label for="action" class="form-label">Action</label>
                 <select wire:model.live="action" id="action" 
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    class="form-control">
                     <option value="">All Actions</option>
                     @foreach($actions as $act)
                         <option value="{{ $act }}">{{ ucfirst($act) }}</option>
@@ -37,9 +37,9 @@
 
             <!-- Model Type Filter -->
             <div>
-                <label for="modelType" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Module</label>
+                <label for="modelType" class="form-label">Module</label>
                 <select wire:model.live="modelType" id="modelType" 
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    class="form-control">
                     <option value="">All Modules</option>
                     @foreach($modelTypes as $type)
                         <option value="{{ $type }}">{{ $type }}</option>
@@ -51,16 +51,16 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
             <!-- Start Date -->
             <div>
-                <label for="startDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
+                <label for="startDate" class="form-label">Start Date</label>
                 <input type="date" wire:model.live="startDate" id="startDate" 
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    class="form-control">
             </div>
 
             <!-- End Date -->
             <div>
-                <label for="endDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date</label>
+                <label for="endDate" class="form-label">End Date</label>
                 <input type="date" wire:model.live="endDate" id="endDate" 
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    class="form-control">
             </div>
 
             <!-- Clear Filters -->

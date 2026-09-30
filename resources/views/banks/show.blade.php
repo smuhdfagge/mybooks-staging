@@ -182,7 +182,7 @@
                                                     @endif
                                                 </td>
                                                 <td class="px-4 py-3 text-sm text-right font-medium {{ $transaction['type'] === 'deposit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
-                                                    {{ $transaction['type'] === 'deposit' ? '+' : '-' }}₦{{ number_format($transaction['amount'], 2) }}
+                                                    {{ $transaction['type'] === 'deposit' ? '+' : '-' }}@money($transaction['amount'], $bank->currency)
                                                 </td>
                                                 <td class="px-4 py-3 text-sm text-center">
                                                     <a href="{{ $transaction['route'] }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">

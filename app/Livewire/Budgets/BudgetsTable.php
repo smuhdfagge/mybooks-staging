@@ -3,13 +3,14 @@
 namespace App\Livewire\Budgets;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\Budget;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class BudgetsTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -215,7 +216,7 @@ class BudgetsTable extends Component
         // Sorting
         $query->orderBy($this->sortField, $this->sortDirection);
 
-        $budgets = $query->paginate($this->perPage);
+        $budgets = $query->paginate($this->pageSize());
 
         // Get available years for filter
         $availableYears = Budget::distinct()->pluck('fiscal_year')->sort()->reverse()->values();

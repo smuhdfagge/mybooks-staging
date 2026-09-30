@@ -72,7 +72,7 @@ class NotificationService
 
             $customer->notify(new InvoiceSentNotification($invoice, $customMessage));
 
-            Log::info("Invoice {$invoice->invoice_number} sent to {$customer->email}");
+            Log::info("Invoice {$invoice->invoice_number} sent to customer #{$customer->id}");
 
             return true;
         } catch (\Exception $e) {
@@ -98,7 +98,7 @@ class NotificationService
 
             $customer->notify(new PaymentReceivedNotification($payment));
 
-            Log::info("Payment confirmation sent to {$customer->email}");
+            Log::info("Payment confirmation sent to customer #{$customer->id}");
 
             return true;
         } catch (\Exception $e) {
@@ -286,7 +286,7 @@ class NotificationService
 
             $user->notify(new PayrollApprovedNotification($payroll));
 
-            Log::info("Payroll notification sent to {$user->email}");
+            Log::info("Payroll notification sent to user #{$user->id}");
 
             return true;
         } catch (\Exception $e) {
@@ -343,7 +343,7 @@ class NotificationService
     {
         try {
             $user->notify(new WelcomeUserNotification($temporaryPassword));
-            Log::info("Welcome notification sent to {$user->email}");
+            Log::info("Welcome notification sent to user #{$user->id}");
 
             return true;
         } catch (\Exception $e) {

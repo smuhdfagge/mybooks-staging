@@ -21,21 +21,13 @@ class InvoiceController extends Controller
 
     public function create()
     {
-        $customers = Customer::where('is_active', true)->get();
-        // Get items that either are services/don't track inventory OR have available stock
-        $items = Item::where('is_active', true)
-            ->with(['taxRate', 'taxGroup.taxRates', 'inventory'])
-            ->where(function ($query) {
-                $query->where('track_inventory', false)
-                    ->orWhere('type', 'service')
-                    ->orWhereHas('inventory', function ($q) {
-                        $q->whereRaw('quantity - COALESCE(reserved_quantity, 0) > 0');
-                    });
-            })
-            ->get();
+        // Customers and items are searched as you type (P9); only a
+        // customer already chosen is loaded here.
+        $customerId = old('customer_id', request('customer_id'));
+        $customerOptions = $this->customerOptions($customerId ? Customer::whereKey($customerId)->get() : collect());
         $invoiceNumber = Invoice::previewNumber(auth()->user()->tenant_id);
 
-        return view('invoices.create', compact('customers', 'items', 'invoiceNumber'));
+        return view('invoices.create', compact('customerOptions', 'invoiceNumber'));
     }
 
     public function store(StoreInvoiceRequest $request, \App\Actions\Invoices\SaveInvoice $save)
@@ -87,13 +79,11 @@ class InvoiceController extends Controller
 
     public function edit(Invoice $invoice)
     {
-        $customers = Customer::where('is_active', true)->get();
-        $items = Item::where('is_active', true)
-            ->with(['taxRate', 'taxGroup.taxRates'])
-            ->get();
-        $invoice->load('items');
+        // Only the invoice's own customer and items are loaded (P9).
+        $invoice->load(['customer', 'items.item']);
+        $customerOptions = $this->customerOptions(collect([$invoice->customer])->filter());
 
-        return view('invoices.edit', compact('invoice', 'customers', 'items'));
+        return view('invoices.edit', compact('invoice', 'customerOptions'));
     }
 
     public function update(\App\Http\Requests\UpdateInvoiceRequest $request, Invoice $invoice, \App\Actions\Invoices\SaveInvoice $save)
@@ -219,5 +209,18 @@ class InvoiceController extends Controller
         $tenant = $invoice->tenant ?? auth()->user()->tenant;
 
         return view('invoices.waybill', compact('invoice', 'tenant'));
+    }
+
+    /**
+     * Customers as options for the searchable customer box.
+     *
+     * @return array<int, array{id: string, name: string}>
+     */
+    private function customerOptions($customers): array
+    {
+        return $customers->map(fn ($c) => [
+            'id' => (string) $c->id,
+            'name' => $c->name.($c->company_name ? " ({$c->company_name})" : ''),
+        ])->values()->all();
     }
 }

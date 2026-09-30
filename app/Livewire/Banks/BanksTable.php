@@ -3,13 +3,14 @@
 namespace App\Livewire\Banks;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\Bank;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class BanksTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -198,7 +199,7 @@ class BanksTable extends Component
         ];
 
         return view('livewire.banks.banks-table', [
-            'banks' => $query->paginate($this->perPage),
+            'banks' => $query->paginate($this->pageSize()),
             'accountTypes' => Bank::getAccountTypes(),
             'totals' => $totals,
         ]);

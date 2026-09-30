@@ -21,20 +21,12 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-            {{-- Flash Messages --}}
-            @if(session('success'))
-                <div class="mb-4 bg-green-50 dark:bg-green-900/50 border-l-4 border-green-400 p-4 rounded">
-                    <p class="text-sm text-green-700 dark:text-green-300">{{ session('success') }}</p>
-                </div>
-            @endif
-            @if(session('error'))
+            {{-- The message itself is shown by the layout (U9); this adds the figure. --}}
+            @if(session('error') && session('reconciliation_difference'))
                 <div class="mb-4 bg-red-50 dark:bg-red-900/50 border-l-4 border-red-400 p-4 rounded">
-                    <p class="text-sm text-red-700 dark:text-red-300">{{ session('error') }}</p>
-                    @if(session('reconciliation_difference'))
-                        <p class="text-sm text-red-600 dark:text-red-400 mt-1">
-                            Difference: {{ $bank->currency }} {{ number_format(session('reconciliation_difference'), 2) }}
-                        </p>
-                    @endif
+                    <p class="text-sm text-red-700 dark:text-red-300">
+                        Difference: {{ $bank->currency }} {{ number_format(session('reconciliation_difference'), 2) }}
+                    </p>
                 </div>
             @endif
 
@@ -58,7 +50,7 @@
                     <div class="text-sm text-gray-500 dark:text-gray-400">Unreconciled Items</div>
                     <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ $summary['unreconciled_count'] }}</div>
                     @if($summary['last_reconciled_date'])
-                        <div class="text-xs text-gray-400 mt-1">Last: {{ $summary['last_reconciled_date']->format('M d, Y') }}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Last: {{ $summary['last_reconciled_date']->format('M d, Y') }}</div>
                     @endif
                 </div>
             </div>
@@ -70,12 +62,12 @@
                         <div>
                             <label for="from_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">From Date</label>
                             <input type="date" name="from_date" id="from_date" value="{{ $fromDate }}"
-                                   class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                   class="mt-1 block form-control sm:text-sm">
                         </div>
                         <div>
                             <label for="to_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">To Date</label>
                             <input type="date" name="to_date" id="to_date" value="{{ $toDate }}"
-                                   class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                   class="mt-1 block form-control sm:text-sm">
                         </div>
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition ease-in-out duration-150">
                             Filter
@@ -98,14 +90,14 @@
                                     <label for="statement_balance" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Bank Statement Closing Balance</label>
                                     <input type="number" step="0.01" name="statement_balance" id="statement_balance" required
                                            x-model="statementBalance"
-                                           class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                           class="mt-1 block form-control sm:text-sm"
                                            placeholder="Enter closing balance from bank statement">
                                 </div>
                                 <div>
                                     <label for="statement_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Statement Date</label>
                                     <input type="date" name="statement_date" id="statement_date" required
                                            value="{{ now()->format('Y-m-d') }}"
-                                           class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                           class="mt-1 block form-control sm:text-sm">
                                 </div>
                             </div>
 
@@ -113,11 +105,11 @@
                             <div class="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm">
                                 <div class="flex justify-between">
                                     <span class="text-gray-600 dark:text-gray-300">Selected deposits:</span>
-                                    <span class="font-medium text-green-600 dark:text-green-400" x-text="'{{ $bank->currency }} ' + selectedDeposits.toFixed(2)"></span>
+                                    <span class="font-medium text-green-600 dark:text-green-400" x-text="formatMoney(selectedDeposits, '{{ $bank->currency }} ')"></span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-gray-600 dark:text-gray-300">Selected withdrawals:</span>
-                                    <span class="font-medium text-red-600 dark:text-red-400" x-text="'{{ $bank->currency }} ' + selectedWithdrawals.toFixed(2)"></span>
+                                    <span class="font-medium text-red-600 dark:text-red-400" x-text="formatMoney(selectedWithdrawals, '{{ $bank->currency }} ')"></span>
                                 </div>
                                 <div class="flex justify-between border-t border-gray-200 dark:border-gray-600 mt-2 pt-2">
                                     <span class="text-gray-600 dark:text-gray-300">Selected count:</span>

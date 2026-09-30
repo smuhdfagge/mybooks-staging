@@ -110,7 +110,7 @@
                 </div>
                 
                 @error('plan_id')
-                    <p class="text-red-400 text-sm mt-2">{{ $message }}</p>
+                    <p id="plan_id-error" class="text-red-400 text-sm mt-2">{{ $message }}</p>
                 @enderror
 
                 <!-- Billing Cycle -->
@@ -172,7 +172,7 @@
                             @endif
                         </div>
                         @error('billing_cycle')
-                            <p class="text-red-400 text-sm mt-2">{{ $message }}</p>
+                            <p id="billing_cycle-error" class="text-red-400 text-sm mt-2">{{ $message }}</p>
                         @enderror
                     </div>
                 @endif
@@ -200,7 +200,7 @@
                         placeholder="Enter your company name"
                     >
                     @error('company_name')
-                        <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                        <p id="company_name-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -217,7 +217,7 @@
                         placeholder="company@example.com"
                     >
                     @error('company_email')
-                        <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                        <p id="company_email-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -234,7 +234,7 @@
                         placeholder="+234 XXX XXX XXXX"
                     >
                     @error('company_phone')
-                        <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                        <p id="company_phone-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -251,7 +251,7 @@
                         placeholder="Street address"
                     >
                     @error('company_address')
-                        <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                        <p id="company_address-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -267,7 +267,7 @@
                             placeholder="City"
                         >
                         @error('company_city')
-                            <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                            <p id="company_city-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
                         @enderror
                     </div>
 
@@ -282,7 +282,7 @@
                             placeholder="State"
                         >
                         @error('company_state')
-                            <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                            <p id="company_state-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
                         @enderror
                     </div>
                 </div>
@@ -299,7 +299,7 @@
                             placeholder="Country"
                         >
                         @error('company_country')
-                            <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                            <p id="company_country-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
                         @enderror
                     </div>
 
@@ -314,7 +314,7 @@
                             placeholder="Postal code"
                         >
                         @error('company_postal_code')
-                            <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                            <p id="company_postal_code-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
                         @enderror
                     </div>
                 </div>
@@ -340,7 +340,7 @@
                         <option value="ZAR">ZAR - South African Rand</option>
                     </select>
                     @error('currency')
-                        <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                        <p id="currency-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
             </div>
@@ -367,7 +367,7 @@
                         placeholder="Enter your full name"
                     >
                     @error('name')
-                        <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                        <p id="name-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -385,7 +385,7 @@
                     >
                     <p class="text-gray-500 text-sm mt-1">We'll send a verification email to this address</p>
                     @error('email')
-                        <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                        <p id="email-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -400,7 +400,7 @@
                         placeholder="+234 XXX XXX XXXX"
                     >
                     @error('phone')
-                        <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                        <p id="phone-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -417,7 +417,7 @@
                         placeholder="Create a strong password"
                     >
                     @error('password')
-                        <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                        <p id="password-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -434,7 +434,7 @@
                         placeholder="Confirm your password"
                     >
                     @error('password_confirmation')
-                        <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                        <p id="password_confirmation-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 

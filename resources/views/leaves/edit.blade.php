@@ -23,7 +23,7 @@
                     <div class="space-y-6">
                         <!-- Employee (Read-only) -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Employee</label>
+                            <label class="form-label">Employee</label>
                             <div class="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
                                 <div class="h-8 w-8 flex-shrink-0 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
                                     <span class="text-sm font-medium text-gray-600 dark:text-gray-300">
@@ -38,7 +38,7 @@
 
                         <!-- Leave Type (Read-only) -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Leave Type</label>
+                            <label class="form-label">Leave Type</label>
                             <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
                                 <span class="text-sm text-gray-900 dark:text-gray-100">{{ $leave->leaveType->name ?? 'N/A' }}</span>
                             </div>
@@ -47,32 +47,22 @@
                         <!-- Date Range -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date <span class="text-red-500">*</span></label>
-                                <input type="date" name="start_date" id="start_date" value="{{ old('start_date', $leave->start_date->format('Y-m-d')) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('start_date') border-red-500 @enderror">
-                                @error('start_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="start_date" label="Start Date" type="date" :value="old('start_date', $leave->start_date->format('Y-m-d'))" required />
                             </div>
 
                             <div>
-                                <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date <span class="text-red-500">*</span></label>
-                                <input type="date" name="end_date" id="end_date" value="{{ old('end_date', $leave->end_date->format('Y-m-d')) }}" required
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('end_date') border-red-500 @enderror">
-                                @error('end_date')
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <x-field name="end_date" label="End Date" type="date" :value="old('end_date', $leave->end_date->format('Y-m-d'))" required />
                             </div>
                         </div>
 
                         <!-- Reason -->
                         <div>
-                            <label for="reason" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason</label>
+                            <label for="reason" class="form-label">Reason</label>
                             <textarea name="reason" id="reason" rows="4"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('reason') border-red-500 @enderror"
-                                placeholder="Optional: Provide a reason for your leave request">{{ old('reason', $leave->reason) }}</textarea>
+                                class="form-control @error('reason') border-red-500 @enderror"
+                                placeholder="Optional: Provide a reason for your leave request" @error('reason') aria-invalid="true" aria-describedby="reason-error" @enderror>{{ old('reason', $leave->reason) }}</textarea>
                             @error('reason')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="reason-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>

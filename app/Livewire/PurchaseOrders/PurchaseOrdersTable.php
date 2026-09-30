@@ -3,6 +3,7 @@
 namespace App\Livewire\PurchaseOrders;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\PurchaseOrder;
 use App\Models\Vendor;
 use Livewire\Component;
@@ -10,7 +11,7 @@ use Livewire\WithPagination;
 
 class PurchaseOrdersTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -215,7 +216,7 @@ class PurchaseOrdersTable extends Component
                 $query->whereDate('order_date', '<=', $this->dateTo);
             })
             ->orderBy('created_at', 'desc')
-            ->paginate($this->perPage);
+            ->paginate($this->pageSize());
 
         $vendors = Vendor::where('is_active', true)->orderBy('name')->get();
 

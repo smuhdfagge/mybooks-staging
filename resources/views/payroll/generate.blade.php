@@ -15,15 +15,6 @@
 
     <div class="py-6">
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
-            @if($errors->any())
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                    <ul class="list-disc list-inside">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
 
             @if($employeesWithStructures->isEmpty())
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
@@ -55,16 +46,10 @@
                             </h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label for="month" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Month <span class="text-red-500">*</span></label>
-                                    <input type="month" name="month" id="month" required
-                                        value="{{ old('month', $currentMonth) }}"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    <x-field name="month" label="Month" type="month" :value="old('month', $currentMonth)" required />
                                 </div>
                                 <div>
-                                    <label for="tax_rate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tax Rate (%)</label>
-                                    <input type="number" name="tax_rate" id="tax_rate" step="0.01" min="0" max="100"
-                                        value="{{ old('tax_rate', 0) }}" placeholder="Enter tax percentage"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    <x-field name="tax_rate" label="Tax Rate (%)" type="number" :value="old('tax_rate', 0)" step="0.01" min="0" max="100" placeholder="Enter tax percentage" />
                                 </div>
                             </div>
                         </div>

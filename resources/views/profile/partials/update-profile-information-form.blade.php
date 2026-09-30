@@ -47,6 +47,13 @@
             @endif
         </div>
 
+        <div>
+            <x-input-label for="profile_current_password" :value="__('Current password')" />
+            <x-text-input id="profile_current_password" name="current_password" type="password" class="mt-1 block w-full" autocomplete="current-password" />
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ __('Only needed when you change your email address.') }}</p>
+            <x-input-error class="mt-2" :messages="$errors->get('current_password')" />
+        </div>
+
         <div class="flex items-center gap-4">
             <x-primary-button>{{ __('Save') }}</x-primary-button>
 

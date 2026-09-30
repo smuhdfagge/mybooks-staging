@@ -18,9 +18,11 @@ use App\Models\ItemCategory;
 use App\Models\Journal;
 use App\Models\JournalEntry;
 use App\Models\Vendor;
+use App\Support\Csv;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\LazyCollection;
 use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
@@ -65,14 +67,15 @@ class ImportService
             $this->errors = [];
             $this->warnings = [];
 
-            // Read the file
+            // Read the file (streamed row by row for CSV, P3)
             $data = $this->readFile($import);
 
-            if (empty($data)) {
+            if ($data->isEmpty()) {
                 throw new \Exception('No data found in the file');
             }
 
-            $import->update(['total_rows' => count($data)]);
+            $totalRows = $data->count();
+            $import->update(['total_rows' => $totalRows]);
 
             // Process based on type
             $result = match ($import->type) {
@@ -89,6 +92,7 @@ class ImportService
 
             $import->update([
                 'status' => Import::STATUS_COMPLETED,
+                'processed_rows' => $totalRows,
                 'completed_at' => now(),
                 'errors' => ! empty($this->errors) ? $this->errors : null,
                 'warnings' => ! empty($this->warnings) ? $this->warnings : null,
@@ -117,7 +121,7 @@ class ImportService
     /**
      * Read file contents based on format
      */
-    protected function readFile(Import $import): array
+    protected function readFile(Import $import): LazyCollection
     {
         $path = Storage::disk($this->disk)->path($import->file_path);
 
@@ -136,36 +140,40 @@ class ImportService
     /**
      * Read CSV file
      */
-    protected function readCsv(string $path): array
+    protected function readCsv(string $path): LazyCollection
     {
-        $data = [];
-        $headers = [];
-
-        if (($handle = fopen($path, 'r')) !== false) {
-            $rowNum = 0;
-            while (($row = fgetcsv($handle)) !== false) {
-                $rowNum++;
-                if ($rowNum === 1) {
-                    // First row is headers
-                    $headers = array_map(fn ($h) => Str::snake(trim($h)), $row);
-
-                    continue;
-                }
-
-                if (count($row) === count($headers)) {
-                    $data[] = array_combine($headers, $row);
-                }
+        // Streamed, so a large file is never held in memory whole (P3).
+        return LazyCollection::make(function () use ($path) {
+            if (($handle = fopen($path, 'r')) === false) {
+                return;
             }
-            fclose($handle);
-        }
 
-        return $data;
+            try {
+                $headers = null;
+                $index = 0;
+                while (($row = fgetcsv($handle)) !== false) {
+                    if ($headers === null) {
+                        // First row is headers
+                        $headers = array_map(fn ($h) => Str::snake(trim((string) $h)), $row);
+
+                        continue;
+                    }
+
+                    if (count($row) === count($headers)) {
+                        // Our own exports mark formula-like cells; take the mark off (S4).
+                        yield $index++ => array_combine($headers, array_map([Csv::class, 'unescapeCell'], $row));
+                    }
+                }
+            } finally {
+                fclose($handle);
+            }
+        });
     }
 
     /**
      * Read XLSX file
      */
-    protected function readXlsx(string $path): array
+    protected function readXlsx(string $path): LazyCollection
     {
         if (! Import::excelSupported()) {
             throw new \RuntimeException('Excel import is not available: the phpoffice/phpspreadsheet package is not installed.');
@@ -176,7 +184,7 @@ class ImportService
         $rows = $worksheet->toArray();
 
         if (empty($rows)) {
-            return [];
+            return LazyCollection::empty();
         }
 
         $headers = array_map(fn ($h) => Str::snake(trim($h ?? '')), array_shift($rows));
@@ -192,13 +200,13 @@ class ImportService
             }
         }
 
-        return $data;
+        return LazyCollection::make($data);
     }
 
     /**
      * Read JSON file
      */
-    protected function readJson(string $path): array
+    protected function readJson(string $path): LazyCollection
     {
         $content = file_get_contents($path);
         $data = json_decode($content, true);
@@ -209,10 +217,10 @@ class ImportService
 
         // If it's a keyed array (from backup), extract the data
         if (isset($data['data'])) {
-            return $data['data'];
+            $data = $data['data'];
         }
 
-        return $data;
+        return LazyCollection::make(is_array($data) ? array_values($data) : []);
     }
 
     /**
@@ -233,7 +241,7 @@ class ImportService
     /**
      * Import customers
      */
-    protected function importCustomers(Import $import, array $data): bool
+    protected function importCustomers(Import $import, iterable $data): bool
     {
         $mapping = $import->column_mapping ?? [];
         $skipDuplicates = $this->options['skip_duplicates'] ?? true;
@@ -293,7 +301,7 @@ class ImportService
                 $failed++;
             }
 
-            $import->update(['processed_rows' => $index + 1]);
+            $this->reportProgress($import, $index + 1);
         }
 
         $import->update([
@@ -336,7 +344,7 @@ class ImportService
     /**
      * Import vendors
      */
-    protected function importVendors(Import $import, array $data): bool
+    protected function importVendors(Import $import, iterable $data): bool
     {
         $mapping = $import->column_mapping ?? [];
         $skipDuplicates = $this->options['skip_duplicates'] ?? true;
@@ -388,7 +396,7 @@ class ImportService
                 $failed++;
             }
 
-            $import->update(['processed_rows' => $index + 1]);
+            $this->reportProgress($import, $index + 1);
         }
 
         $import->update([
@@ -426,7 +434,7 @@ class ImportService
     /**
      * Import items
      */
-    protected function importItems(Import $import, array $data): bool
+    protected function importItems(Import $import, iterable $data): bool
     {
         $mapping = $import->column_mapping ?? [];
         $skipDuplicates = $this->options['skip_duplicates'] ?? true;
@@ -583,7 +591,7 @@ class ImportService
                 $failed++;
             }
 
-            $import->update(['processed_rows' => $index + 1]);
+            $this->reportProgress($import, $index + 1);
         }
 
         $import->update([
@@ -629,7 +637,7 @@ class ImportService
     /**
      * Import chart of accounts
      */
-    protected function importChartOfAccounts(Import $import, array $data): bool
+    protected function importChartOfAccounts(Import $import, iterable $data): bool
     {
         $mapping = $import->column_mapping ?? [];
         $skipDuplicates = $this->options['skip_duplicates'] ?? true;
@@ -706,7 +714,7 @@ class ImportService
                 $failed++;
             }
 
-            $import->update(['processed_rows' => $index + 1]);
+            $this->reportProgress($import, $index + 1);
         }
 
         // Second pass: update parent relationships
@@ -734,7 +742,7 @@ class ImportService
     /**
      * Import expenses
      */
-    protected function importExpenses(Import $import, array $data): bool
+    protected function importExpenses(Import $import, iterable $data): bool
     {
         $mapping = $import->column_mapping ?? [];
 
@@ -832,7 +840,7 @@ class ImportService
                 $failed++;
             }
 
-            $import->update(['processed_rows' => $index + 1]);
+            $this->reportProgress($import, $index + 1);
         }
 
         $import->update([
@@ -847,7 +855,7 @@ class ImportService
     /**
      * Import employees
      */
-    protected function importEmployees(Import $import, array $data): bool
+    protected function importEmployees(Import $import, iterable $data): bool
     {
         $mapping = $import->column_mapping ?? [];
         $skipDuplicates = $this->options['skip_duplicates'] ?? true;
@@ -949,7 +957,7 @@ class ImportService
                 $failed++;
             }
 
-            $import->update(['processed_rows' => $index + 1]);
+            $this->reportProgress($import, $index + 1);
         }
 
         $import->update([
@@ -988,7 +996,7 @@ class ImportService
     /**
      * Import opening balances
      */
-    protected function importOpeningBalances(Import $import, array $data): bool
+    protected function importOpeningBalances(Import $import, iterable $data): bool
     {
         $mapping = $import->column_mapping ?? [];
 
@@ -1056,7 +1064,7 @@ class ImportService
                 $failed++;
             }
 
-            $import->update(['processed_rows' => $index + 1]);
+            $this->reportProgress($import, $index + 1);
         }
 
         // Opening balances must balance: debits = credits. Previously this was
@@ -1117,7 +1125,7 @@ class ImportService
     /**
      * Import budget line items into an existing budget
      */
-    public function importBudgetLines(Import $import, array $data, ?Budget $budget = null): bool
+    public function importBudgetLines(Import $import, iterable $data, ?Budget $budget = null): bool
     {
         $mapping = $import->column_mapping ?? [];
         $skipDuplicates = $this->options['skip_duplicates'] ?? true;
@@ -1215,7 +1223,7 @@ class ImportService
                 $failed++;
             }
 
-            $import->update(['processed_rows' => $index + 1]);
+            $this->reportProgress($import, $index + 1);
         }
 
         $import->update([
@@ -1262,14 +1270,26 @@ class ImportService
             Import::FORMAT_CSV => $this->readCsv($fullPath),
             Import::FORMAT_XLSX => $this->readXlsx($fullPath),
             Import::FORMAT_JSON => $this->readJson($fullPath),
-            default => [],
+            default => LazyCollection::empty(),
         };
 
+        $first = $data->first();
+
         return [
-            'headers' => ! empty($data) ? array_keys($data[0]) : [],
-            'rows' => array_slice($data, 0, $rows),
-            'total_rows' => count($data),
+            'headers' => is_array($first) ? array_keys($first) : [],
+            'rows' => $data->take($rows)->values()->all(),
+            'total_rows' => $data->count(),
         ];
+    }
+
+    /**
+     * Saves progress every 500 rows rather than after every row (P3).
+     */
+    protected function reportProgress(Import $import, int $processed): void
+    {
+        if ($processed % 500 === 0) {
+            $import->update(['processed_rows' => $processed]);
+        }
     }
 
     /**

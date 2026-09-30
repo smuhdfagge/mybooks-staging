@@ -67,12 +67,38 @@ Schedule::command('transactions:process-recurring')
 |--------------------------------------------------------------------------
 */
 
+// Erase businesses closed by their owner more than 30 days ago (O7)
+Schedule::command('tenants:purge-closed')
+    ->dailyAt('02:30')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->appendOutputTo(storage_path('logs/tenant-purge.log'));
+
 // Run data retention purge on the 1st of every month at 2:00 AM
 Schedule::command('retention:purge --force')
     ->monthlyOn(1, '02:00')
     ->withoutOverlapping()
     ->onOneServer()
     ->appendOutputTo(storage_path('logs/retention-purge.log'));
+
+// Drop API idempotency keys older than 24 hours (I5)
+Schedule::command('model:prune', ['--model' => [\App\Models\IdempotencyKey::class]])
+    ->dailyAt('03:15')
+    ->withoutOverlapping()
+    ->onOneServer();
+
+// Housekeeping (O6): forget failed jobs after 30 days, and check the
+// activity log's tamper-evidence chain every week.
+Schedule::command('queue:prune-failed', ['--hours' => 720])
+    ->dailyAt('03:20')
+    ->onOneServer();
+
+Schedule::command('logs:verify')
+    ->weeklyOn(0, '04:00')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->appendOutputTo(storage_path('logs/log-verify.log'))
+    ->onFailure(fn () => \Illuminate\Support\Facades\Log::error('Activity log integrity check failed; see storage/logs/log-verify.log.'));
 
 /*
 |--------------------------------------------------------------------------

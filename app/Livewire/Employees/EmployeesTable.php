@@ -3,6 +3,7 @@
 namespace App\Livewire\Employees;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\Department;
 use App\Models\Employee;
 use Livewire\Component;
@@ -10,7 +11,7 @@ use Livewire\WithPagination;
 
 class EmployeesTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -203,7 +204,7 @@ class EmployeesTable extends Component
             ->when($this->status, fn ($q) => $q->where('status', $this->status))
             ->when($this->department, fn ($q) => $q->where('department_id', $this->department))
             ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->perPage);
+            ->paginate($this->pageSize());
 
         $departments = Department::where('is_active', true)->get();
 

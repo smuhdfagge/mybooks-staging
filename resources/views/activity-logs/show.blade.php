@@ -170,7 +170,7 @@
                                                     @elseif(is_bool($value))
                                                         {{ $value ? 'Yes' : 'No' }}
                                                     @elseif(is_null($value))
-                                                        <em class="text-gray-400">null</em>
+                                                        <em class="text-gray-500 dark:text-gray-400">null</em>
                                                     @else
                                                         {{ $value }}
                                                     @endif
@@ -202,7 +202,7 @@
                                                     @elseif(is_bool($value))
                                                         {{ $value ? 'Yes' : 'No' }}
                                                     @elseif(is_null($value))
-                                                        <em class="text-gray-400">null</em>
+                                                        <em class="text-gray-500 dark:text-gray-400">null</em>
                                                     @else
                                                         {{ $value }}
                                                     @endif

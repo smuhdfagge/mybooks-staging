@@ -3,13 +3,14 @@
 namespace App\Livewire\TaxGroups;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\TaxGroup;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class TaxGroupsTable extends Component
 {
-    use ChecksPermissions, WithPagination;
+    use ChecksPermissions, LimitsPageSize, WithPagination;
 
     public $search = '';
 
@@ -184,7 +185,7 @@ class TaxGroupsTable extends Component
             $query->where('is_active', true);
         }
 
-        $taxGroups = $query->paginate($this->perPage);
+        $taxGroups = $query->paginate($this->pageSize());
 
         return view('livewire.tax-groups.tax-groups-table', compact('taxGroups'));
     }

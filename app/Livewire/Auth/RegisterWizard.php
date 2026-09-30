@@ -6,6 +6,7 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\SignupThrottle;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -173,6 +174,9 @@ class RegisterWizard extends Component
 
     public function register()
     {
+        // Livewire calls skip route throttles, so limit sign-ups here (S8).
+        SignupThrottle::check((string) request()->ip());
+
         // Validate final step
         $this->validate(
             $this->rulesForStep($this->currentStep),
@@ -223,6 +227,8 @@ class RegisterWizard extends Component
 
             return $user;
         });
+
+        SignupThrottle::recordSignup((string) request()->ip());
 
         // Fire registered event (sends verification email)
         event(new Registered($user));

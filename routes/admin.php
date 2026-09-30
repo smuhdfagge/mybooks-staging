@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminAuthController;
+use App\Http\Controllers\Admin\AdminDataRequestController;
 use App\Http\Controllers\Admin\AdminTenantController;
+use App\Http\Controllers\Admin\AdminTwoFactorController;
 use App\Http\Controllers\Admin\AdminUserController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,11 +21,22 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('admin.guest')->group(function () {
     Route::get('login', [AdminAuthController::class, 'showLoginForm'])->name('login');
     Route::post('login', [AdminAuthController::class, 'login'])->middleware('throttle:5,1');
+
+    // Second step of sign-in (S2)
+    Route::get('two-factor/challenge', [AdminTwoFactorController::class, 'challenge'])->name('two-factor.challenge');
+    Route::post('two-factor/verify', [AdminTwoFactorController::class, 'verify'])->middleware('throttle:5,1')->name('two-factor.verify');
 });
 
-// Admin Authenticated Routes
+// Signed in, second factor not needed yet: logout and first-time 2FA setup
 Route::middleware('admin.auth')->group(function () {
     Route::post('logout', [AdminAuthController::class, 'logout'])->name('logout');
+    Route::get('two-factor/setup', [AdminTwoFactorController::class, 'setup'])->name('two-factor.setup');
+    Route::post('two-factor/confirm', [AdminTwoFactorController::class, 'confirm'])->middleware('throttle:5,1')->name('two-factor.confirm');
+});
+
+// Admin Authenticated Routes: every admin must have finished 2FA (S2)
+Route::middleware(['admin.auth', 'admin.two-factor'])->group(function () {
+    Route::get('two-factor/recovery-codes', [AdminTwoFactorController::class, 'recoveryCodes'])->name('two-factor.recovery-codes');
 
     // Tenant Management — requires manage-tenants ability (super_admin + admin)
     Route::prefix('tenants')->name('tenants.')->middleware('admin.role:manage-tenants')->group(function () {
@@ -34,6 +47,13 @@ Route::middleware('admin.auth')->group(function () {
         Route::patch('/{tenant}/extend', [AdminTenantController::class, 'extendSubscription'])->name('extend-subscription');
         Route::patch('/{tenant}/toggle-status', [AdminTenantController::class, 'toggleStatus'])->name('toggle-status');
         Route::delete('/{tenant}/subscription', [AdminTenantController::class, 'cancelSubscription'])->name('cancel-subscription');
+    });
+
+    // Data protection requests (O7)
+    Route::prefix('data-requests')->name('data-requests.')->middleware('admin.role:manage-tenants')->group(function () {
+        Route::get('/', [AdminDataRequestController::class, 'index'])->name('index');
+        Route::post('/', [AdminDataRequestController::class, 'store'])->name('store');
+        Route::patch('/{dataRequest}/complete', [AdminDataRequestController::class, 'complete'])->name('complete');
     });
 
     // Admin Users Management — requires manage-admin-users ability (super_admin only)
