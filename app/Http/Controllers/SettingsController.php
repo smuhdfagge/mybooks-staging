@@ -9,6 +9,7 @@ use App\Models\Role;
 use App\Models\State;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Notifications\EmailAddressChangedNotification;
 use App\Notifications\TestEmailNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -198,12 +199,20 @@ class SettingsController extends Controller
         // Users cannot change their own roles or deactivate themselves (H4).
         $isSelf = $user->id === auth()->id() && ! auth()->user()->isSuperAdmin();
 
+        $oldEmail = $user->email;
+
         $user->update([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'phone' => $validated['phone'] ?? null,
             'is_active' => $isSelf ? $user->is_active : ($validated['is_active'] ?? true),
         ]);
+
+        if ($user->email !== $oldEmail) {
+            // Tell the old address about the change (S6).
+            Notification::route('mail', $oldEmail)
+                ->notify(new EmailAddressChangedNotification($user->name, $oldEmail, $user->email, changedByAdmin: true));
+        }
 
         if (! empty($validated['password'])) {
             $user->update(['password' => Hash::make($validated['password'])]);

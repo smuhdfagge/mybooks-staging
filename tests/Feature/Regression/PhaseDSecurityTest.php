@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\Export;
 use App\Models\Journal;
 use App\Models\User;
+use App\Notifications\EmailAddressChangedNotification;
 use App\Services\BankFileExporters\CsvBankExporter;
 use App\Services\ExportService;
 use App\Services\ReportExportService;
@@ -17,6 +18,7 @@ use App\Support\Csv;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Storage;
 use PragmaRX\Google2FA\Google2FA;
@@ -479,5 +481,51 @@ class PhaseDSecurityTest extends TestCase
             ->get(route('admin.tenants.index'))
             ->assertRedirect(route('admin.login'));
         $this->assertGuest('admin');
+    }
+
+    // ── S6: changing the email address ──────────────────────────
+
+    public function test_s6_changing_your_email_needs_the_password(): void
+    {
+        Notification::fake();
+        $user = $this->createAuthenticatedUser();
+        $old = $user->email;
+
+        $this->patch(route('profile.update'), ['name' => $user->name, 'email' => 'thief@evil.test'])
+            ->assertSessionHasErrors('current_password');
+        $this->patch(route('profile.update'), ['name' => $user->name, 'email' => 'thief@evil.test', 'current_password' => 'wrong'])
+            ->assertSessionHasErrors('current_password');
+        $this->assertSame($old, $user->fresh()->email);
+        Notification::assertNothingSent();
+
+        // Other profile changes still don't need it.
+        $this->patch(route('profile.update'), ['name' => 'New Name', 'email' => $old])->assertSessionHasNoErrors();
+        $this->assertSame('New Name', $user->fresh()->name);
+    }
+
+    public function test_s6_the_old_address_is_told_when_the_email_changes(): void
+    {
+        Notification::fake();
+        $user = $this->createAuthenticatedUser(['edit users']);
+        $old = $user->email;
+
+        // A business admin changing someone else's email.
+        $staff = $this->createUserForTenant($this->tenant);
+        $staffOld = $staff->email;
+        $this->put(route('settings.users.update', $staff), ['name' => $staff->name, 'email' => 'staff@new.test', 'is_active' => 1])
+            ->assertRedirect(route('settings.users'));
+
+        Notification::assertSentOnDemand(EmailAddressChangedNotification::class, function ($n, $channels, $notifiable) use ($staffOld) {
+            return $notifiable->routes['mail'] === $staffOld && $n->changedByAdmin;
+        });
+
+        // Changing your own.
+        $this->patch(route('profile.update'), ['name' => $user->name, 'email' => 'me@new.test', 'current_password' => 'password'])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('me@new.test', $user->fresh()->email);
+
+        Notification::assertSentOnDemand(EmailAddressChangedNotification::class, function ($n, $channels, $notifiable) use ($old) {
+            return $notifiable->routes['mail'] === $old && $n->newEmail === 'me@new.test' && ! $n->changedByAdmin;
+        });
     }
 }
