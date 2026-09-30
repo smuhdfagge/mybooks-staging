@@ -167,7 +167,7 @@
                                                     @input="calculateTotals()"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                             </td>
-                                            <td class="py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100" x-text="'₦' + lineTotal(index).toFixed(2)"></td>
+                                            <td class="py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(lineTotal(index))"></td>
                                             <td class="py-2 text-center">
                                                 <button type="button" @click="removeItem(index)" x-show="items.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -216,7 +216,7 @@
                             <div class="space-y-3">
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600 dark:text-gray-400">Subtotal</span>
-                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="'₦' + subtotal.toFixed(2)">₦0.00</span>
+                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(subtotal)">@money(0)</span>
                                 </div>
 
                                 <div class="flex items-center justify-between text-sm">
@@ -226,23 +226,23 @@
                                             class="text-xs rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 py-1">
                                             <option value="">None</option>
                                             <option value="percentage">%</option>
-                                            <option value="fixed">₦</option>
+                                            <option value="fixed">@currencySymbol</option>
                                         </select>
                                         <input type="number" name="discount_amount" x-model.number="discountValue" x-show="discountType" min="0" step="0.01"
                                             @input="calculateTotals()"
                                             class="w-20 text-xs rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 py-1">
                                     </div>
-                                    <span class="font-medium text-red-600 dark:text-red-400" x-text="'-₦' + discount.toFixed(2)">-₦0.00</span>
+                                    <span class="font-medium text-red-600 dark:text-red-400" x-text="'-' + formatMoney(discount)">-@money(0)</span>
                                 </div>
 
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600 dark:text-gray-400">Tax</span>
-                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="'₦' + totalTax.toFixed(2)">₦0.00</span>
+                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(totalTax)">@money(0)</span>
                                 </div>
 
                                 <div class="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between">
                                     <span class="text-lg font-bold text-gray-900 dark:text-gray-100">Total</span>
-                                    <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400" x-text="'₦' + total.toFixed(2)">₦0.00</span>
+                                    <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400" x-text="formatMoney(total)">@money(0)</span>
                                 </div>
                             </div>
                         </div>

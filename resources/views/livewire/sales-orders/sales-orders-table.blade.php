@@ -105,7 +105,7 @@
                             {{ $order->expected_date?->format('M d, Y') ?? '-' }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 text-right font-medium">
-                            {{ number_format($order->total, 2) }}
+                            @money($order->total)
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full

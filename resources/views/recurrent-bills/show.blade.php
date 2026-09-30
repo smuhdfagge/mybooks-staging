@@ -55,7 +55,7 @@
                 </div>
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Bill Amount</div>
-                    <div class="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">₦{{ number_format($recurrentBill->total, 2) }}</div>
+                    <div class="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">@money($recurrentBill->total)</div>
                 </div>
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Next Bill Date</div>
@@ -130,24 +130,24 @@
                                                     @endif
                                                 </td>
                                                 <td class="py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{{ number_format($item->quantity, 2) }}</td>
-                                                <td class="py-3 text-sm text-gray-900 dark:text-gray-100 text-right">₦{{ number_format($item->unit_price, 2) }}</td>
+                                                <td class="py-3 text-sm text-gray-900 dark:text-gray-100 text-right">@money($item->unit_price)</td>
                                                 <td class="py-3 text-sm text-gray-500 dark:text-gray-400 text-right">{{ $item->tax_rate }}%</td>
-                                                <td class="py-3 text-sm font-medium text-gray-900 dark:text-gray-100 text-right">₦{{ number_format($item->total, 2) }}</td>
+                                                <td class="py-3 text-sm font-medium text-gray-900 dark:text-gray-100 text-right">@money($item->total)</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
                                     <tfoot class="border-t-2 border-gray-300 dark:border-gray-600">
                                         <tr>
                                             <td colspan="4" class="py-2 text-sm font-medium text-gray-700 dark:text-gray-300 text-right">Subtotal</td>
-                                            <td class="py-2 text-sm text-gray-900 dark:text-gray-100 text-right">₦{{ number_format($recurrentBill->subtotal, 2) }}</td>
+                                            <td class="py-2 text-sm text-gray-900 dark:text-gray-100 text-right">@money($recurrentBill->subtotal)</td>
                                         </tr>
                                         <tr>
                                             <td colspan="4" class="py-2 text-sm font-medium text-gray-700 dark:text-gray-300 text-right">Tax</td>
-                                            <td class="py-2 text-sm text-gray-900 dark:text-gray-100 text-right">₦{{ number_format($recurrentBill->tax_amount, 2) }}</td>
+                                            <td class="py-2 text-sm text-gray-900 dark:text-gray-100 text-right">@money($recurrentBill->tax_amount)</td>
                                         </tr>
                                         <tr>
                                             <td colspan="4" class="py-2 text-lg font-bold text-gray-900 dark:text-gray-100 text-right">Total</td>
-                                            <td class="py-2 text-lg font-bold text-gray-900 dark:text-gray-100 text-right">₦{{ number_format($recurrentBill->total, 2) }}</td>
+                                            <td class="py-2 text-lg font-bold text-gray-900 dark:text-gray-100 text-right">@money($recurrentBill->total)</td>
                                         </tr>
                                     </tfoot>
                                 </table>

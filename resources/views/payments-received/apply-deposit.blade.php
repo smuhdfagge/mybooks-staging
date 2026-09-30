@@ -71,7 +71,7 @@
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('amount') border-red-500 @enderror">
                             </div>
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" x-show="selectedInvoice">
-                                Maximum: <span x-text="'$' + maxAmount.toFixed(2)"></span>
+                                Maximum: <span x-text="formatMoney(maxAmount)"></span>
                             </p>
                             @error('amount')
                                 <p class="mt-1 text-sm text-red-500">{{ $message }}</p>

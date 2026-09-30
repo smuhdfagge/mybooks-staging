@@ -48,7 +48,7 @@
                                             {{ $profile->next_bill_date?->format('M d, Y') ?? '—' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 text-right">
-                                            ₦{{ number_format($profile->total, 2) }}
+                                            @money($profile->total)
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $profile->status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' : 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300' }}">

@@ -105,9 +105,9 @@
                             <td class="hidden md:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $invoice->invoice_date?->format('M d, Y') }}</td>
                             <td class="hidden lg:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $invoice->due_date?->format('M d, Y') }}</td>
                             <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-right">
-                                <div class="font-medium text-gray-900 dark:text-white">{{ number_format($invoice->total, 2) }}</div>
+                                <div class="font-medium text-gray-900 dark:text-white">@money($invoice->total)</div>
                                 @if($invoice->balance_due > 0)
-                                    <div class="text-xs text-red-600 dark:text-red-400">Due: {{ number_format($invoice->balance_due, 2) }}</div>
+                                    <div class="text-xs text-red-600 dark:text-red-400">Due: @money($invoice->balance_due)</div>
                                 @endif
                             </td>
                             <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-center">

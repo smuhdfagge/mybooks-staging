@@ -2,6 +2,9 @@
 
 namespace Tests\Feature\Regression;
 
+use App\Models\Customer;
+use App\Models\Invoice;
+use App\Support\Money;
 use Tests\TestCase;
 
 /**
@@ -210,5 +213,34 @@ class PhaseDUiTest extends TestCase
         }
 
         $this->assertSame([], $offenders);
+    }
+
+    // ── U8: one way to show money ───────────────────────────────
+
+    public function test_u8_money_format_uses_symbol_separators_and_rounding(): void
+    {
+        $this->assertSame('₦1,234,567.89', Money::format(1234567.891, 'NGN'));
+        $this->assertSame('$1.01', Money::format(1.005, 'USD'));
+        $this->assertSame('-€20.00', Money::format(-20, 'EUR'));
+        $this->assertSame('XYZ 5.00', Money::format(5, 'XYZ'));
+    }
+
+    public function test_u8_lists_and_forms_use_the_business_currency(): void
+    {
+        $this->createAuthenticatedUser(['view invoices', 'create bills']);
+        $this->tenant->update(['currency' => 'USD']);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        Invoice::factory()->create([
+            'tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'total' => 1234.5,
+        ]);
+
+        $list = $this->get(route('invoices.index'))->assertOk()->getContent();
+        $this->assertStringContainsString('$1,234.50', $list);
+
+        $form = $this->get(route('bills.create'))->assertOk()->getContent();
+        $this->assertStringContainsString('<meta name="currency-symbol" content="$">', $form);
+        $this->assertStringContainsString('x-text="formatMoney(total)"', $form);
+        $this->assertStringNotContainsString('₦', $form);
+        $this->assertDoesNotMatchRegularExpression('/x-text="[^"]*toFixed\(2\)/', $form);
     }
 }

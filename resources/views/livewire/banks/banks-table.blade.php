@@ -12,7 +12,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Balance</p>
-                        <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">₦{{ number_format($totals['total_balance'], 2) }}</p>
+                        <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">@money($totals['total_balance'])</p>
                     </div>
                 </div>
             </div>

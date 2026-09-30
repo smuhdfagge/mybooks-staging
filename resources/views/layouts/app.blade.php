@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     @include('partials.theme-init')
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="currency-symbol" content="@currencySymbol">
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#4f46e5">

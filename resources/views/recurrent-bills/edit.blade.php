@@ -160,7 +160,7 @@
                                                     @input="calculateTotals()"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                             </td>
-                                            <td class="py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100" x-text="'₦' + lineTotal(index).toFixed(2)"></td>
+                                            <td class="py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(lineTotal(index))"></td>
                                             <td class="py-2 text-center">
                                                 <button type="button" @click="removeItem(index)" x-show="items.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,15 +190,15 @@
                             <div class="w-full md:w-80 space-y-3">
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600 dark:text-gray-400">Subtotal</span>
-                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="'₦' + subtotal.toFixed(2)"></span>
+                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(subtotal)"></span>
                                 </div>
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600 dark:text-gray-400">Tax</span>
-                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="'₦' + totalTax.toFixed(2)"></span>
+                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(totalTax)"></span>
                                 </div>
                                 <div class="flex justify-between text-lg font-bold border-t border-gray-200 dark:border-gray-700 pt-3">
                                     <span class="text-gray-900 dark:text-gray-100">Total</span>
-                                    <span class="text-gray-900 dark:text-gray-100" x-text="'₦' + grandTotal.toFixed(2)"></span>
+                                    <span class="text-gray-900 dark:text-gray-100" x-text="formatMoney(grandTotal)"></span>
                                 </div>
                             </div>
                         </div>

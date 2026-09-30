@@ -105,7 +105,7 @@
                                 class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">No specific invoice</option>
                                 <template x-for="inv in filteredInvoices" :key="inv.id">
-                                    <option :value="inv.id" x-text="inv.invoice_number + ' - $' + parseFloat(inv.balance_due).toFixed(2) + ' due'"></option>
+                                    <option :value="inv.id" x-text="inv.invoice_number + ' - ' + formatMoney(inv.balance_due) + ' due'"></option>
                                 </template>
                             </select>
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" x-show="!selectedCustomer">Select a customer to see their unpaid invoices</p>
@@ -190,7 +190,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                     </svg>
                                     <span class="text-sm font-medium text-green-800 dark:text-green-300">
-                                        Customer has available deposit: <span class="font-bold" x-text="'$' + totalAvailableDeposit.toFixed(2)"></span>
+                                        Customer has available deposit: <span class="font-bold" x-text="formatMoney(totalAvailableDeposit)"></span>
                                     </span>
                                 </div>
                                 <div class="flex items-center">
@@ -207,7 +207,7 @@
                                             class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                             <option value="">Select a deposit to apply</option>
                                             <template x-for="dep in availableDeposits" :key="dep.id">
-                                                <option :value="dep.id" x-text="dep.payment_number + ' - $' + parseFloat(dep.unused_amount).toFixed(2) + ' available'"></option>
+                                                <option :value="dep.id" x-text="dep.payment_number + ' - ' + formatMoney(dep.unused_amount) + ' available'"></option>
                                             </template>
                                         </select>
                                     </div>
@@ -217,7 +217,7 @@
                                             :max="maxDepositAmount" x-model="depositAmountToApply"
                                             class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                         <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" x-show="selectedDepositId">
-                                            Maximum: <span x-text="'$' + maxDepositAmount.toFixed(2)"></span>
+                                            Maximum: <span x-text="formatMoney(maxDepositAmount)"></span>
                                         </p>
                                     </div>
                                 </div>

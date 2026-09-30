@@ -138,7 +138,7 @@
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400">
                                         Deposit
                                         @if($payment->unused_amount > 0)
-                                            <span class="ml-1 text-green-600 dark:text-green-300">({{ number_format($payment->unused_amount, 2) }} avail)</span>
+                                            <span class="ml-1 text-green-600 dark:text-green-300">(@money($payment->unused_amount) avail)</span>
                                         @endif
                                     </span>
                                 @elseif($payment->invoice)
@@ -165,7 +165,7 @@
                                 </span>
                             </td>
                             <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-right">
-                                <div class="font-medium text-green-600 dark:text-green-400">{{ number_format($payment->amount, 2) }}</div>
+                                <div class="font-medium text-green-600 dark:text-green-400">@money($payment->amount)</div>
                             </td>
                             <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex items-center justify-end space-x-1 sm:space-x-2">

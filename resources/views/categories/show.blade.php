@@ -165,10 +165,10 @@
                                             {{ $asset->name }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100">
-                                            ${{ number_format($asset->purchase_cost, 2) }}
+                                            @money($asset->purchase_cost)
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-900 dark:text-gray-100">
-                                            ${{ number_format($asset->book_value, 2) }}
+                                            @money($asset->book_value)
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 

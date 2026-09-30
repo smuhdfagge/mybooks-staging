@@ -105,7 +105,7 @@
                                 class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">No specific bill</option>
                                 <template x-for="b in filteredBills" :key="b.id">
-                                    <option :value="b.id" x-text="b.bill_number + ' - $' + parseFloat(b.balance_due).toFixed(2) + ' due'"></option>
+                                    <option :value="b.id" x-text="b.bill_number + ' - ' + formatMoney(b.balance_due) + ' due'"></option>
                                 </template>
                             </select>
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" x-show="!selectedVendor">Select a vendor to see their unpaid bills</p>

@@ -62,7 +62,7 @@
                             </td>
                             <td class="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $vendor->contact_name ?? '-' }}</td>
                             <td class="hidden md:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $vendor->email ?? '-' }}</td>
-                            <td class="hidden lg:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white">{{ number_format($vendor->outstanding_balance ?? 0, 2) }}</td>
+                            <td class="hidden lg:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white">@money($vendor->outstanding_balance ?? 0)</td>
                             <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-center">
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $vendor->is_active ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' : 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300' }}">
                                     {{ $vendor->is_active ? 'Active' : 'Inactive' }}

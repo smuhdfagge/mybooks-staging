@@ -159,7 +159,7 @@
                             <div>
                                 <label for="credit_limit" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Credit Limit</label>
                                 <div class="relative">
-                                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400">₦</span>
+                                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400">@currencySymbol</span>
                                     <input type="number" name="credit_limit" id="credit_limit" value="{{ old('credit_limit', $customer->credit_limit) }}" min="0" step="0.01"
                                         class="w-full pl-8 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('credit_limit') border-red-500 @enderror">
                                 </div>

@@ -162,7 +162,7 @@
                             @endif
                         </td>
                         <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium text-gray-900 dark:text-gray-100">
-                            ${{ number_format($payment->amount, 2) }}
+                            @money($payment->amount)
                         </td>
                         <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                             {{ ucfirst($payment->payment_method ?? '-') }}

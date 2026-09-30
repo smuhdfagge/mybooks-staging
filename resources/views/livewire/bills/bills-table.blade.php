@@ -131,10 +131,10 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 text-right">
-                                {{ number_format($bill->total, 2) }}
+                                @money($bill->total)
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $bill->balance_due > 0 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-900 dark:text-gray-100' }}">
-                                {{ number_format($bill->balance_due, 2) }}
+                                @money($bill->balance_due)
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex items-center justify-end gap-2">

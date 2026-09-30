@@ -336,7 +336,7 @@
                             displayColors: true,
                             callbacks: {
                                 label: function(context) {
-                                    return context.dataset.label + ': ₦' + context.parsed.y.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                    return context.dataset.label + ': ' + window.formatMoney(context.parsed.y);
                                 }
                             }
                         }
@@ -364,12 +364,13 @@
                                     size: 11
                                 },
                                 callback: function(value) {
+                                    const symbol = @js(\App\Support\Money::symbol());
                                     if (value >= 1000000) {
-                                        return '₦' + (value / 1000000).toFixed(1) + 'M';
+                                        return symbol + (value / 1000000).toFixed(1) + 'M';
                                     } else if (value >= 1000) {
-                                        return '₦' + (value / 1000).toFixed(0) + 'K';
+                                        return symbol + (value / 1000).toFixed(0) + 'K';
                                     }
-                                    return '₦' + value;
+                                    return symbol + value;
                                 }
                             }
                         }

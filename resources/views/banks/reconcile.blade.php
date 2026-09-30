@@ -105,11 +105,11 @@
                             <div class="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm">
                                 <div class="flex justify-between">
                                     <span class="text-gray-600 dark:text-gray-300">Selected deposits:</span>
-                                    <span class="font-medium text-green-600 dark:text-green-400" x-text="'{{ $bank->currency }} ' + selectedDeposits.toFixed(2)"></span>
+                                    <span class="font-medium text-green-600 dark:text-green-400" x-text="formatMoney(selectedDeposits, '{{ $bank->currency }} ')"></span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-gray-600 dark:text-gray-300">Selected withdrawals:</span>
-                                    <span class="font-medium text-red-600 dark:text-red-400" x-text="'{{ $bank->currency }} ' + selectedWithdrawals.toFixed(2)"></span>
+                                    <span class="font-medium text-red-600 dark:text-red-400" x-text="formatMoney(selectedWithdrawals, '{{ $bank->currency }} ')"></span>
                                 </div>
                                 <div class="flex justify-between border-t border-gray-200 dark:border-gray-600 mt-2 pt-2">
                                     <span class="text-gray-600 dark:text-gray-300">Selected count:</span>
