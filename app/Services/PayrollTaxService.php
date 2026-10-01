@@ -4,8 +4,11 @@ namespace App\Services;
 
 use App\Models\Employee;
 use App\Models\EmployeeLoan;
+use App\Models\StatutoryContribution;
 use App\Models\TaxBracket;
 use App\Models\Tenant;
+use App\Services\Payroll\StatutoryLines;
+use App\Services\Payroll\StatutorySettings;
 use Illuminate\Support\Collection;
 
 class PayrollTaxService
@@ -196,8 +199,14 @@ class PayrollTaxService
 
         $deductionDetails = [];
         $totalOtherDeductions = 0;
+        $statutory = $this->statutory($tenantId);
 
         foreach ($structure ? $structure->deductions : [] as $item) {
+            // With statutory settings on, pension and NHF come from the
+            // settings below, not from a structure deduction of the same kind.
+            if ($statutory && StatutoryLines::deduction(['name' => $item->name])) {
+                continue;
+            }
             $calculated = $item->amount_type === 'percentage'
                 ? round($grossSalary * $item->amount / 100, 2)
                 : $item->amount;
@@ -213,6 +222,22 @@ class PayrollTaxService
             // Pre-tax deductions (pension, NHF, health insurance) are reliefs.
             if ($item->is_taxable) {
                 $taxableAmount -= $calculated;
+            }
+        }
+
+        // Statutory employee contributions (pension, NHF): reliefs under the
+        // Nigeria Tax Act 2025, so they come off before tax like any other
+        // pre-tax deduction.
+        $bases = [
+            StatutoryContribution::BASE_BASIC => (float) $basicSalary,
+            StatutoryContribution::BASE_GROSS => (float) $grossSalary,
+            StatutoryContribution::BASE_PENSIONABLE => $this->pensionableBase((float) $basicSalary, $allowanceDetails, $statutory['pensionable_components'] ?? []),
+        ];
+        foreach ($statutory ? [StatutoryLines::PENSION_EMPLOYEE, StatutoryLines::NHF] : [] as $code) {
+            if ($line = $this->statutoryLine($statutory['rates'][$code] ?? null, $bases)) {
+                $deductionDetails[] = $line + ['amount_type' => 'percentage', 'pre_tax' => true];
+                $totalOtherDeductions += $line['amount'];
+                $taxableAmount -= $line['amount'];
             }
         }
 
@@ -243,8 +268,18 @@ class PayrollTaxService
         $totalDeductions = $taxDeduction + $totalOtherDeductions;
         $netSalary = $grossSalary - $totalDeductions;
 
-        // Employer contributions (not deducted from employee)
+        // Employer contributions (not deducted from employee). With statutory
+        // settings on, employer pension, NSITF and ITF come from the settings.
+        if ($statutory) {
+            $employerContributionRules = array_values(array_filter($employerContributionRules, fn ($rule) => StatutoryLines::contribution($rule) === null));
+        }
         $employerResult = $this->calculateEmployerContributions($grossSalary, $employerContributionRules);
+        foreach ($statutory ? [StatutoryLines::PENSION_EMPLOYER, StatutoryLines::NSITF, StatutoryLines::ITF] : [] as $code) {
+            if ($line = $this->statutoryLine($statutory['rates'][$code] ?? null, $bases)) {
+                $employerResult['details'][] = $line + ['type' => 'percentage', 'cap' => null];
+                $employerResult['total'] = round($employerResult['total'] + $line['amount'], 2);
+            }
+        }
 
         return [
             'salary_structure_id' => $structure?->id,
@@ -255,6 +290,9 @@ class PayrollTaxService
             'overtime_hours' => 0,
             'overtime_amount' => 0,
             'gross_salary' => $grossSalary,
+            'taxable_income' => round(max(0, $taxableAmount), 2),
+            'tax_state_id' => $employee->tax_state_id,
+            'pension_fund_administrator_id' => $employee->pension_fund_administrator_id,
             'tax_deduction' => $taxDeduction,
             'other_deductions' => $totalOtherDeductions,
             'deduction_details' => array_merge($deductionDetails, [
@@ -265,6 +303,70 @@ class PayrollTaxService
             'total_deductions' => $totalDeductions,
             'net_salary' => $netSalary,
         ];
+    }
+
+    /** @var array<int, array{rates: Collection<string, StatutoryContribution>, pensionable_components: list<string>}|null> */
+    protected array $statutoryCache = [];
+
+    /**
+     * The business's statutory rates when payroll works them out
+     * (Payroll > Statutory settings), or null when it does not.
+     *
+     * @return array{rates: Collection<string, StatutoryContribution>, pensionable_components: list<string>}|null
+     */
+    public function statutory(int $tenantId): ?array
+    {
+        if (! array_key_exists($tenantId, $this->statutoryCache)) {
+            $settings = StatutorySettings::get($tenantId);
+            $this->statutoryCache[$tenantId] = $settings['auto']
+                ? ['rates' => StatutoryContribution::forTenant($tenantId), 'pensionable_components' => $settings['pensionable_components']]
+                : null;
+        }
+
+        return $this->statutoryCache[$tenantId];
+    }
+
+    /**
+     * Pensionable pay (Pension Reform Act 2014 s.4(1)): basic salary plus the
+     * allowances the business marked pensionable (housing and transport by
+     * default), matched by name.
+     *
+     * @param  array<int, array<string, mixed>>  $allowanceDetails
+     * @param  list<string>  $components
+     */
+    public function pensionableBase(float $basic, array $allowanceDetails, array $components): float
+    {
+        $base = $basic;
+        foreach ($allowanceDetails as $allowance) {
+            $name = strtolower((string) ($allowance['name'] ?? ''));
+            foreach ($components as $component) {
+                if ($component !== '' && str_contains($name, strtolower($component))) {
+                    $base += (float) $allowance['amount'];
+                    break;
+                }
+            }
+        }
+
+        return round($base, 2);
+    }
+
+    /**
+     * One statutory payslip line from a setting, or null when it is off.
+     *
+     * @param  array<string, float>  $bases
+     * @return array{name: string, rate: float, amount: float, base: float, statutory: string}|null
+     */
+    protected function statutoryLine(?StatutoryContribution $setting, array $bases): ?array
+    {
+        if (! $setting || ! $setting->is_enabled || (float) $setting->rate <= 0) {
+            return null;
+        }
+        $base = $bases[$setting->base] ?? $bases[StatutoryContribution::BASE_GROSS];
+        $amount = round($base * (float) $setting->rate / 100, 2);
+
+        return $amount > 0
+            ? ['name' => $setting->name, 'rate' => (float) $setting->rate, 'amount' => $amount, 'base' => $base, 'statutory' => $setting->code]
+            : null;
     }
 
     /**

@@ -92,6 +92,7 @@ class DatabaseSeeder extends Seeder
             'view leave-types', 'create leave-types', 'edit leave-types', 'delete leave-types',
             'view leaves', 'create leaves', 'edit leaves', 'delete leaves', 'approve leaves',
             'view payroll', 'create payroll', 'edit payroll', 'delete payroll', 'approve payroll',
+            'view statutory-remittances', 'record statutory-remittances', 'manage statutory-settings',
 
             // Accountant
             'view chart-of-accounts', 'create chart-of-accounts', 'edit chart-of-accounts', 'delete chart-of-accounts',
@@ -195,6 +196,7 @@ class DatabaseSeeder extends Seeder
             'view leave-types', 'create leave-types', 'edit leave-types',
             'view leaves', 'create leaves', 'edit leaves', 'approve leaves',
             'view payroll', 'create payroll', 'edit payroll', 'approve payroll',
+            'view statutory-remittances', 'record statutory-remittances', 'manage statutory-settings',
             'view reports',
         ]);
 
@@ -210,6 +212,7 @@ class DatabaseSeeder extends Seeder
             'view customers', 'view invoices', 'view sales-orders', 'view sales-receipts', 'view payments-received',
             'view vendors', 'view expenses', 'view bills', 'view purchase-orders', 'view payments-made',
             'view employees', 'view departments', 'view designations', 'view leaves', 'view payroll',
+            'view statutory-remittances',
             'view chart-of-accounts', 'view journals',
             'view banks',
             'view reports',

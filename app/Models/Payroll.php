@@ -37,6 +37,8 @@ class Payroll extends Model
         'tenant_id',
         'payroll_batch_id',
         'employee_id',
+        'tax_state_id',
+        'pension_fund_administrator_id',
         'salary_structure_id',
         'salary_structure_snapshot',
         'payroll_number',
@@ -49,6 +51,7 @@ class Payroll extends Model
         'overtime_hours',
         'overtime_amount',
         'gross_salary',
+        'taxable_income',
         'tax_deduction',
         'other_deductions',
         'deduction_details',
@@ -76,6 +79,7 @@ class Payroll extends Model
         'overtime_hours' => 'decimal:2',
         'overtime_amount' => 'decimal:2',
         'gross_salary' => 'decimal:2',
+        'taxable_income' => 'decimal:2',
         'tax_deduction' => 'decimal:2',
         'other_deductions' => 'decimal:2',
         'deduction_details' => 'array',
@@ -90,6 +94,26 @@ class Payroll extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    /**
+     * PAYE state as at this pay run (statutory remittances).
+     *
+     * @return BelongsTo<State, $this>
+     */
+    public function taxState(): BelongsTo
+    {
+        return $this->belongsTo(State::class, 'tax_state_id');
+    }
+
+    /**
+     * Pension Fund Administrator as at this pay run.
+     *
+     * @return BelongsTo<PensionFundAdministrator, $this>
+     */
+    public function pensionFundAdministrator(): BelongsTo
+    {
+        return $this->belongsTo(PensionFundAdministrator::class);
     }
 
     /** @return BelongsTo<PayrollBatch, $this> */

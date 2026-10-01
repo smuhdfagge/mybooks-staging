@@ -19,7 +19,7 @@ class PayrollLiabilityController extends Controller
 {
     private const KEYS = [
         'tax_payable', 'pension_payable', 'insurance_payable', 'union_dues_payable',
-        'garnishments_payable', 'payroll_liabilities', 'accrued_salaries',
+        'garnishments_payable', 'nhf_payable', 'nsitf_payable', 'itf_payable', 'payroll_liabilities', 'accrued_salaries',
     ];
 
     public function index()

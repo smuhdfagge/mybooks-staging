@@ -54,6 +54,7 @@ use App\Http\Controllers\SalaryStructureController;
 use App\Http\Controllers\SalesOrderController;
 use App\Http\Controllers\SalesReceiptController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\StatutorySettingsController;
 use App\Http\Controllers\StockTransferController;
 use App\Http\Controllers\TaxGroupController;
 use App\Http\Controllers\TaxRateController;
@@ -768,6 +769,13 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::get('payroll/{payroll}/payslip', [PayrollController::class, 'payslip'])->name('payroll.payslip');
         Route::get('payroll-batches/{payrollBatch}/payslips', [PayrollController::class, 'batchPayslips'])->name('payroll-batches.payslips');
         Route::get('payroll-liabilities', [PayrollLiabilityController::class, 'index'])->name('payroll.liabilities');
+    });
+    // Statutory settings: rates, due dates, pensionable pay, PFAs.
+    Route::middleware('permission:manage statutory-settings')->group(function () {
+        Route::get('payroll-statutory/settings', [StatutorySettingsController::class, 'edit'])->name('payroll.statutory.settings');
+        Route::put('payroll-statutory/settings', [StatutorySettingsController::class, 'update'])->name('payroll.statutory.settings.update');
+        Route::post('payroll-statutory/pfas', [StatutorySettingsController::class, 'storePfa'])->name('payroll.statutory.pfas.store');
+        Route::patch('payroll-statutory/pfas/{pfa}', [StatutorySettingsController::class, 'updatePfa'])->name('payroll.statutory.pfas.update');
     });
     Route::post('payroll-liabilities/remit', [PayrollLiabilityController::class, 'remit'])
         ->middleware('permission:edit payroll')

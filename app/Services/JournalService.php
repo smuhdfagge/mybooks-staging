@@ -19,6 +19,7 @@ use App\Models\PaymentMade;
 use App\Models\PaymentReceived;
 use App\Models\Payroll;
 use App\Models\SalesReceipt;
+use App\Services\Payroll\StatutoryLines;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -107,8 +108,14 @@ class JournalService implements JournalServiceInterface
      * Map a deduction name to its specific liability account code.
      * Uses keyword matching since deduction names are tenant-defined.
      */
-    protected function mapDeductionToLiabilityAccount(string $name, int $tenantId): string
+    protected function mapDeductionToLiabilityAccount(string $name, int $tenantId, ?string $statutory = null): string
     {
+        // NHF and pension go to their own accounts, found the same way as the
+        // remittance schedules find them, so the two always agree.
+        if ($code = StatutoryLines::deduction(['name' => $name, 'statutory' => $statutory])) {
+            return $this->acct($tenantId, StatutoryLines::liabilityKey($code));
+        }
+
         $name = strtolower($name);
 
         if (preg_match('/\btax\b|\\bpaye\\b|\\bwithholding\\b/', $name)) {
@@ -133,8 +140,19 @@ class JournalService implements JournalServiceInterface
     /**
      * Map an employer contribution name to its specific expense account code.
      */
-    protected function mapContributionToExpenseAccount(string $name, int $tenantId): string
+    protected function mapContributionToExpenseAccount(string $name, int $tenantId, ?string $statutory = null): string
     {
+        $code = StatutoryLines::contribution(['name' => $name, 'statutory' => $statutory]);
+        if ($code === StatutoryLines::PENSION_EMPLOYER) {
+            return $this->acct($tenantId, 'employer_pension');
+        }
+        if ($code === StatutoryLines::NSITF) {
+            return $this->acct($tenantId, 'workers_comp'); // NSITF runs the Employees' Compensation Scheme
+        }
+        if ($code === StatutoryLines::ITF) {
+            return $this->acct($tenantId, 'payroll_taxes');
+        }
+
         $name = strtolower($name);
 
         if (preg_match('/pension|provident|retirement|401k|superannuation|nssf/', $name)) {
@@ -153,8 +171,12 @@ class JournalService implements JournalServiceInterface
     /**
      * Map an employer contribution name to its specific liability account code.
      */
-    protected function mapContributionToLiabilityAccount(string $name, int $tenantId): string
+    protected function mapContributionToLiabilityAccount(string $name, int $tenantId, ?string $statutory = null): string
     {
+        if ($code = StatutoryLines::contribution(['name' => $name, 'statutory' => $statutory])) {
+            return $this->acct($tenantId, StatutoryLines::liabilityKey($code));
+        }
+
         $name = strtolower($name);
 
         if (preg_match('/pension|provident|retirement|401k|superannuation|nssf/', $name)) {
@@ -1346,7 +1368,7 @@ class JournalService implements JournalServiceInterface
                 foreach ($contributionDetails as $contribution) {
                     $amount = (float) ($contribution['amount'] ?? 0);
                     if ($amount > 0) {
-                        $this->createEntry($journal, $this->mapContributionToExpenseAccount($contribution['name'] ?? '', $t), $amount, 0,
+                        $this->createEntry($journal, $this->mapContributionToExpenseAccount($contribution['name'] ?? '', $t, $contribution['statutory'] ?? null), $amount, 0,
                             "{$contribution['name']} - {$payroll->payroll_number}");
                     }
                 }
@@ -1386,7 +1408,7 @@ class JournalService implements JournalServiceInterface
                             "Interest {$loan->loan_number} - {$payroll->payroll_number}");
                     }
                 } else {
-                    $this->createEntry($journal, $this->mapDeductionToLiabilityAccount($deduction['name'] ?? '', $t), 0, $amount,
+                    $this->createEntry($journal, $this->mapDeductionToLiabilityAccount($deduction['name'] ?? '', $t, $deduction['statutory'] ?? null), 0, $amount,
                         "{$deduction['name']} - {$payroll->payroll_number}");
                 }
                 $mappedTotal += $amount;
@@ -1403,7 +1425,7 @@ class JournalService implements JournalServiceInterface
                 foreach ($contributionDetails as $contribution) {
                     $amount = (float) ($contribution['amount'] ?? 0);
                     if ($amount > 0) {
-                        $this->createEntry($journal, $this->mapContributionToLiabilityAccount($contribution['name'] ?? '', $t), 0, $amount,
+                        $this->createEntry($journal, $this->mapContributionToLiabilityAccount($contribution['name'] ?? '', $t, $contribution['statutory'] ?? null), 0, $amount,
                             "{$contribution['name']} Payable - {$payroll->payroll_number}");
                     }
                 }
