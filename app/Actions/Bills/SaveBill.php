@@ -83,7 +83,7 @@ class SaveBill
 
         return DB::transaction(function () use ($bill, $data) {
             $lines = $data['items'] ?? $bill->items()->get()
-                ->map(fn ($l) => $l->only(['item_id', 'account_id', 'description', 'quantity', 'unit_price', 'discount', 'tax_rate']))->all();
+                ->map(fn ($l) => $l->only(['item_id', 'account_id', 'description', 'quantity', 'unit_price', 'discount', 'tax_rate', 'vat_treatment']))->all();
 
             if ($bill->inventory_updated_at && $this->stockLines($lines) !== $this->stockLines($bill->items()->get()->toArray())) {
                 throw ValidationException::withMessages(['items' => 'The goods on this bill are already in stock, so their items and quantities can\'t change. Prices, descriptions and other lines can.']);
@@ -140,6 +140,7 @@ class SaveBill
                 'discount' => $line['discount'],
                 'tax_rate' => $line['tax_rate'],
                 'tax_amount' => $line['tax_amount'],
+                'vat_treatment' => $line['vat_treatment'] ?? null,
                 // After both discounts, plus VAT: what the journal and stock cost read.
                 'total' => Money::subtract($line['total'], $line['discount_share']),
             ]);

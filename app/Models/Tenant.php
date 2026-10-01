@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Accounting\VatDefaults;
 use App\Services\ChartOfAccountService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -22,6 +23,7 @@ class Tenant extends Model
     {
         static::created(function (Tenant $tenant) {
             ChartOfAccountService::createDefaultAccountsForTenant($tenant);
+            VatDefaults::seedForTenant($tenant->id);
         });
     }
 

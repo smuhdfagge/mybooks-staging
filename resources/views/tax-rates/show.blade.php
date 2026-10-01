@@ -64,6 +64,10 @@
                     </p>
                 </div>
                 <div>
+                    <label class="block text-sm font-medium text-gray-500 dark:text-gray-400">VAT treatment</label>
+                    <p class="mt-1 text-lg text-gray-900 dark:text-gray-100">{{ \App\Services\Accounting\VatTreatment::label($taxRate->vat_treatment) }}</p>
+                </div>
+                <div>
                     <label class="block text-sm font-medium text-gray-500 dark:text-gray-400">Tax Registration Number</label>
                     <p class="mt-1 text-lg text-gray-900 dark:text-gray-100">{{ $taxRate->tax_number ?? '-' }}</p>
                 </div>

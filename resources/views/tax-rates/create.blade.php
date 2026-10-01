@@ -69,6 +69,19 @@
                     </div>
                 </div>
 
+                <!-- VAT treatment (for the VAT return) -->
+                <div class="mt-6">
+                    <x-input-label for="vat_treatment" :value="__('VAT treatment')" />
+                    <select name="vat_treatment" id="vat_treatment" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm" @error('vat_treatment') aria-invalid="true" aria-describedby="vat_treatment-error" @enderror>
+                        <option value="">Not set</option>
+                        @foreach (\App\Services\Accounting\VatTreatment::labels() as $value => $label)
+                            <option value="{{ $value }}" {{ old('vat_treatment') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">A rate above 0% is standard-rated. For a 0% rate choose zero-rated (e.g. basic food, medical, exports), exempt, or outside the scope of VAT. The VAT return uses this.</p>
+                    <x-input-error id="vat_treatment-error" :messages="$errors->get('vat_treatment')" class="mt-2" />
+                </div>
+
                 <!-- Description -->
                 <div class="mt-6">
                     <x-input-label for="description" :value="__('Description')" />

@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\RecordsVatTreatment;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BillItem extends Model
 {
-    use HasFactory;
+    use HasFactory, RecordsVatTreatment;
 
     protected $fillable = [
         'bill_id',
@@ -20,6 +21,7 @@ class BillItem extends Model
         'discount',
         'tax_rate',
         'tax_amount',
+        'vat_treatment',
         'total',
     ];
 
