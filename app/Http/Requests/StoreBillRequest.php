@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Actions\Bills\SaveBill;
+use App\Services\Accounting\VatTreatment;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -30,6 +31,7 @@ class StoreBillRequest extends FormRequest
             'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'items.*.vat_treatment' => ['nullable', 'in:'.implode(',', VatTreatment::ALL)],
             'items.*.discount' => ['nullable', 'numeric', 'min:0'],
             'items.*.account_id' => ['nullable', Rule::exists('chart_of_accounts', 'id')->where('tenant_id', $tenantId)],
             // Shared with the API (Q5).

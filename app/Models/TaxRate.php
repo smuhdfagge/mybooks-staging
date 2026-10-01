@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Accounting\VatTreatment;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -22,6 +23,7 @@ class TaxRate extends Model
         'rate',
         'type',
         'applies_to',
+        'vat_treatment',
         'tax_number',
         'description',
         'is_compound',
@@ -48,6 +50,22 @@ class TaxRate extends Model
     const APPLIES_TO_PURCHASES = 'purchases';
 
     const APPLIES_TO_BOTH = 'both';
+
+    /**
+     * A rate that charges VAT is standard-rated. A 0% rate keeps the
+     * treatment chosen for it (zero-rated, exempt or out of scope), or none
+     * until the business picks one (VatTreatment).
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (TaxRate $rate) {
+            if ((float) $rate->rate > 0) {
+                $rate->vat_treatment = VatTreatment::STANDARD;
+            } elseif ($rate->vat_treatment === VatTreatment::STANDARD) {
+                $rate->vat_treatment = null;
+            }
+        });
+    }
 
     /** @return BelongsTo<Tenant, $this> */
     public function tenant(): BelongsTo

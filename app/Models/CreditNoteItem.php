@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\RecordsVatTreatment;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CreditNoteItem extends Model
 {
-    use HasFactory;
+    use HasFactory, RecordsVatTreatment;
 
     protected $fillable = [
         'credit_note_id',
@@ -18,6 +19,7 @@ class CreditNoteItem extends Model
         'unit_price',
         'tax_rate',
         'tax_amount',
+        'vat_treatment',
         'total',
     ];
 
@@ -33,6 +35,25 @@ class CreditNoteItem extends Model
     public function creditNote(): BelongsTo
     {
         return $this->belongsTo(CreditNote::class);
+    }
+
+    /**
+     * A credit note against an invoice takes the treatment of the matching
+     * invoice line (same item, else same description), so crediting a
+     * zero-rated sale reduces zero-rated supplies.
+     */
+    public function inheritedVatTreatment(): ?string
+    {
+        $invoiceId = CreditNote::withoutGlobalScopes()->whereKey($this->credit_note_id)->value('invoice_id');
+        if (! $invoiceId) {
+            return null;
+        }
+
+        $lines = InvoiceItem::where('invoice_id', $invoiceId)->get(['item_id', 'description', 'vat_treatment']);
+        $match = ($this->item_id ? $lines->firstWhere('item_id', $this->item_id) : null)
+            ?? $lines->firstWhere('description', $this->description);
+
+        return $match?->vat_treatment;
     }
 
     /** @return BelongsTo<Item, $this> */

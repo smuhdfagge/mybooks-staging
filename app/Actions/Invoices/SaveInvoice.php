@@ -86,7 +86,7 @@ class SaveInvoice
         }
 
         return DB::transaction(function () use ($invoice, $data) {
-            $lines = $data['items'] ?? $invoice->items()->get()->map(fn ($l) => $l->only(['item_id', 'description', 'quantity', 'unit_price', 'discount', 'tax_rate']))->all();
+            $lines = $data['items'] ?? $invoice->items()->get()->map(fn ($l) => $l->only(['item_id', 'description', 'quantity', 'unit_price', 'discount', 'tax_rate', 'vat_treatment']))->all();
 
             if (! $invoice->isReleased()) {
                 $this->assertStock($lines, $invoice->tenant_id, $invoice);
@@ -163,6 +163,7 @@ class SaveInvoice
                 'discount' => $line['discount'] ?? 0,
                 'tax_rate' => $line['tax_rate'],
                 'tax_amount' => $line['tax_amount'],
+                'vat_treatment' => $line['vat_treatment'] ?? null,
                 'total' => $line['total'],
             ]);
         }

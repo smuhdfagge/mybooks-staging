@@ -17,6 +17,7 @@ class TaxRateResource extends JsonResource
             'rate' => (float) $this->rate,
             'description' => $this->description,
             'applies_to' => $this->applies_to,
+            'vat_treatment' => $this->vat_treatment,
             'is_compound' => $this->is_compound,
             'is_default' => $this->is_default,
             'is_active' => $this->is_active,
