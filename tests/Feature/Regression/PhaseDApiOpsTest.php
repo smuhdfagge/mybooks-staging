@@ -2,8 +2,31 @@
 
 namespace Tests\Feature\Regression;
 
+use App\Logging\MaskEmailAddresses;
+use App\Models\AccountingPeriod;
+use App\Models\AdminUser;
+use App\Models\ChartOfAccount;
 use App\Models\Customer;
+use App\Models\DataRequest;
+use App\Models\Employee;
+use App\Models\IdempotencyKey;
+use App\Models\Invoice;
+use App\Models\Journal;
+use App\Models\Payroll;
+use App\Models\Role;
+use App\Models\SalaryStructure;
+use App\Models\StatutoryTaxTemplate;
+use App\Models\Tenant;
+use App\Models\User;
+use App\Services\BackupService;
+use App\Services\TenantPurger;
+use Carbon\Carbon;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
+use Symfony\Component\Yaml\Yaml;
 use Tests\TestCase;
 
 /**
@@ -99,12 +122,12 @@ class PhaseDApiOpsTest extends TestCase
     public function test_i6_a_broken_rule_is_a_422_not_a_500_with_internals(): void
     {
         $this->createAuthenticatedUser(['create journals', 'view journals']);
-        \App\Models\AccountingPeriod::create([
+        AccountingPeriod::create([
             'tenant_id' => $this->tenant->id, 'name' => 'Jan 2026', 'start_date' => '2026-01-01',
             'end_date' => '2026-01-31', 'status' => 'closed', 'fiscal_year' => 2026,
         ]);
-        $cash = \App\Models\ChartOfAccount::factory()->create(['tenant_id' => $this->tenant->id]);
-        $sales = \App\Models\ChartOfAccount::factory()->create(['tenant_id' => $this->tenant->id]);
+        $cash = ChartOfAccount::factory()->create(['tenant_id' => $this->tenant->id]);
+        $sales = ChartOfAccount::factory()->create(['tenant_id' => $this->tenant->id]);
 
         $this->post('/api/v1/journals', [
             'journal_date' => '2026-01-15', 'description' => 'Into a closed month',
@@ -120,7 +143,7 @@ class PhaseDApiOpsTest extends TestCase
     public function test_i6_unexpected_errors_hide_the_internal_message(): void
     {
         config(['app.debug' => false]);
-        \Illuminate\Support\Facades\Route::middleware('api')->get('/api/v1/_boom', fn () => throw new \RuntimeException('SQLSTATE secret detail'));
+        Route::middleware('api')->get('/api/v1/_boom', fn () => throw new \RuntimeException('SQLSTATE secret detail'));
 
         $response = $this->get('/api/v1/_boom')->assertStatus(500)
             ->assertExactJson(['success' => false, 'message' => 'Server error. Please try again later.']);
@@ -155,9 +178,9 @@ class PhaseDApiOpsTest extends TestCase
 
     // ── I7: employee bank details are masked ────────────────────
 
-    private function employeeWithBank(): \App\Models\Employee
+    private function employeeWithBank(): Employee
     {
-        return \App\Models\Employee::withoutEvents(fn () => \App\Models\Employee::create([
+        return Employee::withoutEvents(fn () => Employee::create([
             'tenant_id' => $this->tenant->id, 'employee_id' => 'EMP-00001', 'first_name' => 'Aisha', 'last_name' => 'Bello',
             'hire_date' => '2025-01-01', 'status' => 'active', 'salary' => 250000,
             'bank_name' => 'Access Bank', 'bank_account_number' => '0123456789', 'tax_id' => 'TIN-99887766',
@@ -233,23 +256,23 @@ class PhaseDApiOpsTest extends TestCase
     public function test_i5_old_keys_are_pruned_on_schedule(): void
     {
         $this->createAuthenticatedUser();
-        $old = \App\Models\IdempotencyKey::create(['user_id' => $this->user->id, 'key' => 'old', 'route' => 'POST x', 'request_hash' => str_repeat('a', 64), 'status_code' => 201]);
+        $old = IdempotencyKey::create(['user_id' => $this->user->id, 'key' => 'old', 'route' => 'POST x', 'request_hash' => str_repeat('a', 64), 'status_code' => 201]);
         $old->forceFill(['created_at' => now()->subHours(25)])->save();
-        \App\Models\IdempotencyKey::create(['user_id' => $this->user->id, 'key' => 'new', 'route' => 'POST x', 'request_hash' => str_repeat('a', 64), 'status_code' => 201]);
+        IdempotencyKey::create(['user_id' => $this->user->id, 'key' => 'new', 'route' => 'POST x', 'request_hash' => str_repeat('a', 64), 'status_code' => 201]);
 
-        $this->artisan('model:prune', ['--model' => [\App\Models\IdempotencyKey::class]])->assertSuccessful();
+        $this->artisan('model:prune', ['--model' => [IdempotencyKey::class]])->assertSuccessful();
 
-        $this->assertSame(['new'], \App\Models\IdempotencyKey::pluck('key')->all());
+        $this->assertSame(['new'], IdempotencyKey::pluck('key')->all());
 
-        $events = collect(app(\Illuminate\Console\Scheduling\Schedule::class)->events())->map->command;
+        $events = collect(app(Schedule::class)->events())->map->command;
         $this->assertTrue($events->contains(fn ($c) => str_contains((string) $c, 'model:prune') && str_contains((string) $c, 'IdempotencyKey')));
     }
 
     // ── O6: a real health check ─────────────────────────────────
 
-    private function lastBackup(?\Carbon\Carbon $at): void
+    private function lastBackup(?Carbon $at): void
     {
-        $this->mock(\App\Services\BackupService::class, fn ($m) => $m->shouldReceive('lastSuccess')->andReturn($at));
+        $this->mock(BackupService::class, fn ($m) => $m->shouldReceive('lastSuccess')->andReturn($at));
     }
 
     public function test_o6_health_reports_each_part_and_200_when_all_is_well(): void
@@ -294,7 +317,7 @@ class PhaseDApiOpsTest extends TestCase
 
     public function test_o6_housekeeping_jobs_are_scheduled(): void
     {
-        $commands = collect(app(\Illuminate\Console\Scheduling\Schedule::class)->events())->map(fn ($e) => (string) $e->command);
+        $commands = collect(app(Schedule::class)->events())->map(fn ($e) => (string) $e->command);
 
         $this->assertTrue($commands->contains(fn ($c) => str_contains($c, 'queue:prune-failed')));
         $this->assertTrue($commands->contains(fn ($c) => str_contains($c, 'logs:verify')));
@@ -335,9 +358,10 @@ class PhaseDApiOpsTest extends TestCase
 
     public function test_o3_ci_runs_mariadb_php_84_and_composer_audit(): void
     {
-        $ci = \Symfony\Component\Yaml\Yaml::parseFile(base_path('.github/workflows/php.yml'));
+        $ci = Yaml::parseFile(base_path('.github/workflows/php.yml'));
 
-        $this->assertEqualsCanonicalizing(['8.2', '8.4'], $ci['jobs']['tests']['strategy']['matrix']['php']);
+        // PHP 8.3 is the oldest Laravel 13 supports (Phase E).
+        $this->assertEqualsCanonicalizing(['8.3', '8.4'], $ci['jobs']['tests']['strategy']['matrix']['php']);
         $this->assertArrayHasKey('mariadb', $ci['jobs']['mariadb']['services']);
         $this->assertSame('mariadb', $ci['jobs']['mariadb']['env']['DB_CONNECTION']);
 
@@ -347,16 +371,16 @@ class PhaseDApiOpsTest extends TestCase
 
     // ── P-payroll: bulk create deducts tax like a payroll run ───
 
-    private function ngOfficer(): \App\Models\Employee
+    private function ngOfficer(): Employee
     {
         $this->tenant->update(['country' => 'NG']);
-        \App\Models\StatutoryTaxTemplate::where('country_code', 'NGA')->where('tax_year', 2026)->sole()->applyToTenant($this->tenant->id);
+        StatutoryTaxTemplate::where('country_code', 'NGA')->where('tax_year', 2026)->sole()->applyToTenant($this->tenant->id);
 
-        $employee = \App\Models\Employee::withoutGlobalScopes()->create([
+        $employee = Employee::withoutGlobalScopes()->create([
             'tenant_id' => $this->tenant->id, 'employee_id' => 'EMP-00001', 'first_name' => 'Aisha', 'last_name' => 'Musa',
             'hire_date' => '2026-01-01', 'status' => 'active', 'salary' => 500000, 'annual_rent' => 1200000,
         ]);
-        $structure = \App\Models\SalaryStructure::create([
+        $structure = SalaryStructure::create([
             'tenant_id' => $this->tenant->id, 'name' => 'Officer', 'basic_salary' => 500000, 'effective_from' => '2026-01-01', 'is_active' => true,
         ]);
         $structure->items()->create(['type' => 'allowance', 'name' => 'Transport', 'amount_type' => 'fixed', 'amount' => 50000, 'is_taxable' => true, 'sort_order' => 0]);
@@ -374,7 +398,7 @@ class PhaseDApiOpsTest extends TestCase
         $this->post(route('payroll.bulk-store'), [
             'pay_period_start' => '2026-03-01', 'pay_period_end' => '2026-03-31', 'employee_ids' => [$employee->id],
         ])->assertSessionHasNoErrors()->assertRedirect(route('payroll.index'));
-        $bulk = \App\Models\Payroll::where('employee_id', $employee->id)->sole();
+        $bulk = Payroll::where('employee_id', $employee->id)->sole();
 
         $this->assertGreaterThan(0, (float) $bulk->tax_deduction, 'PAYE is deducted');
         $this->assertLessThan((float) $bulk->gross_salary, (float) $bulk->net_salary);
@@ -383,7 +407,7 @@ class PhaseDApiOpsTest extends TestCase
         $bulkFigures = $bulk->only(['basic_salary', 'allowances', 'gross_salary', 'tax_deduction', 'other_deductions', 'total_deductions', 'net_salary']);
         $bulk->forceDelete();
         $this->post(route('payroll.generate'), ['month' => '2026-03', 'employee_ids' => [$employee->id]])->assertSessionHasNoErrors();
-        $run = \App\Models\Payroll::where('employee_id', $employee->id)->sole();
+        $run = Payroll::where('employee_id', $employee->id)->sole();
 
         foreach ($bulkFigures as $field => $value) {
             $this->assertEqualsWithDelta((float) $run->{$field}, (float) $value, 0.001, $field);
@@ -393,16 +417,16 @@ class PhaseDApiOpsTest extends TestCase
 
     // ── O7: Nigeria Data Protection Act ─────────────────────────
 
-    private function adminRole(): \App\Models\Role
+    private function adminRole(): Role
     {
-        return \App\Models\Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => null]);
+        return Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => null]);
     }
 
     /**
      * A business with data in parent tables, child tables without
      * tenant_id, and user-keyed tables.
      *
-     * @return array{0: \App\Models\Tenant, 1: \App\Models\User}
+     * @return array{0: Tenant, 1: User}
      */
     private function businessWithData(): array
     {
@@ -410,14 +434,14 @@ class PhaseDApiOpsTest extends TestCase
         $user = $this->createUserForTenant($tenant, ['view customers']);
         $user->assignRole($this->adminRole());
         $user->createToken('phone');
-        $role = \App\Models\Role::create(['name' => 'clerk-'.$tenant->id, 'guard_name' => 'web', 'tenant_id' => $tenant->id]);
+        $role = Role::create(['name' => 'clerk-'.$tenant->id, 'guard_name' => 'web', 'tenant_id' => $tenant->id]);
         $role->givePermissionTo('view customers');
 
         $customer = Customer::factory()->create(['tenant_id' => $tenant->id]);
-        $invoice = \App\Models\Invoice::withoutEvents(fn () => \App\Models\Invoice::factory()->create(['tenant_id' => $tenant->id, 'customer_id' => $customer->id]));
+        $invoice = Invoice::withoutEvents(fn () => Invoice::factory()->create(['tenant_id' => $tenant->id, 'customer_id' => $customer->id]));
         DB::table('invoice_items')->insert(['invoice_id' => $invoice->id, 'description' => 'Goods', 'quantity' => 1, 'unit_price' => 100, 'total' => 100]);
-        $journal = \App\Models\Journal::withoutEvents(fn () => \App\Models\Journal::factory()->create(['tenant_id' => $tenant->id]));
-        $account = \App\Models\ChartOfAccount::factory()->create(['tenant_id' => $tenant->id]);
+        $journal = Journal::withoutEvents(fn () => Journal::factory()->create(['tenant_id' => $tenant->id]));
+        $account = ChartOfAccount::factory()->create(['tenant_id' => $tenant->id]);
         DB::table('journal_entries')->insert(['journal_id' => $journal->id, 'account_id' => $account->id, 'debit' => 100, 'credit' => 0]);
         DB::table('sessions')->insert(['id' => 'sess-'.$tenant->id, 'user_id' => $user->id, 'payload' => 'x', 'last_activity' => time()]);
 
@@ -428,7 +452,7 @@ class PhaseDApiOpsTest extends TestCase
     private function rowCounts(): array
     {
         $counts = [];
-        foreach (\Illuminate\Support\Facades\Schema::getTableListing(\Illuminate\Support\Facades\Schema::getCurrentSchemaName(), false) as $table) {
+        foreach (Schema::getTableListing(Schema::getCurrentSchemaName(), false) as $table) {
             $counts[$table] = DB::table($table)->count();
         }
 
@@ -439,7 +463,7 @@ class PhaseDApiOpsTest extends TestCase
     {
         [$a, $userA] = $this->businessWithData();
         [$b, $userB] = $this->businessWithData();
-        $purger = app(\App\Services\TenantPurger::class);
+        $purger = app(TenantPurger::class);
         $this->assertSame([], $purger->unclassifiedTables(), 'every table is classified');
 
         // Rows B owns, table by table, before the purge.
@@ -469,7 +493,7 @@ class PhaseDApiOpsTest extends TestCase
 
         // Shared tables (plans, permissions, ...) are not touched at all.
         $after = $this->rowCounts();
-        foreach (\App\Services\TenantPurger::SHARED_TABLES as $table) {
+        foreach (TenantPurger::SHARED_TABLES as $table) {
             if ($table !== 'tenants' && isset($before[$table])) {
                 $this->assertSame($before[$table], $after[$table], "{$table} count");
             }
@@ -498,7 +522,7 @@ class PhaseDApiOpsTest extends TestCase
         $tenant->refresh();
         $this->assertTrue($tenant->isClosing());
         $this->assertEqualsWithDelta(now()->addDays(30)->getTimestamp(), $tenant->closure_purge_at->getTimestamp(), 5);
-        $request = \App\Models\DataRequest::where('tenant_id', $tenant->id)->sole();
+        $request = DataRequest::where('tenant_id', $tenant->id)->sole();
         $this->assertSame(['closure', 'scheduled'], [$request->type, $request->status]);
 
         // Nothing happens before the 30 days are up.
@@ -513,7 +537,7 @@ class PhaseDApiOpsTest extends TestCase
         $this->assertSame(1, DB::table('customers')->where('tenant_id', $other->id)->count());
         $this->assertSame('completed', $request->fresh()->status, 'the log survives the erasure');
 
-        $events = collect(app(\Illuminate\Console\Scheduling\Schedule::class)->events())->map(fn ($e) => (string) $e->command);
+        $events = collect(app(Schedule::class)->events())->map(fn ($e) => (string) $e->command);
         $this->assertTrue($events->contains(fn ($c) => str_contains($c, 'tenants:purge-closed')));
     }
 
@@ -525,7 +549,7 @@ class PhaseDApiOpsTest extends TestCase
 
         $this->delete(route('settings.close-organisation.cancel'))->assertRedirect();
         $this->assertFalse($tenant->fresh()->isClosing());
-        $this->assertSame('cancelled', \App\Models\DataRequest::where('tenant_id', $tenant->id)->sole()->status);
+        $this->assertSame('cancelled', DataRequest::where('tenant_id', $tenant->id)->sole()->status);
 
         $this->travel(31)->days();
         $this->artisan('tenants:purge-closed')->assertSuccessful();
@@ -560,11 +584,11 @@ class PhaseDApiOpsTest extends TestCase
         @unlink($path);
         config(['logging.channels.o7' => [
             'driver' => 'single', 'path' => $path, 'level' => 'debug',
-            'tap' => [\App\Logging\MaskEmailAddresses::class], 'replace_placeholders' => true,
+            'tap' => [MaskEmailAddresses::class], 'replace_placeholders' => true,
         ]]);
-        $this->assertSame([\App\Logging\MaskEmailAddresses::class], config('logging.channels.daily.tap'));
+        $this->assertSame([MaskEmailAddresses::class], config('logging.channels.daily.tap'));
 
-        \Illuminate\Support\Facades\Log::channel('o7')->info('Invoice sent to aisha.bello@example.com', ['to' => 'musa@kano.ng']);
+        Log::channel('o7')->info('Invoice sent to aisha.bello@example.com', ['to' => 'musa@kano.ng']);
         $content = (string) file_get_contents($path);
         @unlink($path);
 
@@ -579,12 +603,12 @@ class PhaseDApiOpsTest extends TestCase
             ->assertSee('Sub-processors')->assertSee('Paystack')->assertSee('Tawk.to')->assertSee('Email delivery provider');
 
         [$tenant, $owner] = $this->businessWithData();
-        \App\Models\DataRequest::record('access', $tenant, $owner);
-        $admin = \App\Models\AdminUser::create(['name' => 'Ops', 'email' => 'ops@example.com', 'password' => 'Secret-123!', 'is_active' => true, 'role' => 'admin']);
+        DataRequest::record('access', $tenant, $owner);
+        $admin = AdminUser::create(['name' => 'Ops', 'email' => 'ops@example.com', 'password' => 'Secret-123!', 'is_active' => true, 'role' => 'admin']);
 
         $this->actingAsPlatformAdmin($admin)->get(route('admin.data-requests.index'))->assertOk()->assertSee($tenant->name);
         $this->post(route('admin.data-requests.store'), ['type' => 'erasure', 'requester' => 'A customer by email'])->assertRedirect();
-        $logged = \App\Models\DataRequest::where('type', 'erasure')->sole();
+        $logged = DataRequest::where('type', 'erasure')->sole();
         $this->patch(route('admin.data-requests.complete', $logged))->assertRedirect();
         $this->assertSame('completed', $logged->fresh()->status);
     }

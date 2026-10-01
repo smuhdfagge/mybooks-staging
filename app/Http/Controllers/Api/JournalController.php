@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\BusinessRuleException;
+use App\Exceptions\UnbalancedJournalException;
 use App\Http\Requests\StoreJournalRequest;
 use App\Http\Requests\UpdateJournalRequest;
 use App\Http\Resources\JournalResource;
@@ -124,7 +126,7 @@ class JournalController extends BaseApiController
 
                 return $journal;
             });
-        } catch (\App\Exceptions\BusinessRuleException|\App\Exceptions\UnbalancedJournalException $e) {
+        } catch (BusinessRuleException|UnbalancedJournalException $e) {
             // A broken rule is the client's to fix (422); anything else goes to the
             // API error handler, which reports it without showing internals (I6).
             return $this->error($e->getMessage(), 422);
@@ -176,7 +178,7 @@ class JournalController extends BaseApiController
 
                     $journal->update($validated);
                 });
-            } catch (\App\Exceptions\BusinessRuleException|\App\Exceptions\UnbalancedJournalException $e) {
+            } catch (BusinessRuleException|UnbalancedJournalException $e) {
                 // A broken rule is the client's to fix (422); anything else goes to the
                 // API error handler, which reports it without showing internals (I6).
                 return $this->error($e->getMessage(), 422);
@@ -230,7 +232,7 @@ class JournalController extends BaseApiController
             // Same posting code as the web app (checks balance, updates
             // account balances, marks posted).
             DB::transaction(fn () => $journal->post());
-        } catch (\App\Exceptions\BusinessRuleException|\App\Exceptions\UnbalancedJournalException $e) {
+        } catch (BusinessRuleException|UnbalancedJournalException $e) {
             // A broken rule is the client's to fix (422); anything else goes to the
             // API error handler, which reports it without showing internals (I6).
             return $this->error($e->getMessage(), 422);
@@ -295,7 +297,7 @@ class JournalController extends BaseApiController
 
                 return $reversingJournal;
             });
-        } catch (\App\Exceptions\BusinessRuleException|\App\Exceptions\UnbalancedJournalException $e) {
+        } catch (BusinessRuleException|UnbalancedJournalException $e) {
             // A broken rule is the client's to fix (422); anything else goes to the
             // API error handler, which reports it without showing internals (I6).
             return $this->error($e->getMessage(), 422);

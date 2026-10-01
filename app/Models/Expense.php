@@ -6,6 +6,8 @@ use App\Events\ExpenseDeleting;
 use App\Events\ExpensePaid;
 use App\Services\JournalService;
 use App\Traits\BelongsToTenant;
+use App\Traits\HasDocumentNumber;
+use App\Traits\KeepsTotalsBalanced;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,8 +18,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Expense extends Model
 {
-    use \App\Traits\HasDocumentNumber;
-    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
+    use BelongsToTenant, HasFactory, KeepsTotalsBalanced, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
+    use HasDocumentNumber;
 
     // Status constants
     const STATUS_DRAFT = 'draft';

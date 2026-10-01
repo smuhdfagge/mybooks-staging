@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\DiscountRule;
+use Illuminate\Database\Eloquent\Collection;
 
 class DiscountService
 {
@@ -72,7 +73,7 @@ class DiscountService
     /**
      * Get all active discount rules for a tenant, optionally filtered.
      */
-    public function getActiveRules(int $tenantId, ?string $scope = null): \Illuminate\Database\Eloquent\Collection
+    public function getActiveRules(int $tenantId, ?string $scope = null): Collection
     {
         $query = DiscountRule::where('tenant_id', $tenantId)->applicable();
 

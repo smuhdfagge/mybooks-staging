@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\SyncController;
 use App\Http\Controllers\Api\TaxRateController;
 use App\Http\Controllers\Api\VendorController;
+use App\Services\HealthCheck;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -43,7 +44,7 @@ Route::prefix('v1')->group(function () {
     // Health Check
     // Checks the database, cache, queue, storage and backups (O6): 200 when
     // everything works, 503 when something is broken.
-    Route::get('health', function (\App\Services\HealthCheck $health) {
+    Route::get('health', function (HealthCheck $health) {
         $result = $health->run();
 
         return response()->json([

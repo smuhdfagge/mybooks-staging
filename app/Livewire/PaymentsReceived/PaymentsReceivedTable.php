@@ -2,6 +2,7 @@
 
 namespace App\Livewire\PaymentsReceived;
 
+use App\Actions\Payments\DeletePaymentReceived;
 use App\Livewire\Concerns\ChecksPermissions;
 use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\Customer;
@@ -153,7 +154,7 @@ class PaymentsReceivedTable extends Component
 
                         // Same rules as the web and API delete (R3): bank balance
                         // back, journal reversed, invoice balances recalculated.
-                        $delete = app(\App\Actions\Payments\DeletePaymentReceived::class);
+                        $delete = app(DeletePaymentReceived::class);
                         if ($delete->blockedBecause($payment)) {
                             $skippedCount++;
 

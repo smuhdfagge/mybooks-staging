@@ -2,9 +2,14 @@
 
 namespace Tests\Feature\Regression;
 
+use App\Models\ChartOfAccount;
 use App\Models\Customer;
+use App\Models\Expense;
 use App\Models\Invoice;
+use App\Models\Vendor;
 use App\Support\Money;
+use Illuminate\Support\MessageBag;
+use Illuminate\Support\ViewErrorBag;
 use Tests\TestCase;
 
 /**
@@ -357,7 +362,7 @@ class PhaseDUiTest extends TestCase
     {
         $this->createAuthenticatedUser($this->permissionsFor('customers.create'));
 
-        $html = $this->withSession(['errors' => (new \Illuminate\Support\ViewErrorBag)->put('default', new \Illuminate\Support\MessageBag([
+        $html = $this->withSession(['errors' => (new ViewErrorBag)->put('default', new MessageBag([
             'name' => ['The customer name field is required.'],
             'country' => ['Pick a country.'],
         ]))])->get(route('customers.create'))->assertOk()->getContent();
@@ -409,9 +414,9 @@ class PhaseDUiTest extends TestCase
         // Its vendor list escaped quotes inside {{ }}, a PHP syntax error,
         // so the page never opened.
         $this->createAuthenticatedUser(['view expenses', 'create expenses', 'edit expenses']);
-        \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Dangote', 'company_name' => 'Dangote Ltd']);
-        $account = \App\Models\ChartOfAccount::withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->where('type', 'expense')->firstOrFail();
-        $expense = \App\Models\Expense::factory()->create(['tenant_id' => $this->tenant->id, 'expense_account_id' => $account->id, 'status' => 'draft']);
+        Vendor::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Dangote', 'company_name' => 'Dangote Ltd']);
+        $account = ChartOfAccount::withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->where('type', 'expense')->firstOrFail();
+        $expense = Expense::factory()->create(['tenant_id' => $this->tenant->id, 'expense_account_id' => $account->id, 'status' => 'draft']);
 
         $this->get(route('expenses.edit', $expense))->assertOk()->assertSee('Dangote (Dangote Ltd)', false);
     }

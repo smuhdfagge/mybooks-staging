@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Actions\Bills\SaveBill;
+use App\Actions\Invoices\SaveInvoice;
 use App\Models\Bill;
 use App\Models\Expense;
 use App\Models\Invoice;
@@ -81,7 +83,7 @@ class ProcessRecurrentTransactions extends Command
                     // The same rules as every other invoice (R3): totals from
                     // the profile's lines with today's VAT rules, stock checked
                     // and reserved, journal posted with the lines in place.
-                    app(\App\Actions\Invoices\SaveInvoice::class)->create($profile->tenant_id, [
+                    app(SaveInvoice::class)->create($profile->tenant_id, [
                         'customer_id' => $profile->customer_id,
                         'recurrent_invoice_id' => $profile->id,
                         'invoice_date' => $profile->next_invoice_date->toDateString(),
@@ -140,7 +142,7 @@ class ProcessRecurrentTransactions extends Command
                 DB::transaction(function () use ($profile) {
                     // The same rules as every other bill (R3): totals from the
                     // profile's lines, journal by line and stock in (A21).
-                    app(\App\Actions\Bills\SaveBill::class)->create($profile->tenant_id, [
+                    app(SaveBill::class)->create($profile->tenant_id, [
                         'vendor_id' => $profile->vendor_id,
                         'recurrent_bill_id' => $profile->id,
                         'bill_date' => $profile->next_bill_date->toDateString(),

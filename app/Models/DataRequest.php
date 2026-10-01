@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * Log of data-protection requests under the Nigeria Data Protection Act
@@ -19,10 +20,10 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $type
  * @property string $status
  * @property string|null $details
- * @property \Illuminate\Support\Carbon|null $due_at
- * @property \Illuminate\Support\Carbon|null $completed_at
+ * @property Carbon|null $due_at
+ * @property Carbon|null $completed_at
  * @property string|null $handled_by
- * @property \Illuminate\Support\Carbon|null $created_at
+ * @property Carbon|null $created_at
  */
 class DataRequest extends Model
 {

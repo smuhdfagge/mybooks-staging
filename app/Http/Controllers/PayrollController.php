@@ -8,13 +8,17 @@ use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Payroll;
 use App\Models\PayrollBatch;
+use App\Models\StatutoryTaxTemplate;
+use App\Models\TaxBracket;
 use App\Services\BankFileExportService;
 use App\Services\PayrollTaxService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class PayrollController extends Controller
 {
@@ -175,7 +179,7 @@ class PayrollController extends Controller
         try {
             // Posts the payroll cost into its pay period (A10).
             $payroll->approve(auth()->id());
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return redirect()->route('payroll.show', $payroll)
                 ->with('error', collect($e->errors())->flatten()->first() ?? 'This payroll cannot be approved.');
         }
@@ -279,7 +283,7 @@ class PayrollController extends Controller
             'employer_contributions.*.cap' => 'nullable|numeric|min:0',
         ]);
 
-        $payPeriodStart = \Carbon\Carbon::createFromFormat('Y-m', $validated['month'])->startOfMonth();
+        $payPeriodStart = Carbon::createFromFormat('Y-m', $validated['month'])->startOfMonth();
         $payPeriodEnd = $payPeriodStart->copy()->endOfMonth();
         $flatTaxRate = $validated['tax_rate'] ?? 0;
         $employerContributionRules = $validated['employer_contributions'] ?? [];
@@ -433,7 +437,7 @@ class PayrollController extends Controller
 
             return redirect()->route('payroll-batches.show', $payrollBatch)
                 ->with('success', 'Payroll batch approved successfully.');
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return redirect()->route('payroll-batches.show', $payrollBatch)
                 ->with('error', collect($e->errors())->flatten()->first() ?? 'Failed to approve batch.');
         } catch (\Exception $e) {
@@ -470,7 +474,7 @@ class PayrollController extends Controller
 
                 return redirect()->route('payroll-batches.show', $payrollBatch)
                     ->with('success', 'Payroll batch marked as paid.');
-            } catch (\Illuminate\Validation\ValidationException $e) {
+            } catch (ValidationException $e) {
                 return redirect()->route('payroll-batches.show', $payrollBatch)
                     ->with('error', collect($e->errors())->flatten()->first() ?? 'Validation failed while marking batch as paid.');
             } catch (\Exception $e) {
@@ -615,12 +619,12 @@ class PayrollController extends Controller
      */
     public function taxTemplates()
     {
-        $templates = \App\Models\StatutoryTaxTemplate::orderBy('country_code')
+        $templates = StatutoryTaxTemplate::orderBy('country_code')
             ->orderByDesc('tax_year')
             ->get()
             ->groupBy('country_code');
 
-        $currentBrackets = \App\Models\TaxBracket::where('is_active', true)
+        $currentBrackets = TaxBracket::where('is_active', true)
             ->orderBy('sort_order')
             ->get();
 
@@ -636,7 +640,7 @@ class PayrollController extends Controller
             'template_id' => 'required|exists:statutory_tax_templates,id',
         ]);
 
-        $template = \App\Models\StatutoryTaxTemplate::findOrFail($validated['template_id']);
+        $template = StatutoryTaxTemplate::findOrFail($validated['template_id']);
         $tenantId = auth()->user()->tenant_id;
 
         $created = $template->applyToTenant($tenantId);

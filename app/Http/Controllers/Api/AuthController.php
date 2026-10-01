@@ -6,6 +6,7 @@ use App\Actions\Auth\SignOutOtherSessions;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\ActivityLogService;
+use App\Services\TwoFactorService;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -60,7 +61,7 @@ class AuthController extends BaseApiController
             }
 
             // Verify 2FA code: per-account limit, and no reusing a code (S7)
-            $twoFactor = app(\App\Services\TwoFactorService::class);
+            $twoFactor = app(TwoFactorService::class);
 
             if ($twoFactor->tooManyAttempts($user)) {
                 return $this->error('Too many two-factor attempts. Please try again later.', 429);

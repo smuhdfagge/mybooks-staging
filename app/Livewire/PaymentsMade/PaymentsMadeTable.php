@@ -2,6 +2,7 @@
 
 namespace App\Livewire\PaymentsMade;
 
+use App\Actions\Payments\DeletePaymentMade;
 use App\Livewire\Concerns\ChecksPermissions;
 use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\PaymentMade;
@@ -141,7 +142,7 @@ class PaymentsMadeTable extends Component
                         }
 
                         // Same as the web and API delete (R3).
-                        app(\App\Actions\Payments\DeletePaymentMade::class)->handle($payment);
+                        app(DeletePaymentMade::class)->handle($payment);
                         $deletedCount++;
                     }
                 });

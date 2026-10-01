@@ -7,6 +7,8 @@ use App\Models\BillItem;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\TaxRate;
+use App\Services\Accounting\VatReturn;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -34,7 +36,7 @@ class TaxReportController extends ReportController
             ->get();
 
         // From the ledger: every posted document, whatever its payment status (A5).
-        $return = app(\App\Services\Accounting\VatReturn::class)->build($tenantId, $startDate, $endDate);
+        $return = app(VatReturn::class)->build($tenantId, $startDate, $endDate);
 
         // The rate filter narrows the by-rate tables only; totals stay complete.
         if ($taxRateId && ($selected = $taxRates->firstWhere('id', (int) $taxRateId))) {
@@ -57,7 +59,7 @@ class TaxReportController extends ReportController
         ]);
 
         try {
-            $journal = app(\App\Services\Accounting\VatReturn::class)
+            $journal = app(VatReturn::class)
                 ->settle(auth()->user()->tenant_id, $validated['start_date'], $validated['end_date']);
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
@@ -238,7 +240,7 @@ class TaxReportController extends ReportController
             case 'month':
             default:
                 try {
-                    return \Carbon\Carbon::createFromFormat('Y-m', $period)->format('F Y');
+                    return Carbon::createFromFormat('Y-m', $period)->format('F Y');
                 } catch (\Exception $e) {
                     return $period;
                 }

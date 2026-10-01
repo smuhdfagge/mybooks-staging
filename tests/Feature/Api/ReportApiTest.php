@@ -11,6 +11,7 @@ use App\Models\Item;
 use App\Models\Journal;
 use App\Models\JournalEntry;
 use App\Models\Payroll;
+use App\Models\Tenant;
 use App\Models\Vendor;
 use Tests\TestCase;
 
@@ -345,7 +346,7 @@ class ReportApiTest extends TestCase
         $this->seedAccountsAndJournals();
 
         // Create second tenant without triggering auto-seeding (avoids unique key conflict)
-        $otherTenant = \App\Models\Tenant::withoutEvents(fn () => \App\Models\Tenant::factory()->create());
+        $otherTenant = Tenant::withoutEvents(fn () => Tenant::factory()->create());
         $otherJournal = Journal::withoutEvents(fn () => Journal::create([
             'tenant_id' => $otherTenant->id,
             'journal_number' => 'JE-OTHER-001',

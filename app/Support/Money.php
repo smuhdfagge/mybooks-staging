@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Models\User;
+
 /**
  * Money arithmetic in one place (finding Q2).
  *
@@ -119,7 +121,7 @@ final class Money
     public static function currency(): string
     {
         $user = auth()->user();
-        $tenant = $user instanceof \App\Models\User ? $user->tenant : null;
+        $tenant = $user instanceof User ? $user->tenant : null;
 
         return $tenant->currency ?? 'NGN';
     }

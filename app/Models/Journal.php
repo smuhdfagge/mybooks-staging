@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Exceptions\BusinessRuleException;
 use App\Traits\BelongsToTenant;
+use App\Traits\HasDocumentNumber;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,8 +16,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Journal extends Model
 {
-    use \App\Traits\HasDocumentNumber;
     use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
+    use HasDocumentNumber;
 
     /** Year-end closing journal: kept out of the profit and loss (A8). */
     public const TYPE_CLOSING = 'closing';
@@ -96,11 +98,11 @@ class Journal extends Model
     public function post()
     {
         if (! $this->entries()->exists()) {
-            throw new \App\Exceptions\BusinessRuleException('Journal has no lines to post.');
+            throw new BusinessRuleException('Journal has no lines to post.');
         }
 
         if (! $this->isBalanced()) {
-            throw new \App\Exceptions\BusinessRuleException('Journal entries must be balanced before posting.');
+            throw new BusinessRuleException('Journal entries must be balanced before posting.');
         }
 
         foreach ($this->entries as $entry) {

@@ -2,10 +2,11 @@
 
 namespace App\Http\Resources;
 
+use App\Models\PaymentReceived;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/** @mixin \App\Models\PaymentReceived */
+/** @mixin PaymentReceived */
 class PaymentReceivedResource extends JsonResource
 {
     public function toArray(Request $request): array

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Reports;
 use App\Models\ChartOfAccount;
 use App\Models\Journal;
 use App\Models\JournalEntry;
+use App\Services\Accounting\FinancialStatements;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -53,7 +54,7 @@ class FinancialReportController extends ReportController
         $asOf = $request->get('as_of', now()->format('Y-m-d'));
 
         // Built from the ledger at the chosen date (A2).
-        return view('reports.balance-sheet', app(\App\Services\Accounting\FinancialStatements::class)->balanceSheet($tenantId, $asOf));
+        return view('reports.balance-sheet', app(FinancialStatements::class)->balanceSheet($tenantId, $asOf));
     }
 
     /**
@@ -67,7 +68,7 @@ class FinancialReportController extends ReportController
         $endDate = $request->get('end_date', now()->format('Y-m-d'));
 
         // Built from cash and bank account movements in the ledger (A7).
-        return view('reports.cash-flow', app(\App\Services\Accounting\FinancialStatements::class)->cashFlow($tenantId, $startDate, $endDate));
+        return view('reports.cash-flow', app(FinancialStatements::class)->cashFlow($tenantId, $startDate, $endDate));
     }
 
     public function trialBalance(Request $request)
@@ -76,7 +77,7 @@ class FinancialReportController extends ReportController
         $asOf = $request->get('as_of', now()->format('Y-m-d'));
 
         // One grouped query instead of every line of every account (P1).
-        $accounts = app(\App\Services\Accounting\FinancialStatements::class)->trialBalance($tenantId, $asOf);
+        $accounts = app(FinancialStatements::class)->trialBalance($tenantId, $asOf);
 
         $totalDebits = $accounts->sum('total_debit');
         $totalCredits = $accounts->sum('total_credit');
@@ -210,7 +211,7 @@ class FinancialReportController extends ReportController
         $asOf = $request->get('as_of', now()->format('Y-m-d'));
         $format = $request->get('format', 'pdf');
 
-        $data = app(\App\Services\Accounting\FinancialStatements::class)->balanceSheet($tenantId, $asOf);
+        $data = app(FinancialStatements::class)->balanceSheet($tenantId, $asOf);
         unset($data['assetDetails'], $data['liabilityDetails'], $data['equityDetails']);
 
         if ($format === 'csv') {
@@ -238,7 +239,7 @@ class FinancialReportController extends ReportController
         $endDate = $request->get('end_date', now()->format('Y-m-d'));
         $format = $request->get('format', 'pdf');
 
-        $data = app(\App\Services\Accounting\FinancialStatements::class)->cashFlow($tenantId, $startDate, $endDate);
+        $data = app(FinancialStatements::class)->cashFlow($tenantId, $startDate, $endDate);
 
         if ($format === 'csv') {
             $exportData = $this->exportService->cashFlowData($data);
@@ -265,7 +266,7 @@ class FinancialReportController extends ReportController
         $format = $request->get('format', 'pdf');
 
         // One grouped query instead of every line of every account (P1).
-        $accounts = app(\App\Services\Accounting\FinancialStatements::class)->trialBalance($tenantId, $asOf);
+        $accounts = app(FinancialStatements::class)->trialBalance($tenantId, $asOf);
 
         $totalDebits = $accounts->sum('total_debit');
         $totalCredits = $accounts->sum('total_credit');

@@ -25,6 +25,7 @@ use App\Models\Vendor;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class SyncController extends BaseApiController
 {
@@ -464,7 +465,7 @@ class SyncController extends BaseApiController
 
         if (! is_array($decoded) || ! is_string($decoded['u'] ?? null) || ! is_int($decoded['i'] ?? null)
             || strtotime($decoded['u']) === false) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['cursor' => 'The cursor is invalid.']);
+            throw ValidationException::withMessages(['cursor' => 'The cursor is invalid.']);
         }
 
         return ['u' => $decoded['u'], 'i' => $decoded['i']];

@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\Bill;
 use App\Models\ChartOfAccount;
 use App\Models\Employee;
 use App\Models\Journal;
 use App\Models\Payroll;
 use App\Models\SalesReceipt;
+use App\Models\Vendor;
 use App\Services\JournalService;
 use Tests\TestCase;
 
@@ -208,7 +210,7 @@ class JournalIntegrationTest extends TestCase
         $owedEntry = $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '2210'))->first();
         $this->assertEquals(4850.00, (float) $owedEntry->credit);
         $payment = Journal::where('reference_type', Payroll::class)->where('reference_id', $payroll->id)
-            ->where('journal_type', \App\Services\JournalService::PAYROLL_PAYMENT)->sole();
+            ->where('journal_type', JournalService::PAYROLL_PAYMENT)->sole();
         $cashEntry = $payment->entries()->whereHas('account', fn ($q) => $q->where('account_code', '1100'))->first();
         $this->assertEquals(4850.00, (float) $cashEntry->credit);
 
@@ -315,9 +317,9 @@ class JournalIntegrationTest extends TestCase
         $this->seedDefaultAccounts($this->tenant->id);
 
         // Create a draft bill — journal should NOT be created
-        $bill = \App\Models\Bill::create([
+        $bill = Bill::create([
             'tenant_id' => $this->tenant->id,
-            'vendor_id' => \App\Models\Vendor::withoutEvents(fn () => \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]))->id,
+            'vendor_id' => Vendor::withoutEvents(fn () => Vendor::factory()->create(['tenant_id' => $this->tenant->id]))->id,
             'bill_number' => 'BIL-000001',
             'bill_date' => now(),
             'due_date' => now()->addDays(30),
@@ -330,7 +332,7 @@ class JournalIntegrationTest extends TestCase
             'balance_due' => 500.00,
         ]);
 
-        $journal = Journal::where('reference_type', \App\Models\Bill::class)
+        $journal = Journal::where('reference_type', Bill::class)
             ->where('reference_id', $bill->id)
             ->first();
 

@@ -12,6 +12,8 @@ use App\Models\JournalEntry;
 use App\Models\PaymentReceived;
 use App\Models\Payroll;
 use App\Models\Vendor;
+use App\Services\Accounting\FinancialStatements;
+use App\Services\Reports\PayrollReportService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -53,7 +55,7 @@ class ReportController extends BaseApiController
         $asOf = $request->get('as_of', now()->format('Y-m-d'));
 
         // Built from the ledger at the chosen date (A2), same as the web report.
-        $bs = app(\App\Services\Accounting\FinancialStatements::class)->balanceSheet($tenantId, $asOf);
+        $bs = app(FinancialStatements::class)->balanceSheet($tenantId, $asOf);
 
         return $this->success([
             'as_of' => $asOf,
@@ -100,7 +102,7 @@ class ReportController extends BaseApiController
         $endDate = $request->get('end_date', now()->format('Y-m-d'));
 
         // Same ledger-based figures as the web report (A7).
-        $cf = app(\App\Services\Accounting\FinancialStatements::class)->cashFlow($tenantId, $startDate, $endDate);
+        $cf = app(FinancialStatements::class)->cashFlow($tenantId, $startDate, $endDate);
 
         return $this->success([
             'period' => [
@@ -451,7 +453,7 @@ class ReportController extends BaseApiController
         $asOf = $request->get('as_of', now()->format('Y-m-d'));
 
         // One grouped query (P1), same figures as the web report.
-        $accounts = app(\App\Services\Accounting\FinancialStatements::class)->trialBalance($tenantId, $asOf)
+        $accounts = app(FinancialStatements::class)->trialBalance($tenantId, $asOf)
             ->map(fn ($account) => [
                 'id' => $account->id,
                 'account_code' => $account->account_code,
@@ -878,9 +880,9 @@ class ReportController extends BaseApiController
         ]);
     }
 
-    private function payrollReports(): \App\Services\Reports\PayrollReportService
+    private function payrollReports(): PayrollReportService
     {
-        return app(\App\Services\Reports\PayrollReportService::class);
+        return app(PayrollReportService::class);
     }
 
     /** @return array{0: string, 1: string} */
@@ -1020,7 +1022,7 @@ class ReportController extends BaseApiController
      */
     protected function calculateProfitLossFromJournals(int $tenantId, string $startDate, string $endDate): array
     {
-        return app(\App\Services\Accounting\FinancialStatements::class)->profitAndLoss($tenantId, $startDate, $endDate);
+        return app(FinancialStatements::class)->profitAndLoss($tenantId, $startDate, $endDate);
     }
 
     /**
@@ -1029,7 +1031,7 @@ class ReportController extends BaseApiController
      */
     protected function calculateNetIncomeForBalanceSheet(int $tenantId, string $asOf): float
     {
-        return app(\App\Services\Accounting\FinancialStatements::class)->balanceSheet($tenantId, $asOf)['netIncome'];
+        return app(FinancialStatements::class)->balanceSheet($tenantId, $asOf)['netIncome'];
     }
 
     /**

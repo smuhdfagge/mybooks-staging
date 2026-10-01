@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Regression;
 
+use App\Http\Middleware\EnsureAdminTwoFactor;
+use App\Livewire\Auth\RegisterWizard;
 use App\Models\ActivityLog;
 use App\Models\AdminUser;
 use App\Models\ChartOfAccount;
@@ -9,6 +11,8 @@ use App\Models\Customer;
 use App\Models\Export;
 use App\Models\Journal;
 use App\Models\Plan;
+use App\Models\Subscription;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\EmailAddressChangedNotification;
 use App\Services\BankFileExporters\CsvBankExporter;
@@ -261,7 +265,7 @@ class PhaseDSecurityTest extends TestCase
         $admin = $this->makeAdmin();
         $this->actingAs($admin, 'admin')->withSession([
             'admin_two_factor_verified' => true,
-            'admin_password_hash' => \App\Http\Middleware\EnsureAdminTwoFactor::passwordFingerprint($admin),
+            'admin_password_hash' => EnsureAdminTwoFactor::passwordFingerprint($admin),
         ]);
 
         return $admin;
@@ -351,7 +355,7 @@ class PhaseDSecurityTest extends TestCase
 
         $logs = ActivityLog::where('admin_user_id', $admin->id)->orderBy('id')->get();
 
-        $suspend = $logs->firstWhere('model_type', \App\Models\Tenant::class);
+        $suspend = $logs->firstWhere('model_type', Tenant::class);
         $this->assertNotNull($suspend);
         $this->assertNull($suspend->tenant_id); // not shown in the business's own log
         $this->assertStringContainsString('root@mybooks.test', $suspend->description);
@@ -359,7 +363,7 @@ class PhaseDSecurityTest extends TestCase
         $this->assertEquals(['is_active' => 0], array_map('intval', $suspend->new_values));
         $this->assertNotEmpty($suspend->integrity_hash);
 
-        $extend = $logs->firstWhere('model_type', \App\Models\Subscription::class);
+        $extend = $logs->firstWhere('model_type', Subscription::class);
         $this->assertNotNull($extend);
         $this->assertStringStartsWith(substr($oldEnd, 0, 10), (string) $extend->old_values['ends_at']);
         $this->assertNotEquals($extend->old_values['ends_at'], $extend->new_values['ends_at']);
@@ -466,11 +470,11 @@ class PhaseDSecurityTest extends TestCase
             'role' => AdminUser::ROLE_ADMIN, 'is_active' => true, 'two_factor_confirmed_at' => now(),
         ]);
         $other->forceFill(['two_factor_confirmed_at' => now()])->save();
-        $otherFingerprint = \App\Http\Middleware\EnsureAdminTwoFactor::passwordFingerprint($other);
+        $otherFingerprint = EnsureAdminTwoFactor::passwordFingerprint($other);
 
         $this->actingAs($admin, 'admin')->withSession([
             'admin_two_factor_verified' => true,
-            'admin_password_hash' => \App\Http\Middleware\EnsureAdminTwoFactor::passwordFingerprint($admin),
+            'admin_password_hash' => EnsureAdminTwoFactor::passwordFingerprint($admin),
         ])->put(route('admin.users.update', $other), [
             'name' => 'Other', 'email' => 'other@mybooks.test', 'role' => AdminUser::ROLE_ADMIN,
             'password' => self::NEW_PASSWORD, 'password_confirmation' => self::NEW_PASSWORD,
@@ -536,7 +540,7 @@ class PhaseDSecurityTest extends TestCase
 
     private function signUpThroughWizard(Plan $plan, int $n)
     {
-        return Livewire::test(\App\Livewire\Auth\RegisterWizard::class)
+        return Livewire::test(RegisterWizard::class)
             ->set('plan_id', $plan->id)
             ->set('company_name', "Bot Co {$n}")
             ->set('company_email', "co{$n}@bots.test")
@@ -561,7 +565,7 @@ class PhaseDSecurityTest extends TestCase
         $this->signUpThroughWizard($plan, 4)->assertHasErrors('email');
 
         $this->assertSame(3, User::where('email', 'like', '%@bots.test')->count());
-        $this->assertFalse(\App\Models\Tenant::where('email', 'co4@bots.test')->exists());
+        $this->assertFalse(Tenant::where('email', 'co4@bots.test')->exists());
         Notification::assertSentTimes(VerifyEmail::class, 3);
     }
 

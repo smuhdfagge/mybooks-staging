@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Invoices\DeleteInvoice;
+use App\Actions\Invoices\SaveInvoice;
 use App\Http\Requests\StoreInvoiceRequest;
+use App\Http\Requests\UpdateInvoiceRequest;
 use App\Models\ActivityLog;
 use App\Models\Customer;
 use App\Models\Inventory;
 use App\Models\InventoryHistory;
 use App\Models\Invoice;
+use App\Models\InvoiceTemplate;
 use App\Models\Item;
 use App\Services\NotificationService;
 use Illuminate\Support\Facades\DB;
@@ -30,7 +34,7 @@ class InvoiceController extends Controller
         return view('invoices.create', compact('customerOptions', 'invoiceNumber'));
     }
 
-    public function store(StoreInvoiceRequest $request, \App\Actions\Invoices\SaveInvoice $save)
+    public function store(StoreInvoiceRequest $request, SaveInvoice $save)
     {
         // Same rules as the API, sales-order conversion and recurring
         // invoices (R3): stock check, totals, lines, reservation, journal.
@@ -54,14 +58,14 @@ class InvoiceController extends Controller
         // Load the active invoice template settings
         $template = $tenant->invoiceTemplate;
         if (! $template) {
-            $template = \App\Models\InvoiceTemplate::where('tenant_id', $tenant->id)
+            $template = InvoiceTemplate::where('tenant_id', $tenant->id)
                 ->where('is_default', true)
                 ->first();
         }
 
         if ($template) {
             $templateSettings = array_merge(
-                \App\Models\InvoiceTemplate::getDefaultSettings(),
+                InvoiceTemplate::getDefaultSettings(),
                 $template->settings ?? []
             );
 
@@ -86,7 +90,7 @@ class InvoiceController extends Controller
         return view('invoices.edit', compact('invoice', 'customerOptions'));
     }
 
-    public function update(\App\Http\Requests\UpdateInvoiceRequest $request, Invoice $invoice, \App\Actions\Invoices\SaveInvoice $save)
+    public function update(UpdateInvoiceRequest $request, Invoice $invoice, SaveInvoice $save)
     {
         if ($invoice->status === 'paid') {
             return redirect()->back()->with('error', 'Cannot edit a paid invoice.');
@@ -97,7 +101,7 @@ class InvoiceController extends Controller
         return redirect()->route('invoices.show', $invoice)->with('success', 'Invoice updated successfully.');
     }
 
-    public function destroy(Invoice $invoice, \App\Actions\Invoices\DeleteInvoice $delete)
+    public function destroy(Invoice $invoice, DeleteInvoice $delete)
     {
         // Same rules as the API and the bulk delete (R3).
         if ($reason = $delete->blockedBecause($invoice)) {

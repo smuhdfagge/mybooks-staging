@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Reports;
 
 use App\Models\Expense;
 use App\Models\Journal;
+use App\Services\Accounting\FinancialStatements;
 use Illuminate\Http\Request;
 
 /**
@@ -82,7 +83,7 @@ class ComparativeReportController extends ReportController
             $asOf = $period['end'];
 
             // Same ledger-based figures as the balance sheet (A2).
-            $bs = app(\App\Services\Accounting\FinancialStatements::class)->balanceSheet($tenantId, $asOf);
+            $bs = app(FinancialStatements::class)->balanceSheet($tenantId, $asOf);
             $equity = $bs['totalEquity'];
 
             $periodData[$key] = [
@@ -118,7 +119,7 @@ class ComparativeReportController extends ReportController
 
         foreach ($periods as $key => $period) {
             // Same ledger-based figures as the cash flow statement (A7).
-            $cf = app(\App\Services\Accounting\FinancialStatements::class)->cashFlow($tenantId, $period['start'], $period['end']);
+            $cf = app(FinancialStatements::class)->cashFlow($tenantId, $period['start'], $period['end']);
 
             $periodData[$key] = [
                 'label' => $period['label'],

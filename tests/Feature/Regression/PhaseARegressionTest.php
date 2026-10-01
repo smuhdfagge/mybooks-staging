@@ -2,17 +2,32 @@
 
 namespace Tests\Feature\Regression;
 
+use App\Models\ChartOfAccount;
 use App\Models\Customer;
 use App\Models\Employee;
 use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Item;
 use App\Models\Payroll;
+use App\Models\Role;
 use App\Models\SalaryStructure;
 use App\Models\StatutoryTaxTemplate;
 use App\Models\TaxBracket;
 use App\Models\Tenant;
+use App\Models\User;
+use App\Services\BackupService;
 use App\Services\PayrollTaxService;
+use App\Services\TwoFactorService;
+use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
+use PragmaRX\Google2FA\Google2FA;
+use Spatie\Permission\PermissionRegistrar;
+use Symfony\Component\Mailer\SentMessage;
 use Tests\TestCase;
 
 /**
@@ -50,7 +65,7 @@ class PhaseARegressionTest extends TestCase
         [$tenant] = $this->createTenantWithSubscription();
         $this->employeeFor($tenant, ['employee_id' => 'EMP-00007']);
 
-        $this->expectException(\Illuminate\Database\QueryException::class);
+        $this->expectException(QueryException::class);
         $this->employeeFor($tenant, ['employee_id' => 'EMP-00007']);
     }
 
@@ -226,12 +241,12 @@ class PhaseARegressionTest extends TestCase
 
     // ── S1: 2FA settings pages ──────────────────────────────────
 
-    private function userWithTwoFactor(): \App\Models\User
+    private function userWithTwoFactor(): User
     {
         $user = $this->createAuthenticatedUser();
         $user->forceFill([
-            'two_factor_secret' => \Illuminate\Support\Facades\Crypt::encryptString('JBSWY3DPEHPK3PXP'),
-            'two_factor_recovery_codes' => \Illuminate\Support\Facades\Crypt::encryptString(json_encode(['aaaa-bbbb'])),
+            'two_factor_secret' => Crypt::encryptString('JBSWY3DPEHPK3PXP'),
+            'two_factor_recovery_codes' => Crypt::encryptString(json_encode(['aaaa-bbbb'])),
             'two_factor_confirmed_at' => now(),
         ])->save();
 
@@ -267,8 +282,8 @@ class PhaseARegressionTest extends TestCase
         $user = $this->userWithTwoFactor();
         $before = $user->fresh()->two_factor_secret;
 
-        $newSecret = app(\App\Services\TwoFactorService::class)->generateSecret();
-        $code = (new \PragmaRX\Google2FA\Google2FA)->getCurrentOtp($newSecret);
+        $newSecret = app(TwoFactorService::class)->generateSecret();
+        $code = (new Google2FA)->getCurrentOtp($newSecret);
 
         $this->withSession([
             'two_factor_verified' => true,
@@ -356,15 +371,15 @@ class PhaseARegressionTest extends TestCase
         $this->postJson(route('api.expenses.approve', $expense))->assertForbidden();
 
         // An admin approving their own expense
-        \App\Models\Role::query()->firstOrCreate(['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => null]);
-        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        Role::query()->firstOrCreate(['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => null]);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
         $clerk->assignRole('admin');
         $this->postJson(route('api.expenses.approve', $expense))->assertForbidden();
 
         $this->assertSame(Expense::STATUS_PENDING_APPROVAL, $expense->fresh()->status);
 
         // Another admin can
-        $manager = \App\Models\User::factory()->create(['tenant_id' => $this->tenant->id]);
+        $manager = User::factory()->create(['tenant_id' => $this->tenant->id]);
         $manager->givePermissionTo(['view expenses', 'edit expenses']);
         $manager->assignRole('admin');
         $this->actingAs($manager)->postJson(route('api.expenses.approve', $expense))->assertOk();
@@ -374,7 +389,7 @@ class PhaseARegressionTest extends TestCase
     public function test_i4_api_cannot_create_an_expense_already_approved_or_paid(): void
     {
         $this->createAuthenticatedUser(['view expenses', 'create expenses']);
-        $account = \App\Models\ChartOfAccount::factory()->create(['tenant_id' => $this->tenant->id, 'type' => 'expense']);
+        $account = ChartOfAccount::factory()->create(['tenant_id' => $this->tenant->id, 'type' => 'expense']);
 
         $this->postJson(route('api.expenses.store'), [
             'expense_account_id' => $account->id,
@@ -402,7 +417,7 @@ class PhaseARegressionTest extends TestCase
     {
         $this->assertTrue(config('mybooks.queue_work_from_scheduler'));
 
-        $commands = collect(app(\Illuminate\Console\Scheduling\Schedule::class)->events())
+        $commands = collect(app(Schedule::class)->events())
             ->map(fn ($e) => $e->command ?? '')
             ->filter(fn ($c) => str_contains($c, 'queue:work'));
 
@@ -413,7 +428,7 @@ class PhaseARegressionTest extends TestCase
 
     private function fakeDump(): void
     {
-        $this->partialMock(\App\Services\BackupService::class, function ($mock) {
+        $this->partialMock(BackupService::class, function ($mock) {
             $mock->shouldReceive('dumpDatabase')->andReturnUsing(function (string $path) {
                 file_put_contents($path, "-- MariaDB dump\nCREATE TABLE invoices (id int);\n");
             });
@@ -422,39 +437,39 @@ class PhaseARegressionTest extends TestCase
 
     public function test_o1_backup_writes_database_and_files_to_every_disk(): void
     {
-        \Illuminate\Support\Facades\Storage::fake('backups');
-        \Illuminate\Support\Facades\Storage::fake('offsite');
+        Storage::fake('backups');
+        Storage::fake('offsite');
         config(['mybooks.backup.disks' => ['backups', 'offsite']]);
         $this->fakeDump();
 
         $upload = storage_path('app/private/o1-test/receipt.txt');
-        \Illuminate\Support\Facades\File::ensureDirectoryExists(dirname($upload));
+        File::ensureDirectoryExists(dirname($upload));
         file_put_contents($upload, 'receipt');
 
         try {
             $this->artisan('mybooks:backup')->assertSuccessful();
         } finally {
-            \Illuminate\Support\Facades\File::deleteDirectory(dirname($upload));
+            File::deleteDirectory(dirname($upload));
         }
 
         foreach (['backups', 'offsite'] as $disk) {
-            $files = \Illuminate\Support\Facades\Storage::disk($disk)->files('mybooks-backups');
+            $files = Storage::disk($disk)->files('mybooks-backups');
             $this->assertCount(1, $files, "one backup on {$disk}");
         }
 
-        $zipPath = \Illuminate\Support\Facades\Storage::disk('offsite')->path($files[0]);
+        $zipPath = Storage::disk('offsite')->path($files[0]);
         $zip = new \ZipArchive;
         $this->assertTrue($zip->open($zipPath) === true);
         $this->assertStringContainsString('CREATE TABLE invoices', $zip->getFromName('database.sql'));
         $this->assertSame('receipt', $zip->getFromName('files/private/o1-test/receipt.txt'));
         $zip->close();
 
-        $this->assertNotNull(app(\App\Services\BackupService::class)->lastSuccess());
+        $this->assertNotNull(app(BackupService::class)->lastSuccess());
     }
 
     public function test_o1_old_backups_are_removed_but_the_newest_is_always_kept(): void
     {
-        $disk = \Illuminate\Support\Facades\Storage::fake('backups');
+        $disk = Storage::fake('backups');
         config(['mybooks.backup.disks' => ['backups'], 'mybooks.backup.keep_days' => 30]);
 
         foreach (['old-1.zip' => 60, 'old-2.zip' => 45, 'recent.zip' => 3] as $name => $daysAgo) {
@@ -462,29 +477,29 @@ class PhaseARegressionTest extends TestCase
             touch($disk->path("mybooks-backups/{$name}"), now()->subDays($daysAgo)->getTimestamp());
         }
 
-        $this->assertSame(2, app(\App\Services\BackupService::class)->cleanup());
+        $this->assertSame(2, app(BackupService::class)->cleanup());
         $this->assertSame(['mybooks-backups/recent.zip'], $disk->files('mybooks-backups'));
 
         // If every backup is old (e.g. backups stopped), the newest stays.
         touch($disk->path('mybooks-backups/recent.zip'), now()->subDays(90)->getTimestamp());
-        $this->assertSame(0, app(\App\Services\BackupService::class)->cleanup());
+        $this->assertSame(0, app(BackupService::class)->cleanup());
     }
 
     public function test_o1_a_failed_backup_fails_the_command(): void
     {
-        \Illuminate\Support\Facades\Storage::fake('backups');
+        Storage::fake('backups');
         config(['mybooks.backup.disks' => ['backups']]);
-        $this->partialMock(\App\Services\BackupService::class, function ($mock) {
+        $this->partialMock(BackupService::class, function ($mock) {
             $mock->shouldReceive('dumpDatabase')->andThrow(new \RuntimeException('mysqldump: Access denied'));
         });
 
         $this->artisan('mybooks:backup')->assertFailed();
-        $this->assertSame([], \Illuminate\Support\Facades\Storage::disk('backups')->allFiles());
+        $this->assertSame([], Storage::disk('backups')->allFiles());
     }
 
     public function test_o1_backup_is_scheduled_daily(): void
     {
-        $events = collect(app(\Illuminate\Console\Scheduling\Schedule::class)->events())
+        $events = collect(app(Schedule::class)->events())
             ->filter(fn ($e) => str_contains($e->command ?? '', 'mybooks:backup'));
 
         $this->assertCount(1, $events);
@@ -493,7 +508,7 @@ class PhaseARegressionTest extends TestCase
 
     // ── O2: error alerts ────────────────────────────────────────
 
-    /** @return \Illuminate\Support\Collection<int, \Symfony\Component\Mailer\SentMessage> */
+    /** @return Collection<int, SentMessage> */
     private function sentMail()
     {
         return app('mail.manager')->mailer('array')->getSymfonyTransport()->messages();
@@ -506,7 +521,7 @@ class PhaseARegressionTest extends TestCase
             'mybooks.error_alerts.enabled' => true,
             'mybooks.error_alerts.email' => 'alerts@example.com',
         ]);
-        \Illuminate\Support\Facades\Cache::flush();
+        Cache::flush();
 
         $boom = fn () => new \RuntimeException('SQLSTATE[HY000]: General error');
         report($boom());
@@ -527,7 +542,7 @@ class PhaseARegressionTest extends TestCase
             'mybooks.error_alerts.email' => 'alerts@example.com',
             'mybooks.error_alerts.max_per_hour' => 3,
         ]);
-        \Illuminate\Support\Facades\Cache::flush();
+        Cache::flush();
 
         // Six distinct errors (different lines).
         report(new \RuntimeException('error 1'));

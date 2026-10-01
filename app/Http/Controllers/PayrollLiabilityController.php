@@ -6,6 +6,7 @@ use App\Models\ChartOfAccount;
 use App\Services\AccountCodeService;
 use App\Services\JournalService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -58,7 +59,7 @@ class PayrollLiabilityController extends Controller
             ->with('success', "Remittance recorded (journal {$journal->journal_number}).");
     }
 
-    /** @return \Illuminate\Support\Collection<int, ChartOfAccount> */
+    /** @return Collection<int, ChartOfAccount> */
     private function accounts(int $tenantId)
     {
         $codes = collect(self::KEYS)->map(fn ($k) => AccountCodeService::resolve($tenantId, $k))->unique()->values();

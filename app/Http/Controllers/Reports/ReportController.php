@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\JournalEntry;
+use App\Services\Accounting\FinancialStatements;
 use App\Services\ReportExportService;
 
 /**
@@ -25,7 +26,7 @@ abstract class ReportController extends Controller
      */
     protected function calculateProfitLossFromJournals(int $tenantId, string $startDate, string $endDate): array
     {
-        return app(\App\Services\Accounting\FinancialStatements::class)->profitAndLoss($tenantId, $startDate, $endDate);
+        return app(FinancialStatements::class)->profitAndLoss($tenantId, $startDate, $endDate);
     }
 
     /**
@@ -34,7 +35,7 @@ abstract class ReportController extends Controller
      */
     protected function calculateNetIncomeForBalanceSheet(int $tenantId, string $asOf): float
     {
-        return app(\App\Services\Accounting\FinancialStatements::class)->balanceSheet($tenantId, $asOf)['netIncome'];
+        return app(FinancialStatements::class)->balanceSheet($tenantId, $asOf)['netIncome'];
     }
 
     /**

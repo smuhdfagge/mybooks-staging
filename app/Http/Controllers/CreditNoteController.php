@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CreditNote;
 use App\Models\CreditNoteItem;
 use App\Models\Invoice;
+use App\Services\JournalService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -182,7 +183,7 @@ class CreditNoteController extends Controller
         DB::transaction(function () use ($creditNote) {
             // An opened credit note has a journal; reverse it (N5)
             if ($creditNote->status !== CreditNote::STATUS_DRAFT) {
-                app(\App\Services\JournalService::class)
+                app(JournalService::class)
                     ->reverseDocumentJournal(CreditNote::class, $creditNote->id, 'Credit note deleted');
             }
             $creditNote->items()->delete();

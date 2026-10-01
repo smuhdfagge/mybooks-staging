@@ -10,7 +10,7 @@
                placeholder="Search customers, invoices, items..."
                aria-label="Global search"
                class="block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 py-2 pl-10 pr-3 text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-               @focus="if(query.length >= 2) open = true"
+               @focus="if(($wire.query || '').length >= 2) open = true"
                @keydown.slash.window.prevent="$el.focus()">
         <div wire:loading wire:target="query" class="absolute inset-y-0 right-0 flex items-center pr-3">
             <svg class="animate-spin h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24">

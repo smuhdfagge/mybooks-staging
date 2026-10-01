@@ -2,10 +2,22 @@
 
 namespace Tests\Feature\Regression;
 
+use App\Livewire\GlobalSearch;
+use App\Livewire\Settings\InvoiceTemplateEditor;
 use App\Livewire\Subscriptions\SubscriptionManager;
+use App\Models\Customer;
+use App\Models\Department;
+use App\Models\InvoiceTemplate;
+use App\Models\Item;
 use App\Models\Plan;
 use App\Models\Role;
+use App\Models\StockTransfer;
+use App\Models\SubscriptionPayment;
 use App\Models\User;
+use App\Models\Vendor;
+use App\Models\Warehouse;
+use Database\Seeders\DatabaseSeeder;
+use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
@@ -43,8 +55,8 @@ class Phase2RegressionTest extends TestCase
 
         // Since Phase 5 the change goes through payment (see Phase5RegressionTest)
         config(['services.paystack.secret_key' => 'sk_test']);
-        \Illuminate\Support\Facades\Http::fake([
-            'api.paystack.co/*' => \Illuminate\Support\Facades\Http::response(['status' => true, 'data' => ['authorization_url' => 'https://checkout.paystack.com/x']]),
+        Http::fake([
+            'api.paystack.co/*' => Http::response(['status' => true, 'data' => ['authorization_url' => 'https://checkout.paystack.com/x']]),
         ]);
 
         Livewire::test(SubscriptionManager::class)
@@ -53,7 +65,7 @@ class Phase2RegressionTest extends TestCase
             ->call('changePlan')
             ->assertRedirect('https://checkout.paystack.com/x');
 
-        $this->assertSame($other->id, \App\Models\SubscriptionPayment::sole()->plan_id);
+        $this->assertSame($other->id, SubscriptionPayment::sole()->plan_id);
     }
 
     public function test_c1_page_hides_plan_buttons_from_non_admins(): void
@@ -74,7 +86,7 @@ class Phase2RegressionTest extends TestCase
 
     public function test_c1_manage_subscription_permission_is_seeded_for_admins_only(): void
     {
-        $this->seed(\Database\Seeders\DatabaseSeeder::class);
+        $this->seed(DatabaseSeeder::class);
 
         $this->assertTrue(Role::findByName('admin', 'web')->hasPermissionTo('manage subscription'));
         $this->assertTrue(Role::findByName('super-admin', 'web')->hasPermissionTo('manage subscription'));
@@ -100,7 +112,7 @@ class Phase2RegressionTest extends TestCase
     /** A second organisation, created while someone is signed in. */
     private function otherTenant()
     {
-        return \App\Models\Customer::withoutTenantGuard(fn () => $this->createTenantWithSubscription()[0]);
+        return Customer::withoutTenantGuard(fn () => $this->createTenantWithSubscription()[0]);
     }
 
     private function makeRoles(): array
@@ -220,10 +232,10 @@ class Phase2RegressionTest extends TestCase
     public function test_l12_global_search_only_shows_sections_the_user_can_view(): void
     {
         $this->createAuthenticatedUser(['view customers']);
-        \App\Models\Customer::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Zebra Customer']);
-        \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Zebra Vendor']);
+        Customer::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Zebra Customer']);
+        Vendor::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Zebra Vendor']);
 
-        Livewire::test(\App\Livewire\GlobalSearch::class)
+        Livewire::test(GlobalSearch::class)
             ->set('query', 'Zebra')
             ->assertSee('Zebra Customer')
             ->assertDontSee('Zebra Vendor');
@@ -233,11 +245,11 @@ class Phase2RegressionTest extends TestCase
     {
         $this->createAuthenticatedUser(['view customers']);
         $other = $this->otherTenant();
-        \App\Models\Customer::withoutTenantGuard(fn () => \App\Models\Customer::factory()->create([
+        Customer::withoutTenantGuard(fn () => Customer::factory()->create([
             'tenant_id' => $other->id, 'name' => 'Zebra Elsewhere', 'email' => 'zebra@elsewhere.test',
         ]));
 
-        Livewire::test(\App\Livewire\GlobalSearch::class)
+        Livewire::test(GlobalSearch::class)
             ->set('query', 'zebra@')
             ->assertDontSee('Zebra Elsewhere');
     }
@@ -248,50 +260,50 @@ class Phase2RegressionTest extends TestCase
     {
         $this->createAuthenticatedUser(['view settings']);
 
-        Livewire::test(\App\Livewire\Settings\InvoiceTemplateEditor::class)
+        Livewire::test(InvoiceTemplateEditor::class)
             ->set('name', 'Mine')
             ->call('save')
             ->assertForbidden();
 
-        $this->assertSame(0, \App\Models\InvoiceTemplate::count());
+        $this->assertSame(0, InvoiceTemplate::count());
     }
 
     public function test_l13_template_colours_and_font_are_validated(): void
     {
         $this->createAuthenticatedUser(['edit settings']);
 
-        Livewire::test(\App\Livewire\Settings\InvoiceTemplateEditor::class)
+        Livewire::test(InvoiceTemplateEditor::class)
             ->set('name', 'Mine')
             ->set('primary_color', 'red;}')
             ->set('font_family', 'x; } body { display:none')
             ->call('save')
             ->assertHasErrors(['primary_color', 'font_family']);
 
-        $this->assertSame(0, \App\Models\InvoiceTemplate::count());
+        $this->assertSame(0, InvoiceTemplate::count());
     }
 
     public function test_l13_valid_template_saves(): void
     {
         $this->createAuthenticatedUser(['edit settings']);
 
-        Livewire::test(\App\Livewire\Settings\InvoiceTemplateEditor::class)
+        Livewire::test(InvoiceTemplateEditor::class)
             ->set('name', 'Mine')
             ->set('primary_color', '#123ABC')
             ->call('save')
             ->assertHasNoErrors();
 
-        $this->assertSame(1, \App\Models\InvoiceTemplate::count());
+        $this->assertSame(1, InvoiceTemplate::count());
     }
 
     // ── L2: validation stays inside the tenant ─────────────────
 
-    private function transferFor(int $tenantId, string $status): \App\Models\StockTransfer
+    private function transferFor(int $tenantId, string $status): StockTransfer
     {
-        return \App\Models\StockTransfer::withoutTenantGuard(function () use ($tenantId, $status) {
-            $from = \App\Models\Warehouse::create(['tenant_id' => $tenantId, 'name' => 'A', 'code' => 'A'.$tenantId]);
-            $to = \App\Models\Warehouse::create(['tenant_id' => $tenantId, 'name' => 'B', 'code' => 'B'.$tenantId]);
-            $item = \App\Models\Item::factory()->create(['tenant_id' => $tenantId, 'track_inventory' => false]);
-            $transfer = \App\Models\StockTransfer::create([
+        return StockTransfer::withoutTenantGuard(function () use ($tenantId, $status) {
+            $from = Warehouse::create(['tenant_id' => $tenantId, 'name' => 'A', 'code' => 'A'.$tenantId]);
+            $to = Warehouse::create(['tenant_id' => $tenantId, 'name' => 'B', 'code' => 'B'.$tenantId]);
+            $item = Item::factory()->create(['tenant_id' => $tenantId, 'track_inventory' => false]);
+            $transfer = StockTransfer::create([
                 'tenant_id' => $tenantId, 'transfer_number' => 'ST-'.$tenantId,
                 'from_warehouse_id' => $from->id, 'to_warehouse_id' => $to->id, 'status' => $status,
             ]);
@@ -305,8 +317,8 @@ class Phase2RegressionTest extends TestCase
     {
         config(['mybooks.features.stock_transfers' => true]);   // hidden by default since Phase 6 (N4)
         $this->createAuthenticatedUser(['adjust inventory']);
-        $mine = $this->transferFor($this->tenant->id, \App\Models\StockTransfer::STATUS_IN_TRANSIT);
-        $theirs = $this->transferFor($this->otherTenant()->id, \App\Models\StockTransfer::STATUS_IN_TRANSIT);
+        $mine = $this->transferFor($this->tenant->id, StockTransfer::STATUS_IN_TRANSIT);
+        $theirs = $this->transferFor($this->otherTenant()->id, StockTransfer::STATUS_IN_TRANSIT);
         $theirLine = $theirs->items()->first();
 
         $this->post(route('stock-transfers.receive', $mine), [
@@ -321,8 +333,8 @@ class Phase2RegressionTest extends TestCase
         [$tenant] = $this->createTenantWithSubscription();
         $user = User::factory()->create(['tenant_id' => $tenant->id]);
         $user->givePermissionTo(Permission::findOrCreate('create employees', 'web'));
-        $other = \App\Models\Customer::withoutTenantGuard(fn () => $this->createTenantWithSubscription()[0]);
-        $foreignDept = \App\Models\Department::withoutTenantGuard(fn () => \App\Models\Department::create([
+        $other = Customer::withoutTenantGuard(fn () => $this->createTenantWithSubscription()[0]);
+        $foreignDept = Department::withoutTenantGuard(fn () => Department::create([
             'tenant_id' => $other->id, 'name' => 'Theirs', 'code' => 'THR',
         ]));
 

@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Bills\DeleteBill;
+use App\Actions\Bills\SaveBill;
+use App\Http\Requests\StoreBillRequest;
+use App\Http\Requests\UpdateBillRequest;
 use App\Http\Resources\BillResource;
 use App\Models\Bill;
 use Illuminate\Http\JsonResponse;
@@ -78,7 +82,7 @@ class BillController extends BaseApiController
     /**
      * Create a new bill
      */
-    public function store(\App\Http\Requests\StoreBillRequest $request, \App\Actions\Bills\SaveBill $save): JsonResponse
+    public function store(StoreBillRequest $request, SaveBill $save): JsonResponse
     {
         // Same rules and code as the web form (R3, Q5), in a transaction (R6).
         $bill = $save->create($this->getTenantId(), $request->validated(), auth()->id());
@@ -90,7 +94,7 @@ class BillController extends BaseApiController
     /**
      * Update a bill
      */
-    public function update(\App\Http\Requests\UpdateBillRequest $request, Bill $bill, \App\Actions\Bills\SaveBill $save): JsonResponse
+    public function update(UpdateBillRequest $request, Bill $bill, SaveBill $save): JsonResponse
     {
         $bill = $save->update($bill, $request->validated());
         $bill->load(['vendor', 'items.item']);
@@ -101,7 +105,7 @@ class BillController extends BaseApiController
     /**
      * Delete a bill
      */
-    public function destroy(Bill $bill, \App\Actions\Bills\DeleteBill $delete): JsonResponse
+    public function destroy(Bill $bill, DeleteBill $delete): JsonResponse
     {
         if ($reason = $delete->blockedBecause($bill)) {
             return $this->error($reason, 422);

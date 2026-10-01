@@ -15,7 +15,10 @@ use App\Models\Expense;
 use App\Models\Export;
 use App\Models\Import;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
+use App\Models\Item;
 use App\Models\Vendor;
+use App\Services\BudgetService;
 use App\Services\ExportService;
 use App\Services\ImportService;
 use App\Services\ReportExportService;
@@ -26,6 +29,8 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
+use Spatie\Permission\PermissionRegistrar;
+use Symfony\Component\Finder\Finder;
 use Tests\TestCase;
 
 /**
@@ -453,7 +458,7 @@ class PhaseDPerformanceTest extends TestCase
 
         // Every list table with a page size uses the same rule.
         $checked = 0;
-        foreach ((new \Symfony\Component\Finder\Finder)->files()->in(app_path('Livewire'))->name('*.php') as $file) {
+        foreach ((new Finder)->files()->in(app_path('Livewire'))->name('*.php') as $file) {
             $class = 'App\\Livewire\\'.str_replace(['/', '.php'], ['\\', ''], $file->getRelativePathname());
             if (! class_exists($class) || ! property_exists($class, 'perPage')) {
                 continue;
@@ -626,8 +631,8 @@ class PhaseDPerformanceTest extends TestCase
         $this->assertCount(2, $ledger->json('data.entries'));
         $this->assertEquals(500, $ledger->json('data.closing_balance'));
 
-        $actual = (new \ReflectionMethod(\App\Services\BudgetService::class, 'getAccountActual'))
-            ->invoke(app(\App\Services\BudgetService::class), $sales->id, Carbon::parse('2026-06-01'), Carbon::parse('2026-06-30 23:59:59'), 'income');
+        $actual = (new \ReflectionMethod(BudgetService::class, 'getAccountActual'))
+            ->invoke(app(BudgetService::class), $sales->id, Carbon::parse('2026-06-01'), Carbon::parse('2026-06-30 23:59:59'), 'income');
         $this->assertEquals(500, $actual);
 
         $exists = array_filter($sql, fn ($q) => str_contains($q, 'exists (') && str_contains($q, 'journal'));
@@ -644,15 +649,15 @@ class PhaseDPerformanceTest extends TestCase
         Customer::factory()->create(['tenant_id' => $tid, 'name' => 'Other Customer Zed']);
         $vendor = Vendor::factory()->create(['tenant_id' => $tid, 'name' => 'Chosen Vendor']);
         Vendor::factory()->create(['tenant_id' => $tid, 'name' => 'Other Vendor Zed']);
-        $item = \App\Models\Item::factory()->create(['tenant_id' => $tid, 'name' => 'Line Widget']);
-        \App\Models\Item::factory()->create(['tenant_id' => $tid, 'name' => 'Unused Gadget Zed']);
+        $item = Item::factory()->create(['tenant_id' => $tid, 'name' => 'Line Widget']);
+        Item::factory()->create(['tenant_id' => $tid, 'name' => 'Unused Gadget Zed']);
 
         $create = $this->get(route('invoices.create', ['customer_id' => $chosen->id]))->assertOk();
         $create->assertSee('Chosen Customer')->assertDontSee('Other Customer Zed')->assertDontSee('Unused Gadget Zed');
         $create->assertSee('lookup\\/customers', false)->assertSee('lookup\\/items', false);
 
         $invoice = Invoice::withoutEvents(fn () => Invoice::factory()->create(['tenant_id' => $tid, 'customer_id' => $chosen->id]));
-        \App\Models\InvoiceItem::withoutEvents(fn () => \App\Models\InvoiceItem::create([
+        InvoiceItem::withoutEvents(fn () => InvoiceItem::create([
             'invoice_id' => $invoice->id, 'item_id' => $item->id, 'description' => 'x', 'quantity' => 1, 'unit_price' => 10, 'total' => 10,
         ]));
         $this->get(route('invoices.edit', $invoice))->assertOk()
@@ -675,7 +680,7 @@ class PhaseDPerformanceTest extends TestCase
         Customer::factory()->create(['tenant_id' => $tid, 'name' => 'Acme Stores', 'company_name' => 'Acme Ltd']);
         Customer::factory()->create(['tenant_id' => $tid, 'name' => 'Bello Foods']);
         Vendor::factory()->create(['tenant_id' => $tid, 'name' => 'Kano Supplies']);
-        \App\Models\Item::factory()->create([
+        Item::factory()->create([
             'tenant_id' => $tid, 'name' => 'Consulting', 'type' => 'service', 'track_inventory' => true,
             'is_taxable' => true, 'tax_rate' => 7.5, 'selling_price' => 1000, 'cost_price' => 400, 'description' => 'Hourly',
         ]);
@@ -693,7 +698,7 @@ class PhaseDPerformanceTest extends TestCase
 
         // Still refused without any of the permissions.
         $this->user->syncPermissions([]);
-        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
         $this->getJson(route('lookup.customers'))->assertForbidden();
     }
 }

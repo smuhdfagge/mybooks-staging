@@ -2,6 +2,19 @@
 
 namespace Tests\Feature\Regression;
 
+use App\Models\Bill;
+use App\Models\ChartOfAccount;
+use App\Models\Employee;
+use App\Models\Expense;
+use App\Models\Import;
+use App\Models\Inventory;
+use App\Models\InventoryHistory;
+use App\Models\InventoryLayer;
+use App\Models\Item;
+use App\Models\Payroll;
+use App\Models\Vendor;
+use App\Services\ImportService;
+use App\Services\JournalService;
 use Tests\TestCase;
 
 /**
@@ -12,7 +25,7 @@ class PhpstanFindingsTest extends TestCase
     public function test_bill_reference_typed_on_the_form_is_saved(): void
     {
         $this->createAuthenticatedUser(['create bills', 'edit bills']);
-        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
         $form = [
             'vendor_id' => $vendor->id, 'bill_date' => now()->toDateString(), 'due_date' => now()->addDays(30)->toDateString(),
             'reference' => 'INV-7781',
@@ -20,7 +33,7 @@ class PhpstanFindingsTest extends TestCase
         ];
 
         $this->post(route('bills.store'), $form)->assertSessionHasNoErrors();
-        $bill = \App\Models\Bill::sole();
+        $bill = Bill::sole();
         $this->assertSame('INV-7781', $bill->vendor_bill_number);
 
         $this->put(route('bills.update', $bill), array_merge($form, ['reference' => 'INV-7782']))->assertSessionHasNoErrors();
@@ -30,8 +43,8 @@ class PhpstanFindingsTest extends TestCase
     public function test_api_stock_adjustment_works_and_keeps_cost_layers(): void
     {
         $this->createAuthenticatedUser(['view inventory', 'adjust inventory']);
-        $item = \App\Models\Item::factory()->create(['tenant_id' => $this->tenant->id, 'track_inventory' => true, 'cost_price' => 250]);
-        $inventory = \App\Models\Inventory::create(['tenant_id' => $this->tenant->id, 'item_id' => $item->id, 'quantity' => 0, 'reserved_quantity' => 0]);
+        $item = Item::factory()->create(['tenant_id' => $this->tenant->id, 'track_inventory' => true, 'cost_price' => 250]);
+        $inventory = Inventory::create(['tenant_id' => $this->tenant->id, 'item_id' => $item->id, 'quantity' => 0, 'reserved_quantity' => 0]);
         $api = $this->actingAs($this->user, 'sanctum');
 
         $api->postJson("/api/v1/inventory/{$inventory->id}/adjust", ['type' => 'add', 'quantity' => 10, 'reason' => 'Opening count'])->assertOk();
@@ -40,8 +53,8 @@ class PhpstanFindingsTest extends TestCase
             ->assertStatus(422);
 
         $this->assertSame(7.0, (float) $inventory->fresh()->quantity);
-        $this->assertSame(7.0, (float) \App\Models\InventoryLayer::where('item_id', $item->id)->sum('remaining_quantity'));
-        $this->assertSame([10.0, -3.0], \App\Models\InventoryHistory::where('item_id', $item->id)->orderBy('id')->pluck('quantity')->map(fn ($q) => (float) $q)->all());
+        $this->assertSame(7.0, (float) InventoryLayer::where('item_id', $item->id)->sum('remaining_quantity'));
+        $this->assertSame([10.0, -3.0], InventoryHistory::where('item_id', $item->id)->orderBy('id')->pluck('quantity')->map(fn ($q) => (float) $q)->all());
 
         $api->getJson("/api/v1/inventory/{$inventory->id}/history")->assertOk()->assertJsonCount(2, 'data');
     }
@@ -49,13 +62,13 @@ class PhpstanFindingsTest extends TestCase
     public function test_expense_import_finds_accounts_by_code(): void
     {
         $this->createAuthenticatedUser();
-        $account = \App\Models\ChartOfAccount::where('tenant_id', $this->tenant->id)->where('type', 'expense')->firstOrFail();
-        $import = \App\Models\Import::create([
+        $account = ChartOfAccount::where('tenant_id', $this->tenant->id)->where('type', 'expense')->firstOrFail();
+        $import = Import::create([
             'tenant_id' => $this->tenant->id, 'user_id' => $this->user->id, 'type' => 'expenses', 'format' => 'csv',
             'status' => 'processing', 'original_filename' => 'x.csv', 'file_path' => 'x.csv',
         ]);
 
-        $service = new \App\Services\ImportService;
+        $service = new ImportService;
         $tenant = new \ReflectionProperty($service, 'tenantId');
         $tenant->setValue($service, $this->tenant->id);
         $method = new \ReflectionMethod($service, 'importExpenses');
@@ -65,24 +78,24 @@ class PhpstanFindingsTest extends TestCase
 
         $errors = (new \ReflectionProperty($service, 'errors'))->getValue($service);
         $this->assertSame(1, $import->fresh()->successful_rows, json_encode($errors));
-        $this->assertSame($account->id, \App\Models\Expense::sole()->expense_account_id);
+        $this->assertSame($account->id, Expense::sole()->expense_account_id);
     }
 
     public function test_payroll_journal_names_the_employee(): void
     {
         $this->createAuthenticatedUser();
-        $employee = \App\Models\Employee::withoutEvents(fn () => \App\Models\Employee::create([
+        $employee = Employee::withoutEvents(fn () => Employee::create([
             'tenant_id' => $this->tenant->id, 'employee_id' => 'EMP-001', 'first_name' => 'Hauwa', 'last_name' => 'Musa',
             'email' => 'hauwa@example.com', 'hire_date' => now()->subYear(), 'status' => 'active',
         ]));
-        $payroll = \App\Models\Payroll::withoutEvents(fn () => \App\Models\Payroll::create([
+        $payroll = Payroll::withoutEvents(fn () => Payroll::create([
             'tenant_id' => $this->tenant->id, 'employee_id' => $employee->id, 'payroll_number' => 'PAY-000001',
             'pay_period_start' => now()->startOfMonth(), 'pay_period_end' => now()->endOfMonth(), 'pay_date' => now(),
             'basic_salary' => 1000, 'gross_salary' => 1000, 'total_deductions' => 0, 'net_salary' => 1000,
             'status' => 'paid', 'created_by' => $this->user->id,
         ]));
 
-        $journal = app(\App\Services\JournalService::class)->createPayrollJournal($payroll);
+        $journal = app(JournalService::class)->createPayrollJournal($payroll);
 
         $this->assertStringContainsString('Hauwa Musa', $journal->description);
     }

@@ -2,13 +2,35 @@
 
 namespace Tests\Feature\Regression;
 
+use App\Exceptions\UnbalancedJournalException;
+use App\Livewire\Bills\BillsTable;
+use App\Livewire\Invoices\InvoicesTable;
+use App\Livewire\Journals\JournalsTable;
+use App\Models\AccountingPeriod;
+use App\Models\Bank;
 use App\Models\Bill;
+use App\Models\ChartOfAccount;
 use App\Models\Customer;
+use App\Models\FixedAsset;
+use App\Models\Import;
+use App\Models\Inventory;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
+use App\Models\Item;
+use App\Models\Journal;
 use App\Models\PaymentMade;
 use App\Models\PaymentReceived;
 use App\Models\SalesReceipt;
+use App\Models\TaxRate;
+use App\Models\User;
 use App\Models\Vendor;
+use App\Services\DepreciationService;
+use App\Services\ImportService;
+use App\Services\JournalService;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Livewire;
+use Spatie\Permission\Models\Permission;
 use Tests\Support\AssertsLedger;
 use Tests\TestCase;
 
@@ -104,7 +126,7 @@ class Phase3RegressionTest extends TestCase
     public function test_c4_recalculation_keeps_opening_balances(): void
     {
         $this->createAuthenticatedUser();
-        $cash = \App\Models\ChartOfAccount::where('account_code', '1000')->first();
+        $cash = ChartOfAccount::where('account_code', '1000')->first();
         $cash->update(['opening_balance' => 5000, 'current_balance' => 5000]);
 
         $this->artisan('accounts:recalculate', ['--tenant' => $this->tenant->id])->assertSuccessful();
@@ -117,21 +139,21 @@ class Phase3RegressionTest extends TestCase
     public function test_m2_an_unbalanced_journal_is_refused_and_nothing_is_posted(): void
     {
         $this->createAuthenticatedUser();
-        $journalsBefore = \App\Models\Journal::count();
+        $journalsBefore = Journal::count();
 
         // Total does not equal subtotal + tax, so the journal cannot balance.
         try {
-            \Illuminate\Support\Facades\DB::transaction(fn () => SalesReceipt::create([
+            DB::transaction(fn () => SalesReceipt::create([
                 'tenant_id' => $this->tenant->id, 'receipt_number' => 'SR-000009', 'receipt_date' => now(),
                 'payment_method' => 'cash', 'subtotal' => 1000, 'tax_amount' => 75, 'discount_amount' => 0, 'total' => 1000,
                 'created_by' => $this->user->id,
             ]));
             $this->fail('An unbalanced journal was posted.');
-        } catch (\App\Exceptions\UnbalancedJournalException $e) {
+        } catch (UnbalancedJournalException $e) {
             $this->assertStringContainsString('not balanced', $e->getMessage());
         }
 
-        $this->assertSame($journalsBefore, \App\Models\Journal::count());
+        $this->assertSame($journalsBefore, Journal::count());
         $this->assertSame(0.0, $this->accountBalance($this->tenant->id, '1000'));
         $this->assertSame(0.0, $this->accountBalance($this->tenant->id, '4000'));
     }
@@ -139,12 +161,12 @@ class Phase3RegressionTest extends TestCase
     public function test_m2_journal_lines_are_rounded_to_two_decimals(): void
     {
         $this->createAuthenticatedUser();
-        $journal = \App\Models\Journal::create([
+        $journal = Journal::create([
             'tenant_id' => $this->tenant->id, 'journal_number' => 'JE-900001', 'journal_date' => now(),
             'description' => 'Rounding', 'status' => 'draft',
         ]);
 
-        $line = app(\App\Services\JournalService::class)->createEntry($journal, '1000', 10.004999, 0, 'x');
+        $line = app(JournalService::class)->createEntry($journal, '1000', 10.004999, 0, 'x');
 
         $this->assertSame('10.00', (string) $line->fresh()->debit);
     }
@@ -235,7 +257,7 @@ class Phase3RegressionTest extends TestCase
 
     private function bulk(string $component, array $ids, string $action)
     {
-        return \Livewire\Livewire::test($component)
+        return Livewire::test($component)
             ->set('selectedItems', array_map('strval', $ids))
             ->set('bulkAction', $action)
             ->call('applyBulkAction');
@@ -248,7 +270,7 @@ class Phase3RegressionTest extends TestCase
         $invoice = Invoice::factory()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000020']);
         $this->assertSame(0.0, $this->accountBalance($this->tenant->id, '1200'));
 
-        $this->bulk(\App\Livewire\Invoices\InvoicesTable::class, [$invoice->id], 'mark_sent')->assertOk();
+        $this->bulk(InvoicesTable::class, [$invoice->id], 'mark_sent')->assertOk();
 
         $this->assertSame('sent', $invoice->fresh()->status);
         $this->assertSame(1075.0, $this->accountBalance($this->tenant->id, '1200'));
@@ -261,10 +283,10 @@ class Phase3RegressionTest extends TestCase
         $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         $invoice = Invoice::factory()->sent()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000021']);
 
-        $this->bulk(\App\Livewire\Invoices\InvoicesTable::class, [$invoice->id], 'mark_paid')->assertForbidden();
+        $this->bulk(InvoicesTable::class, [$invoice->id], 'mark_paid')->assertForbidden();
         $this->assertSame('sent', $invoice->fresh()->status);
 
-        \Livewire\Livewire::test(\App\Livewire\Invoices\InvoicesTable::class)->assertDontSeeHtml('value="mark_paid"');
+        Livewire::test(InvoicesTable::class)->assertDontSeeHtml('value="mark_paid"');
     }
 
     public function test_c5_cancelling_a_sent_invoice_reverses_its_journal(): void
@@ -274,19 +296,19 @@ class Phase3RegressionTest extends TestCase
         $invoice = Invoice::factory()->sent()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000022']);
         $this->assertSame(1075.0, $this->accountBalance($this->tenant->id, '1200'));
 
-        $this->bulk(\App\Livewire\Invoices\InvoicesTable::class, [$invoice->id], 'mark_cancelled')->assertOk();
+        $this->bulk(InvoicesTable::class, [$invoice->id], 'mark_cancelled')->assertOk();
 
         $this->assertSame('cancelled', $invoice->fresh()->status);
         $this->assertSame(0.0, $this->accountBalance($this->tenant->id, '1200'));
         $this->assertSame(0.0, $this->accountBalance($this->tenant->id, '4000'));
-        $journals = \App\Models\Journal::where('reference_type', Invoice::class)->where('reference_id', $invoice->id)->get();
+        $journals = Journal::where('reference_type', Invoice::class)->where('reference_id', $invoice->id)->get();
         $this->assertCount(2, $journals, 'Original journal and its reversal are both kept');
         $this->assertStoredBalancesMatchLedger($this->tenant->id);
         $this->assertAllJournalsBalance($this->tenant->id);
 
         // Saving the cancelled invoice again doesn't reverse twice
         $invoice->fresh()->update(['notes' => 'cancelled by customer']);
-        $this->assertSame(2, \App\Models\Journal::where('reference_type', Invoice::class)->where('reference_id', $invoice->id)->count());
+        $this->assertSame(2, Journal::where('reference_type', Invoice::class)->where('reference_id', $invoice->id)->count());
     }
 
     public function test_c5_cancelling_an_unpaid_bill_reverses_its_journal(): void
@@ -296,20 +318,20 @@ class Phase3RegressionTest extends TestCase
         $bill = Bill::factory()->create(['tenant_id' => $this->tenant->id, 'vendor_id' => $vendor->id, 'status' => 'unpaid', 'bill_number' => 'BIL-000022']);
         $this->assertSame(537.5, $this->accountBalance($this->tenant->id, '2000'));
 
-        $this->bulk(\App\Livewire\Bills\BillsTable::class, [$bill->id], 'mark_cancelled')->assertOk();
+        $this->bulk(BillsTable::class, [$bill->id], 'mark_cancelled')->assertOk();
 
         $this->assertSame('cancelled', $bill->fresh()->status);
         $this->assertSame(0.0, $this->accountBalance($this->tenant->id, '2000'));
         $this->assertStoredBalancesMatchLedger($this->tenant->id);
     }
 
-    private function manualJournal(float $debit, float $credit): \App\Models\Journal
+    private function manualJournal(float $debit, float $credit): Journal
     {
-        $journal = \App\Models\Journal::create([
+        $journal = Journal::create([
             'tenant_id' => $this->tenant->id, 'journal_number' => 'JE-'.random_int(100000, 999999),
             'journal_date' => now(), 'description' => 'Manual', 'status' => 'draft',
         ]);
-        $service = app(\App\Services\JournalService::class);
+        $service = app(JournalService::class);
         $service->createEntry($journal, '1000', $debit, 0, 'Cash in');
         $service->createEntry($journal, '4000', 0, $credit, 'Other income');
 
@@ -321,7 +343,7 @@ class Phase3RegressionTest extends TestCase
         $this->createAuthenticatedUser(['post journals']);
         $journal = $this->manualJournal(250, 250);
 
-        $this->bulk(\App\Livewire\Journals\JournalsTable::class, [$journal->id], 'post')->assertOk();
+        $this->bulk(JournalsTable::class, [$journal->id], 'post')->assertOk();
 
         $this->assertSame('posted', $journal->fresh()->status);
         $this->assertSame(250.0, $this->accountBalance($this->tenant->id, '1000'));
@@ -333,7 +355,7 @@ class Phase3RegressionTest extends TestCase
         $this->createAuthenticatedUser(['post journals']);
         $journal = $this->manualJournal(250, 200);
 
-        $this->bulk(\App\Livewire\Journals\JournalsTable::class, [$journal->id], 'post')->assertOk();
+        $this->bulk(JournalsTable::class, [$journal->id], 'post')->assertOk();
 
         $this->assertSame('draft', $journal->fresh()->status);
         $this->assertSame(0.0, $this->accountBalance($this->tenant->id, '1000'));
@@ -343,14 +365,14 @@ class Phase3RegressionTest extends TestCase
     {
         $this->createAuthenticatedUser(['post journals', 'edit journals']);
         $journal = $this->manualJournal(250, 250);
-        $this->bulk(\App\Livewire\Journals\JournalsTable::class, [$journal->id], 'post');
+        $this->bulk(JournalsTable::class, [$journal->id], 'post');
         $this->assertSame(250.0, $this->accountBalance($this->tenant->id, '1000'));
 
-        $this->bulk(\App\Livewire\Journals\JournalsTable::class, [$journal->id], 'void')->assertOk();
+        $this->bulk(JournalsTable::class, [$journal->id], 'void')->assertOk();
 
         $this->assertSame('reversed', $journal->fresh()->status);
         $this->assertSame(0.0, $this->accountBalance($this->tenant->id, '1000'));
-        $this->assertNotNull(\App\Models\Journal::where('reference', 'REV-'.$journal->journal_number)->first());
+        $this->assertNotNull(Journal::where('reference', 'REV-'.$journal->journal_number)->first());
         $this->assertStoredBalancesMatchLedger($this->tenant->id);
     }
 
@@ -359,9 +381,9 @@ class Phase3RegressionTest extends TestCase
         $this->createAuthenticatedUser(['edit journals']);
         $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         $invoice = Invoice::factory()->sent()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000023']);
-        $journal = \App\Models\Journal::where('reference_type', Invoice::class)->where('reference_id', $invoice->id)->first();
+        $journal = Journal::where('reference_type', Invoice::class)->where('reference_id', $invoice->id)->first();
 
-        $this->bulk(\App\Livewire\Journals\JournalsTable::class, [$journal->id], 'void')->assertOk();
+        $this->bulk(JournalsTable::class, [$journal->id], 'void')->assertOk();
 
         $this->assertSame('posted', $journal->fresh()->status);
         $this->assertSame(1075.0, $this->accountBalance($this->tenant->id, '1200'));
@@ -380,7 +402,7 @@ class Phase3RegressionTest extends TestCase
             'status' => 'overdue',
         ]);
 
-        $this->bulk(\App\Livewire\Invoices\InvoicesTable::class, [$invoice->id, $unpaid->id], 'mark_cancelled')->assertOk();
+        $this->bulk(InvoicesTable::class, [$invoice->id, $unpaid->id], 'mark_cancelled')->assertOk();
 
         $this->assertSame('partial', $invoice->fresh()->status);
         $this->assertSame('cancelled', $unpaid->fresh()->status);
@@ -395,12 +417,12 @@ class Phase3RegressionTest extends TestCase
             'invoice_date' => now()->subYear(),
         ]);
         $current = Invoice::factory()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000027']);
-        \App\Models\AccountingPeriod::create([
+        AccountingPeriod::create([
             'tenant_id' => $this->tenant->id, 'name' => 'Last year', 'status' => 'closed',
             'start_date' => now()->subYear()->startOfYear(), 'end_date' => now()->subYear()->endOfYear(),
         ]);
 
-        $this->bulk(\App\Livewire\Invoices\InvoicesTable::class, [$old->id, $current->id], 'mark_sent')
+        $this->bulk(InvoicesTable::class, [$old->id, $current->id], 'mark_sent')
             ->assertOk()
             ->assertSet('errorMessage', 'Not changed (closed period or invalid totals): INV-000026.');
 
@@ -420,7 +442,7 @@ class Phase3RegressionTest extends TestCase
 
         $invoice->delete();
 
-        $journals = \App\Models\Journal::where('reference_type', Invoice::class)->where('reference_id', $invoice->id)->orderBy('id')->get();
+        $journals = Journal::where('reference_type', Invoice::class)->where('reference_id', $invoice->id)->orderBy('id')->get();
         $this->assertCount(2, $journals);
         $this->assertSame('reversed', $journals[0]->status);
         $this->assertSame('REV-'.$journals[0]->journal_number, $journals[1]->reference);
@@ -445,7 +467,7 @@ class Phase3RegressionTest extends TestCase
 
         $this->assertEqualsWithDelta(1075.0, (float) $invoice->fresh()->balance_due, 0.001);
         $this->assertSame(1075.0, $this->accountBalance($this->tenant->id, '1200'));
-        $this->assertSame(2, \App\Models\Journal::where('reference_type', PaymentReceived::class)->where('reference_id', $payment->id)->count());
+        $this->assertSame(2, Journal::where('reference_type', PaymentReceived::class)->where('reference_id', $payment->id)->count());
         $this->assertStoredBalancesMatchLedger($this->tenant->id);
     }
 
@@ -457,12 +479,12 @@ class Phase3RegressionTest extends TestCase
 
         $invoice->delete();
 
-        $this->assertSame(0, \App\Models\Journal::withTrashed()->where('reference_type', Invoice::class)->where('reference_id', $invoice->id)->count());
+        $this->assertSame(0, Journal::withTrashed()->where('reference_type', Invoice::class)->where('reference_id', $invoice->id)->count());
     }
 
-    private function asset(): \App\Models\FixedAsset
+    private function asset(): FixedAsset
     {
-        return \App\Models\FixedAsset::create([
+        return FixedAsset::create([
             'tenant_id' => $this->tenant->id, 'asset_number' => 'FA-'.random_int(1000, 9999), 'name' => 'Laptop',
             'purchase_date' => now()->subMonths(2), 'in_service_date' => now()->subMonths(2),
             'purchase_cost' => 1200, 'salvage_value' => 0, 'depreciable_amount' => 1200,
@@ -474,7 +496,7 @@ class Phase3RegressionTest extends TestCase
     public function test_m6_depreciation_keeps_balances_in_step_with_the_ledger(): void
     {
         $this->createAuthenticatedUser();
-        $service = app(\App\Services\DepreciationService::class);
+        $service = app(DepreciationService::class);
 
         $depreciation = $service->recordDepreciation($this->asset(), now());
 
@@ -493,7 +515,7 @@ class Phase3RegressionTest extends TestCase
     public function test_m6_disposing_an_asset_keeps_balances_in_step_with_the_ledger(): void
     {
         $this->createAuthenticatedUser();
-        $service = app(\App\Services\DepreciationService::class);
+        $service = app(DepreciationService::class);
         $asset = $this->asset();
         $service->recordDepreciation($asset, now());
 
@@ -582,8 +604,8 @@ class Phase3RegressionTest extends TestCase
     public function test_m5_api_accepts_ids_sent_as_strings(): void
     {
         [$tenant] = $this->createTenantWithSubscription();
-        $user = \App\Models\User::factory()->create(['tenant_id' => $tenant->id]);
-        $user->givePermissionTo(\Spatie\Permission\Models\Permission::findOrCreate('create payments-received', 'web'));
+        $user = User::factory()->create(['tenant_id' => $tenant->id]);
+        $user->givePermissionTo(Permission::findOrCreate('create payments-received', 'web'));
         $customer = Customer::factory()->create(['tenant_id' => $tenant->id]);
         $invoice = Invoice::factory()->sent()->create(['tenant_id' => $tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000044']);
 
@@ -601,11 +623,11 @@ class Phase3RegressionTest extends TestCase
         $this->createAuthenticatedUser();
         $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         $invoice = Invoice::factory()->sent()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000045']);
-        $gtAccount = \App\Models\ChartOfAccount::create([
+        $gtAccount = ChartOfAccount::create([
             'tenant_id' => $this->tenant->id, 'account_code' => '1190', 'name' => 'GTBank Current',
             'type' => 'asset', 'sub_type' => 'bank', 'is_active' => true, 'current_balance' => 0,
         ]);
-        $bank = \App\Models\Bank::factory()->create(['tenant_id' => $this->tenant->id, 'chart_of_account_id' => $gtAccount->id]);
+        $bank = Bank::factory()->create(['tenant_id' => $this->tenant->id, 'chart_of_account_id' => $gtAccount->id]);
 
         PaymentReceived::create([
             'tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_id' => $invoice->id, 'bank_id' => $bank->id,
@@ -623,7 +645,7 @@ class Phase3RegressionTest extends TestCase
         $this->createAuthenticatedUser();
         $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         $invoice = Invoice::factory()->sent()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000046']);
-        $bank = \App\Models\Bank::factory()->create(['tenant_id' => $this->tenant->id]);
+        $bank = Bank::factory()->create(['tenant_id' => $this->tenant->id]);
 
         PaymentReceived::create([
             'tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_id' => $invoice->id, 'bank_id' => $bank->id,
@@ -648,7 +670,7 @@ class Phase3RegressionTest extends TestCase
     {
         $this->createAuthenticatedUser(['create invoices']);
         $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
-        \App\Models\InvoiceItem::creating(function ($line) {
+        InvoiceItem::creating(function ($line) {
             if ($line->description === 'Second line') {
                 throw new \RuntimeException('Simulated failure');
             }
@@ -666,14 +688,14 @@ class Phase3RegressionTest extends TestCase
         }
 
         $this->assertSame(0, Invoice::count());
-        $this->assertSame(0, \App\Models\InvoiceItem::count());
+        $this->assertSame(0, InvoiceItem::count());
     }
 
     public function test_m4_tax_rate_must_be_one_of_the_organisations_rates(): void
     {
         $this->createAuthenticatedUser(['create invoices']);
         $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
-        \App\Models\TaxRate::create(['tenant_id' => $this->tenant->id, 'name' => 'VAT', 'code' => 'VAT', 'rate' => 7.5, 'type' => 'exclusive', 'is_active' => true]);
+        TaxRate::create(['tenant_id' => $this->tenant->id, 'name' => 'VAT', 'code' => 'VAT', 'rate' => 7.5, 'type' => 'exclusive', 'is_active' => true]);
         $line = fn ($rate) => [['description' => 'Service', 'quantity' => 1, 'unit_price' => 100, 'tax_rate' => $rate]];
 
         $this->post(route('invoices.store'), $this->invoiceForm($customer->id, $line(5)))
@@ -698,8 +720,8 @@ class Phase3RegressionTest extends TestCase
     {
         $this->createAuthenticatedUser(['edit invoices']);
         $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
-        $item = \App\Models\Item::factory()->create(['tenant_id' => $this->tenant->id, 'type' => 'product', 'track_inventory' => true]);
-        $stock = \App\Models\Inventory::create(['tenant_id' => $this->tenant->id, 'item_id' => $item->id, 'quantity' => 2, 'reserved_quantity' => 5]);
+        $item = Item::factory()->create(['tenant_id' => $this->tenant->id, 'type' => 'product', 'track_inventory' => true]);
+        $stock = Inventory::create(['tenant_id' => $this->tenant->id, 'item_id' => $item->id, 'quantity' => 2, 'reserved_quantity' => 5]);
         $invoice = Invoice::factory()->paid()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000050']);
         $invoice->items()->create(['item_id' => $item->id, 'description' => $item->name, 'quantity' => 5, 'unit_price' => 10, 'tax_rate' => 0, 'tax_amount' => 0, 'total' => 50]);
 
@@ -712,20 +734,20 @@ class Phase3RegressionTest extends TestCase
 
     // ── Opening-balance import follows the ledger rules ─────────
 
-    private function runOpeningBalanceImport(string $csv): \App\Models\Import
+    private function runOpeningBalanceImport(string $csv): Import
     {
-        \Illuminate\Support\Facades\Storage::fake('imports');
+        Storage::fake('imports');
         $path = $this->tenant->id.'/opening.csv';
-        \Illuminate\Support\Facades\Storage::disk('imports')->put($path, $csv);
+        Storage::disk('imports')->put($path, $csv);
 
-        $import = \App\Models\Import::create([
+        $import = Import::create([
             'tenant_id' => $this->tenant->id, 'user_id' => $this->user->id,
-            'type' => \App\Models\Import::TYPE_OPENING_BALANCES, 'format' => \App\Models\Import::FORMAT_CSV,
-            'status' => \App\Models\Import::STATUS_PENDING, 'original_filename' => 'opening.csv',
+            'type' => Import::TYPE_OPENING_BALANCES, 'format' => Import::FORMAT_CSV,
+            'status' => Import::STATUS_PENDING, 'original_filename' => 'opening.csv',
             'file_path' => $path, 'file_size' => strlen($csv),
         ]);
 
-        app(\App\Services\ImportService::class)->processImport($import);
+        app(ImportService::class)->processImport($import);
 
         return $import->fresh();
     }
@@ -736,7 +758,7 @@ class Phase3RegressionTest extends TestCase
 
         $import = $this->runOpeningBalanceImport("account_code,debit,credit\n1000,5000,0\n3000,0,5000\n");
 
-        $journal = \App\Models\Journal::where('description', 'Opening Balances Import')->firstOrFail();
+        $journal = Journal::where('description', 'Opening Balances Import')->firstOrFail();
         $this->assertMatchesRegularExpression('/^JE-\\d{6}$/', (string) $journal->journal_number);
         $this->assertSame(5000.0, $this->accountBalance($this->tenant->id, '1000'));
         $this->assertSame(5000.0, $this->accountBalance($this->tenant->id, '3000'));
@@ -750,7 +772,7 @@ class Phase3RegressionTest extends TestCase
 
         $import = $this->runOpeningBalanceImport("account_code,debit,credit\n1000,5000,0\n3000,0,4000\n");
 
-        $this->assertSame(0, \App\Models\Journal::where('description', 'Opening Balances Import')->count());
+        $this->assertSame(0, Journal::where('description', 'Opening Balances Import')->count());
         $this->assertSame(0.0, $this->accountBalance($this->tenant->id, '1000'));
         $this->assertSame(0, (int) $import->successful_rows);
         $this->assertStringContainsString('do not equal total credits', implode(' ', $import->errors ?? []));

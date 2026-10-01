@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use App\Actions\SalesOrders\SaveSalesOrder;
 use App\Traits\BelongsToTenant;
+use App\Traits\HasDocumentNumber;
+use App\Traits\KeepsTotalsBalanced;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,8 +15,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Quotation extends Model
 {
-    use \App\Traits\HasDocumentNumber;
-    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
+    use BelongsToTenant, HasFactory, KeepsTotalsBalanced, LogsActivity, SoftDeletes;
+    use HasDocumentNumber;
 
     const STATUS_DRAFT = 'draft';
 
@@ -97,7 +100,7 @@ class Quotation extends Model
     {
         // The same rules as every other sales order (R3), so the order's
         // figures match the quotation's and the invoice that follows.
-        $salesOrder = app(\App\Actions\SalesOrders\SaveSalesOrder::class)->create($this->tenant_id, [
+        $salesOrder = app(SaveSalesOrder::class)->create($this->tenant_id, [
             'customer_id' => $this->customer_id,
             'reference' => "From {$this->quotation_number}",
             'order_date' => now()->toDateString(),

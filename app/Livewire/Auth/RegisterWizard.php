@@ -3,9 +3,11 @@
 namespace App\Livewire\Auth;
 
 use App\Models\Plan;
+use App\Models\Role;
 use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Billing\SubscriptionBilling;
 use App\Support\SignupThrottle;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
@@ -205,7 +207,7 @@ class RegisterWizard extends Component
 
             // The subscription waits for payment (finding C1). A free plan
             // is switched on straight away.
-            app(\App\Services\Billing\SubscriptionBilling::class)
+            app(SubscriptionBilling::class)
                 ->startPendingSubscription($tenant, $plan, $this->billing_cycle);
 
             // Create the admin user
@@ -219,7 +221,7 @@ class RegisterWizard extends Component
             ]);
 
             // Ensure admin role exists and assign it
-            $adminRole = \App\Models\Role::firstOrCreate(
+            $adminRole = Role::firstOrCreate(
                 ['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => null],
                 []
             );

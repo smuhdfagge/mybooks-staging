@@ -2,10 +2,15 @@
 
 namespace App\Models;
 
+use App\Enums\BillStatus;
 use App\Events\BillDeleting;
 use App\Events\BillSaved;
 use App\Services\JournalService;
+use App\Services\StockValuationService;
 use App\Traits\BelongsToTenant;
+use App\Traits\GuardsStatusTransitions;
+use App\Traits\HasDocumentNumber;
+use App\Traits\KeepsTotalsBalanced;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,8 +23,8 @@ use Illuminate\Support\Facades\DB;
 
 class Bill extends Model
 {
-    use \App\Traits\GuardsStatusTransitions, \App\Traits\HasDocumentNumber;
-    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
+    use BelongsToTenant, HasFactory, KeepsTotalsBalanced, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
+    use GuardsStatusTransitions, HasDocumentNumber;
 
     protected $fillable = [
         'tenant_id',
@@ -173,7 +178,7 @@ class Bill extends Model
                         $unitCost = $billItem->quantity > 0
                             ? round($netLine / $billItem->quantity, 4)
                             : ($item->cost_price ?? 0);
-                        $valuationService = app(\App\Services\StockValuationService::class);
+                        $valuationService = app(StockValuationService::class);
                         $valuationService->updateWeightedAverageCost($inventory, $billItem->quantity, $unitCost);
 
                         // Add quantity
@@ -283,6 +288,6 @@ class Bill extends Model
     /** Allowed status moves (Q3). */
     protected static function statusEnum(): string
     {
-        return \App\Enums\BillStatus::class;
+        return BillStatus::class;
     }
 }

@@ -6,6 +6,8 @@ use App\Events\SalesReceiptDeleting;
 use App\Events\SalesReceiptSaved;
 use App\Services\JournalService;
 use App\Traits\BelongsToTenant;
+use App\Traits\HasDocumentNumber;
+use App\Traits\KeepsTotalsBalanced;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,8 +19,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SalesReceipt extends Model
 {
-    use \App\Traits\HasDocumentNumber;
-    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
+    use BelongsToTenant, HasFactory, KeepsTotalsBalanced, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
+    use HasDocumentNumber;
 
     protected $fillable = [
         'tenant_id',

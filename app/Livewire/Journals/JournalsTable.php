@@ -5,6 +5,7 @@ namespace App\Livewire\Journals;
 use App\Livewire\Concerns\ChecksPermissions;
 use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\Journal;
+use App\Services\JournalService;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -153,7 +154,7 @@ class JournalsTable extends Component
                 // document and are changed through it instead.
                 $voided = 0;
                 $skipped = [];
-                $journalService = app(\App\Services\JournalService::class);
+                $journalService = app(JournalService::class);
                 foreach (Journal::with('entries.account')->whereIn('id', $this->selectedItems)->where('status', 'posted')->get() as $journal) {
                     if ($journal->reference_type) {
                         $skipped[] = $journal->journal_number;

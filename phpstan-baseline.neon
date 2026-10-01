@@ -219,7 +219,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Models\\Item\:\:\$quantity_sold\.$#'
 			identifier: property.notFound
-			count: 4
+			count: 2
 			path: app/Http/Controllers/Reports/SalesReportController.php
 
 		-
@@ -367,144 +367,6 @@ parameters:
 			path: app/Livewire/ActivityLogs/ActivityLogsTable.php
 
 		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\Allowances\\AllowancesTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/Allowances/AllowancesTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\Banks\\BanksTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/Banks/BanksTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\Bills\\BillsTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/Bills/BillsTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\Budgets\\BudgetsTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/Budgets/BudgetsTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\ChartOfAccounts\\ChartOfAccountsTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/ChartOfAccounts/ChartOfAccountsTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\Customers\\CustomersTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/Customers/CustomersTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\Deductions\\DeductionsTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/Deductions/DeductionsTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\Employees\\EmployeesTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/Employees/EmployeesTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\Expenses\\ExpensesTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/Expenses/ExpensesTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\FixedAssets\\CategoriesTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/FixedAssets/CategoriesTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\FixedAssets\\FixedAssetsTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/FixedAssets/FixedAssetsTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\Inventory\\InventoryTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/Inventory/InventoryTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\Invoices\\InvoicesTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/Invoices/InvoicesTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\Items\\ItemCategoriesTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/Items/ItemCategoriesTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\Items\\ItemsTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/Items/ItemsTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\Journals\\JournalsTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/Journals/JournalsTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\Leaves\\LeavesTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/Leaves/LeavesTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\PaymentsMade\\PaymentsMadeTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/PaymentsMade/PaymentsMadeTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\PaymentsReceived\\PaymentsReceivedTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/PaymentsReceived/PaymentsReceivedTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\PurchaseOrders\\PurchaseOrdersTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/PurchaseOrders/PurchaseOrdersTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\SalaryStructures\\SalaryStructuresTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/SalaryStructures/SalaryStructuresTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\SalesOrders\\SalesOrdersTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/SalesOrders/SalesOrdersTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\SalesReceipts\\SalesReceiptsTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/SalesReceipts/SalesReceiptsTable.php
-
-		-
 			message: '#^Access to an undefined property App\\Livewire\\Settings\\InvoiceTemplateEditor\:\:\$bulkAction\.$#'
 			identifier: property.notFound
 			count: 1
@@ -523,34 +385,10 @@ parameters:
 			path: app/Livewire/Subscriptions/SubscriptionManager.php
 
 		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\TaxGroups\\TaxGroupsTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/TaxGroups/TaxGroupsTable.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\TaxRates\\TaxRatesTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/TaxRates/TaxRatesTable.php
-
-		-
 			message: '#^Trait App\\Livewire\\Traits\\WithBulkOperations is used zero times and is not analysed\.$#'
 			identifier: trait.unused
 			count: 1
 			path: app/Livewire/Traits/WithBulkOperations.php
-
-		-
-			message: '#^Call to function method_exists\(\) with \$this\(App\\Livewire\\Vendors\\VendorsTable\) and ''bulkActionPermissio…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Livewire/Vendors/VendorsTable.php
-
-		-
-			message: '#^Access to an undefined static property static\(App\\Models\\AccountingPeriod\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/AccountingPeriod.php
 
 		-
 			message: '#^Parameter \#1 \$year of static method Carbon\\Carbon\:\:createFromDate\(\) expects int\|null, float given\.$#'
@@ -571,12 +409,6 @@ parameters:
 			path: app/Models/AccountingPeriod.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\Allowance\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/Allowance.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -589,12 +421,6 @@ parameters:
 			path: app/Models/Allowance.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\AssemblyOrder\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/AssemblyOrder.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -605,18 +431,6 @@ parameters:
 			identifier: new.static
 			count: 1
 			path: app/Models/AssemblyOrder.php
-
-		-
-			message: '#^Access to an undefined static property static\(App\\Models\\Bank\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/Bank.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\Bank\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/Bank.php
 
 		-
 			message: '#^Parameter \#1 \$num of function number_format expects float, string given\.$#'
@@ -643,18 +457,6 @@ parameters:
 			path: app/Models/BankTransaction.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\Bill\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/Bill.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\Bill\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/Bill.php
-
-		-
 			message: '#^Parameter \#2 \$newQuantity of method App\\Services\\StockValuationService\:\:updateWeightedAverageCost\(\) expects float, string given\.$#'
 			identifier: argument.type
 			count: 1
@@ -673,12 +475,6 @@ parameters:
 			path: app/Models/Bill.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\BillOfMaterial\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/BillOfMaterial.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -691,18 +487,6 @@ parameters:
 			path: app/Models/BillOfMaterial.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\Budget\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/Budget.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\Budget\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/Budget.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -713,18 +497,6 @@ parameters:
 			identifier: new.static
 			count: 1
 			path: app/Models/Budget.php
-
-		-
-			message: '#^Access to an undefined static property static\(App\\Models\\ChartOfAccount\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/ChartOfAccount.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\ChartOfAccount\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/ChartOfAccount.php
 
 		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
@@ -739,18 +511,6 @@ parameters:
 			path: app/Models/ChartOfAccount.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\CreditNote\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/CreditNote.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\CreditNote\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/CreditNote.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -763,18 +523,6 @@ parameters:
 			path: app/Models/CreditNote.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\Customer\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/Customer.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\Customer\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/Customer.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -785,12 +533,6 @@ parameters:
 			identifier: new.static
 			count: 1
 			path: app/Models/Customer.php
-
-		-
-			message: '#^Access to an undefined static property static\(App\\Models\\Deduction\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/Deduction.php
 
 		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
@@ -803,18 +545,6 @@ parameters:
 			identifier: new.static
 			count: 1
 			path: app/Models/Deduction.php
-
-		-
-			message: '#^Access to an undefined static property static\(App\\Models\\DeliveryNote\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/DeliveryNote.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\DeliveryNote\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/DeliveryNote.php
 
 		-
 			message: '#^Parameter \#2 \$amount of method Illuminate\\Database\\Eloquent\\Model\:\:increment\(\) expects float\|int, string given\.$#'
@@ -835,12 +565,6 @@ parameters:
 			path: app/Models/DeliveryNote.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\Department\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/Department.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -851,12 +575,6 @@ parameters:
 			identifier: new.static
 			count: 1
 			path: app/Models/Department.php
-
-		-
-			message: '#^Access to an undefined static property static\(App\\Models\\Designation\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/Designation.php
 
 		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
@@ -871,18 +589,6 @@ parameters:
 			path: app/Models/Designation.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\Employee\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/Employee.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\Employee\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/Employee.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -893,18 +599,6 @@ parameters:
 			identifier: new.static
 			count: 1
 			path: app/Models/Employee.php
-
-		-
-			message: '#^Access to an undefined static property static\(App\\Models\\EmployeeLoan\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/EmployeeLoan.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\EmployeeLoan\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/EmployeeLoan.php
 
 		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
@@ -919,18 +613,6 @@ parameters:
 			path: app/Models/EmployeeLoan.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\Expense\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/Expense.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\Expense\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/Expense.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -941,18 +623,6 @@ parameters:
 			identifier: new.static
 			count: 1
 			path: app/Models/Expense.php
-
-		-
-			message: '#^Access to an undefined static property static\(App\\Models\\FixedAsset\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/FixedAsset.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\FixedAsset\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/FixedAsset.php
 
 		-
 			message: '#^Negated boolean expression is always false\.$#'
@@ -973,18 +643,6 @@ parameters:
 			path: app/Models/FixedAsset.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\FixedAssetCategory\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/FixedAssetCategory.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\FixedAssetCategory\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/FixedAssetCategory.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -995,12 +653,6 @@ parameters:
 			identifier: new.static
 			count: 1
 			path: app/Models/FixedAssetCategory.php
-
-		-
-			message: '#^Access to an undefined static property static\(App\\Models\\FixedAssetDepreciation\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/FixedAssetDepreciation.php
 
 		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
@@ -1015,18 +667,6 @@ parameters:
 			path: app/Models/FixedAssetDepreciation.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\Invoice\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/Invoice.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\Invoice\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/Invoice.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -1039,18 +679,6 @@ parameters:
 			path: app/Models/Invoice.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\InvoiceRefund\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/InvoiceRefund.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\InvoiceRefund\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/InvoiceRefund.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -1061,18 +689,6 @@ parameters:
 			identifier: new.static
 			count: 1
 			path: app/Models/InvoiceRefund.php
-
-		-
-			message: '#^Access to an undefined static property static\(App\\Models\\Item\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/Item.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\Item\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/Item.php
 
 		-
 			message: '#^Method App\\Models\\Item\:\:getEffectiveTaxRateAttribute\(\) should return float\|null but returns string\.$#'
@@ -1093,12 +709,6 @@ parameters:
 			path: app/Models/Item.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\ItemCategory\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/ItemCategory.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -1111,18 +721,6 @@ parameters:
 			path: app/Models/ItemCategory.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\Journal\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/Journal.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\Journal\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/Journal.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -1133,12 +731,6 @@ parameters:
 			identifier: new.static
 			count: 1
 			path: app/Models/Journal.php
-
-		-
-			message: '#^Access to an undefined static property static\(App\\Models\\Leave\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/Leave.php
 
 		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
@@ -1153,12 +745,6 @@ parameters:
 			path: app/Models/Leave.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\LeaveType\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/LeaveType.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -1171,18 +757,6 @@ parameters:
 			path: app/Models/LeaveType.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\PaymentMade\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/PaymentMade.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\PaymentMade\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/PaymentMade.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -1193,18 +767,6 @@ parameters:
 			identifier: new.static
 			count: 1
 			path: app/Models/PaymentMade.php
-
-		-
-			message: '#^Access to an undefined static property static\(App\\Models\\PaymentReceived\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/PaymentReceived.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\PaymentReceived\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/PaymentReceived.php
 
 		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
@@ -1219,18 +781,6 @@ parameters:
 			path: app/Models/PaymentReceived.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\Payroll\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/Payroll.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\Payroll\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/Payroll.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -1241,18 +791,6 @@ parameters:
 			identifier: new.static
 			count: 1
 			path: app/Models/Payroll.php
-
-		-
-			message: '#^Access to an undefined static property static\(App\\Models\\PayrollBatch\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/PayrollBatch.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\PayrollBatch\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/PayrollBatch.php
 
 		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
@@ -1273,18 +811,6 @@ parameters:
 			path: app/Models/Plan.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\PurchaseOrder\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/PurchaseOrder.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\PurchaseOrder\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/PurchaseOrder.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -1297,18 +823,6 @@ parameters:
 			path: app/Models/PurchaseOrder.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\Quotation\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/Quotation.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\Quotation\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/Quotation.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -1319,18 +833,6 @@ parameters:
 			identifier: new.static
 			count: 1
 			path: app/Models/Quotation.php
-
-		-
-			message: '#^Access to an undefined static property static\(App\\Models\\RecurrentInvoice\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/RecurrentInvoice.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\RecurrentInvoice\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/RecurrentInvoice.php
 
 		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
@@ -1351,18 +853,6 @@ parameters:
 			path: app/Models/Role.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\SalaryStructure\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/SalaryStructure.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\SalaryStructure\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/SalaryStructure.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -1381,18 +871,6 @@ parameters:
 			path: app/Models/SalaryStructure.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\SalesOrder\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/SalesOrder.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\SalesOrder\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/SalesOrder.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -1405,18 +883,6 @@ parameters:
 			path: app/Models/SalesOrder.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\SalesReceipt\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/SalesReceipt.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\SalesReceipt\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/SalesReceipt.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -1427,12 +893,6 @@ parameters:
 			identifier: new.static
 			count: 1
 			path: app/Models/SalesReceipt.php
-
-		-
-			message: '#^Access to an undefined static property static\(App\\Models\\StockTransfer\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/StockTransfer.php
 
 		-
 			message: '#^Parameter \#2 \$quantity of method App\\Models\\StockTransfer\:\:transferLayers\(\) expects float, string given\.$#'
@@ -1453,18 +913,6 @@ parameters:
 			path: app/Models/StockTransfer.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\TaxGroup\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/TaxGroup.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\TaxGroup\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/TaxGroup.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -1475,18 +923,6 @@ parameters:
 			identifier: new.static
 			count: 1
 			path: app/Models/TaxGroup.php
-
-		-
-			message: '#^Access to an undefined static property static\(App\\Models\\TaxRate\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/TaxRate.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\TaxRate\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/TaxRate.php
 
 		-
 			message: '#^Parameter \#1 \$num of function number_format expects float, string given\.$#'
@@ -1507,18 +943,6 @@ parameters:
 			path: app/Models/TaxRate.php
 
 		-
-			message: '#^Access to an undefined static property static\(App\\Models\\Vendor\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/Vendor.php
-
-		-
-			message: '#^Call to function method_exists\(\) with class\-string\<static\(App\\Models\\Vendor\)\> and ''restored'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/Vendor.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
@@ -1529,12 +953,6 @@ parameters:
 			identifier: new.static
 			count: 1
 			path: app/Models/Vendor.php
-
-		-
-			message: '#^Access to an undefined static property static\(App\\Models\\Warehouse\)\:\:\$redactedFields\.$#'
-			identifier: staticProperty.notFound
-			count: 1
-			path: app/Models/Warehouse.php
 
 		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'

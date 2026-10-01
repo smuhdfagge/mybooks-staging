@@ -2,7 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\Employee;
+use App\Models\EmployeeLoan;
 use App\Models\TaxBracket;
+use App\Models\Tenant;
+use Illuminate\Support\Collection;
 
 class PayrollTaxService
 {
@@ -56,7 +60,7 @@ class PayrollTaxService
         return $this->calculateProgressiveTax($taxableIncome, $brackets);
     }
 
-    /** @return \Illuminate\Support\Collection<int, TaxBracket> */
+    /** @return Collection<int, TaxBracket> */
     protected function activeBrackets(int $tenantId, string $period)
     {
         return TaxBracket::withoutGlobalScopes()
@@ -136,10 +140,10 @@ class PayrollTaxService
      * Monthly rent relief for an employee of a Nigerian business: taken off
      * pay before PAYE, like pension and NHF. Zero elsewhere or with no rent.
      */
-    public function monthlyRentRelief(\App\Models\Employee $employee): float
+    public function monthlyRentRelief(Employee $employee): float
     {
         $rent = (float) ($employee->annual_rent ?? 0);
-        $country = strtoupper(trim((string) \App\Models\Tenant::whereKey($employee->tenant_id)->value('country')));
+        $country = strtoupper(trim((string) Tenant::whereKey($employee->tenant_id)->value('country')));
         if ($rent <= 0 || ! in_array($country, ['NG', 'NGA', 'NIGERIA'], true)) {
             return 0.0;
         }
@@ -158,7 +162,7 @@ class PayrollTaxService
      * @param  array<int, array<string, mixed>>  $employerContributionRules
      * @return array<string, mixed> Payroll attributes
      */
-    public function payslipFigures(\App\Models\Employee $employee, int $tenantId, float $flatTaxRate, array $employerContributionRules, string $periodEnd): array
+    public function payslipFigures(Employee $employee, int $tenantId, float $flatTaxRate, array $employerContributionRules, string $periodEnd): array
     {
         $structure = $employee->salaryStructure;
 
@@ -220,9 +224,9 @@ class PayrollTaxService
         $taxDeduction = $taxResult['tax'];
 
         // Include active loan/advance deductions
-        $activeLoans = \App\Models\EmployeeLoan::getActiveDeductionsForEmployee($employee->id, $periodEnd);
+        $activeLoans = EmployeeLoan::getActiveDeductionsForEmployee($employee->id, $periodEnd);
         foreach ($activeLoans as $loan) {
-            /** @var \App\Models\EmployeeLoan $loan */
+            /** @var EmployeeLoan $loan */
             $loanAmount = min((float) $loan->installment_amount, (float) $loan->outstanding_balance);
             if ($loanAmount > 0) {
                 $deductionDetails[] = [

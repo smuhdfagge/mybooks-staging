@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * A stored API write response, replayed for a retry with the same
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int|null $status_code
  * @property string|null $response_body
  * @property string|null $content_type
- * @property \Illuminate\Support\Carbon|null $created_at
+ * @property Carbon|null $created_at
  */
 class IdempotencyKey extends Model
 {

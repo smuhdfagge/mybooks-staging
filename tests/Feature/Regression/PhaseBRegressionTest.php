@@ -2,13 +2,31 @@
 
 namespace Tests\Feature\Regression;
 
+use App\Events\PayrollPaid;
+use App\Listeners\HandlePayrollPaid;
 use App\Models\AccountingPeriod;
+use App\Models\Bill;
 use App\Models\ChartOfAccount;
 use App\Models\Customer;
+use App\Models\Employee;
+use App\Models\EmployeeLoan;
+use App\Models\Expense;
+use App\Models\FixedAsset;
+use App\Models\Inventory;
 use App\Models\Invoice;
+use App\Models\InvoiceRefund;
+use App\Models\Item;
 use App\Models\Journal;
+use App\Models\PaymentReceived;
+use App\Models\Payroll;
+use App\Models\SalaryStructure;
+use App\Models\StatutoryTaxTemplate;
+use App\Models\User;
+use App\Models\Vendor;
 use App\Services\JournalService;
+use App\Services\Sales\DocumentTotals;
 use App\Services\YearEndCloseService;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
@@ -310,7 +328,7 @@ class PhaseBRegressionTest extends TestCase
 
     public function test_a4_document_discount_is_shared_across_lines_with_different_vat(): void
     {
-        $totals = \App\Services\Sales\DocumentTotals::calculate([
+        $totals = DocumentTotals::calculate([
             ['quantity' => 1, 'unit_price' => 60000, 'tax_rate' => 7.5],
             ['quantity' => 1, 'unit_price' => 40000, 'tax_rate' => 0], // exempt
         ], 'fixed', 10000);
@@ -342,7 +360,7 @@ class PhaseBRegressionTest extends TestCase
     {
         $journals = app(JournalService::class);
         $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
-        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
         $today = now()->toDateString();
 
         // An unpaid invoice (the old report skipped "unpaid").
@@ -364,16 +382,16 @@ class PhaseBRegressionTest extends TestCase
         $journals->createInvoiceJournal($cancelled);
 
         // An unpaid bill (the old report skipped it) and an expense.
-        $bill = \App\Models\Bill::withoutEvents(fn () => \App\Models\Bill::factory()->create([
+        $bill = Bill::withoutEvents(fn () => Bill::factory()->create([
             'tenant_id' => $this->tenant->id, 'vendor_id' => $vendor->id, 'status' => 'unpaid',
             'bill_date' => $today, 'subtotal' => 400, 'tax_amount' => 30, 'total' => 430, 'balance_due' => 430,
         ]));
         $bill->items()->create(['description' => 'Supplies', 'quantity' => 1, 'unit_price' => 400, 'tax_rate' => 7.5, 'tax_amount' => 30, 'total' => 430]);
         $journals->createBillJournal($bill);
 
-        $expense = \App\Models\Expense::withoutEvents(fn () => \App\Models\Expense::factory()->create([
+        $expense = Expense::withoutEvents(fn () => Expense::factory()->create([
             'tenant_id' => $this->tenant->id, 'expense_date' => $today, 'amount' => 200, 'tax_amount' => 20, 'total' => 220,
-            'status' => \App\Models\Expense::STATUS_PAID,
+            'status' => Expense::STATUS_PAID,
             'expense_account_id' => ChartOfAccount::where('tenant_id', $this->tenant->id)->where('type', 'expense')->value('id'),
         ]));
         $journals->createExpenseJournal($expense);
@@ -427,14 +445,14 @@ class PhaseBRegressionTest extends TestCase
         ]));
         app(JournalService::class)->createInvoiceJournal($invoice);
 
-        \App\Models\PaymentReceived::create([
+        PaymentReceived::create([
             'tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_id' => $invoice->id,
             'payment_number' => 'PAY-A6', 'payment_date' => now()->toDateString(), 'amount' => 1075, 'payment_method' => 'cash',
         ]);
         $this->assertSame('paid', $invoice->fresh()->status);
 
         $this->post(route('invoices.refunds.store', $invoice), [
-            'amount' => 1075, 'refund_date' => now()->toDateString(), 'refund_method' => array_key_first(\App\Models\InvoiceRefund::METHODS),
+            'amount' => 1075, 'refund_date' => now()->toDateString(), 'refund_method' => array_key_first(InvoiceRefund::METHODS),
         ])->assertSessionHas('success');
 
         $invoice->refresh();
@@ -451,7 +469,7 @@ class PhaseBRegressionTest extends TestCase
 
         // No second refund of the same money.
         $this->post(route('invoices.refunds.store', $invoice), [
-            'amount' => 1, 'refund_date' => now()->toDateString(), 'refund_method' => array_key_first(\App\Models\InvoiceRefund::METHODS),
+            'amount' => 1, 'refund_date' => now()->toDateString(), 'refund_method' => array_key_first(InvoiceRefund::METHODS),
         ])->assertSessionHasErrors('amount');
     }
 
@@ -462,15 +480,15 @@ class PhaseBRegressionTest extends TestCase
         return (float) ChartOfAccount::where('tenant_id', $this->tenant->id)->where('account_code', $code)->value('current_balance');
     }
 
-    private function draftPayroll(array $attrs = []): \App\Models\Payroll
+    private function draftPayroll(array $attrs = []): Payroll
     {
-        $employee = \App\Models\Employee::withoutGlobalScopes()->create([
-            'tenant_id' => $this->tenant->id, 'employee_id' => \App\Models\Employee::generateEmployeeId($this->tenant->id),
+        $employee = Employee::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id, 'employee_id' => Employee::generateEmployeeId($this->tenant->id),
             'first_name' => 'Hauwa', 'last_name' => 'Sani', 'hire_date' => '2026-01-01',
         ]);
-        $creator = \App\Models\User::factory()->create(['tenant_id' => $this->tenant->id]);
+        $creator = User::factory()->create(['tenant_id' => $this->tenant->id]);
 
-        return \App\Models\Payroll::withoutEvents(fn () => \App\Models\Payroll::create(array_merge([
+        return Payroll::withoutEvents(fn () => Payroll::create(array_merge([
             'tenant_id' => $this->tenant->id, 'employee_id' => $employee->id, 'payroll_number' => 'PAY-B'.random_int(1000, 9999),
             'pay_period_start' => '2026-08-01', 'pay_period_end' => '2026-08-31', 'pay_date' => '2026-08-31',
             'basic_salary' => 5000, 'allowances' => 0, 'overtime_hours' => 0, 'overtime_amount' => 0, 'gross_salary' => 5000,
@@ -487,7 +505,7 @@ class PhaseBRegressionTest extends TestCase
         $this->post(route('payroll.approve', $payroll))->assertSessionHas('success');
 
         // Cost recognised in August, owed to the employee, nothing paid yet.
-        $accrual = Journal::where('reference_type', \App\Models\Payroll::class)->where('reference_id', $payroll->id)->sole();
+        $accrual = Journal::where('reference_type', Payroll::class)->where('reference_id', $payroll->id)->sole();
         $this->assertSame('2026-08-31', $accrual->journal_date->toDateString());
         $this->assertEqualsWithDelta(5000, $this->code('6000'), 0.001);
         $this->assertEqualsWithDelta(4500, $this->code('2210'), 0.001, 'net pay owed');
@@ -512,7 +530,7 @@ class PhaseBRegressionTest extends TestCase
         $this->post(route('payroll.approve', $payroll))->assertSessionHas('error');
 
         $this->assertSame('draft', $payroll->fresh()->status);
-        $this->assertSame(0, Journal::where('reference_type', \App\Models\Payroll::class)->count());
+        $this->assertSame(0, Journal::where('reference_type', Payroll::class)->count());
     }
 
     public function test_a10_payroll_liabilities_can_be_remitted(): void
@@ -540,7 +558,7 @@ class PhaseBRegressionTest extends TestCase
     {
         $this->createAuthenticatedUser(['approve payroll', 'edit payroll', 'view payroll']);
         $payroll = $this->draftPayroll();
-        $loan = \App\Models\EmployeeLoan::create([
+        $loan = EmployeeLoan::create([
             'tenant_id' => $this->tenant->id, 'employee_id' => $payroll->employee_id, 'loan_number' => 'LN-1', 'type' => 'advance',
             'principal_amount' => 100000, 'interest_rate' => 0, 'total_installments' => 10, 'installment_amount' => 10000,
             'installments_paid' => 0, 'amount_repaid' => 0, 'outstanding_balance' => 100000,
@@ -568,7 +586,7 @@ class PhaseBRegressionTest extends TestCase
         $this->assertSame(1, $loan->repayments()->count());
 
         // Paying again (e.g. a retried batch) doesn't record a second repayment.
-        app(\App\Listeners\HandlePayrollPaid::class)->handle(new \App\Events\PayrollPaid($payroll->fresh()));
+        app(HandlePayrollPaid::class)->handle(new PayrollPaid($payroll->fresh()));
         $this->assertSame(1, $loan->repayments()->count());
     }
 
@@ -609,7 +627,7 @@ class PhaseBRegressionTest extends TestCase
     {
         $this->createAuthenticatedUser(['create fixed-assets', 'view fixed-assets', 'delete fixed-assets']);
         $this->post(route('fixed-assets.store'), $this->assetPayload());
-        $asset = \App\Models\FixedAsset::sole();
+        $asset = FixedAsset::sole();
 
         $this->delete(route('fixed-assets.destroy', $asset))->assertSessionHas('success');
 
@@ -621,7 +639,7 @@ class PhaseBRegressionTest extends TestCase
     {
         $this->createAuthenticatedUser(['create fixed-assets', 'view fixed-assets', 'edit fixed-assets']);
         $this->post(route('fixed-assets.store'), $this->assetPayload());
-        $asset = \App\Models\FixedAsset::sole();
+        $asset = FixedAsset::sole();
 
         $this->post(route('fixed-assets.depreciate', $asset), ['depreciation_date' => '2026-06-30'])->assertSessionHas('success');
         $this->post(route('fixed-assets.depreciate', $asset), ['depreciation_date' => '2026-06-30'])->assertSessionHas('error');
@@ -634,7 +652,7 @@ class PhaseBRegressionTest extends TestCase
     {
         $this->createAuthenticatedUser(['create fixed-assets', 'view fixed-assets', 'edit fixed-assets']);
         $this->post(route('fixed-assets.store'), $this->assetPayload());
-        $asset = \App\Models\FixedAsset::sole();
+        $asset = FixedAsset::sole();
 
         $this->put(route('fixed-assets.update', $asset), ['name' => 'Delivery van', 'status' => 'disposed'])
             ->assertSessionHasErrors('status');
@@ -652,9 +670,9 @@ class PhaseBRegressionTest extends TestCase
         }
         $this->postJournal('2026-03-31', [['6100', 500, 0], ['1000', 0, 500]]);
 
-        \Illuminate\Support\Facades\DB::enableQueryLog();
+        DB::enableQueryLog();
         $tb = $this->get(route('reports.trial-balance', ['as_of' => '2026-03-31']))->assertOk();
-        $queries = count(\Illuminate\Support\Facades\DB::getQueryLog());
+        $queries = count(DB::getQueryLog());
 
         $this->assertLessThan(25, $queries, 'one grouped query, not one per account');
         $this->assertEqualsWithDelta($tb->viewData('totalDebits'), $tb->viewData('totalCredits'), 0.001);
@@ -666,9 +684,9 @@ class PhaseBRegressionTest extends TestCase
     public function test_a21_stock_arrives_when_the_bill_is_posted_and_matches_the_ledger(): void
     {
         $this->createAuthenticatedUser(['create bills', 'view bills']);
-        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
-        $product = \App\Models\Item::factory()->create(['tenant_id' => $this->tenant->id, 'type' => 'product', 'track_inventory' => true]);
-        $service = \App\Models\Item::factory()->create(['tenant_id' => $this->tenant->id, 'type' => 'service', 'track_inventory' => false]);
+        $vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $product = Item::factory()->create(['tenant_id' => $this->tenant->id, 'type' => 'product', 'track_inventory' => true]);
+        $service = Item::factory()->create(['tenant_id' => $this->tenant->id, 'type' => 'service', 'track_inventory' => false]);
 
         $this->post(route('bills.store'), [
             'vendor_id' => $vendor->id, 'bill_date' => now()->toDateString(), 'due_date' => now()->addDays(30)->toDateString(),
@@ -678,11 +696,11 @@ class PhaseBRegressionTest extends TestCase
             ],
         ])->assertSessionHasNoErrors();
 
-        $bill = \App\Models\Bill::sole();
+        $bill = Bill::sole();
         $this->assertSame('unpaid', $bill->status);
 
         // Stock is in, although nothing is paid yet.
-        $this->assertEqualsWithDelta(10, (float) \App\Models\Inventory::where('item_id', $product->id)->value('quantity'), 0.001);
+        $this->assertEqualsWithDelta(10, (float) Inventory::where('item_id', $product->id)->value('quantity'), 0.001);
 
         // The ledger agrees: only the goods go to Inventory; haulage is an expense.
         $this->assertEqualsWithDelta(50000, $this->code('1300'), 0.001);
@@ -695,13 +713,13 @@ class PhaseBRegressionTest extends TestCase
     {
         $this->createAuthenticatedUser(['create payroll', 'view payroll']);
         $this->tenant->update(['country' => 'NG']);
-        \App\Models\StatutoryTaxTemplate::where('country_code', 'NGA')->where('tax_year', 2026)->sole()->applyToTenant($this->tenant->id);
+        StatutoryTaxTemplate::where('country_code', 'NGA')->where('tax_year', 2026)->sole()->applyToTenant($this->tenant->id);
 
-        $employee = \App\Models\Employee::withoutGlobalScopes()->create([
+        $employee = Employee::withoutGlobalScopes()->create([
             'tenant_id' => $this->tenant->id, 'employee_id' => 'EMP-00001', 'first_name' => 'Aisha', 'last_name' => 'Musa',
             'hire_date' => '2026-01-01', 'annual_rent' => 1200000,
         ]);
-        $structure = \App\Models\SalaryStructure::create([
+        $structure = SalaryStructure::create([
             'tenant_id' => $this->tenant->id, 'name' => 'Officer', 'basic_salary' => 500000, 'effective_from' => '2026-01-01', 'is_active' => true,
         ]);
         $structure->items()->create(['type' => 'deduction', 'name' => 'Pension (8%)', 'amount_type' => 'percentage', 'amount' => 8, 'is_taxable' => true, 'sort_order' => 0]);
@@ -712,6 +730,6 @@ class PhaseBRegressionTest extends TestCase
 
         // 447,500 - 20,000 rent relief (20% of 1.2m / 12) = 427,500 a month = 5,130,000 a year:
         // 15% of 2.2m = 330,000 + 18% of 2.13m = 383,400 -> 713,400 a year = 59,450 a month.
-        $this->assertEqualsWithDelta(59450, (float) \App\Models\Payroll::sole()->tax_deduction, 0.01);
+        $this->assertEqualsWithDelta(59450, (float) Payroll::sole()->tax_deduction, 0.01);
     }
 }

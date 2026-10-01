@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Services\ActivityLogService;
 use App\Services\TwoFactorService;
 use Illuminate\Http\RedirectResponse;
@@ -176,7 +177,7 @@ class TwoFactorController extends Controller
                 ->with('error', 'Session expired. Please login again.');
         }
 
-        $user = \App\Models\User::findOrFail($userId);
+        $user = User::findOrFail($userId);
 
         if (! $request->filled('code') && ! $request->filled('recovery_code')) {
             return back()->with('error', 'Please enter a code.');

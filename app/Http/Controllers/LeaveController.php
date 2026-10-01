@@ -6,6 +6,7 @@ use App\Models\ActivityLog;
 use App\Models\Employee;
 use App\Models\Leave;
 use App\Models\LeaveType;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -37,8 +38,8 @@ class LeaveController extends Controller
         ]);
 
         // Calculate days
-        $startDate = \Carbon\Carbon::parse($validated['start_date']);
-        $endDate = \Carbon\Carbon::parse($validated['end_date']);
+        $startDate = Carbon::parse($validated['start_date']);
+        $endDate = Carbon::parse($validated['end_date']);
         $days = $startDate->diffInDays($endDate) + 1;
 
         $leave = Leave::create([
@@ -87,8 +88,8 @@ class LeaveController extends Controller
             'reason' => 'nullable|string',
         ]);
 
-        $startDate = \Carbon\Carbon::parse($validated['start_date']);
-        $endDate = \Carbon\Carbon::parse($validated['end_date']);
+        $startDate = Carbon::parse($validated['start_date']);
+        $endDate = Carbon::parse($validated['end_date']);
         $days = $startDate->diffInDays($endDate) + 1;
 
         $leave->update([

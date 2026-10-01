@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Events\InvoiceRefundDeleting;
 use App\Services\JournalService;
 use App\Traits\BelongsToTenant;
+use App\Traits\HasDocumentNumber;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,8 +15,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class InvoiceRefund extends Model
 {
-    use \App\Traits\HasDocumentNumber;
     use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
+    use HasDocumentNumber;
 
     protected $fillable = [
         'tenant_id',

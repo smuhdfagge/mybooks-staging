@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\Payroll;
 use App\Models\SalaryStructureVersion;
 use App\Services\Reports\PayrollReportService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 /**
@@ -367,7 +368,7 @@ class PayrollReportController extends ReportController
         $departmentId = $request->get('department_id');
         $format = $request->get('format', 'pdf');
 
-        $startDate = \Carbon\Carbon::parse($month.'-01')->startOfMonth();
+        $startDate = Carbon::parse($month.'-01')->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
 
         $query = Payroll::where('tenant_id', $tenantId)
@@ -423,8 +424,8 @@ class PayrollReportController extends ReportController
         $employeeId = $request->get('employee_id');
         $format = $request->get('format', 'pdf');
 
-        $startDate = \Carbon\Carbon::create($year, 1, 1)->startOfYear();
-        $endDate = \Carbon\Carbon::create($year, 12, 31)->endOfYear();
+        $startDate = Carbon::create($year, 1, 1)->startOfYear();
+        $endDate = Carbon::create($year, 12, 31)->endOfYear();
 
         $query = Payroll::where('tenant_id', $tenantId)
             ->whereIn('status', [Payroll::STATUS_APPROVED, Payroll::STATUS_PAID])

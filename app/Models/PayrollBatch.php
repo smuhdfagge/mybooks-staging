@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\BelongsToTenant;
+use App\Traits\HasDocumentNumber;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,8 +12,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PayrollBatch extends Model
 {
-    use \App\Traits\HasDocumentNumber;
     use BelongsToTenant, LogsActivity, SoftDeletes;
+    use HasDocumentNumber;
 
     const STATUS_DRAFT = 'draft';
 

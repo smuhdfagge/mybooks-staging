@@ -6,6 +6,7 @@ use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class Import extends Model
 {
@@ -131,7 +132,7 @@ class Import extends Model
      */
     public static function excelSupported(): bool
     {
-        return class_exists(\PhpOffice\PhpSpreadsheet\IOFactory::class);
+        return class_exists(IOFactory::class);
     }
 
     /**

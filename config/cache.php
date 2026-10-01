@@ -112,6 +112,19 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Serializable Classes
+    |--------------------------------------------------------------------------
+    |
+    | Objects are never rebuilt from the cache (Laravel 13 hardening against
+    | PHP object injection). Everything MyBooks caches is plain arrays and
+    | numbers; list a class here only if it really must be cached.
+    |
+    */
+
+    'serializable_classes' => false,
+
     'prefix' => env('CACHE_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-cache-'),
 
 ];

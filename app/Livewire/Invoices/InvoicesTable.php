@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Invoices;
 
+use App\Actions\Invoices\DeleteInvoice;
 use App\Livewire\Concerns\ChecksPermissions;
 use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\Customer;
@@ -183,7 +184,7 @@ class InvoicesTable extends Component
 
             case 'delete':
                 // Same rules as deleting one invoice (R3).
-                $deleteInvoice = app(\App\Actions\Invoices\DeleteInvoice::class);
+                $deleteInvoice = app(DeleteInvoice::class);
                 $deletedCount = 0;
                 $skipped = 0;
                 DB::transaction(function () use (&$deletedCount, &$skipped, $deleteInvoice) {

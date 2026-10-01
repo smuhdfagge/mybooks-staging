@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\DepreciationService;
 use App\Traits\BelongsToTenant;
+use App\Traits\HasDocumentNumber;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
 use Carbon\Carbon;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class FixedAsset extends Model
 {
-    use \App\Traits\HasDocumentNumber;
+    use HasDocumentNumber;
 
     /** How the asset was paid for (finding A11) => what the purchase journal credits. */
     public const FUNDING_SOURCES = [

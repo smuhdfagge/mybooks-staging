@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\IdempotencyKey;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
@@ -82,7 +84,7 @@ Schedule::command('retention:purge --force')
     ->appendOutputTo(storage_path('logs/retention-purge.log'));
 
 // Drop API idempotency keys older than 24 hours (I5)
-Schedule::command('model:prune', ['--model' => [\App\Models\IdempotencyKey::class]])
+Schedule::command('model:prune', ['--model' => [IdempotencyKey::class]])
     ->dailyAt('03:15')
     ->withoutOverlapping()
     ->onOneServer();
@@ -98,7 +100,7 @@ Schedule::command('logs:verify')
     ->withoutOverlapping()
     ->onOneServer()
     ->appendOutputTo(storage_path('logs/log-verify.log'))
-    ->onFailure(fn () => \Illuminate\Support\Facades\Log::error('Activity log integrity check failed; see storage/logs/log-verify.log.'));
+    ->onFailure(fn () => Log::error('Activity log integrity check failed; see storage/logs/log-verify.log.'));
 
 /*
 |--------------------------------------------------------------------------
