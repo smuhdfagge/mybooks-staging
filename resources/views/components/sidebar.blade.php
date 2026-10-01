@@ -190,6 +190,9 @@
                 <a href="{{ route('salary-structures.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('salary-structures.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Salary Structure</a>
                 <a href="{{ route('allowances.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('allowances.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Allowances</a>
                 <a href="{{ route('deductions.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('deductions.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Deductions</a>
+                @can('view statutory-remittances')
+                <a href="{{ route('payroll.statutory.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('payroll.statutory.*') && ! request()->routeIs('payroll.statutory.settings') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Statutory Remittances</a>
+                @endcan
                 @can('manage statutory-settings')
                 <a href="{{ route('payroll.statutory.settings') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('payroll.statutory.settings') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Statutory Settings</a>
                 @endcan

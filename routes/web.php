@@ -54,6 +54,7 @@ use App\Http\Controllers\SalaryStructureController;
 use App\Http\Controllers\SalesOrderController;
 use App\Http\Controllers\SalesReceiptController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\StatutoryRemittanceController;
 use App\Http\Controllers\StatutorySettingsController;
 use App\Http\Controllers\StockTransferController;
 use App\Http\Controllers\TaxGroupController;
@@ -769,6 +770,14 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::get('payroll/{payroll}/payslip', [PayrollController::class, 'payslip'])->name('payroll.payslip');
         Route::get('payroll-batches/{payrollBatch}/payslips', [PayrollController::class, 'batchPayslips'])->name('payroll-batches.payslips');
         Route::get('payroll-liabilities', [PayrollLiabilityController::class, 'index'])->name('payroll.liabilities');
+    });
+    // Statutory remittance schedules: PAYE by state, pension by PFA, NHF, NSITF, ITF.
+    Route::middleware('permission:view statutory-remittances')->group(function () {
+        Route::get('payroll-statutory', [StatutoryRemittanceController::class, 'index'])->name('payroll.statutory.index');
+        Route::get('payroll-statutory/{schedule}', [StatutoryRemittanceController::class, 'show'])
+            ->whereIn('schedule', ['paye', 'pension', 'nhf', 'nsitf', 'itf'])->name('payroll.statutory.show');
+        Route::get('payroll-statutory/{schedule}/export', [StatutoryRemittanceController::class, 'export'])
+            ->whereIn('schedule', ['paye', 'pension', 'nhf', 'nsitf', 'itf'])->name('payroll.statutory.export');
     });
     // Statutory settings: rates, due dates, pensionable pay, PFAs.
     Route::middleware('permission:manage statutory-settings')->group(function () {

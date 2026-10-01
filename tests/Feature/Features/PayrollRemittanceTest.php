@@ -14,7 +14,10 @@ use App\Models\StatutoryContribution;
 use App\Models\StatutoryTaxTemplate;
 use App\Models\User;
 use App\Services\ImportService;
+use App\Services\JournalService;
+use App\Services\Payroll\StatutoryScheduleService;
 use App\Services\Payroll\StatutorySettings;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Permission;
@@ -260,6 +263,143 @@ class PayrollRemittanceTest extends TestCase
         $this->patch(route('payroll.statutory.pfas.update', $ours), ['name' => 'Our PFA (renamed)', 'is_active' => 0])->assertSessionHasNoErrors();
         $this->assertFalse($ours->fresh()->is_active);
         $this->assertSame('Their PFA', $theirs->fresh()->name);
+    }
+
+    // ── Part 3: remittance schedules ───────────────────────────────
+
+    /** @return array<string, mixed> */
+    private function schedule(string $name, string $month = '2026-09'): array
+    {
+        return app(StatutoryScheduleService::class)->build($this->tenant->id, $name, Carbon::parse($month.'-01'), true);
+    }
+
+    public function test_schedules_group_by_state_and_pfa_and_total_correctly(): void
+    {
+        $this->septemberPayroll();
+
+        $paye = $this->schedule('paye');
+        $byState = collect($paye['groups'])->mapWithKeys(fn ($g) => [$g['label'] => $g['amount']]);
+        $this->assertEquals(['Kano' => 67550.0, 'Lagos' => 34304.0], $byState->all());
+        $this->assertEqualsWithDelta(101854, $paye['total'], 0.001);
+        $kanoRow = collect($paye['groups'])->firstWhere('label', 'Kano')['rows'][0];
+        $this->assertSame('Aminu Test', $kanoRow['employee']);
+        $this->assertSame('TIN-Aminu', $kanoRow['tin']);
+        $this->assertEqualsWithDelta(520000, $kanoRow['gross'], 0.001);
+        $this->assertEqualsWithDelta(472500, $kanoRow['taxable'], 0.001);
+
+        $pension = $this->schedule('pension');
+        $stanbic = collect($pension['groups'])->firstWhere('label', 'Stanbic IBTC Pension Managers Limited');
+        $leadway = collect($pension['groups'])->firstWhere('label', 'Leadway Pensure PFA Limited');
+        $this->assertEqualsWithDelta(40000, $stanbic['rows'][0]['employee_share'], 0.001);
+        $this->assertEqualsWithDelta(50000, $stanbic['rows'][0]['employer_share'], 0.001);
+        $this->assertEqualsWithDelta(90000, $stanbic['amount'], 0.001);
+        $this->assertEqualsWithDelta(61200, $leadway['amount'], 0.001);
+        $this->assertSame('PEN100000000050', $stanbic['rows'][0]['rsa_pin']);
+        $this->assertEqualsWithDelta(151200, $pension['total'], 0.001);
+
+        $this->assertEqualsWithDelta(12500, $this->schedule('nhf')['total'], 0.001);
+        $this->assertEqualsWithDelta(8600, $this->schedule('nsitf')['total'], 0.001);
+        $itf = $this->schedule('itf');
+        $this->assertEqualsWithDelta(8600, $itf['total'], 0.001);
+        $this->assertEqualsWithDelta(8600, $itf['extra']['year_to_date'], 0.001);
+        $this->assertEqualsWithDelta(860000, $itf['extra']['year_payroll'], 0.001);
+
+        // A different month has nothing.
+        $this->assertEqualsWithDelta(0, $this->schedule('paye', '2026-08')['total'], 0.001);
+    }
+
+    public function test_schedule_totals_agree_to_the_ledger_and_a_stray_journal_shows_up(): void
+    {
+        $this->septemberPayroll();
+
+        foreach (['paye' => '2310', 'pension' => '2320', 'nhf' => '2370', 'nsitf' => '2380', 'itf' => '2390'] as $name => $code) {
+            $s = $this->schedule($name);
+            $this->assertSame($code, $s['ledger']['account_code']);
+            $this->assertEqualsWithDelta($s['total'], $s['ledger']['posted'], 0.001, $name.' agrees');
+            $this->assertEqualsWithDelta(0, $s['ledger']['difference'], 0.001);
+        }
+
+        // A manual journal into NHF Payable in September is a difference to explain.
+        $journal = Journal::create([
+            'tenant_id' => $this->tenant->id, 'journal_number' => Journal::generateNumber($this->tenant->id), 'journal_date' => '2026-09-20',
+            'reference' => 'ADJ-1', 'description' => 'Adjustment', 'status' => 'posted', 'is_posted' => true, 'posted_at' => now(),
+        ]);
+        $js = app(JournalService::class);
+        $js->createEntry($journal, '6000', 1000, 0, 'x');
+        $js->createEntry($journal, '2370', 0, 1000, 'x');
+        $journal->updateTotals();
+        $journal->save();
+        $js->updateAccountBalances($journal);
+
+        $nhf = $this->schedule('nhf');
+        $this->assertEqualsWithDelta(13500, $nhf['ledger']['posted'], 0.001);
+        $this->assertEqualsWithDelta(-1000, $nhf['ledger']['difference'], 0.001);
+    }
+
+    public function test_schedules_use_state_and_pfa_as_at_the_pay_run_and_skip_drafts(): void
+    {
+        [$a] = $this->septemberPayroll();
+        // Aminu moves to Lagos and changes PFA after September was paid.
+        $a->employee->update(['tax_state_id' => $this->state('Lagos')->id, 'pension_fund_administrator_id' => $this->pfa('Access Pensions Limited')->id]);
+        // A draft payroll for the month is not owed yet.
+        Payroll::create(array_merge($a->only(['employee_id', 'pay_period_start', 'pay_period_end', 'pay_date', 'basic_salary', 'allowances', 'gross_salary', 'tax_deduction', 'other_deductions', 'total_deductions', 'net_salary', 'deduction_details']), [
+            'tenant_id' => $this->tenant->id, 'payroll_number' => 'PAY-DRAFT', 'status' => 'draft',
+        ]));
+
+        $paye = $this->schedule('paye');
+        $this->assertEqualsWithDelta(67550, collect($paye['groups'])->firstWhere('label', 'Kano')['amount'], 0.001);
+        $this->assertEqualsWithDelta(101854, $paye['total'], 0.001);
+        $this->assertNotNull(collect($this->schedule('pension')['groups'])->firstWhere('label', 'Stanbic IBTC Pension Managers Limited'));
+    }
+
+    public function test_remittance_screens_and_exports(): void
+    {
+        $this->septemberPayroll(true, ['view statutory-remittances', 'record statutory-remittances']);
+
+        $this->get(route('payroll.statutory.index', ['month' => '2026-09']))->assertOk()
+            ->assertSee('PAYE schedule')->assertSee('101,854.00')->assertSee('151,200.00');
+        $this->get(route('payroll.statutory.show', ['schedule' => 'paye', 'month' => '2026-09']))->assertOk()
+            ->assertSee('Kano')->assertSee('Lagos')->assertSee('67,550.00')->assertSee('TIN-Aminu')->assertSee('(agrees)');
+
+        $csv = $this->get(route('payroll.statutory.export', ['schedule' => 'pension', 'month' => '2026-09', 'format' => 'csv']));
+        $csv->assertOk();
+        $body = $csv->streamedContent();
+        $this->assertStringContainsString('PFA,Employee,"Staff no.","RSA PIN",Employee,Employer,Total', $body);
+        $this->assertStringContainsString('"Stanbic IBTC Pension Managers Limited","Aminu Test",EMP-Aminu,PEN100000000050,40000,50000,90000', $body);
+        $this->assertStringContainsString('"Schedule total",,,,,,151200.00', $body);
+        $this->assertStringContainsString('Difference,,,,,,0.00', $body);
+
+        $pdf = $this->get(route('payroll.statutory.export', ['schedule' => 'paye', 'month' => '2026-09', 'format' => 'pdf']));
+        $pdf->assertOk();
+        $this->assertSame('application/pdf', $pdf->headers->get('Content-Type'));
+
+        $this->get(route('payroll.statutory.show', ['schedule' => 'vat', 'month' => '2026-09']))->assertNotFound();
+        $this->get(route('payroll.statutory.index', ['month' => 'September']))->assertSessionHasErrors('month');
+    }
+
+    public function test_schedules_need_permission_mask_numbers_for_viewers_and_stay_inside_the_business(): void
+    {
+        [$other] = $this->createTenantWithSubscription();
+        $this->septemberPayroll();
+        $tenant = $this->tenant;
+
+        // Same business, payroll rights but no remittance permission.
+        $this->get(route('payroll.statutory.index'))->assertForbidden();
+
+        // A viewer sees schedules with numbers masked.
+        $viewer = $this->createUserForTenant($tenant, ['view statutory-remittances']);
+        $this->actingAs($viewer);
+        $this->get(route('payroll.statutory.show', ['schedule' => 'paye', 'month' => '2026-09']))->assertOk()
+            ->assertSee('****minu')->assertDontSee('TIN-Aminu');
+        $this->get(route('payroll.statutory.show', ['schedule' => 'pension', 'month' => '2026-09']))->assertOk()
+            ->assertDontSee('PEN100000000050');
+
+        // Another business sees nothing of ours.
+        $outsider = $this->createUserForTenant($other, ['view statutory-remittances', 'record statutory-remittances']);
+        $this->actingAs($outsider);
+        $this->get(route('payroll.statutory.show', ['schedule' => 'paye', 'month' => '2026-09']))->assertOk()
+            ->assertDontSee('Aminu')->assertSee('Nothing owed');
+        $this->assertEqualsWithDelta(0, app(StatutoryScheduleService::class)->build($other->id, 'pension', Carbon::parse('2026-09-01'))['total'], 0.001);
     }
 
     // ── Part 1: employee statutory details ─────────────────────────
