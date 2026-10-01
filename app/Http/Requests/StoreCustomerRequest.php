@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * Creating a customer, from the web form or the API (finding Q5).
@@ -33,6 +34,10 @@ class StoreCustomerRequest extends FormRequest
             'payment_terms' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string'],
             'is_active' => ['boolean'],
+            // Withholding tax: payee type sets the rate and the authority (NRS or state IRS).
+            'payee_type' => ['sometimes', Rule::in(['company', 'individual'])],
+            'wht_category_id' => ['nullable', Rule::exists('wht_categories', 'id')->where('tenant_id', $this->user()->tenant_id)],
+            'wht_exempt' => ['boolean'],
         ];
     }
 }

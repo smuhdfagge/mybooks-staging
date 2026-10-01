@@ -61,6 +61,7 @@ use App\Http\Controllers\TaxRateController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\VendorCreditController;
 use App\Http\Controllers\WarehouseController;
+use App\Http\Controllers\WithholdingTax\WhtSetupController;
 use App\Mail\ContactFormMail;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Http\Request;
@@ -944,6 +945,20 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::post('accounting-periods/{accountingPeriod}/reopen', [AccountingPeriodController::class, 'reopen'])->name('accounting-periods.reopen');
         Route::post('accounting-periods/{accountingPeriod}/lock', [AccountingPeriodController::class, 'lock'])->name('accounting-periods.lock');
         Route::delete('accounting-periods/{accountingPeriod}', [AccountingPeriodController::class, 'destroy'])->name('accounting-periods.destroy');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Withholding Tax (WHT)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('withholding-tax')->name('withholding-tax.')->group(function () {
+        Route::get('/', [WhtSetupController::class, 'index'])->name('setup')->middleware('permission:view withholding-tax');
+        Route::middleware('permission:manage withholding-tax')->group(function () {
+            Route::put('rates', [WhtSetupController::class, 'updateRates'])->name('rates.update');
+            Route::post('rates', [WhtSetupController::class, 'storeRate'])->name('rates.store');
+            Route::put('settings', [WhtSetupController::class, 'updateSettings'])->name('settings.update');
+        });
     });
 
     /*

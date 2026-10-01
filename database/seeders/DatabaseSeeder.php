@@ -97,6 +97,7 @@ class DatabaseSeeder extends Seeder
             'view chart-of-accounts', 'create chart-of-accounts', 'edit chart-of-accounts', 'delete chart-of-accounts',
             'view journals', 'create journals', 'edit journals', 'delete journals', 'post journals',
             'view banks', 'create banks', 'edit banks', 'delete banks', 'reconcile banks',
+            'view withholding-tax', 'manage withholding-tax', 'remit withholding-tax',
 
             // Budgets
             'view budgets', 'create budgets', 'edit budgets', 'delete budgets',
@@ -164,6 +165,7 @@ class DatabaseSeeder extends Seeder
             'view chart-of-accounts', 'create chart-of-accounts', 'edit chart-of-accounts',
             'view journals', 'create journals', 'edit journals', 'post journals',
             'view banks', 'create banks', 'edit banks', 'reconcile banks',
+            'view withholding-tax', 'manage withholding-tax', 'remit withholding-tax',
             'view fixed-assets', 'create fixed-assets', 'edit fixed-assets', 'depreciate fixed-assets',
             'view reports', 'export reports',
             'export data', 'import data',
@@ -211,7 +213,7 @@ class DatabaseSeeder extends Seeder
             'view vendors', 'view expenses', 'view bills', 'view purchase-orders', 'view payments-made',
             'view employees', 'view departments', 'view designations', 'view leaves', 'view payroll',
             'view chart-of-accounts', 'view journals',
-            'view banks',
+            'view banks', 'view withholding-tax',
             'view reports',
         ]);
     }

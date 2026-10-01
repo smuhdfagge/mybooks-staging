@@ -33,6 +33,9 @@ class Customer extends Model
         'payment_terms',
         'notes',
         'is_active',
+        'payee_type',
+        'wht_category_id',
+        'wht_exempt',
     ];
 
     protected $casts = [
@@ -40,7 +43,20 @@ class Customer extends Model
         'credit_limit' => 'decimal:2',
         'deposit_balance' => 'decimal:2',
         'tax_number' => 'encrypted',
+        'wht_exempt' => 'boolean',
     ];
+
+    /** @return BelongsTo<WhtCategory, $this> */
+    public function whtCategory(): BelongsTo
+    {
+        return $this->belongsTo(WhtCategory::class);
+    }
+
+    /** Has a Tax Identification Number on file (WHT is doubled without one). */
+    public function hasTin(): bool
+    {
+        return trim((string) $this->tax_number) !== '';
+    }
 
     /** @return BelongsTo<Tenant, $this> */
     public function tenant(): BelongsTo

@@ -22,6 +22,7 @@ class Tenant extends Model
     {
         static::created(function (Tenant $tenant) {
             ChartOfAccountService::createDefaultAccountsForTenant($tenant);
+            WhtCategory::seedDefaults($tenant->id);
         });
     }
 

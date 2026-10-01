@@ -31,6 +31,7 @@ class AccountCodeService
         'accumulated_depreciation' => '1600',
         'input_vat' => '1410',
         'supplier_advances' => '1420', // money paid to a supplier before their bill
+        'wht_receivable' => '1430', // WHT credit notes receivable (customers withheld from us)
 
         // Liabilities
         'accounts_payable' => '2000',
@@ -46,8 +47,10 @@ class AccountCodeService
         'nhf_payable' => '2370',
         'nsitf_payable' => '2380',
         'itf_payable' => '2390',
+        'wht_payable' => '2420', // WHT we withheld from vendors, owed to the tax authority
         'sales_tax_payable' => '2400', // output VAT
         'vat_payable' => '2410', // net VAT owed after a return is settled
+        'income_tax_payable' => '2430', // company income tax; WHT credits are used against it
 
         // Equity
         'owners_capital' => '3000',
