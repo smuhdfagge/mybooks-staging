@@ -9,6 +9,7 @@ use App\Services\JournalService;
 use App\Services\StockValuationService;
 use App\Traits\BelongsToTenant;
 use App\Traits\GuardsStatusTransitions;
+use App\Traits\HasDocumentNumber;
 use App\Traits\KeepsTotalsBalanced;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
@@ -22,8 +23,8 @@ use Illuminate\Support\Facades\DB;
 
 class Bill extends Model
 {
-    use \App\Traits\HasDocumentNumber, GuardsStatusTransitions;
     use BelongsToTenant, HasFactory, KeepsTotalsBalanced, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
+    use GuardsStatusTransitions, HasDocumentNumber;
 
     protected $fillable = [
         'tenant_id',
