@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\Customer;
 use App\Models\Employee;
 use App\Models\PaymentMade;
 use App\Models\PaymentReceived;
 use App\Models\Payroll;
+use App\Models\Vendor;
 use Tests\TestCase;
 
 class SoftDeletesTest extends TestCase
@@ -14,7 +16,7 @@ class SoftDeletesTest extends TestCase
     {
         $this->createAuthenticatedUser();
 
-        $customer = \App\Models\Customer::withoutEvents(fn () => \App\Models\Customer::factory()->create(['tenant_id' => $this->tenant->id]));
+        $customer = Customer::withoutEvents(fn () => Customer::factory()->create(['tenant_id' => $this->tenant->id]));
 
         $payment = PaymentReceived::withoutEvents(function () use ($customer) {
             return PaymentReceived::create([
@@ -38,7 +40,7 @@ class SoftDeletesTest extends TestCase
     {
         $this->createAuthenticatedUser();
 
-        $vendor = \App\Models\Vendor::withoutEvents(fn () => \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]));
+        $vendor = Vendor::withoutEvents(fn () => Vendor::factory()->create(['tenant_id' => $this->tenant->id]));
 
         $payment = PaymentMade::withoutEvents(function () use ($vendor) {
             return PaymentMade::create([

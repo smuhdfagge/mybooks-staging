@@ -12,9 +12,11 @@ use App\Models\User;
 use App\Notifications\EmailAddressChangedNotification;
 use App\Notifications\TestEmailNotification;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Spatie\Permission\Exceptions\RoleAlreadyExists;
 use Spatie\Permission\Models\Permission;
 
@@ -149,7 +151,7 @@ class SettingsController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users',
-            'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
+            'password' => ['required', 'confirmed', Password::defaults()],
             'phone' => 'nullable|string|max:50',
             ...$this->roleRules(),
         ]);
@@ -190,7 +192,7 @@ class SettingsController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,'.$user->id,
-            'password' => ['nullable', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
+            'password' => ['nullable', 'confirmed', Password::defaults()],
             'phone' => 'nullable|string|max:50',
             'is_active' => 'boolean',
             ...$this->roleRules(),
@@ -489,7 +491,7 @@ class SettingsController extends Controller
             // Create an anonymous notifiable for the test email
             $notifiable = new class($request->test_email)
             {
-                use \Illuminate\Notifications\Notifiable;
+                use Notifiable;
 
                 public function __construct(public string $email) {}
 

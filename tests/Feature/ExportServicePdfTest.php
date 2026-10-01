@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Customer;
 use App\Models\Export;
 use App\Services\ExportService;
 use Illuminate\Support\Facades\Storage;
@@ -40,7 +41,7 @@ class ExportServicePdfTest extends TestCase
     public function test_export_to_pdf_contains_pdf_magic_bytes(): void
     {
         // Create some customer data so the export has content
-        \App\Models\Customer::factory()->count(2)->create([
+        Customer::factory()->count(2)->create([
             'tenant_id' => $this->tenant->id,
         ]);
 

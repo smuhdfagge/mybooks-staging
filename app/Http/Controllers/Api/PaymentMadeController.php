@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Payments\DeletePaymentMade;
+use App\Actions\Payments\RecordPaymentMade;
+use App\Http\Requests\StorePaymentMadeRequest;
 use App\Http\Resources\PaymentMadeResource;
 use App\Models\Bill;
 use App\Models\PaymentMade;
@@ -78,7 +81,7 @@ class PaymentMadeController extends BaseApiController
     /**
      * Create a new payment made
      */
-    public function store(\App\Http\Requests\StorePaymentMadeRequest $request, \App\Actions\Payments\RecordPaymentMade $record): JsonResponse
+    public function store(StorePaymentMadeRequest $request, RecordPaymentMade $record): JsonResponse
     {
         // Same rules and code as the web form (R3, Q5), including the bank balance.
         $payment = $record->handle($this->getTenantId(), $request->validated(), auth()->id());
@@ -90,7 +93,7 @@ class PaymentMadeController extends BaseApiController
     /**
      * Delete a payment
      */
-    public function destroy(PaymentMade $paymentMade, \App\Actions\Payments\DeletePaymentMade $delete): JsonResponse
+    public function destroy(PaymentMade $paymentMade, DeletePaymentMade $delete): JsonResponse
     {
         $delete->handle($paymentMade);
 

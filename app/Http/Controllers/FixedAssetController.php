@@ -8,8 +8,10 @@ use App\Models\FixedAssetCategory;
 use App\Models\FixedAssetDepreciation;
 use App\Models\Vendor;
 use App\Services\DepreciationService;
+use App\Services\JournalService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class FixedAssetController extends Controller
@@ -94,7 +96,7 @@ class FixedAssetController extends Controller
         }
 
         // The asset and its purchase journal are saved together (A11).
-        $asset = \Illuminate\Support\Facades\DB::transaction(function () use ($tenantId, $validated) {
+        $asset = DB::transaction(function () use ($tenantId, $validated) {
             $asset = FixedAsset::create([
                 'tenant_id' => $tenantId,
                 'asset_number' => FixedAsset::generateNumber($tenantId),
@@ -102,7 +104,7 @@ class FixedAssetController extends Controller
                 ...$validated,
             ]);
 
-            app(\App\Services\JournalService::class)->createFixedAssetAcquisitionJournal($asset);
+            app(JournalService::class)->createFixedAssetAcquisitionJournal($asset);
 
             return $asset;
         });
@@ -170,9 +172,9 @@ class FixedAssetController extends Controller
             return back()->with('error', 'Cannot delete asset with posted depreciation. Please dispose the asset instead.');
         }
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($fixedAsset) {
+        DB::transaction(function () use ($fixedAsset) {
             // Keep the purchase journal and post its reversal (A11, M6).
-            app(\App\Services\JournalService::class)->deleteJournalForTransaction(FixedAsset::class, $fixedAsset->id, $fixedAsset->tenant_id);
+            app(JournalService::class)->deleteJournalForTransaction(FixedAsset::class, $fixedAsset->id, $fixedAsset->tenant_id);
             $fixedAsset->delete();
         });
 

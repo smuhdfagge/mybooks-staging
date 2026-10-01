@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Regression;
 
+use App\Models\Item;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -45,7 +46,7 @@ class RerunnableMigrationTest extends TestCase
         }
 
         $this->createAuthenticatedUser();
-        $item = \App\Models\Item::factory()->create(['tenant_id' => $this->tenant->id]);
+        $item = Item::factory()->create(['tenant_id' => $this->tenant->id]);
         \DB::statement("SET SESSION sql_mode = ''");
         \DB::update("UPDATE items SET created_at = '0000-00-00 00:00:00' WHERE id = ?", [$item->id]);
         \DB::statement("SET SESSION sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO'");

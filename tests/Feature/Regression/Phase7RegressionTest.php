@@ -2,8 +2,11 @@
 
 namespace Tests\Feature\Regression;
 
+use App\Models\CustomReport;
 use App\Models\Role;
+use App\Models\SalaryStructure;
 use App\Models\User;
+use Spatie\Permission\Exceptions\RoleDoesNotExist;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
@@ -55,7 +58,7 @@ class Phase7RegressionTest extends TestCase
         auth()->logout();
 
         $this->assertNull(Role::findByName('admin')->tenant_id);
-        $this->expectException(\Spatie\Permission\Exceptions\RoleDoesNotExist::class);
+        $this->expectException(RoleDoesNotExist::class);
         Role::findByName('Accountant');
     }
 
@@ -83,19 +86,19 @@ class Phase7RegressionTest extends TestCase
             ->assertSessionHasErrors('aggregations.0.function');
         $this->post(route('reports.custom.store'), array_merge($base, ['data_source' => 'users']))
             ->assertSessionHasErrors('data_source');
-        $this->assertSame(0, \App\Models\CustomReport::count());
+        $this->assertSame(0, CustomReport::count());
 
         $this->post(route('reports.custom.store'), $base + [
             'filters' => [['column' => 'status', 'operator' => 'equals', 'value' => 'sent']],
             'sort_by' => [['column' => 'total', 'direction' => 'desc']],
         ])->assertSessionHasNoErrors();
-        $this->assertSame(1, \App\Models\CustomReport::count());
+        $this->assertSame(1, CustomReport::count());
     }
 
     public function test_m7_old_reports_with_unknown_columns_still_run(): void
     {
         $this->createAuthenticatedUser(['view reports']);
-        $report = \App\Models\CustomReport::create([
+        $report = CustomReport::create([
             'tenant_id' => $this->tenant->id, 'created_by' => $this->user->id, 'name' => 'Old', 'data_source' => 'invoices',
             'columns' => ['invoice_number'],
             'filters' => [['column' => 'no_such_column', 'operator' => 'equals', 'value' => 'x']],
@@ -124,7 +127,7 @@ class Phase7RegressionTest extends TestCase
     public function test_l1_salary_structure_edit_form_renders(): void
     {
         $this->createAuthenticatedUser(['create payroll', 'edit payroll', 'view payroll']);
-        $structure = \App\Models\SalaryStructure::withoutEvents(fn () => \App\Models\SalaryStructure::create([
+        $structure = SalaryStructure::withoutEvents(fn () => SalaryStructure::create([
             'tenant_id' => $this->tenant->id, 'name' => 'Standard', 'basic_salary' => 5000, 'is_active' => true,
             'effective_from' => now()->startOfYear(), 'version' => 1, 'created_by' => $this->user->id,
         ]));

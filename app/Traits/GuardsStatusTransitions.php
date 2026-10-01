@@ -2,6 +2,8 @@
 
 namespace App\Traits;
 
+use App\Enums\DocumentStatus;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -24,7 +26,7 @@ trait GuardsStatusTransitions
                 return;
             }
 
-            /** @var class-string<\App\Enums\DocumentStatus> $enum */
+            /** @var class-string<DocumentStatus> $enum */
             $enum = static::statusEnum();
             $to = $enum::tryFrom((string) $document->status);
             if (! $to) {
@@ -39,11 +41,11 @@ trait GuardsStatusTransitions
         });
     }
 
-    /** @return class-string<\App\Enums\DocumentStatus> */
+    /** @return class-string<DocumentStatus> */
     abstract protected static function statusEnum(): string;
 
     protected static function statusDocumentName(): string
     {
-        return strtolower(str_replace('_', ' ', \Illuminate\Support\Str::snake(class_basename(static::class))));
+        return strtolower(str_replace('_', ' ', Str::snake(class_basename(static::class))));
     }
 }

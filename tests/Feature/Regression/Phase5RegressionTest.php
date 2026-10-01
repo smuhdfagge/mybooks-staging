@@ -2,9 +2,20 @@
 
 namespace Tests\Feature\Regression;
 
+use App\Http\Controllers\Admin\AdminTenantController;
+use App\Http\Requests\Admin\ExtendSubscriptionRequest;
 use App\Livewire\Subscriptions\SubscriptionManager;
+use App\Models\Plan;
+use App\Models\Role;
 use App\Models\Subscription;
+use App\Models\SubscriptionPayment;
+use App\Models\User;
+use App\Notifications\SubscriptionExpiringNotification;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 /**
@@ -83,16 +94,16 @@ class Phase5RegressionTest extends TestCase
     private function livewireUpdate(string $snapshot, array $updates = [])
     {
         // Each real request starts with fresh Livewire state (Livewire 4).
-        \Livewire\Livewire::flushState();
+        Livewire::flushState();
 
-        return $this->withHeaders(['X-Livewire' => '1'])->postJson(\Livewire\Livewire::getUpdateUri(), [
+        return $this->withHeaders(['X-Livewire' => '1'])->postJson(Livewire::getUpdateUri(), [
             'components' => [['snapshot' => $snapshot, 'updates' => $updates, 'calls' => []]],
         ]);
     }
 
     public function test_c1_expired_tenant_cannot_keep_using_an_open_livewire_page(): void
     {
-        \Spatie\Permission\Models\Permission::findOrCreate('view customers', 'web');
+        Permission::findOrCreate('view customers', 'web');
         $this->user->givePermissionTo('view customers');
         $snapshot = $this->livewireSnapshot(route('customers.index'), 'customers');
         $this->livewireUpdate($snapshot, ['search' => 'x'])->assertOk();
@@ -119,15 +130,15 @@ class Phase5RegressionTest extends TestCase
 
     public function test_c1_expire_command_closes_ended_subscriptions_and_reminds(): void
     {
-        \Illuminate\Support\Facades\Notification::fake();
-        \App\Models\Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        Notification::fake();
+        Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         $this->user->assignRole('admin');
 
         // Ends in 7 days: reminded once, even if the command runs twice
         $this->subscription->update(['ends_at' => now()->addDays(7)->setTime(12, 0)]);
         $this->artisan('subscriptions:expire')->assertSuccessful();
         $this->artisan('subscriptions:expire')->assertSuccessful();
-        \Illuminate\Support\Facades\Notification::assertSentToTimes($this->user, \App\Notifications\SubscriptionExpiringNotification::class, 1);
+        Notification::assertSentToTimes($this->user, SubscriptionExpiringNotification::class, 1);
 
         // Ended yesterday: marked expired
         $this->subscription->update(['ends_at' => now()->subDay()]);
@@ -178,21 +189,21 @@ class Phase5RegressionTest extends TestCase
 
     private function fakeInitialize(): void
     {
-        \Illuminate\Support\Facades\Http::fake([
-            'api.paystack.co/transaction/initialize' => \Illuminate\Support\Facades\Http::response([
+        Http::fake([
+            'api.paystack.co/transaction/initialize' => Http::response([
                 'status' => true, 'data' => ['authorization_url' => 'https://checkout.paystack.com/abc123'],
             ]),
         ]);
     }
 
-    private function startPayment(): \App\Models\SubscriptionPayment
+    private function startPayment(): SubscriptionPayment
     {
         $this->fakeInitialize();
         Livewire::test(SubscriptionManager::class)
             ->call('payPending')
             ->assertRedirect('https://checkout.paystack.com/abc123');
 
-        return \App\Models\SubscriptionPayment::latest('id')->firstOrFail();
+        return SubscriptionPayment::latest('id')->firstOrFail();
     }
 
     private function signedWebhook(array $event)
@@ -205,7 +216,7 @@ class Phase5RegressionTest extends TestCase
         ], $body);
     }
 
-    private function charge(\App\Models\SubscriptionPayment $payment, array $overrides = []): array
+    private function charge(SubscriptionPayment $payment, array $overrides = []): array
     {
         return array_merge([
             'status' => 'success', 'reference' => $payment->reference,
@@ -216,16 +227,16 @@ class Phase5RegressionTest extends TestCase
     public function test_c1_sign_up_waits_for_payment(): void
     {
         auth()->logout();
-        $plan = \App\Models\Plan::factory()->create(['monthly_price' => 5000, 'annual_price' => 50000]);
+        $plan = Plan::factory()->create(['monthly_price' => 5000, 'annual_price' => 50000]);
 
         $this->post('/register', [
             'plan_id' => $plan->id, 'billing_cycle' => 'monthly',
             'company_name' => 'Kano Traders', 'company_email' => 'office@kanotraders.test', 'currency' => 'NGN',
             'name' => 'Aisha', 'email' => 'aisha@kanotraders.test',
-            'password' => $password = 'Aa1!'.\Illuminate\Support\Str::random(16), 'password_confirmation' => $password,
+            'password' => $password = 'Aa1!'.Str::random(16), 'password_confirmation' => $password,
         ])->assertRedirect(route('verification.notice', absolute: false));
 
-        $user = \App\Models\User::where('email', 'aisha@kanotraders.test')->firstOrFail();
+        $user = User::where('email', 'aisha@kanotraders.test')->firstOrFail();
         $user->markEmailAsVerified();
         $subscription = Subscription::withoutGlobalScopes()->where('tenant_id', $user->tenant_id)->sole();
 
@@ -233,7 +244,7 @@ class Phase5RegressionTest extends TestCase
         $this->assertNull($subscription->ends_at);
         $this->assertFalse($user->tenant->hasActiveSubscription());
 
-        \Spatie\Permission\Models\Permission::findOrCreate('view dashboard', 'web');
+        Permission::findOrCreate('view dashboard', 'web');
         $user->givePermissionTo('view dashboard');
         $this->actingAs($user)->get(route('dashboard'))->assertRedirect(route('settings.subscription'));
     }
@@ -241,23 +252,23 @@ class Phase5RegressionTest extends TestCase
     public function test_c1_free_plan_is_active_at_sign_up(): void
     {
         auth()->logout();
-        $plan = \App\Models\Plan::factory()->create(['monthly_price' => 0, 'annual_price' => 0]);
+        $plan = Plan::factory()->create(['monthly_price' => 0, 'annual_price' => 0]);
 
         $this->post('/register', [
             'plan_id' => $plan->id, 'billing_cycle' => 'monthly',
             'company_name' => 'Free Co', 'company_email' => 'office@free.test', 'currency' => 'NGN',
             'name' => 'Musa', 'email' => 'musa@free.test',
-            'password' => $password = 'Aa1!'.\Illuminate\Support\Str::random(16), 'password_confirmation' => $password,
+            'password' => $password = 'Aa1!'.Str::random(16), 'password_confirmation' => $password,
         ]);
 
-        $this->assertTrue(\App\Models\User::where('email', 'musa@free.test')->firstOrFail()->tenant->hasActiveSubscription());
+        $this->assertTrue(User::where('email', 'musa@free.test')->firstOrFail()->tenant->hasActiveSubscription());
     }
 
     public function test_c1_changing_plan_no_longer_switches_without_paying(): void
     {
         $this->paystack();
         $this->fakeInitialize();
-        $bigger = \App\Models\Plan::factory()->create(['monthly_price' => 20000, 'annual_price' => 200000]);
+        $bigger = Plan::factory()->create(['monthly_price' => 20000, 'annual_price' => 200000]);
 
         Livewire::test(SubscriptionManager::class)
             ->set('selectedPlanId', $bigger->id)
@@ -267,11 +278,11 @@ class Phase5RegressionTest extends TestCase
 
         // Still on the old plan until Paystack confirms
         $this->assertSame($this->plan->id, $this->tenant->fresh()->currentPlan()->id);
-        $payment = \App\Models\SubscriptionPayment::sole();
+        $payment = SubscriptionPayment::sole();
         $this->assertSame(2000000, $payment->amountInKobo());
         $this->assertSame('pending', $payment->status);
 
-        \Illuminate\Support\Facades\Http::assertSent(fn ($request) => $request['amount'] === 2000000
+        Http::assertSent(fn ($request) => $request['amount'] === 2000000
             && $request['currency'] === 'NGN'
             && $request->hasHeader('Authorization', 'Bearer '.self::SECRET));
     }
@@ -283,8 +294,8 @@ class Phase5RegressionTest extends TestCase
         $payment = $this->startPayment();
 
         // Paystack says the charge failed: the redirect alone changes nothing
-        \Illuminate\Support\Facades\Http::fake([
-            'api.paystack.co/transaction/verify/*' => \Illuminate\Support\Facades\Http::response([
+        Http::fake([
+            'api.paystack.co/transaction/verify/*' => Http::response([
                 'status' => true, 'data' => $this->charge($payment, ['status' => 'failed']),
             ]),
         ]);
@@ -300,8 +311,8 @@ class Phase5RegressionTest extends TestCase
         $this->makePending();
         $payment = $this->startPayment();
 
-        \Illuminate\Support\Facades\Http::fake([
-            'api.paystack.co/transaction/verify/*' => \Illuminate\Support\Facades\Http::response(['status' => true, 'data' => $this->charge($payment)]),
+        Http::fake([
+            'api.paystack.co/transaction/verify/*' => Http::response(['status' => true, 'data' => $this->charge($payment)]),
         ]);
         $this->get(route('billing.callback', ['reference' => $payment->reference]))
             ->assertRedirect(route('settings.subscription'))
@@ -369,7 +380,7 @@ class Phase5RegressionTest extends TestCase
         $oldEnd = $this->subscription->fresh()->ends_at;
 
         Livewire::test(SubscriptionManager::class)->call('renew')->assertRedirect('https://checkout.paystack.com/abc123');
-        $payment = \App\Models\SubscriptionPayment::sole();
+        $payment = SubscriptionPayment::sole();
         $this->signedWebhook(['event' => 'charge.success', 'data' => $this->charge($payment)])->assertOk();
 
         $this->assertEquals($oldEnd->copy()->addMonth()->toDateTimeString(), $this->subscription->fresh()->ends_at->toDateTimeString());
@@ -382,7 +393,7 @@ class Phase5RegressionTest extends TestCase
         $this->subscription->forceFill(['status' => Subscription::STATUS_EXPIRED, 'ends_at' => now()->subDays(3)])->save();
 
         Livewire::test(SubscriptionManager::class)->call('renew')->assertRedirect('https://checkout.paystack.com/abc123');
-        $payment = \App\Models\SubscriptionPayment::sole();
+        $payment = SubscriptionPayment::sole();
         $this->signedWebhook(['event' => 'charge.success', 'data' => $this->charge($payment)])->assertOk();
 
         $this->assertTrue($this->tenant->fresh()->hasActiveSubscription());
@@ -395,11 +406,11 @@ class Phase5RegressionTest extends TestCase
         $this->fakeInitialize();
         // 15 days left of a 10,000/month plan = 5,000 of value
         $this->subscription->update(['billing_cycle' => 'monthly', 'amount' => 10000, 'ends_at' => now()->addDays(15)]);
-        $bigger = \App\Models\Plan::factory()->create(['monthly_price' => 30000, 'annual_price' => 300000]);
+        $bigger = Plan::factory()->create(['monthly_price' => 30000, 'annual_price' => 300000]);
 
         Livewire::test(SubscriptionManager::class)
             ->set('selectedPlanId', $bigger->id)->set('selectedBillingCycle', 'monthly')->call('changePlan');
-        $payment = \App\Models\SubscriptionPayment::sole();
+        $payment = SubscriptionPayment::sole();
         $this->signedWebhook(['event' => 'charge.success', 'data' => $this->charge($payment)])->assertOk();
 
         $tenant = $this->tenant->fresh();
@@ -427,8 +438,8 @@ class Phase5RegressionTest extends TestCase
     {
         $this->subscription->forceFill(['status' => Subscription::STATUS_EXPIRED, 'ends_at' => now()->subDays(10)])->save();
 
-        $controller = app(\App\Http\Controllers\Admin\AdminTenantController::class);
-        $request = \App\Http\Requests\Admin\ExtendSubscriptionRequest::create('/', 'POST', ['extension_days' => 14]);
+        $controller = app(AdminTenantController::class);
+        $request = ExtendSubscriptionRequest::create('/', 'POST', ['extension_days' => 14]);
         $request->setContainer(app())->setRedirector(app('redirect'))->validateResolved();
         $controller->extendSubscription($request, $this->tenant);
 

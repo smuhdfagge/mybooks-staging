@@ -4,16 +4,22 @@ namespace App\Services;
 
 use App\Contracts\JournalServiceInterface;
 use App\Exceptions\UnbalancedJournalException;
+use App\Models\Bank;
 use App\Models\Bill;
 use App\Models\ChartOfAccount;
+use App\Models\CreditNote;
+use App\Models\EmployeeLoan;
 use App\Models\Expense;
+use App\Models\FixedAsset;
 use App\Models\Invoice;
+use App\Models\InvoiceRefund;
 use App\Models\Journal;
 use App\Models\JournalEntry;
 use App\Models\PaymentMade;
 use App\Models\PaymentReceived;
 use App\Models\Payroll;
 use App\Models\SalesReceipt;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -706,7 +712,7 @@ class JournalService implements JournalServiceInterface
      * This properly reflects that we're giving money back to the customer
      * and reducing our recorded revenue.
      */
-    public function createRefundJournal(\App\Models\InvoiceRefund $refund): ?Journal
+    public function createRefundJournal(InvoiceRefund $refund): ?Journal
     {
         if ($refund->amount <= 0) {
             return null;
@@ -715,7 +721,7 @@ class JournalService implements JournalServiceInterface
         return DB::transaction(function () use ($refund) {
             $t = $refund->tenant_id;
 
-            $existingJournal = Journal::where('reference_type', \App\Models\InvoiceRefund::class)
+            $existingJournal = Journal::where('reference_type', InvoiceRefund::class)
                 ->where('reference_id', $refund->id)
                 ->first();
 
@@ -732,7 +738,7 @@ class JournalService implements JournalServiceInterface
                 'journal_date' => $refund->refund_date,
                 'reference' => $refund->refund_number,
                 'description' => $description,
-                'reference_type' => \App\Models\InvoiceRefund::class,
+                'reference_type' => InvoiceRefund::class,
                 'reference_id' => $refund->id,
                 'status' => 'posted',
                 'is_posted' => true,
@@ -774,7 +780,7 @@ class JournalService implements JournalServiceInterface
     /**
      * Update existing refund journal
      */
-    protected function updateRefundJournal(\App\Models\InvoiceRefund $refund, Journal $journal): Journal
+    protected function updateRefundJournal(InvoiceRefund $refund, Journal $journal): Journal
     {
         $t = $refund->tenant_id;
 
@@ -1272,9 +1278,9 @@ class JournalService implements JournalServiceInterface
     /**
      * An employee loan or advance paid out (A9): Dr Employee Advances, Cr bank.
      */
-    public function createLoanDisbursementJournal(\App\Models\EmployeeLoan $loan): ?Journal
+    public function createLoanDisbursementJournal(EmployeeLoan $loan): ?Journal
     {
-        $already = Journal::where('reference_type', \App\Models\EmployeeLoan::class)
+        $already = Journal::where('reference_type', EmployeeLoan::class)
             ->where('reference_id', $loan->id)
             ->where('journal_type', self::LOAN_DISBURSEMENT)
             ->exists();
@@ -1291,7 +1297,7 @@ class JournalService implements JournalServiceInterface
                 'journal_date' => $loan->disbursement_date ?? now()->toDateString(),
                 'reference' => $loan->loan_number,
                 'description' => "Loan paid out {$loan->loan_number} - {$name}",
-                'reference_type' => \App\Models\EmployeeLoan::class,
+                'reference_type' => EmployeeLoan::class,
                 'reference_id' => $loan->id,
                 'journal_type' => self::LOAN_DISBURSEMENT,
                 'status' => 'posted',
@@ -1370,7 +1376,7 @@ class JournalService implements JournalServiceInterface
                     continue;
                 }
 
-                if (! empty($deduction['_loan_id']) && ($loan = \App\Models\EmployeeLoan::find($deduction['_loan_id']))) {
+                if (! empty($deduction['_loan_id']) && ($loan = EmployeeLoan::find($deduction['_loan_id']))) {
                     // Loan repayment: reduces the advance; any interest is income (A9).
                     $interest = $loan->interestPortionFor($amount);
                     $this->createEntry($journal, $this->acct($t, 'employee_advances'), 0, round($amount - $interest, 2),
@@ -1420,7 +1426,7 @@ class JournalService implements JournalServiceInterface
      *
      * @return array{asset: string, accumulated: string, expense: string, gain: string, loss: string}
      */
-    public function fixedAssetAccounts(\App\Models\FixedAsset $asset): array
+    public function fixedAssetAccounts(FixedAsset $asset): array
     {
         $t = $asset->tenant_id;
         $category = $asset->category;
@@ -1441,7 +1447,7 @@ class JournalService implements JournalServiceInterface
      * payable), the expense a vendor bill already posted it to, or owner's
      * capital for an asset the business already had.
      */
-    public function createFixedAssetAcquisitionJournal(\App\Models\FixedAsset $asset): ?Journal
+    public function createFixedAssetAcquisitionJournal(FixedAsset $asset): ?Journal
     {
         if ((float) $asset->purchase_cost <= 0) {
             return null;
@@ -1454,7 +1460,7 @@ class JournalService implements JournalServiceInterface
             'opening_balance' => $this->acct($t, 'owners_capital'),
             default => $this->getPaymentAccountCode('bank_transfer', $t),
         };
-        $label = \App\Models\FixedAsset::FUNDING_SOURCES[$asset->funding_source] ?? 'Paid from the bank';
+        $label = FixedAsset::FUNDING_SOURCES[$asset->funding_source] ?? 'Paid from the bank';
 
         return $this->postSimple($asset, self::ASSET_ACQUISITION, $asset->purchase_date, "Asset purchase - {$asset->name} ({$label})", [
             [$this->fixedAssetAccounts($asset)['asset'], (float) $asset->purchase_cost, 0, "Asset - {$asset->name}"],
@@ -1462,7 +1468,7 @@ class JournalService implements JournalServiceInterface
         ]);
     }
 
-    public function createDepreciationJournal(\App\Models\FixedAsset $asset, \Carbon\Carbon $date, float $amount): ?Journal
+    public function createDepreciationJournal(FixedAsset $asset, Carbon $date, float $amount): ?Journal
     {
         $accounts = $this->fixedAssetAccounts($asset);
 
@@ -1476,7 +1482,7 @@ class JournalService implements JournalServiceInterface
      * Disposal: remove cost and accumulated depreciation, record any money
      * received, and the gain or loss.
      */
-    public function createDisposalJournal(\App\Models\FixedAsset $asset, \Carbon\Carbon $date, float $proceeds, float $gainLoss): ?Journal
+    public function createDisposalJournal(FixedAsset $asset, Carbon $date, float $proceeds, float $gainLoss): ?Journal
     {
         $a = $this->fixedAssetAccounts($asset);
         $lines = [];
@@ -1502,7 +1508,7 @@ class JournalService implements JournalServiceInterface
      *
      * @param  array<int, array{0: string, 1: float, 2: float, 3: string}>  $lines  code, debit, credit, text
      */
-    protected function postSimple(\App\Models\FixedAsset $document, string $type, mixed $date, string $description, array $lines): Journal
+    protected function postSimple(FixedAsset $document, string $type, mixed $date, string $description, array $lines): Journal
     {
         return DB::transaction(function () use ($document, $type, $date, $description, $lines) {
             $journal = Journal::create([
@@ -1538,7 +1544,7 @@ class JournalService implements JournalServiceInterface
      * Applying it to an invoice later is only an allocation within
      * receivables, so it posts nothing.
      */
-    public function createCreditNoteJournal(\App\Models\CreditNote $creditNote): ?Journal
+    public function createCreditNoteJournal(CreditNote $creditNote): ?Journal
     {
         if ((float) $creditNote->total <= 0) {
             return null;
@@ -1547,7 +1553,7 @@ class JournalService implements JournalServiceInterface
         return DB::transaction(function () use ($creditNote) {
             $t = $creditNote->tenant_id;
 
-            $existing = Journal::where('reference_type', \App\Models\CreditNote::class)
+            $existing = Journal::where('reference_type', CreditNote::class)
                 ->where('reference_id', $creditNote->id)
                 ->where('status', 'posted')
                 ->first();
@@ -1562,7 +1568,7 @@ class JournalService implements JournalServiceInterface
                 'journal_date' => $creditNote->credit_note_date,
                 'reference' => $creditNote->credit_note_number,
                 'description' => "Credit note {$creditNote->credit_note_number} - {$customer}",
-                'reference_type' => \App\Models\CreditNote::class,
+                'reference_type' => CreditNote::class,
                 'reference_id' => $creditNote->id,
                 'status' => 'posted',
                 'is_posted' => true,
@@ -1748,7 +1754,7 @@ class JournalService implements JournalServiceInterface
      * reconciled in the ledger (M5). Otherwise use the payment method's
      * default account (cash, checking, ...), as before.
      */
-    protected function paymentAccountFor(?\App\Models\Bank $bank, ?string $paymentMethod, int $tenantId): string
+    protected function paymentAccountFor(?Bank $bank, ?string $paymentMethod, int $tenantId): string
     {
         if ($bank && $bank->chart_of_account_id) {
             $code = ChartOfAccount::where('tenant_id', $tenantId)

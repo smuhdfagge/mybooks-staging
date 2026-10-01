@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Invoices\SaveInvoice;
+use App\Actions\SalesOrders\DeleteSalesOrder;
+use App\Actions\SalesOrders\SaveSalesOrder;
+use App\Http\Requests\StoreSalesOrderRequest;
+use App\Http\Requests\UpdateSalesOrderRequest;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Item;
@@ -24,7 +29,7 @@ class SalesOrderController extends Controller
         return view('sales-orders.create', compact('customers', 'items', 'orderNumber'));
     }
 
-    public function store(\App\Http\Requests\StoreSalesOrderRequest $request, \App\Actions\SalesOrders\SaveSalesOrder $save)
+    public function store(StoreSalesOrderRequest $request, SaveSalesOrder $save)
     {
         // Same rules as the API (R3).
         $order = $save->create(auth()->user()->tenant_id, $request->validated(), auth()->id());
@@ -41,7 +46,7 @@ class SalesOrderController extends Controller
 
     public function edit(SalesOrder $salesOrder)
     {
-        if (! in_array($salesOrder->status, \App\Actions\SalesOrders\SaveSalesOrder::EDITABLE, true)) {
+        if (! in_array($salesOrder->status, SaveSalesOrder::EDITABLE, true)) {
             return redirect()->route('sales-orders.show', $salesOrder)->with('error', "A {$salesOrder->status} sales order can't be changed.");
         }
 
@@ -52,7 +57,7 @@ class SalesOrderController extends Controller
         return view('sales-orders.edit', compact('salesOrder', 'customers', 'items'));
     }
 
-    public function update(\App\Http\Requests\UpdateSalesOrderRequest $request, SalesOrder $salesOrder, \App\Actions\SalesOrders\SaveSalesOrder $save)
+    public function update(UpdateSalesOrderRequest $request, SalesOrder $salesOrder, SaveSalesOrder $save)
     {
         // This used to save nothing at all (R3).
         $save->update($salesOrder, $request->validated());
@@ -60,7 +65,7 @@ class SalesOrderController extends Controller
         return redirect()->route('sales-orders.show', $salesOrder)->with('success', 'Sales order updated.');
     }
 
-    public function destroy(SalesOrder $salesOrder, \App\Actions\SalesOrders\DeleteSalesOrder $delete)
+    public function destroy(SalesOrder $salesOrder, DeleteSalesOrder $delete)
     {
         // Same rules as the API and the bulk delete (R3).
         if ($reason = $delete->blockedBecause($salesOrder)) {
@@ -85,7 +90,7 @@ class SalesOrderController extends Controller
             ->with('success', 'Sales order confirmed successfully.');
     }
 
-    public function convertToInvoice(SalesOrder $salesOrder, \App\Actions\Invoices\SaveInvoice $save)
+    public function convertToInvoice(SalesOrder $salesOrder, SaveInvoice $save)
     {
         if (! in_array($salesOrder->status, ['confirmed', 'processing'])) {
             return redirect()->back()->with('error', 'Only confirmed or processing orders can be converted to invoices.');

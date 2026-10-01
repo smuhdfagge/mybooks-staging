@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\BelongsToTenant;
+use App\Traits\KeepsTotalsBalanced;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class RecurrentInvoice extends Model
 {
-    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
+    use BelongsToTenant, HasFactory, KeepsTotalsBalanced, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'tenant_id',

@@ -1109,7 +1109,7 @@ class ImportService
                 $journal->updateTotals();
 
                 // Apply to account balances (checks the journal balances)
-                app(\App\Services\JournalService::class)->updateAccountBalances($journal);
+                app(JournalService::class)->updateAccountBalances($journal);
             });
         }
 

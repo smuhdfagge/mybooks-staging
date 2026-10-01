@@ -6,6 +6,7 @@ use App\Models\Bill;
 use App\Models\Inventory;
 use App\Models\Item;
 use App\Models\Vendor;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 /**
@@ -30,7 +31,7 @@ class PurchaseReportController extends ReportController
             ->get();
 
         // Group by aging based on as_of date for proper historical accuracy
-        $asOfDate = \Carbon\Carbon::parse($asOf);
+        $asOfDate = Carbon::parse($asOf);
         $current = $bills->filter(fn ($bill) => $bill->due_date >= $asOfDate)->sum('balance_due');
         $days30 = $bills->filter(fn ($bill) => $bill->due_date < $asOfDate && $bill->due_date >= $asOfDate->copy()->subDays(30))->sum('balance_due');
         $days60 = $bills->filter(fn ($bill) => $bill->due_date < $asOfDate->copy()->subDays(30) && $bill->due_date >= $asOfDate->copy()->subDays(60))->sum('balance_due');
@@ -117,7 +118,7 @@ class PurchaseReportController extends ReportController
             ->orderBy('due_date')
             ->get();
 
-        $asOfDate = \Carbon\Carbon::parse($asOf);
+        $asOfDate = Carbon::parse($asOf);
         $current = $bills->filter(fn ($bill) => $bill->due_date >= $asOfDate)->sum('balance_due');
         $days30 = $bills->filter(fn ($bill) => $bill->due_date < $asOfDate && $bill->due_date >= $asOfDate->copy()->subDays(30))->sum('balance_due');
         $days60 = $bills->filter(fn ($bill) => $bill->due_date < $asOfDate->copy()->subDays(30) && $bill->due_date >= $asOfDate->copy()->subDays(60))->sum('balance_due');

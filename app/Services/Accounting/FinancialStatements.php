@@ -5,6 +5,7 @@ namespace App\Services\Accounting;
 use App\Models\ChartOfAccount;
 use App\Models\Journal;
 use App\Models\Tenant;
+use App\Services\AccountCodeService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -283,13 +284,13 @@ class FinancialStatements
         $payrollCodes = collect(['accrued_salaries', 'payroll_liabilities', 'tax_payable', 'pension_payable', 'insurance_payable', 'union_dues_payable', 'garnishments_payable', 'net_pay_payable'])
             ->map(function ($key) use ($tenantId) {
                 try {
-                    return \App\Services\AccountCodeService::resolve($tenantId, $key);
+                    return AccountCodeService::resolve($tenantId, $key);
                 } catch (\InvalidArgumentException) {
                     return null;
                 }
             })->filter()->all();
 
-        $depositCode = \App\Services\AccountCodeService::resolve($tenantId, 'customer_deposits');
+        $depositCode = AccountCodeService::resolve($tenantId, 'customer_deposits');
 
         $totals = [
             'customers' => 0.0, 'suppliers' => 0.0, 'payroll' => 0.0, 'other' => 0.0,

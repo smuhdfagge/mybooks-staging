@@ -2,6 +2,9 @@
 
 namespace App\Http\Requests\Concerns;
 
+use App\Models\Item;
+use App\Models\TaxGroup;
+use App\Models\TaxRate;
 use Illuminate\Validation\Rule;
 
 /**
@@ -37,9 +40,9 @@ trait ValidatesSalesLines
     {
         $tenantId = auth()->user()->tenant_id;
 
-        $allowed = \App\Models\TaxRate::where('tenant_id', $tenantId)->where('is_active', true)->pluck('rate')
+        $allowed = TaxRate::where('tenant_id', $tenantId)->where('is_active', true)->pluck('rate')
             ->map(fn ($rate) => (float) $rate)
-            ->merge(\App\Models\TaxGroup::with('taxRates')->where('tenant_id', $tenantId)->where('is_active', true)->get()
+            ->merge(TaxGroup::with('taxRates')->where('tenant_id', $tenantId)->where('is_active', true)->get()
                 ->map(fn ($group) => (float) $group->combined_rate))
             ->unique()
             ->values();
@@ -52,7 +55,7 @@ trait ValidatesSalesLines
 
             $index = explode('.', $attribute)[1] ?? null;
             $itemId = $this->input("items.{$index}.item_id");
-            $itemRate = $itemId ? \App\Models\Item::find($itemId)?->effective_tax_rate : null;
+            $itemRate = $itemId ? Item::find($itemId)?->effective_tax_rate : null;
 
             foreach ($allowed->concat([(float) ($itemRate ?? 0)]) as $candidate) {
                 if (abs($candidate - $rate) < 0.005) {

@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
+use App\Models\Role;
 use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Billing\SubscriptionBilling;
 use App\Support\SignupThrottle;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -16,6 +18,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
@@ -31,7 +34,7 @@ class RegisteredUserController extends Controller
     /**
      * Handle an incoming registration request.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function store(Request $request): RedirectResponse
     {
@@ -88,7 +91,7 @@ class RegisteredUserController extends Controller
 
             // The subscription waits for payment (finding C1). A free plan
             // is switched on straight away.
-            app(\App\Services\Billing\SubscriptionBilling::class)
+            app(SubscriptionBilling::class)
                 ->startPendingSubscription($tenant, $plan, $billingCycle);
 
             // Create the admin user for this tenant
@@ -102,7 +105,7 @@ class RegisteredUserController extends Controller
             ]);
 
             // Ensure admin role exists and assign it
-            $adminRole = \App\Models\Role::firstOrCreate(
+            $adminRole = Role::firstOrCreate(
                 ['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => null],
                 []
             );

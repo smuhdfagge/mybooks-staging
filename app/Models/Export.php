@@ -6,6 +6,7 @@ use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class Export extends Model
 {
@@ -146,7 +147,7 @@ class Export extends Model
     {
         return $this->status === self::STATUS_COMPLETED
             && $this->file_path
-            && \Illuminate\Support\Facades\Storage::disk('exports')->exists($this->file_path);
+            && Storage::disk('exports')->exists($this->file_path);
     }
 
     /**

@@ -10,6 +10,7 @@ use App\Models\Designation;
 use App\Models\Employee;
 use App\Models\SalaryStructure;
 use App\Models\State;
+use App\Support\DocumentNumber;
 use Illuminate\Support\Facades\Storage;
 
 class EmployeeController extends Controller
@@ -23,7 +24,7 @@ class EmployeeController extends Controller
     {
         $departments = Department::where('is_active', true)->get();
         $designations = Designation::where('is_active', true)->get();
-        $employeeId = \App\Support\DocumentNumber::preview(auth()->user()->tenant_id, Employee::class, 'employee_id', 'EMP-', 5);
+        $employeeId = DocumentNumber::preview(auth()->user()->tenant_id, Employee::class, 'employee_id', 'EMP-', 5);
         $countries = Country::orderBy('name')->get();
         $states = State::orderBy('name')->get();
         $salaryStructures = SalaryStructure::where('is_active', true)->get();

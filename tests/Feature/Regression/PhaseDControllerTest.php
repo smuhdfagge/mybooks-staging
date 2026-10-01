@@ -3,9 +3,11 @@
 namespace Tests\Feature\Regression;
 
 use App\Models\AccountingPeriod;
+use App\Models\AdminUser;
 use App\Models\Budget;
 use App\Models\ChartOfAccount;
 use App\Models\Customer;
+use App\Models\FixedAsset;
 use App\Models\TaxBracket;
 use App\Models\Vendor;
 use App\Services\PayrollTaxService;
@@ -157,7 +159,7 @@ class PhaseDControllerTest extends TestCase
             'purchase_cost' => 1200000, 'funding_source' => 'opening_balance', 'salvage_value' => 0,
             'useful_life' => 5, 'depreciation_method' => 'straight_line',
         ])->assertSessionHasNoErrors();
-        $asset = \App\Models\FixedAsset::sole();
+        $asset = FixedAsset::sole();
 
         $this->get(route('fixed-assets.show', $asset))->assertOk()->assertSee('Generator');
 
@@ -270,14 +272,14 @@ class PhaseDControllerTest extends TestCase
     public function test_o4_admin_panel_login_and_admin_user_list(): void
     {
         $this->get(route('admin.login'))->assertOk();
-        $admin = \App\Models\AdminUser::create(['name' => 'Ops', 'email' => 'ops@example.com', 'password' => 'Secret-123!', 'is_active' => true, 'role' => 'super_admin']);
+        $admin = AdminUser::create(['name' => 'Ops', 'email' => 'ops@example.com', 'password' => 'Secret-123!', 'is_active' => true, 'role' => 'super_admin']);
 
         $this->post(route('admin.login'), ['email' => 'ops@example.com', 'password' => 'wrong'])->assertSessionHasErrors();
         $this->assertGuest('admin');
 
         $this->actingAsPlatformAdmin($admin)->get(route('admin.users.index'))->assertOk()->assertSee('ops@example.com');
 
-        $viewer = \App\Models\AdminUser::create(['name' => 'View', 'email' => 'view@example.com', 'password' => 'Secret-123!', 'is_active' => true, 'role' => 'viewer']);
+        $viewer = AdminUser::create(['name' => 'View', 'email' => 'view@example.com', 'password' => 'Secret-123!', 'is_active' => true, 'role' => 'viewer']);
         // A fresh sign-in: the session still holds the first admin's password check (S5).
         $this->flushSession();
         $this->actingAsPlatformAdmin($viewer)->get(route('admin.users.index'))->assertForbidden();

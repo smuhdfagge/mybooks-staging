@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Bills\DeleteBill;
+use App\Actions\Bills\SaveBill;
 use App\Http\Requests\StoreBillRequest;
 use App\Http\Requests\UpdateBillRequest;
 use App\Models\Bill;
@@ -55,7 +57,7 @@ class BillController extends Controller
         return view('bills.create', compact('vendorOptions', 'billNumber', 'purchaseOrder', 'prefillItems'));
     }
 
-    public function store(StoreBillRequest $request, \App\Actions\Bills\SaveBill $save)
+    public function store(StoreBillRequest $request, SaveBill $save)
     {
         // Same rules as the API and recurring bills (R3).
         $bill = $save->create(auth()->user()->tenant_id, $request->validated(), auth()->id());
@@ -83,7 +85,7 @@ class BillController extends Controller
         return view('bills.edit', compact('bill', 'vendorOptions'));
     }
 
-    public function update(UpdateBillRequest $request, Bill $bill, \App\Actions\Bills\SaveBill $save)
+    public function update(UpdateBillRequest $request, Bill $bill, SaveBill $save)
     {
         if ($bill->status === 'paid') {
             return redirect()->route('bills.show', $bill)->with('error', 'Paid bills cannot be updated.');
@@ -94,7 +96,7 @@ class BillController extends Controller
         return redirect()->route('bills.show', $bill)->with('success', 'Bill updated.');
     }
 
-    public function destroy(Bill $bill, \App\Actions\Bills\DeleteBill $delete)
+    public function destroy(Bill $bill, DeleteBill $delete)
     {
         if ($reason = $delete->blockedBecause($bill)) {
             return redirect()->route('bills.index')->with('error', $reason);

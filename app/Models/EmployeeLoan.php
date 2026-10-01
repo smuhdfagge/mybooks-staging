@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
+use App\Services\JournalService;
 use App\Traits\BelongsToTenant;
+use App\Traits\HasDocumentNumber;
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,8 +14,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class EmployeeLoan extends Model
 {
-    use \App\Traits\HasDocumentNumber;
     use BelongsToTenant, LogsActivity, SoftDeletes;
+    use HasDocumentNumber;
 
     const TYPE_LOAN = 'loan';
 
@@ -96,7 +99,7 @@ class EmployeeLoan extends Model
     /**
      * Get active loans for an employee that should be deducted in a given pay period.
      */
-    public static function getActiveDeductionsForEmployee(int $employeeId, string $payDate): \Illuminate\Database\Eloquent\Collection
+    public static function getActiveDeductionsForEmployee(int $employeeId, string $payDate): Collection
     {
         return static::where('employee_id', $employeeId)
             ->where('status', self::STATUS_ACTIVE)
@@ -163,7 +166,7 @@ class EmployeeLoan extends Model
     {
         static::created(function (self $loan) {
             if ($loan->status === self::STATUS_ACTIVE && (float) $loan->principal_amount > 0) {
-                app(\App\Services\JournalService::class)->createLoanDisbursementJournal($loan);
+                app(JournalService::class)->createLoanDisbursementJournal($loan);
             }
         });
     }

@@ -6,6 +6,7 @@ use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Validation\Rule;
 
 class CustomReport extends Model
 {
@@ -220,21 +221,21 @@ class CustomReport extends Model
         return [
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
-            'data_source' => ['required', \Illuminate\Validation\Rule::in(array_keys($sources))],
+            'data_source' => ['required', Rule::in(array_keys($sources))],
             'columns' => 'required|array|min:1',
-            'columns.*' => ['required', 'string', \Illuminate\Validation\Rule::in($columns)],
+            'columns.*' => ['required', 'string', Rule::in($columns)],
             'filters' => 'nullable|array',
-            'filters.*.column' => ['required', 'string', \Illuminate\Validation\Rule::in($columns)],
-            'filters.*.operator' => ['required', \Illuminate\Validation\Rule::in(array_keys(static::getFilterOperators()))],
+            'filters.*.column' => ['required', 'string', Rule::in($columns)],
+            'filters.*.operator' => ['required', Rule::in(array_keys(static::getFilterOperators()))],
             'filters.*.value' => 'nullable',
             'sort_by' => 'nullable|array',
-            'sort_by.*.column' => ['required', 'string', \Illuminate\Validation\Rule::in($columns)],
-            'sort_by.*.direction' => ['required', \Illuminate\Validation\Rule::in(['asc', 'desc'])],
-            'group_by' => ['nullable', 'string', \Illuminate\Validation\Rule::in($source['group_fields'] ?? [])],
+            'sort_by.*.column' => ['required', 'string', Rule::in($columns)],
+            'sort_by.*.direction' => ['required', Rule::in(['asc', 'desc'])],
+            'group_by' => ['nullable', 'string', Rule::in($source['group_fields'] ?? [])],
             'aggregations' => 'nullable|array',
-            'aggregations.*.column' => ['required', 'string', \Illuminate\Validation\Rule::in($columns)],
-            'aggregations.*.function' => ['required', \Illuminate\Validation\Rule::in(array_keys(static::getAggregations()))],
-            'date_field' => ['nullable', 'string', \Illuminate\Validation\Rule::in($source['date_fields'] ?? [])],
+            'aggregations.*.column' => ['required', 'string', Rule::in($columns)],
+            'aggregations.*.function' => ['required', Rule::in(array_keys(static::getAggregations()))],
+            'date_field' => ['nullable', 'string', Rule::in($source['date_fields'] ?? [])],
         ];
     }
 

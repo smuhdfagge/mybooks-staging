@@ -7,6 +7,7 @@ use App\Models\Journal;
 use App\Services\AccountCodeService;
 use App\Services\JournalService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -102,7 +103,7 @@ class VatReturn
             $with = array_values(array_filter(['customer', 'vendor', 'items', 'invoice.customer'], fn ($r) => method_exists($type, explode('.', $r)[0])));
 
             $query = $type::withoutGlobalScopes()->with($with);
-            if (in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses_recursive($type), true)) {
+            if (in_array(SoftDeletes::class, class_uses_recursive($type), true)) {
                 $query->withTrashed();
             }
 

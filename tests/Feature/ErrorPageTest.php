@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 class ErrorPageTest extends TestCase
@@ -22,7 +23,7 @@ class ErrorPageTest extends TestCase
         // Force a 403 by calling abort
         $response = $this->get('/test-forbidden-page');
         // Route doesn't exist so we get 404. Instead test view directly.
-        $view = $this->view('errors.403', ['exception' => new \Symfony\Component\HttpKernel\Exception\HttpException(403)]);
+        $view = $this->view('errors.403', ['exception' => new HttpException(403)]);
         $view->assertSee('403');
     }
 
@@ -38,28 +39,28 @@ class ErrorPageTest extends TestCase
 
     public function test_419_view_renders(): void
     {
-        $view = $this->view('errors.419', ['exception' => new \Symfony\Component\HttpKernel\Exception\HttpException(419)]);
+        $view = $this->view('errors.419', ['exception' => new HttpException(419)]);
         $view->assertSee('419');
         $view->assertSee('Page Expired');
     }
 
     public function test_429_view_renders(): void
     {
-        $view = $this->view('errors.429', ['exception' => new \Symfony\Component\HttpKernel\Exception\HttpException(429)]);
+        $view = $this->view('errors.429', ['exception' => new HttpException(429)]);
         $view->assertSee('429');
         $view->assertSee('Too Many Requests');
     }
 
     public function test_500_view_renders(): void
     {
-        $view = $this->view('errors.500', ['exception' => new \Symfony\Component\HttpKernel\Exception\HttpException(500)]);
+        $view = $this->view('errors.500', ['exception' => new HttpException(500)]);
         $view->assertSee('500');
         $view->assertSee('Server Error');
     }
 
     public function test_503_view_renders(): void
     {
-        $view = $this->view('errors.503', ['exception' => new \Symfony\Component\HttpKernel\Exception\HttpException(503)]);
+        $view = $this->view('errors.503', ['exception' => new HttpException(503)]);
         $view->assertSee('503');
         $view->assertSee('Service Unavailable');
     }

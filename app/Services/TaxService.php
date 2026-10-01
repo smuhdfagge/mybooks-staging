@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Item;
 use App\Models\TaxGroup;
 use App\Models\TaxRate;
+use Illuminate\Database\Eloquent\Collection;
 
 class TaxService
 {
@@ -160,7 +161,7 @@ class TaxService
      * Get available tax rates for selection (dropdowns)
      *
      * @param  string  $type  'sales', 'purchases', or 'both'
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return Collection
      */
     public function getAvailableTaxRates(string $type = 'both')
     {
@@ -181,7 +182,7 @@ class TaxService
     /**
      * Get available tax groups for selection (dropdowns)
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return Collection
      */
     public function getAvailableTaxGroups()
     {

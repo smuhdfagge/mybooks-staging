@@ -2,6 +2,7 @@
 
 use App\Services\ChartOfAccountService;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\Log;
 
 return new class extends Migration
 {
@@ -19,7 +20,7 @@ return new class extends Migration
 
         // Log the summary (optional - useful for debugging)
         if ($summary['tenants_seeded'] > 0) {
-            \Illuminate\Support\Facades\Log::info('Default Chart of Accounts seeded', $summary);
+            Log::info('Default Chart of Accounts seeded', $summary);
         }
     }
 

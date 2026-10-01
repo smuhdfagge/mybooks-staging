@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Models\Bill;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
@@ -10,6 +11,6 @@ class BillDeleting
     use Dispatchable, SerializesModels;
 
     public function __construct(
-        public \App\Models\Bill $bill
+        public Bill $bill
     ) {}
 }

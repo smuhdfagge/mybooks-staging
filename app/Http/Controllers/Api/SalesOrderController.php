@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\SalesOrders\DeleteSalesOrder;
+use App\Actions\SalesOrders\SaveSalesOrder;
+use App\Http\Requests\StoreSalesOrderRequest;
+use App\Http\Requests\UpdateSalesOrderRequest;
 use App\Http\Resources\SalesOrderResource;
 use App\Models\SalesOrder;
 use Illuminate\Http\JsonResponse;
@@ -72,7 +76,7 @@ class SalesOrderController extends BaseApiController
     /**
      * Create a sales order
      */
-    public function store(\App\Http\Requests\StoreSalesOrderRequest $request, \App\Actions\SalesOrders\SaveSalesOrder $save): JsonResponse
+    public function store(StoreSalesOrderRequest $request, SaveSalesOrder $save): JsonResponse
     {
         // Same rules and code as the web form (R3, Q5), in a transaction (R6).
         $order = $save->create($this->getTenantId(), $request->validated(), auth()->id());
@@ -84,7 +88,7 @@ class SalesOrderController extends BaseApiController
     /**
      * Update a sales order
      */
-    public function update(\App\Http\Requests\UpdateSalesOrderRequest $request, SalesOrder $salesOrder, \App\Actions\SalesOrders\SaveSalesOrder $save): JsonResponse
+    public function update(UpdateSalesOrderRequest $request, SalesOrder $salesOrder, SaveSalesOrder $save): JsonResponse
     {
         $salesOrder = $save->update($salesOrder, $request->validated());
         $salesOrder->load(['customer', 'items.item']);
@@ -95,7 +99,7 @@ class SalesOrderController extends BaseApiController
     /**
      * Delete a sales order
      */
-    public function destroy(SalesOrder $salesOrder, \App\Actions\SalesOrders\DeleteSalesOrder $delete): JsonResponse
+    public function destroy(SalesOrder $salesOrder, DeleteSalesOrder $delete): JsonResponse
     {
         if ($reason = $delete->blockedBecause($salesOrder)) {
             return $this->error($reason, 422);

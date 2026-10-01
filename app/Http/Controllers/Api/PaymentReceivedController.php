@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Payments\DeletePaymentReceived;
+use App\Actions\Payments\RecordPaymentReceived;
+use App\Http\Requests\StorePaymentReceivedRequest;
 use App\Http\Resources\PaymentReceivedResource;
 use App\Models\Invoice;
 use App\Models\PaymentReceived;
@@ -83,7 +86,7 @@ class PaymentReceivedController extends BaseApiController
     /**
      * Create a new payment received
      */
-    public function store(\App\Http\Requests\StorePaymentReceivedRequest $request, \App\Actions\Payments\RecordPaymentReceived $record): JsonResponse
+    public function store(StorePaymentReceivedRequest $request, RecordPaymentReceived $record): JsonResponse
     {
         // Same rules and code as the web form (R3, Q5): the bank balance
         // is updated and deposits can be applied, which the API used to skip.
@@ -96,7 +99,7 @@ class PaymentReceivedController extends BaseApiController
     /**
      * Delete a payment
      */
-    public function destroy(PaymentReceived $paymentReceived, \App\Actions\Payments\DeletePaymentReceived $delete): JsonResponse
+    public function destroy(PaymentReceived $paymentReceived, DeletePaymentReceived $delete): JsonResponse
     {
         if ($reason = $delete->blockedBecause($paymentReceived)) {
             return $this->error($reason, 422);

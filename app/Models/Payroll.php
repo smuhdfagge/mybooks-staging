@@ -6,18 +6,21 @@ use App\Events\PayrollDeleting;
 use App\Events\PayrollPaid;
 use App\Services\JournalService;
 use App\Traits\BelongsToTenant;
+use App\Traits\HasDocumentNumber;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class Payroll extends Model
 {
-    use \App\Traits\HasDocumentNumber;
     use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
+    use HasDocumentNumber;
 
     // Status constants
     const STATUS_DRAFT = 'draft';
@@ -131,12 +134,12 @@ class Payroll extends Model
     {
         // The cost journal (A10); the payment has its own (payment journal type).
         return $this->morphOne(Journal::class, 'reference')
-            ->where(fn ($q) => $q->whereNull('journal_type')->orWhere('journal_type', \App\Services\JournalService::PAYROLL_ACCRUAL))
+            ->where(fn ($q) => $q->whereNull('journal_type')->orWhere('journal_type', JournalService::PAYROLL_ACCRUAL))
             ->orderBy('id');
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\MorphMany<Journal, $this> */
-    public function journals(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    /** @return MorphMany<Journal, $this> */
+    public function journals(): MorphMany
     {
         return $this->morphMany(Journal::class, 'reference')->orderBy('id');
     }
@@ -159,7 +162,7 @@ class Payroll extends Model
      */
     public function approve(int $approverId): void
     {
-        \Illuminate\Support\Facades\DB::transaction(function () use ($approverId) {
+        DB::transaction(function () use ($approverId) {
             $this->update([
                 'status' => self::STATUS_APPROVED,
                 'approved_by' => $approverId,

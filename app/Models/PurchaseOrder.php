@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Enums\PurchaseOrderStatus;
 use App\Traits\BelongsToTenant;
+use App\Traits\GuardsStatusTransitions;
+use App\Traits\KeepsTotalsBalanced;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,8 +16,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PurchaseOrder extends Model
 {
-    use \App\Traits\GuardsStatusTransitions, \App\Traits\HasDocumentNumber;
-    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
+    use \App\Traits\HasDocumentNumber, GuardsStatusTransitions;
+    use BelongsToTenant, HasFactory, KeepsTotalsBalanced, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     /** A bill has been raised for this order (finding N8). */
     public const STATUS_BILLED = PurchaseOrderStatus::Billed->value;
@@ -118,6 +120,6 @@ class PurchaseOrder extends Model
     /** Allowed status moves (Q3). */
     protected static function statusEnum(): string
     {
-        return \App\Enums\PurchaseOrderStatus::class;
+        return PurchaseOrderStatus::class;
     }
 }

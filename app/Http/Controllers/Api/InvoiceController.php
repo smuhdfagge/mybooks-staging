@@ -2,6 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Invoices\DeleteInvoice;
+use App\Actions\Invoices\SaveInvoice;
+use App\Exceptions\BusinessRuleException;
+use App\Exceptions\UnbalancedJournalException;
+use App\Http\Requests\StoreInvoiceRequest;
+use App\Http\Requests\UpdateInvoiceRequest;
 use App\Http\Resources\InvoiceResource;
 use App\Models\ActivityLog;
 use App\Models\Inventory;
@@ -11,6 +17,7 @@ use App\Services\NotificationService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 
 class InvoiceController extends BaseApiController
@@ -84,7 +91,7 @@ class InvoiceController extends BaseApiController
     /**
      * Create a new invoice
      */
-    public function store(\App\Http\Requests\StoreInvoiceRequest $request, \App\Actions\Invoices\SaveInvoice $save): JsonResponse
+    public function store(StoreInvoiceRequest $request, SaveInvoice $save): JsonResponse
     {
         // Same rules and the same code as the web form (R3, Q5).
         $invoice = $save->create($this->getTenantId(), $request->validated(), auth()->id());
@@ -96,7 +103,7 @@ class InvoiceController extends BaseApiController
     /**
      * Update an invoice
      */
-    public function update(\App\Http\Requests\UpdateInvoiceRequest $request, Invoice $invoice, \App\Actions\Invoices\SaveInvoice $save): JsonResponse
+    public function update(UpdateInvoiceRequest $request, Invoice $invoice, SaveInvoice $save): JsonResponse
     {
         $invoice = $save->update($invoice, $request->validated());
         $invoice->load(['customer', 'items.item']);
@@ -107,7 +114,7 @@ class InvoiceController extends BaseApiController
     /**
      * Delete an invoice
      */
-    public function destroy(Invoice $invoice, \App\Actions\Invoices\DeleteInvoice $delete): JsonResponse
+    public function destroy(Invoice $invoice, DeleteInvoice $delete): JsonResponse
     {
         // Same rules as the web (R3).
         if ($reason = $delete->blockedBecause($invoice)) {
@@ -206,7 +213,7 @@ class InvoiceController extends BaseApiController
                         if ($inventory) {
                             // Refuse rather than silently clamping stock at zero (M4)
                             if ((float) $inventory->quantity < (float) $invoiceItem->quantity) {
-                                throw new \App\Exceptions\BusinessRuleException("Not enough stock to release {$invoiceItem->description}: {$inventory->quantity} on hand, {$invoiceItem->quantity} needed.");
+                                throw new BusinessRuleException("Not enough stock to release {$invoiceItem->description}: {$inventory->quantity} on hand, {$invoiceItem->quantity} needed.");
                             }
                             $inventory->quantity = $inventory->quantity - $invoiceItem->quantity;
                             $inventory->reserved_quantity = max(0, $inventory->reserved_quantity - $invoiceItem->quantity);
@@ -240,7 +247,7 @@ class InvoiceController extends BaseApiController
                 'invoice' => new InvoiceResource($invoice->fresh(['customer', 'items.item'])),
                 'waybill_number' => $waybillNumber,
             ], 'Invoice released successfully');
-        } catch (\App\Exceptions\BusinessRuleException|\App\Exceptions\UnbalancedJournalException $e) {
+        } catch (BusinessRuleException|UnbalancedJournalException $e) {
             // A broken rule is the client's to fix (422); anything else goes to the
             // API error handler, which reports it without showing internals (I6).
             return $this->error($e->getMessage(), 422);
@@ -250,7 +257,7 @@ class InvoiceController extends BaseApiController
     /**
      * Download invoice as PDF
      */
-    public function pdf(Invoice $invoice): \Illuminate\Http\Response
+    public function pdf(Invoice $invoice): Response
     {
         $invoice->load(['customer', 'items.item', 'tenant']);
         $tenant = $invoice->tenant ?? auth()->user()->tenant;

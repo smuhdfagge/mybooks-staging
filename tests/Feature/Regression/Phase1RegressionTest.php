@@ -2,8 +2,30 @@
 
 namespace Tests\Feature\Regression;
 
+use App\Events\BillDeleting;
+use App\Events\BillSaved;
+use App\Events\ExpenseDeleting;
+use App\Events\ExpensePaid;
+use App\Events\InvoiceDeleting;
+use App\Events\InvoiceRefundDeleting;
+use App\Events\InvoiceSaved;
+use App\Events\PaymentMadeCreated;
+use App\Events\PaymentMadeDeleted;
+use App\Events\PaymentMadeDeleting;
+use App\Events\PaymentMadeUpdated;
+use App\Events\PaymentReceivedCreated;
+use App\Events\PaymentReceivedDeleted;
+use App\Events\PaymentReceivedDeleting;
+use App\Events\PaymentReceivedUpdated;
+use App\Events\PayrollDeleting;
+use App\Events\PayrollPaid;
+use App\Events\SalesReceiptDeleting;
+use App\Events\SalesReceiptSaved;
+use App\Models\AdminUser;
 use App\Models\Bank;
+use App\Models\Customer;
 use App\Models\Expense;
+use App\Models\Import;
 use App\Models\PayrollBatch;
 use App\Models\Plan;
 use App\Models\PurchaseOrder;
@@ -11,8 +33,14 @@ use App\Models\Role;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Vendor;
+use Database\Seeders\DatabaseSeeder;
+use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Event;
+use Livewire\Livewire;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PragmaRX\Google2FA\Google2FA;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
@@ -27,25 +55,25 @@ class Phase1RegressionTest extends TestCase
     public function test_n1_each_journal_event_has_exactly_one_listener(): void
     {
         $events = [
-            \App\Events\InvoiceSaved::class,
-            \App\Events\InvoiceDeleting::class,
-            \App\Events\BillSaved::class,
-            \App\Events\BillDeleting::class,
-            \App\Events\SalesReceiptSaved::class,
-            \App\Events\SalesReceiptDeleting::class,
-            \App\Events\PaymentReceivedCreated::class,
-            \App\Events\PaymentReceivedUpdated::class,
-            \App\Events\PaymentReceivedDeleting::class,
-            \App\Events\PaymentReceivedDeleted::class,
-            \App\Events\PaymentMadeCreated::class,
-            \App\Events\PaymentMadeUpdated::class,
-            \App\Events\PaymentMadeDeleting::class,
-            \App\Events\PaymentMadeDeleted::class,
-            \App\Events\ExpensePaid::class,
-            \App\Events\ExpenseDeleting::class,
-            \App\Events\PayrollPaid::class,
-            \App\Events\PayrollDeleting::class,
-            \App\Events\InvoiceRefundDeleting::class,
+            InvoiceSaved::class,
+            InvoiceDeleting::class,
+            BillSaved::class,
+            BillDeleting::class,
+            SalesReceiptSaved::class,
+            SalesReceiptDeleting::class,
+            PaymentReceivedCreated::class,
+            PaymentReceivedUpdated::class,
+            PaymentReceivedDeleting::class,
+            PaymentReceivedDeleted::class,
+            PaymentMadeCreated::class,
+            PaymentMadeUpdated::class,
+            PaymentMadeDeleting::class,
+            PaymentMadeDeleted::class,
+            ExpensePaid::class,
+            ExpenseDeleting::class,
+            PayrollPaid::class,
+            PayrollDeleting::class,
+            InvoiceRefundDeleting::class,
         ];
 
         foreach ($events as $event) {
@@ -99,7 +127,7 @@ class Phase1RegressionTest extends TestCase
 
         $this->get(route('dashboard'))->assertRedirect(route('two-factor.challenge'));
 
-        $code = (new \PragmaRX\Google2FA\Google2FA)->getCurrentOtp($secret);
+        $code = (new Google2FA)->getCurrentOtp($secret);
         $this->post(route('two-factor.verify'), ['code' => $code])->assertRedirect(route('dashboard'));
         $this->assertAuthenticatedAs($this->user);
         $this->get(route('dashboard'))->assertOk();
@@ -190,7 +218,7 @@ class Phase1RegressionTest extends TestCase
         ]));
 
         $make();
-        $this->expectException(\Illuminate\Database\UniqueConstraintViolationException::class);
+        $this->expectException(UniqueConstraintViolationException::class);
         $make();
     }
 
@@ -198,7 +226,7 @@ class Phase1RegressionTest extends TestCase
 
     public function test_n2_purchase_order_permissions_exist_and_tenant_admin_can_open_purchase_orders(): void
     {
-        $this->seed(\Database\Seeders\DatabaseSeeder::class);
+        $this->seed(DatabaseSeeder::class);
 
         foreach (['view', 'create', 'edit', 'delete'] as $action) {
             $this->assertNotNull(Permission::where('name', "{$action} purchase-orders")->first());
@@ -279,7 +307,7 @@ class Phase1RegressionTest extends TestCase
     public function test_h1_deactivated_user_cannot_keep_using_an_open_livewire_page(): void
     {
         $this->createAuthenticatedUser(['view customers']);
-        \App\Models\Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        Customer::factory()->create(['tenant_id' => $this->tenant->id]);
 
         $html = $this->get(route('customers.index'))->assertOk()->getContent();
         preg_match_all('/wire:snapshot="([^"]+)"/', $html, $matches);
@@ -289,7 +317,7 @@ class Phase1RegressionTest extends TestCase
         $this->assertNotNull($snapshot, 'customers table component not found on page');
 
         $payload = ['components' => [['snapshot' => $snapshot, 'updates' => ['search' => 'x'], 'calls' => []]]];
-        $update = \Livewire\Livewire::getUpdateUri();
+        $update = Livewire::getUpdateUri();
 
         $this->withHeaders(['X-Livewire' => '1'])->postJson($update, $payload)->assertOk();
 
@@ -297,7 +325,7 @@ class Phase1RegressionTest extends TestCase
 
         // Each real request starts with fresh Livewire state; in one test the
         // middleware-applied flag would carry over (Livewire 4).
-        \Livewire\Livewire::flushState();
+        Livewire::flushState();
         $this->withHeaders(['X-Livewire' => '1'])->postJson($update, $payload)->assertRedirect(route('login'));
         $this->assertGuest();
     }
@@ -323,34 +351,34 @@ class Phase1RegressionTest extends TestCase
 
     public function test_h5_excel_upload_is_refused_cleanly_while_library_is_missing(): void
     {
-        if (\App\Models\Import::excelSupported()) {
+        if (Import::excelSupported()) {
             $this->markTestSkipped('phpoffice/phpspreadsheet is installed; Excel import is enabled.');
         }
 
         $this->createAuthenticatedUser(['import data']);
-        $file = \Illuminate\Http\UploadedFile::fake()->create('customers.xlsx', 10,
+        $file = UploadedFile::fake()->create('customers.xlsx', 10,
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 
         $this->post(route('imports.upload'), ['type' => 'customers', 'file' => $file])
             ->assertSessionHasErrors(['file' => 'Excel import is not available yet. Please save the sheet as CSV and upload that instead.']);
-        $this->assertSame(0, \App\Models\Import::count());
+        $this->assertSame(0, Import::count());
     }
 
     public function test_h5_csv_upload_still_works(): void
     {
         $this->createAuthenticatedUser(['import data']);
-        $file = \Illuminate\Http\UploadedFile::fake()->createWithContent('customers.csv', "name,email\nAda,ada@example.com\n");
+        $file = UploadedFile::fake()->createWithContent('customers.csv', "name,email\nAda,ada@example.com\n");
 
         $this->post(route('imports.upload'), ['type' => 'customers', 'file' => $file])->assertSessionHasNoErrors();
-        $this->assertSame(1, \App\Models\Import::count());
+        $this->assertSame(1, Import::count());
     }
 
     public function test_h5_spreadsheet_library_is_installed(): void
     {
-        if (! \App\Models\Import::excelSupported()) {
+        if (! Import::excelSupported()) {
             $this->markTestSkipped('Run: composer require phpoffice/phpspreadsheet  (then Excel import switches on).');
         }
-        $this->assertTrue(class_exists(\PhpOffice\PhpSpreadsheet\IOFactory::class));
+        $this->assertTrue(class_exists(IOFactory::class));
     }
 
     // ── M8: seeder must not create demo accounts outside local ──
@@ -359,12 +387,12 @@ class Phase1RegressionTest extends TestCase
     {
         $this->app['env'] = 'production';
 
-        $this->artisan('db:seed', ['--class' => \Database\Seeders\DatabaseSeeder::class, '--force' => true])
+        $this->artisan('db:seed', ['--class' => DatabaseSeeder::class, '--force' => true])
             ->assertSuccessful();
 
         $this->assertSame(0, User::where('email', 'like', '%@mybooks.local')->count());
         $this->assertSame(0, User::where('is_super_admin', true)->count());
-        $this->assertSame(0, \App\Models\AdminUser::where('email', 'like', '%@mybooks.local')->count());
+        $this->assertSame(0, AdminUser::where('email', 'like', '%@mybooks.local')->count());
         // Roles and permissions are still seeded
         $this->assertNotNull(Role::where('name', 'admin')->first());
     }

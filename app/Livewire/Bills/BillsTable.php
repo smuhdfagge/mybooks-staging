@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Bills;
 
+use App\Actions\Bills\DeleteBill;
 use App\Livewire\Concerns\ChecksPermissions;
 use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\Bill;
@@ -195,7 +196,7 @@ class BillsTable extends Component
                         }
 
                         // Same rules as the web and API delete (R3).
-                        $delete = app(\App\Actions\Bills\DeleteBill::class);
+                        $delete = app(DeleteBill::class);
                         if ($delete->blockedBecause($bill)) {
                             $skippedCount++;
 

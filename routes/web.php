@@ -4,11 +4,14 @@ use App\Http\Controllers\AccountingPeriodController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AllowanceController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\BankController;
 use App\Http\Controllers\BillController;
+use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BillOfMaterialController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\ChartOfAccountController;
+use App\Http\Controllers\CloseOrganisationController;
 use App\Http\Controllers\CreditNoteController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
@@ -19,9 +22,12 @@ use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\FixedAssetCategoryController;
+use App\Http\Controllers\FixedAssetController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\InvoiceRefundController;
 use App\Http\Controllers\InvoiceTemplateController;
 use App\Http\Controllers\ItemCategoryController;
 use App\Http\Controllers\ItemController;
@@ -31,6 +37,7 @@ use App\Http\Controllers\LeaveTypeController;
 use App\Http\Controllers\PaymentMadeController;
 use App\Http\Controllers\PaymentReceivedController;
 use App\Http\Controllers\PayrollController;
+use App\Http\Controllers\PayrollLiabilityController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\QuotationController;
@@ -53,8 +60,11 @@ use App\Http\Controllers\TaxRateController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\WarehouseController;
 use App\Mail\ContactFormMail;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 
 /*
 |--------------------------------------------------------------------------
@@ -77,7 +87,7 @@ Route::get('/contact', function () {
     return view('pages.contact');
 })->name('contact');
 
-Route::post('/contact', function (\Illuminate\Http\Request $request) {
+Route::post('/contact', function (Request $request) {
     // Honeypot check: if the hidden field is filled, it's a bot
     if ($request->filled('website')) {
         return back()->with('success', 'Thank you for your message! We will get back to you soon.');
@@ -127,7 +137,7 @@ Route::get('/docs/api', function () {
         abort(500, 'Unable to read API documentation file');
     }
 
-    return view('docs.api', ['content' => \Illuminate\Support\Str::markdown($markdown, [
+    return view('docs.api', ['content' => Str::markdown($markdown, [
         'html_input' => 'strip',
         'allow_unsafe_links' => false,
     ])]);
@@ -141,12 +151,12 @@ Route::get('/docs/api', function () {
 | checks with Paystack itself. The webhook is Paystack's server calling us;
 | it needs no login or CSRF token but must carry a valid signature.
 */
-Route::get('/billing/callback', [App\Http\Controllers\BillingController::class, 'callback'])
+Route::get('/billing/callback', [BillingController::class, 'callback'])
     ->middleware('throttle:30,1')
     ->name('billing.callback');
-Route::post('/billing/paystack/webhook', [App\Http\Controllers\BillingController::class, 'webhook'])
+Route::post('/billing/paystack/webhook', [BillingController::class, 'webhook'])
     ->middleware('throttle:120,1')
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class])
+    ->withoutMiddleware([ValidateCsrfToken::class])
     ->name('billing.webhook');
 
 /*
@@ -159,11 +169,11 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     // Search-as-you-type for the invoice, bill and credit note forms (P9),
     // so the forms no longer load every customer, vendor and item.
     Route::prefix('lookup')->name('lookup.')->middleware('throttle:120,1')->group(function () {
-        Route::get('customers', [\App\Http\Controllers\Api\SearchController::class, 'customers'])
+        Route::get('customers', [SearchController::class, 'customers'])
             ->middleware('permission:view customers,create invoices,edit invoices')->name('customers');
-        Route::get('vendors', [\App\Http\Controllers\Api\SearchController::class, 'vendors'])
+        Route::get('vendors', [SearchController::class, 'vendors'])
             ->middleware('permission:view vendors,create bills,edit bills')->name('vendors');
-        Route::get('items', [\App\Http\Controllers\Api\SearchController::class, 'items'])
+        Route::get('items', [SearchController::class, 'items'])
             ->middleware('permission:view items,create invoices,edit invoices,create bills,edit bills')->name('items');
     });
 
@@ -343,11 +353,11 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
 
     // Invoice Refunds
     Route::middleware('permission:edit invoices')->group(function () {
-        Route::get('invoices/{invoice}/refund', [\App\Http\Controllers\InvoiceRefundController::class, 'create'])->name('invoices.refunds.create');
-        Route::post('invoices/{invoice}/refund', [\App\Http\Controllers\InvoiceRefundController::class, 'store'])->name('invoices.refunds.store');
-        Route::get('refunds/{refund}', [\App\Http\Controllers\InvoiceRefundController::class, 'show'])->name('invoices.refunds.show');
-        Route::get('refunds/{refund}/print', [\App\Http\Controllers\InvoiceRefundController::class, 'print'])->name('invoices.refunds.print');
-        Route::patch('refunds/{refund}/cancel', [\App\Http\Controllers\InvoiceRefundController::class, 'cancel'])->name('invoices.refunds.cancel');
+        Route::get('invoices/{invoice}/refund', [InvoiceRefundController::class, 'create'])->name('invoices.refunds.create');
+        Route::post('invoices/{invoice}/refund', [InvoiceRefundController::class, 'store'])->name('invoices.refunds.store');
+        Route::get('refunds/{refund}', [InvoiceRefundController::class, 'show'])->name('invoices.refunds.show');
+        Route::get('refunds/{refund}/print', [InvoiceRefundController::class, 'print'])->name('invoices.refunds.print');
+        Route::patch('refunds/{refund}/cancel', [InvoiceRefundController::class, 'cancel'])->name('invoices.refunds.cancel');
     });
 
     // Sales Orders - Create routes MUST come before wildcard routes
@@ -757,9 +767,9 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::get('payroll/{payroll}', [PayrollController::class, 'show'])->name('payroll.show');
         Route::get('payroll/{payroll}/payslip', [PayrollController::class, 'payslip'])->name('payroll.payslip');
         Route::get('payroll-batches/{payrollBatch}/payslips', [PayrollController::class, 'batchPayslips'])->name('payroll-batches.payslips');
-        Route::get('payroll-liabilities', [\App\Http\Controllers\PayrollLiabilityController::class, 'index'])->name('payroll.liabilities');
+        Route::get('payroll-liabilities', [PayrollLiabilityController::class, 'index'])->name('payroll.liabilities');
     });
-    Route::post('payroll-liabilities/remit', [\App\Http\Controllers\PayrollLiabilityController::class, 'remit'])
+    Route::post('payroll-liabilities/remit', [PayrollLiabilityController::class, 'remit'])
         ->middleware('permission:edit payroll')
         ->name('payroll.liabilities.remit');
     Route::middleware('permission:edit payroll')->group(function () {
@@ -1067,10 +1077,10 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         });
 
         // Close organisation (O7): owner only, checked in the controller.
-        Route::get('/close-organisation', [\App\Http\Controllers\CloseOrganisationController::class, 'show'])->name('close-organisation');
-        Route::post('/close-organisation', [\App\Http\Controllers\CloseOrganisationController::class, 'store'])
+        Route::get('/close-organisation', [CloseOrganisationController::class, 'show'])->name('close-organisation');
+        Route::post('/close-organisation', [CloseOrganisationController::class, 'store'])
             ->middleware('throttle:5,1')->name('close-organisation.store');
-        Route::delete('/close-organisation', [\App\Http\Controllers\CloseOrganisationController::class, 'cancel'])->name('close-organisation.cancel');
+        Route::delete('/close-organisation', [CloseOrganisationController::class, 'cancel'])->name('close-organisation.cancel');
 
         // Subscription Management
         Route::get('/subscription', function () {
@@ -1170,44 +1180,44 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     */
     // Fixed Assets - Create routes MUST come before wildcard routes
     Route::middleware('permission:create fixed-assets')->group(function () {
-        Route::get('fixed-assets/create', [App\Http\Controllers\FixedAssetController::class, 'create'])->name('fixed-assets.create');
-        Route::post('fixed-assets', [App\Http\Controllers\FixedAssetController::class, 'store'])->name('fixed-assets.store');
+        Route::get('fixed-assets/create', [FixedAssetController::class, 'create'])->name('fixed-assets.create');
+        Route::post('fixed-assets', [FixedAssetController::class, 'store'])->name('fixed-assets.store');
     });
     Route::middleware('permission:view fixed-assets')->group(function () {
-        Route::get('fixed-assets', [App\Http\Controllers\FixedAssetController::class, 'index'])->name('fixed-assets.index');
-        Route::get('fixed-assets/register', [App\Http\Controllers\FixedAssetController::class, 'register'])->name('fixed-assets.register');
-        Route::get('fixed-assets/depreciation-schedule', [App\Http\Controllers\FixedAssetController::class, 'depreciationSchedule'])->name('fixed-assets.depreciation-schedule');
-        Route::get('fixed-assets/{fixedAsset}', [App\Http\Controllers\FixedAssetController::class, 'show'])->name('fixed-assets.show');
-        Route::get('fixed-assets/{fixedAsset}/schedule', [App\Http\Controllers\FixedAssetController::class, 'schedule'])->name('fixed-assets.schedule');
+        Route::get('fixed-assets', [FixedAssetController::class, 'index'])->name('fixed-assets.index');
+        Route::get('fixed-assets/register', [FixedAssetController::class, 'register'])->name('fixed-assets.register');
+        Route::get('fixed-assets/depreciation-schedule', [FixedAssetController::class, 'depreciationSchedule'])->name('fixed-assets.depreciation-schedule');
+        Route::get('fixed-assets/{fixedAsset}', [FixedAssetController::class, 'show'])->name('fixed-assets.show');
+        Route::get('fixed-assets/{fixedAsset}/schedule', [FixedAssetController::class, 'schedule'])->name('fixed-assets.schedule');
     });
     Route::middleware('permission:edit fixed-assets')->group(function () {
-        Route::get('fixed-assets/{fixedAsset}/edit', [App\Http\Controllers\FixedAssetController::class, 'edit'])->name('fixed-assets.edit');
-        Route::put('fixed-assets/{fixedAsset}', [App\Http\Controllers\FixedAssetController::class, 'update'])->name('fixed-assets.update');
-        Route::patch('fixed-assets/{fixedAsset}', [App\Http\Controllers\FixedAssetController::class, 'update']);
-        Route::post('fixed-assets/{fixedAsset}/depreciate', [App\Http\Controllers\FixedAssetController::class, 'depreciate'])->name('fixed-assets.depreciate');
-        Route::post('fixed-assets/{fixedAsset}/dispose', [App\Http\Controllers\FixedAssetController::class, 'dispose'])->name('fixed-assets.dispose');
-        Route::post('fixed-assets/run-depreciation', [App\Http\Controllers\FixedAssetController::class, 'runDepreciation'])->name('fixed-assets.run-depreciation');
-        Route::post('fixed-asset-depreciations/{depreciation}/reverse', [App\Http\Controllers\FixedAssetController::class, 'reverseDepreciation'])->name('fixed-asset-depreciations.reverse');
+        Route::get('fixed-assets/{fixedAsset}/edit', [FixedAssetController::class, 'edit'])->name('fixed-assets.edit');
+        Route::put('fixed-assets/{fixedAsset}', [FixedAssetController::class, 'update'])->name('fixed-assets.update');
+        Route::patch('fixed-assets/{fixedAsset}', [FixedAssetController::class, 'update']);
+        Route::post('fixed-assets/{fixedAsset}/depreciate', [FixedAssetController::class, 'depreciate'])->name('fixed-assets.depreciate');
+        Route::post('fixed-assets/{fixedAsset}/dispose', [FixedAssetController::class, 'dispose'])->name('fixed-assets.dispose');
+        Route::post('fixed-assets/run-depreciation', [FixedAssetController::class, 'runDepreciation'])->name('fixed-assets.run-depreciation');
+        Route::post('fixed-asset-depreciations/{depreciation}/reverse', [FixedAssetController::class, 'reverseDepreciation'])->name('fixed-asset-depreciations.reverse');
     });
-    Route::delete('fixed-assets/{fixedAsset}', [App\Http\Controllers\FixedAssetController::class, 'destroy'])
+    Route::delete('fixed-assets/{fixedAsset}', [FixedAssetController::class, 'destroy'])
         ->middleware('permission:delete fixed-assets')
         ->name('fixed-assets.destroy');
 
     // Fixed Asset Categories - Create routes MUST come before wildcard routes
     Route::middleware('permission:create fixed-assets')->group(function () {
-        Route::get('fixed-asset-categories/create', [App\Http\Controllers\FixedAssetCategoryController::class, 'create'])->name('fixed-asset-categories.create');
-        Route::post('fixed-asset-categories', [App\Http\Controllers\FixedAssetCategoryController::class, 'store'])->name('fixed-asset-categories.store');
+        Route::get('fixed-asset-categories/create', [FixedAssetCategoryController::class, 'create'])->name('fixed-asset-categories.create');
+        Route::post('fixed-asset-categories', [FixedAssetCategoryController::class, 'store'])->name('fixed-asset-categories.store');
     });
     Route::middleware('permission:view fixed-assets')->group(function () {
-        Route::get('fixed-asset-categories', [App\Http\Controllers\FixedAssetCategoryController::class, 'index'])->name('fixed-asset-categories.index');
-        Route::get('fixed-asset-categories/{fixedAssetCategory}', [App\Http\Controllers\FixedAssetCategoryController::class, 'show'])->name('fixed-asset-categories.show');
+        Route::get('fixed-asset-categories', [FixedAssetCategoryController::class, 'index'])->name('fixed-asset-categories.index');
+        Route::get('fixed-asset-categories/{fixedAssetCategory}', [FixedAssetCategoryController::class, 'show'])->name('fixed-asset-categories.show');
     });
     Route::middleware('permission:edit fixed-assets')->group(function () {
-        Route::get('fixed-asset-categories/{fixedAssetCategory}/edit', [App\Http\Controllers\FixedAssetCategoryController::class, 'edit'])->name('fixed-asset-categories.edit');
-        Route::put('fixed-asset-categories/{fixedAssetCategory}', [App\Http\Controllers\FixedAssetCategoryController::class, 'update'])->name('fixed-asset-categories.update');
-        Route::patch('fixed-asset-categories/{fixedAssetCategory}', [App\Http\Controllers\FixedAssetCategoryController::class, 'update']);
+        Route::get('fixed-asset-categories/{fixedAssetCategory}/edit', [FixedAssetCategoryController::class, 'edit'])->name('fixed-asset-categories.edit');
+        Route::put('fixed-asset-categories/{fixedAssetCategory}', [FixedAssetCategoryController::class, 'update'])->name('fixed-asset-categories.update');
+        Route::patch('fixed-asset-categories/{fixedAssetCategory}', [FixedAssetCategoryController::class, 'update']);
     });
-    Route::delete('fixed-asset-categories/{fixedAssetCategory}', [App\Http\Controllers\FixedAssetCategoryController::class, 'destroy'])
+    Route::delete('fixed-asset-categories/{fixedAssetCategory}', [FixedAssetCategoryController::class, 'destroy'])
         ->middleware('permission:delete fixed-assets')
         ->name('fixed-asset-categories.destroy');
 });

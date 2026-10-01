@@ -2,13 +2,31 @@
 
 namespace Tests\Feature\Regression;
 
+use App\Livewire\ActivityLogs\ActivityLogsTable;
+use App\Livewire\Auth\RegisterWizard;
+use App\Livewire\Bills\BillsTable;
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Customers\CustomersTable;
+use App\Livewire\Expenses\ExpensesTable;
+use App\Livewire\Invoices\InvoicesTable;
+use App\Livewire\Items\ItemCategoriesTable;
+use App\Livewire\Items\ItemsTable;
+use App\Livewire\TaxGroups\TaxGroupsTable;
+use App\Livewire\TaxRates\TaxRatesTable;
+use App\Models\Customer;
+use App\Models\Expense;
+use App\Models\Invoice;
+use App\Models\Item;
+use App\Models\ItemCategory;
 use App\Models\Role;
+use App\Models\TaxGroup;
+use App\Models\TaxRate;
 use Livewire\Component;
 use Livewire\Livewire;
 use ReflectionClass;
 use ReflectionMethod;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 use Symfony\Component\Finder\Finder;
 use Tests\TestCase;
 
@@ -36,7 +54,7 @@ class LivewirePermissionTest extends TestCase
     ];
 
     /** Components that take no part in the check (registration happens before login). */
-    private const SKIP_COMPONENTS = [\App\Livewire\Auth\RegisterWizard::class];
+    private const SKIP_COMPONENTS = [RegisterWizard::class];
 
     /** @return array<class-string<Component>> */
     private function components(): array
@@ -158,7 +176,7 @@ class LivewirePermissionTest extends TestCase
     {
         $this->createSuperAdmin();
 
-        Livewire::test(\App\Livewire\Customers\CustomersTable::class)
+        Livewire::test(CustomersTable::class)
             ->set('selectedItems', ['1'])
             ->set('bulkAction', 'something_new')
             ->call('applyBulkAction')
@@ -173,27 +191,27 @@ class LivewirePermissionTest extends TestCase
         $this->createAuthenticatedUser();
         $tenantId = $this->tenant->id;
 
-        $taxRate = \App\Models\TaxRate::create(['tenant_id' => $tenantId, 'name' => 'VAT', 'code' => 'VAT', 'rate' => 7.5, 'type' => 'exclusive', 'is_active' => true]);
-        $taxGroup = \App\Models\TaxGroup::create(['tenant_id' => $tenantId, 'name' => 'Group', 'code' => 'GRP', 'is_active' => true]);
-        $category = \App\Models\ItemCategory::create(['tenant_id' => $tenantId, 'name' => 'Cat', 'is_active' => true]);
-        $customer = \App\Models\Customer::factory()->create(['tenant_id' => $tenantId]);
-        $item = \App\Models\Item::factory()->create(['tenant_id' => $tenantId]);
-        $expense = \App\Models\Expense::factory()->create(['tenant_id' => $tenantId]);
+        $taxRate = TaxRate::create(['tenant_id' => $tenantId, 'name' => 'VAT', 'code' => 'VAT', 'rate' => 7.5, 'type' => 'exclusive', 'is_active' => true]);
+        $taxGroup = TaxGroup::create(['tenant_id' => $tenantId, 'name' => 'Group', 'code' => 'GRP', 'is_active' => true]);
+        $category = ItemCategory::create(['tenant_id' => $tenantId, 'name' => 'Cat', 'is_active' => true]);
+        $customer = Customer::factory()->create(['tenant_id' => $tenantId]);
+        $item = Item::factory()->create(['tenant_id' => $tenantId]);
+        $expense = Expense::factory()->create(['tenant_id' => $tenantId]);
 
         $cases = [
-            [\App\Livewire\Customers\CustomersTable::class, 'deleteCustomer', [$customer->id]],
-            [\App\Livewire\Items\ItemsTable::class, 'deleteItem', [$item->id]],
-            [\App\Livewire\Items\ItemCategoriesTable::class, 'deleteCategory', [$category->id]],
-            [\App\Livewire\Items\ItemCategoriesTable::class, 'toggleActive', [$category->id]],
-            [\App\Livewire\TaxRates\TaxRatesTable::class, 'toggleActive', [$taxRate->id]],
-            [\App\Livewire\TaxRates\TaxRatesTable::class, 'toggleDefault', [$taxRate->id]],
-            [\App\Livewire\TaxGroups\TaxGroupsTable::class, 'toggleActive', [$taxGroup->id]],
-            [\App\Livewire\Expenses\ExpensesTable::class, 'confirmDelete', [$expense->id]],
-            [\App\Livewire\Expenses\ExpensesTable::class, 'submitForApproval', [$expense->id]],
-            [\App\Livewire\Expenses\ExpensesTable::class, 'approveExpense', [$expense->id]],
-            [\App\Livewire\Expenses\ExpensesTable::class, 'markAsPaid', [$expense->id]],
-            [\App\Livewire\Bills\BillsTable::class, 'delete', [999999]],
-            [\App\Livewire\ActivityLogs\ActivityLogsTable::class, 'export', ['csv']],
+            [CustomersTable::class, 'deleteCustomer', [$customer->id]],
+            [ItemsTable::class, 'deleteItem', [$item->id]],
+            [ItemCategoriesTable::class, 'deleteCategory', [$category->id]],
+            [ItemCategoriesTable::class, 'toggleActive', [$category->id]],
+            [TaxRatesTable::class, 'toggleActive', [$taxRate->id]],
+            [TaxRatesTable::class, 'toggleDefault', [$taxRate->id]],
+            [TaxGroupsTable::class, 'toggleActive', [$taxGroup->id]],
+            [ExpensesTable::class, 'confirmDelete', [$expense->id]],
+            [ExpensesTable::class, 'submitForApproval', [$expense->id]],
+            [ExpensesTable::class, 'approveExpense', [$expense->id]],
+            [ExpensesTable::class, 'markAsPaid', [$expense->id]],
+            [BillsTable::class, 'delete', [999999]],
+            [ActivityLogsTable::class, 'export', ['csv']],
         ];
 
         foreach ($cases as [$class, $method, $args]) {
@@ -211,11 +229,11 @@ class LivewirePermissionTest extends TestCase
     public function test_row_actions_work_with_permission(): void
     {
         $this->createAuthenticatedUser(['delete customers', 'edit items']);
-        $customer = \App\Models\Customer::factory()->create(['tenant_id' => $this->tenant->id]);
-        $category = \App\Models\ItemCategory::create(['tenant_id' => $this->tenant->id, 'name' => 'Cat', 'is_active' => true]);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $category = ItemCategory::create(['tenant_id' => $this->tenant->id, 'name' => 'Cat', 'is_active' => true]);
 
-        Livewire::test(\App\Livewire\Customers\CustomersTable::class)->call('deleteCustomer', $customer->id)->assertStatus(200);
-        Livewire::test(\App\Livewire\Items\ItemCategoriesTable::class)->call('toggleActive', $category->id)->assertStatus(200);
+        Livewire::test(CustomersTable::class)->call('deleteCustomer', $customer->id)->assertStatus(200);
+        Livewire::test(ItemCategoriesTable::class)->call('toggleActive', $category->id)->assertStatus(200);
 
         $this->assertSoftDeleted('customers', ['id' => $customer->id]);
         $this->assertFalse((bool) $category->fresh()->is_active);
@@ -228,13 +246,13 @@ class LivewirePermissionTest extends TestCase
     public function test_view_only_user_cannot_bulk_delete_or_mark_invoices_paid(): void
     {
         $this->createAuthenticatedUser(['view invoices']);
-        $customer = \App\Models\Customer::factory()->create(['tenant_id' => $this->tenant->id]);
-        $invoice = \App\Models\Invoice::factory()->sent()->create([
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $invoice = Invoice::factory()->sent()->create([
             'tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000900',
         ]);
 
         foreach (['mark_paid', 'delete'] as $action) {
-            Livewire::test(\App\Livewire\Invoices\InvoicesTable::class)
+            Livewire::test(InvoicesTable::class)
                 ->set('selectedItems', [(string) $invoice->id])
                 ->set('bulkAction', $action)
                 ->call('applyBulkAction')
@@ -247,7 +265,7 @@ class LivewirePermissionTest extends TestCase
 
     private function refreshPermissions(): void
     {
-        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
         $this->user->unsetRelation('roles')->unsetRelation('permissions');
     }
 }

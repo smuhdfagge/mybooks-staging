@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Payments\DeletePaymentMade;
+use App\Actions\Payments\RecordPaymentMade;
+use App\Http\Requests\StorePaymentMadeRequest;
 use App\Models\Bank;
 use App\Models\Bill;
 use App\Models\PaymentMade;
@@ -35,7 +38,7 @@ class PaymentMadeController extends Controller
         return view('payments-made.create', compact('vendors', 'bill', 'paymentNumber', 'banks'));
     }
 
-    public function store(\App\Http\Requests\StorePaymentMadeRequest $request, \App\Actions\Payments\RecordPaymentMade $record)
+    public function store(StorePaymentMadeRequest $request, RecordPaymentMade $record)
     {
         // Same rules as the API (R3).
         $payment = $record->handle(auth()->user()->tenant_id, $request->validated(), auth()->id());
@@ -98,7 +101,7 @@ class PaymentMadeController extends Controller
         return redirect()->route('payments-made.show', $paymentMade)->with('success', 'Payment updated.');
     }
 
-    public function destroy(PaymentMade $paymentMade, \App\Actions\Payments\DeletePaymentMade $delete)
+    public function destroy(PaymentMade $paymentMade, DeletePaymentMade $delete)
     {
         $delete->handle($paymentMade);
 

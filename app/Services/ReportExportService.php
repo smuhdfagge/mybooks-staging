@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Support\Csv;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
 
@@ -616,7 +617,7 @@ class ReportExportService
             $rows[] = [
                 $version->salaryStructure->name ?? 'N/A',
                 'v'.$version->version_number,
-                $version->effective_date ? \Carbon\Carbon::parse($version->effective_date)->format('Y-m-d') : 'N/A',
+                $version->effective_date ? Carbon::parse($version->effective_date)->format('Y-m-d') : 'N/A',
                 $version->changedByUser ? ($version->changedByUser->first_name.' '.$version->changedByUser->last_name) : 'System',
                 $version->change_reason ?? '-',
                 $version->created_at->format('Y-m-d'),

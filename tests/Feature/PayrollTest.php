@@ -5,9 +5,11 @@ namespace Tests\Feature;
 use App\Models\ChartOfAccount;
 use App\Models\Employee;
 use App\Models\Journal;
+use App\Models\JournalEntry;
 use App\Models\Payroll;
 use App\Models\PayrollBatch;
 use App\Models\TaxBracket;
+use App\Services\ChartOfAccountService;
 use App\Services\PayrollTaxService;
 use Tests\TestCase;
 
@@ -650,7 +652,7 @@ class PayrollTest extends TestCase
         }
 
         // Every account's lines across both journals net to zero
-        $net = \App\Models\JournalEntry::whereIn('journal_id', $journals->pluck('id'))
+        $net = JournalEntry::whereIn('journal_id', $journals->pluck('id'))
             ->selectRaw('account_id, SUM(debit) - SUM(credit) as net')
             ->groupBy('account_id')->pluck('net');
         foreach ($net as $value) {
@@ -939,7 +941,7 @@ class PayrollTest extends TestCase
 
     public function test_new_accounts_exist_in_default_chart(): void
     {
-        $accounts = \App\Services\ChartOfAccountService::getDefaultAccounts();
+        $accounts = ChartOfAccountService::getDefaultAccounts();
         $codes = array_column($accounts, 'account_code');
 
         // Liability sub-accounts

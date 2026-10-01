@@ -19,6 +19,8 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\LazyCollection;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use ZipArchive;
 
 class ExportService
@@ -600,7 +602,7 @@ class ExportService
      */
     protected function exportToXlsxWithSpreadsheet(Export $export, LazyCollection $data, string $filename, string $path): bool
     {
-        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet;
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
 
         $row = 1;
@@ -630,7 +632,7 @@ class ExportService
             mkdir(dirname($fullPath), 0755, true);
         }
 
-        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $writer = new Xlsx($spreadsheet);
         $writer->save($fullPath);
 
         $export->update([

@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Payments\DeletePaymentReceived;
+use App\Actions\Payments\RecordPaymentReceived;
+use App\Http\Requests\StorePaymentReceivedRequest;
 use App\Models\Bank;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -48,7 +51,7 @@ class PaymentReceivedController extends Controller
         return view('payments-received.create', compact('customers', 'invoice', 'paymentNumber', 'unpaidInvoices', 'customerDeposits', 'banks'));
     }
 
-    public function store(\App\Http\Requests\StorePaymentReceivedRequest $request, \App\Actions\Payments\RecordPaymentReceived $record)
+    public function store(StorePaymentReceivedRequest $request, RecordPaymentReceived $record)
     {
         // Same rules as the API (R3): checks, bank balance, confirmation email.
         $payment = $record->handle(auth()->user()->tenant_id, $request->validated(), auth()->id());
@@ -135,7 +138,7 @@ class PaymentReceivedController extends Controller
         return redirect()->route('payments-received.show', $paymentReceived)->with('success', 'Payment updated.');
     }
 
-    public function destroy(PaymentReceived $paymentReceived, \App\Actions\Payments\DeletePaymentReceived $delete)
+    public function destroy(PaymentReceived $paymentReceived, DeletePaymentReceived $delete)
     {
         // Same rules as the API (R3).
         if ($reason = $delete->blockedBecause($paymentReceived)) {

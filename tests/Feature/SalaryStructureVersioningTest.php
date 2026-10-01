@@ -7,6 +7,7 @@ use App\Models\Payroll;
 use App\Models\SalaryStructure;
 use App\Models\SalaryStructureItem;
 use App\Models\SalaryStructureVersion;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 class SalaryStructureVersioningTest extends TestCase
@@ -332,7 +333,7 @@ class SalaryStructureVersioningTest extends TestCase
         $this->createAuthenticatedUser();
 
         // Grant the required permission
-        $permission = \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'create payroll']);
+        $permission = Permission::firstOrCreate(['name' => 'create payroll']);
         $this->user->givePermissionTo($permission);
 
         $structure = $this->createStructureWithItems(

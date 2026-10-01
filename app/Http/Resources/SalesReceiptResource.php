@@ -2,10 +2,11 @@
 
 namespace App\Http\Resources;
 
+use App\Models\SalesReceipt;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/** @mixin \App\Models\SalesReceipt */
+/** @mixin SalesReceipt */
 class SalesReceiptResource extends JsonResource
 {
     public function toArray(Request $request): array

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\DocumentNumber;
 use App\Traits\AuditsSensitiveFields;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
@@ -143,6 +144,6 @@ class Employee extends Model
      */
     public static function generateEmployeeId($tenantId)
     {
-        return \App\Support\DocumentNumber::next((int) $tenantId, static::class, 'employee_id', 'EMP-', 5);
+        return DocumentNumber::next((int) $tenantId, static::class, 'employee_id', 'EMP-', 5);
     }
 }

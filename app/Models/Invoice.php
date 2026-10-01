@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use App\Enums\InvoiceStatus;
 use App\Events\InvoiceDeleting;
 use App\Events\InvoiceSaved;
 use App\Services\JournalService;
+use App\Support\DocumentNumber;
 use App\Traits\BelongsToTenant;
+use App\Traits\GuardsStatusTransitions;
+use App\Traits\KeepsTotalsBalanced;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,8 +21,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Invoice extends Model
 {
-    use \App\Traits\GuardsStatusTransitions, \App\Traits\HasDocumentNumber;
-    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
+    use \App\Traits\HasDocumentNumber, GuardsStatusTransitions;
+    use BelongsToTenant, HasFactory, KeepsTotalsBalanced, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     protected $fillable = [
         'tenant_id',
@@ -169,7 +173,7 @@ class Invoice extends Model
     public static function generateWaybillNumber($tenantId)
     {
         // Locked per-business sequence (R2).
-        return \App\Support\DocumentNumber::next((int) $tenantId, static::class, 'waybill_number', 'WB-', 6);
+        return DocumentNumber::next((int) $tenantId, static::class, 'waybill_number', 'WB-', 6);
     }
 
     public function isReleased()
@@ -341,6 +345,6 @@ class Invoice extends Model
     /** Allowed status moves (Q3). */
     protected static function statusEnum(): string
     {
-        return \App\Enums\InvoiceStatus::class;
+        return InvoiceStatus::class;
     }
 }

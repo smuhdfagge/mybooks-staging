@@ -2,6 +2,7 @@
 
 namespace App\Livewire\SalesOrders;
 
+use App\Actions\SalesOrders\DeleteSalesOrder;
 use App\Livewire\Concerns\ChecksPermissions;
 use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\Customer;
@@ -163,7 +164,7 @@ class SalesOrdersTable extends Component
                     }
 
                     // Same rules as the web and API delete (R3).
-                    $delete = app(\App\Actions\SalesOrders\DeleteSalesOrder::class);
+                    $delete = app(DeleteSalesOrder::class);
                     if ($delete->blockedBecause($order)) {
                         $skippedCount++;
 

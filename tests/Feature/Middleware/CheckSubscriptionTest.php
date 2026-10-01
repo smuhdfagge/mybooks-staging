@@ -8,6 +8,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Routing\Route;
 use Tests\TestCase;
 
 class CheckSubscriptionTest extends TestCase
@@ -15,7 +16,7 @@ class CheckSubscriptionTest extends TestCase
     private function makeRequest(string $routeName = 'dashboard'): Request
     {
         $request = Request::create('/dashboard', 'GET');
-        $route = new \Illuminate\Routing\Route('GET', '/dashboard', []);
+        $route = new Route('GET', '/dashboard', []);
         $route->name($routeName);
         $request->setRouteResolver(fn () => $route);
 
@@ -115,7 +116,7 @@ class CheckSubscriptionTest extends TestCase
         $middleware = new CheckSubscription;
         $request = Request::create('/api/invoices', 'GET');
         $request->headers->set('Accept', 'application/json');
-        $route = new \Illuminate\Routing\Route('GET', '/api/invoices', []);
+        $route = new Route('GET', '/api/invoices', []);
         $route->name('api.invoices.index');
         $request->setRouteResolver(fn () => $route);
         $request->setUserResolver(fn () => $user);

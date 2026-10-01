@@ -6,6 +6,7 @@ use App\Models\Bank;
 use App\Models\ChartOfAccount;
 use App\Models\Customer;
 use App\Models\Employee;
+use App\Models\Expense;
 use App\Models\Item;
 use App\Models\Journal;
 use App\Models\JournalEntry;
@@ -74,8 +75,8 @@ class PhaseCQ5Test extends TestCase
     {
         $this->createAuthenticatedUser(['view expenses', 'create expenses', 'edit expenses']);
         $this->postJson('/api/v1/expenses', ['expense_account_id' => $this->account()->id, 'name' => 'Fuel', 'expense_date' => '2026-09-01', 'amount' => 5000])->assertCreated();
-        $expense = \App\Models\Expense::sole();
-        $expense->update(['status' => \App\Models\Expense::STATUS_PENDING_APPROVAL]);
+        $expense = Expense::sole();
+        $expense->update(['status' => Expense::STATUS_PENDING_APPROVAL]);
 
         // The web refused this; the API let the amount change under the approver.
         $this->putJson("/api/v1/expenses/{$expense->id}", ['amount' => 9000])->assertForbidden();

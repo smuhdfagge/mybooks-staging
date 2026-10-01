@@ -6,6 +6,7 @@ use App\Models\ActivityLog;
 use App\Models\Employee;
 use App\Models\SalaryStructure;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class SecurityAndRetentionTest extends TestCase
@@ -308,7 +309,7 @@ class SecurityAndRetentionTest extends TestCase
         });
 
         // Force backdate via raw DB update to bypass Eloquent timestamp handling
-        \Illuminate\Support\Facades\DB::table('activity_logs')
+        DB::table('activity_logs')
             ->where('id', $log->id)
             ->update(['created_at' => now()->subMonths(85)]);
 

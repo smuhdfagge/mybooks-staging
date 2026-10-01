@@ -2,7 +2,26 @@
 
 namespace Tests\Feature\Regression;
 
+use App\Events\PayrollPaid;
+use App\Jobs\ProcessPayrollBatch;
+use App\Models\Bill;
+use App\Models\CreditNote;
+use App\Models\Customer;
+use App\Models\Department;
+use App\Models\Employee;
+use App\Models\Export;
+use App\Models\Invoice;
+use App\Models\Item;
+use App\Models\LeaveType;
+use App\Models\Payroll;
+use App\Models\PayrollBatch;
+use App\Models\PurchaseOrder;
+use App\Models\SalesReceipt;
+use App\Models\Vendor;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Route;
+use Tests\Support\AssertsLedger;
 use Tests\TestCase;
 
 /**
@@ -10,7 +29,7 @@ use Tests\TestCase;
  */
 class Phase6RegressionTest extends TestCase
 {
-    use \Tests\Support\AssertsLedger;
+    use AssertsLedger;
 
     public function test_n4_unfinished_modules_are_off_by_default(): void
     {
@@ -60,8 +79,8 @@ class Phase6RegressionTest extends TestCase
     public function test_n9_sales_receipt_downloads_as_pdf(): void
     {
         $this->createAuthenticatedUser(['view sales-receipts']);
-        $customer = \App\Models\Customer::factory()->create(['tenant_id' => $this->tenant->id]);
-        $receipt = \App\Models\SalesReceipt::create([
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $receipt = SalesReceipt::create([
             'tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'receipt_number' => 'SR-000001',
             'receipt_date' => now(), 'payment_method' => 'cash', 'subtotal' => 100, 'tax_amount' => 0, 'total' => 100,
         ]);
@@ -75,8 +94,8 @@ class Phase6RegressionTest extends TestCase
     public function test_n9_api_invoice_downloads_as_pdf(): void
     {
         $this->createAuthenticatedUser(['view invoices']);
-        $customer = \App\Models\Customer::factory()->create(['tenant_id' => $this->tenant->id]);
-        $invoice = \App\Models\Invoice::factory()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000777']);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        $invoice = Invoice::factory()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000777']);
 
         $response = $this->actingAs($this->user, 'sanctum')->get("/api/v1/invoices/{$invoice->id}/pdf")->assertOk();
         $this->assertStringStartsWith('%PDF', $response->getContent());
@@ -85,8 +104,8 @@ class Phase6RegressionTest extends TestCase
     public function test_n9_department_show_and_edit_pages_work(): void
     {
         $this->createAuthenticatedUser(['view departments', 'edit departments', 'view employees']);
-        $parent = \App\Models\Department::create(['tenant_id' => $this->tenant->id, 'name' => 'Operations', 'code' => 'OPS', 'is_active' => true]);
-        $child = \App\Models\Department::create(['tenant_id' => $this->tenant->id, 'name' => 'Farm', 'code' => 'FRM', 'parent_id' => $parent->id, 'is_active' => true]);
+        $parent = Department::create(['tenant_id' => $this->tenant->id, 'name' => 'Operations', 'code' => 'OPS', 'is_active' => true]);
+        $child = Department::create(['tenant_id' => $this->tenant->id, 'name' => 'Farm', 'code' => 'FRM', 'parent_id' => $parent->id, 'is_active' => true]);
 
         $this->get(route('departments.show', $parent))->assertOk()->assertSee('Operations')->assertSee('Farm');
         $this->get(route('departments.edit', $child))->assertOk()->assertSee('value="Farm"', false);
@@ -112,7 +131,7 @@ class Phase6RegressionTest extends TestCase
             'name' => 'Annual leave', 'code' => 'AL', 'days_per_year' => 21, 'is_paid' => '1', 'is_active' => '1',
         ])->assertRedirect(route('leave-types.index'));
 
-        $type = \App\Models\LeaveType::sole();
+        $type = LeaveType::sole();
         $this->assertSame(21, $type->days_per_year);   // was lost before (days_allowed)
         $this->get(route('leave-types.show', $type))->assertOk()->assertSee('Annual leave');
         $this->get(route('leave-types.edit', $type))->assertOk();
@@ -127,7 +146,7 @@ class Phase6RegressionTest extends TestCase
     public function test_n9_export_details_page_works(): void
     {
         $this->createAuthenticatedUser(['export reports']);
-        $export = \App\Models\Export::create([
+        $export = Export::create([
             'tenant_id' => $this->tenant->id, 'user_id' => $this->user->id, 'type' => 'customers', 'format' => 'csv',
             'status' => 'failed', 'error_message' => 'Disk full', 'expires_at' => now()->addDays(7),
         ]);
@@ -137,13 +156,13 @@ class Phase6RegressionTest extends TestCase
 
     private function payrollFixture(): void
     {
-        $employee = \App\Models\Employee::withoutEvents(fn () => \App\Models\Employee::create([
+        $employee = Employee::withoutEvents(fn () => Employee::create([
             'tenant_id' => $this->tenant->id, 'employee_id' => 'EMP-001', 'first_name' => 'Hauwa', 'last_name' => 'Musa',
             'email' => 'hauwa@example.com', 'hire_date' => now()->subYear(), 'status' => 'active',
             'bank_name' => 'Zenith', 'bank_account_number' => '0123456789',
         ]));
 
-        \App\Models\Payroll::withoutEvents(fn () => \App\Models\Payroll::create([
+        Payroll::withoutEvents(fn () => Payroll::create([
             'tenant_id' => $this->tenant->id, 'employee_id' => $employee->id, 'payroll_number' => 'PAY-000001',
             'pay_period_start' => now()->startOfMonth(), 'pay_period_end' => now()->endOfMonth(), 'pay_date' => now(),
             'basic_salary' => 100000, 'allowances' => 20000, 'gross_salary' => 120000, 'tax_deduction' => 9000,
@@ -192,11 +211,11 @@ class Phase6RegressionTest extends TestCase
         $this->get(route('reports.payroll-register'))->assertSee('Hauwa');
     }
 
-    private function purchaseOrder(string $status = 'received'): \App\Models\PurchaseOrder
+    private function purchaseOrder(string $status = 'received'): PurchaseOrder
     {
-        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
-        $item = \App\Models\Item::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Fish feed 15kg']);
-        $po = \App\Models\PurchaseOrder::create([
+        $vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $item = Item::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Fish feed 15kg']);
+        $po = PurchaseOrder::create([
             'tenant_id' => $this->tenant->id, 'vendor_id' => $vendor->id, 'order_number' => 'PO-000001',
             'order_date' => now(), 'status' => $status, 'subtotal' => 50000, 'total' => 50000,
         ]);
@@ -236,7 +255,7 @@ class Phase6RegressionTest extends TestCase
 
         $this->post(route('bills.store'), $payload)->assertSessionHasNoErrors();
 
-        $bill = \App\Models\Bill::sole();
+        $bill = Bill::sole();
         $this->assertSame($po->id, $bill->purchase_order_id);
         $this->assertSame('billed', $po->fresh()->status);
         $this->assertCount(1, $po->fresh()->bills);
@@ -244,14 +263,14 @@ class Phase6RegressionTest extends TestCase
         // Can't be billed twice
         $this->post(route('purchase-orders.convert-to-bill', $po))->assertSessionHas('error');
         $this->post(route('bills.store'), $payload)->assertSessionHasErrors('purchase_order_id');
-        $this->assertSame(1, \App\Models\Bill::count());
+        $this->assertSame(1, Bill::count());
     }
 
     public function test_n8_bill_vendor_must_match_the_order(): void
     {
         $this->createAuthenticatedUser(['create bills']);
         $po = $this->purchaseOrder();
-        $other = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $other = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
 
         $this->post(route('bills.store'), [
             'purchase_order_id' => $po->id, 'vendor_id' => $other->id,
@@ -263,20 +282,20 @@ class Phase6RegressionTest extends TestCase
     }
 
     /** An approved batch with $count approved payrolls. */
-    private function approvedBatch(int $count): \App\Models\PayrollBatch
+    private function approvedBatch(int $count): PayrollBatch
     {
-        $batch = \App\Models\PayrollBatch::create([
+        $batch = PayrollBatch::create([
             'tenant_id' => $this->tenant->id, 'batch_number' => 'PB-000001',
             'pay_period_start' => now()->startOfMonth(), 'pay_period_end' => now()->endOfMonth(),
             'status' => 'approved', 'created_by' => $this->user->id,
         ]);
 
         for ($i = 1; $i <= $count; $i++) {
-            $employee = \App\Models\Employee::withoutEvents(fn () => \App\Models\Employee::create([
+            $employee = Employee::withoutEvents(fn () => Employee::create([
                 'tenant_id' => $this->tenant->id, 'employee_id' => "EMP-{$i}", 'first_name' => "Staff{$i}", 'last_name' => 'Test',
                 'email' => "staff{$i}@example.com", 'hire_date' => now()->subYear(), 'status' => 'active',
             ]));
-            \App\Models\Payroll::withoutEvents(fn () => \App\Models\Payroll::create([
+            Payroll::withoutEvents(fn () => Payroll::create([
                 'tenant_id' => $this->tenant->id, 'employee_id' => $employee->id, 'payroll_batch_id' => $batch->id,
                 'payroll_number' => sprintf('PAY-%06d', $i), 'pay_period_start' => now()->startOfMonth(),
                 'pay_period_end' => now()->endOfMonth(), 'pay_date' => now(), 'basic_salary' => 1000, 'gross_salary' => 1000,
@@ -290,7 +309,7 @@ class Phase6RegressionTest extends TestCase
     public function test_n7_queued_batch_is_processing_until_the_job_finishes(): void
     {
         $this->createAuthenticatedUser(['view payroll', 'edit payroll', 'approve payroll']);
-        \Illuminate\Support\Facades\Queue::fake();
+        Queue::fake();
         $batch = $this->approvedBatch(11);
 
         $this->post(route('payroll-batches.mark-paid', $batch))->assertSessionHas('success');
@@ -298,11 +317,11 @@ class Phase6RegressionTest extends TestCase
         $this->assertSame('processing', $batch->fresh()->status);
         $this->assertNull($batch->fresh()->paid_at);
         $this->assertSame(11, $batch->payrolls()->where('status', 'approved')->count());
-        \Illuminate\Support\Facades\Queue::assertPushed(\App\Jobs\ProcessPayrollBatch::class);
+        Queue::assertPushed(ProcessPayrollBatch::class);
         $this->get(route('payroll-batches.show', $batch))->assertOk()->assertSee('Being paid in the background');
 
-        \Illuminate\Support\Facades\Event::fake([\App\Events\PayrollPaid::class]);
-        (new \App\Jobs\ProcessPayrollBatch($batch))->handle();
+        Event::fake([PayrollPaid::class]);
+        (new ProcessPayrollBatch($batch))->handle();
 
         $this->assertSame('paid', $batch->fresh()->status);
         $this->assertNotNull($batch->fresh()->paid_at);
@@ -317,14 +336,14 @@ class Phase6RegressionTest extends TestCase
 
         // The 6th payroll's journal fails
         $n = 0;
-        \Illuminate\Support\Facades\Event::listen(\App\Events\PayrollPaid::class, function () use (&$n) {
+        Event::listen(PayrollPaid::class, function () use (&$n) {
             if (++$n === 6) {
                 throw new \RuntimeException('Salaries payable account is missing');
             }
         });
 
         try {
-            \App\Jobs\ProcessPayrollBatch::dispatchSync($batch);
+            ProcessPayrollBatch::dispatchSync($batch);
         } catch (\RuntimeException) {
         }
 
@@ -338,14 +357,14 @@ class Phase6RegressionTest extends TestCase
     }
 
     /** A 500 credit note (465.12 + 7.5% VAT) for $customerId, created through the page. */
-    private function creditNote(int $customerId): \App\Models\CreditNote
+    private function creditNote(int $customerId): CreditNote
     {
         $this->post(route('credit-notes.store'), [
             'customer_id' => $customerId, 'credit_note_date' => now()->toDateString(), 'reason' => 'product_return',
             'items' => [['description' => 'Returned goods', 'quantity' => 1, 'unit_price' => 465.12, 'tax_rate' => 7.5]],
         ])->assertSessionHasNoErrors();
 
-        return \App\Models\CreditNote::latest('id')->firstOrFail();
+        return CreditNote::latest('id')->firstOrFail();
     }
 
     public function test_n5_credit_note_posts_to_the_ledger_and_survives_a_payment(): void
@@ -353,8 +372,8 @@ class Phase6RegressionTest extends TestCase
         config(['mybooks.features.credit_notes' => true]);
         $this->createAuthenticatedUser(['create invoices', 'edit invoices', 'view invoices', 'create payments-received']);
         $t = $this->tenant->id;
-        $customer = \App\Models\Customer::factory()->create(['tenant_id' => $t]);
-        $invoice = \App\Models\Invoice::factory()->sent()->create(['tenant_id' => $t, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000500']);
+        $customer = Customer::factory()->create(['tenant_id' => $t]);
+        $invoice = Invoice::factory()->sent()->create(['tenant_id' => $t, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000500']);
         $this->assertSame(1075.0, $this->accountBalance($t, '1200'));
 
         $cn = $this->creditNote($customer->id);
@@ -386,9 +405,9 @@ class Phase6RegressionTest extends TestCase
         config(['mybooks.features.credit_notes' => true]);
         $this->createAuthenticatedUser(['create invoices', 'edit invoices', 'view invoices']);
         $t = $this->tenant->id;
-        $mine = \App\Models\Customer::factory()->create(['tenant_id' => $t]);
-        $other = \App\Models\Customer::factory()->create(['tenant_id' => $t]);
-        $theirInvoice = \App\Models\Invoice::factory()->sent()->create(['tenant_id' => $t, 'customer_id' => $other->id, 'invoice_number' => 'INV-000501']);
+        $mine = Customer::factory()->create(['tenant_id' => $t]);
+        $other = Customer::factory()->create(['tenant_id' => $t]);
+        $theirInvoice = Invoice::factory()->sent()->create(['tenant_id' => $t, 'customer_id' => $other->id, 'invoice_number' => 'INV-000501']);
 
         $cn = $this->creditNote($mine->id);
         $this->post(route('credit-notes.open', $cn));
@@ -410,8 +429,8 @@ class Phase6RegressionTest extends TestCase
         config(['mybooks.features.credit_notes' => true]);
         $this->createAuthenticatedUser(['create invoices', 'edit invoices', 'view invoices']);
         $t = $this->tenant->id;
-        $customer = \App\Models\Customer::factory()->create(['tenant_id' => $t]);
-        \App\Models\Invoice::factory()->sent()->create(['tenant_id' => $t, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000502']);
+        $customer = Customer::factory()->create(['tenant_id' => $t]);
+        Invoice::factory()->sent()->create(['tenant_id' => $t, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000502']);
 
         $cn = $this->creditNote($customer->id);
         $this->post(route('credit-notes.open', $cn));

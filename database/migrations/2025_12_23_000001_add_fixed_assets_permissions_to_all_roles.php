@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 return new class extends Migration
 {
@@ -27,7 +28,7 @@ return new class extends Migration
         }
 
         // Clear permission cache
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // Assign to super-admin role (all permissions)
         $superAdminRole = Role::where('name', 'super-admin')->first();
@@ -53,7 +54,7 @@ return new class extends Migration
         }
 
         // Clear permission cache again after assignments
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
 
     /**
@@ -79,6 +80,6 @@ return new class extends Migration
         // Note: We don't delete the permissions themselves as they may be used by other roles
 
         // Clear permission cache
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
 };

@@ -8,6 +8,7 @@ use App\Events\PaymentReceivedDeleting;
 use App\Events\PaymentReceivedUpdated;
 use App\Services\JournalService;
 use App\Traits\BelongsToTenant;
+use App\Traits\HasDocumentNumber;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,8 +20,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PaymentReceived extends Model
 {
-    use \App\Traits\HasDocumentNumber;
     use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
+    use HasDocumentNumber;
 
     protected $table = 'payments_received';
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Actions\Bills\SaveBill;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -34,7 +35,7 @@ class StoreBillRequest extends FormRequest
             // Shared with the API (Q5).
             'vendor_bill_number' => ['nullable', 'string', 'max:100'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
-            'status' => ['sometimes', Rule::in(\App\Actions\Bills\SaveBill::START_STATUSES)],
+            'status' => ['sometimes', Rule::in(SaveBill::START_STATUSES)],
         ];
     }
 }

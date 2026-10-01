@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Item;
 use App\Models\Quotation;
 use App\Models\QuotationItem;
+use App\Services\Sales\DocumentTotals;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -215,7 +216,7 @@ class QuotationController extends Controller
      */
     private function writeLines(Quotation $quotation, array $validated): void
     {
-        $totals = \App\Services\Sales\DocumentTotals::calculate($validated['items'], $validated['discount_type'] ?? null, $validated['discount_amount'] ?? 0);
+        $totals = DocumentTotals::calculate($validated['items'], $validated['discount_type'] ?? null, $validated['discount_amount'] ?? 0);
 
         foreach ($totals['lines'] as $line) {
             QuotationItem::create([

@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use App\Enums\SalesOrderStatus;
 use App\Traits\BelongsToTenant;
+use App\Traits\GuardsStatusTransitions;
+use App\Traits\KeepsTotalsBalanced;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,8 +17,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SalesOrder extends Model
 {
-    use \App\Traits\GuardsStatusTransitions, \App\Traits\HasDocumentNumber;
-    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
+    use \App\Traits\HasDocumentNumber, GuardsStatusTransitions;
+    use BelongsToTenant, HasFactory, KeepsTotalsBalanced, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
 
     protected $fillable = [
         'tenant_id',
@@ -143,6 +146,6 @@ class SalesOrder extends Model
     /** Allowed status moves (Q3). */
     protected static function statusEnum(): string
     {
-        return \App\Enums\SalesOrderStatus::class;
+        return SalesOrderStatus::class;
     }
 }

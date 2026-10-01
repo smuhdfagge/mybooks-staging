@@ -2,9 +2,28 @@
 
 namespace Tests\Feature\Regression;
 
+use App\Models\Bank;
+use App\Models\Bill;
+use App\Models\CreditNote;
 use App\Models\Customer;
+use App\Models\Inventory;
+use App\Models\InventoryLayer;
 use App\Models\Invoice;
+use App\Models\InvoiceRefund;
+use App\Models\Item;
 use App\Models\Journal;
+use App\Models\PaymentMade;
+use App\Models\PaymentReceived;
+use App\Models\PurchaseOrder;
+use App\Models\Quotation;
+use App\Models\RecurrentBill;
+use App\Models\RecurrentInvoice;
+use App\Models\SalesOrder;
+use App\Models\SalesReceipt;
+use App\Models\Vendor;
+use App\Services\AccountCodeService;
+use App\Support\Money;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 /**
@@ -59,18 +78,18 @@ class PhaseCRegressionTest extends TestCase
 
     // ── R3: one set of invoice rules ────────────────────────────
 
-    private function stockedItem(float $onHand): \App\Models\Item
+    private function stockedItem(float $onHand): Item
     {
-        $item = \App\Models\Item::factory()->create([
+        $item = Item::factory()->create([
             'tenant_id' => $this->tenant->id, 'type' => 'product', 'track_inventory' => true, 'selling_price' => 10000,
         ]);
-        \App\Models\Inventory::create(['tenant_id' => $this->tenant->id, 'item_id' => $item->id, 'quantity' => $onHand, 'reserved_quantity' => 0]);
+        Inventory::create(['tenant_id' => $this->tenant->id, 'item_id' => $item->id, 'quantity' => $onHand, 'reserved_quantity' => 0]);
 
         return $item;
     }
 
     /** @return array<string, mixed> */
-    private function sameSale(Customer $customer, \App\Models\Item $item): array
+    private function sameSale(Customer $customer, Item $item): array
     {
         return [
             'customer_id' => $customer->id, 'invoice_date' => '2026-09-01', 'due_date' => '2026-10-01',
@@ -82,9 +101,9 @@ class PhaseCRegressionTest extends TestCase
         ];
     }
 
-    private function reserved(\App\Models\Item $item): float
+    private function reserved(Item $item): float
     {
-        return (float) \App\Models\Inventory::where('item_id', $item->id)->value('reserved_quantity');
+        return (float) Inventory::where('item_id', $item->id)->value('reserved_quantity');
     }
 
     public function test_r3_the_same_sale_gives_the_same_invoice_from_every_path(): void
@@ -99,7 +118,7 @@ class PhaseCRegressionTest extends TestCase
         // API
         $this->postJson('/api/v1/invoices', $sale)->assertCreated();
         // Sales order conversion
-        $order = \App\Models\SalesOrder::create([
+        $order = SalesOrder::create([
             'tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'order_number' => 'SO-000001',
             'order_date' => '2026-09-01', 'status' => 'confirmed', 'subtotal' => 25000, 'discount_amount' => 2000, 'total' => 24500,
         ]);
@@ -109,7 +128,7 @@ class PhaseCRegressionTest extends TestCase
         $order->items()->where('description', 'Goods')->update(['item_id' => $item->id]);
         $this->post(route('sales-orders.convert', $order))->assertSessionHasNoErrors();
         // Recurring invoice
-        $profile = \App\Models\RecurrentInvoice::create([
+        $profile = RecurrentInvoice::create([
             'tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'profile_name' => 'Monthly', 'frequency' => 'monthly',
             'start_date' => '2026-09-01', 'next_invoice_date' => now()->subDay()->toDateString(), 'payment_terms' => 30,
             'discount_type' => 'fixed', 'discount_amount' => 2000, 'status' => 'active', 'created_by' => $this->user->id,
@@ -140,7 +159,7 @@ class PhaseCRegressionTest extends TestCase
         $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         $item = $this->stockedItem(1); // only one on hand, the sale needs two
 
-        $order = \App\Models\SalesOrder::create([
+        $order = SalesOrder::create([
             'tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'order_number' => 'SO-000002',
             'order_date' => '2026-09-01', 'status' => 'confirmed', 'subtotal' => 20000, 'total' => 20000,
         ]);
@@ -157,7 +176,7 @@ class PhaseCRegressionTest extends TestCase
         $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         $invoice = Invoice::withoutEvents(fn () => Invoice::factory()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'status' => 'unpaid']));
         // A refund with no payment record (the old web check looked only at amount paid).
-        \App\Models\InvoiceRefund::withoutEvents(fn () => \App\Models\InvoiceRefund::create([
+        InvoiceRefund::withoutEvents(fn () => InvoiceRefund::create([
             'tenant_id' => $this->tenant->id, 'invoice_id' => $invoice->id, 'customer_id' => $customer->id,
             'refund_number' => 'REF-1', 'refund_date' => '2026-09-02', 'amount' => 10, 'refund_method' => 'cash', 'status' => 'completed',
         ]));
@@ -179,7 +198,7 @@ class PhaseCRegressionTest extends TestCase
     // ── R3: one set of bill rules ───────────────────────────────
 
     /** @return array<string, mixed> */
-    private function samePurchase(\App\Models\Vendor $vendor, \App\Models\Item $item): array
+    private function samePurchase(Vendor $vendor, Item $item): array
     {
         return [
             'vendor_id' => $vendor->id, 'bill_date' => '2026-09-01', 'due_date' => '2026-10-01',
@@ -191,22 +210,22 @@ class PhaseCRegressionTest extends TestCase
         ];
     }
 
-    private function onHand(\App\Models\Item $item): float
+    private function onHand(Item $item): float
     {
-        return (float) \App\Models\Inventory::where('item_id', $item->id)->value('quantity');
+        return (float) Inventory::where('item_id', $item->id)->value('quantity');
     }
 
     public function test_r3_the_same_purchase_gives_the_same_bill_on_web_and_api(): void
     {
         $this->createAuthenticatedUser(['create bills', 'view bills']);
-        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
         $item = $this->stockedItem(0);
         $purchase = $this->samePurchase($vendor, $item);
 
         $this->post(route('bills.store'), $purchase)->assertSessionHasNoErrors();
         $this->postJson('/api/v1/bills', $purchase)->assertCreated();
 
-        $bills = \App\Models\Bill::orderBy('id')->get();
+        $bills = Bill::orderBy('id')->get();
         $this->assertCount(2, $bills);
         foreach ($bills as $bill) {
             // Goods 20,000 less 2,000 = 18,000; freight 6,000. The 2,400 bill
@@ -217,7 +236,7 @@ class PhaseCRegressionTest extends TestCase
             $this->assertEqualsWithDelta(22815, (float) $bill->total, 0.001, "total #{$bill->id}");
             $this->assertEqualsWithDelta(2000, (float) $bill->items()->where('description', 'Goods')->value('discount'), 0.001);
 
-            $journal = Journal::where('reference_type', \App\Models\Bill::class)->where('reference_id', $bill->id)->firstOrFail();
+            $journal = Journal::where('reference_type', Bill::class)->where('reference_id', $bill->id)->firstOrFail();
             $this->assertEqualsWithDelta(22815, (float) $journal->entries()->sum('credit'), 0.001, "journal #{$bill->id}");
             $this->assertEqualsWithDelta((float) $journal->entries()->sum('debit'), (float) $journal->entries()->sum('credit'), 0.001);
         }
@@ -228,21 +247,21 @@ class PhaseCRegressionTest extends TestCase
     public function test_r3_api_cannot_create_a_bill_already_paid(): void
     {
         $this->createAuthenticatedUser(['create bills', 'view bills']);
-        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
 
         $this->postJson('/api/v1/bills', $this->samePurchase($vendor, $this->stockedItem(0)) + ['status' => 'paid'])
             ->assertStatus(422)->assertJsonValidationErrors('status');
-        $this->assertSame(0, \App\Models\Bill::count());
+        $this->assertSame(0, Bill::count());
     }
 
     public function test_r3_deleting_a_bill_takes_its_unsold_goods_back_out_of_stock(): void
     {
         $this->createAuthenticatedUser(['create bills', 'view bills', 'delete bills']);
-        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
         $item = $this->stockedItem(0);
 
         $this->postJson('/api/v1/bills', $this->samePurchase($vendor, $item))->assertCreated();
-        $bill = \App\Models\Bill::firstOrFail();
+        $bill = Bill::firstOrFail();
         $this->assertEqualsWithDelta(2, $this->onHand($item), 0.001);
 
         $this->delete(route('bills.destroy', $bill))->assertSessionHasNoErrors();
@@ -253,13 +272,13 @@ class PhaseCRegressionTest extends TestCase
     public function test_r3_a_bill_whose_goods_were_sold_cannot_be_deleted(): void
     {
         $this->createAuthenticatedUser(['create bills', 'view bills', 'delete bills']);
-        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
         $item = $this->stockedItem(0);
 
         $this->postJson('/api/v1/bills', $this->samePurchase($vendor, $item))->assertCreated();
-        $bill = \App\Models\Bill::firstOrFail();
+        $bill = Bill::firstOrFail();
         // One of the two units has since been sold.
-        \App\Models\InventoryLayer::where('reference_type', 'bill')->where('reference_id', $bill->id)->update(['remaining_quantity' => 1]);
+        InventoryLayer::where('reference_type', 'bill')->where('reference_id', $bill->id)->update(['remaining_quantity' => 1]);
 
         $this->deleteJson('/api/v1/bills/'.$bill->id)->assertStatus(422);
         $this->delete(route('bills.destroy', $bill))->assertSessionHas('error');
@@ -269,12 +288,12 @@ class PhaseCRegressionTest extends TestCase
     public function test_r3_goods_already_in_stock_cannot_be_changed_on_the_bill(): void
     {
         $this->createAuthenticatedUser(['create bills', 'view bills', 'edit bills']);
-        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
         $item = $this->stockedItem(0);
         $purchase = $this->samePurchase($vendor, $item);
 
         $this->postJson('/api/v1/bills', $purchase)->assertCreated();
-        $bill = \App\Models\Bill::firstOrFail();
+        $bill = Bill::firstOrFail();
 
         $purchase['items'][0]['quantity'] = 3;
         $this->putJson('/api/v1/bills/'.$bill->id, $purchase)->assertStatus(422);
@@ -291,9 +310,9 @@ class PhaseCRegressionTest extends TestCase
     public function test_r3_recurring_bills_work_out_totals_from_their_lines(): void
     {
         $this->createAuthenticatedUser();
-        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
         $item = $this->stockedItem(0);
-        $profile = \App\Models\RecurrentBill::create([
+        $profile = RecurrentBill::create([
             'tenant_id' => $this->tenant->id, 'vendor_id' => $vendor->id, 'profile_name' => 'Monthly stock', 'frequency' => 'monthly',
             'start_date' => '2026-09-01', 'next_bill_date' => now()->subDay()->toDateString(), 'status' => 'active',
             'created_by' => $this->user->id, 'subtotal' => 999, 'tax_amount' => 999, 'total' => 999, // stale
@@ -302,7 +321,7 @@ class PhaseCRegressionTest extends TestCase
 
         $this->artisan('transactions:process-recurring')->assertSuccessful();
 
-        $bill = \App\Models\Bill::firstOrFail();
+        $bill = Bill::firstOrFail();
         $this->assertEqualsWithDelta(21500, (float) $bill->total, 0.001);
         $this->assertEqualsWithDelta(1500, (float) $bill->items()->value('tax_amount'), 0.001);
         $this->assertEqualsWithDelta(2, $this->onHand($item), 0.001);
@@ -341,7 +360,7 @@ class PhaseCRegressionTest extends TestCase
         $this->post(route('sales-orders.store'), $this->sameOrder($customer))->assertSessionHasNoErrors();
         $this->postJson('/api/v1/sales-orders', $this->sameOrder($customer))->assertCreated();
 
-        $orders = \App\Models\SalesOrder::orderBy('id')->get();
+        $orders = SalesOrder::orderBy('id')->get();
         $this->assertCount(2, $orders);
         foreach ($orders as $order) {
             $this->assertOrderFigures($order, "#{$order->id}");
@@ -353,7 +372,7 @@ class PhaseCRegressionTest extends TestCase
         $this->createAuthenticatedUser(['create sales-orders', 'edit sales-orders', 'view sales-orders']);
         $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->post(route('sales-orders.store'), $this->sameOrder($customer));
-        $order = \App\Models\SalesOrder::firstOrFail();
+        $order = SalesOrder::firstOrFail();
 
         $changed = $this->sameOrder($customer);
         $changed['items'][1]['quantity'] = 2;
@@ -374,7 +393,7 @@ class PhaseCRegressionTest extends TestCase
             ->assertStatus(422)->assertJsonValidationErrors('status');
 
         $this->postJson('/api/v1/sales-orders', $this->sameOrder($customer))->assertCreated();
-        $order = \App\Models\SalesOrder::firstOrFail();
+        $order = SalesOrder::firstOrFail();
         $this->putJson('/api/v1/sales-orders/'.$order->id, ['status' => 'completed'])->assertStatus(422);
         $this->putJson('/api/v1/sales-orders/'.$order->id, ['status' => 'confirmed'])->assertOk();
         $this->assertSame('confirmed', $order->fresh()->status);
@@ -385,7 +404,7 @@ class PhaseCRegressionTest extends TestCase
         $this->createAuthenticatedUser(['create sales-orders', 'view sales-orders', 'delete sales-orders']);
         $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->post(route('sales-orders.store'), $this->sameOrder($customer));
-        $order = \App\Models\SalesOrder::firstOrFail();
+        $order = SalesOrder::firstOrFail();
         Invoice::withoutEvents(fn () => Invoice::factory()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'sales_order_id' => $order->id]));
 
         $this->delete(route('sales-orders.destroy', $order))->assertSessionHas('error');
@@ -402,11 +421,11 @@ class PhaseCRegressionTest extends TestCase
         $quote['quotation_date'] = '2026-09-01';
 
         $this->post(route('quotations.store'), $quote)->assertSessionHasNoErrors();
-        $quotation = \App\Models\Quotation::firstOrFail();
+        $quotation = Quotation::firstOrFail();
         $this->assertOrderFigures($quotation, 'quotation');
 
         $this->post(route('quotations.convert', $quotation))->assertSessionHasNoErrors();
-        $order = \App\Models\SalesOrder::firstOrFail();
+        $order = SalesOrder::firstOrFail();
         $this->assertOrderFigures($order, 'order');
 
         $order->update(['status' => 'confirmed']);
@@ -417,8 +436,8 @@ class PhaseCRegressionTest extends TestCase
     public function test_r3_billing_a_purchase_order_keeps_its_line_discounts(): void
     {
         $this->createAuthenticatedUser(['create bills', 'view bills']);
-        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
-        $order = \App\Models\PurchaseOrder::create([
+        $vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $order = PurchaseOrder::create([
             'tenant_id' => $this->tenant->id, 'vendor_id' => $vendor->id, 'order_number' => 'PO-000001',
             'order_date' => '2026-09-01', 'status' => 'confirmed', 'subtotal' => 20000, 'discount_amount' => 1000, 'total' => 19000,
         ]);
@@ -442,11 +461,11 @@ class PhaseCRegressionTest extends TestCase
 
         $this->post(route('sales-receipts.store'), $sale)->assertSessionHasNoErrors();
 
-        $receipt = \App\Models\SalesReceipt::firstOrFail();
+        $receipt = SalesReceipt::firstOrFail();
         $this->assertEqualsWithDelta(1500, (float) $receipt->tax_amount, 0.001);
         $this->assertEqualsWithDelta(21500, (float) $receipt->total, 0.001);
-        $journal = Journal::where('reference_type', \App\Models\SalesReceipt::class)->where('reference_id', $receipt->id)->firstOrFail();
-        $vat = \App\Services\AccountCodeService::resolve($this->tenant->id, 'sales_tax_payable');
+        $journal = Journal::where('reference_type', SalesReceipt::class)->where('reference_id', $receipt->id)->firstOrFail();
+        $vat = AccountCodeService::resolve($this->tenant->id, 'sales_tax_payable');
         $this->assertEqualsWithDelta(1500, (float) $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', $vat))->sum('credit'), 0.001);
         $this->assertEqualsWithDelta(8, $this->onHand($item), 0.001);
 
@@ -462,9 +481,9 @@ class PhaseCRegressionTest extends TestCase
     public function test_r3_api_payments_move_the_bank_balance_like_the_web(): void
     {
         $this->createAuthenticatedUser(['create payments-received', 'delete payments-received', 'create payments-made', 'delete payments-made']);
-        $bank = \App\Models\Bank::factory()->create(['tenant_id' => $this->tenant->id, 'current_balance' => 100000]);
+        $bank = Bank::factory()->create(['tenant_id' => $this->tenant->id, 'current_balance' => 100000]);
         $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
-        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
         $balance = fn () => (float) $bank->fresh()->current_balance;
 
         $this->postJson('/api/v1/payments-received', [
@@ -479,10 +498,10 @@ class PhaseCRegressionTest extends TestCase
         ])->assertCreated();
         $this->assertEqualsWithDelta(103000, $balance(), 0.001);
 
-        $this->deleteJson('/api/v1/payments-made/'.\App\Models\PaymentMade::firstOrFail()->id)->assertOk();
+        $this->deleteJson('/api/v1/payments-made/'.PaymentMade::firstOrFail()->id)->assertOk();
         $this->assertEqualsWithDelta(105000, $balance(), 0.001);
 
-        $this->deleteJson('/api/v1/payments-received/'.\App\Models\PaymentReceived::firstOrFail()->id)->assertOk();
+        $this->deleteJson('/api/v1/payments-received/'.PaymentReceived::firstOrFail()->id)->assertOk();
         $this->assertEqualsWithDelta(100000, $balance(), 0.001);
     }
 
@@ -495,7 +514,7 @@ class PhaseCRegressionTest extends TestCase
         $this->postJson('/api/v1/payments-received', [
             'customer_id' => $customer->id, 'payment_date' => '2026-09-01', 'amount' => 5000, 'payment_method' => 'cash', 'is_deposit' => true,
         ])->assertCreated();
-        $deposit = \App\Models\PaymentReceived::firstOrFail();
+        $deposit = PaymentReceived::firstOrFail();
         $deposit->applyToInvoice($invoice, 3000);
 
         $this->deleteJson('/api/v1/payments-received/'.$deposit->id)->assertStatus(422);
@@ -506,26 +525,26 @@ class PhaseCRegressionTest extends TestCase
 
     public function test_q2_money_rounds_and_adds_in_whole_kobo(): void
     {
-        $this->assertSame(1.01, \App\Support\Money::round(1.005));
-        $this->assertSame(0.6, \App\Support\Money::sum([0.1, 0.2, 0.3]));
-        $this->assertSame([33.33, 33.33, 33.34], \App\Support\Money::allocate(100, [1, 1, 1]));
-        $this->assertTrue(\App\Support\Money::equals(0.1 + 0.2, 0.3));
+        $this->assertSame(1.01, Money::round(1.005));
+        $this->assertSame(0.6, Money::sum([0.1, 0.2, 0.3]));
+        $this->assertSame([33.33, 33.33, 33.34], Money::allocate(100, [1, 1, 1]));
+        $this->assertTrue(Money::equals(0.1 + 0.2, 0.3));
     }
 
     public function test_q2_every_document_keeps_its_total_equal_to_its_parts(): void
     {
         [$tenant] = $this->createTenantWithSubscription();
         $customer = Customer::factory()->create(['tenant_id' => $tenant->id]);
-        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $tenant->id]);
+        $vendor = Vendor::factory()->create(['tenant_id' => $tenant->id]);
         // 3.71 + 0.28 stored as 3.98: a kobo out, as unrounded sums used to give.
         $figures = ['subtotal' => 3.71, 'tax_amount' => 0.28, 'total' => 3.98];
 
         $docs = [
-            \App\Models\SalesOrder::create($figures + ['tenant_id' => $tenant->id, 'customer_id' => $customer->id, 'order_number' => 'SO-9', 'order_date' => '2026-09-01', 'status' => 'draft']),
-            \App\Models\Quotation::create($figures + ['tenant_id' => $tenant->id, 'customer_id' => $customer->id, 'quotation_number' => 'QT-9', 'quotation_date' => '2026-09-01', 'status' => 'draft']),
-            \App\Models\PurchaseOrder::create($figures + ['tenant_id' => $tenant->id, 'vendor_id' => $vendor->id, 'order_number' => 'PO-9', 'order_date' => '2026-09-01', 'status' => 'draft']),
-            \App\Models\CreditNote::create($figures + ['tenant_id' => $tenant->id, 'customer_id' => $customer->id, 'credit_note_number' => 'CN-9', 'credit_note_date' => '2026-09-01', 'status' => 'draft']),
-            \App\Models\RecurrentBill::create($figures + ['tenant_id' => $tenant->id, 'vendor_id' => $vendor->id, 'profile_name' => 'R', 'frequency' => 'monthly', 'start_date' => '2026-09-01', 'next_bill_date' => '2026-10-01', 'status' => 'active']),
+            SalesOrder::create($figures + ['tenant_id' => $tenant->id, 'customer_id' => $customer->id, 'order_number' => 'SO-9', 'order_date' => '2026-09-01', 'status' => 'draft']),
+            Quotation::create($figures + ['tenant_id' => $tenant->id, 'customer_id' => $customer->id, 'quotation_number' => 'QT-9', 'quotation_date' => '2026-09-01', 'status' => 'draft']),
+            PurchaseOrder::create($figures + ['tenant_id' => $tenant->id, 'vendor_id' => $vendor->id, 'order_number' => 'PO-9', 'order_date' => '2026-09-01', 'status' => 'draft']),
+            CreditNote::create($figures + ['tenant_id' => $tenant->id, 'customer_id' => $customer->id, 'credit_note_number' => 'CN-9', 'credit_note_date' => '2026-09-01', 'status' => 'draft']),
+            RecurrentBill::create($figures + ['tenant_id' => $tenant->id, 'vendor_id' => $vendor->id, 'profile_name' => 'R', 'frequency' => 'monthly', 'start_date' => '2026-09-01', 'next_bill_date' => '2026-10-01', 'status' => 'active']),
         ];
 
         foreach ($docs as $doc) {
@@ -539,15 +558,15 @@ class PhaseCRegressionTest extends TestCase
     {
         $this->createAuthenticatedUser();
         $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
-        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
         $invoice = Invoice::withoutEvents(fn () => Invoice::factory()->create(['tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'status' => 'cancelled']));
-        $bill = \App\Models\Bill::withoutEvents(fn () => \App\Models\Bill::factory()->create(['tenant_id' => $this->tenant->id, 'vendor_id' => $vendor->id, 'status' => 'paid']));
+        $bill = Bill::withoutEvents(fn () => Bill::factory()->create(['tenant_id' => $this->tenant->id, 'vendor_id' => $vendor->id, 'status' => 'paid']));
 
         foreach ([[$invoice, 'unpaid'], [$bill, 'draft'], [$invoice, 'finished']] as [$doc, $status]) {
             try {
                 $doc->update(['status' => $status]);
                 $this->fail(class_basename($doc)." moved to {$status}");
-            } catch (\Illuminate\Validation\ValidationException $e) {
+            } catch (ValidationException $e) {
                 $this->assertArrayHasKey('status', $e->errors());
             }
         }
@@ -562,8 +581,8 @@ class PhaseCRegressionTest extends TestCase
     public function test_q3_deleting_a_purchase_orders_bill_makes_the_order_billable_again(): void
     {
         $this->createAuthenticatedUser(['create bills', 'view bills', 'delete bills']);
-        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
-        $order = \App\Models\PurchaseOrder::create([
+        $vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $order = PurchaseOrder::create([
             'tenant_id' => $this->tenant->id, 'vendor_id' => $vendor->id, 'order_number' => 'PO-000007',
             'order_date' => '2026-09-01', 'status' => 'confirmed', 'subtotal' => 6000, 'total' => 6000,
         ]);
@@ -573,7 +592,7 @@ class PhaseCRegressionTest extends TestCase
         $this->post(route('bills.store'), $purchase + ['purchase_order_id' => $order->id])->assertSessionHasNoErrors();
         $this->assertSame('billed', $order->fresh()->status);
 
-        $this->delete(route('bills.destroy', \App\Models\Bill::firstOrFail()))->assertSessionHasNoErrors();
+        $this->delete(route('bills.destroy', Bill::firstOrFail()))->assertSessionHasNoErrors();
         $this->assertSame('confirmed', $order->fresh()->status);
     }
 
@@ -584,19 +603,19 @@ class PhaseCRegressionTest extends TestCase
         // Their item lists used a multi-line @json(...), which Blade splits
         // at the first comma, so each edit page failed with an error.
         $this->createAuthenticatedUser(['create sales-receipts', 'edit sales-receipts', 'create bills', 'edit bills', 'create sales-orders', 'edit sales-orders', 'edit recurrent-bills', 'view recurrent-bills']);
-        $vendor = \App\Models\Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
+        $vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
         $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         $line = ['description' => 'Service', 'quantity' => 1, 'unit_price' => 100, 'tax_rate' => 0];
 
         $this->post(route('sales-receipts.store'), ['receipt_date' => '2026-09-01', 'payment_method' => 'cash', 'items' => [$line]]);
         $this->post(route('bills.store'), ['vendor_id' => $vendor->id, 'bill_date' => '2026-09-01', 'due_date' => '2026-10-01', 'items' => [$line]]);
         $this->post(route('sales-orders.store'), ['customer_id' => $customer->id, 'order_date' => '2026-09-01', 'items' => [$line]]);
-        $profile = \App\Models\RecurrentBill::create(['tenant_id' => $this->tenant->id, 'vendor_id' => $vendor->id, 'profile_name' => 'Rent', 'frequency' => 'monthly', 'start_date' => '2026-09-01', 'next_bill_date' => '2026-10-01', 'status' => 'active', 'subtotal' => 100, 'tax_amount' => 0, 'total' => 100]);
+        $profile = RecurrentBill::create(['tenant_id' => $this->tenant->id, 'vendor_id' => $vendor->id, 'profile_name' => 'Rent', 'frequency' => 'monthly', 'start_date' => '2026-09-01', 'next_bill_date' => '2026-10-01', 'status' => 'active', 'subtotal' => 100, 'tax_amount' => 0, 'total' => 100]);
         $profile->items()->create($line + ['tax_amount' => 0, 'total' => 100]);
 
-        $this->get(route('sales-receipts.edit', \App\Models\SalesReceipt::firstOrFail()))->assertOk()->assertSee('VAT %');
-        $this->get(route('bills.edit', \App\Models\Bill::firstOrFail()))->assertOk();
-        $this->get(route('sales-orders.edit', \App\Models\SalesOrder::firstOrFail()))->assertOk();
+        $this->get(route('sales-receipts.edit', SalesReceipt::firstOrFail()))->assertOk()->assertSee('VAT %');
+        $this->get(route('bills.edit', Bill::firstOrFail()))->assertOk();
+        $this->get(route('sales-orders.edit', SalesOrder::firstOrFail()))->assertOk();
         $this->get(route('recurrent-bills.edit', $profile))->assertOk();
     }
 }

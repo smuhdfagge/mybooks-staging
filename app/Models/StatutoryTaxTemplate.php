@@ -42,13 +42,13 @@ class StatutoryTaxTemplate extends Model
     {
         // One active table at a time: switch off existing brackets of both
         // periods, or an old monthly table would keep overriding a new annual one.
-        \App\Models\TaxBracket::withoutGlobalScopes()
+        TaxBracket::withoutGlobalScopes()
             ->where('tenant_id', $tenantId)
             ->update(['is_active' => false]);
 
         $created = 0;
         foreach ($this->brackets as $index => $bracket) {
-            \App\Models\TaxBracket::create([
+            TaxBracket::create([
                 'tenant_id' => $tenantId,
                 'name' => $bracket['name'] ?? "{$this->name} Bracket ".($index + 1),
                 'min_amount' => $bracket['min'] ?? $bracket['min_amount'] ?? 0,

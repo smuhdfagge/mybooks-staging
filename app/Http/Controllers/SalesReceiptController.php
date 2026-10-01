@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\SalesReceipts\SaveSalesReceipt;
+use App\Http\Requests\StoreSalesReceiptRequest;
 use App\Models\Customer;
 use App\Models\Item;
 use App\Models\SalesReceipt;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 
 class SalesReceiptController extends Controller
@@ -23,7 +26,7 @@ class SalesReceiptController extends Controller
         return view('sales-receipts.create', compact('customers', 'items', 'receiptNumber'));
     }
 
-    public function store(\App\Http\Requests\StoreSalesReceiptRequest $request, \App\Actions\SalesReceipts\SaveSalesReceipt $save)
+    public function store(StoreSalesReceiptRequest $request, SaveSalesReceipt $save)
     {
         // VAT and discounts by the same rules as invoices (R3).
         $receipt = $save->create(auth()->user()->tenant_id, $request->validated(), auth()->id());
@@ -46,7 +49,7 @@ class SalesReceiptController extends Controller
         $salesReceipt->load(['customer', 'items.item', 'tenant']);
         $tenant = $salesReceipt->tenant ?? auth()->user()->tenant;
 
-        return \Barryvdh\DomPDF\Facade\Pdf::loadView('sales-receipts.print', compact('salesReceipt', 'tenant'))
+        return Pdf::loadView('sales-receipts.print', compact('salesReceipt', 'tenant'))
             ->download("sales-receipt-{$salesReceipt->receipt_number}.pdf");
     }
 
@@ -58,7 +61,7 @@ class SalesReceiptController extends Controller
         return view('sales-receipts.edit', compact('salesReceipt', 'customers', 'items'));
     }
 
-    public function update(\App\Http\Requests\StoreSalesReceiptRequest $request, SalesReceipt $salesReceipt, \App\Actions\SalesReceipts\SaveSalesReceipt $save)
+    public function update(StoreSalesReceiptRequest $request, SalesReceipt $salesReceipt, SaveSalesReceipt $save)
     {
         $save->update($salesReceipt, $request->validated());
 

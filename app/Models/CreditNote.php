@@ -2,18 +2,22 @@
 
 namespace App\Models;
 
+use App\Services\JournalService;
 use App\Traits\BelongsToTenant;
+use App\Traits\HasDocumentNumber;
+use App\Traits\KeepsTotalsBalanced;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class CreditNote extends Model
 {
-    use \App\Traits\HasDocumentNumber;
-    use \App\Traits\KeepsTotalsBalanced, BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
+    use BelongsToTenant, HasFactory, KeepsTotalsBalanced, LogsActivity, SoftDeletes;
+    use HasDocumentNumber;
 
     const STATUS_DRAFT = 'draft';
 
@@ -155,12 +159,12 @@ class CreditNote extends Model
             return false;
         }
 
-        \Illuminate\Support\Facades\DB::transaction(function () {
+        DB::transaction(function () {
             $this->update([
                 'status' => self::STATUS_OPEN,
                 'balance' => $this->total,
             ]);
-            app(\App\Services\JournalService::class)->createCreditNoteJournal($this);
+            app(JournalService::class)->createCreditNoteJournal($this);
         });
 
         return true;
@@ -175,9 +179,9 @@ class CreditNote extends Model
             return false;
         }
 
-        \Illuminate\Support\Facades\DB::transaction(function () {
+        DB::transaction(function () {
             if ($this->status !== self::STATUS_DRAFT) {
-                app(\App\Services\JournalService::class)
+                app(JournalService::class)
                     ->reverseDocumentJournal(self::class, $this->id, 'Credit note voided');
             }
             $this->update(['status' => self::STATUS_VOID, 'balance' => 0]);

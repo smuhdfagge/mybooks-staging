@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Contracts\JournalServiceInterface;
 use App\Events;
+use App\Http\Middleware\CheckSubscription;
+use App\Http\Middleware\EnsureAccountActive;
 use App\Listeners;
 use App\Models\User;
 use App\Services\ActivityLogService;
@@ -22,6 +24,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -124,9 +127,9 @@ class AppServiceProvider extends ServiceProvider
         // page's route, so page middleware does not run on them unless it is
         // marked persistent. Keep deactivated users (H1) and tenants whose
         // subscription has ended (C1) out of pages they already have open.
-        \Livewire\Livewire::addPersistentMiddleware([
-            \App\Http\Middleware\EnsureAccountActive::class,
-            \App\Http\Middleware\CheckSubscription::class,
+        Livewire::addPersistentMiddleware([
+            EnsureAccountActive::class,
+            CheckSubscription::class,
         ]);
 
         // Implicitly grant "Super Admin" role all permissions
