@@ -337,7 +337,8 @@ class PhaseDApiOpsTest extends TestCase
     {
         $ci = \Symfony\Component\Yaml\Yaml::parseFile(base_path('.github/workflows/php.yml'));
 
-        $this->assertEqualsCanonicalizing(['8.2', '8.4'], $ci['jobs']['tests']['strategy']['matrix']['php']);
+        // PHP 8.3 is the oldest Laravel 13 supports (Phase E).
+        $this->assertEqualsCanonicalizing(['8.3', '8.4'], $ci['jobs']['tests']['strategy']['matrix']['php']);
         $this->assertArrayHasKey('mariadb', $ci['jobs']['mariadb']['services']);
         $this->assertSame('mariadb', $ci['jobs']['mariadb']['env']['DB_CONNECTION']);
 
