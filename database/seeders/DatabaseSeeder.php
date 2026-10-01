@@ -107,7 +107,7 @@ class DatabaseSeeder extends Seeder
             'view fixed-asset-categories', 'create fixed-asset-categories', 'edit fixed-asset-categories', 'delete fixed-asset-categories',
 
             // Reports
-            'view reports', 'export reports',
+            'view reports', 'export reports', 'file vat-returns',
 
             // Settings
             'view settings', 'edit settings',
@@ -165,7 +165,7 @@ class DatabaseSeeder extends Seeder
             'view journals', 'create journals', 'edit journals', 'post journals',
             'view banks', 'create banks', 'edit banks', 'reconcile banks',
             'view fixed-assets', 'create fixed-assets', 'edit fixed-assets', 'depreciate fixed-assets',
-            'view reports', 'export reports',
+            'view reports', 'export reports', 'file vat-returns',
             'export data', 'import data',
         ]);
 

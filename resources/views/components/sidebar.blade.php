@@ -287,6 +287,17 @@
         </a>
         @endcan
 
+        <!-- Monthly VAT return -->
+        @can('view reports')
+        <a href="{{ route('reports.vat-return') }}"
+           class="group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors {{ request()->routeIs('reports.vat-return*') ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
+            <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
+            </svg>
+            VAT Return
+        </a>
+        @endcan
+
         <!-- Analytics Dashboard -->
         @can('view reports')
         <a href="{{ route('analytics.index') }}" 
