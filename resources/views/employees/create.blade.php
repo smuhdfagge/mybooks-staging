@@ -249,7 +249,7 @@
                             </div>
 
                             <div>
-                                <x-field name="tax_id" label="Tax ID / SSN" :value="old('tax_id')" />
+                                <x-field name="tax_id" label="Tax ID (TIN or NIN)" :value="old('tax_id')" />
                             </div>
                             <div>
                                 <x-field name="annual_rent" label="Annual rent paid (for PAYE rent relief)" type="number" :value="old('annual_rent')" step="0.01" min="0" />
@@ -260,6 +260,8 @@
                             </div>
                         </div>
                     </div>
+
+                    @include('employees.partials.statutory-fields')
 
                     <!-- Emergency Contact -->
                     <div class="mb-8">

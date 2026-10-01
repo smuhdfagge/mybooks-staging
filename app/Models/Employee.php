@@ -22,6 +22,10 @@ class Employee extends Model
         'bank_routing_number' => ['type' => 'masked', 'label' => 'Bank Routing Number'],
         'bank_name' => ['type' => 'plain', 'label' => 'Bank Name'],
         'tax_id' => ['type' => 'masked', 'label' => 'Tax ID'],
+        'rsa_pin' => ['type' => 'masked', 'label' => 'RSA PIN'],
+        'nhf_number' => ['type' => 'masked', 'label' => 'NHF Number'],
+        'tax_state_id' => ['type' => 'reference', 'label' => 'PAYE State', 'model' => State::class],
+        'pension_fund_administrator_id' => ['type' => 'reference', 'label' => 'Pension Fund Administrator', 'model' => PensionFundAdministrator::class],
         'salary_structure_id' => ['type' => 'reference', 'label' => 'Salary Structure', 'model' => SalaryStructure::class],
         'status' => ['type' => 'plain', 'label' => 'Employment Status'],
     ];
@@ -55,6 +59,10 @@ class Employee extends Model
         'bank_routing_number',
         'tax_id',
         'annual_rent',
+        'tax_state_id',
+        'pension_fund_administrator_id',
+        'rsa_pin',
+        'nhf_number',
         'emergency_contact_name',
         'emergency_contact_phone',
         'status',
@@ -71,12 +79,30 @@ class Employee extends Model
         'bank_account_number' => 'encrypted',
         'bank_routing_number' => 'encrypted',
         'tax_id' => 'encrypted',
+        'rsa_pin' => 'encrypted',
+        'nhf_number' => 'encrypted',
     ];
 
     /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * State whose IRS receives this employee's PAYE.
+     *
+     * @return BelongsTo<State, $this>
+     */
+    public function taxState(): BelongsTo
+    {
+        return $this->belongsTo(State::class, 'tax_state_id');
+    }
+
+    /** @return BelongsTo<PensionFundAdministrator, $this> */
+    public function pensionFundAdministrator(): BelongsTo
+    {
+        return $this->belongsTo(PensionFundAdministrator::class);
     }
 
     /** @return BelongsTo<Department, $this> */

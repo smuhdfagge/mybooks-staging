@@ -41,6 +41,12 @@ class EmployeeResource extends JsonResource
             'bank_name' => $this->bank_name,
             'bank_account_number' => $fullBank ? $this->bank_account_number : self::last4($this->bank_account_number),
             'tax_id' => $fullBank ? $this->tax_id : self::last4($this->tax_id),
+            // Statutory details: RSA PIN and NHF number masked like the tax ID (I7).
+            'tax_state' => $this->tax_state_id ? ['id' => $this->tax_state_id, 'name' => $this->taxState?->name] : null,
+            'pension_fund_administrator' => $this->pension_fund_administrator_id
+                ? ['id' => $this->pension_fund_administrator_id, 'name' => $this->pensionFundAdministrator?->name] : null,
+            'rsa_pin' => $fullBank ? $this->rsa_pin : self::last4($this->rsa_pin),
+            'nhf_number' => $fullBank ? $this->nhf_number : self::last4($this->nhf_number),
             'sensitive_masked' => ! $fullBank,
             'department' => new DepartmentResource($this->whenLoaded('department')),
             'designation' => new DesignationResource($this->whenLoaded('designation')),

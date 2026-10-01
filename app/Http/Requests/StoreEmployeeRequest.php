@@ -35,6 +35,21 @@ class StoreEmployeeRequest extends FormRequest
         if ($this->isMethod('post') && ! $this->filled('employment_type')) {
             $this->merge(['employment_type' => 'full-time']);
         }
+        // "pen 1001 2345 6789" and "PEN100123456789" are the same PIN.
+        if ($this->filled('rsa_pin') && is_string($this->input('rsa_pin'))) {
+            $this->merge(['rsa_pin' => strtoupper(preg_replace('/\s+/', '', $this->input('rsa_pin')))]);
+        }
+        if ($this->filled('nhf_number') && is_string($this->input('nhf_number'))) {
+            $this->merge(['nhf_number' => trim($this->input('nhf_number'))]);
+        }
+    }
+
+    public function messages(): array
+    {
+        return [
+            'rsa_pin.regex' => 'The RSA PIN must be PEN followed by 12 digits, for example PEN100123456789.',
+            'nhf_number.regex' => 'The NHF number may contain only letters, digits, / and -.',
+        ];
     }
 
     public function rules(): array
@@ -68,6 +83,12 @@ class StoreEmployeeRequest extends FormRequest
             'bank_routing_number' => ['nullable', 'string', 'max:50'],
             'tax_id' => ['nullable', 'string', 'max:50'],
             'annual_rent' => ['nullable', 'numeric', 'min:0'],
+            // Statutory details for remittances: PAYE state, PFA, RSA PIN, NHF number.
+            'tax_state_id' => ['nullable', Rule::exists('states', 'id')],
+            'pension_fund_administrator_id' => ['nullable', Rule::exists('pension_fund_administrators', 'id')
+                ->where(fn ($q) => $q->where(fn ($w) => $w->whereNull('tenant_id')->orWhere('tenant_id', $tenantId)))],
+            'rsa_pin' => ['nullable', 'string', 'regex:/^PEN\d{12}$/'],
+            'nhf_number' => ['nullable', 'string', 'max:30', 'regex:/^[A-Za-z0-9\/-]+$/'],
             'emergency_contact_name' => ['nullable', 'string', 'max:100'],
             'emergency_contact_phone' => ['nullable', 'string', 'max:50'],
             'notes' => ['nullable', 'string'],

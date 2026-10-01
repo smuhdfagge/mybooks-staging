@@ -17,7 +17,7 @@ class EmployeeController extends BaseApiController
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Employee::with(['department', 'designation']);
+        $query = Employee::with(['department', 'designation', 'taxState', 'pensionFundAdministrator']);
 
         // Search
         if ($search = $request->input('search')) {
@@ -63,7 +63,7 @@ class EmployeeController extends BaseApiController
      */
     public function show(Employee $employee): JsonResponse
     {
-        $employee->load(['department', 'designation']);
+        $employee->load(['department', 'designation', 'taxState', 'pensionFundAdministrator']);
 
         return $this->success(new EmployeeResource($employee));
     }
@@ -87,7 +87,7 @@ class EmployeeController extends BaseApiController
         }
 
         $employee = Employee::create($validated);
-        $employee->load(['department', 'designation']);
+        $employee->load(['department', 'designation', 'taxState', 'pensionFundAdministrator']);
 
         return $this->created(new EmployeeResource($employee), 'Employee created successfully');
     }
@@ -107,7 +107,7 @@ class EmployeeController extends BaseApiController
         unset($validated['photo']);
 
         $employee->update($validated);
-        $employee->load(['department', 'designation']);
+        $employee->load(['department', 'designation', 'taxState', 'pensionFundAdministrator']);
 
         return $this->success(new EmployeeResource($employee), 'Employee updated successfully');
     }

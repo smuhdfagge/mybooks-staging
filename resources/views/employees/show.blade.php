@@ -215,7 +215,7 @@
                 <!-- Right Column -->
                 <div class="lg:col-span-2">
                     <!-- Banking Information -->
-                    @if($employee->bank_name || $employee->bank_account_number || $employee->tax_id)
+                    @if($employee->bank_name || $employee->bank_account_number || $employee->tax_id || $employee->tax_state_id || $employee->pension_fund_administrator_id || $employee->rsa_pin || $employee->nhf_number)
                     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
                         <div class="p-6">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Banking & Tax Information</h3>
@@ -242,6 +242,30 @@
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Tax ID</dt>
                                     <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">****{{ substr($employee->tax_id, -4) }}</dd>
+                                </div>
+                                @endif
+                                @if($employee->taxState)
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">PAYE State</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $employee->taxState->name }}</dd>
+                                </div>
+                                @endif
+                                @if($employee->pensionFundAdministrator)
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Pension Fund Administrator</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $employee->pensionFundAdministrator->name }}</dd>
+                                </div>
+                                @endif
+                                @if($employee->rsa_pin)
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">RSA PIN</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">****{{ substr($employee->rsa_pin, -4) }}</dd>
+                                </div>
+                                @endif
+                                @if($employee->nhf_number)
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">NHF Number</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">****{{ substr($employee->nhf_number, -4) }}</dd>
                                 </div>
                                 @endif
                             </div>

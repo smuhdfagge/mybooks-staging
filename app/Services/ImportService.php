@@ -17,6 +17,8 @@ use App\Models\Item;
 use App\Models\ItemCategory;
 use App\Models\Journal;
 use App\Models\JournalEntry;
+use App\Models\PensionFundAdministrator;
+use App\Models\State;
 use App\Models\Vendor;
 use App\Support\Csv;
 use Illuminate\Support\Facades\DB;
@@ -970,12 +972,41 @@ class ImportService
     }
 
     /**
-     * Prepare employee data
+     * Prepare employee data. The sheet has one Name column; the table has
+     * first and last names, and the pay column is "salary" (the old keys
+     * name, basic_salary and pay_frequency are not columns, so rows failed).
+     * Statutory details: TIN, PAYE state and PFA (by name), RSA PIN, NHF number.
      */
     protected function prepareEmployeeData(array $data, $departments, $designations): array
     {
-        return [
-            'name' => $data['name'] ?? null,
+        $name = trim((string) ($data['name'] ?? ''));
+        $parts = preg_split('/\s+/', $name, 2) ?: [''];
+
+        $rsaPin = isset($data['rsa_pin']) && $data['rsa_pin'] !== '' ? strtoupper(preg_replace('/\s+/', '', (string) $data['rsa_pin'])) : null;
+        if ($rsaPin !== null && ! preg_match('/^PEN\d{12}$/', $rsaPin)) {
+            throw new \Exception("RSA PIN {$rsaPin} must be PEN followed by 12 digits");
+        }
+
+        $stateId = null;
+        if (! empty($data['tax_state'])) {
+            $stateId = State::whereRaw('LOWER(name) = ?', [strtolower(trim((string) $data['tax_state']))])->value('id');
+            if (! $stateId) {
+                throw new \Exception("Unknown PAYE state '{$data['tax_state']}'");
+            }
+        }
+
+        $pfaId = null;
+        if (! empty($data['pfa'])) {
+            $pfaId = PensionFundAdministrator::availableTo($this->tenantId)
+                ->whereRaw('LOWER(name) = ?', [strtolower(trim((string) $data['pfa']))])->value('id');
+            if (! $pfaId) {
+                throw new \Exception("Unknown Pension Fund Administrator '{$data['pfa']}'");
+            }
+        }
+
+        return array_filter([
+            'first_name' => $parts[0],
+            'last_name' => $parts[1] ?? '',
             'email' => $data['email'] ?? null,
             'employee_id' => $data['employee_id'] ?? null,
             'phone' => $data['phone'] ?? null,
@@ -985,12 +1016,16 @@ class ImportService
             'postal_code' => $data['postal_code'] ?? null,
             'date_of_birth' => ! empty($data['date_of_birth']) ? $this->parseDate($data['date_of_birth']) : null,
             'hire_date' => ! empty($data['hire_date']) ? $this->parseDate($data['hire_date']) : null,
-            'basic_salary' => isset($data['salary']) ? (float) $data['salary'] : 0,
-            'pay_frequency' => $data['pay_frequency'] ?? 'monthly',
+            'salary' => isset($data['salary']) && $data['salary'] !== '' ? (float) $data['salary'] : null,
             'bank_name' => $data['bank_name'] ?? null,
             'bank_account_number' => $data['bank_account'] ?? null,
+            'tax_id' => $data['tax_id'] ?? null,
+            'tax_state_id' => $stateId,
+            'pension_fund_administrator_id' => $pfaId,
+            'rsa_pin' => $rsaPin,
+            'nhf_number' => isset($data['nhf_number']) && $data['nhf_number'] !== '' ? trim((string) $data['nhf_number']) : null,
             'status' => 'active',
-        ];
+        ], fn ($v) => $v !== null && $v !== '');
     }
 
     /**

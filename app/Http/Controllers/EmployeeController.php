@@ -8,6 +8,7 @@ use App\Models\Country;
 use App\Models\Department;
 use App\Models\Designation;
 use App\Models\Employee;
+use App\Models\PensionFundAdministrator;
 use App\Models\SalaryStructure;
 use App\Models\State;
 use App\Support\DocumentNumber;
@@ -29,7 +30,9 @@ class EmployeeController extends Controller
         $states = State::orderBy('name')->get();
         $salaryStructures = SalaryStructure::where('is_active', true)->get();
 
-        return view('employees.create', compact('departments', 'designations', 'employeeId', 'countries', 'states', 'salaryStructures'));
+        $pfas = $this->pfas();
+
+        return view('employees.create', compact('departments', 'designations', 'employeeId', 'countries', 'states', 'salaryStructures', 'pfas'));
     }
 
     public function store(StoreEmployeeRequest $request)
@@ -56,7 +59,7 @@ class EmployeeController extends Controller
     {
         abort_unless($employee->tenant_id === auth()->user()->tenant_id, 403);
 
-        $employee->load(['department', 'designation', 'leaves', 'payrolls', 'salaryStructure']);
+        $employee->load(['department', 'designation', 'leaves', 'payrolls', 'salaryStructure', 'taxState', 'pensionFundAdministrator']);
 
         return view('employees.show', compact('employee'));
     }
@@ -71,7 +74,18 @@ class EmployeeController extends Controller
         $states = State::orderBy('name')->get();
         $salaryStructures = SalaryStructure::where('is_active', true)->get();
 
-        return view('employees.edit', compact('employee', 'departments', 'designations', 'countries', 'states', 'salaryStructures'));
+        $pfas = $this->pfas($employee->pension_fund_administrator_id);
+
+        return view('employees.edit', compact('employee', 'departments', 'designations', 'countries', 'states', 'salaryStructures', 'pfas'));
+    }
+
+    /** PFAs to choose from: active ones, plus the employee's current one. */
+    private function pfas(?int $current = null)
+    {
+        return PensionFundAdministrator::availableTo(auth()->user()->tenant_id)
+            ->where(fn ($q) => $q->where('is_active', true)->when($current, fn ($w) => $w->orWhere('id', $current)))
+            ->orderBy('name')
+            ->get();
     }
 
     public function update(UpdateEmployeeRequest $request, Employee $employee)
