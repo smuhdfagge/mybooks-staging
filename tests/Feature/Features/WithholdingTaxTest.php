@@ -2,11 +2,19 @@
 
 namespace Tests\Feature\Features;
 
+use App\Actions\Bills\SaveBill;
+use App\Models\Bank;
+use App\Models\Bill;
 use App\Models\ChartOfAccount;
+use App\Models\Journal;
+use App\Models\PaymentMade;
+use App\Models\Tenant;
+use App\Models\User;
 use App\Models\Vendor;
 use App\Models\WhtCategory;
 use App\Services\AccountCodeService;
 use App\Services\Accounting\WithholdingTax;
+use App\Services\JournalService;
 use Tests\TestCase;
 
 /**
@@ -17,10 +25,12 @@ class WithholdingTaxTest extends TestCase
 {
     private const ALL = ['view withholding-tax', 'manage withholding-tax', 'remit withholding-tax'];
 
+    private const PAY = ['create payments-made', 'edit payments-made', 'delete payments-made', 'view payments-made'];
+
     /** Sign in as a user of a brand-new business (signed out first, so the business is set up as itself). */
     private function signInFresh(array $permissions): void
     {
-        auth()->logout();
+        $this->app['auth']->forgetGuards();
         $this->createAuthenticatedUser($permissions);
     }
 
@@ -159,5 +169,256 @@ class WithholdingTaxTest extends TestCase
         $this->postJson('/api/v1/customers', [
             'name' => 'Federal Ministry', 'payee_type' => 'company', 'wht_category_id' => $professional->id,
         ])->assertCreated()->assertJsonPath('data.wht_category_id', $professional->id)->assertJsonPath('data.payee_type', 'company');
+    }
+
+    // ── Purchases: we withhold ──────────────────────────────────
+
+    private function category(string $code): WhtCategory
+    {
+        return WhtCategory::where('tenant_id', $this->tenant->id)->where('code', $code)->firstOrFail();
+    }
+
+    private function balance(string $key): float
+    {
+        $code = AccountCodeService::resolve($this->tenant->id, $key);
+
+        return round((float) ChartOfAccount::where('tenant_id', $this->tenant->id)->where('account_code', $code)->value('current_balance'), 2);
+    }
+
+    /** A bill for $net of contract supplies plus 7.5% VAT. */
+    private function vatBill(Vendor $vendor, float $net = 1000000, string $date = '2026-09-10'): Bill
+    {
+        return app(SaveBill::class)->create($this->tenant->id, [
+            'vendor_id' => $vendor->id, 'bill_date' => $date, 'due_date' => $date,
+            'items' => [['description' => 'Supply of materials', 'quantity' => 1, 'unit_price' => $net, 'tax_rate' => 7.5]],
+        ], $this->user->id);
+    }
+
+    private function vendor(array $attributes = []): Vendor
+    {
+        return Vendor::factory()->create($attributes + [
+            'tenant_id' => $this->tenant->id, 'name' => 'Dangote Supplies Ltd', 'tax_number' => '01234567-0001',
+            'payee_type' => 'company',
+        ]);
+    }
+
+    /** @return array<string, float> debit - credit per account code */
+    private function journalLines(string $type, int $id): array
+    {
+        $journal = Journal::with('entries.account')->where('reference_type', $type)->where('reference_id', $id)
+            ->where('status', 'posted')->firstOrFail();
+        app(JournalService::class)->assertBalanced($journal);
+
+        $lines = [];
+        foreach ($journal->entries as $entry) {
+            $code = $entry->account->account_code;
+            $lines[$code] = round(($lines[$code] ?? 0) + (float) $entry->debit - (float) $entry->credit, 2);
+        }
+
+        return $lines;
+    }
+
+    public function test_paying_a_vat_bill_withholds_2_percent_of_the_amount_before_vat(): void
+    {
+        $this->createAuthenticatedUser(self::PAY);
+        $bank = Bank::factory()->create(['tenant_id' => $this->tenant->id, 'current_balance' => 2000000]);
+        $vendor = $this->vendor();
+        $bill = $this->vatBill($vendor);
+        $this->assertEqualsWithDelta(1075000, (float) $bill->total, 0.001);
+        $this->get(route('payments-made.create', ['bill_id' => $bill->id]))->assertOk()->assertSee('Deduct withholding tax (WHT)');
+
+        // Web form: the net paid and the transaction type; the WHT is worked out.
+        $this->post(route('payments-made.store'), [
+            'vendor_id' => $vendor->id, 'bill_id' => $bill->id, 'payment_date' => '2026-09-15',
+            'amount' => 1055000, 'payment_method' => 'bank_transfer', 'bank_id' => $bank->id,
+            'wht_category_id' => $this->category('supply_goods')->id,
+        ])->assertSessionHasNoErrors();
+
+        $payment = PaymentMade::firstOrFail();
+        $this->assertEqualsWithDelta(1055000, (float) $payment->amount, 0.001);
+        $this->assertEqualsWithDelta(20000, (float) $payment->wht_amount, 0.001);
+        $this->assertEqualsWithDelta(1000000, (float) $payment->wht_base, 0.001);
+        $this->assertEqualsWithDelta(2, (float) $payment->wht_rate, 0.001);
+        $this->assertSame(WithholdingTax::AUTHORITY_FEDERAL, $payment->wht_authority);
+
+        // Net + WHT settles the bill.
+        $bill->refresh();
+        $this->assertSame('paid', $bill->status);
+        $this->assertEqualsWithDelta(0, (float) $bill->balance_due, 0.001);
+        $this->assertEqualsWithDelta(1075000, (float) $bill->amount_paid, 0.001);
+
+        // Bank goes down by the net only.
+        $this->assertEqualsWithDelta(945000, (float) $bank->fresh()->current_balance, 0.001);
+
+        // Dr payables 1,075,000 / Cr bank 1,055,000 / Cr WHT payable 20,000.
+        $lines = $this->journalLines(PaymentMade::class, $payment->id);
+        $this->assertEqualsWithDelta(1075000, $lines[AccountCodeService::resolve($this->tenant->id, 'accounts_payable')], 0.001);
+        $this->assertEqualsWithDelta(-1055000, $lines[AccountCodeService::resolve($this->tenant->id, 'checking')], 0.001);
+        $this->assertEqualsWithDelta(-20000, $lines[AccountCodeService::resolve($this->tenant->id, 'wht_payable')], 0.001);
+        $this->assertEqualsWithDelta(20000, $this->balance('wht_payable'), 0.001);
+        $this->assertEqualsWithDelta(0, $this->balance('accounts_payable'), 0.001);
+
+        $this->get(route('payments-made.show', $payment))->assertOk()->assertSee('WHT withheld')->assertSee('Nigeria Revenue Service');
+        $this->createUserForTenant($this->tenant, ['view bills']);
+        $this->actingAs(User::where('tenant_id', $this->tenant->id)->latest('id')->firstOrFail())
+            ->get(route('bills.show', $bill))->assertOk()->assertSee('WHT withheld');
+    }
+
+    public function test_api_payments_take_wht_the_same_way(): void
+    {
+        [$otherTenant] = $this->createTenantWithSubscription();
+        $theirs = WhtCategory::withoutGlobalScopes()->where('tenant_id', $otherTenant->id)->firstOrFail();
+        $this->createAuthenticatedUser(self::PAY);
+        $vendor = $this->vendor();
+        $bill = $this->vatBill($vendor);
+
+        $this->postJson('/api/v1/payments-made', [
+            'vendor_id' => $vendor->id, 'bill_id' => $bill->id, 'payment_date' => '2026-09-15',
+            'amount' => 1055000, 'payment_method' => 'cash', 'wht_category_id' => $this->category('supply_goods')->id,
+        ])->assertCreated()
+            ->assertJsonPath('data.wht_amount', 20000)
+            ->assertJsonPath('data.wht_authority', 'nrs');
+
+        $this->assertSame('paid', $bill->fresh()->status);
+        $this->assertEqualsWithDelta(20000, $this->balance('wht_payable'), 0.001);
+
+        // A WHT amount without a type, for a vendor with no usual type, is refused.
+        $other = $this->vendor(['name' => 'No Type Ltd']);
+        $this->postJson('/api/v1/payments-made', [
+            'vendor_id' => $other->id, 'payment_date' => '2026-09-15', 'amount' => 1000, 'payment_method' => 'cash', 'wht_amount' => 50,
+        ])->assertStatus(422)->assertJsonValidationErrors('wht_category_id');
+
+        // Another business's transaction type is refused.
+        $this->postJson('/api/v1/payments-made', [
+            'vendor_id' => $vendor->id, 'payment_date' => '2026-09-15', 'amount' => 1000, 'payment_method' => 'cash', 'wht_category_id' => $theirs->id,
+        ])->assertStatus(422)->assertJsonValidationErrors('wht_category_id');
+    }
+
+    public function test_an_individual_without_a_tin_pays_double_to_the_state_irs(): void
+    {
+        $this->createAuthenticatedUser(self::PAY);
+        $vendor = $this->vendor(['name' => 'Aisha Bello', 'tax_number' => null, 'payee_type' => 'individual', 'state' => 'Kano',
+            'wht_category_id' => $this->category('professional')->id]);
+        $bill = $this->vatBill($vendor, 500000); // 537,500 with VAT
+
+        // The vendor's usual type is used; 5% doubled to 10% on 500,000.
+        $this->post(route('payments-made.store'), [
+            'vendor_id' => $vendor->id, 'bill_id' => $bill->id, 'payment_date' => '2026-09-15',
+            'amount' => 487500, 'payment_method' => 'cash', 'wht_amount' => 50000,
+        ])->assertSessionHasNoErrors();
+
+        $payment = PaymentMade::firstOrFail();
+        $this->assertEqualsWithDelta(10, (float) $payment->wht_rate, 0.001);
+        $this->assertEqualsWithDelta(500000, (float) $payment->wht_base, 0.001);
+        $this->assertSame(WithholdingTax::AUTHORITY_STATE, $payment->wht_authority);
+        $this->assertSame('Kano', $payment->wht_state);
+        $this->assertSame('paid', $bill->fresh()->status);
+    }
+
+    public function test_wht_cannot_overpay_a_bill_or_be_taken_from_an_exempt_vendor(): void
+    {
+        $this->createAuthenticatedUser(self::PAY);
+        $vendor = $this->vendor();
+        $bill = $this->vatBill($vendor);
+        $supply = $this->category('supply_goods')->id;
+        $form = fn (array $extra) => $extra + [
+            'vendor_id' => $vendor->id, 'bill_id' => $bill->id, 'payment_date' => '2026-09-15', 'payment_method' => 'cash',
+        ];
+
+        // 1,060,000 paid + 20,000 WHT is more than the 1,075,000 owed.
+        $this->post(route('payments-made.store'), $form(['amount' => 1060000, 'wht_category_id' => $supply, 'wht_amount' => 20000]))
+            ->assertSessionHasErrors('amount');
+        // WHT can't be more than the amount it is worked out on.
+        $this->post(route('payments-made.store'), $form(['amount' => 1000, 'wht_category_id' => $supply, 'wht_amount' => 50000]))
+            ->assertSessionHasErrors('wht_amount');
+
+        $vendor->update(['wht_exempt' => true]);
+        $this->post(route('payments-made.store'), $form(['amount' => 1055000, 'wht_category_id' => $supply]))
+            ->assertSessionHasErrors('wht_amount');
+        $this->assertSame(0, PaymentMade::count());
+    }
+
+    public function test_part_payments_with_wht_leave_the_right_balance(): void
+    {
+        $this->createAuthenticatedUser(self::PAY);
+        $vendor = $this->vendor();
+        $bill = $this->vatBill($vendor);
+        $supply = $this->category('supply_goods')->id;
+
+        // Half the bill: 537,500 settled = 527,500 paid + 10,000 WHT (2% of 500,000).
+        $this->post(route('payments-made.store'), [
+            'vendor_id' => $vendor->id, 'bill_id' => $bill->id, 'payment_date' => '2026-09-15',
+            'amount' => 527500, 'payment_method' => 'cash', 'wht_category_id' => $supply, 'wht_amount' => 10000,
+        ])->assertSessionHasNoErrors();
+        $bill->refresh();
+        $this->assertSame('partial', $bill->status);
+        $this->assertEqualsWithDelta(537500, (float) $bill->balance_due, 0.001);
+        $this->assertEqualsWithDelta(500000, (float) PaymentMade::firstOrFail()->wht_base, 0.001);
+
+        // The rest, worked out: 527,500 paid settles the remaining 537,500.
+        $this->post(route('payments-made.store'), [
+            'vendor_id' => $vendor->id, 'bill_id' => $bill->id, 'payment_date' => '2026-09-20',
+            'amount' => 527500, 'payment_method' => 'cash', 'wht_category_id' => $supply,
+        ])->assertSessionHasNoErrors();
+        $this->assertSame('paid', $bill->fresh()->status);
+        $this->assertEqualsWithDelta(20000, $this->balance('wht_payable'), 0.001);
+
+        // Editing the money paid keeps the WHT and still can't overpay.
+        $first = PaymentMade::orderBy('id')->firstOrFail();
+        $edit = ['payment_date' => '2026-09-15', 'payment_method' => 'cash'];
+        $this->put(route('payments-made.update', $first), $edit + ['amount' => 527500.01])->assertSessionHasErrors('amount');
+        $this->put(route('payments-made.update', $first), $edit + ['amount' => 517500])->assertSessionHasNoErrors();
+        $this->assertEqualsWithDelta(10000, (float) $bill->fresh()->balance_due, 0.001);
+        $this->assertEqualsWithDelta(20000, $this->balance('wht_payable'), 0.001);
+        $this->assertEqualsWithDelta(10000, $this->balance('accounts_payable'), 0.001);
+    }
+
+    public function test_small_company_exemption_and_no_wht_without_a_type(): void
+    {
+        $this->createAuthenticatedUser(self::PAY);
+        $tenant = Tenant::findOrFail($this->tenant->id);
+        $tenant->update(['settings' => ['wht' => ['small_company' => true, 'small_company_threshold' => 2000000]]]);
+        $vendor = $this->vendor(['wht_category_id' => $this->category('services')->id]);
+        $form = fn (array $extra) => $extra + ['vendor_id' => $vendor->id, 'payment_date' => '2026-09-15', 'payment_method' => 'cash'];
+
+        // Within N2m this month to a vendor with a TIN: no WHT is worked out.
+        $this->post(route('payments-made.store'), $form(['amount' => 1500000, 'wht_category_id' => $this->category('services')->id]))
+            ->assertSessionHasNoErrors();
+        $this->assertEqualsWithDelta(0, (float) PaymentMade::latest('id')->first()->wht_amount, 0.001);
+
+        // Over N2m in the month: WHT applies again (2%, no bill so no VAT).
+        $this->post(route('payments-made.store'), $form(['amount' => 980000, 'wht_category_id' => $this->category('services')->id]))
+            ->assertSessionHasNoErrors();
+        $this->assertEqualsWithDelta(20000, (float) PaymentMade::latest('id')->first()->wht_amount, 0.001);
+
+        // No type and no amount: an ordinary payment.
+        $this->post(route('payments-made.store'), $form(['amount' => 1000]))->assertSessionHasNoErrors();
+        $this->assertEqualsWithDelta(0, (float) PaymentMade::latest('id')->first()->wht_amount, 0.001);
+        $this->assertEqualsWithDelta(20000, $this->balance('wht_payable'), 0.001);
+    }
+
+    public function test_deleting_a_payment_reverses_its_wht(): void
+    {
+        $this->createAuthenticatedUser(self::PAY);
+        $bank = Bank::factory()->create(['tenant_id' => $this->tenant->id, 'current_balance' => 2000000]);
+        $vendor = $this->vendor();
+        $bill = $this->vatBill($vendor);
+
+        $this->postJson('/api/v1/payments-made', [
+            'vendor_id' => $vendor->id, 'bill_id' => $bill->id, 'payment_date' => '2026-09-15', 'amount' => 1055000,
+            'payment_method' => 'bank_transfer', 'bank_id' => $bank->id, 'wht_category_id' => $this->category('supply_goods')->id,
+        ])->assertCreated();
+        $payment = PaymentMade::firstOrFail();
+
+        $this->delete(route('payments-made.destroy', $payment))->assertSessionHasNoErrors();
+
+        $bill->refresh();
+        $this->assertSame('unpaid', $bill->status);
+        $this->assertEqualsWithDelta(1075000, (float) $bill->balance_due, 0.001);
+        $this->assertEqualsWithDelta(0, $this->balance('wht_payable'), 0.001);
+        $this->assertEqualsWithDelta(1075000, $this->balance('accounts_payable'), 0.001);
+        $this->assertEqualsWithDelta(2000000, (float) $bank->fresh()->current_balance, 0.001);
+        // The original journal is kept and reversed.
+        $this->assertSame(2, Journal::where('reference_type', PaymentMade::class)->where('reference_id', $payment->id)->count());
     }
 }

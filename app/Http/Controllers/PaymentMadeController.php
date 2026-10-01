@@ -89,9 +89,10 @@ class PaymentMadeController extends Controller
         }
 
         // Not more than the bill still owes, counting this payment's current
-        // amount as available again (M5)
+        // amount as available again (M5). Any WHT withheld stays as it was
+        // and still counts towards the bill.
         if ($paymentMade->bill && ($errors = PaymentValidation::forBill(
-            $paymentMade->bill, $paymentMade->vendor_id, (float) $validated['amount'], (float) $paymentMade->amount
+            $paymentMade->bill, $paymentMade->vendor_id, (float) $validated['amount'] + (float) $paymentMade->wht_amount, $paymentMade->settledAmount()
         ))) {
             throw ValidationException::withMessages($errors);
         }
@@ -107,7 +108,8 @@ class PaymentMadeController extends Controller
             );
 
             if ($paymentMade->is_advance && ! $paymentMade->advanceApplications()->exists()) {
-                $validated['unused_amount'] = $validated['amount'];
+                // An advance's credit is the money paid plus any WHT withheld.
+                $validated['unused_amount'] = round((float) $validated['amount'] + (float) $paymentMade->wht_amount, 2);
             }
             $paymentMade->update($validated);
         });

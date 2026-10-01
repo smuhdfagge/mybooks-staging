@@ -857,6 +857,7 @@ class JournalService implements JournalServiceInterface
      *
      * Debit: Accounts Payable (liability decreases)
      * Credit: Cash/Bank (asset decreases)
+     * Credit: WHT Payable (WHT withheld, owed to the tax authority)
      */
     public function createPaymentMadeJournal(PaymentMade $payment): ?Journal
     {
@@ -865,8 +866,6 @@ class JournalService implements JournalServiceInterface
         }
 
         return DB::transaction(function () use ($payment) {
-            $t = $payment->tenant_id;
-
             $existingJournal = Journal::where('reference_type', PaymentMade::class)
                 ->where('reference_id', $payment->id)
                 ->first();
@@ -935,28 +934,36 @@ class JournalService implements JournalServiceInterface
      *   ordinary payment:          Dr Accounts payable   / Cr bank or cash
      *   advance (before a bill):   Dr Supplier advances  / Cr bank or cash
      *   advance used on a bill:    Dr Accounts payable   / Cr Supplier advances
+     * WHT withheld (ordinary payment or advance): the debit is the money paid
+     * plus the WHT, and the WHT is credited to WHT Payable, owed to the tax
+     * authority.
      */
     protected function writePaymentMadeLines(Journal $journal, PaymentMade $payment): void
     {
         $t = $payment->tenant_id;
         $amount = (float) $payment->amount;
+        $wht = round((float) $payment->wht_amount, 2);
+        $settled = $payment->settledAmount();
 
         if ($payment->is_advance) {
-            $this->createEntry($journal, $this->acct($t, 'supplier_advances'), $amount, 0,
+            $this->createEntry($journal, $this->acct($t, 'supplier_advances'), $settled, 0,
                 "Advance to {$payment->vendor->name}");
             $this->createEntry($journal, $this->paymentAccountFor($payment->bank, $payment->payment_method, $t), 0, $amount,
                 "Supplier Advance - {$payment->payment_number}");
+        } else {
+            $this->createEntry($journal, $this->acct($t, 'accounts_payable'), $settled, 0,
+                "Payment to {$payment->vendor->name}");
 
-            return;
+            $credit = $payment->payment_method === PaymentMade::METHOD_ADVANCE
+                ? $this->acct($t, 'supplier_advances')
+                : $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
+            $this->createEntry($journal, $credit, 0, $amount, "Payment Made - {$payment->payment_number}");
         }
 
-        $this->createEntry($journal, $this->acct($t, 'accounts_payable'), $amount, 0,
-            "Payment to {$payment->vendor->name}");
-
-        $credit = $payment->payment_method === PaymentMade::METHOD_ADVANCE
-            ? $this->acct($t, 'supplier_advances')
-            : $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
-        $this->createEntry($journal, $credit, 0, $amount, "Payment Made - {$payment->payment_number}");
+        if ($wht > 0) {
+            $this->createEntry($journal, $this->acct($t, 'wht_payable'), 0, $wht,
+                "WHT withheld from {$payment->vendor->name} - {$payment->payment_number}");
+        }
     }
 
     /**
