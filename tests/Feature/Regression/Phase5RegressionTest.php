@@ -82,6 +82,9 @@ class Phase5RegressionTest extends TestCase
 
     private function livewireUpdate(string $snapshot, array $updates = [])
     {
+        // Each real request starts with fresh Livewire state (Livewire 4).
+        \Livewire\Livewire::flushState();
+
         return $this->withHeaders(['X-Livewire' => '1'])->postJson(\Livewire\Livewire::getUpdateUri(), [
             'components' => [['snapshot' => $snapshot, 'updates' => $updates, 'calls' => []]],
         ]);

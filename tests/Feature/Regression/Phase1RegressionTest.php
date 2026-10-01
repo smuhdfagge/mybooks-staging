@@ -295,6 +295,9 @@ class Phase1RegressionTest extends TestCase
 
         $this->user->forceFill(['is_active' => false])->save();
 
+        // Each real request starts with fresh Livewire state; in one test the
+        // middleware-applied flag would carry over (Livewire 4).
+        \Livewire\Livewire::flushState();
         $this->withHeaders(['X-Livewire' => '1'])->postJson($update, $payload)->assertRedirect(route('login'));
         $this->assertGuest();
     }
