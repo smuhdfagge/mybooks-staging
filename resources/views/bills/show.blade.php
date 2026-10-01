@@ -260,6 +260,7 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Method</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Reference</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">WHT withheld</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -270,6 +271,7 @@
                                     <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ ucfirst($payment->payment_method ?? '-') }}</td>
                                     <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $payment->reference ?? '-' }}</td>
                                     <td class="px-4 py-3 text-sm font-medium text-green-600 dark:text-green-400 text-right">{{ number_format($payment->amount, 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{{ (float) $payment->wht_amount > 0 ? number_format($payment->wht_amount, 2) : '-' }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -395,6 +397,9 @@
                                             <div>
                                                 <p class="text-sm text-gray-900 dark:text-gray-100">
                                                     Payment made: <span class="font-semibold text-green-600 dark:text-green-400">{{ number_format($payment->amount, 2) }}</span>
+                                                    @if((float) $payment->wht_amount > 0)
+                                                        <span class="text-gray-500 dark:text-gray-400">+ WHT withheld {{ number_format($payment->wht_amount, 2) }}</span>
+                                                    @endif
                                                 </p>
                                                 <p class="text-xs text-gray-500 dark:text-gray-400">
                                                     via {{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}

@@ -94,7 +94,7 @@ class SaveBill
             }
             $totals = $this->totals(['items' => $lines] + $data);
 
-            $paid = (float) $bill->payments()->sum('amount');
+            $paid = $bill->settledByPayments();
             if ($paid > $totals['total'] + 0.005) {
                 throw ValidationException::withMessages(['items' => 'The new total is less than what has already been paid ('.number_format($paid, 2).').']);
             }

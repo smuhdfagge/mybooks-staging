@@ -136,10 +136,17 @@ class Bill extends Model
         }
     }
 
+    /** Money paid plus WHT withheld on this bill's payments. */
+    public function settledByPayments(): float
+    {
+        return round((float) $this->payments()->selectRaw('COALESCE(SUM(amount + wht_amount), 0) as settled')->value('settled'), 2);
+    }
+
     public function updateBalances()
     {
 
-        $this->amount_paid = $this->payments()->sum('amount');
+        // WHT withheld settles the bill too, not only the money paid.
+        $this->amount_paid = $this->settledByPayments();
         $this->balance_due = $this->total - $this->amount_paid;
         $this->status = $this->balance_due <= 0 ? 'paid' : ($this->amount_paid > 0 ? 'partial' : 'unpaid');
         $this->withoutPeriodValidation()->save();

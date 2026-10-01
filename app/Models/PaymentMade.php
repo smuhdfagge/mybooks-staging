@@ -36,12 +36,33 @@ class PaymentMade extends Model
         'reference',
         'notes',
         'created_by',
+        'wht_category_id',
+        'wht_rate',
+        'wht_base',
+        'wht_amount',
+        'wht_authority',
+        'wht_state',
     ];
 
     protected $casts = [
         'payment_date' => 'date',
         'amount' => 'decimal:2',
+        'wht_rate' => 'decimal:2',
+        'wht_base' => 'decimal:2',
+        'wht_amount' => 'decimal:2',
     ];
+
+    /** @return BelongsTo<WhtCategory, $this> */
+    public function whtCategory(): BelongsTo
+    {
+        return $this->belongsTo(WhtCategory::class);
+    }
+
+    /** What this payment settles on the bill: money paid plus WHT withheld. */
+    public function settledAmount(): float
+    {
+        return round((float) $this->amount + (float) $this->wht_amount, 2);
+    }
 
     /** @return BelongsTo<Vendor, $this> */
     public function vendor(): BelongsTo

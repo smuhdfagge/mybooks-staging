@@ -43,7 +43,7 @@
                         <div x-data="searchableSelect({
                             items: @js($vendors->map(fn ($vendor) => ['id' => (string) $vendor->id, 'name' => (string) $vendor->name])->values()),
                             selectedId: '{{ old('vendor_id', $bill?->vendor_id) }}',
-                            onSelect: (id) => { selectedVendor = id; filterBills(); }
+                            onSelect: (id) => { selectedVendor = id; filterBills(); whtCategoryId = ''; deductWht = !!(vendors[id] && vendors[id].wht_category_id && !vendors[id].wht_exempt); recalculate(); }
                         })" class="relative">
                             <label for="vendor_search" class="form-label">Vendor <span class="text-red-500">*</span></label>
                             <input type="hidden" name="vendor_id" :value="selectedId" required @error('vendor_id') aria-invalid="true" aria-describedby="vendor_id-error" @enderror>
@@ -115,12 +115,49 @@
                         <div>
                             <label for="amount" class="form-label">Amount <span class="text-red-500">*</span></label>
                             <div class="relative">
-                                <input type="number" name="amount" id="amount" step="0.01" min="0.01" value="{{ old('amount', $bill?->balance_due) }}" required placeholder="0.00"
+                                <input type="number" name="amount" id="amount" step="0.01" min="0.01" x-model="amount" @input="amountTyped()" required placeholder="0.00"
                                     class="form-control @error('amount') border-red-500 @enderror" @error('amount') aria-invalid="true" aria-describedby="amount-error" @enderror>
                             </div>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" x-show="deductWht">Money paid from the bank, after WHT.</p>
                             @error('amount')
                                 <p id="amount-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
+                        </div>
+
+                        <!-- Withholding tax -->
+                        <div class="md:col-span-2 rounded-md border border-gray-200 dark:border-gray-700 p-4">
+                            <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <input type="checkbox" x-model="deductWht" @change="recalculate()" :disabled="vendorExempt()">
+                                Deduct withholding tax (WHT)
+                            </label>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" x-show="vendorExempt()">This vendor is marked as exempt from WHT.</p>
+                            <div x-show="deductWht" x-cloak class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="wht_category_id" class="form-label">WHT transaction type</label>
+                                    <select name="wht_category_id" id="wht_category_id" x-model="whtCategoryId" @change="recalculate()" :disabled="!deductWht"
+                                        class="form-control @error('wht_category_id') border-red-500 @enderror">
+                                        <option value="">Select type</option>
+                                        <template x-for="c in categories" :key="c.id">
+                                            <option :value="c.id" x-text="c.name"></option>
+                                        </template>
+                                    </select>
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" x-show="whtCategoryId" x-text="'Rate ' + rate() + '% on the amount before VAT' + (vendorHasTin() ? '' : ' (doubled: vendor has no TIN)')"></p>
+                                    @error('wht_category_id')
+                                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                                <div>
+                                    <label for="wht_amount" class="form-label">WHT withheld</label>
+                                    <input type="number" name="wht_amount" id="wht_amount" step="0.01" min="0" x-model="whtAmount" :disabled="!deductWht"
+                                        class="form-control @error('wht_amount') border-red-500 @enderror">
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" x-show="selectedBill">
+                                        Settles <span x-text="formatMoney((parseFloat(amount) || 0) + (parseFloat(whtAmount) || 0))"></span> of the bill.
+                                    </p>
+                                    @error('wht_amount')
+                                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Payment Method -->
@@ -243,7 +280,13 @@
         }
 
         @php
-            $unpaidBills = \App\Models\Bill::whereIn('status', ['unpaid', 'partial'])->get(['id', 'vendor_id', 'bill_number', 'balance_due']);
+            $unpaidBills = \App\Models\Bill::whereIn('status', ['unpaid', 'partial'])->get(['id', 'vendor_id', 'bill_number', 'balance_due', 'total', 'tax_amount']);
+            $whtVendors = $vendors->mapWithKeys(fn ($v) => [$v->id => [
+                'payee_type' => $v->payee_type ?? 'company', 'has_tin' => $v->hasTin(),
+                'wht_category_id' => $v->wht_category_id, 'wht_exempt' => (bool) $v->wht_exempt,
+            ]]);
+            $whtCategories = \App\Models\WhtCategory::where('is_active', true)->orderBy('sort_order')->orderBy('name')
+                ->get(['id', 'name', 'rate_company', 'rate_individual', 'double_without_tin']);
         @endphp
         function paymentForm() {
             return {
@@ -251,9 +294,80 @@
                 selectedBill: '{{ old('bill_id', $bill?->id ?? '') }}',
                 allBills: @json($unpaidBills),
                 filteredBills: [],
+                amount: '{{ old('amount', $bill?->balance_due) }}',
+                // Withholding tax (worked out on the amount before VAT).
+                vendors: @json($whtVendors),
+                categories: @json($whtCategories),
+                deductWht: {{ old('wht_category_id') || old('wht_amount') ? 'true' : 'false' }},
+                whtCategoryId: '{{ old('wht_category_id') }}',
+                whtAmount: '{{ old('wht_amount') }}',
 
                 init() {
                     this.filterBills();
+                    // Paying a bill of a vendor with a usual WHT type: suggest it.
+                    if (!this.deductWht && this.selectedBill && this.vendor() && this.vendor().wht_category_id && !this.vendor().wht_exempt) {
+                        this.deductWht = true;
+                        this.recalculate();
+                    }
+                },
+
+                vendor() {
+                    return this.vendors[this.selectedVendor] || null;
+                },
+
+                vendorExempt() {
+                    return !!(this.vendor() && this.vendor().wht_exempt);
+                },
+
+                vendorHasTin() {
+                    return !this.vendor() || this.vendor().has_tin;
+                },
+
+                rate() {
+                    const c = this.categories.find(c => c.id == this.whtCategoryId);
+                    if (!c) return 0;
+                    const v = this.vendor();
+                    let r = parseFloat(v && v.payee_type === 'individual' ? c.rate_individual : c.rate_company) || 0;
+                    if (v && !v.has_tin && c.double_without_tin) r *= 2;
+                    return Math.round(r * 100) / 100;
+                },
+
+                bill() {
+                    return this.filteredBills.find(b => b.id == this.selectedBill) || null;
+                },
+
+                exVatShare() {
+                    const b = this.bill();
+                    const total = b ? parseFloat(b.total) : 0;
+                    return total > 0 ? Math.min(1, Math.max(0, (total - (parseFloat(b.tax_amount) || 0)) / total)) : 1;
+                },
+
+                // With a bill: settle what is owed, net = owed - WHT.
+                // Without one: the amount typed is the net; WHT is grossed up.
+                recalculate() {
+                    if (this.deductWht && !this.whtCategoryId && this.vendor() && this.vendor().wht_category_id) {
+                        this.whtCategoryId = String(this.vendor().wht_category_id);
+                    }
+                    const b = this.bill();
+                    if (!this.deductWht || !this.whtCategoryId) {
+                        this.whtAmount = '';
+                        if (b) this.amount = parseFloat(b.balance_due).toFixed(2);
+                        return;
+                    }
+                    const r = this.rate() / 100 * this.exVatShare();
+                    if (b) {
+                        const owed = parseFloat(b.balance_due);
+                        const wht = Math.round(owed * r * 100) / 100;
+                        this.whtAmount = wht.toFixed(2);
+                        this.amount = (owed - wht).toFixed(2);
+                    } else {
+                        const net = parseFloat(this.amount) || 0;
+                        this.whtAmount = r > 0 && r < 1 ? (Math.round(r * net / (1 - r) * 100) / 100).toFixed(2) : '0.00';
+                    }
+                },
+
+                amountTyped() {
+                    if (this.deductWht && !this.bill()) this.recalculate();
                 },
 
                 filterBills() {
@@ -269,12 +383,11 @@
                 },
 
                 updateAmount() {
-                    if (this.selectedBill) {
-                        const bill = this.filteredBills.find(b => b.id == this.selectedBill);
-                        if (bill) {
-                            document.getElementById('amount').value = parseFloat(bill.balance_due).toFixed(2);
-                        }
+                    const bill = this.bill();
+                    if (bill) {
+                        this.amount = parseFloat(bill.balance_due).toFixed(2);
                     }
+                    this.recalculate();
                 }
             }
         }

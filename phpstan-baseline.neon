@@ -1173,13 +1173,13 @@ parameters:
 		-
 			message: '#^Parameter \#3 \$debit of method App\\Services\\JournalService\:\:createEntry\(\) expects float, string given\.$#'
 			identifier: argument.type
-			count: 19
+			count: 17
 			path: app/Services/JournalService.php
 
 		-
 			message: '#^Parameter \#4 \$credit of method App\\Services\\JournalService\:\:createEntry\(\) expects float, string given\.$#'
 			identifier: argument.type
-			count: 19
+			count: 18
 			path: app/Services/JournalService.php
 
 		-

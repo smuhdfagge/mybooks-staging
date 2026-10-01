@@ -828,6 +828,7 @@ class JournalService implements JournalServiceInterface
      *
      * Debit: Accounts Payable (liability decreases)
      * Credit: Cash/Bank (asset decreases)
+     * Credit: WHT Payable (WHT withheld, owed to the tax authority)
      */
     public function createPaymentMadeJournal(PaymentMade $payment): ?Journal
     {
@@ -836,8 +837,6 @@ class JournalService implements JournalServiceInterface
         }
 
         return DB::transaction(function () use ($payment) {
-            $t = $payment->tenant_id;
-
             $existingJournal = Journal::where('reference_type', PaymentMade::class)
                 ->where('reference_id', $payment->id)
                 ->first();
@@ -862,14 +861,7 @@ class JournalService implements JournalServiceInterface
                 'created_by' => $payment->created_by ?? auth()->id(),
             ]);
 
-            // Debit: Accounts Payable (reduces liability)
-            $this->createEntry($journal, $this->acct($t, 'accounts_payable'), $payment->amount, 0,
-                "Payment to {$payment->vendor->name}");
-
-            // Credit: Cash/Bank account
-            $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
-            $this->createEntry($journal, $paymentAccountCode, 0, $payment->amount,
-                "Payment Made - {$payment->payment_number}");
+            $this->writePaymentMadeLines($journal, $payment);
 
             $journal->updateTotals();
             $journal->save();
@@ -881,12 +873,32 @@ class JournalService implements JournalServiceInterface
     }
 
     /**
+     * Dr Accounts Payable with what the payment settles, Cr the bank with
+     * the money paid, and Cr WHT Payable with any WHT withheld.
+     */
+    protected function writePaymentMadeLines(Journal $journal, PaymentMade $payment): void
+    {
+        $t = $payment->tenant_id;
+        $wht = round((float) $payment->wht_amount, 2);
+
+        $this->createEntry($journal, $this->acct($t, 'accounts_payable'), $payment->settledAmount(), 0,
+            "Payment to {$payment->vendor->name}");
+
+        $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
+        $this->createEntry($journal, $paymentAccountCode, 0, $payment->amount,
+            "Payment Made - {$payment->payment_number}");
+
+        if ($wht > 0) {
+            $this->createEntry($journal, $this->acct($t, 'wht_payable'), 0, $wht,
+                "WHT withheld from {$payment->vendor->name} - {$payment->payment_number}");
+        }
+    }
+
+    /**
      * Update existing payment made journal
      */
     protected function updatePaymentMadeJournal(PaymentMade $payment, Journal $journal): Journal
     {
-        $t = $payment->tenant_id;
-
         $this->reverseAccountBalances($journal);
         $journal->entries()->delete();
 
@@ -898,12 +910,7 @@ class JournalService implements JournalServiceInterface
             'description' => "Payment Made {$payment->payment_number} - {$payment->vendor->name}{$billRef}",
         ]);
 
-        $this->createEntry($journal, $this->acct($t, 'accounts_payable'), $payment->amount, 0,
-            "Payment to {$payment->vendor->name}");
-
-        $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
-        $this->createEntry($journal, $paymentAccountCode, 0, $payment->amount,
-            "Payment Made - {$payment->payment_number}");
+        $this->writePaymentMadeLines($journal, $payment);
 
         $journal->updateTotals();
         $journal->save();

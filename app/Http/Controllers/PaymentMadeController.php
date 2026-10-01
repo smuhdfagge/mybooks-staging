@@ -78,9 +78,10 @@ class PaymentMadeController extends Controller
         ]);
 
         // Not more than the bill still owes, counting this payment's current
-        // amount as available again (M5)
+        // amount as available again (M5). Any WHT withheld stays as it was
+        // and still counts towards the bill.
         if ($paymentMade->bill && ($errors = PaymentValidation::forBill(
-            $paymentMade->bill, $paymentMade->vendor_id, (float) $validated['amount'], (float) $paymentMade->amount
+            $paymentMade->bill, $paymentMade->vendor_id, (float) $validated['amount'] + (float) $paymentMade->wht_amount, $paymentMade->settledAmount()
         ))) {
             throw ValidationException::withMessages($errors);
         }
