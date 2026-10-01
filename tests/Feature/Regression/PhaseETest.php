@@ -41,4 +41,16 @@ class PhaseETest extends TestCase
         $this->assertSame(substr_count($first, '₦'), substr_count($second, '₦'));
         Cache::flush();
     }
+
+    public function test_money_display_and_global_search_scripts_are_ready_when_alpine_starts(): void
+    {
+        // Found in a browser run: Alpine evaluated formatMoney(...) before
+        // app.js defined it, and the global search read an undefined "query".
+        $js = file_get_contents(resource_path('js/app.js'));
+        $this->assertLessThan(strpos($js, 'Livewire.start()'), strpos($js, 'window.formatMoney ='));
+
+        $search = file_get_contents(resource_path('views/livewire/global-search.blade.php'));
+        $this->assertStringNotContainsString('if(query.length', $search);
+        $this->assertStringContainsString('$wire.query', $search);
+    }
 }
