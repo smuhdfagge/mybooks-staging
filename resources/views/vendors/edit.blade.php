@@ -62,6 +62,8 @@
                         </div>
                     </div>
 
+                    @include('withholding-tax._party-fields', ['party' => $vendor, 'side' => 'vendor'])
+
                     <!-- Address Information -->
                     <div class="mb-8">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">

@@ -6,6 +6,7 @@ use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -28,12 +29,28 @@ class Vendor extends Model
         'payment_terms',
         'notes',
         'is_active',
+        'payee_type',
+        'wht_category_id',
+        'wht_exempt',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'tax_number' => 'encrypted',
+        'wht_exempt' => 'boolean',
     ];
+
+    /** @return BelongsTo<WhtCategory, $this> */
+    public function whtCategory(): BelongsTo
+    {
+        return $this->belongsTo(WhtCategory::class);
+    }
+
+    /** Has a Tax Identification Number on file (WHT is doubled without one). */
+    public function hasTin(): bool
+    {
+        return trim((string) $this->tax_number) !== '';
+    }
 
     /** @return HasMany<Bill, $this> */
     public function bills(): HasMany
