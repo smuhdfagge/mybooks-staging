@@ -93,6 +93,13 @@ class VatReturnForm
         ]],
     ];
 
+    /**
+     * A month's return is due by the 21st of the next month (Nigeria Tax
+     * Administration Act 2025, as under the VAT Act before it). VAT is
+     * paid with the return.
+     */
+    public const DUE_DAY = 21;
+
     private const SALES = [Invoice::class, SalesReceipt::class, CreditNote::class, InvoiceRefund::class];
 
     private const PURCHASES = [Bill::class, Expense::class];
@@ -186,6 +193,7 @@ class VatReturnForm
 
         return [
             'month' => $start->format('Y-m'),
+            'dueDate' => self::dueDate($start->format('Y-m')),
             'from' => $from,
             'to' => $to,
             'lines' => $L,
@@ -208,6 +216,11 @@ class VatReturnForm
             'journalIds' => $journals->pluck('id')->merge($ledger['outputLines']->pluck('journal_id'))
                 ->merge($ledger['inputLines']->pluck('journal_id'))->unique()->sort()->values()->all(),
         ];
+    }
+
+    public static function dueDate(string $month): Carbon
+    {
+        return Carbon::createFromFormat('Y-m-d', $month.'-01')->startOfDay()->addMonthNoOverflow()->day(self::DUE_DAY);
     }
 
     /**

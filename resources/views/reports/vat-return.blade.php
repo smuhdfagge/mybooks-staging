@@ -16,7 +16,19 @@
                 {{ __('VAT return') }} &middot; {{ $monthLabel }}
             </h2>
             <div class="flex flex-wrap items-center gap-2">
-                {{-- vat-return:actions --}}
+                <a href="{{ route('reports.vat-return.export', ['month' => $month, 'format' => 'pdf']) }}" class="inline-flex items-center px-3 py-2 bg-red-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700">PDF (Form 002)</a>
+                <x-dropdown align="right" width="w-64">
+                    <x-slot name="trigger">
+                        <button type="button" class="inline-flex items-center px-3 py-2 bg-green-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">CSV</button>
+                    </x-slot>
+                    <x-slot name="content">
+                        <x-dropdown-link :href="route('reports.vat-return.export', ['month' => $month, 'format' => 'csv', 'schedule' => 'sales-upload'])">Sales schedule (TaxPro-Max upload)</x-dropdown-link>
+                        <x-dropdown-link :href="route('reports.vat-return.export', ['month' => $month, 'format' => 'csv', 'schedule' => 'sales'])">Sales schedule (detailed)</x-dropdown-link>
+                        <x-dropdown-link :href="route('reports.vat-return.export', ['month' => $month, 'format' => 'csv', 'schedule' => 'adjustments'])">Sales adjustments</x-dropdown-link>
+                        <x-dropdown-link :href="route('reports.vat-return.export', ['month' => $month, 'format' => 'csv', 'schedule' => 'purchases'])">Purchases schedule</x-dropdown-link>
+                        <x-dropdown-link :href="route('reports.vat-return.export', ['month' => $month, 'format' => 'csv', 'schedule' => 'form'])">Form 002 lines</x-dropdown-link>
+                    </x-slot>
+                </x-dropdown>
                 <a href="{{ route('reports.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">Back to Reports</a>
             </div>
         </div>
