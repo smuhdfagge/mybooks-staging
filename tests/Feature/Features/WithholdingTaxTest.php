@@ -3,6 +3,10 @@
 namespace Tests\Feature\Features;
 
 use App\Actions\Bills\SaveBill;
+use App\Actions\Payments\ApplySupplierAdvance;
+use App\Actions\Payments\RecordPaymentMade;
+use App\Actions\VendorCredits\ApplyVendorCredit;
+use App\Actions\VendorCredits\SaveVendorCredit;
 use App\Models\Bank;
 use App\Models\Bill;
 use App\Models\ChartOfAccount;
@@ -11,12 +15,14 @@ use App\Models\Invoice;
 use App\Models\Journal;
 use App\Models\PaymentMade;
 use App\Models\PaymentReceived;
+use App\Models\StatutoryRemittance;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Models\WhtCategory;
 use App\Models\WhtCreditUtilisation;
 use App\Services\AccountCodeService;
+use App\Services\Accounting\FinancialStatements;
 use App\Services\Accounting\WithholdingTax;
 use App\Services\JournalService;
 use Tests\TestCase;
@@ -601,5 +607,234 @@ class WithholdingTaxTest extends TestCase
         $this->post(route('withholding-tax.credit-notes.utilise'), ['payment_ids' => [$theirPayment->id], 'utilisation_date' => '2026-12-31'])
             ->assertSessionHasErrors('payment_ids.0');
         $this->assertNull($theirPayment->fresh()->wht_utilisation_id);
+    }
+
+    // ── Advances and supplier credits with WHT ──────────────────
+
+    private function assertBooksBalance(): void
+    {
+        $tb = app(FinancialStatements::class)->trialBalance($this->tenant->id, '2026-12-31');
+        $this->assertEqualsWithDelta($tb->sum('total_debit'), $tb->sum('total_credit'), 0.001);
+    }
+
+    public function test_an_advance_with_wht_gives_the_supplier_credit_for_the_gross(): void
+    {
+        $this->createAuthenticatedUser(array_merge(self::PAY, ['view vendors', 'create vendors']));
+        $bank = Bank::factory()->create(['tenant_id' => $this->tenant->id, 'current_balance' => 1000000]);
+        $vendor = $this->vendor();
+        $this->get(route('supplier-advances.create'))->assertOk()->assertSee('WHT transaction type');
+
+        // 49,000 paid, 1,000 WHT (2% of 50,000: no bill yet, so no VAT to take out).
+        $this->post(route('supplier-advances.store'), [
+            'vendor_id' => $vendor->id, 'payment_date' => '2026-09-01', 'amount' => 49000,
+            'payment_method' => 'bank_transfer', 'bank_id' => $bank->id, 'wht_category_id' => $this->category('services')->id,
+        ])->assertSessionHasNoErrors();
+        $advance = PaymentMade::where('is_advance', true)->firstOrFail();
+        $this->assertEqualsWithDelta(1000, (float) $advance->wht_amount, 0.001);
+        $this->assertEqualsWithDelta(50000, (float) $advance->unused_amount, 0.001);
+        $this->assertEqualsWithDelta(951000, (float) $bank->fresh()->current_balance, 0.001);
+
+        // Dr supplier advances 50,000 / Cr bank 49,000 / Cr WHT payable 1,000.
+        $lines = $this->journalLines(PaymentMade::class, $advance->id);
+        $this->assertEqualsWithDelta(50000, $lines[AccountCodeService::resolve($this->tenant->id, 'supplier_advances')], 0.001);
+        $this->assertEqualsWithDelta(-49000, $lines[AccountCodeService::resolve($this->tenant->id, 'checking')], 0.001);
+        $this->assertEqualsWithDelta(-1000, $lines[AccountCodeService::resolve($this->tenant->id, 'wht_payable')], 0.001);
+        $this->get(route('supplier-advances.show', $advance))->assertOk()->assertSee('Plus WHT withheld');
+
+        // Editing the money paid keeps the WHT in the credit.
+        $this->put(route('payments-made.update', $advance), [
+            'payment_date' => '2026-09-01', 'amount' => 39000, 'payment_method' => 'bank_transfer', 'bank_id' => $bank->id,
+        ])->assertSessionHasNoErrors();
+        $this->assertEqualsWithDelta(40000, (float) $advance->fresh()->unused_amount, 0.001);
+        $this->assertEqualsWithDelta(40000, $this->balance('supplier_advances'), 0.001);
+        $this->assertBooksBalance();
+    }
+
+    public function test_a_bill_settled_by_an_advance_a_supplier_credit_and_a_payment_with_wht(): void
+    {
+        $this->createAuthenticatedUser(self::PAY);
+        $vendor = $this->vendor();
+        $services = $this->category('services')->id;
+
+        $advance = app(RecordPaymentMade::class)->handle($this->tenant->id, [
+            'vendor_id' => $vendor->id, 'payment_date' => '2026-09-01', 'amount' => 49000, 'payment_method' => 'cash',
+            'is_advance' => true, 'wht_category_id' => $services,
+        ], $this->user->id);
+
+        $bill = $this->vatBill($vendor); // 1,075,000
+        app(ApplySupplierAdvance::class)->handle($advance, $bill, 50000, '2026-09-11');
+        $credit = app(SaveVendorCredit::class)->create($this->tenant->id, [
+            'vendor_id' => $vendor->id, 'bill_id' => $bill->id, 'credit_date' => '2026-09-12', 'status' => 'open',
+            'reason' => 'price_adjustment', 'items' => [['description' => 'Discount agreed', 'quantity' => 1, 'unit_price' => 100000, 'tax_rate' => 7.5]],
+        ], $this->user->id);
+        app(ApplyVendorCredit::class)->handle($credit, $bill->fresh(), 107500, '2026-09-12');
+
+        $bill->refresh();
+        $this->assertEqualsWithDelta(917500, (float) $bill->balance_due, 0.001);
+
+        // The rest: WHT on its share before VAT (917,500 x 1,000,000 / 1,075,000 x 2% = 17,069.77).
+        $this->post(route('payments-made.store'), [
+            'vendor_id' => $vendor->id, 'bill_id' => $bill->id, 'payment_date' => '2026-09-20',
+            'amount' => 900430.23, 'payment_method' => 'cash', 'wht_category_id' => $this->category('supply_goods')->id,
+        ])->assertSessionHasNoErrors();
+        $payment = PaymentMade::latest('id')->firstOrFail();
+        $this->assertEqualsWithDelta(17069.77, (float) $payment->wht_amount, 0.001);
+
+        $bill->refresh();
+        $this->assertSame('paid', $bill->status);
+        $this->assertEqualsWithDelta(1075000, (float) $bill->amount_paid, 0.001);
+        $this->assertEqualsWithDelta(0, (float) $bill->balance_due, 0.001);
+        $this->assertEqualsWithDelta(0, $this->balance('accounts_payable'), 0.001);
+        $this->assertEqualsWithDelta(0, $this->balance('supplier_advances'), 0.001);
+        $this->assertEqualsWithDelta(18069.77, $this->balance('wht_payable'), 0.001);
+        $this->assertBooksBalance();
+
+        // Changing the bill can't take its total below what is settled.
+        $this->assertEqualsWithDelta(1075000, $bill->settledByPayments() + (float) $bill->vendorCreditApplications()->sum('amount'), 0.001);
+    }
+
+    // ── Schedule and remittance ─────────────────────────────────
+
+    /** WHT payments in September: two to a company (NRS), one to an individual in Kano (state IRS), one in October. */
+    private function septemberDeductions(): void
+    {
+        $company = $this->vendor();
+        $person = $this->vendor(['name' => 'Musa Ibrahim', 'payee_type' => 'individual', 'state' => 'Kano', 'tax_number' => null]);
+        $supply = $this->category('supply_goods')->id;
+        $pay = fn (Vendor $v, string $date, float $amount, ?float $wht = null) => app(RecordPaymentMade::class)->handle($this->tenant->id, [
+            'vendor_id' => $v->id, 'payment_date' => $date, 'amount' => $amount, 'payment_method' => 'cash',
+            'wht_category_id' => $this->category($v->is($person) ? 'professional' : 'supply_goods')->id, 'wht_amount' => $wht,
+        ], $this->user->id);
+
+        $this->post(route('payments-made.store'), [
+            'vendor_id' => $company->id, 'bill_id' => $this->vatBill($company)->id, 'payment_date' => '2026-09-15',
+            'amount' => 1055000, 'payment_method' => 'cash', 'wht_category_id' => $supply,
+        ])->assertSessionHasNoErrors();                    // 20,000
+        $pay($company, '2026-09-25', 98000);               // 2,000 (2% of 100,000)
+        $pay($person, '2026-09-28', 90000);                // 10,000 (professional, 5% doubled: no TIN)
+        $pay($company, '2026-10-02', 49000);               // 1,000 in October
+    }
+
+    public function test_the_monthly_schedule_lists_wht_by_authority_and_vendor(): void
+    {
+        $this->createAuthenticatedUser(array_merge(self::PAY, ['view withholding-tax']));
+        Tenant::whereKey($this->tenant->id)->update(['tax_number' => '98765432-0001']);
+        $this->septemberDeductions();
+        $this->assertEqualsWithDelta(33000, $this->balance('wht_payable'), 0.001);
+
+        $this->get(route('withholding-tax.schedule', ['month' => '2026-09']))->assertOk()
+            ->assertSee('Nigeria Revenue Service (NRS)')->assertSee('Kano Internal Revenue Service')
+            ->assertSee('Dangote Supplies Ltd')->assertSee('01234567-0001')->assertSee('Musa Ibrahim')->assertSee('No TIN')
+            ->assertSee('Due by 21 Oct 2026')->assertSee('Due by 30 Oct 2026')
+            ->assertSeeInOrder(['WHT deducted this month', '32,000.00'])
+            ->assertDontSee('Record WHT payment'); // can't remit
+
+        $csv = $this->get(route('withholding-tax.schedule.export', ['month' => '2026-09', 'format' => 'csv']))->assertOk()->streamedContent();
+        $this->assertStringContainsString('"Nigeria Revenue Service (NRS)","Dangote Supplies Ltd",01234567-0001,Company', $csv);
+        $this->assertStringContainsString('2026-09-15,PM-000001,BILL-', $csv);
+        $this->assertStringContainsString(',1000000.00,2.00,20000.00', $csv);
+        $this->assertStringContainsString('"Kano Internal Revenue Service","Musa Ibrahim",,Individual,', $csv);
+        $this->assertStringContainsString('100000.00,10.00,10000.00', $csv);
+        $this->assertStringNotContainsString('2026-10-02', $csv);
+
+        $this->get(route('withholding-tax.schedule.export', ['month' => '2026-09', 'format' => 'pdf']))
+            ->assertOk()->assertHeader('content-type', 'application/pdf');
+        $this->get(route('withholding-tax.schedule', ['month' => '2026-08']))->assertOk()->assertSee('No WHT was deducted from vendors in August 2026');
+    }
+
+    public function test_remitting_wht_posts_dr_payable_cr_bank_and_can_be_undone(): void
+    {
+        $this->createAuthenticatedUser(array_merge(self::PAY, self::ALL));
+        $bank = Bank::factory()->create(['tenant_id' => $this->tenant->id, 'current_balance' => 100000]);
+        $this->septemberDeductions();
+
+        $this->get(route('withholding-tax.schedule', ['month' => '2026-09']))->assertOk()->assertSee('Record WHT payment');
+
+        $form = ['period' => '2026-09', 'authority' => 'nrs', 'amount' => 22000, 'paid_on' => '2026-10-02',
+            'payment_method' => 'bank_transfer', 'bank_id' => $bank->id, 'reference' => 'NRS-RCPT-77'];
+        $this->post(route('withholding-tax.remittances.store'), $form)->assertSessionHasNoErrors();
+
+        $remittance = StatutoryRemittance::firstOrFail();
+        $this->assertSame('wht', $remittance->body);
+        $this->assertSame('Nigeria Revenue Service (NRS)', $remittance->paid_to);
+        $this->assertSame('2026-09-01', $remittance->period_start->format('Y-m-d'));
+        $this->assertEqualsWithDelta(11000, $this->balance('wht_payable'), 0.001);
+        $this->assertEqualsWithDelta(78000, (float) $bank->fresh()->current_balance, 0.001);
+
+        // Dr WHT payable 22,000 / Cr bank 22,000.
+        $lines = $this->journalLines(StatutoryRemittance::class, $remittance->id);
+        $this->assertEqualsWithDelta(22000, $lines[AccountCodeService::resolve($this->tenant->id, 'wht_payable')], 0.001);
+        $this->assertEqualsWithDelta(-22000, $lines[AccountCodeService::resolve($this->tenant->id, 'checking')], 0.001);
+        $this->assertSame($remittance->journal_id, Journal::where('reference_type', StatutoryRemittance::class)->value('id'));
+
+        // The schedule shows the NRS paid and Kano still owed.
+        $this->get(route('withholding-tax.schedule', ['month' => '2026-09']))->assertOk()
+            ->assertSee('Paid in full')->assertSee('Still to pay ₦10,000.00', false)->assertSee('NRS-RCPT-77');
+
+        // Not more than is owed; a state needs its name.
+        $this->post(route('withholding-tax.remittances.store'), ['amount' => 11000.01] + $form)->assertSessionHasErrors('amount');
+        $this->post(route('withholding-tax.remittances.store'), ['authority' => 'state', 'state' => ''] + $form)->assertSessionHasErrors('state');
+        $this->post(route('withholding-tax.remittances.store'), ['authority' => 'state', 'state' => 'Kano', 'amount' => 10000] + $form)->assertSessionHasNoErrors();
+        $this->assertEqualsWithDelta(1000, $this->balance('wht_payable'), 0.001);
+        $this->assertSame('Kano Internal Revenue Service', StatutoryRemittance::latest('id')->value('paid_to'));
+
+        // Payroll's remittance list leaves WHT out.
+        $this->assertSame(0, StatutoryRemittance::where('body', '!=', 'wht')->count());
+
+        // Deleting one reverses its journal and gives the bank its money back.
+        $this->delete(route('withholding-tax.remittances.destroy', $remittance))->assertRedirect(route('withholding-tax.schedule', ['month' => '2026-09']));
+        $this->assertNull(StatutoryRemittance::find($remittance->id));
+        $this->assertEqualsWithDelta(23000, $this->balance('wht_payable'), 0.001);
+        $this->assertEqualsWithDelta(90000, (float) $bank->fresh()->current_balance, 0.001); // 100,000 - 22,000 - 10,000 + 22,000
+        $this->assertSame(2, Journal::where('reference_type', StatutoryRemittance::class)->where('reference_id', $remittance->id)->count());
+        $this->assertBooksBalance();
+    }
+
+    public function test_wht_schedule_and_remittances_need_permission_and_stay_within_the_business(): void
+    {
+        [$otherTenant] = $this->createTenantWithSubscription();
+        $theirRemittance = StatutoryRemittance::withoutGlobalScopes()->create([
+            'tenant_id' => $otherTenant->id, 'body' => 'wht', 'account_code' => '2420', 'period_start' => '2026-09-01',
+            'period_end' => '2026-09-30', 'paid_to' => 'THEIR NRS', 'wht_authority' => 'nrs', 'amount' => 500, 'paid_on' => '2026-10-01',
+        ]);
+
+        $this->createAuthenticatedUser(self::PAY);
+        $this->get(route('withholding-tax.schedule'))->assertForbidden();
+
+        $this->signInFresh(array_merge(self::PAY, ['view withholding-tax']));
+        $this->septemberDeductions();
+        $this->get(route('withholding-tax.schedule', ['month' => '2026-09']))->assertOk()->assertDontSee('THEIR NRS');
+        $this->post(route('withholding-tax.remittances.store'), [
+            'period' => '2026-09', 'authority' => 'nrs', 'amount' => 100, 'paid_on' => '2026-10-02', 'payment_method' => 'cash',
+        ])->assertForbidden();
+
+        $this->signInFresh(self::ALL);
+        $this->get(route('withholding-tax.schedule', ['month' => '2026-09']))->assertOk()->assertDontSee('Dangote Supplies Ltd');
+        $this->delete(route('withholding-tax.remittances.destroy', $theirRemittance))->assertNotFound();
+        $this->assertNotNull(StatutoryRemittance::withoutGlobalScopes()->find($theirRemittance->id));
+
+        // A payroll remittance can't be deleted from here.
+        $payroll = StatutoryRemittance::create([
+            'tenant_id' => $this->tenant->id, 'body' => 'paye', 'account_code' => '2310', 'period_start' => '2026-09-01',
+            'period_end' => '2026-09-30', 'amount' => 100, 'paid_on' => '2026-10-01',
+        ]);
+        $this->delete(route('withholding-tax.remittances.destroy', $payroll))->assertNotFound();
+    }
+
+    public function test_payments_on_the_last_day_of_the_period_are_included(): void
+    {
+        // Dates are stored with a time on SQLite; a plain "between" dropped the last day.
+        $this->createAuthenticatedUser(array_merge(self::PAY, self::RECEIVE, ['view withholding-tax']));
+        $vendor = $this->vendor();
+        app(RecordPaymentMade::class)->handle($this->tenant->id, [
+            'vendor_id' => $vendor->id, 'payment_date' => '2026-09-30', 'amount' => 98000, 'payment_method' => 'cash',
+            'wht_category_id' => $this->category('services')->id,
+        ], $this->user->id);
+        $customer = $this->customer();
+        $this->receiveWithWht($customer, $this->vatInvoice($customer), ['payment_date' => '2026-09-30']);
+
+        $this->get(route('withholding-tax.schedule', ['month' => '2026-09']))->assertOk()->assertSee('Dangote Supplies Ltd');
+        $this->get(route('withholding-tax.receivable', ['start_date' => '2026-09-01', 'end_date' => '2026-09-30']))
+            ->assertOk()->assertSee('Kano State Ministry of Works');
     }
 }

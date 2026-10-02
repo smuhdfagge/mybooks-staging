@@ -58,7 +58,12 @@
                 'imports' => 'Imports',
                 'activity-logs' => 'Activity Logs',
                 'payment-methods' => 'Payment Methods',
+                'withholding-tax' => 'Withholding Tax',
             ];
+
+            // Sections whose first page isn't named "{resource}.index".
+            $indexRoutes = ['withholding-tax' => 'withholding-tax.setup'];
+            $sectionActions = ['withholding-tax' => ['setup' => 'Rates & settings', 'schedule' => 'WHT payable schedule', 'receivable' => 'WHT credit notes']];
 
             $label = $labels[$resource] ?? ucwords(str_replace('-', ' ', $resource ?? ''));
 
@@ -66,7 +71,7 @@
                 // Try to build index route
                 $indexRoute = null;
                 try {
-                    $indexRoute = route($resource . '.index');
+                    $indexRoute = route($indexRoutes[$resource] ?? $resource . '.index');
                 } catch (\Exception $e) {
                     // Route may not exist
                 }
@@ -83,7 +88,7 @@
                         'edit' => 'Edit',
                         'show' => 'View',
                     ];
-                    $crumbs[] = ['label' => $actionLabels[$action] ?? ucfirst($action)];
+                    $crumbs[] = ['label' => $sectionActions[$resource][$action] ?? $actionLabels[$action] ?? ucfirst($action)];
                 }
             }
         }

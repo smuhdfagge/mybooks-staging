@@ -19,6 +19,7 @@ use App\Models\PaymentMade;
 use App\Models\PaymentReceived;
 use App\Models\Payroll;
 use App\Models\SalesReceipt;
+use App\Models\StatutoryRemittance;
 use App\Models\VendorCredit;
 use App\Models\VendorCreditRefund;
 use App\Models\WhtCreditUtilisation;
@@ -686,6 +687,43 @@ class JournalService implements JournalServiceInterface
 
         $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), 0, $payment->settledAmount(),
             "Payment for {$payment->customer->name}");
+    }
+
+    /**
+     * WHT paid to the tax authority (the NRS or a state IRS):
+     * Dr WHT Payable, Cr the bank it was paid from.
+     */
+    public function createWhtRemittanceJournal(StatutoryRemittance $remittance): Journal
+    {
+        return DB::transaction(function () use ($remittance) {
+            $t = $remittance->tenant_id;
+            $to = $remittance->paid_to ?: 'tax authority';
+            $journal = Journal::create([
+                'tenant_id' => $t,
+                'journal_number' => Journal::generateNumber($t),
+                'journal_date' => $remittance->paid_on,
+                'reference' => $remittance->reference ?: 'WHT-REMIT-'.$remittance->id,
+                'description' => "WHT remitted to {$to} for ".$remittance->period_start->format('F Y'),
+                'reference_type' => StatutoryRemittance::class,
+                'reference_id' => $remittance->id,
+                'journal_type' => self::WHT_REMITTANCE,
+                'status' => 'posted',
+                'is_posted' => true,
+                'posted_at' => now(),
+                'created_by' => $remittance->created_by ?? auth()->id(),
+            ]);
+
+            $amount = round((float) $remittance->amount, 2);
+            $this->createEntry($journal, $this->acct($t, 'wht_payable'), $amount, 0, "WHT remitted to {$to}");
+            $this->createEntry($journal, $this->paymentAccountFor($remittance->bank, $remittance->payment_method, $t), 0, $amount,
+                "WHT remittance - {$to}");
+
+            $journal->updateTotals();
+            $journal->save();
+            $this->updateAccountBalances($journal);
+
+            return $journal;
+        });
     }
 
     /**

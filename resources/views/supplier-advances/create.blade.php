@@ -36,6 +36,18 @@
                             </x-field>
                         </div>
                     </div>
+                    {{-- WHT is due when the money is paid, advances included. --}}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <x-field name="wht_category_id" label="WHT transaction type (if you deduct WHT)" type="select">
+                                <option value="">No WHT</option>
+                                @foreach($whtCategories as $category)
+                                    <option value="{{ $category->id }}" @selected((string) old('wht_category_id') === (string) $category->id)>{{ $category->name }}</option>
+                                @endforeach
+                            </x-field>
+                        </div>
+                        <div><x-field name="wht_amount" label="WHT withheld" type="number" step="0.01" min="0" :value="old('wht_amount')" help="Leave empty to work it out. Amount above is what you pay; the supplier's credit is the amount plus the WHT." /></div>
+                    </div>
                     <x-field name="reference" label="Reference" :value="old('reference')" />
                     <x-field name="notes" label="Notes" type="textarea" rows="2" :value="old('notes')" />
                     <div class="flex justify-end"><button class="btn-primary">Record advance</button></div>

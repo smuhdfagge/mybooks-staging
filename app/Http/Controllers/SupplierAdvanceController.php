@@ -8,6 +8,7 @@ use App\Models\Bank;
 use App\Models\Bill;
 use App\Models\PaymentMade;
 use App\Models\Vendor;
+use App\Models\WhtCategory;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -35,7 +36,9 @@ class SupplierAdvanceController extends Controller
         $banks = Bank::where('is_active', true)->orderBy('name')->get(['id', 'name']);
         $vendorId = $request->get('vendor_id');
 
-        return view('supplier-advances.create', compact('vendors', 'banks', 'vendorId'));
+        $whtCategories = WhtCategory::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(['id', 'name']);
+
+        return view('supplier-advances.create', compact('vendors', 'banks', 'vendorId', 'whtCategories'));
     }
 
     public function store(Request $request, RecordPaymentMade $record)
@@ -49,6 +52,8 @@ class SupplierAdvanceController extends Controller
             'bank_id' => ['nullable', Rule::exists('banks', 'id')->where('tenant_id', $tenantId)],
             'reference' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'wht_category_id' => ['nullable', Rule::exists('wht_categories', 'id')->where('tenant_id', $tenantId)],
+            'wht_amount' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $advance = $record->handle($tenantId, $validated + ['is_advance' => true], auth()->id());

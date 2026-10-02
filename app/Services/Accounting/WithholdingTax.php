@@ -34,9 +34,23 @@ class WithholdingTax
      * Small company exemption (Withholding Regulations 2024): a small
      * company need not deduct WHT from a supplier with a valid TIN when the
      * supplier's transactions in the month are no more than N2,000,000.
-     * Editable per business on the WHT settings page.
+     * Editable per business on the WHT settings page. Whether the business
+     * is "small" is the business's own tick: under the Nigeria Tax Act 2025
+     * that is turnover of N50m or less and fixed assets of N250m or less, not
+     * a professional services firm (owoode.com, 3 Sep 2026; checked
+     * 2 Oct 2026). Some summaries quote other turnover limits.
      */
     public const SMALL_COMPANY_THRESHOLD = 2000000.0;
+
+    /**
+     * Day of the following month WHT deducted must be paid over by: the
+     * 21st to the NRS, the 30th to a state IRS (Withholding Regulations
+     * 2024, as summarised by Andersen Nigeria and PwC; NRS still uses the
+     * 21st in 2026 per nrsportal.ng, 23 Mar 2026; checked 2 Oct 2026).
+     */
+    public const DUE_DAY_FEDERAL = 21;
+
+    public const DUE_DAY_STATE = 30;
 
     public const AUTHORITY_FEDERAL = 'nrs';
 
@@ -66,6 +80,15 @@ class WithholdingTax
         }
 
         return 'Nigeria Revenue Service (NRS)';
+    }
+
+    /** When WHT deducted in $month must reach the authority. */
+    public static function dueDate(string $authority, Carbon $month): Carbon
+    {
+        $next = $month->copy()->startOfMonth()->addMonthNoOverflow();
+        $day = $authority === self::AUTHORITY_STATE ? self::DUE_DAY_STATE : self::DUE_DAY_FEDERAL;
+
+        return $next->day(min($day, $next->daysInMonth));
     }
 
     /** Share of a document's total that is before VAT (1 when there is no document). */
@@ -232,7 +255,8 @@ class WithholdingTax
         $day = $date ? Carbon::parse($date) : now();
         $paid = (float) PaymentMade::where('tenant_id', $tenantId)
             ->where('vendor_id', $vendor->id)
-            ->whereBetween('payment_date', [$day->copy()->startOfMonth()->toDateString(), $day->copy()->endOfMonth()->toDateString()])
+            ->whereDate('payment_date', '>=', $day->copy()->startOfMonth()->toDateString())
+            ->whereDate('payment_date', '<=', $day->copy()->endOfMonth()->toDateString())
             ->selectRaw('COALESCE(SUM(amount + wht_amount), 0) as total')
             ->value('total');
 

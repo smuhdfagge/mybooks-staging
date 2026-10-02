@@ -61,6 +61,7 @@ use App\Http\Controllers\TaxRateController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\VendorCreditController;
 use App\Http\Controllers\WarehouseController;
+use App\Http\Controllers\WithholdingTax\WhtPayableController;
 use App\Http\Controllers\WithholdingTax\WhtReceivableController;
 use App\Http\Controllers\WithholdingTax\WhtSetupController;
 use App\Mail\ContactFormMail;
@@ -965,6 +966,12 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::middleware('permission:view withholding-tax')->group(function () {
             Route::get('receivable', [WhtReceivableController::class, 'index'])->name('receivable');
             Route::get('receivable/export', [WhtReceivableController::class, 'export'])->name('receivable.export');
+            Route::get('schedule', [WhtPayableController::class, 'index'])->name('schedule');
+            Route::get('schedule/export', [WhtPayableController::class, 'export'])->name('schedule.export');
+        });
+        Route::middleware('permission:remit withholding-tax')->group(function () {
+            Route::post('remittances', [WhtPayableController::class, 'remit'])->name('remittances.store');
+            Route::delete('remittances/{remittance}', [WhtPayableController::class, 'destroyRemittance'])->name('remittances.destroy');
         });
     });
 

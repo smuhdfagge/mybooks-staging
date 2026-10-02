@@ -67,7 +67,7 @@
                     <td class="text-right">{{ number_format((float) $payment->wht_base, 2) }}</td>
                     <td class="text-right">{{ number_format((float) $payment->wht_rate, 2) }}</td>
                     <td class="text-right">{{ number_format((float) $payment->wht_amount, 2) }}</td>
-                    <td>{{ ucfirst((string) $payment->whtStatus()) }}</td>
+                    <td>{{ \App\Models\PaymentReceived::WHT_STATUS_LABELS[$payment->whtStatus()] ?? '' }}</td>
                     <td>{{ $payment->wht_credit_note_number }} {{ $payment->wht_credit_note_date?->format('d M Y') }}</td>
                 </tr>
             @endforeach
