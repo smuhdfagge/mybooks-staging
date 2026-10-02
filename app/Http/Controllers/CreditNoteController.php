@@ -2,13 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\CreditNotes\DeleteCreditNote;
+use App\Actions\CreditNotes\OpenCreditNote;
+use App\Actions\CreditNotes\RefundCreditNote;
+use App\Actions\CreditNotes\SaveCreditNote;
+use App\Actions\CreditNotes\VoidCreditNote;
+use App\Enums\CreditNoteStatus;
+use App\Http\Requests\SaveCreditNoteRequest;
+use App\Models\Bank;
 use App\Models\CreditNote;
-use App\Models\CreditNoteItem;
+use App\Models\Customer;
 use App\Models\Invoice;
-use App\Services\JournalService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class CreditNoteController extends Controller
 {
@@ -17,135 +26,109 @@ class CreditNoteController extends Controller
         return view('credit-notes.index');
     }
 
+    /**
+     * New credit note. From an invoice (?invoice_id=) the customer, invoice
+     * and lines are filled in, at the price actually charged (after
+     * discounts), ready to cut down to what is being credited.
+     */
     public function create(Request $request)
     {
-        $tenantId = auth()->user()->tenant_id;
-        // Customers and items are searched as you type through the
-        // lookup routes (P9), so they are not all loaded here.
-        $creditNoteNumber = CreditNote::previewNumber($tenantId);
-
-        $invoice = null;
-        if ($request->has('invoice_id')) {
-            $invoice = Invoice::with('items.item')->findOrFail($request->invoice_id);
-        }
-
+        $creditNoteNumber = CreditNote::previewNumber(auth()->user()->tenant_id);
         $reasons = CreditNote::REASONS;
 
-        return view('credit-notes.create', compact('creditNoteNumber', 'invoice', 'reasons'));
+        $invoice = null;
+        $lines = [];
+        $customer = null;
+        if ($request->filled('invoice_id')) {
+            $invoice = Invoice::with(['items.item', 'customer'])->findOrFail($request->integer('invoice_id'));
+            $customer = $invoice->customer;
+            $lines = $invoice->items->map(fn ($l) => [
+                'item_id' => $l->item_id,
+                'item_name' => $l->item?->name,
+                'description' => $l->description,
+                'quantity' => (float) $l->quantity,
+                // Net price per unit: the line less its VAT, so any discount is already in it.
+                'unit_price' => (float) $l->quantity > 0 ? round(((float) $l->total - (float) $l->tax_amount) / (float) $l->quantity, 2) : 0,
+                'tax_rate' => (float) $l->tax_rate,
+            ])->all();
+        } elseif ($request->filled('customer_id')) {
+            $customer = Customer::find($request->integer('customer_id'));
+        }
+        $customerOptions = $this->customerOptions(collect([$customer])->filter());
+
+        return view('credit-notes.create', compact('creditNoteNumber', 'reasons', 'invoice', 'lines', 'customerOptions'));
     }
 
-    public function store(Request $request)
+    public function store(SaveCreditNoteRequest $request, SaveCreditNote $save)
     {
-        $tenantId = auth()->user()->tenant_id;
+        $note = $save->create(auth()->user()->tenant_id, $request->validated(), auth()->id());
 
-        $validated = $request->validate([
-            'customer_id' => ['required', Rule::exists('customers', 'id')->where('tenant_id', $tenantId)],
-            'invoice_id' => ['nullable', Rule::exists('invoices', 'id')->where('tenant_id', $tenantId)],
-            'credit_note_date' => 'required|date',
-            'reason' => ['nullable', Rule::in(array_keys(CreditNote::REASONS))],
-            'notes' => 'nullable|string',
-            'items' => 'required|array|min:1',
-            'items.*.item_id' => ['nullable', Rule::exists('items', 'id')->where('tenant_id', $tenantId)],
-            'items.*.description' => 'required|string',
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.tax_rate' => 'nullable|numeric|min:0|max:100',
-        ]);
-
-        if (! empty($validated['invoice_id'])
-            && (int) Invoice::whereKey($validated['invoice_id'])->value('customer_id') !== (int) $validated['customer_id']) {
-            return back()->withInput()->withErrors(['invoice_id' => 'That invoice belongs to a different customer.']);
-        }
-
-        $creditNote = DB::transaction(function () use ($tenantId, $validated) {
-            $cn = CreditNote::create([
-                'tenant_id' => $tenantId,
-                'customer_id' => $validated['customer_id'],
-                'invoice_id' => $validated['invoice_id'] ?? null,
-                'credit_note_number' => CreditNote::generateNumber($tenantId),
-                'credit_note_date' => $validated['credit_note_date'],
-                'reason' => $validated['reason'] ?? null,
-                'notes' => $validated['notes'] ?? null,
-                'status' => 'draft',
-                'created_by' => auth()->id(),
-            ]);
-
-            $subtotal = 0;
-            $totalTax = 0;
-
-            foreach ($validated['items'] as $itemData) {
-                $taxRate = $itemData['tax_rate'] ?? 0;
-                $lineTotal = $itemData['quantity'] * $itemData['unit_price'];
-                $taxAmount = $lineTotal * ($taxRate / 100);
-
-                CreditNoteItem::create([
-                    'credit_note_id' => $cn->id,
-                    'item_id' => $itemData['item_id'] ?? null,
-                    'description' => $itemData['description'],
-                    'quantity' => $itemData['quantity'],
-                    'unit_price' => $itemData['unit_price'],
-                    'tax_rate' => $taxRate,
-                    'tax_amount' => $taxAmount,
-                    'total' => $lineTotal + $taxAmount,
-                ]);
-
-                $subtotal += $lineTotal;
-                $totalTax += $taxAmount;
-            }
-
-            $cn->update([
-                'subtotal' => $subtotal,
-                'tax_amount' => $totalTax,
-                'total' => $subtotal + $totalTax,
-                'balance' => $subtotal + $totalTax,
-            ]);
-
-            return $cn;
-        });
-
-        return redirect()->route('credit-notes.show', $creditNote)->with('success', 'Credit note created.');
+        return redirect()->route('credit-notes.show', $note)->with('success', "Credit note {$note->credit_note_number} created as a draft. Open it to post it.");
     }
 
     public function show(CreditNote $creditNote)
     {
-        $creditNote->load(['customer', 'invoice', 'items.item', 'applications.invoice', 'createdBy']);
+        $creditNote->load(['customer', 'invoice', 'items.item', 'applications.invoice', 'refunds.bank', 'createdBy']);
 
-        return view('credit-notes.show', compact('creditNote'));
+        $invoices = $creditNote->status === CreditNoteStatus::Open->value
+            ? Invoice::where('customer_id', $creditNote->customer_id)
+                ->where('balance_due', '>', 0)
+                ->whereIn('status', ['unpaid', 'partial', 'sent', 'overdue'])
+                ->orderBy('due_date')->get()
+            : collect();
+        $banks = Bank::where('is_active', true)->orderBy('name')->get();
+
+        return view('credit-notes.show', compact('creditNote', 'invoices', 'banks'));
     }
 
-    public function open(CreditNote $creditNote)
+    public function edit(CreditNote $creditNote)
     {
-        if (! $creditNote->open()) {
-            return redirect()->back()->with('error', 'Only draft credit notes can be opened.');
+        if ($creditNote->status !== CreditNoteStatus::Draft->value) {
+            return redirect()->route('credit-notes.show', $creditNote)->with('error', 'Only a draft credit note can be changed.');
         }
 
-        return redirect()->back()->with('success', 'Credit note is now open and can be applied to invoices.');
+        $creditNote->load(['customer', 'invoice', 'items.item']);
+        $reasons = CreditNote::REASONS;
+        $customerOptions = $this->customerOptions(collect([$creditNote->customer])->filter());
+
+        return view('credit-notes.edit', compact('creditNote', 'reasons', 'customerOptions'));
     }
 
-    public function void(CreditNote $creditNote)
+    public function update(SaveCreditNoteRequest $request, CreditNote $creditNote, SaveCreditNote $save)
     {
-        if (! $creditNote->void()) {
-            return redirect()->back()->with('error', 'Cannot void a credit note that has been applied, or is already void.');
+        $save->update($creditNote, $request->validated());
+
+        return redirect()->route('credit-notes.show', $creditNote)->with('success', 'Credit note updated.');
+    }
+
+    public function open(CreditNote $creditNote, OpenCreditNote $open)
+    {
+        try {
+            $open->handle($creditNote);
+        } catch (ValidationException $e) {
+            return redirect()->back()->with('error', collect($e->errors())->flatten()->first());
+        }
+
+        return redirect()->back()->with('success', $creditNote->restock
+            ? 'Credit note opened. The returned goods are back in stock, and the credit can be applied to invoices or refunded.'
+            : 'Credit note is now open and can be applied to invoices or refunded.');
+    }
+
+    public function void(CreditNote $creditNote, VoidCreditNote $void)
+    {
+        try {
+            $void->handle($creditNote);
+        } catch (ValidationException $e) {
+            return redirect()->back()->with('error', collect($e->errors())->flatten()->first());
         }
 
         return redirect()->back()->with('success', 'Credit note voided.');
     }
 
-    /**
-     * Show form to apply credit note to an invoice.
-     */
+    /** The apply form is on the credit note's page. */
     public function showApply(CreditNote $creditNote)
     {
-        if ($creditNote->status !== CreditNote::STATUS_OPEN || $creditNote->balance <= 0) {
-            return redirect()->back()->with('error', 'This credit note has no available balance to apply.');
-        }
-
-        $invoices = Invoice::where('customer_id', $creditNote->customer_id)
-            ->where('balance_due', '>', 0)
-            ->whereIn('status', ['unpaid', 'partial', 'sent', 'overdue'])
-            ->get();
-
-        return view('credit-notes.apply', compact('creditNote', 'invoices'));
+        return redirect()->to(route('credit-notes.show', $creditNote).'#apply');
     }
 
     /**
@@ -171,25 +154,61 @@ class CreditNoteController extends Controller
         }
 
         return redirect()->route('credit-notes.show', $creditNote)
-            ->with('success', "Applied {$validated['amount']} to Invoice {$invoice->invoice_number}.");
+            ->with('success', 'Applied '.number_format((float) $validated['amount'], 2)." to invoice {$invoice->invoice_number}.");
     }
 
-    public function destroy(CreditNote $creditNote)
+    /** Pay the customer back out of the credit. */
+    public function refund(Request $request, CreditNote $creditNote, RefundCreditNote $refund)
     {
-        if ($creditNote->total_applied > 0) {
-            return redirect()->back()->with('error', 'Cannot delete a credit note with applications.');
+        $validated = $request->validate([
+            'refund_date' => 'required|date',
+            'amount' => 'required|numeric|min:0.01',
+            'payment_method' => 'required|in:cash,bank_transfer,check,other',
+            'bank_id' => ['nullable', Rule::exists('banks', 'id')->where('tenant_id', auth()->user()->tenant_id)],
+            'reference' => 'nullable|string|max:100',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $refund->handle($creditNote, $validated, auth()->id());
+
+        return redirect()->route('credit-notes.show', $creditNote)
+            ->with('success', 'Refund of '.number_format((float) $validated['amount'], 2).' recorded.');
+    }
+
+    public function print(CreditNote $creditNote)
+    {
+        $creditNote->load(['customer', 'items.item', 'invoice']);
+        $tenant = auth()->user()->tenant;
+
+        return view('credit-notes.print', compact('creditNote', 'tenant'));
+    }
+
+    public function pdf(CreditNote $creditNote)
+    {
+        $creditNote->load(['customer', 'items.item', 'invoice']);
+        $tenant = auth()->user()->tenant;
+
+        return Pdf::loadView('credit-notes.print', ['creditNote' => $creditNote, 'tenant' => $tenant, 'forPdf' => true])
+            ->download("credit-note-{$creditNote->credit_note_number}.pdf");
+    }
+
+    public function destroy(CreditNote $creditNote, DeleteCreditNote $delete)
+    {
+        if ($reason = $delete->blockedBecause($creditNote)) {
+            return redirect()->back()->with('error', $reason);
         }
 
-        DB::transaction(function () use ($creditNote) {
-            // An opened credit note has a journal; reverse it (N5)
-            if ($creditNote->status !== CreditNote::STATUS_DRAFT) {
-                app(JournalService::class)
-                    ->reverseDocumentJournal(CreditNote::class, $creditNote->id, 'Credit note deleted');
-            }
-            $creditNote->items()->delete();
-            $creditNote->delete();
-        });
+        $delete->handle($creditNote);
 
         return redirect()->route('credit-notes.index')->with('success', 'Credit note deleted.');
+    }
+
+    /** @return array<int, array{id: string, name: string}> */
+    private function customerOptions($customers): array
+    {
+        return $customers->map(fn ($c) => [
+            'id' => (string) $c->id,
+            'name' => $c->name.($c->company_name ? " ({$c->company_name})" : ''),
+        ])->values()->all();
     }
 }

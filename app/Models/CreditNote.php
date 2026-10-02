@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
-use App\Services\JournalService;
+use App\Actions\CreditNotes\OpenCreditNote;
+use App\Actions\CreditNotes\VoidCreditNote;
+use App\Enums\CreditNoteStatus;
 use App\Traits\BelongsToTenant;
+use App\Traits\GuardsStatusTransitions;
 use App\Traits\HasDocumentNumber;
 use App\Traits\KeepsTotalsBalanced;
 use App\Traits\LogsActivity;
@@ -12,12 +15,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CreditNote extends Model
 {
     use BelongsToTenant, HasFactory, KeepsTotalsBalanced, LogsActivity, SoftDeletes;
-    use HasDocumentNumber;
+    use GuardsStatusTransitions, HasDocumentNumber;
 
     const STATUS_DRAFT = 'draft';
 
@@ -45,6 +48,7 @@ class CreditNote extends Model
         'credit_note_date',
         'status',
         'reason',
+        'restock',
         'subtotal',
         'tax_amount',
         'total',
@@ -55,6 +59,7 @@ class CreditNote extends Model
 
     protected $casts = [
         'credit_note_date' => 'date',
+        'restock' => 'boolean',
         'subtotal' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'total' => 'decimal:2',
@@ -83,6 +88,12 @@ class CreditNote extends Model
     public function applications(): HasMany
     {
         return $this->hasMany(CreditNoteApplication::class);
+    }
+
+    /** @return HasMany<CreditNoteRefund, $this> */
+    public function refunds(): HasMany
+    {
+        return $this->hasMany(CreditNoteRefund::class);
     }
 
     /** @return BelongsTo<User, $this> */
@@ -150,42 +161,33 @@ class CreditNote extends Model
     }
 
     /**
-     * Open the credit note: it can now be applied to invoices, and the
-     * ledger is credited (finding N5 - it used to post nothing).
+     * Open (post) the credit note: see OpenCreditNote. Returns false if it
+     * isn't a draft.
      */
     public function open(): bool
     {
-        if ($this->status !== self::STATUS_DRAFT) {
+        if ($this->status !== CreditNoteStatus::Draft->value) {
             return false;
         }
 
-        DB::transaction(function () {
-            $this->update([
-                'status' => self::STATUS_OPEN,
-                'balance' => $this->total,
-            ]);
-            app(JournalService::class)->createCreditNoteJournal($this);
-        });
+        app(OpenCreditNote::class)->handle($this);
+        $this->refresh();
 
         return true;
     }
 
     /**
-     * Void an unused credit note, reversing its journal if it was opened.
+     * Void an unused credit note: see VoidCreditNote. Returns false if it
+     * can't be voided.
      */
     public function void(): bool
     {
-        if ($this->status === self::STATUS_VOID || $this->total_applied > 0) {
+        try {
+            app(VoidCreditNote::class)->handle($this);
+        } catch (ValidationException) {
             return false;
         }
-
-        DB::transaction(function () {
-            if ($this->status !== self::STATUS_DRAFT) {
-                app(JournalService::class)
-                    ->reverseDocumentJournal(self::class, $this->id, 'Credit note voided');
-            }
-            $this->update(['status' => self::STATUS_VOID, 'balance' => 0]);
-        });
+        $this->refresh();
 
         return true;
     }
@@ -196,5 +198,11 @@ class CreditNote extends Model
     protected function documentTotalParts(): array
     {
         return [['subtotal', 'tax_amount'], []];
+    }
+
+    /** Allowed status moves. */
+    protected static function statusEnum(): string
+    {
+        return CreditNoteStatus::class;
     }
 }

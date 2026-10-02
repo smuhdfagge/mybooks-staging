@@ -478,7 +478,7 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     });
 
     Route::middleware('feature:credit_notes')->group(function () {
-        // Credit Notes
+        // Customer credit notes (they share the invoice permissions)
         Route::middleware('permission:create invoices')->group(function () {
             Route::get('credit-notes/create', [CreditNoteController::class, 'create'])->name('credit-notes.create');
             Route::post('credit-notes', [CreditNoteController::class, 'store'])->name('credit-notes.store');
@@ -486,12 +486,17 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::middleware('permission:view invoices')->group(function () {
             Route::get('credit-notes', [CreditNoteController::class, 'index'])->name('credit-notes.index');
             Route::get('credit-notes/{creditNote}', [CreditNoteController::class, 'show'])->name('credit-notes.show');
+            Route::get('credit-notes/{creditNote}/print', [CreditNoteController::class, 'print'])->name('credit-notes.print');
+            Route::get('credit-notes/{creditNote}/pdf', [CreditNoteController::class, 'pdf'])->name('credit-notes.pdf');
         });
         Route::middleware('permission:edit invoices')->group(function () {
+            Route::get('credit-notes/{creditNote}/edit', [CreditNoteController::class, 'edit'])->name('credit-notes.edit');
+            Route::put('credit-notes/{creditNote}', [CreditNoteController::class, 'update'])->name('credit-notes.update');
             Route::post('credit-notes/{creditNote}/open', [CreditNoteController::class, 'open'])->name('credit-notes.open');
             Route::post('credit-notes/{creditNote}/void', [CreditNoteController::class, 'void'])->name('credit-notes.void');
             Route::get('credit-notes/{creditNote}/apply', [CreditNoteController::class, 'showApply'])->name('credit-notes.apply');
             Route::post('credit-notes/{creditNote}/apply', [CreditNoteController::class, 'apply'])->name('credit-notes.apply.store');
+            Route::post('credit-notes/{creditNote}/refund', [CreditNoteController::class, 'refund'])->name('credit-notes.refund');
         });
         Route::delete('credit-notes/{creditNote}', [CreditNoteController::class, 'destroy'])
             ->middleware('permission:delete invoices')
