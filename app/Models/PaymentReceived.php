@@ -39,6 +39,15 @@ class PaymentReceived extends Model
         'is_deposit',
         'unused_amount',
         'created_by',
+        'wht_category_id',
+        'wht_rate',
+        'wht_base',
+        'wht_amount',
+        'wht_authority',
+        'wht_state',
+        'wht_credit_note_number',
+        'wht_credit_note_date',
+        'wht_utilisation_id',
     ];
 
     protected $casts = [
@@ -46,7 +55,48 @@ class PaymentReceived extends Model
         'amount' => 'decimal:2',
         'unused_amount' => 'decimal:2',
         'is_deposit' => 'boolean',
+        'wht_rate' => 'decimal:2',
+        'wht_base' => 'decimal:2',
+        'wht_amount' => 'decimal:2',
+        'wht_credit_note_date' => 'date',
     ];
+
+    /** WHT credit note states: deducted, credit note in hand, used against income tax. */
+    public const WHT_OUTSTANDING = 'outstanding';
+
+    public const WHT_RECEIVED = 'received';
+
+    public const WHT_UTILISED = 'utilised';
+
+    /** @return BelongsTo<WhtCategory, $this> */
+    public function whtCategory(): BelongsTo
+    {
+        return $this->belongsTo(WhtCategory::class);
+    }
+
+    /** @return BelongsTo<WhtCreditUtilisation, $this> */
+    public function whtUtilisation(): BelongsTo
+    {
+        return $this->belongsTo(WhtCreditUtilisation::class, 'wht_utilisation_id');
+    }
+
+    /** What this payment settles on the invoice: money received plus WHT the customer deducted. */
+    public function settledAmount(): float
+    {
+        return round((float) $this->amount + (float) $this->wht_amount, 2);
+    }
+
+    public function whtStatus(): ?string
+    {
+        if ((float) $this->wht_amount <= 0) {
+            return null;
+        }
+        if ($this->wht_utilisation_id) {
+            return self::WHT_UTILISED;
+        }
+
+        return $this->wht_credit_note_number ? self::WHT_RECEIVED : self::WHT_OUTSTANDING;
+    }
 
     /** @return BelongsTo<Customer, $this> */
     public function customer(): BelongsTo

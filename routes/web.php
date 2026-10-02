@@ -59,6 +59,7 @@ use App\Http\Controllers\TaxGroupController;
 use App\Http\Controllers\TaxRateController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\WarehouseController;
+use App\Http\Controllers\WithholdingTax\WhtReceivableController;
 use App\Http\Controllers\WithholdingTax\WhtSetupController;
 use App\Mail\ContactFormMail;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
@@ -915,6 +916,12 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
             Route::put('rates', [WhtSetupController::class, 'updateRates'])->name('rates.update');
             Route::post('rates', [WhtSetupController::class, 'storeRate'])->name('rates.store');
             Route::put('settings', [WhtSetupController::class, 'updateSettings'])->name('settings.update');
+            Route::post('credit-notes/{paymentReceived}', [WhtReceivableController::class, 'recordCreditNote'])->name('credit-notes.store');
+            Route::post('credit-notes-utilisations', [WhtReceivableController::class, 'utilise'])->name('credit-notes.utilise');
+        });
+        Route::middleware('permission:view withholding-tax')->group(function () {
+            Route::get('receivable', [WhtReceivableController::class, 'index'])->name('receivable');
+            Route::get('receivable/export', [WhtReceivableController::class, 'export'])->name('receivable.export');
         });
     });
 

@@ -202,7 +202,8 @@ class WithholdingTax
         if ($wht - $base > 0.005) {
             throw ValidationException::withMessages(['wht_amount' => 'The WHT is more than the amount it is worked out on.']);
         }
-        if (! $category) {
+        // The customer decided the WHT: record the rate it actually comes to.
+        if ($entered !== null) {
             $rate = $base > 0 ? round($wht / $base * 100, 2) : 0.0;
         }
 

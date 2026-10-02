@@ -28,6 +28,9 @@ class StorePaymentReceivedRequest extends FormRequest
             'is_deposit' => ['boolean'],
             'apply_deposit_id' => ['nullable', Rule::exists('payments_received', 'id')->where('tenant_id', $tenantId)],
             'deposit_amount' => ['nullable', 'numeric', 'min:0'],
+            // Withholding tax the customer deducted (amount is the money received).
+            'wht_category_id' => ['nullable', Rule::exists('wht_categories', 'id')->where('tenant_id', $tenantId)],
+            'wht_amount' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 }
