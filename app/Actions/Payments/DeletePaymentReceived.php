@@ -35,6 +35,11 @@ class DeletePaymentReceived
             return 'Cannot delete a deposit that has been applied to invoices.';
         }
 
+        // Its WHT credit has been used against income tax; that would no longer balance.
+        if ($payment->wht_utilisation_id) {
+            return 'Cannot delete a payment whose WHT credit note has been used against income tax.';
+        }
+
         return null;
     }
 }

@@ -9,6 +9,8 @@ use App\Models\Bank;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\PaymentReceived;
+use App\Models\WhtCategory;
+use App\Services\Accounting\WithholdingTax;
 use App\Services\BankService;
 use App\Services\NotificationService;
 use App\Services\PaymentValidation;
@@ -39,8 +41,12 @@ class PaymentReceivedController extends Controller
 
         // Get all unpaid invoices for dynamic filtering
         $unpaidInvoices = Invoice::whereIn('status', ['draft', 'sent', 'unpaid', 'partial'])
-            ->select('id', 'customer_id', 'invoice_number', 'balance_due', 'total')
+            ->select('id', 'customer_id', 'invoice_number', 'balance_due', 'total', 'tax_amount')
             ->get();
+
+        // Withholding tax a customer may deduct, at this business's rate.
+        $whtCategories = WhtCategory::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
+        $whtBusinessType = WithholdingTax::settings(auth()->user()->tenant_id)['business_type'];
 
         // Get customer deposits for applying to invoices
         $customerDeposits = PaymentReceived::where('is_deposit', true)
@@ -48,7 +54,7 @@ class PaymentReceivedController extends Controller
             ->select('id', 'customer_id', 'payment_number', 'unused_amount', 'payment_date')
             ->get();
 
-        return view('payments-received.create', compact('customers', 'invoice', 'paymentNumber', 'unpaidInvoices', 'customerDeposits', 'banks'));
+        return view('payments-received.create', compact('customers', 'invoice', 'paymentNumber', 'unpaidInvoices', 'customerDeposits', 'banks', 'whtCategories', 'whtBusinessType'));
     }
 
     public function store(StorePaymentReceivedRequest $request, RecordPaymentReceived $record)
@@ -104,11 +110,12 @@ class PaymentReceivedController extends Controller
         // The new amount may not exceed what the invoice still owes, counting
         // this payment's current amount as available again (M5).
         if (! $paymentReceived->is_deposit && $paymentReceived->invoice) {
+            // Any WHT the customer deducted stays and still counts.
             $errors = PaymentValidation::forInvoice(
                 $paymentReceived->invoice,
                 $paymentReceived->customer_id,
-                (float) $validated['amount'],
-                (float) $paymentReceived->amount
+                (float) $validated['amount'] + (float) $paymentReceived->wht_amount,
+                $paymentReceived->settledAmount()
             );
             if ($errors) {
                 throw ValidationException::withMessages($errors);

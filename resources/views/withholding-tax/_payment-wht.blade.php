@@ -31,6 +31,18 @@
                 <dt class="text-gray-500 dark:text-gray-400">{{ $side === 'made' ? 'Settled on the bill' : 'Settled on the invoice' }}</dt>
                 <dd class="font-semibold text-gray-900 dark:text-gray-100">@money($payment->settledAmount())</dd>
             </div>
+            @if($side === 'received')
+                <div class="flex justify-between border-b border-gray-100 dark:border-gray-700 py-1 sm:col-span-2">
+                    <dt class="text-gray-500 dark:text-gray-400">WHT credit note</dt>
+                    <dd class="text-gray-900 dark:text-gray-100">
+                        @switch($payment->whtStatus())
+                            @case('utilised') {{ $payment->wht_credit_note_number }} ({{ $payment->wht_credit_note_date?->format('d M Y') }}), used against income tax @break
+                            @case('received') {{ $payment->wht_credit_note_number }} ({{ $payment->wht_credit_note_date?->format('d M Y') }}), received @break
+                            @default Not received yet
+                        @endswitch
+                    </dd>
+                </div>
+            @endif
             @if($side === 'made')
                 <div class="flex justify-between border-b border-gray-100 dark:border-gray-700 py-1 sm:col-span-2">
                     <dt class="text-gray-500 dark:text-gray-400">Remit to</dt>

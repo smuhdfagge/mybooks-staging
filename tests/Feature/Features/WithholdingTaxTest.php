@@ -6,12 +6,16 @@ use App\Actions\Bills\SaveBill;
 use App\Models\Bank;
 use App\Models\Bill;
 use App\Models\ChartOfAccount;
+use App\Models\Customer;
+use App\Models\Invoice;
 use App\Models\Journal;
 use App\Models\PaymentMade;
+use App\Models\PaymentReceived;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Models\WhtCategory;
+use App\Models\WhtCreditUtilisation;
 use App\Services\AccountCodeService;
 use App\Services\Accounting\WithholdingTax;
 use App\Services\JournalService;
@@ -24,6 +28,8 @@ use Tests\TestCase;
 class WithholdingTaxTest extends TestCase
 {
     private const ALL = ['view withholding-tax', 'manage withholding-tax', 'remit withholding-tax'];
+
+    private const RECEIVE = ['create payments-received', 'edit payments-received', 'delete payments-received', 'view payments-received'];
 
     private const PAY = ['create payments-made', 'edit payments-made', 'delete payments-made', 'view payments-made'];
 
@@ -420,5 +426,180 @@ class WithholdingTaxTest extends TestCase
         $this->assertEqualsWithDelta(2000000, (float) $bank->fresh()->current_balance, 0.001);
         // The original journal is kept and reversed.
         $this->assertSame(2, Journal::where('reference_type', PaymentMade::class)->where('reference_id', $payment->id)->count());
+    }
+
+    // ── Sales: the customer withholds ───────────────────────────
+
+    /** An invoice for 1,000,000 plus 7.5% VAT. */
+    private function vatInvoice(Customer $customer, string $number = 'INV-000101'): Invoice
+    {
+        return Invoice::factory()->sent()->create([
+            'tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => $number,
+            'subtotal' => 1000000, 'tax_amount' => 75000, 'discount_amount' => 0, 'total' => 1075000,
+            'amount_paid' => 0, 'balance_due' => 1075000,
+        ]);
+    }
+
+    private function customer(array $attributes = []): Customer
+    {
+        return Customer::factory()->create($attributes + ['tenant_id' => $this->tenant->id, 'name' => 'Kano State Ministry of Works']);
+    }
+
+    /** Record a 1,055,000 receipt on a 1,075,000 invoice with 20,000 WHT deducted. */
+    private function receiveWithWht(Customer $customer, Invoice $invoice, array $extra = []): PaymentReceived
+    {
+        $this->postJson('/api/v1/payments-received', $extra + [
+            'customer_id' => $customer->id, 'invoice_id' => $invoice->id, 'payment_date' => '2026-09-20',
+            'amount' => 1055000, 'payment_method' => 'cash', 'wht_amount' => 20000,
+            'wht_category_id' => $this->category('supply_goods')->id,
+        ])->assertCreated();
+
+        return PaymentReceived::latest('id')->firstOrFail();
+    }
+
+    public function test_a_customer_payment_net_of_wht_settles_the_invoice_and_books_a_wht_receivable(): void
+    {
+        $this->createAuthenticatedUser(self::RECEIVE);
+        Tenant::whereKey($this->tenant->id)->update(['tax_number' => '98765432-0001']); // our TIN: no doubling
+        $bank = Bank::factory()->create(['tenant_id' => $this->tenant->id, 'current_balance' => 0]);
+        $customer = $this->customer();
+        $invoice = $this->vatInvoice($customer);
+
+        $this->get(route('payments-received.create', ['invoice_id' => $invoice->id]))->assertOk()->assertSee('The customer deducted withholding tax (WHT)');
+
+        // Web form with only the type: WHT worked out at our (company) rate, 2% of 1,000,000.
+        $this->post(route('payments-received.store'), [
+            'customer_id' => $customer->id, 'invoice_id' => $invoice->id, 'payment_date' => '2026-09-20',
+            'amount' => 1055000, 'payment_method' => 'bank_transfer', 'bank_id' => $bank->id,
+            'wht_category_id' => $this->category('supply_goods')->id,
+        ])->assertSessionHasNoErrors();
+
+        $payment = PaymentReceived::firstOrFail();
+        $this->assertEqualsWithDelta(20000, (float) $payment->wht_amount, 0.001);
+        $this->assertEqualsWithDelta(1000000, (float) $payment->wht_base, 0.001);
+        $this->assertSame(PaymentReceived::WHT_OUTSTANDING, $payment->whtStatus());
+
+        $invoice->refresh();
+        $this->assertSame('paid', $invoice->status);
+        $this->assertEqualsWithDelta(0, (float) $invoice->balance_due, 0.001);
+        $this->assertEqualsWithDelta(1055000, (float) $bank->fresh()->current_balance, 0.001);
+
+        // Dr bank 1,055,000 / Dr WHT receivable 20,000 / Cr receivables 1,075,000.
+        $lines = $this->journalLines(PaymentReceived::class, $payment->id);
+        $this->assertEqualsWithDelta(1055000, $lines[AccountCodeService::resolve($this->tenant->id, 'checking')], 0.001);
+        $this->assertEqualsWithDelta(20000, $lines[AccountCodeService::resolve($this->tenant->id, 'wht_receivable')], 0.001);
+        $this->assertEqualsWithDelta(-1075000, $lines[AccountCodeService::resolve($this->tenant->id, 'accounts_receivable')], 0.001);
+        $this->assertEqualsWithDelta(20000, $this->balance('wht_receivable'), 0.001);
+
+        $this->get(route('payments-received.show', $payment))->assertOk()->assertSee('WHT deducted by customer')->assertSee('Not received yet');
+    }
+
+    public function test_api_customer_payments_take_wht_and_refuse_it_on_deposits(): void
+    {
+        $this->createAuthenticatedUser(self::RECEIVE);
+        $customer = $this->customer();
+        $invoice = $this->vatInvoice($customer);
+
+        // An amount as given, without a type: the rate is worked out from it.
+        $this->postJson('/api/v1/payments-received', [
+            'customer_id' => $customer->id, 'invoice_id' => $invoice->id, 'payment_date' => '2026-09-20',
+            'amount' => 1055000, 'payment_method' => 'cash', 'wht_amount' => 20000,
+        ])->assertCreated()->assertJsonPath('data.wht_amount', 20000)->assertJsonPath('data.wht_status', 'outstanding');
+        $this->assertEqualsWithDelta(2, (float) PaymentReceived::firstOrFail()->wht_rate, 0.001);
+        $this->assertSame('paid', $invoice->fresh()->status);
+
+        // Too much: 1,060,000 + 20,000 is more than owed on a new invoice.
+        $second = $this->vatInvoice($customer, 'INV-000102');
+        $this->postJson('/api/v1/payments-received', [
+            'customer_id' => $customer->id, 'invoice_id' => $second->id, 'payment_date' => '2026-09-20',
+            'amount' => 1060000, 'payment_method' => 'cash', 'wht_amount' => 20000,
+        ])->assertStatus(422)->assertJsonValidationErrors('amount');
+
+        $this->postJson('/api/v1/payments-received', [
+            'customer_id' => $customer->id, 'payment_date' => '2026-09-20', 'amount' => 5000,
+            'payment_method' => 'cash', 'is_deposit' => true, 'wht_amount' => 100,
+        ])->assertStatus(422)->assertJsonValidationErrors('wht_amount');
+        $this->assertSame(1, PaymentReceived::count());
+    }
+
+    public function test_wht_credit_note_lifecycle_received_then_used_against_income_tax(): void
+    {
+        $this->createAuthenticatedUser(array_merge(self::RECEIVE, self::ALL));
+        $customer = $this->customer();
+        $first = $this->receiveWithWht($customer, $this->vatInvoice($customer));
+        $second = $this->receiveWithWht($customer, $this->vatInvoice($customer, 'INV-000102'));
+        $this->assertEqualsWithDelta(40000, $this->balance('wht_receivable'), 0.001);
+
+        // Nothing in hand yet: can't be used.
+        $this->post(route('withholding-tax.credit-notes.utilise'), ['payment_ids' => [$first->id], 'utilisation_date' => '2026-12-31'])
+            ->assertSessionHasErrors('payment_ids');
+
+        $this->post(route('withholding-tax.credit-notes.store', $first), [
+            'wht_credit_note_number' => 'NRS-WHT-0001', 'wht_credit_note_date' => '2026-10-15',
+        ])->assertSessionHasNoErrors();
+        $first->refresh();
+        $this->assertSame(PaymentReceived::WHT_RECEIVED, $first->whtStatus());
+        $this->assertSame('2026-10-15', $first->wht_credit_note_date->format('Y-m-d'));
+
+        $this->get(route('withholding-tax.receivable', ['start_date' => '2026-01-01', 'end_date' => '2026-12-31']))
+            ->assertOk()->assertSee('NRS-WHT-0001')->assertSee('Kano State Ministry of Works');
+
+        // Use it: Dr income tax payable 20,000 / Cr WHT receivable 20,000.
+        $this->post(route('withholding-tax.credit-notes.utilise'), [
+            'payment_ids' => [$first->id], 'utilisation_date' => '2026-12-31', 'reference' => 'CIT 2026',
+        ])->assertSessionHasNoErrors();
+        $first->refresh();
+        $this->assertSame(PaymentReceived::WHT_UTILISED, $first->whtStatus());
+        $this->assertEqualsWithDelta(20000, $this->balance('wht_receivable'), 0.001);
+        $this->assertEqualsWithDelta(-20000, $this->balance('income_tax_payable'), 0.001);
+        $utilisation = $first->whtUtilisation;
+        $lines = $this->journalLines(WhtCreditUtilisation::class, $utilisation->id);
+        $this->assertEqualsWithDelta(20000, $lines[AccountCodeService::resolve($this->tenant->id, 'income_tax_payable')], 0.001);
+        $this->assertEqualsWithDelta(-20000, $lines[AccountCodeService::resolve($this->tenant->id, 'wht_receivable')], 0.001);
+
+        // Used once only, and its credit note can't be changed after.
+        $this->post(route('withholding-tax.credit-notes.utilise'), ['payment_ids' => [$first->id], 'utilisation_date' => '2026-12-31'])
+            ->assertSessionHasErrors('payment_ids');
+        $this->post(route('withholding-tax.credit-notes.store', $first), ['wht_credit_note_number' => 'X', 'wht_credit_note_date' => '2026-10-15'])
+            ->assertSessionHasErrors('wht_credit_note_number');
+
+        // The report splits it out.
+        $csv = $this->get(route('withholding-tax.receivable.export', ['format' => 'csv', 'start_date' => '2026-01-01', 'end_date' => '2026-12-31']))
+            ->assertOk()->streamedContent();
+        $this->assertStringContainsString('PAY-000001,INV-000101,"Supply of goods (contract supplies, not made by the supplier)",1000000.00,2.00,20000.00,"Used against income tax",NRS-WHT-0001,2026-10-15', $csv);
+        $this->assertStringContainsString('20000.00,"Awaiting credit note"', $csv);
+        $this->get(route('withholding-tax.receivable.export', ['format' => 'pdf']))->assertOk()->assertHeader('content-type', 'application/pdf');
+
+        // A utilised payment can't be deleted; one still outstanding can, and its WHT is reversed.
+        $this->deleteJson('/api/v1/payments-received/'.$first->id)->assertStatus(422);
+        $this->deleteJson('/api/v1/payments-received/'.$second->id)->assertOk();
+        $this->assertEqualsWithDelta(0, $this->balance('wht_receivable'), 0.001);
+        $this->assertSame('unpaid', Invoice::where('invoice_number', 'INV-000102')->value('status'));
+        $this->assertEqualsWithDelta(1075000, (float) Invoice::where('invoice_number', 'INV-000102')->value('balance_due'), 0.001);
+    }
+
+    public function test_wht_credit_notes_need_permission_and_stay_within_the_business(): void
+    {
+        [$otherTenant] = $this->createTenantWithSubscription();
+        $theirCustomer = Customer::factory()->create(['tenant_id' => $otherTenant->id]);
+        $theirPayment = PaymentReceived::withoutEvents(fn () => PaymentReceived::create([
+            'tenant_id' => $otherTenant->id, 'customer_id' => $theirCustomer->id, 'payment_number' => 'PAY-900001',
+            'payment_date' => '2026-09-20', 'amount' => 1000, 'payment_method' => 'cash', 'wht_amount' => 50,
+            'wht_credit_note_number' => 'THEIRS', 'wht_credit_note_date' => '2026-09-30',
+        ]));
+
+        $this->createAuthenticatedUser(array_merge(self::RECEIVE, ['view withholding-tax']));
+        $customer = $this->customer();
+        $mine = $this->receiveWithWht($customer, $this->vatInvoice($customer));
+
+        // View only: can see the report, not record or use credit notes.
+        $this->get(route('withholding-tax.receivable'))->assertOk()->assertDontSee('THEIRS');
+        $this->post(route('withholding-tax.credit-notes.store', $mine), ['wht_credit_note_number' => 'A', 'wht_credit_note_date' => '2026-10-01'])->assertForbidden();
+
+        $this->signInFresh(self::ALL);
+        $this->post(route('withholding-tax.credit-notes.store', $theirPayment), ['wht_credit_note_number' => 'A', 'wht_credit_note_date' => '2026-10-01'])->assertNotFound();
+        $this->post(route('withholding-tax.credit-notes.utilise'), ['payment_ids' => [$theirPayment->id], 'utilisation_date' => '2026-12-31'])
+            ->assertSessionHasErrors('payment_ids.0');
+        $this->assertNull($theirPayment->fresh()->wht_utilisation_id);
     }
 }

@@ -223,6 +223,7 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Method</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Reference</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Amount</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">WHT deducted</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -232,6 +233,7 @@
                                     <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{{ ucfirst($payment->payment_method) }}</td>
                                     <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{{ $payment->reference ?? '-' }}</td>
                                     <td class="px-4 py-3 text-sm text-green-600 dark:text-green-400 text-right font-medium">{{ number_format($payment->amount, 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-right">{{ (float) $payment->wht_amount > 0 ? number_format($payment->wht_amount, 2) : '-' }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
