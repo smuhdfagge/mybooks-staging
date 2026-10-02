@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\DeliveryNotes\SaveDeliveryNote;
 use App\Actions\Invoices\SaveInvoice;
 use App\Actions\SalesOrders\DeleteSalesOrder;
 use App\Actions\SalesOrders\SaveSalesOrder;
@@ -39,7 +40,7 @@ class SalesOrderController extends Controller
 
     public function show(SalesOrder $salesOrder)
     {
-        $salesOrder->load(['customer', 'items.item']);
+        $salesOrder->load(['customer', 'items.item', 'invoices', 'deliveryNotes', 'quotation']);
 
         return view('sales-orders.show', compact('salesOrder'));
     }
@@ -92,25 +93,29 @@ class SalesOrderController extends Controller
 
     public function convertToInvoice(SalesOrder $salesOrder, SaveInvoice $save)
     {
-        if (! in_array($salesOrder->status, ['confirmed', 'processing'])) {
-            return redirect()->back()->with('error', 'Only confirmed or processing orders can be converted to invoices.');
+        if (! in_array($salesOrder->status, ['confirmed', 'processing', 'invoiced', 'completed'], true)) {
+            return redirect()->back()->with('error', 'Only confirmed orders can be converted to invoices.');
         }
 
         $salesOrder->load('items');
 
-        // Lines still to deliver.
+        // Lines not yet invoiced. Delivered goods are invoiced too: this used
+        // to invoice "ordered minus delivered", so goods delivered first
+        // (delivery notes) were never billed.
         $lines = [];
+        $invoicedNow = [];
         foreach ($salesOrder->items as $soItem) {
-            $qty = $soItem->quantity - ($soItem->quantity_fulfilled ?? 0);
+            $qty = round((float) $soItem->quantity - (float) $soItem->quantity_invoiced, 2);
             if ($qty <= 0) {
                 continue;
             }
+            $invoicedNow[$soItem->id] = $qty;
             $lines[] = [
                 'item_id' => $soItem->item_id,
                 'description' => $soItem->description,
                 'quantity' => $qty,
                 'unit_price' => $soItem->unit_price,
-                // The line discount is money for the whole line; invoice the part still to deliver.
+                // The line discount is money for the whole line; invoice the part not yet invoiced.
                 'discount' => (float) $soItem->quantity > 0 ? round((float) $soItem->discount * $qty / (float) $soItem->quantity, 2) : 0,
                 'discount_type' => 'fixed',
                 'tax_rate' => $soItem->tax_rate ?? 0,
@@ -118,18 +123,18 @@ class SalesOrderController extends Controller
         }
 
         if ($lines === []) {
-            return redirect()->back()->with('error', 'All items have already been fulfilled. Nothing to invoice.');
+            return redirect()->back()->with('error', 'Everything on this order has already been invoiced.');
         }
 
         // The order's discount is stored as money. Invoice the share that
-        // belongs to the lines still to deliver.
+        // belongs to the lines not yet invoiced.
         $remaining = collect($lines)->sum(fn ($l) => (float) $l['quantity'] * (float) $l['unit_price'] - $l['discount']);
         $orderSubtotal = (float) $salesOrder->subtotal;
         $discountShare = $orderSubtotal > 0 ? (float) ($salesOrder->discount_amount ?? 0) * min(1, $remaining / $orderSubtotal) : 0;
 
         // The same rules as every other invoice (R3): stock is checked and
         // reserved, which conversion used to skip.
-        $invoice = DB::transaction(function () use ($save, $salesOrder, $lines, $discountShare) {
+        $invoice = DB::transaction(function () use ($save, $salesOrder, $lines, $discountShare, $invoicedNow) {
             $invoice = $save->create(auth()->user()->tenant_id, [
                 'customer_id' => $salesOrder->customer_id,
                 'sales_order_id' => $salesOrder->id,
@@ -143,7 +148,16 @@ class SalesOrderController extends Controller
                 'items' => $lines,
             ], auth()->id());
 
-            $salesOrder->update(['status' => 'invoiced']);
+            foreach ($salesOrder->items as $soItem) {
+                if (isset($invoicedNow[$soItem->id])) {
+                    $soItem->update(['quantity_invoiced' => round((float) $soItem->quantity_invoiced + $invoicedNow[$soItem->id], 2)]);
+                }
+            }
+
+            // A fully delivered order stays completed; otherwise it is invoiced.
+            if ($salesOrder->status !== 'completed') {
+                $salesOrder->update(['status' => 'invoiced']);
+            }
 
             return $invoice;
         });
@@ -154,8 +168,8 @@ class SalesOrderController extends Controller
 
     public function createDeliveryNote(SalesOrder $salesOrder)
     {
-        if (! in_array($salesOrder->status, ['confirmed', 'processing'])) {
-            return redirect()->back()->with('error', 'Only confirmed or processing orders can have delivery notes.');
+        if (! in_array($salesOrder->status, SaveDeliveryNote::OPEN_ORDER_STATUSES, true)) {
+            return redirect()->back()->with('error', 'Only confirmed orders with goods still to deliver can have delivery notes.');
         }
 
         return redirect()->route('delivery-notes.create', ['sales_order_id' => $salesOrder->id]);

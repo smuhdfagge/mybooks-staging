@@ -126,7 +126,7 @@ return [
 
     'features' => [
         'quotations' => (bool) env('MYBOOKS_FEATURE_QUOTATIONS', true),
-        'delivery_notes' => (bool) env('MYBOOKS_FEATURE_DELIVERY_NOTES', false),
+        'delivery_notes' => (bool) env('MYBOOKS_FEATURE_DELIVERY_NOTES', true),
         'credit_notes' => (bool) env('MYBOOKS_FEATURE_CREDIT_NOTES', false),
         'warehouses' => (bool) env('MYBOOKS_FEATURE_WAREHOUSES', false),
         'stock_transfers' => (bool) env('MYBOOKS_FEATURE_STOCK_TRANSFERS', false),

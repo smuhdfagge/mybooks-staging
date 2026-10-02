@@ -28,7 +28,7 @@
                         </button>
                     </form>
                 @endif
-                @if($salesOrder->status === 'confirmed')
+                @if(in_array($salesOrder->status, ['confirmed', 'processing', 'invoiced', 'completed'], true) && $salesOrder->hasUninvoicedItems())
                     <form action="{{ route('sales-orders.convert', $salesOrder) }}" method="POST" class="inline">
                         @csrf
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
@@ -38,6 +38,13 @@
                             Convert to Invoice
                         </button>
                     </form>
+                @endif
+                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('delivery_notes') && in_array($salesOrder->status, \App\Actions\DeliveryNotes\SaveDeliveryNote::OPEN_ORDER_STATUSES, true) && $salesOrder->hasUnfulfilledItems())
+                    @can('create invoices')
+                        <a href="{{ route('delivery-notes.create', ['sales_order_id' => $salesOrder->id]) }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-200 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-600 transition">
+                            Deliver (delivery note)
+                        </a>
+                    @endcan
                 @endif
             </div>
         </div>
@@ -61,6 +68,7 @@
                                 <span class="px-3 py-1 rounded-full text-xs font-medium
                                     @if($salesOrder->status === 'draft') bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300
                                     @elseif($salesOrder->status === 'confirmed') bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300
+                                    @elseif($salesOrder->status === 'processing') bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300
                                     @elseif($salesOrder->status === 'invoiced') bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300
                                     @elseif($salesOrder->status === 'completed') bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300
                                     @elseif($salesOrder->status === 'cancelled') bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300
@@ -105,6 +113,8 @@
                                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Item</th>
                                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
                                             <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Qty</th>
+                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Delivered</th>
+                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Invoiced</th>
                                             <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Price</th>
                                             <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tax</th>
                                             <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total</th>
@@ -116,6 +126,8 @@
                                                 <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $item->item?->name ?? '-' }}</td>
                                                 <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{{ $item->description }}</td>
                                                 <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{{ number_format($item->quantity, 2) }}</td>
+                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{{ number_format((float) $item->quantity_fulfilled, 2) }}</td>
+                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{{ number_format((float) $item->quantity_invoiced, 2) }}</td>
                                                 <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{{ number_format($item->unit_price, 2) }}</td>
                                                 <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{{ $item->tax_rate }}%</td>
                                                 <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 text-right">{{ number_format($item->total, 2) }}</td>
@@ -200,6 +212,25 @@
                             </div>
                         </div>
                     </div>
+
+                    @if($salesOrder->invoices->isNotEmpty() || $salesOrder->deliveryNotes->isNotEmpty() || $salesOrder->quotation)
+                        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                            <div class="p-6 text-sm space-y-3">
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 pb-2 border-b border-gray-200 dark:border-gray-700">Related documents</h3>
+                                @if($salesOrder->quotation && \App\Http\Middleware\EnsureFeatureEnabled::enabled('quotations'))
+                                    <p>From quotation <a href="{{ route('quotations.show', $salesOrder->quotation) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $salesOrder->quotation->quotation_number }}</a></p>
+                                @endif
+                                @foreach($salesOrder->invoices as $invoice)
+                                    <p class="flex justify-between gap-2"><a href="{{ route('invoices.show', $invoice) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Invoice {{ $invoice->invoice_number }}</a><x-status-badge :status="$invoice->status" /></p>
+                                @endforeach
+                                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('delivery_notes'))
+                                    @foreach($salesOrder->deliveryNotes as $note)
+                                        <p class="flex justify-between gap-2"><a href="{{ route('delivery-notes.show', $note) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Delivery note {{ $note->delivery_number }}</a><x-status-badge :status="$note->status" /></p>
+                                    @endforeach
+                                @endif
+                            </div>
+                        </div>
+                    @endif
 
                     <!-- Actions -->
                     @if($salesOrder->status === 'draft')
