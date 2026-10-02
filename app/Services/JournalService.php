@@ -19,7 +19,10 @@ use App\Models\PaymentMade;
 use App\Models\PaymentReceived;
 use App\Models\Payroll;
 use App\Models\SalesReceipt;
+use App\Models\VendorCredit;
+use App\Models\VendorCreditRefund;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -847,13 +850,14 @@ class JournalService implements JournalServiceInterface
             }
 
             $billRef = $payment->bill ? " for Bill {$payment->bill->bill_number}" : '';
+            $kind = $payment->is_advance ? 'Supplier Advance' : 'Payment Made';
 
             $journal = Journal::create([
                 'tenant_id' => $payment->tenant_id,
                 'journal_number' => Journal::generateNumber($payment->tenant_id),
                 'journal_date' => $payment->payment_date,
                 'reference' => $payment->payment_number,
-                'description' => "Payment Made {$payment->payment_number} - {$payment->vendor->name}{$billRef}",
+                'description' => "{$kind} {$payment->payment_number} - {$payment->vendor->name}{$billRef}",
                 'reference_type' => PaymentMade::class,
                 'reference_id' => $payment->id,
                 'status' => 'posted',
@@ -862,14 +866,7 @@ class JournalService implements JournalServiceInterface
                 'created_by' => $payment->created_by ?? auth()->id(),
             ]);
 
-            // Debit: Accounts Payable (reduces liability)
-            $this->createEntry($journal, $this->acct($t, 'accounts_payable'), $payment->amount, 0,
-                "Payment to {$payment->vendor->name}");
-
-            // Credit: Cash/Bank account
-            $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
-            $this->createEntry($journal, $paymentAccountCode, 0, $payment->amount,
-                "Payment Made - {$payment->payment_number}");
+            $this->writePaymentMadeLines($journal, $payment);
 
             $journal->updateTotals();
             $journal->save();
@@ -885,25 +882,19 @@ class JournalService implements JournalServiceInterface
      */
     protected function updatePaymentMadeJournal(PaymentMade $payment, Journal $journal): Journal
     {
-        $t = $payment->tenant_id;
-
         $this->reverseAccountBalances($journal);
         $journal->entries()->delete();
 
         $billRef = $payment->bill ? " for Bill {$payment->bill->bill_number}" : '';
+        $kind = $payment->is_advance ? 'Supplier Advance' : 'Payment Made';
 
         $journal->update([
             'journal_date' => $payment->payment_date,
             'reference' => $payment->payment_number,
-            'description' => "Payment Made {$payment->payment_number} - {$payment->vendor->name}{$billRef}",
+            'description' => "{$kind} {$payment->payment_number} - {$payment->vendor->name}{$billRef}",
         ]);
 
-        $this->createEntry($journal, $this->acct($t, 'accounts_payable'), $payment->amount, 0,
-            "Payment to {$payment->vendor->name}");
-
-        $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
-        $this->createEntry($journal, $paymentAccountCode, 0, $payment->amount,
-            "Payment Made - {$payment->payment_number}");
+        $this->writePaymentMadeLines($journal, $payment);
 
         $journal->updateTotals();
         $journal->save();
@@ -911,6 +902,149 @@ class JournalService implements JournalServiceInterface
         $this->updateAccountBalances($journal);
 
         return $journal;
+    }
+
+    /**
+     * Lines of a payment to a supplier:
+     *   ordinary payment:          Dr Accounts payable   / Cr bank or cash
+     *   advance (before a bill):   Dr Supplier advances  / Cr bank or cash
+     *   advance used on a bill:    Dr Accounts payable   / Cr Supplier advances
+     */
+    protected function writePaymentMadeLines(Journal $journal, PaymentMade $payment): void
+    {
+        $t = $payment->tenant_id;
+        $amount = (float) $payment->amount;
+
+        if ($payment->is_advance) {
+            $this->createEntry($journal, $this->acct($t, 'supplier_advances'), $amount, 0,
+                "Advance to {$payment->vendor->name}");
+            $this->createEntry($journal, $this->paymentAccountFor($payment->bank, $payment->payment_method, $t), 0, $amount,
+                "Supplier Advance - {$payment->payment_number}");
+
+            return;
+        }
+
+        $this->createEntry($journal, $this->acct($t, 'accounts_payable'), $amount, 0,
+            "Payment to {$payment->vendor->name}");
+
+        $credit = $payment->payment_method === PaymentMade::METHOD_ADVANCE
+            ? $this->acct($t, 'supplier_advances')
+            : $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
+        $this->createEntry($journal, $credit, 0, $amount, "Payment Made - {$payment->payment_number}");
+    }
+
+    /**
+     * A supplier credit (purchase return or price reduction), when opened:
+     *   Dr Accounts payable        the credit's total
+     *   Cr Inventory               what the returned goods cost (from their stock layers)
+     *   Cr/Dr Cost of goods sold   any difference between that cost and the credit for them
+     *   Cr expense                 lines that aren't stock (the line's account, else Miscellaneous)
+     *   Cr Input VAT               the VAT on the credit
+     * Using the credit against a bill posts nothing (both are payables).
+     */
+    public function createVendorCreditJournal(VendorCredit $credit): ?Journal
+    {
+        if ((float) $credit->total <= 0) {
+            return null;
+        }
+
+        $existing = Journal::where('reference_type', VendorCredit::class)
+            ->where('reference_id', $credit->id)
+            ->where('status', 'posted')
+            ->whereNot('reference', 'like', 'REV-%')
+            ->first();
+        if ($existing) {
+            return $existing;
+        }
+
+        $t = $credit->tenant_id;
+        $number = $credit->vendor_credit_number;
+        $vendor = $credit->vendor->name;
+
+        $inventory = 0.0;
+        $difference = 0.0;
+        $expenses = [];
+        foreach ($credit->items()->with(['item', 'account'])->get() as $line) {
+            $net = $line->net();
+            if ($line->isStocked()) {
+                $cost = round((float) $line->unit_cost * (float) $line->quantity, 2);
+                $inventory += $cost;
+                $difference += $net - $cost;
+            } else {
+                $code = $line->account_id ? $line->account->account_code : $this->acct($t, 'miscellaneous_expense');
+                $expenses[$code] = ($expenses[$code] ?? 0) + $net;
+            }
+        }
+
+        $lines = [[$this->acct($t, 'accounts_payable'), (float) $credit->total, 0.0, "Supplier credit {$number} - {$vendor}"]];
+        if (round($inventory, 2) > 0) {
+            $lines[] = [$this->acct($t, 'inventory'), 0.0, $inventory, "Goods returned - {$number}"];
+        }
+        $difference = round($difference, 2);
+        if ($difference > 0) {
+            $lines[] = [$this->acct($t, 'cost_of_goods_sold'), 0.0, $difference, "Returned goods credited above cost - {$number}"];
+        } elseif ($difference < 0) {
+            $lines[] = [$this->acct($t, 'cost_of_goods_sold'), -$difference, 0.0, "Returned goods credited below cost - {$number}"];
+        }
+        foreach ($expenses as $code => $amount) {
+            if (round($amount, 2) > 0) {
+                $lines[] = [(string) $code, 0.0, $amount, "Supplier credit {$number}"];
+            }
+        }
+        if ((float) $credit->tax_amount > 0) {
+            $lines[] = [$this->acct($t, 'input_vat'), 0.0, (float) $credit->tax_amount, "Input VAT reversed - {$number}"];
+        }
+
+        return $this->postLines($credit, $number, $credit->credit_date, "Supplier credit {$number} - {$vendor}", $lines, $credit->created_by);
+    }
+
+    /** The supplier pays back (part of) a credit: Dr bank or cash, Cr Accounts payable. */
+    public function createVendorCreditRefundJournal(VendorCreditRefund $refund): Journal
+    {
+        $t = $refund->tenant_id;
+        $credit = $refund->vendorCredit;
+        $vendor = $credit->vendor->name;
+        $amount = (float) $refund->amount;
+
+        return $this->postLines($refund, $credit->vendor_credit_number, $refund->refund_date,
+            "Refund of supplier credit {$credit->vendor_credit_number} - {$vendor}", [
+                [$this->paymentAccountFor($refund->bank, $refund->payment_method, $t), $amount, 0.0, "Refund from {$vendor}"],
+                [$this->acct($t, 'accounts_payable'), 0.0, $amount, "Supplier credit {$credit->vendor_credit_number} refunded"],
+            ], $refund->created_by);
+    }
+
+    /**
+     * One balanced, posted journal for a document, in a transaction, with the
+     * normal period and lock checks (Journal::create).
+     *
+     * @param  array<int, array{0: string, 1: float, 2: float, 3: string}>  $lines  code, debit, credit, text
+     */
+    public function postLines(Model $document, ?string $reference, mixed $date, string $description, array $lines, ?int $createdBy = null, ?string $type = null): Journal
+    {
+        return DB::transaction(function () use ($document, $reference, $date, $description, $lines, $createdBy, $type) {
+            $journal = Journal::create([
+                'tenant_id' => $document->getAttribute('tenant_id'),
+                'journal_number' => Journal::generateNumber($document->getAttribute('tenant_id')),
+                'journal_date' => $date,
+                'reference' => $reference,
+                'description' => $description,
+                'reference_type' => $document::class,
+                'reference_id' => $document->getKey(),
+                'journal_type' => $type,
+                'status' => 'posted',
+                'is_posted' => true,
+                'posted_at' => now(),
+                'created_by' => $createdBy ?? auth()->id(),
+            ]);
+            foreach ($lines as [$code, $debit, $credit, $text]) {
+                $this->createEntry($journal, $code, round($debit, 2), round($credit, 2), $text);
+            }
+            $journal->updateTotals();
+            $journal->save();
+            $this->updateAccountBalances($journal); // refuses an unbalanced journal (M2)
+
+            return $journal;
+        });
     }
 
     /**

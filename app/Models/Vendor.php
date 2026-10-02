@@ -53,6 +53,34 @@ class Vendor extends Model
         return $this->hasMany(PaymentMade::class);
     }
 
+    /** @return HasMany<VendorCredit, $this> */
+    public function vendorCredits(): HasMany
+    {
+        return $this->hasMany(VendorCredit::class);
+    }
+
+    /**
+     * Money paid to this supplier before a bill.
+     *
+     * @return HasMany<PaymentMade, $this>
+     */
+    public function advances(): HasMany
+    {
+        return $this->hasMany(PaymentMade::class)->where('is_advance', true);
+    }
+
+    /** Supplier credit not yet used or refunded. */
+    public function openCreditBalance(): float
+    {
+        return round((float) $this->vendorCredits()->where('status', 'open')->sum('balance'), 2);
+    }
+
+    /** Advances not yet used against bills. */
+    public function advanceBalance(): float
+    {
+        return round((float) $this->advances()->sum('unused_amount'), 2);
+    }
+
     public function getTotalPurchasesAttribute($value)
     {
         // Already loaded by withBalances(): no query per row (P4).

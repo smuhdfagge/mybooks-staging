@@ -49,6 +49,7 @@ class TenantPurger
         'sales_receipt_items' => ['sales_receipt_id', 'sales_receipts'],
         'stock_transfer_items' => ['stock_transfer_id', 'stock_transfers'],
         'tax_group_rates' => ['tax_group_id', 'tax_groups'],
+        'vendor_credit_items' => ['vendor_credit_id', 'vendor_credits'],
     ];
 
     /** Tables keyed to the business's users rather than to the business. */

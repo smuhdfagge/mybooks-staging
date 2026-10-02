@@ -7,6 +7,7 @@ use App\Models\InventoryHistory;
 use App\Models\InventoryLayer;
 use App\Models\InventoryLayerConsumption;
 use App\Models\Item;
+use App\Models\VendorCredit;
 
 class StockValuationService
 {
@@ -157,6 +158,87 @@ class StockValuationService
     }
 
     /**
+     * Send goods back to the supplier (a supplier credit) and return their
+     * cost. When the credit is for a bill, the goods come out of that bill's
+     * own cost layers first, at the price that bill put them in at; anything
+     * more (or with no bill) is taken the item's usual way (FIFO or weighted
+     * average) through issue(). Every piece is recorded against the credit,
+     * so returnStock() puts it all back if the credit is voided.
+     *
+     * The stock record's average cost is worked out again without the
+     * returned goods, the same way Bill::reverseInventory() does.
+     */
+    public function returnToSupplier(Item $item, float $quantity, string $sourceType, int $sourceId, ?int $billId = null): float
+    {
+        if ($quantity <= 0) {
+            return 0.0;
+        }
+
+        $inventory = Inventory::where('tenant_id', $item->tenant_id)->where('item_id', $item->id)->lockForUpdate()->first();
+        $qtyBefore = (float) ($inventory->quantity ?? 0);
+        $avgBefore = (float) ($inventory->unit_cost ?? 0);
+
+        $cost = 0.0;
+        $remaining = $quantity;
+
+        if ($billId) {
+            $layers = InventoryLayer::where('tenant_id', $item->tenant_id)
+                ->forItem($item->id)
+                ->where('reference_type', 'bill')
+                ->where('reference_id', $billId)
+                ->withStock()
+                ->lockForUpdate()
+                ->get();
+
+            $taken = 0.0;
+            foreach ($layers as $layer) {
+                if ($remaining <= 0.00001) {
+                    break;
+                }
+                $take = min($remaining, (float) $layer->remaining_quantity);
+                $layer->remaining_quantity = round((float) $layer->remaining_quantity - $take, 4);
+                $layer->save();
+
+                InventoryLayerConsumption::create([
+                    'tenant_id' => $item->tenant_id,
+                    'item_id' => $item->id,
+                    'inventory_layer_id' => $layer->id,
+                    'source_type' => $sourceType,
+                    'source_id' => $sourceId,
+                    'quantity' => round($take, 4),
+                    'unit_cost' => round((float) $layer->unit_cost, 4),
+                    'reduced_on_hand' => true,
+                ]);
+
+                $cost += $take * (float) $layer->unit_cost;
+                $remaining -= $take;
+                $taken += $take;
+            }
+
+            if ($taken > 0) {
+                $this->adjustOnHand($item->tenant_id, $item->id, -$taken, $sourceType, $sourceId, 'out');
+            }
+        }
+
+        if ($remaining > 0.00001) {
+            $cost += $this->issue($item, $remaining, $sourceType, $sourceId, true);
+        }
+
+        $cost = round($cost, 2);
+
+        if ($inventory) {
+            $inventory->refresh();
+            $left = $qtyBefore - $quantity;
+            if ($left > 0.00001) {
+                $inventory->unit_cost = round(max(0, ($qtyBefore * $avgBefore - $cost) / $left), 4);
+                $inventory->save();
+            }
+        }
+
+        return $cost;
+    }
+
+    /**
      * Put back everything a document took with issue(). Safe to call when it
      * took nothing.
      */
@@ -203,7 +285,9 @@ class StockValuationService
             'quantity' => $delta,
             'reference_type' => strtolower(class_basename($sourceType)),
             'reference_id' => $sourceId,
-            'notes' => ($delta < 0 ? 'Sold via ' : 'Returned from ').class_basename($sourceType)." #{$sourceId}",
+            'notes' => $sourceType === VendorCredit::class
+                ? ($delta < 0 ? 'Sent back to supplier on' : 'Back in stock from voided').' supplier credit #'.$sourceId
+                : ($delta < 0 ? 'Sold via ' : 'Returned from ').class_basename($sourceType)." #{$sourceId}",
             'created_by' => auth()->id(),
         ]);
     }

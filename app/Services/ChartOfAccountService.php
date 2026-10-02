@@ -23,6 +23,7 @@ class ChartOfAccountService
             ['account_code' => '1300', 'name' => 'Inventory', 'type' => 'asset', 'sub_type' => 'inventory'],
             ['account_code' => '1400', 'name' => 'Prepaid Expenses', 'type' => 'asset', 'sub_type' => 'other_current_asset'],
             ['account_code' => '1410', 'name' => 'Input VAT', 'type' => 'asset', 'sub_type' => 'other_current_asset'],
+            ['account_code' => '1420', 'name' => 'Supplier Advances', 'type' => 'asset', 'sub_type' => 'other_current_asset'],
             ['account_code' => '1500', 'name' => 'Equipment', 'type' => 'asset', 'sub_type' => 'fixed_asset'],
             ['account_code' => '1510', 'name' => 'Furniture & Fixtures', 'type' => 'asset', 'sub_type' => 'fixed_asset'],
             ['account_code' => '1520', 'name' => 'Vehicles', 'type' => 'asset', 'sub_type' => 'fixed_asset'],
