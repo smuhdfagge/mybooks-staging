@@ -55,6 +55,11 @@ class Employee extends Model
         'bank_routing_number',
         'tax_id',
         'annual_rent',
+        'tax_state',
+        'pfa_name',
+        'rsa_pin',
+        'nhf_number',
+        'nhf_registered',
         'emergency_contact_name',
         'emergency_contact_phone',
         'status',
@@ -71,6 +76,9 @@ class Employee extends Model
         'bank_account_number' => 'encrypted',
         'bank_routing_number' => 'encrypted',
         'tax_id' => 'encrypted',
+        'rsa_pin' => 'encrypted',
+        'nhf_number' => 'encrypted',
+        'nhf_registered' => 'boolean',
     ];
 
     /** @return BelongsTo<User, $this> */

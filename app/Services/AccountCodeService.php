@@ -42,6 +42,9 @@ class AccountCodeService
         'union_dues_payable' => '2340',
         'customer_deposits' => '2350',
         'garnishments_payable' => '2360',
+        'nhf_payable' => '2370',
+        'nsitf_payable' => '2380',
+        'itf_payable' => '2390',
         'sales_tax_payable' => '2400', // output VAT
         'vat_payable' => '2410', // net VAT owed after a return is settled
 
