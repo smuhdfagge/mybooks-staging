@@ -83,6 +83,12 @@ class Bill extends Model
         return $this->hasMany(PaymentMade::class);
     }
 
+    /** @return HasMany<VendorCreditApplication, $this> */
+    public function vendorCreditApplications(): HasMany
+    {
+        return $this->hasMany(VendorCreditApplication::class);
+    }
+
     /** @return BelongsTo<User, $this> */
     public function createdBy(): BelongsTo
     {
@@ -139,7 +145,10 @@ class Bill extends Model
     public function updateBalances()
     {
 
-        $this->amount_paid = $this->payments()->sum('amount');
+        // Supplier credits used against the bill count as paid, like credit
+        // notes on invoices.
+        $this->amount_paid = round((float) $this->payments()->sum('amount')
+            + (float) $this->vendorCreditApplications()->sum('amount'), 2);
         $this->balance_due = $this->total - $this->amount_paid;
         $this->status = $this->balance_due <= 0 ? 'paid' : ($this->amount_paid > 0 ? 'partial' : 'unpaid');
         $this->withoutPeriodValidation()->save();

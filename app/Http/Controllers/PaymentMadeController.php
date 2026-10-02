@@ -11,6 +11,7 @@ use App\Models\PaymentMade;
 use App\Models\Vendor;
 use App\Services\BankService;
 use App\Services\PaymentValidation;
+use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -77,6 +78,16 @@ class PaymentMadeController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        // A payment that used an advance is undone by deleting it; an advance
+        // that has been used can't change its amount.
+        if ($paymentMade->payment_method === PaymentMade::METHOD_ADVANCE) {
+            throw ValidationException::withMessages(['amount' => 'This payment used a supplier advance. Delete it and apply the advance again instead.']);
+        }
+        if ($paymentMade->is_advance && $paymentMade->advanceApplications()->exists()
+            && ! Money::equals($validated['amount'], $paymentMade->amount)) {
+            throw ValidationException::withMessages(['amount' => 'This advance has been used against bills, so its amount can\'t change.']);
+        }
+
         // Not more than the bill still owes, counting this payment's current
         // amount as available again (M5)
         if ($paymentMade->bill && ($errors = PaymentValidation::forBill(
@@ -95,6 +106,9 @@ class PaymentMadeController extends Controller
                 "Payment made #{$paymentMade->payment_number} updated"
             );
 
+            if ($paymentMade->is_advance && ! $paymentMade->advanceApplications()->exists()) {
+                $validated['unused_amount'] = $validated['amount'];
+            }
             $paymentMade->update($validated);
         });
 

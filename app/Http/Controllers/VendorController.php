@@ -41,7 +41,11 @@ class VendorController extends Controller
             'expenses' => fn ($q) => $q->latest('expense_date')->latest('id')->limit(5),
         ]);
 
-        return view('vendors.show', compact('vendor'));
+        // Supplier credits and advances not yet used.
+        $openCredits = $vendor->vendorCredits()->where('status', 'open')->where('balance', '>', 0)->latest('credit_date')->get();
+        $openAdvances = $vendor->advances()->where('unused_amount', '>', 0)->latest('payment_date')->get();
+
+        return view('vendors.show', compact('vendor', 'openCredits', 'openAdvances'));
     }
 
     public function edit(Vendor $vendor)

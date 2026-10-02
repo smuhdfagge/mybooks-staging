@@ -96,7 +96,7 @@
 
         <!-- Purchases Module -->
         @canany(['view vendors', 'view expenses', 'view bills', 'view purchase-orders', 'view recurrent-bills', 'view recurrent-expenses', 'view payments-made'])
-        <div x-data="{ open: {{ request()->is('purchases*') || request()->is('vendors*') || request()->is('bills*') || request()->is('purchase-orders*') || request()->is('expenses*') ? 'true' : 'false' }} }">
+        <div x-data="{ open: {{ request()->is('purchases*') || request()->is('vendors*') || request()->is('bills*') || request()->is('purchase-orders*') || request()->is('expenses*') || request()->is('vendor-credits*') || request()->is('supplier-advances*') ? 'true' : 'false' }} }">
             <button @click="open = !open" 
                     class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors">
                 <div class="flex items-center">
@@ -130,6 +130,12 @@
                 @endcan
                 @can('view payments-made')
                 <a href="{{ route('payments-made.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('payments-made.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Payments Made</a>
+                @endcan
+                @can('view bills')
+                <a href="{{ route('vendor-credits.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('vendor-credits.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Supplier Credits</a>
+                @endcan
+                @can('view payments-made')
+                <a href="{{ route('supplier-advances.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('supplier-advances.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Supplier Advances</a>
                 @endcan
             </div>
         </div>

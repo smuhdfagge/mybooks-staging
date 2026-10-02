@@ -94,7 +94,8 @@ class SaveBill
             }
             $totals = $this->totals(['items' => $lines] + $data);
 
-            $paid = (float) $bill->payments()->sum('amount');
+            // Supplier credits used against the bill count as paid.
+            $paid = round((float) $bill->payments()->sum('amount') + (float) $bill->vendorCreditApplications()->sum('amount'), 2);
             if ($paid > $totals['total'] + 0.005) {
                 throw ValidationException::withMessages(['items' => 'The new total is less than what has already been paid ('.number_format($paid, 2).').']);
             }

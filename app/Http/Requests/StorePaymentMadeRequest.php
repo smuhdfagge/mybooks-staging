@@ -25,6 +25,7 @@ class StorePaymentMadeRequest extends FormRequest
             'bank_id' => ['nullable', Rule::exists('banks', 'id')->where('tenant_id', $tenantId)],
             'reference' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string'],
+            'is_advance' => ['nullable', 'boolean'],
         ];
     }
 }

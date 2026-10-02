@@ -312,6 +312,28 @@
             </div>
             @endif
 
+            <!-- Supplier credits: used against this bill, and goods sent back -->
+            @if(! in_array($bill->status, ['draft', 'cancelled']))
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6 space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Supplier credits</h3>
+                        @can('create bills')
+                            <a href="{{ route('vendor-credits.create', ['bill_id' => $bill->id]) }}" class="text-sm text-indigo-600 dark:text-indigo-400">Return goods or record a credit note</a>
+                        @endcan
+                    </div>
+                    @forelse($bill->vendorCreditApplications as $application)
+                        <p class="text-sm text-gray-700 dark:text-gray-300 flex justify-between gap-3">
+                            <span>{{ $application->applied_date->format('d M Y') }} · credit <a href="{{ route('vendor-credits.show', $application->vendorCredit) }}" class="text-indigo-600 dark:text-indigo-400">{{ $application->vendorCredit->vendor_credit_number }}</a> used</span>
+                            <span class="font-medium">@money($application->amount)</span>
+                        </p>
+                    @empty
+                        <p class="text-sm text-gray-500 dark:text-gray-400">No supplier credit has been used against this bill.</p>
+                    @endforelse
+                </div>
+            </div>
+            @endif
+
             <!-- Bill History / Audit Trail -->
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">

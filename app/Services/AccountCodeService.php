@@ -30,6 +30,7 @@ class AccountCodeService
         'fixed_assets' => '1500',
         'accumulated_depreciation' => '1600',
         'input_vat' => '1410',
+        'supplier_advances' => '1420', // money paid to a supplier before their bill
 
         // Liabilities
         'accounts_payable' => '2000',
