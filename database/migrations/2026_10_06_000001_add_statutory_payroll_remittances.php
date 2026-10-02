@@ -45,7 +45,8 @@ return new class extends Migration
 
         if (! Schema::hasColumn('payrolls', 'statutory')) {
             Schema::table('payrolls', function (Blueprint $table) {
-                $table->json('statutory')->nullable();
+                // Encrypted, so text: MariaDB checks json columns hold valid JSON.
+                $table->text('statutory')->nullable();
             });
         }
 
