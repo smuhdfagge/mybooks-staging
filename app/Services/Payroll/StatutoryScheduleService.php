@@ -8,6 +8,7 @@ use App\Models\Payroll;
 use App\Models\PensionFundAdministrator;
 use App\Models\State;
 use App\Models\StatutoryContribution;
+use App\Models\StatutoryRemittance;
 use App\Services\AccountCodeService;
 use App\Services\JournalService;
 use Carbon\Carbon;
@@ -49,8 +50,8 @@ class StatutoryScheduleService
     /**
      * @return array{
      *     schedule: string, title: string, month: Carbon, columns: array<string, string>,
-     *     groups: array<string, array{key: string, label: string, rows: list<array<string, mixed>>, amount: float}>,
-     *     total: float, employees: int, gross: float,
+     *     groups: array<string, array{key: string, label: string, rows: list<array<string, mixed>>, amount: float, remitted: float, outstanding: float, remittances: Collection<int, StatutoryRemittance>}>,
+     *     total: float, remitted: float, outstanding: float, employees: int, gross: float,
      *     ledger: array{account_code: string, account_name: string, posted: float, difference: float, balance: float},
      *     due_date: Carbon, due_rule: string, extra: array<string, mixed>
      * }
@@ -71,6 +72,19 @@ class StatutoryScheduleService
         };
 
         $total = round(array_sum(array_column($groups, 'amount')), 2);
+
+        // What has been paid against each group (part payments allowed).
+        $paid = StatutoryRemittance::withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)->where('schedule', $schedule)->whereDate('period', $month->toDateString())
+            ->with(['journal' => fn ($q) => $q->withoutGlobalScopes()])
+            ->orderBy('paid_on')->orderBy('id')->get();
+        foreach ($groups as $key => $group) {
+            $mine = $paid->where('group_key', (string) $key)->values();
+            $groups[$key]['remittances'] = $mine;
+            $groups[$key]['remitted'] = round((float) $mine->sum('amount'), 2);
+            $groups[$key]['outstanding'] = round($group['amount'] - $groups[$key]['remitted'], 2);
+        }
+        $remitted = round((float) $paid->sum('amount'), 2);
         $setting = StatutoryContribution::forTenant($tenantId)[self::SETTING[$schedule]];
         $lastPay = $payrolls->max(fn (Payroll $p) => $p->pay_date ?? $p->pay_period_end);
 
@@ -81,6 +95,8 @@ class StatutoryScheduleService
             'columns' => $columns,
             'groups' => $groups,
             'total' => $total,
+            'remitted' => $remitted,
+            'outstanding' => round(max(0, $total - $remitted), 2),
             'employees' => (int) collect($groups)->flatMap(fn ($g) => array_column($g['rows'], 'employee_id'))->unique()->count(),
             'gross' => round((float) $payrolls->sum('gross_salary'), 2),
             'ledger' => $this->ledger($tenantId, $schedule, $month, $total),

@@ -779,6 +779,9 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::get('payroll-statutory/{schedule}/export', [StatutoryRemittanceController::class, 'export'])
             ->whereIn('schedule', ['paye', 'pension', 'nhf', 'nsitf', 'itf'])->name('payroll.statutory.export');
     });
+    Route::post('payroll-statutory/{schedule}/remit', [StatutoryRemittanceController::class, 'remit'])
+        ->whereIn('schedule', ['paye', 'pension', 'nhf', 'nsitf', 'itf'])
+        ->middleware('permission:record statutory-remittances')->name('payroll.statutory.remit');
     // Statutory settings: rates, due dates, pensionable pay, PFAs.
     Route::middleware('permission:manage statutory-settings')->group(function () {
         Route::get('payroll-statutory/settings', [StatutorySettingsController::class, 'edit'])->name('payroll.statutory.settings');

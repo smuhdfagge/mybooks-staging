@@ -21,6 +21,7 @@ use App\Models\Payroll;
 use App\Models\SalesReceipt;
 use App\Services\Payroll\StatutoryLines;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -1268,17 +1269,22 @@ class JournalService implements JournalServiceInterface
     /**
      * Paying a payroll liability to the authority or fund (PAYE to the state,
      * pension to the PFA, NHF, NSITF, ITF...): Dr the liability, Cr bank.
+     * With a bank linked to its own ledger account, that account is credited
+     * (as for other payments); $document links the journal to the record
+     * behind it, e.g. a statutory remittance.
      */
-    public function createPayrollRemittanceJournal(int $tenantId, string $liabilityCode, float $amount, string $date, ?string $paymentMethod, ?string $reference): Journal
+    public function createPayrollRemittanceJournal(int $tenantId, string $liabilityCode, float $amount, string $date, ?string $paymentMethod, ?string $reference, ?Bank $bank = null, ?string $description = null, ?Model $document = null): Journal
     {
-        return DB::transaction(function () use ($tenantId, $liabilityCode, $amount, $date, $paymentMethod, $reference) {
+        return DB::transaction(function () use ($tenantId, $liabilityCode, $amount, $date, $paymentMethod, $reference, $bank, $description, $document) {
             $account = ChartOfAccount::where('tenant_id', $tenantId)->where('account_code', $liabilityCode)->firstOrFail();
             $journal = Journal::create([
                 'tenant_id' => $tenantId,
                 'journal_number' => Journal::generateNumber($tenantId),
                 'journal_date' => $date,
                 'reference' => $reference ?: 'REMIT-'.$liabilityCode,
-                'description' => "Remittance - {$account->name}",
+                'description' => $description ?? "Remittance - {$account->name}",
+                'reference_type' => $document ? $document::class : null,
+                'reference_id' => $document?->getKey(),
                 'journal_type' => self::PAYROLL_REMITTANCE,
                 'status' => 'posted',
                 'is_posted' => true,
@@ -1286,8 +1292,8 @@ class JournalService implements JournalServiceInterface
                 'created_by' => auth()->id(),
             ]);
 
-            $this->createEntry($journal, $liabilityCode, $amount, 0, "Remitted: {$account->name}");
-            $this->createEntry($journal, $this->getPaymentAccountCode($paymentMethod ?? 'bank_transfer', $tenantId), 0, $amount, "Remittance: {$account->name}");
+            $this->createEntry($journal, $liabilityCode, $amount, 0, $description ?? "Remitted: {$account->name}");
+            $this->createEntry($journal, $this->paymentAccountFor($bank, $paymentMethod ?? 'bank_transfer', $tenantId), 0, $amount, $description ?? "Remittance: {$account->name}");
 
             $journal->updateTotals();
             $journal->save();

@@ -36,6 +36,8 @@
     <table>
         <tbody>
             <tr><td>Schedule total</td><td class="text-right"><strong>{{ number_format($data['total'], 2) }}</strong></td></tr>
+            <tr><td>Remitted</td><td class="text-right">{{ number_format($data['remitted'], 2) }}</td></tr>
+            <tr><td>Outstanding</td><td class="text-right">{{ number_format($data['outstanding'], 2) }}</td></tr>
             <tr><td>Ledger {{ $data['ledger']['account_code'] }} {{ $data['ledger']['account_name'] }}, posted in {{ $data['month']->format('F Y') }}</td><td class="text-right">{{ number_format($data['ledger']['posted'], 2) }}</td></tr>
             <tr><td>Difference</td><td class="text-right">{{ number_format($data['ledger']['difference'], 2) }}</td></tr>
             <tr><td>Due</td><td class="text-right">{{ $data['due_date']->format('j F Y') }} ({{ $data['due_rule'] }})</td></tr>

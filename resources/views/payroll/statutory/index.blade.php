@@ -37,6 +37,7 @@
                             <tr>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Schedule</th>
                                 <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Owed for {{ $month->format('M Y') }}</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Remitted</th>
                                 <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">In the ledger</th>
                                 <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Difference</th>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Due</th>
@@ -51,6 +52,7 @@
                                         <span class="block text-xs font-normal text-gray-500 dark:text-gray-400">{{ count($s['groups']) }} {{ $key === 'paye' ? 'state(s)' : ($key === 'pension' ? 'PFA(s)' : 'payee') }}, {{ $s['employees'] }} employee(s)</span>
                                     </td>
                                     <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">@money($s['total'])</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-700 dark:text-gray-300">@money($s['remitted'])</td>
                                     <td class="px-4 py-3 text-sm text-right text-gray-700 dark:text-gray-300">@money($s['ledger']['posted'])</td>
                                     <td class="px-4 py-3 text-sm text-right {{ abs($s['ledger']['difference']) >= 0.01 ? 'text-red-600 font-semibold' : 'text-green-700 dark:text-green-400' }}">@money($s['ledger']['difference'])</td>
                                     <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ $s['due_date']->format('j M Y') }}</td>

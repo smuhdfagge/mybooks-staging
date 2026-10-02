@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Features;
 
+use App\Models\AccountingPeriod;
+use App\Models\Bank;
 use App\Models\ChartOfAccount;
 use App\Models\Employee;
 use App\Models\Import;
@@ -11,6 +13,7 @@ use App\Models\PensionFundAdministrator;
 use App\Models\SalaryStructure;
 use App\Models\State;
 use App\Models\StatutoryContribution;
+use App\Models\StatutoryRemittance;
 use App\Models\StatutoryTaxTemplate;
 use App\Models\User;
 use App\Services\ImportService;
@@ -400,6 +403,112 @@ class PayrollRemittanceTest extends TestCase
         $this->get(route('payroll.statutory.show', ['schedule' => 'paye', 'month' => '2026-09']))->assertOk()
             ->assertDontSee('Aminu')->assertSee('Nothing owed');
         $this->assertEqualsWithDelta(0, app(StatutoryScheduleService::class)->build($other->id, 'pension', Carbon::parse('2026-09-01'))['total'], 0.001);
+    }
+
+    // ── Part 4: recording remittances ───────────────────────────────
+
+    private function remit(string $schedule, array $data)
+    {
+        return $this->post(route('payroll.statutory.remit', $schedule), $data + [
+            'month' => '2026-09', 'paid_on' => '2026-10-01', 'payment_method' => 'bank_transfer',
+        ]);
+    }
+
+    public function test_paye_to_kano_irs_posts_a_balanced_journal_and_reduces_the_liability(): void
+    {
+        $this->septemberPayroll(true, ['view statutory-remittances', 'record statutory-remittances']);
+        $bank = Bank::create(['tenant_id' => $this->tenant->id, 'name' => 'GTBank Operations', 'bank_name' => 'GTBank', 'account_number' => '0123456789',
+            'chart_of_account_id' => ChartOfAccount::where('account_code', '1100')->value('id'), 'current_balance' => 1000000, 'is_active' => true]);
+        $kano = (string) $this->state('Kano')->id;
+
+        $this->remit('paye', ['group_key' => $kano, 'amount' => 67550, 'bank_id' => $bank->id, 'reference' => 'KN-IRS-0925'])
+            ->assertSessionHasNoErrors()->assertSessionHas('success');
+
+        $r = StatutoryRemittance::sole();
+        $this->assertSame('Kano', $r->group_label);
+        $this->assertSame('KN-IRS-0925', $r->reference);
+        $journal = $r->journal;
+        $this->assertSame(JournalService::PAYROLL_REMITTANCE, $journal->journal_type);
+        $this->assertSame('PAYE to Kano IRS for September 2026', $journal->description);
+        $this->assertSame(StatutoryRemittance::class, $journal->reference_type);
+        $this->assertSame('2026-10-01', $journal->journal_date->toDateString());
+        $this->assertEqualsWithDelta(67550, (float) $journal->total_debit, 0.001);
+        $this->assertEqualsWithDelta(67550, (float) $journal->total_credit, 0.001);
+        $lines = $journal->entries()->with('account')->get()->mapWithKeys(fn ($e) => [$e->account->account_code => [(float) $e->debit, (float) $e->credit]]);
+        $this->assertEquals(['2310' => [67550.0, 0.0], '1100' => [0.0, 67550.0]], $lines->all());
+
+        $this->assertEqualsWithDelta(34304, $this->balance('2310'), 0.001, 'Lagos PAYE still owed');
+        $this->assertEqualsWithDelta(-67550, $this->balance('1100'), 0.001);
+        $this->assertEqualsWithDelta(932450, (float) $bank->fresh()->current_balance, 0.001);
+
+        // The schedule shows Kano as remitted with the reference; the ledger check is unaffected.
+        $paye = $this->schedule('paye');
+        $kanoGroup = $paye['groups'][$kano];
+        $this->assertEqualsWithDelta(0, $kanoGroup['outstanding'], 0.001);
+        $this->assertSame('KN-IRS-0925', $kanoGroup['remittances']->first()->reference);
+        $this->assertEqualsWithDelta(0, $paye['ledger']['difference'], 0.001);
+        $this->assertEqualsWithDelta(34304, $paye['outstanding'], 0.001);
+        $this->get(route('payroll.statutory.show', ['schedule' => 'paye', 'month' => '2026-09']))
+            ->assertSee('KN-IRS-0925')->assertSee('Remitted');
+    }
+
+    public function test_part_remittances_are_allowed_but_not_more_than_is_owed(): void
+    {
+        $this->septemberPayroll(true, ['view statutory-remittances', 'record statutory-remittances']);
+        $stanbic = (string) $this->pfa('Stanbic IBTC Pension Managers Limited')->id;
+
+        $this->remit('pension', ['group_key' => $stanbic, 'amount' => 60000, 'reference' => 'PFA-1'])->assertSessionHasNoErrors();
+        $this->remit('pension', ['group_key' => $stanbic, 'amount' => 30000.01])->assertSessionHasErrors('amount');
+        $this->remit('pension', ['group_key' => $stanbic, 'amount' => 30000, 'reference' => 'PFA-2'])->assertSessionHasNoErrors();
+        $this->remit('pension', ['group_key' => $stanbic, 'amount' => 0.01])->assertSessionHasErrors('amount');
+
+        $this->assertEqualsWithDelta(90000, (float) StatutoryRemittance::sum('amount'), 0.001);
+        $this->assertEqualsWithDelta(61200, $this->balance('2320'), 0.001, 'Leadway still owed');
+        $group = $this->schedule('pension')['groups'][$stanbic];
+        $this->assertEqualsWithDelta(0, $group['outstanding'], 0.001);
+        $this->assertCount(2, $group['remittances']);
+
+        // Nothing owed to a PFA with no September payroll, or for a month with none.
+        $this->remit('pension', ['group_key' => (string) $this->pfa('Access Pensions Limited')->id, 'amount' => 1])->assertSessionHasErrors('group_key');
+        $this->remit('nhf', ['group_key' => 'all', 'amount' => 1, 'month' => '2026-08'])->assertSessionHasErrors('group_key');
+        $this->assertSame(2, StatutoryRemittance::count());
+    }
+
+    public function test_remittance_cannot_exceed_the_ledger_balance_or_go_into_a_locked_period(): void
+    {
+        $this->septemberPayroll(true, ['view statutory-remittances', 'record statutory-remittances', 'edit payroll']);
+
+        // 10,000 of NHF already paid through the general liabilities screen.
+        $this->post(route('payroll.liabilities.remit'), ['account_code' => '2370', 'amount' => 10000, 'date' => '2026-10-01', 'payment_method' => 'bank_transfer'])
+            ->assertSessionHasNoErrors();
+        $this->remit('nhf', ['group_key' => 'all', 'amount' => 12500])->assertSessionHasErrors('amount');
+        $this->remit('nhf', ['group_key' => 'all', 'amount' => 2500])->assertSessionHasNoErrors();
+        $this->assertEqualsWithDelta(0, $this->balance('2370'), 0.001);
+
+        AccountingPeriod::create(['tenant_id' => $this->tenant->id, 'name' => 'Oct 2026', 'start_date' => '2026-10-01', 'end_date' => '2026-10-31', 'status' => 'locked']);
+        $this->remit('nsitf', ['group_key' => 'all', 'amount' => 8600])->assertSessionHasErrors();
+        $this->assertSame(0, StatutoryRemittance::where('schedule', 'nsitf')->count());
+        $this->assertEqualsWithDelta(8600, $this->balance('2380'), 0.001);
+    }
+
+    public function test_recording_a_remittance_needs_permission_and_the_business_own_records(): void
+    {
+        [$other] = $this->createTenantWithSubscription();
+        $otherBank = Bank::withoutGlobalScopes()->create(['tenant_id' => $other->id, 'name' => 'Theirs', 'bank_name' => 'X', 'account_number' => '1', 'is_active' => true]);
+        $this->septemberPayroll(true, ['view statutory-remittances']);
+        $kano = (string) $this->state('Kano')->id;
+
+        $this->remit('paye', ['group_key' => $kano, 'amount' => 100])->assertForbidden();
+
+        $this->user->givePermissionTo(Permission::findOrCreate('record statutory-remittances', 'web'));
+        $this->remit('paye', ['group_key' => $kano, 'amount' => 100, 'bank_id' => $otherBank->id])->assertSessionHasErrors('bank_id');
+
+        // Another business with the same permission cannot pay our schedule: theirs is empty.
+        $outsider = $this->createUserForTenant($other, ['view statutory-remittances', 'record statutory-remittances']);
+        $this->actingAs($outsider);
+        $this->remit('paye', ['group_key' => $kano, 'amount' => 100])->assertSessionHasErrors('group_key');
+        $this->assertSame(0, StatutoryRemittance::withoutGlobalScopes()->count());
+        $this->assertEqualsWithDelta(101854, $this->balance('2310'), 0.001);
     }
 
     // ── Part 1: employee statutory details ─────────────────────────

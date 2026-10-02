@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Payroll\RecordStatutoryRemittance;
+use App\Models\Bank;
 use App\Services\Payroll\StatutoryScheduleService;
 use App\Services\Payroll\StatutorySettings;
 use App\Services\ReportExportService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 /**
  * Payroll > Statutory remittances: for a pay month, what is owed to each
@@ -42,6 +45,8 @@ class StatutoryRemittanceController extends Controller
         return view('payroll.statutory.show', [
             'month' => $month,
             'data' => $this->build($schedule, $month),
+            'banks' => Bank::where('is_active', true)->orderBy('name')->get(),
+            'methods' => ['bank_transfer' => 'Bank transfer', 'cheque' => 'Cheque', 'cash' => 'Cash'],
         ]);
     }
 
@@ -64,6 +69,8 @@ class StatutoryRemittanceController extends Controller
             }
             $blank = array_fill(0, count($data['columns']) - 1, '');
             $rows[] = array_merge(['Schedule total'], $blank, [number_format($data['total'], 2, '.', '')]);
+            $rows[] = array_merge(['Remitted'], $blank, [number_format($data['remitted'], 2, '.', '')]);
+            $rows[] = array_merge(['Outstanding'], $blank, [number_format($data['outstanding'], 2, '.', '')]);
             $rows[] = array_merge(['Ledger: '.$data['ledger']['account_code'].' '.$data['ledger']['account_name'].' posted in month'], $blank, [number_format($data['ledger']['posted'], 2, '.', '')]);
             $rows[] = array_merge(['Difference'], $blank, [number_format($data['ledger']['difference'], 2, '.', '')]);
 
@@ -71,6 +78,31 @@ class StatutoryRemittanceController extends Controller
         }
 
         return $this->exports->setOrientation('landscape')->exportToPdf('payroll.statutory.pdf', ['data' => $data]);
+    }
+
+    /**
+     * Record paying one group of a schedule (e.g. PAYE to Kano IRS), in
+     * full or in part.
+     */
+    public function remit(Request $request, string $schedule, RecordStatutoryRemittance $action)
+    {
+        $tenantId = auth()->user()->tenant_id;
+        $validated = $request->validate([
+            'month' => ['required', 'date_format:Y-m'],
+            'group_key' => ['required', 'string', 'max:30'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'paid_on' => ['required', 'date', 'before_or_equal:today'],
+            'bank_id' => ['nullable', Rule::exists('banks', 'id')->where('tenant_id', $tenantId)],
+            'payment_method' => ['required', 'in:bank_transfer,cheque,cash'],
+            'reference' => ['nullable', 'string', 'max:100'],
+        ]);
+        $month = Carbon::createFromFormat('Y-m-d', $validated['month'].'-01')->startOfDay();
+
+        $remittance = $action->handle($tenantId, $schedule, $month, $validated, auth()->id());
+
+        return redirect()->route('payroll.statutory.show', ['schedule' => $schedule, 'month' => $validated['month']])
+            ->with('success', RecordStatutoryRemittance::describe($schedule, $remittance->group_label, $month)
+                .': '.number_format((float) $remittance->amount, 2).' recorded (journal '.$remittance->journal?->journal_number.').');
     }
 
     /** @return array<string, mixed> */
