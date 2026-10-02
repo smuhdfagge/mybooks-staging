@@ -67,7 +67,7 @@ class BillController extends Controller
 
     public function show(Bill $bill)
     {
-        $bill->load(['vendor', 'items.item', 'payments.createdBy', 'createdBy', 'journal.entries.account']);
+        $bill->load(['vendor', 'items.item', 'payments.createdBy', 'createdBy', 'journal.entries.account', 'vendorCreditApplications.vendorCredit']);
 
         return view('bills.show', compact('bill'));
     }

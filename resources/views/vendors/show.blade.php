@@ -210,6 +210,47 @@
                         </div>
                     </div>
 
+                    <!-- Supplier credits and advances not yet used -->
+                    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="p-6">
+                            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Credits and advances</h3>
+                                <div class="flex gap-4 text-sm">
+                                    @can('create bills')<a href="{{ route('vendor-credits.create', ['vendor_id' => $vendor->id]) }}" class="text-indigo-600 dark:text-indigo-400">+ Supplier credit</a>@endcan
+                                    @can('create payments-made')<a href="{{ route('supplier-advances.create', ['vendor_id' => $vendor->id]) }}" class="text-indigo-600 dark:text-indigo-400">+ Advance</a>@endcan
+                                </div>
+                            </div>
+                            <dl class="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <dt class="text-sm text-gray-500 dark:text-gray-400">Credit from this supplier, not yet used</dt>
+                                    <dd class="text-xl font-semibold text-gray-900 dark:text-gray-100">@money($openCredits->sum('balance'))</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-sm text-gray-500 dark:text-gray-400">Paid in advance, not yet used</dt>
+                                    <dd class="text-xl font-semibold text-gray-900 dark:text-gray-100">@money($openAdvances->sum('unused_amount'))</dd>
+                                </div>
+                            </dl>
+                            @if($openCredits->isEmpty() && $openAdvances->isEmpty())
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Nothing waiting to be used.</p>
+                            @else
+                                <ul class="divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                                    @foreach($openCredits as $credit)
+                                        <li class="py-2 flex justify-between gap-3">
+                                            <a href="{{ route('vendor-credits.show', $credit) }}" class="text-indigo-600 dark:text-indigo-400">{{ $credit->vendor_credit_number }} · {{ $credit->credit_date->format('d M Y') }}</a>
+                                            <span class="text-gray-900 dark:text-gray-100">@money($credit->balance)</span>
+                                        </li>
+                                    @endforeach
+                                    @foreach($openAdvances as $advance)
+                                        <li class="py-2 flex justify-between gap-3">
+                                            <a href="{{ route('supplier-advances.show', $advance) }}" class="text-indigo-600 dark:text-indigo-400">Advance {{ $advance->payment_number }} · {{ $advance->payment_date->format('d M Y') }}</a>
+                                            <span class="text-gray-900 dark:text-gray-100">@money($advance->unused_amount)</span>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @endif
+                        </div>
+                    </div>
+
                     <!-- Recent Expenses -->
                     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6">

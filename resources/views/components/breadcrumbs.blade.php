@@ -49,6 +49,8 @@
                 'sales-receipts' => 'Sales Receipts',
                 'payments-received' => 'Payments Received',
                 'payments-made' => 'Payments Made',
+                'vendor-credits' => 'Supplier Credits',
+                'supplier-advances' => 'Supplier Advances',
                 'recurring-invoices' => 'Recurring Invoices',
                 'inventory' => 'Inventory',
                 'reports' => 'Reports',

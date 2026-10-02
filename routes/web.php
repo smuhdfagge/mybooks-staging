@@ -55,9 +55,11 @@ use App\Http\Controllers\SalesOrderController;
 use App\Http\Controllers\SalesReceiptController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StockTransferController;
+use App\Http\Controllers\SupplierAdvanceController;
 use App\Http\Controllers\TaxGroupController;
 use App\Http\Controllers\TaxRateController;
 use App\Http\Controllers\VendorController;
+use App\Http\Controllers\VendorCreditController;
 use App\Http\Controllers\WarehouseController;
 use App\Mail\ContactFormMail;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
@@ -631,6 +633,36 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     Route::delete('payments-made/{paymentMade}', [PaymentMadeController::class, 'destroy'])
         ->middleware('permission:delete payments-made')
         ->name('payments-made.destroy');
+
+    // Supplier credits (purchase returns) - use the bill permissions, as customer credit notes use the invoice ones
+    Route::middleware('permission:create bills')->group(function () {
+        Route::get('vendor-credits/create', [VendorCreditController::class, 'create'])->name('vendor-credits.create');
+        Route::post('vendor-credits', [VendorCreditController::class, 'store'])->name('vendor-credits.store');
+    });
+    Route::middleware('permission:view bills')->group(function () {
+        Route::get('vendor-credits', [VendorCreditController::class, 'index'])->name('vendor-credits.index');
+        Route::get('vendor-credits/{vendorCredit}', [VendorCreditController::class, 'show'])->name('vendor-credits.show');
+    });
+    Route::middleware('permission:edit bills')->group(function () {
+        Route::post('vendor-credits/{vendorCredit}/open', [VendorCreditController::class, 'open'])->name('vendor-credits.open');
+        Route::post('vendor-credits/{vendorCredit}/void', [VendorCreditController::class, 'void'])->name('vendor-credits.void');
+        Route::post('vendor-credits/{vendorCredit}/apply', [VendorCreditController::class, 'apply'])->name('vendor-credits.apply');
+        Route::post('vendor-credits/{vendorCredit}/refund', [VendorCreditController::class, 'refund'])->name('vendor-credits.refund');
+    });
+    Route::delete('vendor-credits/{vendorCredit}', [VendorCreditController::class, 'destroy'])
+        ->middleware('permission:delete bills')
+        ->name('vendor-credits.destroy');
+
+    // Supplier advances (paid before the bill)
+    Route::middleware('permission:create payments-made')->group(function () {
+        Route::get('supplier-advances/create', [SupplierAdvanceController::class, 'create'])->name('supplier-advances.create');
+        Route::post('supplier-advances', [SupplierAdvanceController::class, 'store'])->name('supplier-advances.store');
+        Route::post('supplier-advances/{advance}/apply', [SupplierAdvanceController::class, 'apply'])->name('supplier-advances.apply');
+    });
+    Route::middleware('permission:view payments-made')->group(function () {
+        Route::get('supplier-advances', [SupplierAdvanceController::class, 'index'])->name('supplier-advances.index');
+        Route::get('supplier-advances/{advance}', [SupplierAdvanceController::class, 'show'])->name('supplier-advances.show');
+    });
 
     /*
     |--------------------------------------------------------------------------
