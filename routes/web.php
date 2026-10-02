@@ -423,24 +423,31 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         ->name('payments-received.destroy');
 
     Route::middleware('feature:quotations')->group(function () {
-        // Quotations / Estimates
+        // Quotations / Estimates (they share the invoice permissions)
         Route::middleware('permission:create invoices')->group(function () {
             Route::get('quotations/create', [QuotationController::class, 'create'])->name('quotations.create');
             Route::post('quotations', [QuotationController::class, 'store'])->name('quotations.store');
+            Route::post('quotations/{quotation}/convert-to-invoice', [QuotationController::class, 'convertToInvoice'])->name('quotations.convert-invoice');
         });
         Route::middleware('permission:view invoices')->group(function () {
             Route::get('quotations', [QuotationController::class, 'index'])->name('quotations.index');
             Route::get('quotations/{quotation}', [QuotationController::class, 'show'])->name('quotations.show');
             Route::get('quotations/{quotation}/print', [QuotationController::class, 'print'])->name('quotations.print');
+            Route::get('quotations/{quotation}/pdf', [QuotationController::class, 'pdf'])->name('quotations.pdf');
         });
         Route::middleware('permission:edit invoices')->group(function () {
             Route::get('quotations/{quotation}/edit', [QuotationController::class, 'edit'])->name('quotations.edit');
             Route::put('quotations/{quotation}', [QuotationController::class, 'update'])->name('quotations.update');
-            Route::post('quotations/{quotation}/send', [QuotationController::class, 'send'])->name('quotations.send');
+            Route::post('quotations/{quotation}/mark-sent', [QuotationController::class, 'markSent'])->name('quotations.mark-sent');
             Route::post('quotations/{quotation}/accept', [QuotationController::class, 'accept'])->name('quotations.accept');
             Route::post('quotations/{quotation}/reject', [QuotationController::class, 'reject'])->name('quotations.reject');
-            Route::post('quotations/{quotation}/convert', [QuotationController::class, 'convertToSalesOrder'])->name('quotations.convert');
         });
+        Route::post('quotations/{quotation}/send', [QuotationController::class, 'send'])
+            ->middleware('permission:send invoices')
+            ->name('quotations.send');
+        Route::post('quotations/{quotation}/convert', [QuotationController::class, 'convertToSalesOrder'])
+            ->middleware('permission:create sales-orders')
+            ->name('quotations.convert');
         Route::delete('quotations/{quotation}', [QuotationController::class, 'destroy'])
             ->middleware('permission:delete invoices')
             ->name('quotations.destroy');

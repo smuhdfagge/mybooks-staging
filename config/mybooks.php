@@ -118,14 +118,14 @@ return [
     | Unfinished modules (finding N4)
     |--------------------------------------------------------------------------
     |
-    | These modules have back-end code but no screens yet, or their ledger
-    | postings are not finished. Their URLs answer 404 until switched on.
-    | Switch one on only once its screens exist and its tests pass.
+    | Optional modules. A module switched off answers 404. The ones finished
+    | in Phase F are on by default and can still be switched off here or in
+    | .env; inventory valuation is not finished yet.
     |
     */
 
     'features' => [
-        'quotations' => (bool) env('MYBOOKS_FEATURE_QUOTATIONS', false),
+        'quotations' => (bool) env('MYBOOKS_FEATURE_QUOTATIONS', true),
         'delivery_notes' => (bool) env('MYBOOKS_FEATURE_DELIVERY_NOTES', false),
         'credit_notes' => (bool) env('MYBOOKS_FEATURE_CREDIT_NOTES', false),
         'warehouses' => (bool) env('MYBOOKS_FEATURE_WAREHOUSES', false),

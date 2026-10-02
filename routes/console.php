@@ -63,6 +63,12 @@ Schedule::command('transactions:process-recurring')
     ->onOneServer()
     ->appendOutputTo(storage_path('logs/recurring-transactions.log'));
 
+// Mark quotations past their expiry date as expired, daily at 00:30
+Schedule::command('quotations:expire')
+    ->dailyAt('00:30')
+    ->withoutOverlapping()
+    ->onOneServer();
+
 /*
 |--------------------------------------------------------------------------
 | Data Retention & Purging

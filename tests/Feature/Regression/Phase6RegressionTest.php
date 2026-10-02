@@ -31,15 +31,24 @@ class Phase6RegressionTest extends TestCase
 {
     use AssertsLedger;
 
+    /** Modules finished in Phase F, switched on by default. */
+    private const FINISHED_MODULES = ['quotations'];
+
     public function test_n4_unfinished_modules_are_off_by_default(): void
     {
         foreach (config('mybooks.features') as $feature => $on) {
-            $this->assertFalse($on, "{$feature} should be off by default");
+            if (in_array($feature, self::FINISHED_MODULES, true)) {
+                $this->assertTrue($on, "{$feature} is finished and should be on by default");
+            } else {
+                $this->assertFalse($on, "{$feature} should be off by default");
+            }
         }
     }
 
     public function test_n4_unfinished_module_urls_answer_404(): void
     {
+        // Any module switched off answers 404, finished ones included.
+        config(['mybooks.features' => array_map(fn () => false, config('mybooks.features'))]);
         $this->createSuperAdmin();
         $checked = 0;
 
