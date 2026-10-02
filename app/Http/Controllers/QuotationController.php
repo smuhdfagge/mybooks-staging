@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Quotations\ConvertQuotation;
+use App\Actions\Quotations\DeleteQuotation;
+use App\Actions\Quotations\SaveQuotation;
+use App\Enums\QuotationStatus;
+use App\Http\Requests\SaveQuotationRequest;
+use App\Models\ActivityLog;
 use App\Models\Customer;
-use App\Models\Item;
 use App\Models\Quotation;
-use App\Models\QuotationItem;
-use App\Services\Sales\DocumentTotals;
+use App\Notifications\QuotationSentNotification;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class QuotationController extends Controller
 {
@@ -18,185 +23,133 @@ class QuotationController extends Controller
         return view('quotations.index');
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $customers = Customer::where('is_active', true)->get();
-        $items = Item::where('is_active', true)->with(['taxRate', 'taxGroup.taxRates'])->get();
         $quotationNumber = Quotation::previewNumber(auth()->user()->tenant_id);
+        // Customers and items are searched as you type (P9).
+        $customer = $request->filled('customer_id') ? Customer::find($request->integer('customer_id')) : null;
+        $customerOptions = $this->customerOptions(collect([$customer])->filter());
 
-        return view('quotations.create', compact('customers', 'items', 'quotationNumber'));
+        return view('quotations.create', compact('quotationNumber', 'customerOptions'));
     }
 
-    public function store(Request $request)
+    public function store(SaveQuotationRequest $request, SaveQuotation $save)
     {
-        $tenantId = auth()->user()->tenant_id;
+        $quotation = $save->create(auth()->user()->tenant_id, $request->validated(), auth()->id());
 
-        $validated = $request->validate([
-            'customer_id' => ['required', Rule::exists('customers', 'id')->where('tenant_id', $tenantId)],
-            'quotation_date' => 'required|date',
-            'expiry_date' => 'nullable|date|after_or_equal:quotation_date',
-            'reference' => 'nullable|string|max:100',
-            'discount_type' => 'nullable|in:percentage,fixed',
-            'discount_amount' => 'nullable|numeric|min:0',
-            'notes' => 'nullable|string',
-            'terms' => 'nullable|string',
-            'items' => 'required|array|min:1',
-            'items.*.item_id' => ['nullable', Rule::exists('items', 'id')->where('tenant_id', $tenantId)],
-            'items.*.description' => 'required|string',
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.discount' => 'nullable|numeric|min:0',
-            'items.*.discount_type' => 'nullable|in:fixed,percentage',
-            'items.*.tax_rate' => 'nullable|numeric|min:0|max:100',
-        ]);
-
-        $quotation = DB::transaction(function () use ($tenantId, $validated) {
-            $quotation = Quotation::create([
-                'tenant_id' => $tenantId,
-                'customer_id' => $validated['customer_id'],
-                'quotation_number' => Quotation::generateNumber($tenantId),
-                'quotation_date' => $validated['quotation_date'],
-                'expiry_date' => $validated['expiry_date'] ?? null,
-                'reference' => $validated['reference'] ?? null,
-                'discount_type' => $validated['discount_type'] ?? null,
-                'notes' => $validated['notes'] ?? null,
-                'terms' => $validated['terms'] ?? null,
-                'status' => 'draft',
-                'created_by' => auth()->id(),
-            ]);
-
-            $this->writeLines($quotation, $validated);
-
-            return $quotation;
-        });
-
-        return redirect()->route('quotations.show', $quotation)->with('success', 'Quotation created.');
+        return redirect()->route('quotations.show', $quotation)->with('success', "Quotation {$quotation->quotation_number} created.");
     }
 
     public function show(Quotation $quotation)
     {
-        $quotation->load(['customer', 'items.item', 'createdBy', 'salesOrder']);
+        $quotation->load(['customer', 'items.item', 'createdBy', 'salesOrder', 'invoice']);
 
         return view('quotations.show', compact('quotation'));
     }
 
     public function edit(Quotation $quotation)
     {
-        if (in_array($quotation->status, ['accepted', 'converted'])) {
+        if (! in_array($quotation->status, QuotationStatus::editableValues(), true)) {
             return redirect()->route('quotations.show', $quotation)
-                ->with('error', 'Cannot edit an accepted or converted quotation.');
+                ->with('error', "A {$quotation->status} quotation can't be changed.");
         }
 
-        $customers = Customer::where('is_active', true)->get();
-        $items = Item::where('is_active', true)->with(['taxRate', 'taxGroup.taxRates'])->get();
-        $quotation->load('items');
+        $quotation->load(['customer', 'items.item']);
+        $customerOptions = $this->customerOptions(collect([$quotation->customer])->filter());
 
-        return view('quotations.edit', compact('quotation', 'customers', 'items'));
+        return view('quotations.edit', compact('quotation', 'customerOptions'));
     }
 
-    public function update(Request $request, Quotation $quotation)
+    public function update(SaveQuotationRequest $request, Quotation $quotation, SaveQuotation $save)
     {
-        if (in_array($quotation->status, ['accepted', 'converted'])) {
-            return redirect()->back()->with('error', 'Cannot edit an accepted or converted quotation.');
-        }
-
-        $tenantId = auth()->user()->tenant_id;
-
-        $validated = $request->validate([
-            'customer_id' => ['required', Rule::exists('customers', 'id')->where('tenant_id', $tenantId)],
-            'quotation_date' => 'required|date',
-            'expiry_date' => 'nullable|date|after_or_equal:quotation_date',
-            'reference' => 'nullable|string|max:100',
-            'discount_type' => 'nullable|in:percentage,fixed',
-            'discount_amount' => 'nullable|numeric|min:0',
-            'notes' => 'nullable|string',
-            'terms' => 'nullable|string',
-            'items' => 'required|array|min:1',
-            'items.*.item_id' => ['nullable', Rule::exists('items', 'id')->where('tenant_id', $tenantId)],
-            'items.*.description' => 'required|string',
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.discount' => 'nullable|numeric|min:0',
-            'items.*.discount_type' => 'nullable|in:fixed,percentage',
-            'items.*.tax_rate' => 'nullable|numeric|min:0|max:100',
-        ]);
-
-        DB::transaction(function () use ($quotation, $validated) {
-            $quotation->update([
-                'customer_id' => $validated['customer_id'],
-                'quotation_date' => $validated['quotation_date'],
-                'expiry_date' => $validated['expiry_date'] ?? null,
-                'reference' => $validated['reference'] ?? null,
-                'discount_type' => $validated['discount_type'] ?? null,
-                'notes' => $validated['notes'] ?? null,
-                'terms' => $validated['terms'] ?? null,
-            ]);
-
-            $quotation->items()->delete();
-
-            $this->writeLines($quotation, $validated);
-        });
+        $save->update($quotation, $request->validated());
 
         return redirect()->route('quotations.show', $quotation)->with('success', 'Quotation updated.');
     }
 
-    public function destroy(Quotation $quotation)
+    public function destroy(Quotation $quotation, DeleteQuotation $delete)
     {
-        if (in_array($quotation->status, ['accepted', 'converted'])) {
-            return redirect()->back()->with('error', 'Cannot delete an accepted or converted quotation.');
+        if ($reason = $delete->blockedBecause($quotation)) {
+            return redirect()->back()->with('error', $reason);
         }
 
-        DB::transaction(function () use ($quotation) {
-            $quotation->items()->delete();
-            $quotation->delete();
-        });
+        $delete->handle($quotation);
 
         return redirect()->route('quotations.index')->with('success', 'Quotation deleted.');
     }
 
-    public function send(Quotation $quotation)
+    /**
+     * Email the quotation to the customer with a PDF copy attached.
+     */
+    public function send(Request $request, Quotation $quotation)
     {
-        if ($quotation->status === 'draft') {
-            $quotation->update(['status' => 'sent']);
+        $validated = $request->validate(['message' => 'nullable|string|max:2000']);
+
+        if (! in_array($quotation->status, [QuotationStatus::Draft->value, QuotationStatus::Sent->value], true)) {
+            return redirect()->back()->with('error', "A {$quotation->status} quotation can't be sent.");
         }
+        if (! $quotation->customer?->email) {
+            return redirect()->back()->with('error', 'This customer has no email address. Add one, or print the quotation and mark it as sent.');
+        }
+
+        try {
+            $quotation->customer->notify(new QuotationSentNotification($quotation, $validated['message'] ?? null));
+        } catch (\Throwable $e) {
+            Log::error("Failed to send quotation {$quotation->quotation_number}: ".$e->getMessage());
+
+            return redirect()->back()->with('error', 'The email could not be sent. Please try again.');
+        }
+
+        $this->markAsSent($quotation);
+        $quotation->logCustomActivity(ActivityLog::ACTION_SENT, "Quotation '{$quotation->quotation_number}' was sent to {$quotation->customer->email}");
+
+        return redirect()->back()->with('success', "Quotation emailed to {$quotation->customer->email}.");
+    }
+
+    /** For a quotation handed over on paper or sent another way. */
+    public function markSent(Quotation $quotation)
+    {
+        if ($quotation->status !== QuotationStatus::Draft->value) {
+            return redirect()->back()->with('error', 'Only a draft quotation can be marked as sent.');
+        }
+
+        $this->markAsSent($quotation);
 
         return redirect()->back()->with('success', 'Quotation marked as sent.');
     }
 
     public function accept(Quotation $quotation)
     {
-        if (! in_array($quotation->status, ['draft', 'sent'])) {
-            return redirect()->back()->with('error', 'Only draft or sent quotations can be accepted.');
-        }
-
-        $quotation->update(['status' => 'accepted']);
-
-        return redirect()->back()->with('success', 'Quotation accepted.');
+        return $this->answer($quotation, QuotationStatus::Accepted, 'Quotation marked as accepted.');
     }
 
     public function reject(Quotation $quotation)
     {
-        if (! in_array($quotation->status, ['draft', 'sent'])) {
-            return redirect()->back()->with('error', 'Only draft or sent quotations can be rejected.');
-        }
-
-        $quotation->update(['status' => 'rejected']);
-
-        return redirect()->back()->with('success', 'Quotation rejected.');
+        return $this->answer($quotation, QuotationStatus::Rejected, 'Quotation marked as rejected.');
     }
 
-    public function convertToSalesOrder(Quotation $quotation)
+    public function convertToSalesOrder(Quotation $quotation, ConvertQuotation $convert)
     {
-        if (! in_array($quotation->status, ['accepted', 'draft', 'sent'])) {
-            return redirect()->back()->with('error', 'This quotation cannot be converted.');
+        try {
+            $order = $convert->toSalesOrder($quotation, auth()->id());
+        } catch (ValidationException $e) {
+            return redirect()->back()->with('error', collect($e->errors())->flatten()->first());
         }
 
-        $salesOrder = DB::transaction(function () use ($quotation) {
-            return $quotation->convertToSalesOrder();
-        });
+        return redirect()->route('sales-orders.show', $order)
+            ->with('success', "Quotation converted to sales order {$order->order_number}.");
+    }
 
-        return redirect()->route('sales-orders.show', $salesOrder)
-            ->with('success', "Quotation converted to Sales Order {$salesOrder->order_number}.");
+    public function convertToInvoice(Quotation $quotation, ConvertQuotation $convert)
+    {
+        try {
+            $invoice = $convert->toInvoice($quotation, auth()->id());
+        } catch (ValidationException $e) {
+            return redirect()->back()->with('error', collect($e->errors())->flatten()->first());
+        }
+
+        return redirect()->route('invoices.show', $invoice)
+            ->with('success', "Quotation converted to draft invoice {$invoice->invoice_number}.");
     }
 
     public function print(Quotation $quotation)
@@ -207,36 +160,40 @@ class QuotationController extends Controller
         return view('quotations.print', compact('quotation', 'tenant'));
     }
 
-    /**
-     * Lines and totals by the same rules as sales orders and invoices
-     * (A4, R3): VAT after discounts. It was charged before the discount,
-     * so a converted quotation came out at a different total.
-     *
-     * @param  array<string, mixed>  $validated
-     */
-    private function writeLines(Quotation $quotation, array $validated): void
+    public function pdf(Quotation $quotation)
     {
-        $totals = DocumentTotals::calculate($validated['items'], $validated['discount_type'] ?? null, $validated['discount_amount'] ?? 0);
+        $quotation->load(['customer', 'items.item']);
+        $tenant = auth()->user()->tenant;
 
-        foreach ($totals['lines'] as $line) {
-            QuotationItem::create([
-                'quotation_id' => $quotation->id,
-                'item_id' => $line['item_id'] ?? null,
-                'description' => $line['description'],
-                'quantity' => $line['quantity'],
-                'unit_price' => $line['unit_price'],
-                'discount' => $line['discount'] ?? 0,
-                'tax_rate' => $line['tax_rate'],
-                'tax_amount' => $line['tax_amount'],
-                'total' => $line['total'],
-            ]);
+        return Pdf::loadView('quotations.print', ['quotation' => $quotation, 'tenant' => $tenant, 'forPdf' => true])
+            ->download("quotation-{$quotation->quotation_number}.pdf");
+    }
+
+    private function answer(Quotation $quotation, QuotationStatus $to, string $message)
+    {
+        if (! QuotationStatus::from($quotation->status)->canMoveTo($to) || $quotation->status === $to->value) {
+            return redirect()->back()->with('error', "A {$quotation->status} quotation can't be marked {$to->value}.");
         }
 
+        $quotation->update(['status' => $to->value]);
+
+        return redirect()->back()->with('success', $message);
+    }
+
+    private function markAsSent(Quotation $quotation): void
+    {
         $quotation->update([
-            'subtotal' => $totals['subtotal'],
-            'tax_amount' => $totals['tax_amount'],
-            'discount_amount' => $totals['discount_amount'],
-            'total' => $totals['total'],
+            'status' => QuotationStatus::Sent->value,
+            'sent_at' => now(),
         ]);
+    }
+
+    /** @return array<int, array{id: string, name: string}> */
+    private function customerOptions($customers): array
+    {
+        return $customers->map(fn ($c) => [
+            'id' => (string) $c->id,
+            'name' => $c->name.($c->company_name ? " ({$c->company_name})" : ''),
+        ])->values()->all();
     }
 }

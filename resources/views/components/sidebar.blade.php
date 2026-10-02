@@ -34,7 +34,7 @@
 
         <!-- Items Module -->
         @canany(['view items', 'view inventory'])
-        <div x-data="{ open: {{ request()->is('items*') || request()->is('inventory*') ? 'true' : 'false' }} }">
+        <div x-data="{ open: {{ request()->is('items*') || request()->is('inventory*') || request()->is('warehouses*') || request()->is('stock-transfers*') || request()->is('bill-of-materials*') || request()->is('assembly-orders*') ? 'true' : 'false' }} }">
             <button @click="open = !open" 
                     class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors">
                 <div class="flex items-center">
@@ -55,13 +55,31 @@
                 @can('view inventory')
                 <a href="{{ route('inventory.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('inventory.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Inventory</a>
                 @endcan
+                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('warehouses'))
+                @can('view inventory')
+                <a href="{{ route('warehouses.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('warehouses.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Warehouses</a>
+                @endcan
+                @endif
+                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('stock_transfers'))
+                @can('adjust inventory')
+                <a href="{{ route('stock-transfers.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('stock-transfers.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Stock Transfers</a>
+                @endcan
+                @endif
+                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('assembly'))
+                @can('view items')
+                <a href="{{ route('bill-of-materials.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('bill-of-materials.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Bills of Materials</a>
+                @endcan
+                @can('adjust inventory')
+                <a href="{{ route('assembly-orders.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('assembly-orders.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Assembly Orders</a>
+                @endcan
+                @endif
             </div>
         </div>
         @endcanany
 
         <!-- Sales Module -->
         @canany(['view customers', 'view invoices', 'view sales-orders', 'view sales-receipts', 'view payments-received'])
-        <div x-data="{ open: {{ request()->is('sales*') || request()->is('customers*') || request()->is('invoices*') ? 'true' : 'false' }} }">
+        <div x-data="{ open: {{ request()->is('sales*') || request()->is('customers*') || request()->is('invoices*') || request()->is('quotations*') || request()->is('delivery-notes*') || request()->is('credit-notes*') ? 'true' : 'false' }} }">
             <button @click="open = !open" 
                     class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors">
                 <div class="flex items-center">
@@ -78,12 +96,27 @@
                 @can('view customers')
                 <a href="{{ route('customers.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('customers.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Customers</a>
                 @endcan
+                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('quotations'))
+                @can('view invoices')
+                <a href="{{ route('quotations.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('quotations.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Quotations</a>
+                @endcan
+                @endif
                 @can('view invoices')
                 <a href="{{ route('invoices.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('invoices.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Invoices</a>
                 @endcan
                 @can('view sales-orders')
                 <a href="{{ route('sales-orders.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('sales-orders.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Sales Orders</a>
                 @endcan
+                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('delivery_notes'))
+                @can('view invoices')
+                <a href="{{ route('delivery-notes.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('delivery-notes.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Delivery Notes</a>
+                @endcan
+                @endif
+                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('credit_notes'))
+                @can('view invoices')
+                <a href="{{ route('credit-notes.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('credit-notes.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Credit Notes</a>
+                @endcan
+                @endif
                 @can('view sales-receipts')
                 <a href="{{ route('sales-receipts.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('sales-receipts.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Sales Receipt</a>
                 @endcan
