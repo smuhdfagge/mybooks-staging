@@ -20,6 +20,7 @@ class Vendor extends Model
         'phone',
         'company_name',
         'tax_number',
+        'entity_type',
         'address',
         'city',
         'state',

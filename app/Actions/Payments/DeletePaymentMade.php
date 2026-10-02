@@ -18,7 +18,7 @@ class DeletePaymentMade
     public function handle(PaymentMade $payment): void
     {
         DB::transaction(function () use ($payment) {
-            $this->bank->credit($payment->bank_id, (float) $payment->amount, "Payment made #{$payment->payment_number} deleted");
+            $this->bank->credit($payment->bank_id, $payment->cashAmount(), "Payment made #{$payment->payment_number} deleted");
             $payment->delete();
         });
     }

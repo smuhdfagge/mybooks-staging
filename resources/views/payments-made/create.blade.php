@@ -158,6 +158,8 @@
                             </div>
                         </div>
 
+                        @include('withholding-tax._payment-fields', ['side' => 'made'])
+
                         <!-- Reference -->
                         <div class="md:col-span-2">
                             <x-field name="reference" label="Reference Number" :value="old('reference')" placeholder="e.g., Check #, Transaction ID" />

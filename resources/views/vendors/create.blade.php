@@ -45,7 +45,14 @@
                             </div>
 
                             <div>
-                                <x-field name="tax_number" label="Tax Number / VAT ID" :value="old('tax_number')" />
+                                <x-field name="tax_number" label="TIN (Tax ID)" :value="old('tax_number')" help="Needed for withholding tax schedules and certificates." />
+                            </div>
+
+                            <div>
+                                <x-field name="entity_type" label="Type (for withholding tax)" type="select">
+                                    <option value="company" @selected(old('entity_type', 'company') === 'company')>Company or business</option>
+                                    <option value="individual" @selected(old('entity_type', 'company') === 'individual')>Individual</option>
+                                </x-field>
                             </div>
                         </div>
                     </div>

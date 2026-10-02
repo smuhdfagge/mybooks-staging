@@ -83,6 +83,16 @@
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Amount</dt>
                                 <dd class="text-lg font-bold text-red-600 dark:text-red-400">@money($paymentMade->amount)</dd>
                             </div>
+                            @if((float) $paymentMade->wht_amount > 0)
+                            <div class="flex justify-between py-2">
+                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Withholding tax deducted ({{ (float) $paymentMade->wht_rate }}%)</dt>
+                                <dd class="text-sm text-gray-900 dark:text-gray-100">@money($paymentMade->wht_amount)</dd>
+                            </div>
+                            <div class="flex justify-between py-2">
+                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Paid to the vendor</dt>
+                                <dd class="text-sm font-semibold text-gray-900 dark:text-gray-100">@money($paymentMade->cashAmount())</dd>
+                            </div>
+                            @endif
                         </dl>
                     </div>
                 </div>

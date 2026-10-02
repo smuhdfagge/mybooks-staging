@@ -115,7 +115,13 @@ class PaymentReceivedController extends Controller
             }
         }
 
-        DB::transaction(function () use ($paymentReceived, $validated) {
+        // Withholding tax recorded on the payment stays as it is (tax pack 2).
+        $wht = (float) $paymentReceived->wht_amount;
+        if ($wht > 0 && (float) $validated['amount'] <= $wht) {
+            throw ValidationException::withMessages(['amount' => 'The amount must be more than the withholding tax on this payment ('.number_format($wht, 2).').']);
+        }
+
+        DB::transaction(function () use ($paymentReceived, $validated, $wht) {
             // If this is a deposit, update unused_amount proportionally
             if ($paymentReceived->is_deposit) {
                 $amountDiff = $validated['amount'] - $paymentReceived->amount;
@@ -125,9 +131,9 @@ class PaymentReceivedController extends Controller
 
             $this->bankService->adjustOnUpdate(
                 $paymentReceived->bank_id,
-                $paymentReceived->amount,
+                $paymentReceived->cashAmount(),
                 $validated['bank_id'] ?? null,
-                $validated['amount'],
+                round((float) $validated['amount'] - $wht, 2),
                 'incoming',
                 "Payment received #{$paymentReceived->payment_number} updated"
             );

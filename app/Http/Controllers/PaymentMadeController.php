@@ -85,12 +85,18 @@ class PaymentMadeController extends Controller
             throw ValidationException::withMessages($errors);
         }
 
-        DB::transaction(function () use ($paymentMade, $validated) {
+        // Withholding tax recorded on the payment stays as it is (tax pack 2).
+        $wht = (float) $paymentMade->wht_amount;
+        if ($wht > 0 && (float) $validated['amount'] <= $wht) {
+            throw ValidationException::withMessages(['amount' => 'The amount must be more than the withholding tax on this payment ('.number_format($wht, 2).').']);
+        }
+
+        DB::transaction(function () use ($paymentMade, $validated, $wht) {
             $this->bankService->adjustOnUpdate(
                 $paymentMade->bank_id,
-                $paymentMade->amount,
+                $paymentMade->cashAmount(),
                 $validated['bank_id'] ?? null,
-                $validated['amount'],
+                round((float) $validated['amount'] - $wht, 2),
                 'outgoing',
                 "Payment made #{$paymentMade->payment_number} updated"
             );

@@ -23,6 +23,7 @@ class ChartOfAccountService
             ['account_code' => '1300', 'name' => 'Inventory', 'type' => 'asset', 'sub_type' => 'inventory'],
             ['account_code' => '1400', 'name' => 'Prepaid Expenses', 'type' => 'asset', 'sub_type' => 'other_current_asset'],
             ['account_code' => '1410', 'name' => 'Input VAT', 'type' => 'asset', 'sub_type' => 'other_current_asset'],
+            ['account_code' => '1420', 'name' => 'WHT Receivable (tax credits)', 'type' => 'asset', 'sub_type' => 'other_current_asset'],
             ['account_code' => '1500', 'name' => 'Equipment', 'type' => 'asset', 'sub_type' => 'fixed_asset'],
             ['account_code' => '1510', 'name' => 'Furniture & Fixtures', 'type' => 'asset', 'sub_type' => 'fixed_asset'],
             ['account_code' => '1520', 'name' => 'Vehicles', 'type' => 'asset', 'sub_type' => 'fixed_asset'],
@@ -45,6 +46,7 @@ class ChartOfAccountService
             ['account_code' => '2390', 'name' => 'ITF Payable', 'type' => 'liability', 'sub_type' => 'other_current_liability'],
             ['account_code' => '2400', 'name' => 'Sales Tax Payable', 'type' => 'liability', 'sub_type' => 'other_current_liability'],
             ['account_code' => '2410', 'name' => 'VAT Payable', 'type' => 'liability', 'sub_type' => 'other_current_liability'],
+            ['account_code' => '2420', 'name' => 'WHT Payable', 'type' => 'liability', 'sub_type' => 'other_current_liability'],
             ['account_code' => '2500', 'name' => 'Short-term Loans', 'type' => 'liability', 'sub_type' => 'other_current_liability'],
             ['account_code' => '2600', 'name' => 'Long-term Loans', 'type' => 'liability', 'sub_type' => 'long_term_liability'],
 

@@ -59,6 +59,7 @@ use App\Http\Controllers\TaxGroupController;
 use App\Http\Controllers\TaxRateController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\WarehouseController;
+use App\Http\Controllers\WithholdingTaxController;
 use App\Mail\ContactFormMail;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Http\Request;
@@ -905,6 +906,21 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::post('accounting-periods/{accountingPeriod}/reopen', [AccountingPeriodController::class, 'reopen'])->name('accounting-periods.reopen');
         Route::post('accounting-periods/{accountingPeriod}/lock', [AccountingPeriodController::class, 'lock'])->name('accounting-periods.lock');
         Route::delete('accounting-periods/{accountingPeriod}', [AccountingPeriodController::class, 'destroy'])->name('accounting-periods.destroy');
+    });
+
+    /*
+    | Withholding tax (tax pack 2)
+    */
+    Route::middleware('permission:view withholding-tax')->prefix('withholding-tax')->name('withholding-tax.')->group(function () {
+        Route::get('/', [WithholdingTaxController::class, 'index'])->name('index');
+        Route::get('/schedule', [WithholdingTaxController::class, 'schedule'])->name('schedule');
+        Route::get('/credits/export', [WithholdingTaxController::class, 'creditsReport'])->name('credits.export');
+        Route::middleware('permission:manage withholding-tax')->group(function () {
+            Route::post('/remit', [WithholdingTaxController::class, 'remit'])->name('remit');
+            Route::put('/rates', [WithholdingTaxController::class, 'updateRates'])->name('rates.update');
+            Route::put('/settings', [WithholdingTaxController::class, 'updateSettings'])->name('settings.update');
+            Route::put('/credits/{whtCredit}', [WithholdingTaxController::class, 'updateCredit'])->name('credits.update');
+        });
     });
 
     /*

@@ -649,13 +649,7 @@ class JournalService implements JournalServiceInterface
                 $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), 0, $payment->amount,
                     "Payment for {$payment->customer->name}");
             } else {
-                // Regular payment: Debit Cash/Bank, Credit A/R
-                $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
-                $this->createEntry($journal, $paymentAccountCode, $payment->amount, 0,
-                    "Payment Received - {$payment->payment_number}");
-
-                $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), 0, $payment->amount,
-                    "Payment for {$payment->customer->name}");
+                $this->writePaymentReceivedLines($journal, $payment);
             }
 
             $journal->updateTotals();
@@ -710,13 +704,7 @@ class JournalService implements JournalServiceInterface
             $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), 0, $payment->amount,
                 "Payment for {$payment->customer->name}");
         } else {
-            // Regular payment: Debit Cash/Bank, Credit A/R
-            $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
-            $this->createEntry($journal, $paymentAccountCode, $payment->amount, 0,
-                "Payment Received - {$payment->payment_number}");
-
-            $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), 0, $payment->amount,
-                "Payment for {$payment->customer->name}");
+            $this->writePaymentReceivedLines($journal, $payment);
         }
 
         $journal->updateTotals();
@@ -725,6 +713,29 @@ class JournalService implements JournalServiceInterface
         $this->updateAccountBalances($journal);
 
         return $journal;
+    }
+
+    /**
+     * A customer payment against an invoice: Dr bank (what arrived), Dr WHT
+     * Receivable (tax the customer withheld, a credit against our income
+     * tax, tax pack 2), Cr Accounts Receivable (the full amount settled).
+     */
+    protected function writePaymentReceivedLines(Journal $journal, PaymentReceived $payment): void
+    {
+        $t = $payment->tenant_id;
+        $wht = (float) ($payment->wht_amount ?? 0);
+
+        $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
+        $this->createEntry($journal, $paymentAccountCode, $payment->cashAmount(), 0,
+            "Payment Received - {$payment->payment_number}");
+
+        if ($wht > 0) {
+            $this->createEntry($journal, $this->acct($t, 'wht_receivable'), $wht, 0,
+                "WHT withheld by {$payment->customer->name} - {$payment->payment_number}");
+        }
+
+        $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), 0, (float) $payment->amount,
+            "Payment for {$payment->customer->name}");
     }
 
     /**
@@ -888,14 +899,7 @@ class JournalService implements JournalServiceInterface
                 'created_by' => $payment->created_by ?? auth()->id(),
             ]);
 
-            // Debit: Accounts Payable (reduces liability)
-            $this->createEntry($journal, $this->acct($t, 'accounts_payable'), $payment->amount, 0,
-                "Payment to {$payment->vendor->name}");
-
-            // Credit: Cash/Bank account
-            $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
-            $this->createEntry($journal, $paymentAccountCode, 0, $payment->amount,
-                "Payment Made - {$payment->payment_number}");
+            $this->writePaymentMadeLines($journal, $payment);
 
             $journal->updateTotals();
             $journal->save();
@@ -924,12 +928,7 @@ class JournalService implements JournalServiceInterface
             'description' => "Payment Made {$payment->payment_number} - {$payment->vendor->name}{$billRef}",
         ]);
 
-        $this->createEntry($journal, $this->acct($t, 'accounts_payable'), $payment->amount, 0,
-            "Payment to {$payment->vendor->name}");
-
-        $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
-        $this->createEntry($journal, $paymentAccountCode, 0, $payment->amount,
-            "Payment Made - {$payment->payment_number}");
+        $this->writePaymentMadeLines($journal, $payment);
 
         $journal->updateTotals();
         $journal->save();
@@ -937,6 +936,28 @@ class JournalService implements JournalServiceInterface
         $this->updateAccountBalances($journal);
 
         return $journal;
+    }
+
+    /**
+     * Dr Accounts Payable (the full amount the bill is settled by), Cr bank
+     * (what was paid), Cr WHT Payable (tax withheld for the NRS, tax pack 2).
+     */
+    protected function writePaymentMadeLines(Journal $journal, PaymentMade $payment): void
+    {
+        $t = $payment->tenant_id;
+        $wht = (float) ($payment->wht_amount ?? 0);
+
+        $this->createEntry($journal, $this->acct($t, 'accounts_payable'), (float) $payment->amount, 0,
+            "Payment to {$payment->vendor->name}");
+
+        $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
+        $this->createEntry($journal, $paymentAccountCode, 0, $payment->cashAmount(),
+            "Payment Made - {$payment->payment_number}");
+
+        if ($wht > 0) {
+            $this->createEntry($journal, $this->acct($t, 'wht_payable'), 0, $wht,
+                "WHT withheld from {$payment->vendor->name} - {$payment->payment_number}");
+        }
     }
 
     /**
@@ -1131,6 +1152,9 @@ class JournalService implements JournalServiceInterface
 
     public const LOAN_DISBURSEMENT = 'loan_disbursement';
 
+    /** Paying withholding tax to the tax office (tax pack 2). */
+    public const TAX_REMITTANCE = 'tax_remittance';
+
     /**
      * Payroll cost, posted when the payroll is approved (A10):
      *   Dr salaries, allowances, overtime, employer contributions
@@ -1272,10 +1296,11 @@ class JournalService implements JournalServiceInterface
     /**
      * Paying a payroll liability to the authority or fund (PAYE to the state,
      * pension to the PFA, NHF, NSITF, ITF...): Dr the liability, Cr bank.
+     * Also used for withholding tax, with the TAX_REMITTANCE type.
      */
-    public function createPayrollRemittanceJournal(int $tenantId, string $liabilityCode, float $amount, string $date, ?string $paymentMethod, ?string $reference): Journal
+    public function createPayrollRemittanceJournal(int $tenantId, string $liabilityCode, float $amount, string $date, ?string $paymentMethod, ?string $reference, string $journalType = self::PAYROLL_REMITTANCE): Journal
     {
-        return DB::transaction(function () use ($tenantId, $liabilityCode, $amount, $date, $paymentMethod, $reference) {
+        return DB::transaction(function () use ($tenantId, $liabilityCode, $amount, $date, $paymentMethod, $reference, $journalType) {
             $account = ChartOfAccount::where('tenant_id', $tenantId)->where('account_code', $liabilityCode)->firstOrFail();
             $journal = Journal::create([
                 'tenant_id' => $tenantId,
@@ -1283,7 +1308,7 @@ class JournalService implements JournalServiceInterface
                 'journal_date' => $date,
                 'reference' => $reference ?: 'REMIT-'.$liabilityCode,
                 'description' => "Remittance - {$account->name}",
-                'journal_type' => self::PAYROLL_REMITTANCE,
+                'journal_type' => $journalType,
                 'status' => 'posted',
                 'is_posted' => true,
                 'posted_at' => now(),

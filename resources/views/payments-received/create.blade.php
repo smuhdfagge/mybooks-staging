@@ -177,6 +177,8 @@
                             </p>
                         </div>
 
+                        @include('withholding-tax._payment-fields', ['side' => 'received'])
+
                         <!-- Apply Existing Deposit Section -->
                         <div class="md:col-span-2" x-show="!isDeposit && selectedCustomer && availableDeposits.length > 0">
                             <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-4">

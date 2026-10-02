@@ -30,6 +30,7 @@ class AccountCodeService
         'fixed_assets' => '1500',
         'accumulated_depreciation' => '1600',
         'input_vat' => '1410',
+        'wht_receivable' => '1420', // WHT customers withheld: a credit against income tax
 
         // Liabilities
         'accounts_payable' => '2000',
@@ -47,6 +48,7 @@ class AccountCodeService
         'itf_payable' => '2390',
         'sales_tax_payable' => '2400', // output VAT
         'vat_payable' => '2410', // net VAT owed after a return is settled
+        'wht_payable' => '2420', // WHT withheld from suppliers, owed to the NRS
 
         // Equity
         'owners_capital' => '3000',

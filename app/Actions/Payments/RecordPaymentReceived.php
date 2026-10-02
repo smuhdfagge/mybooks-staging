@@ -5,6 +5,7 @@ namespace App\Actions\Payments;
 use App\Models\Invoice;
 use App\Models\NotificationSetting;
 use App\Models\PaymentReceived;
+use App\Models\WhtCredit;
 use App\Services\BankService;
 use App\Services\NotificationService;
 use App\Services\PaymentValidation;
@@ -23,7 +24,9 @@ use Illuminate\Validation\ValidationException;
  *
  * $data keys: customer_id, invoice_id, payment_date, amount,
  * payment_method, bank_id, reference, notes, is_deposit, apply_deposit_id,
- * deposit_amount.
+ * deposit_amount, and optionally wht_rate_id, wht_rate, wht_amount (tax
+ * pack 2): withholding tax the customer took off. The amount settles the
+ * invoice in full; amount - WHT arrived in the bank.
  */
 class RecordPaymentReceived
 {
@@ -51,8 +54,12 @@ class RecordPaymentReceived
         if (! empty($errors)) {
             throw ValidationException::withMessages($errors);
         }
+        $wht = WithholdingTaxOnPayment::from($data);
+        if ($wht['wht_amount'] > 0 && ($isDeposit || $applyDepositId)) {
+            throw ValidationException::withMessages(['wht_amount' => 'Withholding tax can only be recorded on a payment for an invoice, not a deposit.']);
+        }
 
-        return DB::transaction(function () use ($tenantId, $data, $userId, $isDeposit, $applyDepositId, $depositAmount, $invoice) {
+        return DB::transaction(function () use ($tenantId, $data, $userId, $isDeposit, $applyDepositId, $depositAmount, $invoice, $wht) {
             $amount = (float) $data['amount'];
 
             if ($applyDepositId && $depositAmount > 0 && $invoice) {
@@ -82,9 +89,21 @@ class RecordPaymentReceived
                 'is_deposit' => $isDeposit,
                 'unused_amount' => $isDeposit ? $amount : 0,
                 'created_by' => $userId,
-            ]);
+            ] + $wht);
 
-            $this->bank->credit($data['bank_id'] ?? null, $amount, "Payment received #{$payment->payment_number}");
+            // Only what arrived goes into the bank; the WHT is a tax credit
+            // to follow up with the customer's certificate.
+            $this->bank->credit($data['bank_id'] ?? null, $payment->cashAmount(), "Payment received #{$payment->payment_number}");
+            if ($wht['wht_amount'] > 0) {
+                WhtCredit::create([
+                    'tenant_id' => $tenantId,
+                    'customer_id' => $payment->customer_id,
+                    'payment_received_id' => $payment->id,
+                    'amount' => $wht['wht_amount'],
+                    'deducted_on' => $payment->payment_date,
+                    'status' => WhtCredit::STATUS_AWAITING,
+                ]);
+            }
 
             if (! $isDeposit && NotificationSetting::getForTenant($tenantId)->send_payment_confirmation) {
                 $this->notifications->sendPaymentConfirmation($payment);

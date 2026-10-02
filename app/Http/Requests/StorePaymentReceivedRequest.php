@@ -25,6 +25,10 @@ class StorePaymentReceivedRequest extends FormRequest
             'bank_id' => ['nullable', Rule::exists('banks', 'id')->where('tenant_id', $tenantId)],
             'reference' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string'],
+            // Withholding tax taken off the payment (tax pack 2).
+            'wht_rate_id' => ['nullable', Rule::exists('wht_rates', 'id')->where('tenant_id', $tenantId)],
+            'wht_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'wht_amount' => ['nullable', 'numeric', 'min:0'],
             'is_deposit' => ['boolean'],
             'apply_deposit_id' => ['nullable', Rule::exists('payments_received', 'id')->where('tenant_id', $tenantId)],
             'deposit_amount' => ['nullable', 'numeric', 'min:0'],

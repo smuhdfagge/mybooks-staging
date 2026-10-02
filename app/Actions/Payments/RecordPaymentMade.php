@@ -15,7 +15,9 @@ use Illuminate\Validation\ValidationException;
  * The Created event updates the bill and posts the journal.
  *
  * $data keys: vendor_id, bill_id, payment_date, amount, payment_method,
- * bank_id, reference, notes.
+ * bank_id, reference, notes, and optionally wht_rate_id, wht_rate,
+ * wht_amount (tax pack 2): withholding tax taken off the payment. The
+ * amount settles the bill in full; the vendor is paid amount - WHT.
  */
 class RecordPaymentMade
 {
@@ -29,8 +31,9 @@ class RecordPaymentMade
         if ($errors = PaymentValidation::forBill($bill, $data['vendor_id'], (float) $data['amount'])) {
             throw ValidationException::withMessages($errors);
         }
+        $wht = WithholdingTaxOnPayment::from($data);
 
-        return DB::transaction(function () use ($tenantId, $data, $userId) {
+        return DB::transaction(function () use ($tenantId, $data, $userId, $wht) {
             $payment = PaymentMade::create([
                 'tenant_id' => $tenantId,
                 'vendor_id' => $data['vendor_id'],
@@ -43,9 +46,10 @@ class RecordPaymentMade
                 'reference' => $data['reference'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'created_by' => $userId,
-            ]);
+            ] + $wht);
 
-            $this->bank->debit($data['bank_id'] ?? null, (float) $data['amount'], "Payment made #{$payment->payment_number}");
+            // Only what was paid leaves the bank; WHT stays owed to the NRS.
+            $this->bank->debit($data['bank_id'] ?? null, $payment->cashAmount(), "Payment made #{$payment->payment_number}");
 
             return $payment;
         });

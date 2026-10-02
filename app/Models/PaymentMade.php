@@ -7,6 +7,7 @@ use App\Events\PaymentMadeDeleted;
 use App\Events\PaymentMadeDeleting;
 use App\Events\PaymentMadeUpdated;
 use App\Services\JournalService;
+use App\Support\Money;
 use App\Traits\BelongsToTenant;
 use App\Traits\HasDocumentNumber;
 use App\Traits\LogsActivity;
@@ -35,12 +36,17 @@ class PaymentMade extends Model
         'bank_id',
         'reference',
         'notes',
+        'wht_rate_id',
+        'wht_rate',
+        'wht_amount',
         'created_by',
     ];
 
     protected $casts = [
         'payment_date' => 'date',
         'amount' => 'decimal:2',
+        'wht_rate' => 'decimal:2',
+        'wht_amount' => 'decimal:2',
     ];
 
     /** @return BelongsTo<Vendor, $this> */
@@ -53,6 +59,22 @@ class PaymentMade extends Model
     public function bill(): BelongsTo
     {
         return $this->belongsTo(Bill::class);
+    }
+
+    /** @return BelongsTo<WhtRate, $this> */
+    public function whtRate(): BelongsTo
+    {
+        return $this->belongsTo(WhtRate::class);
+    }
+
+    /**
+     * Money that actually moved through the bank: the amount less any
+     * withholding tax taken off it (tax pack 2). The amount itself is what
+     * the bill is settled by.
+     */
+    public function cashAmount(): float
+    {
+        return Money::subtract($this->amount, $this->wht_amount ?? 0);
     }
 
     /** @return BelongsTo<Bank, $this> */

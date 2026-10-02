@@ -7,6 +7,7 @@ use App\Events\PaymentReceivedDeleted;
 use App\Events\PaymentReceivedDeleting;
 use App\Events\PaymentReceivedUpdated;
 use App\Services\JournalService;
+use App\Support\Money;
 use App\Traits\BelongsToTenant;
 use App\Traits\HasDocumentNumber;
 use App\Traits\LogsActivity;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -36,6 +38,9 @@ class PaymentReceived extends Model
         'bank_id',
         'reference',
         'notes',
+        'wht_rate_id',
+        'wht_rate',
+        'wht_amount',
         'is_deposit',
         'unused_amount',
         'created_by',
@@ -44,6 +49,8 @@ class PaymentReceived extends Model
     protected $casts = [
         'payment_date' => 'date',
         'amount' => 'decimal:2',
+        'wht_rate' => 'decimal:2',
+        'wht_amount' => 'decimal:2',
         'unused_amount' => 'decimal:2',
         'is_deposit' => 'boolean',
     ];
@@ -58,6 +65,28 @@ class PaymentReceived extends Model
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    /** @return BelongsTo<WhtRate, $this> */
+    public function whtRate(): BelongsTo
+    {
+        return $this->belongsTo(WhtRate::class);
+    }
+
+    /**
+     * Money that actually moved through the bank: the amount less any
+     * withholding tax taken off it (tax pack 2). The amount itself is what
+     * the invoice is settled by.
+     */
+    public function cashAmount(): float
+    {
+        return Money::subtract($this->amount, $this->wht_amount ?? 0);
+    }
+
+    /** @return HasOne<WhtCredit, $this> */
+    public function whtCredit(): HasOne
+    {
+        return $this->hasOne(WhtCredit::class);
     }
 
     /** @return BelongsTo<Bank, $this> */

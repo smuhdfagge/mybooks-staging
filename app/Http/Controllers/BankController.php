@@ -66,7 +66,7 @@ class BankController extends Controller
                     'type' => 'deposit',
                     'reference' => $payment->payment_number,
                     'party' => $payment->customer?->name ?? 'N/A',
-                    'amount' => $payment->amount,
+                    'amount' => $payment->cashAmount(), // less WHT withheld
                     'route' => route('payments-received.show', $payment),
                 ];
             });
@@ -80,7 +80,7 @@ class BankController extends Controller
                     'type' => 'withdrawal',
                     'reference' => $payment->payment_number,
                     'party' => $payment->vendor?->name ?? 'N/A',
-                    'amount' => $payment->amount,
+                    'amount' => $payment->cashAmount(), // less WHT withheld
                     'route' => route('payments-made.show', $payment),
                 ];
             });
@@ -157,7 +157,7 @@ class BankController extends Controller
                     'reference' => $payment->payment_number,
                     'extra_ref' => $payment->reference,
                     'party' => $payment->customer?->name ?? 'N/A',
-                    'amount' => $payment->amount,
+                    'amount' => $payment->cashAmount(), // less WHT withheld
                     'route' => route('payments-received.show', $payment),
                 ];
             });
@@ -172,7 +172,7 @@ class BankController extends Controller
                     'reference' => $payment->payment_number,
                     'extra_ref' => $payment->reference,
                     'party' => $payment->vendor?->name ?? 'N/A',
-                    'amount' => $payment->amount,
+                    'amount' => $payment->cashAmount(), // less WHT withheld
                     'route' => route('payments-made.show', $payment),
                 ];
             });

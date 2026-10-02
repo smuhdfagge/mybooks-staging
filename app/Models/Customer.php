@@ -22,6 +22,7 @@ class Customer extends Model
         'phone',
         'company_name',
         'tax_number',
+        'entity_type',
         'billing_address',
         'shipping_address',
         'city',

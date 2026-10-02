@@ -24,7 +24,8 @@ class DeletePaymentReceived
         }
 
         DB::transaction(function () use ($payment) {
-            $this->bank->debit($payment->bank_id, (float) $payment->amount, "Payment received #{$payment->payment_number} deleted");
+            $this->bank->debit($payment->bank_id, $payment->cashAmount(), "Payment received #{$payment->payment_number} deleted");
+            $payment->whtCredit()->delete(); // the WHT goes with the payment (tax pack 2)
             $payment->delete();
         });
     }

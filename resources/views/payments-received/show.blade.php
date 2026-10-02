@@ -123,6 +123,16 @@
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Amount</dt>
                                 <dd class="text-lg font-bold text-green-600 dark:text-green-400">{{ number_format($paymentReceived->amount, 2) }}</dd>
                             </div>
+                            @if((float) $paymentReceived->wht_amount > 0)
+                            <div class="flex justify-between py-2">
+                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Withholding tax deducted by the customer</dt>
+                                <dd class="text-sm text-gray-900 dark:text-gray-100">@money($paymentReceived->wht_amount)</dd>
+                            </div>
+                            <div class="flex justify-between py-2">
+                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Money received</dt>
+                                <dd class="text-sm font-semibold text-gray-900 dark:text-gray-100">@money($paymentReceived->cashAmount())</dd>
+                            </div>
+                            @endif
                         </dl>
                     </div>
                 </div>
