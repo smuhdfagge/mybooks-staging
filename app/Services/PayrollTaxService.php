@@ -6,6 +6,8 @@ use App\Models\Employee;
 use App\Models\EmployeeLoan;
 use App\Models\TaxBracket;
 use App\Models\Tenant;
+use App\Support\Money;
+use App\Support\PayrollStatutory;
 use Illuminate\Support\Collection;
 
 class PayrollTaxService
@@ -216,6 +218,30 @@ class PayrollTaxService
             }
         }
 
+        // Statutory pension and NHF (tax pack 1), unless the salary structure
+        // already deducts them. Both are reliefs, so they come off before tax.
+        $tenant = Tenant::find($tenantId);
+        $statutory = PayrollStatutory::active($tenant) ? PayrollStatutory::settings($tenant) : null;
+        $pensionablePay = $this->pensionablePay($basicSalary, $allowanceDetails);
+        if ($statutory) {
+            $already = fn (string $body) => collect($deductionDetails)->contains(fn ($d) => PayrollStatutory::classify($d['name']) === $body);
+            $add = [];
+            if ($statutory['pension_applies'] && ! $already('pension')) {
+                $add[] = ['pension', 'Pension (employee '.(float) $statutory['pension_employee_rate'].'%)', $statutory['pension_employee_rate'], Money::percent($pensionablePay, $statutory['pension_employee_rate'])];
+            }
+            if ($employee->nhf_registered && ! $already('nhf')) {
+                $add[] = ['nhf', 'NHF ('.(float) $statutory['nhf_rate'].'% of basic)', $statutory['nhf_rate'], Money::percent($basicSalary, $statutory['nhf_rate'])];
+            }
+            foreach ($add as [$body, $name, $rate, $amount]) {
+                if ($amount <= 0) {
+                    continue;
+                }
+                $deductionDetails[] = ['name' => $name, 'amount_type' => 'percentage', 'rate' => (float) $rate, 'amount' => $amount, 'pre_tax' => true, '_statutory' => $body];
+                $totalOtherDeductions += $amount;
+                $taxableAmount -= $amount;
+            }
+        }
+
         // Rent relief (Nigeria Tax Act 2025) also comes off before tax.
         $taxableAmount -= $this->monthlyRentRelief($employee);
 
@@ -245,6 +271,9 @@ class PayrollTaxService
 
         // Employer contributions (not deducted from employee)
         $employerResult = $this->calculateEmployerContributions($grossSalary, $employerContributionRules);
+        if ($statutory) {
+            $employerResult = $this->addStatutoryEmployerContributions($employerResult, $statutory, $grossSalary, $pensionablePay);
+        }
 
         return [
             'salary_structure_id' => $structure?->id,
@@ -264,6 +293,68 @@ class PayrollTaxService
             'employer_contribution_details' => $employerResult['details'],
             'total_deductions' => $totalDeductions,
             'net_salary' => $netSalary,
+            'statutory' => $this->statutorySnapshot($employee, $tenant, $pensionablePay),
+        ];
+    }
+
+    /**
+     * Pensionable pay (Pension Reform Act 2014 s.4): basic salary plus
+     * housing and transport allowances.
+     *
+     * @param  array<int, array<string, mixed>>  $allowanceDetails
+     */
+    public function pensionablePay(float $basicSalary, array $allowanceDetails): float
+    {
+        return Money::add($basicSalary, ...array_map(
+            fn ($a) => PayrollStatutory::isPensionableAllowance((string) ($a['name'] ?? '')) ? (float) ($a['amount'] ?? 0) : 0,
+            $allowanceDetails
+        ));
+    }
+
+    /**
+     * Employer pension, NSITF and ITF (tax pack 1), each skipped when the
+     * payroll run was given its own rule for it.
+     *
+     * @param  array{total: float, details: array}  $result
+     * @param  array<string, mixed>  $settings
+     * @return array{total: float, details: array}
+     */
+    protected function addStatutoryEmployerContributions(array $result, array $settings, float $grossSalary, float $pensionablePay): array
+    {
+        $given = collect($result['details'])->map(fn ($d) => PayrollStatutory::classify((string) ($d['name'] ?? '')))->filter()->all();
+        $items = [
+            'pension' => [$settings['pension_applies'], 'Pension (employer '.(float) $settings['pension_employer_rate'].'%)', $settings['pension_employer_rate'], $pensionablePay],
+            'nsitf' => [$settings['nsitf_applies'], 'NSITF ('.(float) $settings['nsitf_rate'].'% of payroll)', $settings['nsitf_rate'], $grossSalary],
+            'itf' => [$settings['itf_applies'], 'ITF ('.(float) $settings['itf_rate'].'% of payroll)', $settings['itf_rate'], $grossSalary],
+        ];
+
+        foreach ($items as $body => [$applies, $name, $rate, $base]) {
+            $amount = Money::percent($base, $rate);
+            if (! $applies || in_array($body, $given, true) || $amount <= 0) {
+                continue;
+            }
+            $result['details'][] = ['name' => $name, 'type' => 'percentage', 'rate' => (float) $rate, 'cap' => null, 'amount' => $amount, '_statutory' => $body];
+            $result['total'] = Money::add($result['total'], $amount);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Who the contributions go to, as at this payslip: PAYE state (the
+     * employee's state of residence, else their address state, else the
+     * business's state), PFA, RSA PIN and NHF number.
+     *
+     * @return array<string, mixed>
+     */
+    public function statutorySnapshot(Employee $employee, ?Tenant $tenant, float $pensionablePay): array
+    {
+        return [
+            'tax_state' => $employee->tax_state ?: ($employee->state ?: $tenant?->state),
+            'pfa_name' => $employee->pfa_name,
+            'rsa_pin' => $employee->rsa_pin,
+            'nhf_number' => $employee->nhf_number,
+            'pensionable_pay' => $pensionablePay,
         ];
     }
 

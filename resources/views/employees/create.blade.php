@@ -261,6 +261,41 @@
                         </div>
                     </div>
 
+                    <!-- Statutory contributions (tax pack 1) -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">PAYE, pension and NHF</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <x-searchable-select
+                                    name="tax_state"
+                                    label="State of residence (for PAYE)"
+                                    :options="$states->pluck('name')->toArray()"
+                                    :value="old('tax_state') ?? ''"
+                                    placeholder="Same as the business"
+                                    search-placeholder="Search states..."
+                                    :has-error="$errors->has('tax_state')" />
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">PAYE goes to this state's Internal Revenue Service. Left empty: the address state, then the business's state.</p>
+                                @error('tax_state')
+                                    <p id="tax_state-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div>
+                                <x-field name="pfa_name" label="Pension fund administrator (PFA)" :value="old('pfa_name')" maxlength="150" />
+                            </div>
+                            <div>
+                                <x-field name="rsa_pin" label="RSA PIN" :value="old('rsa_pin')" maxlength="30" help="Retirement Savings Account PIN, e.g. PEN100000000000." />
+                            </div>
+                            <div>
+                                <x-field name="nhf_number" label="NHF number" :value="old('nhf_number')" maxlength="30" />
+                                <label class="mt-2 flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                                    <input type="hidden" name="nhf_registered" value="0">
+                                    <input type="checkbox" name="nhf_registered" value="1" @checked(old('nhf_registered')) class="rounded border-gray-300 dark:border-gray-600">
+                                    Deduct NHF (registered with the National Housing Fund)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Emergency Contact -->
                     <div class="mb-8">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">

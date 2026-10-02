@@ -21,6 +21,7 @@ use App\Models\Payroll;
 use App\Models\SalesReceipt;
 use App\Models\VendorCredit;
 use App\Models\VendorCreditRefund;
+use App\Support\PayrollStatutory;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -129,8 +130,24 @@ class JournalService implements JournalServiceInterface
         if (preg_match('/garnish|court|child.?support|alimony/', $name)) {
             return $this->acct($tenantId, 'garnishments_payable');
         }
+        if (PayrollStatutory::classify($name) === 'nhf') {
+            return $this->statutoryAcct($tenantId, 'nhf_payable');
+        }
 
         return $this->acct($tenantId, 'payroll_liabilities');
+    }
+
+    /**
+     * NHF, NSITF and ITF each have their own liability (tax pack 1); a
+     * business whose chart lacks that account keeps using Payroll Liabilities.
+     */
+    protected function statutoryAcct(int $tenantId, string $key): string
+    {
+        $code = $this->acct($tenantId, $key);
+
+        return ChartOfAccount::where('tenant_id', $tenantId)->where('account_code', $code)->exists()
+            ? $code
+            : $this->acct($tenantId, 'payroll_liabilities');
     }
 
     /**
@@ -139,6 +156,10 @@ class JournalService implements JournalServiceInterface
     protected function mapContributionToExpenseAccount(string $name, int $tenantId): string
     {
         $name = strtolower($name);
+
+        if (PayrollStatutory::classify($name) === 'nsitf') {
+            return $this->acct($tenantId, 'workers_comp');
+        }
 
         if (preg_match('/pension|provident|retirement|401k|superannuation|nssf/', $name)) {
             return $this->acct($tenantId, 'employer_pension');
@@ -159,6 +180,11 @@ class JournalService implements JournalServiceInterface
     protected function mapContributionToLiabilityAccount(string $name, int $tenantId): string
     {
         $name = strtolower($name);
+
+        $body = PayrollStatutory::classify($name);
+        if (in_array($body, ['nhf', 'nsitf', 'itf'], true)) {
+            return $this->statutoryAcct($tenantId, PayrollStatutory::LIABILITY_KEYS[$body]);
+        }
 
         if (preg_match('/pension|provident|retirement|401k|superannuation|nssf/', $name)) {
             return $this->acct($tenantId, 'pension_payable');

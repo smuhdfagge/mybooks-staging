@@ -56,6 +56,7 @@ class Payroll extends Model
         'employer_contribution_details',
         'total_deductions',
         'net_salary',
+        'statutory',
         'status',
         'payment_method',
         'payment_reference',
@@ -84,6 +85,7 @@ class Payroll extends Model
         'salary_structure_snapshot' => 'array',
         'total_deductions' => 'decimal:2',
         'net_salary' => 'decimal:2',
+        'statutory' => 'encrypted:array', // PAYE state, PFA, RSA PIN, NHF number at the time
     ];
 
     /** @return BelongsTo<Employee, $this> */

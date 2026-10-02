@@ -800,10 +800,14 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::get('payroll/{payroll}/payslip', [PayrollController::class, 'payslip'])->name('payroll.payslip');
         Route::get('payroll-batches/{payrollBatch}/payslips', [PayrollController::class, 'batchPayslips'])->name('payroll-batches.payslips');
         Route::get('payroll-liabilities', [PayrollLiabilityController::class, 'index'])->name('payroll.liabilities');
+        Route::get('payroll-liabilities/schedule/{body}', [PayrollLiabilityController::class, 'schedule'])->name('payroll.liabilities.schedule');
     });
     Route::post('payroll-liabilities/remit', [PayrollLiabilityController::class, 'remit'])
         ->middleware('permission:edit payroll')
         ->name('payroll.liabilities.remit');
+    Route::put('payroll-liabilities/settings', [PayrollLiabilityController::class, 'updateSettings'])
+        ->middleware('permission:edit payroll')
+        ->name('payroll.liabilities.settings');
     Route::middleware('permission:edit payroll')->group(function () {
         Route::get('payroll/{payroll}/edit', [PayrollController::class, 'edit'])->name('payroll.edit');
         Route::put('payroll/{payroll}', [PayrollController::class, 'update'])->name('payroll.update');
