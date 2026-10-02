@@ -53,4 +53,13 @@ class PhaseETest extends TestCase
         $this->assertStringNotContainsString('if(query.length', $search);
         $this->assertStringContainsString('$wire.query', $search);
     }
+
+    public function test_chart_loader_is_ready_when_alpine_starts(): void
+    {
+        // The analytics page calls window.loadChart() from x-init, which runs
+        // when Livewire starts Alpine; it was defined after that, so the
+        // three analytics charts stayed empty.
+        $js = file_get_contents(resource_path('js/app.js'));
+        $this->assertLessThan(strpos($js, 'Livewire.start()'), strpos($js, 'window.loadChart ='));
+    }
 }
