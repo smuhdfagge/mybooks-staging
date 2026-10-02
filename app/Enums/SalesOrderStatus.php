@@ -5,7 +5,8 @@ namespace App\Enums;
 /**
  * Sales order statuses and the moves between them (finding Q3).
  * Processing and completed follow deliveries; invoiced follows
- * conversion. Cancelled is final.
+ * conversion. Cancelling a delivery note can take an order back to
+ * confirmed. Cancelled is final.
  */
 enum SalesOrderStatus: string implements DocumentStatus
 {
@@ -24,9 +25,9 @@ enum SalesOrderStatus: string implements DocumentStatus
         return match ($this) {
             self::Draft => [self::Confirmed, self::Cancelled],
             self::Confirmed => [self::Processing, self::Invoiced, self::Completed, self::Cancelled],
-            self::Processing => [self::Invoiced, self::Completed, self::Cancelled],
+            self::Processing => [self::Confirmed, self::Invoiced, self::Completed, self::Cancelled],
             self::Invoiced => [self::Processing, self::Completed, self::Confirmed],
-            self::Completed => [self::Processing, self::Invoiced],
+            self::Completed => [self::Confirmed, self::Processing, self::Invoiced],
             self::Cancelled => [],
         };
     }

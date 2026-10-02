@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\DeliveryNoteStatus;
 use App\Traits\BelongsToTenant;
+use App\Traits\GuardsStatusTransitions;
 use App\Traits\HasDocumentNumber;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,11 +12,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class DeliveryNote extends Model
 {
     use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
-    use HasDocumentNumber;
+    use GuardsStatusTransitions, HasDocumentNumber;
 
     const STATUS_DRAFT = 'draft';
 
@@ -34,6 +37,7 @@ class DeliveryNote extends Model
         'delivery_number',
         'delivery_date',
         'status',
+        'dispatched_at',
         'shipping_method',
         'tracking_number',
         'shipping_address',
@@ -46,6 +50,7 @@ class DeliveryNote extends Model
     protected $casts = [
         'delivery_date' => 'date',
         'received_at' => 'datetime',
+        'dispatched_at' => 'datetime',
     ];
 
     /** @return BelongsTo<Customer, $this> */
@@ -85,92 +90,64 @@ class DeliveryNote extends Model
     }
 
     /**
-     * Mark delivery as dispatched.
+     * Dispatch the goods: from now on they count as delivered on the sales
+     * order (quantity_fulfilled and the order's status). No stock moves here;
+     * see SaveDeliveryNote for the stock rule.
      */
-    public function dispatch(): bool
+    public function dispatch(): void
     {
-        if ($this->status !== self::STATUS_DRAFT) {
-            return false;
-        }
-
-        $this->update(['status' => self::STATUS_DISPATCHED]);
-
-        return true;
+        DB::transaction(function () {
+            $this->update(['status' => DeliveryNoteStatus::Dispatched->value, 'dispatched_at' => now()]);
+            $this->applyToOrder(1);
+        });
     }
 
-    /**
-     * Confirm delivery — updates sales order fulfillment and optionally deducts inventory.
-     */
-    public function confirmDelivery(string $receivedBy): bool
+    /** The customer has the goods: record who received them. */
+    public function markDelivered(string $receivedBy): void
     {
-        if (in_array($this->status, [self::STATUS_DELIVERED, self::STATUS_CANCELLED])) {
-            return false;
-        }
-
         $this->update([
-            'status' => self::STATUS_DELIVERED,
+            'status' => DeliveryNoteStatus::Delivered->value,
             'received_by' => $receivedBy,
             'received_at' => now(),
         ]);
-
-        // Update sales order fulfilled quantities
-        if ($this->sales_order_id) {
-            $salesOrder = $this->salesOrder;
-            foreach ($this->items as $dnItem) {
-                if ($dnItem->item_id) {
-                    $soItem = $salesOrder->items()
-                        ->where('item_id', $dnItem->item_id)
-                        ->first();
-                    if ($soItem) {
-                        $soItem->increment('quantity_fulfilled', $dnItem->quantity_delivered);
-                    }
-                }
-            }
-            $salesOrder->updateFulfillmentStatus();
-        }
-
-        // Deduct inventory
-        $this->deductInventory();
-
-        return true;
     }
 
-    /**
-     * Deduct inventory based on delivered quantities.
-     */
-    protected function deductInventory(): void
+    /** Cancel the note. If it was dispatched, its quantities come off the order again. */
+    public function cancel(): void
     {
-        $tenantId = $this->tenant_id;
+        DB::transaction(function () {
+            $wasCounted = in_array($this->status, DeliveryNoteStatus::countedValues(), true);
+            $this->update(['status' => DeliveryNoteStatus::Cancelled->value]);
+            if ($wasCounted) {
+                $this->applyToOrder(-1);
+            }
+        });
+    }
 
-        foreach ($this->items as $dnItem) {
-            if (! $dnItem->item_id || $dnItem->quantity_delivered <= 0) {
+    /** Add (+1) or take off (-1) this note's quantities on its order lines. */
+    protected function applyToOrder(int $sign): void
+    {
+        if (! $this->sales_order_id) {
+            return;
+        }
+
+        foreach ($this->items()->get() as $line) {
+            if (! $line->sales_order_item_id) {
                 continue;
             }
-
-            $item = Item::find($dnItem->item_id);
-            if (! $item || ! $item->track_inventory || $item->type === 'service') {
-                continue;
-            }
-
-            $inventory = Inventory::where('item_id', $dnItem->item_id)
-                ->where('tenant_id', $tenantId)
-                ->first();
-
-            if ($inventory) {
-                $inventory->quantity = max(0, $inventory->quantity - $dnItem->quantity_delivered);
-                $inventory->save();
-
-                InventoryHistory::create([
-                    'tenant_id' => $tenantId,
-                    'item_id' => $dnItem->item_id,
-                    'type' => 'out',
-                    'quantity' => -$dnItem->quantity_delivered,
-                    'reference_type' => 'delivery_note',
-                    'reference_id' => $this->id,
-                    'notes' => "Delivered via DN #{$this->delivery_number}",
-                    'created_by' => auth()->id(),
-                ]);
+            $orderLine = SalesOrderItem::whereKey($line->sales_order_item_id)->lockForUpdate()->first();
+            if ($orderLine) {
+                $orderLine->quantity_fulfilled = max(0, round((float) $orderLine->quantity_fulfilled + $sign * (float) $line->quantity_delivered, 2));
+                $orderLine->save();
             }
         }
+
+        $this->salesOrder()->first()?->updateFulfillmentStatus();
+    }
+
+    /** Allowed status moves. */
+    protected static function statusEnum(): string
+    {
+        return DeliveryNoteStatus::class;
     }
 }
