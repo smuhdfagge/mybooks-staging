@@ -15,8 +15,8 @@ To start a session, say: **"Do session N of docs/FEATURE-PLAN.md"**.
 | 2 | Supplier credits, purchase returns, supplier advances | `feature/supplier-credits` | PR #18 open |
 | 3 | Quotations: screens, email with PDF, expiry, convert | `feature/quotations` | PR #19 open |
 | 4 | Delivery notes: partial deliveries, printable note | `feature/delivery-notes` | PR #20 open (merge after #19) |
-| 5 | Withholding tax on sales and purchases, WHT credits, schedules | `wip/withholding-tax` | Started; continue from the WIP branch |
-| 6 | VAT return in the NRS format: standard, zero-rated and exempt supplies | — | To do |
+| 5 | Withholding tax on sales and purchases, WHT credits, schedules | `wip/withholding-tax`, `wip/wht-b` | Two partial attempts; pick the better base (`wip/wht-b` has WHT setup and purchases committed) and finish |
+| 6 | VAT return in the NRS format: standard, zero-rated and exempt supplies | `wip/vat-return` | Built (3 commits) but not yet checked; verify, test on MariaDB, browser-check, open PR |
 | 7 | Customer credit notes, with returned goods back into stock (A15) | `wip/customer-credit-notes` | Started; continue from the WIP branch |
 | 8 | Auto-reversing journals (accruals) | `wip/accruals` (shared with 9) | Started; take the reversing-journal part only |
 | 9 | Prepaid expense and deferred revenue schedules | `wip/accruals` (shared with 8) | Started; take the schedules part |
@@ -25,6 +25,8 @@ To start a session, say: **"Do session N of docs/FEATURE-PLAN.md"**.
 | 12 | Warehouses: stock per location, default warehouse for existing stock | — | To do |
 | 13 | Stock transfers between warehouses | — | To do (needs 12) |
 | 14 | Assembly / bill of materials | — | To do (after 12) |
+
+`wip/payroll-remit-alt` is an earlier duplicate of item 1; ignore it and delete it once #17 merges.
 
 Later, not in this batch: multi-currency, bank feeds (Mono/Okra),
 SMS/WhatsApp reminders, Paystack auto-renewal, e-invoicing.
