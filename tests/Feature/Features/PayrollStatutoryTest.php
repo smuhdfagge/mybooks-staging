@@ -10,7 +10,9 @@ use App\Models\SalaryStructure;
 use App\Models\StatutoryRemittance;
 use App\Models\StatutoryTaxTemplate;
 use App\Models\Tenant;
+use App\Services\Payroll\StatutorySchedule;
 use App\Services\PayrollTaxService;
+use Carbon\Carbon;
 use Tests\TestCase;
 
 /**
@@ -186,8 +188,8 @@ class PayrollStatutoryTest extends TestCase
         $this->assertEqualsWithDelta(0, $this->balance('2320'), 0.001);
         $this->assertEqualsWithDelta(-81000, $this->balance('1100'), 0.001);
 
-        $pension = app(\App\Services\Payroll\StatutorySchedule::class)
-            ->summary($this->tenant->id, \Carbon\Carbon::parse('2026-09-01'))->firstWhere('body', 'pension');
+        $pension = app(StatutorySchedule::class)
+            ->summary($this->tenant->id, Carbon::parse('2026-09-01'))->firstWhere('body', 'pension');
         $this->assertEqualsWithDelta(81000, $pension->due, 0.001);
         $this->assertEqualsWithDelta(0, $pension->outstanding, 0.001);
     }
