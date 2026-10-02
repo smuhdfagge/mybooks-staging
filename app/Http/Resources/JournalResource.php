@@ -15,6 +15,8 @@ class JournalResource extends JsonResource
             'id' => $this->id,
             'journal_number' => $this->journal_number,
             'journal_date' => $this->journal_date?->format('Y-m-d'),
+            'reverse_on' => $this->reverse_on?->format('Y-m-d'),
+            'auto_reversal_journal_id' => $this->auto_reversal_journal_id,
             'reference' => $this->reference,
             'description' => $this->description,
             'total_debit' => (float) $this->total_debit,

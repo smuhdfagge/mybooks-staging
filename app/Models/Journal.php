@@ -22,10 +22,18 @@ class Journal extends Model
     /** Year-end closing journal: kept out of the profit and loss (A8). */
     public const TYPE_CLOSING = 'closing';
 
+    /** The automatic reversal of a journal with a "reverse on" date. */
+    public const TYPE_AUTO_REVERSAL = 'auto_reversal';
+
+    /** One month released from a prepaid expense or deferred revenue schedule. */
+    public const TYPE_SCHEDULE_RELEASE = 'schedule_release';
+
     protected $fillable = [
         'tenant_id',
         'journal_number',
         'journal_date',
+        'reverse_on',
+        'auto_reversal_journal_id',
         'reference',
         'description',
         'total_debit',
@@ -42,6 +50,7 @@ class Journal extends Model
 
     protected $casts = [
         'journal_date' => 'date',
+        'reverse_on' => 'date',
         'posted_at' => 'datetime',
         'total_debit' => 'decimal:2',
         'total_credit' => 'decimal:2',
@@ -52,6 +61,16 @@ class Journal extends Model
     public function entries(): HasMany
     {
         return $this->hasMany(JournalEntry::class);
+    }
+
+    /**
+     * The journal that reversed this one on its "reverse on" date.
+     *
+     * @return BelongsTo<Journal, $this>
+     */
+    public function autoReversal(): BelongsTo
+    {
+        return $this->belongsTo(Journal::class, 'auto_reversal_journal_id');
     }
 
     /** @return BelongsTo<User, $this> */

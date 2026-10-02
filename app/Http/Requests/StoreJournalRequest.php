@@ -41,6 +41,8 @@ class StoreJournalRequest extends FormRequest
             'journal_date' => ['required', 'date'],
             'reference' => ['nullable', 'string', 'max:100'],
             'description' => ['required', 'string', 'max:500'],
+            // Accruals: reverse the journal automatically on this date.
+            'reverse_on' => ['nullable', 'date'],
             'entries' => ['required', 'array', 'min:2'],
             'entries.*.account_id' => ['required', Rule::exists('chart_of_accounts', 'id')->where('tenant_id', $tenantId)],
             'entries.*.description' => ['nullable', 'string', 'max:255'],
@@ -52,6 +54,11 @@ class StoreJournalRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
+            $journalDate = $this->input('journal_date') ?? $this->route('journal')?->journal_date;
+            if ($this->filled('reverse_on') && $journalDate && strtotime((string) $this->input('reverse_on')) <= strtotime((string) $journalDate)) {
+                $validator->errors()->add('reverse_on', 'The reverse date must be after the journal date.');
+            }
+
             $entries = $this->input('entries');
             if (! is_array($entries) || $validator->errors()->isNotEmpty()) {
                 return;

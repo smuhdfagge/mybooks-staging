@@ -65,6 +65,26 @@ Schedule::command('transactions:process-recurring')
 
 /*
 |--------------------------------------------------------------------------
+| Accruals and prepayments
+|--------------------------------------------------------------------------
+*/
+
+// Reverse journals whose "reverse on" date has come (accruals)
+Schedule::command('journals:post-reversals')
+    ->dailyAt('05:30')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->appendOutputTo(storage_path('logs/accruals.log'));
+
+// Release the months due on prepaid expense and deferred revenue schedules
+Schedule::command('accruals:release')
+    ->dailyAt('05:40')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->appendOutputTo(storage_path('logs/accruals.log'));
+
+/*
+|--------------------------------------------------------------------------
 | Data Retention & Purging
 |--------------------------------------------------------------------------
 */

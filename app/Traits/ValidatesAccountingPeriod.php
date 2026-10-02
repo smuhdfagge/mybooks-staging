@@ -2,7 +2,7 @@
 
 namespace App\Traits;
 
-use App\Models\AccountingPeriod;
+use App\Services\Accounting\PostingLock;
 use Illuminate\Validation\ValidationException;
 
 trait ValidatesAccountingPeriod
@@ -77,9 +77,9 @@ trait ValidatesAccountingPeriod
             return;
         }
 
-        if (AccountingPeriod::isDateInClosedPeriod($date, $tenantId)) {
+        if ($reason = PostingLock::reasonFor($date, (int) $tenantId)) {
             throw ValidationException::withMessages([
-                $this->getPeriodDateField() => [AccountingPeriod::getClosedPeriodMessage($date)],
+                $this->getPeriodDateField() => [$reason],
             ]);
         }
     }
@@ -101,17 +101,17 @@ trait ValidatesAccountingPeriod
 
         // Check original date (in case record was in a now-closed period)
         $originalDate = $this->getOriginal($this->getPeriodDateField());
-        if ($originalDate && AccountingPeriod::isDateInClosedPeriod($originalDate, $tenantId)) {
+        if ($originalDate && ($reason = PostingLock::reasonFor($originalDate, (int) $tenantId))) {
             throw ValidationException::withMessages([
-                $this->getPeriodDateField() => ['This record belongs to a closed accounting period and cannot be modified.'],
+                $this->getPeriodDateField() => ['This record is dated in a closed or locked period and cannot be changed. '.$reason],
             ]);
         }
 
         // Check new date
         $newDate = $this->getTransactionDate();
-        if (AccountingPeriod::isDateInClosedPeriod($newDate, $tenantId)) {
+        if ($reason = PostingLock::reasonFor($newDate, (int) $tenantId)) {
             throw ValidationException::withMessages([
-                $this->getPeriodDateField() => [AccountingPeriod::getClosedPeriodMessage($newDate)],
+                $this->getPeriodDateField() => [$reason],
             ]);
         }
     }
@@ -132,9 +132,9 @@ trait ValidatesAccountingPeriod
             return;
         }
 
-        if (AccountingPeriod::isDateInClosedPeriod($date, $tenantId)) {
+        if ($reason = PostingLock::reasonFor($date, (int) $tenantId)) {
             throw ValidationException::withMessages([
-                'period' => ['This record belongs to a closed accounting period and cannot be deleted.'],
+                'period' => ['This record is dated in a closed or locked period and cannot be deleted. '.$reason],
             ]);
         }
     }

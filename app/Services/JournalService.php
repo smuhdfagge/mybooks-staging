@@ -21,6 +21,7 @@ use App\Models\Payroll;
 use App\Models\SalesReceipt;
 use App\Models\VendorCredit;
 use App\Models\VendorCreditRefund;
+use App\Services\Accounting\PostingLock;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -1773,6 +1774,55 @@ class JournalService implements JournalServiceInterface
             $journal->update(['status' => 'reversed']);
 
             return $reversingJournal;
+        });
+    }
+
+    /**
+     * Post the automatic reversal of a journal that has a "reverse on" date
+     * (accruals). Dated the reverse-on date, or, when that date is in a
+     * closed or locked period, the first date that can be posted to; the
+     * description says so. The original stays posted. Safe to call twice:
+     * the original is locked and only reversed once.
+     */
+    public function postAutoReversal(Journal $journal): ?Journal
+    {
+        return DB::transaction(function () use ($journal) {
+            $journal = Journal::withoutGlobalScopes()->with('entries.account')->lockForUpdate()->find($journal->id);
+            if (! $journal || $journal->auto_reversal_journal_id || ! $journal->reverse_on
+                || ! $journal->is_posted || $journal->status !== 'posted') {
+                return null;
+            }
+
+            $due = $journal->reverse_on->copy()->startOfDay();
+            $date = PostingLock::firstOpenDate($journal->tenant_id, $due);
+            $note = $date->equalTo($due) ? ''
+                : " (due {$due->format('d M Y')}, but the books are closed or locked then, so posted on {$date->format('d M Y')})";
+
+            $reversal = Journal::create([
+                'tenant_id' => $journal->tenant_id,
+                'journal_number' => Journal::generateNumber($journal->tenant_id),
+                'journal_date' => $date->toDateString(),
+                'reference' => "REV-{$journal->journal_number}",
+                'description' => "Automatic reversal of {$journal->journal_number}: {$journal->description}{$note}",
+                'reference_type' => Journal::class,
+                'reference_id' => $journal->id,
+                'journal_type' => Journal::TYPE_AUTO_REVERSAL,
+                'status' => 'posted',
+                'is_posted' => true,
+                'posted_at' => now(),
+                'created_by' => $journal->created_by,
+            ]);
+            foreach ($journal->entries as $entry) {
+                $this->createEntry($reversal, $entry->account->account_code, (float) $entry->credit, (float) $entry->debit,
+                    'Reversal: '.($entry->description ?: $journal->description));
+            }
+            $reversal->updateTotals();
+            $reversal->save();
+            $this->updateAccountBalances($reversal);
+
+            $journal->forceFill(['auto_reversal_journal_id' => $reversal->id])->withoutPeriodValidation()->saveQuietly();
+
+            return $reversal;
         });
     }
 

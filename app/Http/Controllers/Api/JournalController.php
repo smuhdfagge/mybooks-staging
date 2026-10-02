@@ -105,6 +105,7 @@ class JournalController extends BaseApiController
                     'tenant_id' => $tenantId,
                     'journal_number' => Journal::generateNumber($tenantId),
                     'journal_date' => $validated['journal_date'],
+                    'reverse_on' => $validated['reverse_on'] ?? null,
                     'reference' => $validated['reference'] ?? null,
                     'description' => $validated['description'],
                     'total_debit' => $totalDebit,

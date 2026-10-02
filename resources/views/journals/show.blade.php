@@ -85,6 +85,18 @@
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</dt>
                                 <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100 capitalize">{{ $journal->status }}</dd>
                             </div>
+                            @if($journal->reverse_on)
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Reverses automatically</dt>
+                                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                                    @if($journal->autoReversal)
+                                        Reversed by <a href="{{ route('journals.show', $journal->autoReversal) }}" class="text-indigo-600 dark:text-indigo-400">{{ $journal->autoReversal->journal_number }}</a> on {{ $journal->autoReversal->journal_date->format('M d, Y') }}
+                                    @else
+                                        On {{ $journal->reverse_on->format('M d, Y') }}{{ $journal->is_posted ? '' : ' (once posted)' }}
+                                    @endif
+                                </dd>
+                            </div>
+                            @endif
                             @if($journal->is_posted && $journal->posted_at)
                             <div>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Posted At</dt>

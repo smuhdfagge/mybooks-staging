@@ -35,6 +35,7 @@ class AccountCodeService
         // Liabilities
         'accounts_payable' => '2000',
         'credit_card_payable' => '2100',
+        'accrued_expenses' => '2200',
         'accrued_salaries' => '2210',
         'payroll_liabilities' => '2300',
         'tax_payable' => '2310',
@@ -43,6 +44,7 @@ class AccountCodeService
         'union_dues_payable' => '2340',
         'customer_deposits' => '2350',
         'garnishments_payable' => '2360',
+        'deferred_revenue' => '2380', // income received before it is earned
         'sales_tax_payable' => '2400', // output VAT
         'vat_payable' => '2410', // net VAT owed after a return is settled
 

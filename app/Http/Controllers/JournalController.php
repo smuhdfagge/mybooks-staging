@@ -47,6 +47,7 @@ class JournalController extends Controller
                 'tenant_id' => $tenantId,
                 'journal_number' => Journal::generateNumber($tenantId),
                 'journal_date' => $validated['journal_date'],
+                'reverse_on' => $validated['reverse_on'] ?? null,
                 'reference' => $validated['reference'] ?? null,
                 'description' => $validated['description'] ?? null,
                 'total_debit' => $totalDebit,
@@ -73,7 +74,7 @@ class JournalController extends Controller
 
     public function show(Journal $journal)
     {
-        $journal->load(['entries.account', 'createdBy', 'approvedBy']);
+        $journal->load(['entries.account', 'createdBy', 'approvedBy', 'autoReversal']);
 
         return view('journals.show', compact('journal'));
     }
@@ -119,6 +120,7 @@ class JournalController extends Controller
         DB::transaction(function () use ($validated, $journal, $totalDebit, $totalCredit) {
             $journal->update([
                 'journal_date' => $validated['journal_date'],
+                'reverse_on' => $validated['reverse_on'] ?? null,
                 'reference' => $validated['reference'] ?? null,
                 'description' => $validated['description'],
                 'total_debit' => $totalDebit,

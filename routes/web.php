@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountingPeriodController;
+use App\Http\Controllers\AccrualScheduleController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AllowanceController;
 use App\Http\Controllers\AnalyticsController;
@@ -884,6 +885,18 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     Route::post('journals/{journal}/post', [JournalController::class, 'post'])
         ->middleware('permission:post journals')
         ->name('journals.post');
+
+    // Prepaid expenses and income received in advance, released monthly
+    Route::middleware('permission:create journals')->group(function () {
+        Route::get('accrual-schedules/create', [AccrualScheduleController::class, 'create'])->name('accrual-schedules.create');
+        Route::post('accrual-schedules', [AccrualScheduleController::class, 'store'])->name('accrual-schedules.store');
+        Route::post('accrual-schedules/{accrualSchedule}/release', [AccrualScheduleController::class, 'release'])->name('accrual-schedules.release');
+        Route::post('accrual-schedules/{accrualSchedule}/cancel', [AccrualScheduleController::class, 'cancel'])->name('accrual-schedules.cancel');
+    });
+    Route::middleware('permission:view journals')->group(function () {
+        Route::get('accrual-schedules', [AccrualScheduleController::class, 'index'])->name('accrual-schedules.index');
+        Route::get('accrual-schedules/{accrualSchedule}', [AccrualScheduleController::class, 'show'])->name('accrual-schedules.show');
+    });
 
     /*
     |--------------------------------------------------------------------------
