@@ -12,6 +12,7 @@ class DeliveryNoteItem extends Model
 
     protected $fillable = [
         'delivery_note_id',
+        'sales_order_item_id',
         'item_id',
         'description',
         'quantity_ordered',
@@ -27,6 +28,12 @@ class DeliveryNoteItem extends Model
     public function deliveryNote(): BelongsTo
     {
         return $this->belongsTo(DeliveryNote::class);
+    }
+
+    /** @return BelongsTo<SalesOrderItem, $this> */
+    public function salesOrderItem(): BelongsTo
+    {
+        return $this->belongsTo(SalesOrderItem::class);
     }
 
     /** @return BelongsTo<Item, $this> */

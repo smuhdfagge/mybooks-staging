@@ -93,39 +93,46 @@ class SalesOrder extends Model
     }
 
     /**
-     * Update fulfillment status based on item quantities.
+     * Set the order's status from what has been delivered (dispatched
+     * delivery notes) and invoiced:
+     *   everything delivered        -> completed
+     *   some delivered              -> processing
+     *   nothing delivered (again)   -> invoiced if anything is invoiced, else confirmed
+     * Draft and cancelled orders are left alone.
      */
     public function updateFulfillmentStatus(): void
     {
         $this->load('items');
-        $allFulfilled = true;
-        $anyFulfilled = false;
 
-        foreach ($this->items as $item) {
-            if ($item->quantity_fulfilled >= $item->quantity) {
-                $anyFulfilled = true;
-            } else {
-                $allFulfilled = false;
-                if ($item->quantity_fulfilled > 0) {
-                    $anyFulfilled = true;
-                }
-            }
+        if (in_array($this->status, [SalesOrderStatus::Draft->value, SalesOrderStatus::Cancelled->value], true)) {
+            return;
         }
 
-        if ($allFulfilled && $anyFulfilled) {
-            $this->status = 'completed';
-        } elseif ($anyFulfilled) {
-            $this->status = 'processing';
-        }
+        $lines = $this->items;
+        $allDelivered = $lines->isNotEmpty() && $lines->every(fn ($l) => (float) $l->quantity_fulfilled + 0.001 >= (float) $l->quantity);
+        $anyDelivered = $lines->contains(fn ($l) => (float) $l->quantity_fulfilled > 0);
+        $anyInvoiced = $lines->contains(fn ($l) => (float) $l->quantity_invoiced > 0);
 
-        // Calculate fulfilled amount
-        $fulfilledAmount = $this->items->sum(function ($item) {
-            $ratio = $item->quantity > 0 ? $item->quantity_fulfilled / $item->quantity : 0;
+        $this->status = match (true) {
+            $allDelivered => SalesOrderStatus::Completed->value,
+            $anyDelivered => SalesOrderStatus::Processing->value,
+            $anyInvoiced => SalesOrderStatus::Invoiced->value,
+            default => SalesOrderStatus::Confirmed->value,
+        };
 
-            return $item->total * min($ratio, 1);
-        });
-        $this->total_fulfilled_amount = $fulfilledAmount;
+        $this->total_fulfilled_amount = round($lines->sum(function ($line) {
+            $ratio = (float) $line->quantity > 0 ? (float) $line->quantity_fulfilled / (float) $line->quantity : 0;
+
+            return (float) $line->total * min($ratio, 1);
+        }), 2);
+
         $this->save();
+    }
+
+    /** Lines with quantities not yet invoiced. */
+    public function hasUninvoicedItems(): bool
+    {
+        return $this->items()->whereColumn('quantity_invoiced', '<', 'quantity')->exists();
     }
 
     /**

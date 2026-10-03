@@ -153,12 +153,6 @@ parameters:
 		-
 			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
 			identifier: argument.type
-			count: 4
-			path: app/Http/Controllers/DeliveryNoteController.php
-
-		-
-			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
-			identifier: argument.type
 			count: 1
 			path: app/Http/Controllers/InventoryController.php
 
@@ -539,12 +533,6 @@ parameters:
 			identifier: new.static
 			count: 1
 			path: app/Models/Deduction.php
-
-		-
-			message: '#^Parameter \#2 \$amount of method Illuminate\\Database\\Eloquent\\Model\:\:increment\(\) expects float\|int, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/DeliveryNote.php
 
 		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'

@@ -454,7 +454,7 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     });
 
     Route::middleware('feature:delivery_notes')->group(function () {
-        // Delivery Notes
+        // Delivery Notes (made from sales orders; they share the invoice permissions)
         Route::middleware('permission:create invoices')->group(function () {
             Route::get('delivery-notes/create', [DeliveryNoteController::class, 'create'])->name('delivery-notes.create');
             Route::post('delivery-notes', [DeliveryNoteController::class, 'store'])->name('delivery-notes.store');
@@ -463,17 +463,19 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
             Route::get('delivery-notes', [DeliveryNoteController::class, 'index'])->name('delivery-notes.index');
             Route::get('delivery-notes/{deliveryNote}', [DeliveryNoteController::class, 'show'])->name('delivery-notes.show');
             Route::get('delivery-notes/{deliveryNote}/print', [DeliveryNoteController::class, 'print'])->name('delivery-notes.print');
+            Route::get('delivery-notes/{deliveryNote}/pdf', [DeliveryNoteController::class, 'pdf'])->name('delivery-notes.pdf');
         });
         Route::middleware('permission:edit invoices')->group(function () {
             Route::post('delivery-notes/{deliveryNote}/dispatch', [DeliveryNoteController::class, 'dispatch'])->name('delivery-notes.dispatch');
             Route::post('delivery-notes/{deliveryNote}/confirm', [DeliveryNoteController::class, 'confirmDelivery'])->name('delivery-notes.confirm');
+            Route::post('delivery-notes/{deliveryNote}/cancel', [DeliveryNoteController::class, 'cancel'])->name('delivery-notes.cancel');
         });
         Route::delete('delivery-notes/{deliveryNote}', [DeliveryNoteController::class, 'destroy'])
             ->middleware('permission:delete invoices')
             ->name('delivery-notes.destroy');
         // Delivery note from Sales Order
         Route::post('sales-orders/{salesOrder}/delivery-note', [SalesOrderController::class, 'createDeliveryNote'])
-            ->middleware('permission:edit sales-orders')
+            ->middleware('permission:create invoices')
             ->name('sales-orders.delivery-note');
     });
 

@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Customer;
+use App\Actions\DeliveryNotes\DeleteDeliveryNote;
+use App\Actions\DeliveryNotes\SaveDeliveryNote;
+use App\Enums\DeliveryNoteStatus;
 use App\Models\DeliveryNote;
-use App\Models\DeliveryNoteItem;
 use App\Models\SalesOrder;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class DeliveryNoteController extends Controller
@@ -17,116 +18,106 @@ class DeliveryNoteController extends Controller
         return view('delivery-notes.index');
     }
 
-    public function create(Request $request)
+    /**
+     * A delivery note is made from a sales order. Without one, list the
+     * orders that still have goods to deliver.
+     */
+    public function create(Request $request, SaveDeliveryNote $save)
     {
         $tenantId = auth()->user()->tenant_id;
-        $customers = Customer::where('is_active', true)->get();
         $deliveryNumber = DeliveryNote::previewNumber($tenantId);
 
-        $salesOrder = null;
-        if ($request->has('sales_order_id')) {
-            $salesOrder = SalesOrder::with('items.item')
-                ->findOrFail($request->sales_order_id);
+        if (! $request->filled('sales_order_id')) {
+            $orders = SalesOrder::with('customer')
+                ->whereIn('status', SaveDeliveryNote::OPEN_ORDER_STATUSES)
+                ->whereHas('items', fn ($q) => $q->whereColumn('quantity_fulfilled', '<', 'quantity'))
+                ->latest('order_date')->limit(100)->get();
+
+            return view('delivery-notes.choose-order', compact('orders'));
         }
 
-        return view('delivery-notes.create', compact('customers', 'deliveryNumber', 'salesOrder'));
+        $salesOrder = SalesOrder::with(['items.item', 'customer'])->findOrFail($request->integer('sales_order_id'));
+        if (! in_array($salesOrder->status, SaveDeliveryNote::OPEN_ORDER_STATUSES, true)) {
+            return redirect()->route('sales-orders.show', $salesOrder)
+                ->with('error', "Sales order {$salesOrder->order_number} is {$salesOrder->status}, so it can't be delivered.");
+        }
+        $outstanding = $save->outstanding($salesOrder);
+
+        return view('delivery-notes.create', compact('deliveryNumber', 'salesOrder', 'outstanding'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, SaveDeliveryNote $save)
     {
         $tenantId = auth()->user()->tenant_id;
 
         $validated = $request->validate([
-            'customer_id' => ['required', Rule::exists('customers', 'id')->where('tenant_id', $tenantId)],
-            'sales_order_id' => ['nullable', Rule::exists('sales_orders', 'id')->where('tenant_id', $tenantId)],
-            'invoice_id' => ['nullable', Rule::exists('invoices', 'id')->where('tenant_id', $tenantId)],
+            'sales_order_id' => ['required', Rule::exists('sales_orders', 'id')->where('tenant_id', $tenantId)->whereNull('deleted_at')],
             'delivery_date' => 'required|date',
             'shipping_method' => 'nullable|string|max:100',
             'tracking_number' => 'nullable|string|max:100',
-            'shipping_address' => 'nullable|string',
-            'notes' => 'nullable|string',
-            'items' => 'required|array|min:1',
-            'items.*.item_id' => ['nullable', Rule::exists('items', 'id')->where('tenant_id', auth()->user()->tenant_id)],
-            'items.*.description' => 'required|string',
-            'items.*.quantity_ordered' => 'required|numeric|min:0',
-            'items.*.quantity_delivered' => 'required|numeric|min:0.01',
+            'shipping_address' => 'nullable|string|max:1000',
+            'notes' => 'nullable|string|max:2000',
+            'lines' => 'required|array|min:1',
+            'lines.*.sales_order_item_id' => 'required|integer',
+            'lines.*.quantity' => 'nullable|numeric|min:0',
         ]);
 
-        $deliveryNote = DB::transaction(function () use ($tenantId, $validated) {
-            $dn = DeliveryNote::create([
-                'tenant_id' => $tenantId,
-                'customer_id' => $validated['customer_id'],
-                'sales_order_id' => $validated['sales_order_id'] ?? null,
-                'invoice_id' => $validated['invoice_id'] ?? null,
-                'delivery_number' => DeliveryNote::generateNumber($tenantId),
-                'delivery_date' => $validated['delivery_date'],
-                'status' => 'draft',
-                'shipping_method' => $validated['shipping_method'] ?? null,
-                'tracking_number' => $validated['tracking_number'] ?? null,
-                'shipping_address' => $validated['shipping_address'] ?? null,
-                'notes' => $validated['notes'] ?? null,
-                'created_by' => auth()->id(),
-            ]);
+        $order = SalesOrder::findOrFail($validated['sales_order_id']);
+        $note = $save->create($order, $validated, auth()->id());
 
-            foreach ($validated['items'] as $itemData) {
-                DeliveryNoteItem::create([
-                    'delivery_note_id' => $dn->id,
-                    'item_id' => $itemData['item_id'] ?? null,
-                    'description' => $itemData['description'],
-                    'quantity_ordered' => $itemData['quantity_ordered'],
-                    'quantity_delivered' => $itemData['quantity_delivered'],
-                ]);
-            }
-
-            return $dn;
-        });
-
-        return redirect()->route('delivery-notes.show', $deliveryNote)->with('success', 'Delivery note created.');
+        return redirect()->route('delivery-notes.show', $note)->with('success', "Delivery note {$note->delivery_number} created.");
     }
 
     public function show(DeliveryNote $deliveryNote)
     {
-        $deliveryNote->load(['customer', 'salesOrder', 'invoice', 'items.item', 'createdBy']);
+        $deliveryNote->load(['customer', 'salesOrder.invoices', 'items.item', 'createdBy']);
 
         return view('delivery-notes.show', compact('deliveryNote'));
     }
 
     public function dispatch(DeliveryNote $deliveryNote)
     {
-        if (! $deliveryNote->dispatch()) {
-            return redirect()->back()->with('error', 'Only draft delivery notes can be dispatched.');
+        if ($deliveryNote->status !== DeliveryNoteStatus::Draft->value) {
+            return redirect()->back()->with('error', 'Only a draft delivery note can be dispatched.');
         }
 
-        return redirect()->back()->with('success', 'Delivery note dispatched.');
+        $deliveryNote->dispatch();
+
+        return redirect()->back()->with('success', 'Delivery note dispatched. The sales order now shows these goods as delivered.');
     }
 
     public function confirmDelivery(Request $request, DeliveryNote $deliveryNote)
     {
-        $validated = $request->validate([
-            'received_by' => 'required|string|max:255',
-        ]);
+        $validated = $request->validate(['received_by' => 'required|string|max:255']);
 
-        $result = DB::transaction(function () use ($deliveryNote, $validated) {
-            return $deliveryNote->confirmDelivery($validated['received_by']);
-        });
-
-        if (! $result) {
-            return redirect()->back()->with('error', 'This delivery note cannot be confirmed.');
+        if (! in_array($deliveryNote->status, [DeliveryNoteStatus::Dispatched->value, DeliveryNoteStatus::InTransit->value], true)) {
+            return redirect()->back()->with('error', 'Dispatch the delivery note before confirming delivery.');
         }
 
-        return redirect()->back()->with('success', 'Delivery confirmed. Inventory updated and fulfillment tracked.');
+        $deliveryNote->markDelivered($validated['received_by']);
+
+        return redirect()->back()->with('success', "Delivery confirmed: received by {$validated['received_by']}.");
     }
 
-    public function destroy(DeliveryNote $deliveryNote)
+    public function cancel(DeliveryNote $deliveryNote)
     {
-        if ($deliveryNote->status === DeliveryNote::STATUS_DELIVERED) {
-            return redirect()->back()->with('error', 'Cannot delete a delivered note.');
+        if (! DeliveryNoteStatus::from($deliveryNote->status)->canMoveTo(DeliveryNoteStatus::Cancelled)
+            || $deliveryNote->status === DeliveryNoteStatus::Cancelled->value) {
+            return redirect()->back()->with('error', "A {$deliveryNote->status} delivery note can't be cancelled.");
         }
 
-        DB::transaction(function () use ($deliveryNote) {
-            $deliveryNote->items()->delete();
-            $deliveryNote->delete();
-        });
+        $deliveryNote->cancel();
+
+        return redirect()->back()->with('success', 'Delivery note cancelled.');
+    }
+
+    public function destroy(DeliveryNote $deliveryNote, DeleteDeliveryNote $delete)
+    {
+        if ($reason = $delete->blockedBecause($deliveryNote)) {
+            return redirect()->back()->with('error', $reason);
+        }
+
+        $delete->handle($deliveryNote);
 
         return redirect()->route('delivery-notes.index')->with('success', 'Delivery note deleted.');
     }
@@ -137,5 +128,14 @@ class DeliveryNoteController extends Controller
         $tenant = auth()->user()->tenant;
 
         return view('delivery-notes.print', compact('deliveryNote', 'tenant'));
+    }
+
+    public function pdf(DeliveryNote $deliveryNote)
+    {
+        $deliveryNote->load(['customer', 'items.item', 'salesOrder']);
+        $tenant = auth()->user()->tenant;
+
+        return Pdf::loadView('delivery-notes.print', ['deliveryNote' => $deliveryNote, 'tenant' => $tenant, 'forPdf' => true])
+            ->download("delivery-note-{$deliveryNote->delivery_number}.pdf");
     }
 }
