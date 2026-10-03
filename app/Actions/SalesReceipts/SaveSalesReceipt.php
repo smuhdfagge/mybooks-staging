@@ -146,6 +146,7 @@ class SaveSalesReceipt
                 'discount' => $line['discount'] ?? 0,
                 'tax_rate' => $line['tax_rate'],
                 'tax_amount' => $line['tax_amount'],
+                'vat_treatment' => $line['vat_treatment'] ?? null,
                 'total' => $line['total'],
             ]);
         }

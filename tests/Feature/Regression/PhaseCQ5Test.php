@@ -186,6 +186,7 @@ class PhaseCQ5Test extends TestCase
         $this->createAuthenticatedUser(['view tax-rates', 'create tax-rates', 'edit chart-of-accounts']);
         TaxRate::create(['tenant_id' => $this->tenant->id, 'name' => 'VAT', 'code' => 'VAT', 'rate' => 7.5, 'type' => 'exclusive', 'applies_to' => 'both']);
         $rate = ['name' => 'VAT again', 'code' => 'VAT', 'rate' => 7.5, 'type' => 'exclusive', 'applies_to' => 'sales'];
+        $before = TaxRate::count(); // includes the default VAT rates every business starts with
 
         // The API ignored the code, so a second VAT went in.
         $this->postJson('/api/v1/tax-rates', $rate)->assertStatus(422)->assertJsonValidationErrors('code');
@@ -196,7 +197,7 @@ class PhaseCQ5Test extends TestCase
         $this->post(route('tax-rates.store'), $long)->assertSessionHasErrors('name');
         $this->postJson('/api/v1/tax-rates', $long)->assertStatus(422)->assertJsonValidationErrors('name');
 
-        $this->assertSame(1, TaxRate::count());
+        $this->assertSame($before, TaxRate::count());
     }
 
     // ── Chart of accounts ───────────────────────────────────────

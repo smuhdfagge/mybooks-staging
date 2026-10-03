@@ -710,6 +710,8 @@ class Phase3RegressionTest extends TestCase
     {
         $this->createAuthenticatedUser(['create invoices']);
         $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        // New businesses now start with the VAT rates (VAT return); this one removed them.
+        TaxRate::where('tenant_id', $this->tenant->id)->delete();
 
         $this->post(route('invoices.store'), $this->invoiceForm($customer->id, [
             ['description' => 'Service', 'quantity' => 1, 'unit_price' => 100, 'tax_rate' => 5],

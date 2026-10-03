@@ -5,6 +5,7 @@ namespace App\Http\Requests\Concerns;
 use App\Models\Item;
 use App\Models\TaxGroup;
 use App\Models\TaxRate;
+use App\Services\Accounting\VatTreatment;
 use Illuminate\Validation\Rule;
 
 /**
@@ -28,6 +29,8 @@ trait ValidatesSalesLines
             'items.*.discount' => ['nullable', 'numeric', 'min:0'],
             'items.*.discount_type' => ['nullable', 'in:fixed,percentage'],
             'items.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100', $this->configuredTaxRateRule()],
+            // Zero-rated, exempt or out of scope, for a line without VAT (VAT return).
+            'items.*.vat_treatment' => ['nullable', 'in:'.implode(',', VatTreatment::ALL)],
         ];
     }
 

@@ -50,6 +50,7 @@ use App\Http\Controllers\Reports\PayrollReportController;
 use App\Http\Controllers\Reports\PurchaseReportController;
 use App\Http\Controllers\Reports\SalesReportController;
 use App\Http\Controllers\Reports\TaxReportController;
+use App\Http\Controllers\Reports\VatReturnController;
 use App\Http\Controllers\SalaryStructureController;
 use App\Http\Controllers\SalesOrderController;
 use App\Http\Controllers\SalesReceiptController;
@@ -1015,6 +1016,12 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::get('/vat-gst-return', [TaxReportController::class, 'vatGstReturn'])->name('vat-gst-return');
         Route::post('/vat-gst-return/settle', [TaxReportController::class, 'settleVatReturn'])->name('vat-gst-return.settle')->middleware('permission:create journals');
         Route::get('/tax-liability', [TaxReportController::class, 'taxLiability'])->name('tax-liability');
+
+        // Monthly VAT return in the NRS VAT Form 002 layout
+        Route::get('/vat-return', [VatReturnController::class, 'show'])->name('vat-return');
+        Route::get('/vat-return/export', [VatReturnController::class, 'export'])->name('vat-return.export');
+        Route::post('/vat-return/classify', [VatReturnController::class, 'classify'])->name('vat-return.classify')->middleware('permission:file vat-returns');
+        Route::post('/vat-return/file', [VatReturnController::class, 'file'])->name('vat-return.file')->middleware('permission:file vat-returns');
 
         // Custom Report Builder
         Route::get('/custom', [CustomReportController::class, 'customReportIndex'])->name('custom.index');

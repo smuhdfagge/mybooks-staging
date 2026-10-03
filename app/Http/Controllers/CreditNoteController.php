@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CreditNote;
 use App\Models\CreditNoteItem;
 use App\Models\Invoice;
+use App\Services\Accounting\VatTreatment;
 use App\Services\JournalService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -50,6 +51,7 @@ class CreditNoteController extends Controller
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0',
             'items.*.tax_rate' => 'nullable|numeric|min:0|max:100',
+            'items.*.vat_treatment' => ['nullable', Rule::in(VatTreatment::ALL)],
         ]);
 
         if (! empty($validated['invoice_id'])
@@ -86,6 +88,7 @@ class CreditNoteController extends Controller
                     'unit_price' => $itemData['unit_price'],
                     'tax_rate' => $taxRate,
                     'tax_amount' => $taxAmount,
+                    'vat_treatment' => $itemData['vat_treatment'] ?? null,
                     'total' => $lineTotal + $taxAmount,
                 ]);
 

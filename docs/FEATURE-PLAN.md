@@ -14,9 +14,9 @@ To start a session, say: **"Do session N of docs/FEATURE-PLAN.md"**.
 | 1 | Payroll statutory remittances: PAYE by state, pension by PFA, NHF, NSITF, ITF | `feature/payroll-remittances` | Merged (#17) |
 | 2 | Supplier credits, purchase returns, supplier advances | `feature/supplier-credits` | Merged (#18) |
 | 3 | Quotations: screens, email with PDF, expiry, convert | `feature/quotations` | Merged (#19) |
-| 4 | Delivery notes: partial deliveries, printable note | `feature/delivery-notes` | PR #23 (into main; #20 had gone into the quotations branch) |
-| 5 | Withholding tax on sales and purchases, WHT credits, schedules | `feature/withholding-tax` | Done, PR open |
-| 6 | VAT return in the NRS format: standard, zero-rated and exempt supplies | `wip/vat-return` | Built (3 commits) but not yet checked; verify, test on MariaDB, browser-check, open PR |
+| 4 | Delivery notes: partial deliveries, printable note | `feature/delivery-notes` | Merged (#23) |
+| 5 | Withholding tax on sales and purchases, WHT credits, schedules | `feature/withholding-tax` | Merged (#24) |
+| 6 | VAT return in the NRS format: standard, zero-rated and exempt supplies | `feature/vat-return` | Done, PR open |
 | 7 | Customer credit notes, with returned goods back into stock (A15) | `wip/customer-credit-notes` | Started; continue from the WIP branch |
 | 8 | Auto-reversing journals (accruals) | `wip/accruals` (shared with 9) | Started; take the reversing-journal part only |
 | 9 | Prepaid expense and deferred revenue schedules | `wip/accruals` (shared with 8) | Started; take the schedules part |
