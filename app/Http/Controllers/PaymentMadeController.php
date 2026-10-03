@@ -119,6 +119,10 @@ class PaymentMadeController extends Controller
 
     public function destroy(PaymentMade $paymentMade, DeletePaymentMade $delete)
     {
+        if ($reason = $delete->blockedBecause($paymentMade)) {
+            return redirect()->back()->with('error', $reason);
+        }
+
         $delete->handle($paymentMade);
 
         return redirect()->route('payments-made.index')->with('success', 'Payment deleted.');

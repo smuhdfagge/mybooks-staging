@@ -3,6 +3,7 @@
 namespace App\Actions\Payments;
 
 use App\Models\PaymentMade;
+use App\Models\StatutoryRemittance;
 use App\Models\VendorAdvanceApplication;
 use App\Services\BankService;
 use Illuminate\Support\Facades\DB;
@@ -50,6 +51,25 @@ class DeletePaymentMade
             return 'This advance has been used against bills. Delete those payments first.';
         }
 
+        // WHT already paid over to the tax authority for this payment's month
+        // can't be taken back by deleting the payment, or WHT payable would go
+        // negative. Delete that WHT payment record first.
+        if ((float) $payment->wht_amount > 0 && $this->whtRemitted($payment)) {
+            return 'The WHT on this payment has already been paid over to the tax authority. Delete that WHT payment record first.';
+        }
+
         return null;
+    }
+
+    private function whtRemitted(PaymentMade $payment): bool
+    {
+        $date = $payment->payment_date;
+
+        return StatutoryRemittance::where('body', StatutoryRemittance::BODY_WHT)
+            ->where('period_start', '<=', $date)
+            ->where('period_end', '>=', $date->copy()->startOfDay())
+            ->when($payment->wht_authority, fn ($q) => $q->where('wht_authority', $payment->wht_authority))
+            ->when($payment->wht_state, fn ($q) => $q->where('wht_state', $payment->wht_state))
+            ->exists();
     }
 }

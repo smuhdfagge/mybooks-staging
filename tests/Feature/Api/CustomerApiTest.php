@@ -22,6 +22,10 @@ class CustomerApiTest extends TestCase
 
     public function test_health_endpoint_is_public(): void
     {
+        // Only the access rule is tested here. The backup check reads the real
+        // storage/app/backup-status.json, which an earlier local run may have
+        // left more than 26 hours old, so it is switched off.
+        config(['mybooks.backup.enabled' => false]);
         $response = $this->getJson('/api/v1/health');
         $response->assertOk()
             ->assertJsonPath('status', 'ok');
