@@ -45,6 +45,7 @@ use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\RecurrentBillController;
 use App\Http\Controllers\RecurrentExpenseController;
 use App\Http\Controllers\Reports\ComparativeReportController;
+use App\Http\Controllers\Reports\ControlReconciliationController;
 use App\Http\Controllers\Reports\CustomReportController;
 use App\Http\Controllers\Reports\FinancialReportController;
 use App\Http\Controllers\Reports\PayrollReportController;
@@ -1053,6 +1054,8 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::get('/customer-statement', [StatementController::class, 'pickCustomer'])->name('customer-statement');
         Route::middleware('feature:statements')->group(function () {
             Route::get('/supplier-statement', [StatementController::class, 'pickVendor'])->name('supplier-statement');
+            // Receivables / payables ledger against customer / supplier balances (session 10)
+            Route::get('/control-reconciliation', [ControlReconciliationController::class, 'show'])->name('control-reconciliation');
         });
         Route::get('/inventory-summary', [PurchaseReportController::class, 'inventorySummary'])->name('inventory-summary');
         Route::get('/payroll-summary', [PayrollReportController::class, 'payrollSummary'])->name('payroll-summary');

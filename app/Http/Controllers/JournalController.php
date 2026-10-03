@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Middleware\EnsureFeatureEnabled;
 use App\Http\Requests\StoreJournalRequest;
 use App\Http\Requests\UpdateJournalRequest;
 use App\Models\ChartOfAccount;
 use App\Models\Journal;
 use App\Models\JournalEntry;
+use App\Services\Statements\ControlReconciliation;
 use Illuminate\Support\Facades\DB;
 
 class JournalController extends Controller
@@ -21,7 +23,9 @@ class JournalController extends Controller
         $accounts = ChartOfAccount::where('is_active', true)->orderBy('account_code')->get();
         $journalNumber = Journal::previewNumber(auth()->user()->tenant_id);
 
-        return view('journals.create', compact('accounts', 'journalNumber'));
+        $controlAccounts = $this->controlAccounts();
+
+        return view('journals.create', compact('accounts', 'journalNumber', 'controlAccounts'));
     }
 
     public function store(StoreJournalRequest $request)
@@ -88,7 +92,9 @@ class JournalController extends Controller
         $accounts = ChartOfAccount::where('is_active', true)->orderBy('account_code')->get();
         $journal->load('entries');
 
-        return view('journals.edit', compact('journal', 'accounts'));
+        $controlAccounts = $this->controlAccounts();
+
+        return view('journals.edit', compact('journal', 'accounts', 'controlAccounts'));
     }
 
     public function update(UpdateJournalRequest $request, Journal $journal)
@@ -181,5 +187,18 @@ class JournalController extends Controller
     public function bulkUpdate()
     {
         return view('journals.bulk-update');
+    }
+
+    /**
+     * Receivables / payables accounts, so the form can warn that a manual
+     * journal to them won't show on any statement (session 10).
+     *
+     * @return array<int, string>
+     */
+    private function controlAccounts(): array
+    {
+        return EnsureFeatureEnabled::enabled('statements')
+            ? ControlReconciliation::controlAccounts(auth()->user()->tenant_id)
+            : [];
     }
 }

@@ -232,6 +232,22 @@
                         </div>
                     </a>
 
+                    @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('statements'))
+                        <!-- Ledger against customer / supplier balances (session 10) -->
+                        <a href="{{ route('reports.control-reconciliation') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-sky-500 rounded-md p-3">
+                                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-4">
+                                    <h4 class="text-base font-medium text-gray-900 dark:text-white">Receivables &amp; Payables Check</h4>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Ledger against customer and supplier balances</p>
+                                </div>
+                            </div>
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>
