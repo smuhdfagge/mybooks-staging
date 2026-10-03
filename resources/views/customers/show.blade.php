@@ -315,6 +315,36 @@
                         </div>
                     </div>
 
+                    <!-- Credit notes not yet used -->
+                    @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('credit_notes'))
+                    @can('view invoices')
+                    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
+                        <div class="p-6">
+                            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Unused credit</h3>
+                                @can('create invoices')
+                                    <a href="{{ route('credit-notes.create', ['customer_id' => $customer->id]) }}" class="text-sm text-indigo-600 dark:text-indigo-400">+ Credit note</a>
+                                @endcan
+                            </div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Credit notes for this customer, not yet applied or refunded</p>
+                            <p class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">@money($openCredits->sum('balance'))</p>
+                            @if($openCredits->isEmpty())
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Nothing waiting to be used.</p>
+                            @else
+                                <ul class="divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                                    @foreach($openCredits as $credit)
+                                        <li class="py-2 flex justify-between gap-3">
+                                            <a href="{{ route('credit-notes.show', $credit) }}" class="text-indigo-600 dark:text-indigo-400">{{ $credit->credit_note_number }} · {{ $credit->credit_note_date->format('d M Y') }}</a>
+                                            <span class="text-gray-900 dark:text-gray-100">@money($credit->balance)</span>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @endif
+                        </div>
+                    </div>
+                    @endcan
+                    @endif
+
                     <!-- Customer Deposits -->
                     @php
                         $deposits = $customer->deposits()->orderBy('payment_date', 'desc')->take(10)->get();
