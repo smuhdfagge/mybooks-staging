@@ -196,4 +196,22 @@ class VatReturnFilingTest extends TestCase
         $this->post(route('reports.vat-return.file'), ['month' => '2026-08'])->assertSessionHasNoErrors();
         $this->assertSame(2, VatReturnFiling::withoutGlobalScopes()->count());
     }
+
+    public function test_draft_documents_in_the_month_are_pointed_out(): void
+    {
+        $this->createAuthenticatedUser(['view reports']);
+        Carbon::setTestNow('2026-10-05 09:00:00');
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        foreach (['2026-09-01', '2026-09-30', '2026-10-01'] as $date) {
+            app(SaveInvoice::class)->create($this->tenant->id, [
+                'customer_id' => $customer->id, 'invoice_date' => $date, 'due_date' => $date, 'status' => 'draft',
+                'items' => [['description' => 'Work', 'quantity' => 1, 'unit_price' => 1000, 'tax_rate' => 7.5]],
+            ], $this->user->id);
+        }
+
+        $r = $this->get(route('reports.vat-return', ['month' => '2026-09']))->assertOk();
+        $this->assertSame(['invoice' => 2], $r->viewData('drafts'));
+        $r->assertSee('Not on this return: 2 draft invoices');
+        $this->assertEqualsWithDelta(0, $r->viewData('lines')[45], 0.001);
+    }
 }

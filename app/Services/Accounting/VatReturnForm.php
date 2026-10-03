@@ -236,6 +236,7 @@ class VatReturnForm
             'adjustmentsSchedule' => $adjustments->values(),
             'purchasesSchedule' => $purchases->values(),
             'unclassified' => $unclassified,
+            'drafts' => $this->drafts($tenantId, $from, $to),
             'exemptShare' => $exemptShare,
             'reconciliation' => [
                 'output' => $this->reconcile($docOutput, $L[45], $ledger['outputLines'], self::SALES),
@@ -245,6 +246,31 @@ class VatReturnForm
             'journalIds' => $journals->pluck('id')->merge($ledger['outputLines']->pluck('journal_id'))
                 ->merge($ledger['inputLines']->pluck('journal_id'))->unique()->sort()->values()->all(),
         ];
+    }
+
+    /**
+     * Draft documents dated in the month: they post nothing, so they are not
+     * on the return until they are approved or sent.
+     *
+     * @return array<string, int> plain name => count
+     */
+    private function drafts(int $tenantId, string $from, string $to): array
+    {
+        $counts = [];
+        foreach ([
+            'invoice' => [Invoice::class, 'invoice_date'],
+            'bill' => [Bill::class, 'bill_date'],
+            'credit note' => [CreditNote::class, 'credit_note_date'],
+            'supplier credit' => [VendorCredit::class, 'credit_date'],
+        ] as $label => [$class, $date]) {
+            $n = $class::withoutGlobalScopes()->where('tenant_id', $tenantId)->where('status', 'draft')
+                ->where($date, '>=', $from)->where($date, '<', Carbon::parse($to)->addDay()->toDateString())->count();
+            if ($n > 0) {
+                $counts[$label] = $n;
+            }
+        }
+
+        return $counts;
     }
 
     public static function dueDate(string $month): Carbon

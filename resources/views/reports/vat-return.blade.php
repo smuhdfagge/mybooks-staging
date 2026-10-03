@@ -52,6 +52,15 @@
             </form>
         </x-card>
 
+        @if($drafts)
+            <x-card class="p-4 border-l-4 border-amber-500" data-drafts>
+                <p class="text-sm text-gray-700 dark:text-gray-300">
+                    Not on this return: {{ collect($drafts)->map(fn ($n, $label) => $n.' draft '.\Illuminate\Support\Str::plural($label, $n))->join(', ', ' and ') }}
+                    dated in {{ $monthLabel }}. Drafts don't post to the books; approve or send them first if they belong in this month.
+                </p>
+            </x-card>
+        @endif
+
         <!-- Filing (lines 65, 85, 90 by hand; settlement) -->
         @php($dueLabel = $dueDate->format('j F Y'))
         @if($filing)
@@ -84,12 +93,12 @@
                 <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
                     Due by <strong>{{ $dueLabel }}</strong>, with any VAT payable. Enter the figures MyBooks can't take from your books, then press Update to see them on the form.
                 </p>
-                <form method="GET" action="{{ route('reports.vat-return') }}" class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                <form method="GET" action="{{ route('reports.vat-return') }}" class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
                     <input type="hidden" name="month" value="{{ $month }}">
-                    <x-field name="imports" label="Line 65: imported goods (₦)" type="number" step="0.01" min="0" :value="$manual['imports'] ?: ''" />
-                    <x-field name="import_vat" label="VAT paid on those imports (₦)" type="number" step="0.01" min="0" :value="$manual['import_vat'] ?: ''" help="Already in line 75 if posted on a bill." />
-                    <x-field name="vat_withheld" label="Line 85: VAT deducted at source (₦)" type="number" step="0.01" min="0" :value="$manual['vat_withheld'] ?: ''" help="By government bodies or oil and gas companies." />
-                    <x-field name="auto_vat_paid" label="Line 90: automatic VAT paid (₦)" type="number" step="0.01" min="0" :value="$manual['auto_vat_paid'] ?: ''" />
+                    <div><x-field name="imports" label="Line 65: imported goods (₦)" type="number" step="0.01" min="0" :value="$manual['imports'] ?: ''" /></div>
+                    <div><x-field name="import_vat" label="VAT paid on those imports (₦)" type="number" step="0.01" min="0" :value="$manual['import_vat'] ?: ''" help="Already in line 75 if posted on a bill." /></div>
+                    <div><x-field name="vat_withheld" label="Line 85: VAT deducted at source (₦)" type="number" step="0.01" min="0" :value="$manual['vat_withheld'] ?: ''" help="By government bodies or oil and gas companies." /></div>
+                    <div><x-field name="auto_vat_paid" label="Line 90: automatic VAT paid (₦)" type="number" step="0.01" min="0" :value="$manual['auto_vat_paid'] ?: ''" /></div>
                     <div class="sm:col-span-2 lg:col-span-4">
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">Update</button>
                     </div>
