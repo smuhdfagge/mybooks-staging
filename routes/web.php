@@ -1021,6 +1021,7 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::get('/vat-return', [VatReturnController::class, 'show'])->name('vat-return');
         Route::get('/vat-return/export', [VatReturnController::class, 'export'])->name('vat-return.export');
         Route::post('/vat-return/classify', [VatReturnController::class, 'classify'])->name('vat-return.classify')->middleware('permission:file vat-returns');
+        Route::post('/vat-return/file', [VatReturnController::class, 'file'])->name('vat-return.file')->middleware('permission:file vat-returns');
 
         // Custom Report Builder
         Route::get('/custom', [CustomReportController::class, 'customReportIndex'])->name('custom.index');

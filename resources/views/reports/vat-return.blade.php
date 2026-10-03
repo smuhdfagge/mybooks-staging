@@ -16,7 +16,7 @@
                 {{ __('VAT return') }} &middot; {{ $monthLabel }}
             </h2>
             <div class="flex flex-wrap items-center gap-2">
-                <a href="{{ route('reports.vat-return.export', ['month' => $month, 'format' => 'pdf']) }}" class="inline-flex items-center px-3 py-2 bg-red-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700">PDF (Form 002)</a>
+                <a href="{{ route('reports.vat-return.export', ['month' => $month, 'format' => 'pdf'] + ($filing ? [] : array_filter($manual))) }}" class="inline-flex items-center px-3 py-2 bg-red-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700">PDF (Form 002)</a>
                 <x-dropdown align="right" width="w-64">
                     <x-slot name="trigger">
                         <button type="button" class="inline-flex items-center px-3 py-2 bg-green-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">CSV</button>
@@ -26,7 +26,7 @@
                         <x-dropdown-link :href="route('reports.vat-return.export', ['month' => $month, 'format' => 'csv', 'schedule' => 'sales'])">Sales schedule (detailed)</x-dropdown-link>
                         <x-dropdown-link :href="route('reports.vat-return.export', ['month' => $month, 'format' => 'csv', 'schedule' => 'adjustments'])">Sales adjustments</x-dropdown-link>
                         <x-dropdown-link :href="route('reports.vat-return.export', ['month' => $month, 'format' => 'csv', 'schedule' => 'purchases'])">Purchases schedule</x-dropdown-link>
-                        <x-dropdown-link :href="route('reports.vat-return.export', ['month' => $month, 'format' => 'csv', 'schedule' => 'form'])">Form 002 lines</x-dropdown-link>
+                        <x-dropdown-link :href="route('reports.vat-return.export', ['month' => $month, 'format' => 'csv', 'schedule' => 'form'] + ($filing ? [] : array_filter($manual)))">Form 002 lines</x-dropdown-link>
                         <p class="px-4 py-2 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-100 dark:border-gray-700">NRS upload uses VAT status 0 VATable, 1 zero-rated, 2 exempt. Check this against the template you download from the NRS portal (Rev360) before uploading.</p>
                     </x-slot>
                 </x-dropdown>
@@ -52,7 +52,72 @@
             </form>
         </x-card>
 
-        {{-- vat-return:filing --}}
+        <!-- Filing (lines 65, 85, 90 by hand; settlement) -->
+        @php($dueLabel = $dueDate->format('j F Y'))
+        @if($filing)
+            <x-card class="p-6 border-l-4 border-green-500" data-filed>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Filed</h3>
+                <p class="mt-1 text-sm text-gray-700 dark:text-gray-300">
+                    Marked as filed on {{ $filing->filed_at->format('d/m/Y') }}{{ $filing->filedBy ? ' by '.$filing->filedBy->name : '' }}{{ $filing->reference ? ' (NRS reference '.$filing->reference.')' : '' }}.
+                    @if((float) $filing->vat_payable > 0)
+                        VAT payable (line 120): <strong>@money($filing->vat_payable)</strong>, due by {{ $dueLabel }}.
+                    @else
+                        No VAT to pay. Credit carried forward (line 115): <strong>@money($filing->credit_carried_forward)</strong>.
+                    @endif
+                </p>
+                @if($filing->settlementJournal)
+                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                        Output and input VAT were moved to VAT Payable by
+                        <a href="{{ route('journals.show', $filing->settlementJournal) }}" class="underline">journal {{ $filing->settlementJournal->journal_number }}</a>.
+                    </p>
+                @endif
+                @if($changedSinceFiling)
+                    <p class="mt-3 text-sm text-amber-700 dark:text-amber-300" data-changed-since-filing>
+                        Documents dated in this month have changed since it was filed: output VAT is now @money($lines[45]) (filed @money($filing->output_vat)),
+                        input VAT @money($lines[75]) (filed @money($filing->input_vat)). The difference is not in the settlement; check with your accountant whether to amend the return.
+                    </p>
+                @endif
+            </x-card>
+        @else
+            <x-card class="p-6">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">File this return</h3>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                    Due by <strong>{{ $dueLabel }}</strong>, with any VAT payable. Enter the figures MyBooks can't take from your books, then press Update to see them on the form.
+                </p>
+                <form method="GET" action="{{ route('reports.vat-return') }}" class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                    <input type="hidden" name="month" value="{{ $month }}">
+                    <x-field name="imports" label="Line 65: imported goods (₦)" type="number" step="0.01" min="0" :value="$manual['imports'] ?: ''" />
+                    <x-field name="import_vat" label="VAT paid on those imports (₦)" type="number" step="0.01" min="0" :value="$manual['import_vat'] ?: ''" help="Already in line 75 if posted on a bill." />
+                    <x-field name="vat_withheld" label="Line 85: VAT deducted at source (₦)" type="number" step="0.01" min="0" :value="$manual['vat_withheld'] ?: ''" help="By government bodies or oil and gas companies." />
+                    <x-field name="auto_vat_paid" label="Line 90: automatic VAT paid (₦)" type="number" step="0.01" min="0" :value="$manual['auto_vat_paid'] ?: ''" />
+                    <div class="sm:col-span-2 lg:col-span-4">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">Update</button>
+                    </div>
+                </form>
+                @can('file vat-returns')
+                    @if(\Carbon\Carbon::parse($to)->endOfDay()->isPast())
+                        <form method="POST" action="{{ route('reports.vat-return.file') }}" class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700"
+                              data-confirm="Mark the {{ $monthLabel }} VAT return as filed? Output and input VAT for the month move to VAT Payable and the month can't be filed again.">
+                            @csrf
+                            <input type="hidden" name="month" value="{{ $month }}">
+                            @foreach($manual as $key => $value)
+                                <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                            @endforeach
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                                When you have submitted the return to NRS, mark it as filed here. MyBooks moves the month's output and input VAT into VAT Payable
+                                (one journal dated {{ \Carbon\Carbon::parse($to)->format('d/m/Y') }}) and keeps these figures; line 115 becomes next month's line 100.
+                            </p>
+                            <div class="max-w-sm mb-3">
+                                <x-field name="reference" label="NRS acknowledgement or receipt number (optional)" maxlength="100" />
+                            </div>
+                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">Mark as filed and settle VAT</button>
+                        </form>
+                    @else
+                        <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">You can mark this return as filed once {{ $monthLabel }} has ended.</p>
+                    @endif
+                @endcan
+            </x-card>
+        @endif
 
         @if($unclassified->isNotEmpty())
             <x-card class="p-6 border-l-4 border-amber-500">

@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Reports;
 
+use App\Actions\VatReturns\FileVatReturn;
 use App\Models\BillItem;
 use App\Models\CreditNoteItem;
 use App\Models\InvoiceItem;
 use App\Models\SalesReceiptItem;
+use App\Models\VatReturnFiling;
 use App\Services\Accounting\VatReturnForm;
 use App\Services\Accounting\VatTreatment;
+use App\Support\Money;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
@@ -20,6 +23,9 @@ use Illuminate\Validation\Rule;
  */
 class VatReturnController extends ReportController
 {
+    /** Lines entered by hand: 65 imports (and the VAT on them), 85, 90. */
+    private const MANUAL_LINES = ['imports', 'import_vat', 'vat_withheld', 'auto_vat_paid'];
+
     /** Line types the return can classify, and the parent each belongs to. */
     private const LINE_TYPES = [
         'invoice' => [InvoiceItem::class, 'invoice'],
@@ -33,7 +39,7 @@ class VatReturnController extends ReportController
         $tenantId = auth()->user()->tenant_id;
         $month = $this->month($request);
 
-        $return = app(VatReturnForm::class)->build($tenantId, $month);
+        $return = $this->returnFor($request, $tenantId, $month);
 
         return view('reports.vat-return', $return + [
             'treatments' => VatTreatment::labels(),
@@ -60,7 +66,7 @@ class VatReturnController extends ReportController
     {
         $tenantId = auth()->user()->tenant_id;
         $month = $this->month($request);
-        $return = app(VatReturnForm::class)->build($tenantId, $month);
+        $return = $this->returnFor($request, $tenantId, $month);
         $title = "VAT return {$month}";
 
         if ($request->query('format') !== 'csv') {
@@ -173,6 +179,64 @@ class VatReturnController extends ReportController
 
         return redirect()->route('reports.vat-return', ['month' => $validated['month']])
             ->with('success', $updated === 1 ? '1 line classified.' : "{$updated} lines classified.");
+    }
+
+    /**
+     * The month's return. A filed month uses the figures entered when it was
+     * filed; otherwise the hand-entered lines come from the query string
+     * (the page's "Update" button) and line 100 from the last filed return.
+     *
+     * @return array<string, mixed>
+     */
+    private function returnFor(Request $request, int $tenantId, string $month): array
+    {
+        $filing = VatReturnFiling::where('tenant_id', $tenantId)->where('month', $month)->with(['settlementJournal', 'filedBy'])->first();
+        if ($filing) {
+            $manual = $filing->manual();
+            $broughtForward = (float) $filing->credit_brought_forward;
+        } else {
+            $manual = [];
+            foreach (self::MANUAL_LINES as $key) {
+                $value = $request->query($key);
+                $manual[$key] = is_numeric($value) ? Money::round(max(0, (float) $value)) : 0.0;
+            }
+            $broughtForward = VatReturnFiling::creditBroughtForward($tenantId, $month);
+        }
+
+        $return = app(VatReturnForm::class)->build($tenantId, $month, $manual, $broughtForward);
+        $L = $return['lines'];
+
+        return $return + [
+            'filing' => $filing,
+            'manual' => $manual,
+            // Documents dated in a filed month after it was filed.
+            'changedSinceFiling' => $filing && (abs($L[45] - (float) $filing->output_vat) >= 0.005 || abs($L[75] - (float) $filing->input_vat) >= 0.005),
+        ];
+    }
+
+    /**
+     * Mark the month as filed: settle its VAT into VAT Payable and keep the
+     * figures as filed (FileVatReturn).
+     */
+    public function file(Request $request, FileVatReturn $file)
+    {
+        $validated = $request->validate([
+            'month' => ['required', 'date_format:Y-m'],
+            'imports' => ['nullable', 'numeric', 'min:0', 'max:999999999999'],
+            'import_vat' => ['nullable', 'numeric', 'min:0', 'max:999999999999'],
+            'vat_withheld' => ['nullable', 'numeric', 'min:0', 'max:999999999999'],
+            'auto_vat_paid' => ['nullable', 'numeric', 'min:0', 'max:999999999999'],
+            'reference' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $filing = $file->handle(auth()->user()->tenant_id, $validated['month'], $validated, auth()->id(), $validated['reference'] ?? null);
+        $label = Carbon::createFromFormat('Y-m-d', $filing->month.'-01')->format('F Y');
+        $due = VatReturnForm::dueDate($filing->month)->format('j F Y');
+        $message = (float) $filing->vat_payable > 0
+            ? "VAT return for {$label} filed. Pay ₦".number_format((float) $filing->vat_payable, 2)." to NRS by {$due}."
+            : "VAT return for {$label} filed. No VAT to pay; ₦".number_format((float) $filing->credit_carried_forward, 2).' credit carried forward.';
+
+        return redirect()->route('reports.vat-return', ['month' => $filing->month])->with('success', $message);
     }
 
     /** YYYY-MM from the request; last month by default (the one usually being filed). */

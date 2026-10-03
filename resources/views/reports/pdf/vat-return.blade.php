@@ -46,7 +46,7 @@
             <td class="label">Period ending</td><td>{{ \Carbon\Carbon::parse($to)->format('d/m/Y') }}</td>
         </tr>
         @if(!empty($filing))
-            <tr><td class="label">Filed</td><td>{{ $filing->filed_on?->format('d/m/Y') }}</td><td class="label">Receipt/reference</td><td>{{ $filing->reference }}</td></tr>
+            <tr><td class="label">Filed</td><td>{{ $filing->filed_at?->format('d/m/Y') }}</td><td class="label">Receipt/reference</td><td>{{ $filing->reference }}</td></tr>
         @endif
     </table>
 
