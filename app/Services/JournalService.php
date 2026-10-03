@@ -8,6 +8,7 @@ use App\Models\Bank;
 use App\Models\Bill;
 use App\Models\ChartOfAccount;
 use App\Models\CreditNote;
+use App\Models\CreditNoteRefund;
 use App\Models\EmployeeLoan;
 use App\Models\Expense;
 use App\Models\FixedAsset;
@@ -1798,6 +1799,10 @@ class JournalService implements JournalServiceInterface
      *   Dr Sales revenue      subtotal
      *   Dr Sales tax payable  tax
      *   Cr Accounts receivable total
+     * When the goods came back (restock), they go back into inventory at
+     * the cost stored on each line (finding A15):
+     *   Dr Inventory          cost
+     *   Cr Cost of goods sold cost
      * Applying it to an invoice later is only an allocation within
      * receivables, so it posts nothing.
      */
@@ -1813,6 +1818,7 @@ class JournalService implements JournalServiceInterface
             $existing = Journal::where('reference_type', CreditNote::class)
                 ->where('reference_id', $creditNote->id)
                 ->where('status', 'posted')
+                ->whereNot('reference', 'like', 'REV-%')
                 ->first();
             if ($existing) {
                 return $existing;
@@ -1848,6 +1854,14 @@ class JournalService implements JournalServiceInterface
             $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), 0, $total,
                 "Credit to {$customer} - {$creditNote->credit_note_number}");
 
+            $returnedCost = $creditNote->restock ? $this->creditNoteReturnedCost($creditNote) : 0.0;
+            if ($returnedCost > 0) {
+                $this->createEntry($journal, $this->acct($t, 'inventory'), $returnedCost, 0,
+                    "Goods returned - {$creditNote->credit_note_number}");
+                $this->createEntry($journal, $this->acct($t, 'cost_of_goods_sold'), 0, $returnedCost,
+                    "Cost of goods returned - {$creditNote->credit_note_number}");
+            }
+
             $journal->updateTotals();
             $journal->save();
 
@@ -1855,6 +1869,36 @@ class JournalService implements JournalServiceInterface
 
             return $journal;
         });
+    }
+
+    /** Cost of the goods a credit note put back into stock (lines with a stored cost). */
+    protected function creditNoteReturnedCost(CreditNote $creditNote): float
+    {
+        $cost = 0.0;
+        foreach ($creditNote->items()->whereNotNull('unit_cost')->get() as $line) {
+            $cost += round((float) $line->unit_cost * (float) $line->quantity, 2);
+        }
+
+        return round($cost, 2);
+    }
+
+    /**
+     * Money paid back to a customer out of a credit note:
+     *   Dr Accounts receivable (the customer's credit is used up)
+     *   Cr Cash / Bank
+     */
+    public function createCreditNoteRefundJournal(CreditNoteRefund $refund): Journal
+    {
+        $t = $refund->tenant_id;
+        $note = $refund->creditNote;
+        $customer = $note->customer->name;
+        $amount = (float) $refund->amount;
+
+        return $this->postLines($refund, $note->credit_note_number, $refund->refund_date,
+            "Refund on credit note {$note->credit_note_number} - {$customer}", [
+                [$this->acct($t, 'accounts_receivable'), $amount, 0.0, "Credit refunded to {$customer} - {$note->credit_note_number}"],
+                [$this->paymentAccountFor($refund->bank, $refund->payment_method, $t), 0.0, $amount, "Refund paid - {$note->credit_note_number}"],
+            ], $refund->created_by);
     }
 
     /**

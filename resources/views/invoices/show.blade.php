@@ -243,6 +243,42 @@
             </div>
             @endif
 
+            <!-- Credit notes: raised against this invoice, and credit applied to it -->
+            @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('credit_notes') && ! in_array($invoice->status, ['draft', 'cancelled']))
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
+                <div class="p-6 space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Credit notes</h3>
+                        @can('create invoices')
+                            <a href="{{ route('credit-notes.create', ['invoice_id' => $invoice->id]) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">Create credit note</a>
+                        @endcan
+                    </div>
+                    @forelse($invoice->creditNotes as $note)
+                        <p class="text-sm text-gray-700 dark:text-gray-300 flex flex-wrap justify-between gap-3">
+                            <span>
+                                <a href="{{ route('credit-notes.show', $note) }}" class="text-indigo-600 dark:text-indigo-400">{{ $note->credit_note_number }}</a>
+                                · {{ $note->credit_note_date->format('d M Y') }}
+                                · <x-status-badge :status="$note->status" :label="$note->status === 'closed' ? 'Used up' : null" />
+                                @if($note->restock) · goods returned @endif
+                            </span>
+                            <span class="font-medium">@money($note->total)</span>
+                        </p>
+                    @empty
+                        <p class="text-sm text-gray-500 dark:text-gray-400">No credit note has been raised against this invoice.</p>
+                    @endforelse
+                    @if($invoice->creditNoteApplications->isNotEmpty())
+                        <h4 class="pt-2 text-sm font-medium text-gray-900 dark:text-gray-100">Credit applied to this invoice</h4>
+                        @foreach($invoice->creditNoteApplications as $application)
+                            <p class="text-sm text-gray-700 dark:text-gray-300 flex justify-between gap-3">
+                                <span>{{ $application->applied_date->format('d M Y') }} · from credit note <a href="{{ route('credit-notes.show', $application->creditNote) }}" class="text-indigo-600 dark:text-indigo-400">{{ $application->creditNote->credit_note_number }}</a></span>
+                                <span class="font-medium">-@money($application->amount)</span>
+                            </p>
+                        @endforeach
+                    @endif
+                </div>
+            </div>
+            @endif
+
             <!-- Refund History -->
             @if($invoice->refunds && $invoice->refunds->count() > 0)
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
