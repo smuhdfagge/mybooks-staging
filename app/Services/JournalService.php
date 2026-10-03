@@ -3,7 +3,10 @@
 namespace App\Services;
 
 use App\Contracts\JournalServiceInterface;
+use App\Exceptions\BusinessRuleException;
 use App\Exceptions\UnbalancedJournalException;
+use App\Http\Middleware\EnsureFeatureEnabled;
+use App\Models\AccountingPeriod;
 use App\Models\Bank;
 use App\Models\Bill;
 use App\Models\ChartOfAccount;
@@ -26,6 +29,7 @@ use App\Models\VendorCreditRefund;
 use App\Models\WhtCreditUtilisation;
 use App\Support\PayrollStatutory;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -1906,6 +1910,12 @@ class JournalService implements JournalServiceInterface
      */
     public function reverseJournal(Journal $journal, string $reason = 'Reversed'): Journal
     {
+        // An automatic reversal, or an original it already reversed, can't
+        // be reversed again by hand (S8).
+        if ($blocked = $journal->manualReversalBlockedReason()) {
+            throw new BusinessRuleException($blocked);
+        }
+
         return DB::transaction(function () use ($journal, $reason) {
             // The reversing journal's own lines undo the original when they are
             // applied below. Also un-applying the original here reversed it
@@ -1941,6 +1951,93 @@ class JournalService implements JournalServiceInterface
 
             return $reversingJournal;
         });
+    }
+
+    /**
+     * Post the automatic reversal of a journal with a "reverse on" date (S8,
+     * accruals): same accounts, debits and credits swapped, dated the
+     * reverse-on date. If that date is in a closed period it goes on the
+     * first open date after it, and the description says so. The original
+     * stays posted and points to its reversal. Posted once only: the
+     * original's row is locked and re-checked. Returns null when there is
+     * nothing to do yet (not due, not posted, already reversed, voided).
+     */
+    public function postAutoReversal(Journal $journal, ?CarbonInterface $today = null): ?Journal
+    {
+        if (! EnsureFeatureEnabled::enabled('auto_reversing_journals')) {
+            return null;
+        }
+        $today = ($today ?? today())->copy()->startOfDay();
+
+        return DB::transaction(function () use ($journal, $today) {
+            // Not withoutGlobalScopes(): a deleted journal must stay deleted.
+            $journal = Journal::withoutGlobalScope('tenant')->lockForUpdate()->find($journal->id);
+            if (! $journal || ! $journal->reverse_on || $journal->auto_reversal_journal_id
+                || ! $journal->is_posted || $journal->status !== 'posted' || $journal->isAutoReversal()) {
+                return null;
+            }
+
+            $due = $journal->reverse_on->copy()->startOfDay();
+            if ($due->gt($today)) {
+                return null;
+            }
+            $date = $this->firstOpenDate($journal->tenant_id, $due);
+            if ($date->gt($today)) {
+                return null; // the next open date hasn't come yet; try again then
+            }
+            $note = $date->equalTo($due) ? ''
+                : " (due {$due->format('j M Y')}, but that period is closed, so posted on {$date->format('j M Y')})";
+
+            $reversal = new Journal([
+                'tenant_id' => $journal->tenant_id,
+                'journal_number' => Journal::generateNumber($journal->tenant_id),
+                'journal_date' => $date->toDateString(),
+                'reference' => "REV-{$journal->journal_number}",
+                'description' => "Automatic reversal of {$journal->journal_number}: {$journal->description}{$note}",
+                'reference_type' => Journal::class,
+                'reference_id' => $journal->id,
+                'journal_type' => Journal::TYPE_AUTO_REVERSAL,
+                'status' => 'posted',
+                'is_posted' => true,
+                'posted_at' => now(),
+                'created_by' => $journal->created_by,
+            ]);
+            // Keep the original's business even if someone else is signed in.
+            $reversal->skipTenantGuard = true;
+            $reversal->save();
+
+            foreach ($journal->entries()->get() as $entry) {
+                JournalEntry::create([
+                    'journal_id' => $reversal->id,
+                    'account_id' => $entry->account_id,
+                    'description' => 'Reversal: '.($entry->description ?: $journal->description),
+                    'debit' => $entry->credit,
+                    'credit' => $entry->debit,
+                ]);
+            }
+            $reversal->updateTotals();
+            $this->updateAccountBalances($reversal);
+
+            $journal->forceFill(['auto_reversal_journal_id' => $reversal->id])->withoutPeriodValidation()->save();
+
+            return $reversal;
+        });
+    }
+
+    /** The first date on or after $date that isn't in a closed or locked period. */
+    protected function firstOpenDate(int $tenantId, CarbonInterface $date): CarbonInterface
+    {
+        $day = $date->copy()->startOfDay();
+        // Each pass steps past one closed period.
+        for ($i = 0; $i < 500; $i++) {
+            $period = AccountingPeriod::getPeriodForDate($day, $tenantId);
+            if (! $period || ! $period->isClosed()) {
+                break;
+            }
+            $day = Carbon::parse($period->end_date)->addDay()->startOfDay();
+        }
+
+        return $day;
     }
 
     /**

@@ -51,6 +51,13 @@
                             </div>
                         </div>
 
+                        @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('auto_reversing_journals'))
+                            {{-- Accruals (S8) --}}
+                            <div class="mt-4 md:w-1/3">
+                                <x-field name="reverse_on" label="Reverse automatically on (optional)" type="date" :value="old('reverse_on')" help="For an accrual: on this date the system posts the opposite journal for you (debits and credits swapped). Usually the first day of next month." />
+                            </div>
+                        @endif
+
                         <div class="mt-4">
                             <label for="description" class="form-label">Description <span class="text-red-500">*</span></label>
                             <textarea name="description" id="description" rows="2" required maxlength="500"

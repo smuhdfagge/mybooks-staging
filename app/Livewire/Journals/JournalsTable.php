@@ -156,7 +156,10 @@ class JournalsTable extends Component
                 $skipped = [];
                 $journalService = app(JournalService::class);
                 foreach (Journal::with('entries.account')->whereIn('id', $this->selectedItems)->where('status', 'posted')->get() as $journal) {
-                    if ($journal->reference_type) {
+                    // Also skipped: a journal already reversed automatically
+                    // (S8). One whose reversal is still pending is voided, and
+                    // that cancels the automatic reversal.
+                    if ($journal->reference_type || $journal->manualReversalBlockedReason()) {
                         $skipped[] = $journal->journal_number;
 
                         continue;
@@ -167,7 +170,7 @@ class JournalsTable extends Component
                 }
                 $this->successMessage = "Voided {$voided} journal(s) with reversing entries.";
                 if ($skipped) {
-                    $this->errorMessage = 'Skipped (belong to a document; change the document instead): '.implode(', ', $skipped).'.';
+                    $this->errorMessage = 'Skipped (belong to a document, or already reversed automatically): '.implode(', ', $skipped).'.';
                 }
                 break;
 

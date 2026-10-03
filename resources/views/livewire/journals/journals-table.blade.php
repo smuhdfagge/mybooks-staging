@@ -78,6 +78,12 @@
                                         <a href="{{ route('journals.show', $journal) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 font-medium">
                                             {{ $journal->journal_number }}
                                         </a>
+                                        {{-- Accruals (S8) --}}
+                                        @if($journal->isAutoReversal())
+                                            <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">Auto reversal</span>
+                                        @elseif($journal->hasPendingReversal())
+                                            <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300" title="Reversed automatically on {{ $journal->reverse_on->format('j M Y') }}">Reverses {{ $journal->reverse_on->format('j M') }}</span>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                         {{ $journal->reference ?? '—' }}
