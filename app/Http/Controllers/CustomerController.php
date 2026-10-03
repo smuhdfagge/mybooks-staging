@@ -9,6 +9,7 @@ use App\Models\Country;
 use App\Models\CreditNote;
 use App\Models\Customer;
 use App\Models\State;
+use App\Services\Statements\StatementBuilder;
 
 class CustomerController extends Controller
 {
@@ -46,7 +47,11 @@ class CustomerController extends Controller
         $openCredits = CreditNote::where('customer_id', $customer->id)->where('status', CreditNoteStatus::Open->value)
             ->where('balance', '>', 0)->latest('credit_note_date')->latest('id')->get();
 
-        return view('customers.show', compact('customer', 'openCredits'));
+        // Unpaid invoices less unused credits and deposits: the statement's
+        // closing balance (session 10).
+        $balanceOwed = app(StatementBuilder::class)->balance($customer);
+
+        return view('customers.show', compact('customer', 'openCredits', 'balanceOwed'));
     }
 
     public function edit(Customer $customer)

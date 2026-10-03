@@ -137,6 +137,9 @@ return [
         'auto_reversing_journals' => (bool) env('MYBOOKS_FEATURE_AUTO_REVERSING_JOURNALS', true),
         // Prepaid expense and deferred revenue schedules, released monthly by accruals:release (S9).
         'prepaid_schedules' => (bool) env('MYBOOKS_FEATURE_PREPAID_SCHEDULES', true),
+        // Customer and supplier statements (PDF, email, bulk email) and the
+        // receivables / payables control account reconciliation (session 10).
+        'statements' => (bool) env('MYBOOKS_FEATURE_STATEMENTS', true),
     ],
 
     /*

@@ -150,6 +150,9 @@ class Customer extends Model
         return $this->invoices()->sum('total');
     }
 
+    /** Invoices in these states aren't owed: drafts never reached the books, cancelled ones were reversed (session 10). */
+    public const NOT_OWED_STATUSES = ['paid', 'draft', 'cancelled'];
+
     public function getOutstandingBalanceAttribute($value)
     {
         // Already loaded by withBalances(): no query per row (P4).
@@ -157,7 +160,7 @@ class Customer extends Model
             return $value ?? 0;
         }
 
-        return $this->invoices()->where('status', '!=', 'paid')->sum('balance_due');
+        return $this->invoices()->whereNotIn('status', self::NOT_OWED_STATUSES)->sum('balance_due');
     }
 
     /**
@@ -166,7 +169,7 @@ class Customer extends Model
      */
     public function scopeWithBalances($query)
     {
-        return $query->withSum(['invoices as outstanding_balance' => fn ($q) => $q->where('status', '!=', 'paid')], 'balance_due');
+        return $query->withSum(['invoices as outstanding_balance' => fn ($q) => $q->whereNotIn('status', self::NOT_OWED_STATUSES)], 'balance_due');
     }
 
     public function scopeActive($query)

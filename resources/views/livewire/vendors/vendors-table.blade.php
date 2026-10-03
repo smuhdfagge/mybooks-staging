@@ -3,6 +3,12 @@
     <!-- Flash Messages -->
     <x-flash-messages :successMessage="$successMessage" :errorMessage="$errorMessage" />
 
+    @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('statements'))
+        @can('send invoices')
+            @include('statements.partials.bulk-send', ['side' => 'suppliers', 'selected' => $selectedItems])
+        @endcan
+    @endif
+
     <!-- Filters -->
     <div class="mb-4 sm:mb-6 bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

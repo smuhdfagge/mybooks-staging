@@ -9,10 +9,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Notifications\Notifiable;
 
 class Vendor extends Model
 {
-    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
+    use BelongsToTenant, HasFactory, LogsActivity, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'tenant_id',
@@ -108,13 +109,16 @@ class Vendor extends Model
         return $this->bills()->sum('total');
     }
 
+    /** Bills in these states aren't owed: drafts never reached the books, cancelled ones were reversed (session 10). */
+    public const NOT_OWED_STATUSES = ['paid', 'draft', 'cancelled'];
+
     public function getOutstandingBalanceAttribute($value)
     {
         if (array_key_exists('outstanding_balance', $this->attributes)) {
             return $value ?? 0;
         }
 
-        return $this->bills()->where('status', '!=', 'paid')->sum('balance_due');
+        return $this->bills()->whereNotIn('status', self::NOT_OWED_STATUSES)->sum('balance_due');
     }
 
     /**
@@ -125,7 +129,7 @@ class Vendor extends Model
     {
         return $query
             ->withSum('bills as total_purchases', 'total')
-            ->withSum(['bills as outstanding_balance' => fn ($q) => $q->where('status', '!=', 'paid')], 'balance_due');
+            ->withSum(['bills as outstanding_balance' => fn ($q) => $q->whereNotIn('status', self::NOT_OWED_STATUSES)], 'balance_due');
     }
 
     public function scopeActive($query)
