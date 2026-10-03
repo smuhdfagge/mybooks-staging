@@ -85,6 +85,45 @@
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</dt>
                                 <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100 capitalize">{{ $journal->status }}</dd>
                             </div>
+                            {{-- Accruals (S8) --}}
+                            @if($journal->isAutoReversal())
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Automatic reversal of</dt>
+                                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                                    @if($journal->reversalOf)
+                                        <a href="{{ route('journals.show', $journal->reversalOf) }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">{{ $journal->reversalOf->journal_number }}</a>
+                                        <span class="text-gray-500 dark:text-gray-400">dated {{ $journal->reversalOf->journal_date->format('j M Y') }}</span>
+                                    @else
+                                        —
+                                    @endif
+                                </dd>
+                            </div>
+                            @elseif($journal->reverse_on)
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Automatic reversal</dt>
+                                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                                    @if($journal->autoReversal)
+                                        Reversed by <a href="{{ route('journals.show', $journal->autoReversal) }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">{{ $journal->autoReversal->journal_number }}</a>
+                                        on {{ $journal->autoReversal->journal_date->format('j M Y') }}
+                                    @elseif($journal->status === 'reversed')
+                                        Cancelled: this journal was reversed by hand before {{ $journal->reverse_on->format('j M Y') }}.
+                                    @else
+                                        Reverses on {{ $journal->reverse_on->format('j M Y') }}
+                                        <span class="block text-xs text-gray-500 dark:text-gray-400">
+                                            @if(! $journal->is_posted)
+                                                Once the journal is posted.
+                                            @elseif(! \App\Http\Middleware\EnsureFeatureEnabled::enabled('auto_reversing_journals'))
+                                                Automatic reversals are switched off, so this won't be posted for now.
+                                            @elseif($journal->reverse_on->lte(today()))
+                                                Due now: it is posted at the next daily run.
+                                            @else
+                                                Posted for you on that date.
+                                            @endif
+                                        </span>
+                                    @endif
+                                </dd>
+                            </div>
+                            @endif
                             @if($journal->is_posted && $journal->posted_at)
                             <div>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Posted At</dt>
@@ -220,6 +259,9 @@
                             </svg>
                             Journal is Posted (Locked)
                         </span>
+                        @if($journal->isAutoReversal())
+                            <p class="w-full text-sm text-gray-500 dark:text-gray-400">This journal was posted automatically to reverse {{ $journal->reversalOf?->journal_number }}. It can't be edited, deleted or voided on its own.</p>
+                        @endif
                     @endif
                 </div>
             </div>

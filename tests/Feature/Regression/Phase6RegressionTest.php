@@ -32,7 +32,7 @@ class Phase6RegressionTest extends TestCase
     use AssertsLedger;
 
     /** Modules finished in Phase F, switched on by default. */
-    private const FINISHED_MODULES = ['quotations', 'delivery_notes'];
+    private const FINISHED_MODULES = ['quotations', 'delivery_notes', 'auto_reversing_journals'];
 
     public function test_n4_unfinished_modules_are_off_by_default(): void
     {

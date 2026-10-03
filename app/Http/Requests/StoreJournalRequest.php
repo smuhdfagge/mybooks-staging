@@ -2,7 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Middleware\EnsureFeatureEnabled;
+use App\Models\Journal;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
@@ -37,7 +40,7 @@ class StoreJournalRequest extends FormRequest
     {
         $tenantId = auth()->user()->tenant_id;
 
-        return [
+        $rules = [
             'journal_date' => ['required', 'date'],
             'reference' => ['nullable', 'string', 'max:100'],
             'description' => ['required', 'string', 'max:500'],
@@ -47,6 +50,14 @@ class StoreJournalRequest extends FormRequest
             'entries.*.debit' => ['nullable', 'numeric', 'min:0'],
             'entries.*.credit' => ['nullable', 'numeric', 'min:0'],
         ];
+
+        // Accruals (S8): post the mirror-image journal on this date. Left out
+        // of the rules (so ignored) when the feature is switched off.
+        if (EnsureFeatureEnabled::enabled('auto_reversing_journals')) {
+            $rules['reverse_on'] = ['nullable', 'date'];
+        }
+
+        return $rules;
     }
 
     public function withValidator(Validator $validator): void
@@ -68,5 +79,30 @@ class StoreJournalRequest extends FormRequest
                 }
             }
         });
+
+        $validator->after(fn (Validator $validator) => $this->checkReverseOn($validator));
+    }
+
+    /**
+     * The reverse-on date must be after the journal date (S8). On an update
+     * either may be left out, so the journal's stored value counts then.
+     */
+    private function checkReverseOn(Validator $validator): void
+    {
+        if (! EnsureFeatureEnabled::enabled('auto_reversing_journals') || $validator->errors()->hasAny(['journal_date', 'reverse_on'])) {
+            return;
+        }
+
+        $journal = $this->route('journal');
+        $journal = $journal instanceof Journal ? $journal : null;
+        $reverseOn = $this->has('reverse_on') ? $this->input('reverse_on') : $journal?->reverse_on;
+        $journalDate = $this->input('journal_date') ?? $journal?->journal_date;
+        if (! $reverseOn || ! $journalDate) {
+            return;
+        }
+
+        if (Carbon::parse($reverseOn)->startOfDay()->lte(Carbon::parse($journalDate)->startOfDay())) {
+            $validator->errors()->add('reverse_on', 'The reverse date must be after the journal date (usually the first day of the next month).');
+        }
     }
 }

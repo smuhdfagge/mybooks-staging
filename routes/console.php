@@ -63,6 +63,14 @@ Schedule::command('transactions:process-recurring')
     ->onOneServer()
     ->appendOutputTo(storage_path('logs/recurring-transactions.log'));
 
+// Post the automatic reversals of journals whose "reverse on" date has come
+// (accruals, S8), daily at 00:20 so they are in before the working day.
+Schedule::command('journals:post-reversals')
+    ->dailyAt('00:20')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->appendOutputTo(storage_path('logs/journal-reversals.log'));
+
 // Mark quotations past their expiry date as expired, daily at 00:30
 Schedule::command('quotations:expire')
     ->dailyAt('00:30')

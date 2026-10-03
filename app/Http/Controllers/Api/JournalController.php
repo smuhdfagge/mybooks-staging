@@ -73,7 +73,7 @@ class JournalController extends BaseApiController
      */
     public function show(Journal $journal): JsonResponse
     {
-        $journal->load(['entries.account', 'createdBy', 'approvedBy']);
+        $journal->load(['entries.account', 'createdBy', 'approvedBy', 'autoReversal']);
 
         return $this->success(new JournalResource($journal));
     }
@@ -105,6 +105,7 @@ class JournalController extends BaseApiController
                     'tenant_id' => $tenantId,
                     'journal_number' => Journal::generateNumber($tenantId),
                     'journal_date' => $validated['journal_date'],
+                    'reverse_on' => $validated['reverse_on'] ?? null,
                     'reference' => $validated['reference'] ?? null,
                     'description' => $validated['description'],
                     'total_debit' => $totalDebit,
@@ -254,6 +255,12 @@ class JournalController extends BaseApiController
 
         if ($journal->status === 'reversed') {
             return $this->error('This journal entry has already been reversed.', 422);
+        }
+
+        // An automatic reversal, or a journal it already reversed, can't be
+        // reversed again (S8). A pending one is cancelled by this reversal.
+        if ($blocked = $journal->manualReversalBlockedReason()) {
+            return $this->error($blocked, 422);
         }
 
         $tenantId = $this->getTenantId();
