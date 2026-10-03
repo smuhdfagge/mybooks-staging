@@ -19,8 +19,10 @@ use App\Models\PaymentMade;
 use App\Models\PaymentReceived;
 use App\Models\Payroll;
 use App\Models\SalesReceipt;
+use App\Models\StatutoryRemittance;
 use App\Models\VendorCredit;
 use App\Models\VendorCreditRefund;
+use App\Models\WhtCreditUtilisation;
 use App\Support\PayrollStatutory;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
@@ -652,18 +654,107 @@ class JournalService implements JournalServiceInterface
                 $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), 0, $payment->amount,
                     "Payment for {$payment->customer->name}");
             } else {
-                // Regular payment: Debit Cash/Bank, Credit A/R
-                $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
-                $this->createEntry($journal, $paymentAccountCode, $payment->amount, 0,
-                    "Payment Received - {$payment->payment_number}");
-
-                $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), 0, $payment->amount,
-                    "Payment for {$payment->customer->name}");
+                $this->writeRegularPaymentReceivedLines($journal, $payment);
             }
 
             $journal->updateTotals();
             $journal->save();
 
+            $this->updateAccountBalances($journal);
+
+            return $journal;
+        });
+    }
+
+    /**
+     * Regular payment: Dr the bank with the money received, Dr WHT Credit
+     * Notes Receivable with any WHT the customer deducted, Cr Accounts
+     * Receivable with what the payment settles.
+     */
+    protected function writeRegularPaymentReceivedLines(Journal $journal, PaymentReceived $payment): void
+    {
+        $t = $payment->tenant_id;
+        $wht = round((float) $payment->wht_amount, 2);
+
+        $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
+        $this->createEntry($journal, $paymentAccountCode, $payment->amount, 0,
+            "Payment Received - {$payment->payment_number}");
+
+        if ($wht > 0) {
+            $this->createEntry($journal, $this->acct($t, 'wht_receivable'), $wht, 0,
+                "WHT deducted by {$payment->customer->name} - {$payment->payment_number}");
+        }
+
+        $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), 0, $payment->settledAmount(),
+            "Payment for {$payment->customer->name}");
+    }
+
+    /**
+     * WHT paid to the tax authority (the NRS or a state IRS):
+     * Dr WHT Payable, Cr the bank it was paid from.
+     */
+    public function createWhtRemittanceJournal(StatutoryRemittance $remittance): Journal
+    {
+        return DB::transaction(function () use ($remittance) {
+            $t = $remittance->tenant_id;
+            $to = $remittance->paid_to ?: 'tax authority';
+            $journal = Journal::create([
+                'tenant_id' => $t,
+                'journal_number' => Journal::generateNumber($t),
+                'journal_date' => $remittance->paid_on,
+                'reference' => $remittance->reference ?: 'WHT-REMIT-'.$remittance->id,
+                'description' => "WHT remitted to {$to} for ".$remittance->period_start->format('F Y'),
+                'reference_type' => StatutoryRemittance::class,
+                'reference_id' => $remittance->id,
+                'journal_type' => self::WHT_REMITTANCE,
+                'status' => 'posted',
+                'is_posted' => true,
+                'posted_at' => now(),
+                'created_by' => $remittance->created_by ?? auth()->id(),
+            ]);
+
+            $amount = round((float) $remittance->amount, 2);
+            $this->createEntry($journal, $this->acct($t, 'wht_payable'), $amount, 0, "WHT remitted to {$to}");
+            $this->createEntry($journal, $this->paymentAccountFor($remittance->bank, $remittance->payment_method, $t), 0, $amount,
+                "WHT remittance - {$to}");
+
+            $journal->updateTotals();
+            $journal->save();
+            $this->updateAccountBalances($journal);
+
+            return $journal;
+        });
+    }
+
+    /**
+     * WHT credit notes used against income tax:
+     * Dr Income Tax Payable, Cr WHT Credit Notes Receivable.
+     */
+    public function createWhtUtilisationJournal(WhtCreditUtilisation $utilisation): Journal
+    {
+        return DB::transaction(function () use ($utilisation) {
+            $t = $utilisation->tenant_id;
+            $journal = Journal::create([
+                'tenant_id' => $t,
+                'journal_number' => Journal::generateNumber($t),
+                'journal_date' => $utilisation->utilisation_date,
+                'reference' => $utilisation->reference ?: 'WHT-CREDIT-'.$utilisation->id,
+                'description' => 'WHT credit notes used against income tax',
+                'reference_type' => WhtCreditUtilisation::class,
+                'reference_id' => $utilisation->id,
+                'journal_type' => self::WHT_CREDIT_UTILISATION,
+                'status' => 'posted',
+                'is_posted' => true,
+                'posted_at' => now(),
+                'created_by' => $utilisation->created_by ?? auth()->id(),
+            ]);
+
+            $amount = round((float) $utilisation->amount, 2);
+            $this->createEntry($journal, $this->acct($t, 'income_tax_payable'), $amount, 0, 'Income tax settled with WHT credit notes');
+            $this->createEntry($journal, $this->acct($t, 'wht_receivable'), 0, $amount, 'WHT credit notes used');
+
+            $journal->updateTotals();
+            $journal->save();
             $this->updateAccountBalances($journal);
 
             return $journal;
@@ -713,13 +804,7 @@ class JournalService implements JournalServiceInterface
             $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), 0, $payment->amount,
                 "Payment for {$payment->customer->name}");
         } else {
-            // Regular payment: Debit Cash/Bank, Credit A/R
-            $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
-            $this->createEntry($journal, $paymentAccountCode, $payment->amount, 0,
-                "Payment Received - {$payment->payment_number}");
-
-            $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), 0, $payment->amount,
-                "Payment for {$payment->customer->name}");
+            $this->writeRegularPaymentReceivedLines($journal, $payment);
         }
 
         $journal->updateTotals();
@@ -857,6 +942,7 @@ class JournalService implements JournalServiceInterface
      *
      * Debit: Accounts Payable (liability decreases)
      * Credit: Cash/Bank (asset decreases)
+     * Credit: WHT Payable (WHT withheld, owed to the tax authority)
      */
     public function createPaymentMadeJournal(PaymentMade $payment): ?Journal
     {
@@ -865,8 +951,6 @@ class JournalService implements JournalServiceInterface
         }
 
         return DB::transaction(function () use ($payment) {
-            $t = $payment->tenant_id;
-
             $existingJournal = Journal::where('reference_type', PaymentMade::class)
                 ->where('reference_id', $payment->id)
                 ->first();
@@ -935,28 +1019,36 @@ class JournalService implements JournalServiceInterface
      *   ordinary payment:          Dr Accounts payable   / Cr bank or cash
      *   advance (before a bill):   Dr Supplier advances  / Cr bank or cash
      *   advance used on a bill:    Dr Accounts payable   / Cr Supplier advances
+     * WHT withheld (ordinary payment or advance): the debit is the money paid
+     * plus the WHT, and the WHT is credited to WHT Payable, owed to the tax
+     * authority.
      */
     protected function writePaymentMadeLines(Journal $journal, PaymentMade $payment): void
     {
         $t = $payment->tenant_id;
         $amount = (float) $payment->amount;
+        $wht = round((float) $payment->wht_amount, 2);
+        $settled = $payment->settledAmount();
 
         if ($payment->is_advance) {
-            $this->createEntry($journal, $this->acct($t, 'supplier_advances'), $amount, 0,
+            $this->createEntry($journal, $this->acct($t, 'supplier_advances'), $settled, 0,
                 "Advance to {$payment->vendor->name}");
             $this->createEntry($journal, $this->paymentAccountFor($payment->bank, $payment->payment_method, $t), 0, $amount,
                 "Supplier Advance - {$payment->payment_number}");
+        } else {
+            $this->createEntry($journal, $this->acct($t, 'accounts_payable'), $settled, 0,
+                "Payment to {$payment->vendor->name}");
 
-            return;
+            $credit = $payment->payment_method === PaymentMade::METHOD_ADVANCE
+                ? $this->acct($t, 'supplier_advances')
+                : $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
+            $this->createEntry($journal, $credit, 0, $amount, "Payment Made - {$payment->payment_number}");
         }
 
-        $this->createEntry($journal, $this->acct($t, 'accounts_payable'), $amount, 0,
-            "Payment to {$payment->vendor->name}");
-
-        $credit = $payment->payment_method === PaymentMade::METHOD_ADVANCE
-            ? $this->acct($t, 'supplier_advances')
-            : $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
-        $this->createEntry($journal, $credit, 0, $amount, "Payment Made - {$payment->payment_number}");
+        if ($wht > 0) {
+            $this->createEntry($journal, $this->acct($t, 'wht_payable'), 0, $wht,
+                "WHT withheld from {$payment->vendor->name} - {$payment->payment_number}");
+        }
     }
 
     /**
@@ -1264,6 +1356,11 @@ class JournalService implements JournalServiceInterface
     public const PAYROLL_REMITTANCE = 'payroll_remittance';
 
     public const LOAN_DISBURSEMENT = 'loan_disbursement';
+
+    /** Withholding tax: paying WHT to the authority, and using WHT credits against income tax. */
+    public const WHT_REMITTANCE = 'wht_remittance';
+
+    public const WHT_CREDIT_UTILISATION = 'wht_credit_utilisation';
 
     /**
      * Payroll cost, posted when the payroll is approved (A10):

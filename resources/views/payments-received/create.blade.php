@@ -115,12 +115,49 @@
                         <div>
                             <label for="amount" class="form-label">Amount <span class="text-red-500">*</span></label>
                             <div class="relative">
-                                <input type="number" name="amount" id="amount" step="0.01" min="0.01" value="{{ old('amount', $invoice?->balance_due) }}" required placeholder="0.00"
+                                <input type="number" name="amount" id="amount" step="0.01" min="0.01" x-model="amount" required placeholder="0.00"
                                     class="form-control @error('amount') border-red-500 @enderror" @error('amount') aria-invalid="true" aria-describedby="amount-error" @enderror>
                             </div>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" x-show="hasWht">Money received in the bank, after the customer's WHT.</p>
                             @error('amount')
                                 <p id="amount-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
+                        </div>
+
+                        <!-- Withholding tax deducted by the customer -->
+                        <div class="md:col-span-2 rounded-md border border-gray-200 dark:border-gray-700 p-4" x-show="!isDeposit && !useDeposit">
+                            <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <input type="checkbox" x-model="hasWht" @change="recalculateWht()">
+                                The customer deducted withholding tax (WHT)
+                            </label>
+                            <div x-show="hasWht" x-cloak class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="wht_category_id" class="form-label">WHT transaction type</label>
+                                    <select name="wht_category_id" id="wht_category_id" x-model="whtCategoryId" @change="recalculateWht()" :disabled="!hasWht || isDeposit"
+                                        class="form-control @error('wht_category_id') border-red-500 @enderror">
+                                        <option value="">Select type</option>
+                                        @foreach($whtCategories as $category)
+                                            <option value="{{ $category->id }}" data-rate="{{ $whtBusinessType === 'individual' ? $category->rate_individual : $category->rate_company }}">{{ $category->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('wht_category_id')
+                                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                                <div>
+                                    <label for="wht_amount" class="form-label">WHT deducted</label>
+                                    <input type="number" name="wht_amount" id="wht_amount" step="0.01" min="0" x-model="whtAmount" :disabled="!hasWht || isDeposit"
+                                        class="form-control @error('wht_amount') border-red-500 @enderror">
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">As shown on the customer's payment advice. Recorded as a WHT credit note receivable.</p>
+                                    <p class="mt-1 text-xs text-gray-700 dark:text-gray-300" x-show="whtAmount > 0">
+                                        Received <span x-text="formatMoney(parseFloat(amount) || 0)"></span> + WHT <span x-text="formatMoney(parseFloat(whtAmount) || 0)"></span>
+                                        = settles <span class="font-semibold" x-text="formatMoney((parseFloat(amount) || 0) + (parseFloat(whtAmount) || 0))"></span>.
+                                    </p>
+                                    @error('wht_amount')
+                                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Payment Method -->
@@ -311,6 +348,38 @@
                 selectedDepositId: '',
                 depositAmountToApply: 0,
                 maxDepositAmount: 0,
+                amount: '{{ old('amount', $invoice?->balance_due) }}',
+                // Withholding tax deducted by the customer (on the amount before VAT).
+                whtRates: @json($whtCategories->mapWithKeys(fn ($c) => [$c->id => (float) ($whtBusinessType === 'individual' ? $c->rate_individual : $c->rate_company)])),
+                hasWht: {{ old('wht_amount') || old('wht_category_id') ? 'true' : 'false' }},
+                whtCategoryId: '{{ old('wht_category_id') }}',
+                whtAmount: '{{ old('wht_amount') }}',
+                customerWhtTypes: @json($customers->filter(fn ($c) => $c->wht_category_id && ! $c->wht_exempt)->mapWithKeys(fn ($c) => [$c->id => $c->wht_category_id])),
+
+                recalculateWht() {
+                    const invoice = this.filteredInvoices.find(inv => inv.id == this.selectedInvoice);
+                    // The customer's usual WHT type, if one is set.
+                    if (this.hasWht && !this.whtCategoryId && this.customerWhtTypes[this.selectedCustomer]) {
+                        this.whtCategoryId = String(this.customerWhtTypes[this.selectedCustomer]);
+                    }
+                    if (!this.hasWht || !this.whtCategoryId) {
+                        if (!this.hasWht) this.whtAmount = '';
+                        if (invoice) this.amount = parseFloat(invoice.balance_due).toFixed(2);
+                        return;
+                    }
+                    const total = invoice ? parseFloat(invoice.total) : 0;
+                    const share = total > 0 ? (total - (parseFloat(invoice.tax_amount) || 0)) / total : 1;
+                    const r = (this.whtRates[this.whtCategoryId] || 0) / 100 * share;
+                    if (invoice) {
+                        const owed = parseFloat(invoice.balance_due);
+                        const wht = Math.round(owed * r * 100) / 100;
+                        this.whtAmount = wht.toFixed(2);
+                        this.amount = (owed - wht).toFixed(2);
+                    } else {
+                        const net = parseFloat(this.amount) || 0;
+                        this.whtAmount = r > 0 && r < 1 ? (Math.round(r * net / (1 - r) * 100) / 100).toFixed(2) : '0.00';
+                    }
+                },
 
                 init() {
                     this.filterInvoices();
@@ -366,9 +435,10 @@
                     if (this.selectedInvoice) {
                         const invoice = this.filteredInvoices.find(inv => inv.id == this.selectedInvoice);
                         if (invoice) {
-                            document.getElementById('amount').value = parseFloat(invoice.balance_due).toFixed(2);
+                            this.amount = parseFloat(invoice.balance_due).toFixed(2);
                         }
                     }
+                    this.recalculateWht();
                     // Also update max deposit amount if a deposit is selected
                     this.updateDepositAmount();
                 }

@@ -81,6 +81,8 @@
                 </div>
             </div>
 
+            @include('withholding-tax._payment-wht', ['payment' => $paymentReceived, 'side' => 'received'])
+
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Payment Details -->
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">

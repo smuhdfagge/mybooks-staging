@@ -235,8 +235,8 @@
         @endcan
 
         <!-- Accountant Module -->
-        @canany(['view journals', 'view chart-of-accounts', 'view banks', 'view budgets'])
-        <div x-data="{ open: {{ request()->is('accountant*') || request()->is('journals*') || request()->is('chart-of-accounts*') || request()->is('banks*') || request()->is('budgets*') ? 'true' : 'false' }} }">
+        @canany(['view journals', 'view chart-of-accounts', 'view banks', 'view budgets', 'view withholding-tax'])
+        <div x-data="{ open: {{ request()->is('accountant*') || request()->is('journals*') || request()->is('chart-of-accounts*') || request()->is('banks*') || request()->is('budgets*') || request()->is('withholding-tax*') ? 'true' : 'false' }} }">
             <button @click="open = !open" 
                     class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors">
                 <div class="flex items-center">
@@ -262,6 +262,9 @@
                 @can('view chart-of-accounts')
                 <a href="{{ route('chart-of-accounts.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('chart-of-accounts.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Chart of Accounts</a>
                 <a href="{{ route('accounting-periods.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('accounting-periods.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Accounting Periods</a>
+                @endcan
+                @can('view withholding-tax')
+                <a href="{{ route('withholding-tax.setup') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('withholding-tax.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Withholding Tax</a>
                 @endcan
                 @can('view budgets')
                 @php

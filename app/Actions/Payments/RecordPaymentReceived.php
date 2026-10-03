@@ -2,9 +2,11 @@
 
 namespace App\Actions\Payments;
 
+use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\NotificationSetting;
 use App\Models\PaymentReceived;
+use App\Services\Accounting\WithholdingTax;
 use App\Services\BankService;
 use App\Services\NotificationService;
 use App\Services\PaymentValidation;
@@ -21,15 +23,21 @@ use Illuminate\Validation\ValidationException;
  * payment (the Created event updates the invoice or deposit balance and
  * posts the journal), the bank balance, and the confirmation email.
  *
+ * Withholding tax: when the customer deducted WHT (wht_amount, or worked
+ * out from wht_category_id), `amount` is the money received and amount plus
+ * WHT settles the invoice; the WHT is held as a credit note receivable
+ * (journal: Dr bank, Dr WHT receivable, Cr receivables). Not for deposits.
+ *
  * $data keys: customer_id, invoice_id, payment_date, amount,
  * payment_method, bank_id, reference, notes, is_deposit, apply_deposit_id,
- * deposit_amount.
+ * deposit_amount, wht_category_id, wht_amount.
  */
 class RecordPaymentReceived
 {
     public function __construct(
         protected BankService $bank,
         protected NotificationService $notifications,
+        protected WithholdingTax $wht,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -40,19 +48,25 @@ class RecordPaymentReceived
         $depositAmount = (float) ($data['deposit_amount'] ?? 0);
         $invoice = ! empty($data['invoice_id']) ? Invoice::find($data['invoice_id']) : null;
 
+        $wht = $this->wht->forSale($tenantId, $data, Customer::where('tenant_id', $tenantId)->findOrFail($data['customer_id']), $invoice);
+        if ($wht['wht_amount'] > 0 && ($isDeposit || ($applyDepositId && $depositAmount > 0))) {
+            throw ValidationException::withMessages(['wht_amount' => 'WHT can only be recorded on a payment against an invoice or a general payment, not with a deposit.']);
+        }
+
         if ($applyDepositId && $depositAmount > 0) {
             $errors = PaymentValidation::forDepositApplication(
                 PaymentReceived::find($applyDepositId), $invoice, $data['customer_id'],
                 $depositAmount, (float) $data['amount'] - $depositAmount
             );
         } elseif (! $isDeposit) {
-            $errors = PaymentValidation::forInvoice($invoice, $data['customer_id'], (float) $data['amount']);
+            // Money received plus WHT is what settles the invoice.
+            $errors = PaymentValidation::forInvoice($invoice, $data['customer_id'], (float) $data['amount'] + $wht['wht_amount']);
         }
         if (! empty($errors)) {
             throw ValidationException::withMessages($errors);
         }
 
-        return DB::transaction(function () use ($tenantId, $data, $userId, $isDeposit, $applyDepositId, $depositAmount, $invoice) {
+        return DB::transaction(function () use ($tenantId, $data, $userId, $isDeposit, $applyDepositId, $depositAmount, $invoice, $wht) {
             $amount = (float) $data['amount'];
 
             if ($applyDepositId && $depositAmount > 0 && $invoice) {
@@ -82,7 +96,7 @@ class RecordPaymentReceived
                 'is_deposit' => $isDeposit,
                 'unused_amount' => $isDeposit ? $amount : 0,
                 'created_by' => $userId,
-            ]);
+            ] + $wht);
 
             $this->bank->credit($data['bank_id'] ?? null, $amount, "Payment received #{$payment->payment_number}");
 

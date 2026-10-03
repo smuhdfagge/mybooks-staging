@@ -164,7 +164,8 @@ class Invoice extends Model
      */
     public function updateBalances()
     {
-        $this->amount_paid = round((float) $this->payments()->sum('amount')
+        // WHT the customer deducted settles the invoice too.
+        $this->amount_paid = round((float) $this->payments()->selectRaw('COALESCE(SUM(amount + wht_amount), 0) as settled')->value('settled')
             + (float) $this->creditNoteApplications()->sum('amount'), 2);
         $this->balance_due = $this->total - $this->amount_paid;
         $this->status = $this->balance_due <= 0 ? 'paid' : ($this->amount_paid > 0 ? 'partial' : 'unpaid');

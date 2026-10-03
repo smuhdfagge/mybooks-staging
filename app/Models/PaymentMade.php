@@ -39,6 +39,12 @@ class PaymentMade extends Model
         'is_advance',
         'unused_amount',
         'created_by',
+        'wht_category_id',
+        'wht_rate',
+        'wht_base',
+        'wht_amount',
+        'wht_authority',
+        'wht_state',
     ];
 
     protected $casts = [
@@ -46,10 +52,25 @@ class PaymentMade extends Model
         'amount' => 'decimal:2',
         'unused_amount' => 'decimal:2',
         'is_advance' => 'boolean',
+        'wht_rate' => 'decimal:2',
+        'wht_base' => 'decimal:2',
+        'wht_amount' => 'decimal:2',
     ];
 
     /** Payment method of the payment that uses an advance against a bill. */
     public const METHOD_ADVANCE = 'advance';
+
+    /** @return BelongsTo<WhtCategory, $this> */
+    public function whtCategory(): BelongsTo
+    {
+        return $this->belongsTo(WhtCategory::class);
+    }
+
+    /** What this payment settles on the bill: money paid plus WHT withheld. */
+    public function settledAmount(): float
+    {
+        return round((float) $this->amount + (float) $this->wht_amount, 2);
+    }
 
     /** @return BelongsTo<Vendor, $this> */
     public function vendor(): BelongsTo

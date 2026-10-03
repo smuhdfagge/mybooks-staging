@@ -26,6 +26,9 @@ class StorePaymentMadeRequest extends FormRequest
             'reference' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string'],
             'is_advance' => ['nullable', 'boolean'],
+            // Withholding tax taken off this payment (amount is the net paid).
+            'wht_category_id' => ['nullable', Rule::exists('wht_categories', 'id')->where('tenant_id', $tenantId)],
+            'wht_amount' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 }

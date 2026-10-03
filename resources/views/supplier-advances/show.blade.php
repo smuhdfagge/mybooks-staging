@@ -22,6 +22,9 @@
                 <x-card class="p-4">
                     <p class="text-sm text-gray-500 dark:text-gray-400">Paid in advance</p>
                     <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">@money($advance->amount)</p>
+                    @if((float) $advance->wht_amount > 0)
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Plus WHT withheld @money($advance->wht_amount): credit of @money($advance->settledAmount())</p>
+                    @endif
                 </x-card>
                 <x-card class="p-4">
                     <p class="text-sm text-gray-500 dark:text-gray-400">Not yet used</p>
