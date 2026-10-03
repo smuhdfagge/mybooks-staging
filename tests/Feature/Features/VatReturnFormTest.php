@@ -95,7 +95,7 @@ class VatReturnFormTest extends TestCase
         $this->assertNull($form['salesSchedule']->firstWhere('description', 'October job'));
 
         $credit = $form['adjustmentsSchedule']->sole();
-        $this->assertSame('CreditNote', $credit->document);
+        $this->assertSame('Credit note', $credit->document);
         $this->assertEqualsWithDelta(-20000, $credit->net, 0.001);
         $this->assertEqualsWithDelta(-1500, $credit->vat, 0.001);
         $this->assertSame('standard', $credit->treatment, 'taken from the invoice line');

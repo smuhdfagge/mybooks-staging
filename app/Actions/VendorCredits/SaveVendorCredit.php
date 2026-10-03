@@ -18,7 +18,8 @@ use Illuminate\Validation\ValidationException;
  *
  * $data keys: vendor_id, bill_id, credit_date, vendor_reference, reason,
  * notes, status (draft|open; default open), items[] (item_id, account_id,
- * description, quantity, unit_price, tax_rate).
+ * description, quantity, unit_price, tax_rate, optional vat_treatment for a
+ * line without VAT: zero, exempt or out_of_scope).
  */
 class SaveVendorCredit
 {
@@ -77,6 +78,7 @@ class SaveVendorCredit
                     'unit_price' => $line['unit_price'],
                     'tax_rate' => $line['tax_rate'],
                     'tax_amount' => $line['tax_amount'],
+                    'vat_treatment' => $line['vat_treatment'] ?? null,
                     'total' => $line['total'],
                 ]);
             }

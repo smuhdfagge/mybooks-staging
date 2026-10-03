@@ -114,7 +114,7 @@
             </tr>
             @forelse($rows as $row)
                 <tr>
-                    <td>{{ $row->party }}</td><td>{{ $row->tin }}</td><td>{{ $row->number }}</td><td>{{ $row->date->format('d/m/Y') }}</td>
+                    <td>{{ $row->party }}</td><td>{{ $row->tin }}</td><td>{{ $row->number }} ({{ $row->document }})</td><td>{{ $row->date->format('d/m/Y') }}</td>
                     <td>{{ $row->description }}</td><td>{{ \App\Services\Accounting\VatTreatment::label($row->treatment) }}</td>
                     <td class="r">{{ $fmt($row->net) }}</td><td class="r">{{ $fmt($row->vat) }}</td>
                 </tr>

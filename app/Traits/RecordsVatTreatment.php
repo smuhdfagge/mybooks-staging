@@ -5,7 +5,7 @@ namespace App\Traits;
 use App\Services\Accounting\VatTreatment;
 
 /**
- * Document lines (invoice, bill, cash sale, credit note) record their VAT
+ * Document lines (invoice, bill, cash sale, credit note, supplier credit) record their VAT
  * treatment when they are created, so later changes to tax rates or items
  * don't change past returns. See VatTreatment::forLine() for the rule.
  */

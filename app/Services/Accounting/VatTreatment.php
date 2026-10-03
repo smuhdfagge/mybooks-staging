@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
  *   out_of_scope  not a supply for VAT at all (e.g. a deposit or a
  *                 disbursement); left off the return.
  *
- * Each invoice, bill, cash sale and credit note line records its treatment
+ * Each invoice, bill, cash sale, credit note and supplier credit line records its treatment
  * when it is saved, so changing a tax rate later doesn't rewrite filed
  * months.
  *

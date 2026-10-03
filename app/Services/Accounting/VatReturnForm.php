@@ -9,6 +9,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceRefund;
 use App\Models\SalesReceipt;
 use App\Models\TaxRate;
+use App\Models\VendorCredit;
 use App\Support\Money;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -32,6 +33,13 @@ use Illuminate\Support\Facades\DB;
  *   100 VAT credit brought forward                105 VAT credit claimable
  *   110 VAT credit relieved                       115 credit carried forward
  *   120 VAT payable
+ * Checked 3 October 2026 against VAT Form 002 as published by FIRS
+ * (old.firs.gov.ng/wp-content/uploads/2020/10/VAT-FORM-20-02-20.pdf; line 5,
+ * the branch count, is not used). Rev360, which replaced TaxPro-Max on 30
+ * April 2026, builds the same return from the sales and purchases sheets
+ * of its Excel template. The printed form words lines 10-45 as income
+ * "received"; MyBooks reports by tax point (see below), and line 35 is used
+ * for credit notes, refunds and cancellations of earlier sales.
  *
  * Where the figures come from:
  *  - Supplies are the lines of every sales document whose journal is dated
@@ -42,6 +50,13 @@ use Illuminate\Support\Facades\DB;
  *  - Credit notes and refunds reduce supplies and output VAT in the month
  *    they are issued (line 35). So does cancelling a document from an
  *    earlier month. Cancelling one from the same month just takes it out.
+ *  - Purchases are bills, expenses and supplier credits. A supplier credit
+ *    (purchase return or price reduction) is a negative purchase in the
+ *    month it is dated, on the line of its treatment (standard-rated goods
+ *    off line 50, zero-rated off 55), and its VAT reduces input VAT, as its
+ *    journal reduces the Input VAT account. Supplier credit refunds,
+ *    supplier advances, payments (with or without WHT), delivery notes and
+ *    quotations post no VAT and are not on the return.
  *  - Output VAT (45) and input VAT (75) are the movements on the ledger's
  *    VAT accounts for the month, the same figures VatReturn::settle()
  *    clears, so the return always agrees with the ledger. The
@@ -97,12 +112,26 @@ class VatReturnForm
      * A month's return is due by the 21st of the next month (Nigeria Tax
      * Administration Act 2025, as under the VAT Act before it). VAT is
      * paid with the return.
+     * Checked 3 October 2026: Form 002 says "not later than 21st day of
+     * the month following the month of reporting"; 2026 filing calendars
+     * (e.g. taxlytech.com, June 2026) give the same date.
      */
     public const DUE_DAY = 21;
 
     private const SALES = [Invoice::class, SalesReceipt::class, CreditNote::class, InvoiceRefund::class];
 
-    private const PURCHASES = [Bill::class, Expense::class];
+    private const PURCHASES = [Bill::class, Expense::class, VendorCredit::class];
+
+    /** Plain names for the schedules. */
+    private const DOCUMENT_LABELS = [
+        Invoice::class => 'Invoice',
+        SalesReceipt::class => 'Cash sale',
+        CreditNote::class => 'Credit note',
+        InvoiceRefund::class => 'Refund',
+        Bill::class => 'Bill',
+        Expense::class => 'Expense',
+        VendorCredit::class => 'Supplier credit',
+    ];
 
     public function __construct(private VatReturn $ledger) {}
 
@@ -253,6 +282,7 @@ class VatReturnForm
             InvoiceRefund::class => ['customer', 'invoice.items'],
             Bill::class => ['vendor', 'items'],
             Expense::class => ['vendor'],
+            VendorCredit::class => ['vendor', 'items'],
         ];
 
         return $journals->groupBy('reference_type')->flatMap(function ($group, $type) use ($with) {
@@ -280,7 +310,7 @@ class VatReturnForm
         $reversal = str_starts_with((string) $journal->reference, 'REV-');
 
         // +1 adds to supplies/purchases, -1 takes away.
-        $sign = in_array($type, [CreditNote::class, InvoiceRefund::class], true) ? -1 : 1;
+        $sign = in_array($type, [CreditNote::class, InvoiceRefund::class, VendorCredit::class], true) ? -1 : 1;
         if ($reversal) {
             $sign = -$sign;
         }
@@ -295,7 +325,7 @@ class VatReturnForm
         }
 
         $party = match ($type) {
-            Bill::class, Expense::class => $doc->vendor,
+            Bill::class, Expense::class, VendorCredit::class => $doc->vendor,
             default => $doc->customer,
         };
         $base = [
@@ -308,9 +338,10 @@ class VatReturnForm
                 InvoiceRefund::class => $doc->refund_number,
                 Bill::class => $doc->vendor_bill_number ?: $doc->bill_number,
                 Expense::class => $doc->expense_number,
+                VendorCredit::class => $doc->vendor_reference ?: $doc->vendor_credit_number,
                 default => null,
             } ?: $journal->reference,
-            'document' => class_basename($type),
+            'document' => self::DOCUMENT_LABELS[$type] ?? class_basename($type),
             'document_id' => $doc->id,
             'party' => $party->name ?? ($type === SalesReceipt::class ? 'Walk-in customer' : null),
             'tin' => $this->tin($party),
@@ -365,13 +396,15 @@ class VatReturnForm
             SalesReceipt::class => 'sales_receipt',
             CreditNote::class => 'credit_note',
             Bill::class => 'bill',
+            VendorCredit::class => 'vendor_credit',
             default => null,
         };
         $items = $doc->items->sortBy('id')->values();
         $nets = $items->map(fn ($i) => Money::subtract($i->total, $i->tax_amount))->all();
 
         // Invoices and cash sales keep the document discount off the lines
-        // (bills already have it in each line's total): share it out.
+        // (bills already have it in each line's total; supplier credits have
+        // none): share it out.
         $discount = in_array($type, [Invoice::class, SalesReceipt::class], true) ? (float) $doc->discount_amount : 0.0;
         $shares = ($discount > 0 && $nets) ? Money::allocate($discount, $nets) : array_fill(0, count($nets), 0.0);
 

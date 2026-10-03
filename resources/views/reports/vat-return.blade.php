@@ -22,11 +22,12 @@
                         <button type="button" class="inline-flex items-center px-3 py-2 bg-green-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">CSV</button>
                     </x-slot>
                     <x-slot name="content">
-                        <x-dropdown-link :href="route('reports.vat-return.export', ['month' => $month, 'format' => 'csv', 'schedule' => 'sales-upload'])">Sales schedule (TaxPro-Max upload)</x-dropdown-link>
+                        <x-dropdown-link :href="route('reports.vat-return.export', ['month' => $month, 'format' => 'csv', 'schedule' => 'sales-upload'])">Sales schedule (NRS upload)</x-dropdown-link>
                         <x-dropdown-link :href="route('reports.vat-return.export', ['month' => $month, 'format' => 'csv', 'schedule' => 'sales'])">Sales schedule (detailed)</x-dropdown-link>
                         <x-dropdown-link :href="route('reports.vat-return.export', ['month' => $month, 'format' => 'csv', 'schedule' => 'adjustments'])">Sales adjustments</x-dropdown-link>
                         <x-dropdown-link :href="route('reports.vat-return.export', ['month' => $month, 'format' => 'csv', 'schedule' => 'purchases'])">Purchases schedule</x-dropdown-link>
                         <x-dropdown-link :href="route('reports.vat-return.export', ['month' => $month, 'format' => 'csv', 'schedule' => 'form'])">Form 002 lines</x-dropdown-link>
+                        <p class="px-4 py-2 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-100 dark:border-gray-700">NRS upload uses VAT status 0 VATable, 1 zero-rated, 2 exempt. Check this against the template you download from the NRS portal (Rev360) before uploading.</p>
                     </x-slot>
                 </x-dropdown>
                 <a href="{{ route('reports.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">Back to Reports</a>
@@ -215,7 +216,7 @@
                                     <tr>
                                         <td class="{{ $td }}">{{ $row->party }}</td>
                                         <td class="{{ $td }}">{{ $row->tin }}</td>
-                                        <td class="{{ $td }}">{{ $row->number }}</td>
+                                        <td class="{{ $td }}">{{ $row->number }} <span class="block text-xs text-gray-500 dark:text-gray-400">{{ $row->document }}</span></td>
                                         <td class="{{ $td }} whitespace-nowrap">{{ $row->date->format('d/m/Y') }}</td>
                                         <td class="{{ $td }}">{{ $row->description }}</td>
                                         <td class="{{ $td }} {{ $row->treatment === null ? 'text-amber-600' : '' }}">{{ $treatments[$row->treatment] ?? 'Not classified' }}</td>

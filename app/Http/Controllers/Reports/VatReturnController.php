@@ -48,6 +48,13 @@ class VatReturnController extends ReportController
      * 1 zero-rated, 2 exempt), one row per line, "0" where the TIN isn't
      * known (taken from the NRS template guidance; check it against the
      * template downloaded from TaxPro-Max before uploading).
+     *
+     * Checked 3 October 2026: NRS replaced TaxPro-Max with Rev360 on 30 April
+     * 2026; VAT is still filed by downloading an Excel template, filling the
+     * sales and purchases sheets and uploading it. The codes above are the
+     * TaxPro-Max ones (taxaide.com.ng, April 2023). One unofficial Rev360
+     * guide (nrsportal.ng, May 2026) lists 1 as exempt and 2 as zero-rated,
+     * so the page tells users to check the codes against the template.
      */
     public function export(Request $request)
     {

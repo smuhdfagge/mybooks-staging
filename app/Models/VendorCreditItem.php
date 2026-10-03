@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\RecordsVatTreatment;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class VendorCreditItem extends Model
 {
+    use RecordsVatTreatment;
+
     protected $fillable = [
         'vendor_credit_id',
         'item_id',
@@ -16,6 +19,7 @@ class VendorCreditItem extends Model
         'unit_price',
         'tax_rate',
         'tax_amount',
+        'vat_treatment',
         'total',
         'unit_cost',
     ];
@@ -45,6 +49,25 @@ class VendorCreditItem extends Model
     public function account(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class, 'account_id');
+    }
+
+    /**
+     * A line without VAT takes the treatment of the bill line it credits
+     * (same item, else same description), so returning zero-rated or exempt
+     * goods comes off the right box of the VAT return.
+     */
+    public function inheritedVatTreatment(): ?string
+    {
+        $billId = VendorCredit::withoutGlobalScopes()->whereKey($this->vendor_credit_id)->value('bill_id');
+        if (! $billId) {
+            return null;
+        }
+
+        $lines = BillItem::where('bill_id', $billId)->get(['item_id', 'description', 'vat_treatment']);
+        $match = ($this->item_id ? $lines->firstWhere('item_id', $this->item_id) : null)
+            ?? $lines->firstWhere('description', $this->description);
+
+        return $match?->vat_treatment;
     }
 
     /** The line before VAT. */

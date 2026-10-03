@@ -15,6 +15,7 @@ use App\Models\ChartOfAccount;
 use App\Models\Item;
 use App\Models\Vendor;
 use App\Models\VendorCredit;
+use App\Services\Accounting\VatTreatment;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -83,6 +84,7 @@ class VendorCreditController extends Controller
             'items.*.quantity' => ['required', 'numeric', 'min:0'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'items.*.vat_treatment' => ['nullable', Rule::in(VatTreatment::ALL)],
         ]);
 
         $credit = $save->create($tenantId, $validated, auth()->id());
