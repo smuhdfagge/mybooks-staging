@@ -22,6 +22,10 @@
     <style>
         @page { margin: 28px 34px 44px 34px; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        @if (! empty($forPdf))
+        {{-- DomPDF takes the page margins from html, and the reset above clears them. --}}
+        html { margin: 34px 40px 50px 40px; }
+        @endif
         body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 10.5px; line-height: 1.45; color: #1f2937; }
         .page { padding: 0; }
         .screen .page { max-width: 800px; margin: 0 auto; padding: 32px 40px; }

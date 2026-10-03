@@ -18,9 +18,9 @@ To start a session, say: **"Do session N of docs/FEATURE-PLAN.md"**.
 | 5 | Withholding tax on sales and purchases, WHT credits, schedules | `feature/withholding-tax` | Merged (#24) |
 | 6 | VAT return in the NRS format: standard, zero-rated and exempt supplies | `feature/vat-return` | Merged (#25) |
 | 7 | Customer credit notes, with returned goods back into stock (A15) | `feature/customer-credit-notes` | Merged (#28) |
-| 8 | Auto-reversing journals (accruals) | `feature/auto-reversing-journals` | Done, PR open |
-| 9 | Prepaid expense and deferred revenue schedules | `feature/prepaid-deferred-schedules` | Done, PR open (needs #29 first) |
-| 10 | Customer and supplier statements (PDF, email, bulk send) and AR/AP control reconciliation | — | To do |
+| 8 | Auto-reversing journals (accruals) | `feature/auto-reversing-journals` | Merged (#29) |
+| 9 | Prepaid expense and deferred revenue schedules | `feature/prepaid-deferred-schedules` | Merged (#30) |
+| 10 | Customer and supplier statements (PDF, email, bulk send) and AR/AP control reconciliation | `feature/statements-reconciliation` | Done, PR open |
 | 11 | Audit lock dates: staff and adviser locks, logged reopen with reason | — | To do |
 | 12 | Warehouses: stock per location, default warehouse for existing stock | — | To do |
 | 13 | Stock transfers between warehouses | — | To do (needs 12) |

@@ -137,7 +137,7 @@ class ControlReconciliation
                 ? "Manual journal {$j->journal_number} posted straight to {$title}"
                 : 'Journal '.$j->journal_number.' from a '.strtolower(preg_replace('/(?<!^)[A-Z]/', ' $0', class_basename($j->reference_type)))." posted to {$title}";
             $items[] = $this->item('journal', $label,
-                trim(($j->description ?: '')." It isn't linked to any {$parties}, so it doesn't show on any statement."),
+                trim(rtrim((string) $j->description, '. ').($j->description ? '. ' : '')."It isn't linked to any {$parties}, so it doesn't show on any statement."),
                 Carbon::parse($j->journal_date)->toDateString(), $j->effect, route('journals.show', $j->id));
         }
 
