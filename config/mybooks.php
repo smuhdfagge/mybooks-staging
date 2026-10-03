@@ -127,7 +127,7 @@ return [
     'features' => [
         'quotations' => (bool) env('MYBOOKS_FEATURE_QUOTATIONS', true),
         'delivery_notes' => (bool) env('MYBOOKS_FEATURE_DELIVERY_NOTES', true),
-        'credit_notes' => (bool) env('MYBOOKS_FEATURE_CREDIT_NOTES', false),
+        'credit_notes' => (bool) env('MYBOOKS_FEATURE_CREDIT_NOTES', true),
         'warehouses' => (bool) env('MYBOOKS_FEATURE_WAREHOUSES', false),
         'stock_transfers' => (bool) env('MYBOOKS_FEATURE_STOCK_TRANSFERS', false),
         'assembly' => (bool) env('MYBOOKS_FEATURE_ASSEMBLY', false),              // bills of materials and assembly orders

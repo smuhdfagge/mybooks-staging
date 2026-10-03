@@ -17,6 +17,7 @@ class CreditNoteItem extends Model
         'description',
         'quantity',
         'unit_price',
+        'unit_cost',
         'tax_rate',
         'tax_amount',
         'vat_treatment',
@@ -26,6 +27,7 @@ class CreditNoteItem extends Model
     protected $casts = [
         'quantity' => 'decimal:2',
         'unit_price' => 'decimal:2',
+        'unit_cost' => 'decimal:4',
         'tax_rate' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'total' => 'decimal:2',
@@ -60,5 +62,18 @@ class CreditNoteItem extends Model
     public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class);
+    }
+
+    /** The line before VAT. */
+    public function net(): float
+    {
+        return round((float) $this->total - (float) $this->tax_amount, 2);
+    }
+
+    /** Goods that can go back into stock (a stock item, not a service). */
+    public function isStocked(): bool
+    {
+        return $this->item_id && $this->item && $this->item->track_inventory
+            && $this->item->type !== 'service' && (float) $this->quantity > 0;
     }
 }

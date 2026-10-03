@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CreditNoteStatus;
 use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerRequest;
 use App\Models\Country;
+use App\Models\CreditNote;
 use App\Models\Customer;
 use App\Models\State;
 
@@ -40,8 +42,11 @@ class CustomerController extends Controller
             'invoices' => fn ($q) => $q->latest('invoice_date')->latest('id')->limit(10),
             'payments' => fn ($q) => $q->with('invoice')->latest('payment_date')->latest('id')->limit(5),
         ]);
+        // Posted credit notes with credit left to use.
+        $openCredits = CreditNote::where('customer_id', $customer->id)->where('status', CreditNoteStatus::Open->value)
+            ->where('balance', '>', 0)->latest('credit_note_date')->latest('id')->get();
 
-        return view('customers.show', compact('customer'));
+        return view('customers.show', compact('customer', 'openCredits'));
     }
 
     public function edit(Customer $customer)
