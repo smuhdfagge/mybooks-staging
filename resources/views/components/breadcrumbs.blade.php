@@ -35,6 +35,7 @@
                 'designations' => 'Designations',
                 'chart-of-accounts' => 'Chart of Accounts',
                 'journals' => 'Journals',
+                'accrual-schedules' => 'Prepaid & Deferred Schedules',
                 'banks' => 'Banks',
                 'bank-transfers' => 'Bank Transfers',
                 'bank-transfer-categories' => 'Transfer Categories',

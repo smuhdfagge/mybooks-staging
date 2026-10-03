@@ -51,6 +51,7 @@ class AccountCodeService
         'sales_tax_payable' => '2400', // output VAT
         'vat_payable' => '2410', // net VAT owed after a return is settled
         'income_tax_payable' => '2430', // company income tax; WHT credits are used against it
+        'deferred_revenue' => '2440', // income received before it is earned (S9 schedules)
 
         // Equity
         'owners_capital' => '3000',

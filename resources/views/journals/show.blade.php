@@ -85,6 +85,21 @@
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</dt>
                                 <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100 capitalize">{{ $journal->status }}</dd>
                             </div>
+                            {{-- Prepaid / deferred schedules (S9) --}}
+                            @if($journal->isScheduleRelease())
+                            @php($releasedFrom = \App\Models\AccrualSchedule::find($journal->reference_id))
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Released from schedule</dt>
+                                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                                    @if($releasedFrom && \App\Http\Middleware\EnsureFeatureEnabled::enabled('prepaid_schedules'))
+                                        <a href="{{ route('accrual-schedules.show', $releasedFrom) }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">{{ $releasedFrom->schedule_number }}</a>
+                                        <span class="text-gray-500 dark:text-gray-400">{{ $releasedFrom->description }}</span>
+                                    @else
+                                        {{ $releasedFrom?->schedule_number ?? '—' }}
+                                    @endif
+                                </dd>
+                            </div>
+                            @endif
                             {{-- Accruals (S8) --}}
                             @if($journal->isAutoReversal())
                             <div>
@@ -259,6 +274,9 @@
                             </svg>
                             Journal is Posted (Locked)
                         </span>
+                        @if($journal->isScheduleRelease())
+                            <p class="w-full text-sm text-gray-500 dark:text-gray-400">This journal is one month released from a prepaid or deferred revenue schedule. It can't be edited, deleted or voided on its own; cancel the schedule to stop the months still to come.</p>
+                        @endif
                         @if($journal->isAutoReversal())
                             <p class="w-full text-sm text-gray-500 dark:text-gray-400">This journal was posted automatically to reverse {{ $journal->reversalOf?->journal_number }}. It can't be edited, deleted or voided on its own.</p>
                         @endif

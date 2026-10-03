@@ -69,7 +69,7 @@ composer analyse           # PHPStan; new code must not add to phpstan-baseline.
    php artisan migrate --force
    php artisan config:cache && php artisan route:cache && php artisan view:cache
    ```
-4. **Scheduler.** Add one cron entry. It expires subscriptions and sends renewal reminders, processes recurring transactions, posts the automatic reversals of accrual journals, and sends payment and stock reminders.
+4. **Scheduler.** Add one cron entry. It expires subscriptions and sends renewal reminders, processes recurring transactions, posts the automatic reversals of accrual journals, releases the monthly prepaid expense and deferred revenue amounts, and sends payment and stock reminders.
    ```
    * * * * * cd /path/to/mybooks && php artisan schedule:run >> /dev/null 2>&1
    ```

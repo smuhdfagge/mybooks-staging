@@ -49,6 +49,7 @@ class ChartOfAccountService
             ['account_code' => '2400', 'name' => 'Sales Tax Payable', 'type' => 'liability', 'sub_type' => 'other_current_liability'],
             ['account_code' => '2410', 'name' => 'VAT Payable', 'type' => 'liability', 'sub_type' => 'other_current_liability'],
             ['account_code' => '2430', 'name' => 'Income Tax Payable', 'type' => 'liability', 'sub_type' => 'other_current_liability'],
+            ['account_code' => '2440', 'name' => 'Deferred Revenue', 'type' => 'liability', 'sub_type' => 'other_current_liability'],
             ['account_code' => '2500', 'name' => 'Short-term Loans', 'type' => 'liability', 'sub_type' => 'other_current_liability'],
             ['account_code' => '2600', 'name' => 'Long-term Loans', 'type' => 'liability', 'sub_type' => 'long_term_liability'],
 

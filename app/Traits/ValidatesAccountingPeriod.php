@@ -79,7 +79,7 @@ trait ValidatesAccountingPeriod
 
         if (AccountingPeriod::isDateInClosedPeriod($date, $tenantId)) {
             throw ValidationException::withMessages([
-                $this->getPeriodDateField() => [AccountingPeriod::getClosedPeriodMessage($date)],
+                $this->getPeriodDateField() => [AccountingPeriod::getClosedPeriodMessage($date, $tenantId)],
             ]);
         }
     }
@@ -111,7 +111,7 @@ trait ValidatesAccountingPeriod
         $newDate = $this->getTransactionDate();
         if (AccountingPeriod::isDateInClosedPeriod($newDate, $tenantId)) {
             throw ValidationException::withMessages([
-                $this->getPeriodDateField() => [AccountingPeriod::getClosedPeriodMessage($newDate)],
+                $this->getPeriodDateField() => [AccountingPeriod::getClosedPeriodMessage($newDate, $tenantId)],
             ]);
         }
     }
