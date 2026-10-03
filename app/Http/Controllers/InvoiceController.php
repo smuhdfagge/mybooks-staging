@@ -45,7 +45,8 @@ class InvoiceController extends Controller
 
     public function show(Invoice $invoice)
     {
-        $invoice->load(['customer', 'items.item', 'payments.createdBy', 'createdBy', 'journal.entries.account', 'refunds']);
+        $invoice->load(['customer', 'items.item', 'payments.createdBy', 'createdBy', 'journal.entries.account', 'refunds',
+            'creditNotes' => fn ($q) => $q->latest('credit_note_date')->latest('id'), 'creditNoteApplications.creditNote']);
 
         return view('invoices.show', compact('invoice'));
     }

@@ -2,22 +2,33 @@
 
 namespace App\Models;
 
-use App\Services\JournalService;
+use App\Actions\CreditNotes\OpenCreditNote;
+use App\Actions\CreditNotes\VoidCreditNote;
+use App\Enums\CreditNoteStatus;
 use App\Traits\BelongsToTenant;
+use App\Traits\GuardsStatusTransitions;
 use App\Traits\HasDocumentNumber;
 use App\Traits\KeepsTotalsBalanced;
 use App\Traits\LogsActivity;
+use App\Traits\ValidatesAccountingPeriod;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
+/**
+ * A customer credit note: goods returned, or a price reduction, optionally
+ * against one invoice. Opening it posts the journal and puts returned goods
+ * back into stock (App\Actions\CreditNotes). The open balance can be
+ * applied to the customer's unpaid invoices or refunded to them.
+ */
 class CreditNote extends Model
 {
-    use BelongsToTenant, HasFactory, KeepsTotalsBalanced, LogsActivity, SoftDeletes;
-    use HasDocumentNumber;
+    use BelongsToTenant, HasFactory, KeepsTotalsBalanced, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
+    use GuardsStatusTransitions, HasDocumentNumber;
 
     const STATUS_DRAFT = 'draft';
 
@@ -45,6 +56,7 @@ class CreditNote extends Model
         'credit_note_date',
         'status',
         'reason',
+        'restock',
         'subtotal',
         'tax_amount',
         'total',
@@ -55,6 +67,7 @@ class CreditNote extends Model
 
     protected $casts = [
         'credit_note_date' => 'date',
+        'restock' => 'boolean',
         'subtotal' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'total' => 'decimal:2',
@@ -85,6 +98,18 @@ class CreditNote extends Model
         return $this->hasMany(CreditNoteApplication::class);
     }
 
+    /** @return HasMany<CreditNoteRefund, $this> */
+    public function refunds(): HasMany
+    {
+        return $this->hasMany(CreditNoteRefund::class);
+    }
+
+    /** @return MorphMany<Journal, $this> */
+    public function journals(): MorphMany
+    {
+        return $this->morphMany(Journal::class, 'reference');
+    }
+
     /** @return BelongsTo<User, $this> */
     public function createdBy(): BelongsTo
     {
@@ -97,48 +122,14 @@ class CreditNote extends Model
         return ['credit_note_number', 'CN-', 6];
     }
 
-    /**
-     * Apply this credit note (or part of it) to one of the same customer's
-     * invoices. Call inside a transaction.
-     */
-    public function applyToInvoice(Invoice $invoice, float $amount): CreditNoteApplication
+    public function isDraft(): bool
     {
-        $amount = round($amount, 2);
+        return $this->status === CreditNoteStatus::Draft->value;
+    }
 
-        if ($this->status !== self::STATUS_OPEN) {
-            throw new \InvalidArgumentException('Only an open credit note can be applied.');
-        }
-        if ((int) $invoice->customer_id !== (int) $this->customer_id) {
-            throw new \InvalidArgumentException('The invoice belongs to a different customer.');
-        }
-        if (in_array($invoice->status, ['draft', 'cancelled', 'void'], true)) {
-            throw new \InvalidArgumentException("Invoice {$invoice->invoice_number} is {$invoice->status}.");
-        }
-        if ($amount <= 0 || $amount - (float) $this->balance > 0.005) {
-            throw new \InvalidArgumentException('Amount exceeds credit note balance.');
-        }
-        if ($amount - (float) $invoice->balance_due > 0.005) {
-            throw new \InvalidArgumentException('Amount exceeds invoice balance due.');
-        }
-
-        $application = CreditNoteApplication::create([
-            'credit_note_id' => $this->id,
-            'invoice_id' => $invoice->id,
-            'amount' => $amount,
-            'applied_date' => now(),
-            'applied_by' => auth()->id(),
-        ]);
-
-        $this->balance = round((float) $this->balance - $amount, 2);
-        if ($this->balance <= 0) {
-            $this->status = self::STATUS_CLOSED;
-        }
-        $this->save();
-
-        // Recompute from payments + credits, rather than adding on (N5)
-        $invoice->updateBalances();
-
-        return $application;
+    public function isOpen(): bool
+    {
+        return $this->status === CreditNoteStatus::Open->value;
     }
 
     /**
@@ -149,45 +140,58 @@ class CreditNote extends Model
         return (float) $this->applications()->sum('amount');
     }
 
+    /** Applied to invoices plus refunded. */
+    public function usedAmount(): float
+    {
+        return round((float) $this->applications()->sum('amount') + (float) $this->refunds()->sum('amount'), 2);
+    }
+
+    /** Lower the open balance; the credit note closes when nothing is left. */
+    public function reduceBalance(float $amount): void
+    {
+        $this->balance = round((float) $this->balance - $amount, 2);
+        if ($this->balance <= 0.004) {
+            $this->balance = 0;
+            $this->status = CreditNoteStatus::Closed->value;
+        }
+        $this->withoutPeriodValidation()->save();
+    }
+
     /**
-     * Open the credit note: it can now be applied to invoices, and the
-     * ledger is credited (finding N5 - it used to post nothing).
+     * Open (post) the credit note: see OpenCreditNote. Returns false if it
+     * isn't a draft.
      */
     public function open(): bool
     {
-        if ($this->status !== self::STATUS_DRAFT) {
+        if ($this->status !== CreditNoteStatus::Draft->value) {
             return false;
         }
 
-        DB::transaction(function () {
-            $this->update([
-                'status' => self::STATUS_OPEN,
-                'balance' => $this->total,
-            ]);
-            app(JournalService::class)->createCreditNoteJournal($this);
-        });
+        app(OpenCreditNote::class)->handle($this);
+        $this->refresh();
 
         return true;
     }
 
     /**
-     * Void an unused credit note, reversing its journal if it was opened.
+     * Void an unused credit note: see VoidCreditNote. Returns false if it
+     * can't be voided.
      */
     public function void(): bool
     {
-        if ($this->status === self::STATUS_VOID || $this->total_applied > 0) {
+        try {
+            app(VoidCreditNote::class)->handle($this);
+        } catch (ValidationException) {
             return false;
         }
-
-        DB::transaction(function () {
-            if ($this->status !== self::STATUS_DRAFT) {
-                app(JournalService::class)
-                    ->reverseDocumentJournal(self::class, $this->id, 'Credit note voided');
-            }
-            $this->update(['status' => self::STATUS_VOID, 'balance' => 0]);
-        });
+        $this->refresh();
 
         return true;
+    }
+
+    protected function getPeriodDateField(): string
+    {
+        return 'credit_note_date';
     }
 
     /**
@@ -196,5 +200,16 @@ class CreditNote extends Model
     protected function documentTotalParts(): array
     {
         return [['subtotal', 'tax_amount'], []];
+    }
+
+    /** Allowed status moves. */
+    protected static function statusEnum(): string
+    {
+        return CreditNoteStatus::class;
+    }
+
+    protected static function statusDocumentName(): string
+    {
+        return 'credit note';
     }
 }
