@@ -45,6 +45,7 @@ use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\RecurrentBillController;
 use App\Http\Controllers\RecurrentExpenseController;
 use App\Http\Controllers\Reports\ComparativeReportController;
+use App\Http\Controllers\Reports\ControlReconciliationController;
 use App\Http\Controllers\Reports\CustomReportController;
 use App\Http\Controllers\Reports\FinancialReportController;
 use App\Http\Controllers\Reports\PayrollReportController;
@@ -56,6 +57,7 @@ use App\Http\Controllers\SalaryStructureController;
 use App\Http\Controllers\SalesOrderController;
 use App\Http\Controllers\SalesReceiptController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\StatementController;
 use App\Http\Controllers\StockTransferController;
 use App\Http\Controllers\SupplierAdvanceController;
 use App\Http\Controllers\TaxGroupController;
@@ -331,6 +333,19 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         ->middleware('permission:delete customers')
         ->name('customers.destroy');
 
+    // Customer statements: screen, print, PDF, email, bulk email (session 10)
+    Route::middleware('feature:statements')->group(function () {
+        Route::middleware('permission:view customers,view reports')->group(function () {
+            Route::get('customers/{customer}/statement', [StatementController::class, 'customer'])->name('customers.statement');
+            Route::get('customers/{customer}/statement/print', [StatementController::class, 'customerPrint'])->name('customers.statement.print');
+            Route::get('customers/{customer}/statement/pdf', [StatementController::class, 'customerPdf'])->name('customers.statement.pdf');
+        });
+        Route::middleware('permission:send invoices')->group(function () {
+            Route::post('customers/{customer}/statement/email', [StatementController::class, 'customerEmail'])->name('customers.statement.email');
+            Route::post('customers/statements/send', [StatementController::class, 'sendCustomers'])->name('customers.statements.send');
+        });
+    });
+
     // Invoices - Create routes MUST come before wildcard routes
     Route::middleware('permission:create invoices')->group(function () {
         Route::get('invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
@@ -532,6 +547,20 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     Route::delete('vendors/{vendor}', [VendorController::class, 'destroy'])
         ->middleware('permission:delete vendors')
         ->name('vendors.destroy');
+
+    // Supplier statements (session 10). Emailing them uses the same
+    // permission as emailing invoices.
+    Route::middleware('feature:statements')->group(function () {
+        Route::middleware('permission:view vendors,view reports')->group(function () {
+            Route::get('vendors/{vendor}/statement', [StatementController::class, 'vendor'])->name('vendors.statement');
+            Route::get('vendors/{vendor}/statement/print', [StatementController::class, 'vendorPrint'])->name('vendors.statement.print');
+            Route::get('vendors/{vendor}/statement/pdf', [StatementController::class, 'vendorPdf'])->name('vendors.statement.pdf');
+        });
+        Route::middleware('permission:send invoices')->group(function () {
+            Route::post('vendors/{vendor}/statement/email', [StatementController::class, 'vendorEmail'])->name('vendors.statement.email');
+            Route::post('vendors/statements/send', [StatementController::class, 'sendVendors'])->name('vendors.statements.send');
+        });
+    });
 
     // Expenses - Create routes MUST come before wildcard routes
     Route::middleware('permission:create expenses')->group(function () {
@@ -1022,7 +1051,12 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::get('/sales-by-customer', [SalesReportController::class, 'salesByCustomer'])->name('sales-by-customer');
         Route::get('/sales-by-item', [SalesReportController::class, 'salesByItem'])->name('sales-by-item');
         Route::get('/purchase-by-vendor', [PurchaseReportController::class, 'purchaseByVendor'])->name('purchase-by-vendor');
-        Route::get('/customer-statement', [SalesReportController::class, 'customerStatement'])->name('customer-statement');
+        Route::get('/customer-statement', [StatementController::class, 'pickCustomer'])->name('customer-statement');
+        Route::middleware('feature:statements')->group(function () {
+            Route::get('/supplier-statement', [StatementController::class, 'pickVendor'])->name('supplier-statement');
+            // Receivables / payables ledger against customer / supplier balances (session 10)
+            Route::get('/control-reconciliation', [ControlReconciliationController::class, 'show'])->name('control-reconciliation');
+        });
         Route::get('/inventory-summary', [PurchaseReportController::class, 'inventorySummary'])->name('inventory-summary');
         Route::get('/payroll-summary', [PayrollReportController::class, 'payrollSummary'])->name('payroll-summary');
         Route::get('/payroll-by-department', [PayrollReportController::class, 'payrollByDepartment'])->name('payroll-by-department');

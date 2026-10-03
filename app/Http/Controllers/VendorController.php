@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateVendorRequest;
 use App\Models\Country;
 use App\Models\State;
 use App\Models\Vendor;
+use App\Services\Statements\StatementBuilder;
 
 class VendorController extends Controller
 {
@@ -45,7 +46,11 @@ class VendorController extends Controller
         $openCredits = $vendor->vendorCredits()->where('status', 'open')->where('balance', '>', 0)->latest('credit_date')->get();
         $openAdvances = $vendor->advances()->where('unused_amount', '>', 0)->latest('payment_date')->get();
 
-        return view('vendors.show', compact('vendor', 'openCredits', 'openAdvances'));
+        // Unpaid bills less unused credits and advances: the statement's
+        // closing balance (session 10).
+        $balanceOwed = app(StatementBuilder::class)->balance($vendor);
+
+        return view('vendors.show', compact('vendor', 'openCredits', 'openAdvances', 'balanceOwed'));
     }
 
     public function edit(Vendor $vendor)

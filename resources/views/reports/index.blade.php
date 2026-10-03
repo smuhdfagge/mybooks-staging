@@ -231,6 +231,23 @@
                             </div>
                         </div>
                     </a>
+
+                    @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('statements'))
+                        <!-- Ledger against customer / supplier balances (session 10) -->
+                        <a href="{{ route('reports.control-reconciliation') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-sky-500 rounded-md p-3">
+                                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-4">
+                                    <h4 class="text-base font-medium text-gray-900 dark:text-white">Receivables &amp; Payables Check</h4>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Ledger against customer and supplier balances</p>
+                                </div>
+                            </div>
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>
@@ -288,10 +305,10 @@
             </div>
         </div>
 
-        <!-- Customer Statements -->
+        <!-- Statements -->
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
             <div class="p-6">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Customer Statements</h3>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Statements</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <!-- Customer Statement -->
                     <a href="{{ route('reports.customer-statement') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
@@ -307,6 +324,22 @@
                             </div>
                         </div>
                     </a>
+
+                    @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('statements'))
+                        <a href="{{ route('reports.supplier-statement') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-orange-500 rounded-md p-3">
+                                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-4">
+                                    <h4 class="text-base font-medium text-gray-900 dark:text-white">Supplier Statement</h4>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Activity and balances by supplier</p>
+                                </div>
+                            </div>
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>

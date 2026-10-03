@@ -9,11 +9,12 @@ use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Item;
 use App\Models\JournalEntry;
-use App\Models\PaymentReceived;
 use App\Models\Payroll;
 use App\Models\Vendor;
 use App\Services\Accounting\FinancialStatements;
 use App\Services\Reports\PayrollReportService;
+use App\Services\Statements\Statement;
+use App\Services\Statements\StatementBuilder;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -148,9 +149,11 @@ class ReportController extends BaseApiController
         $tenantId = $this->getTenantId();
         $asOf = $request->get('as_of', now()->format('Y-m-d'));
 
+        // "Sent" invoices are unpaid too; they were missing (session 10). "Before
+        // the next day" because SQLite keeps a time part on dates.
         $invoices = Invoice::where('tenant_id', $tenantId)
-            ->where('invoice_date', '<=', $asOf)
-            ->whereIn('status', ['unpaid', 'partial', 'overdue'])
+            ->where('invoice_date', '<', Carbon::parse($asOf)->addDay()->toDateString())
+            ->whereIn('status', ['sent', 'unpaid', 'partial', 'overdue'])
             ->where('balance_due', '>', 0)
             ->with('customer:id,name,email')
             ->get();
@@ -942,66 +945,24 @@ class ReportController extends BaseApiController
             return $this->error('Customer not found.', 404);
         }
 
-        // Opening balance
-        $openingBalance = Invoice::where('tenant_id', $tenantId)
-            ->where('customer_id', $customerId)
-            ->whereIn('status', ['sent', 'unpaid', 'partial', 'overdue'])
-            ->where('invoice_date', '<', $startDate)
-            ->sum('balance_due');
-
-        // Invoices in period
-        $invoices = Invoice::where('tenant_id', $tenantId)
-            ->where('customer_id', $customerId)
-            ->whereBetween('invoice_date', [$startDate, $endDate])
-            ->orderBy('invoice_date')
-            ->get();
-
-        // Payments in period
-        $payments = PaymentReceived::where('tenant_id', $tenantId)
-            ->where('customer_id', $customerId)
-            ->whereBetween('payment_date', [$startDate, $endDate])
-            ->orderBy('payment_date')
-            ->get();
-
-        // Combine transactions
-        $transactions = collect();
-
-        foreach ($invoices as $inv) {
-            $transactions->push([
-                'date' => $inv->invoice_date?->format('Y-m-d'),
-                'type' => 'invoice',
-                'reference' => $inv->invoice_number,
-                'description' => 'Invoice #'.$inv->invoice_number,
-                'debit' => (float) $inv->total,
-                'credit' => 0,
-            ]);
-        }
-
-        foreach ($payments as $pmt) {
-            $transactions->push([
-                'date' => $pmt->payment_date?->format('Y-m-d'),
-                'type' => 'payment',
-                'reference' => $pmt->payment_number,
-                'description' => 'Payment #'.$pmt->payment_number,
-                'debit' => 0,
-                'credit' => (float) $pmt->amount,
-            ]);
-        }
-
-        $transactions = $transactions->sortBy('date')->values();
-
-        // Running balance
-        $runningBalance = (float) $openingBalance;
-        $transactions = $transactions->map(function ($t) use (&$runningBalance) {
-            $runningBalance += $t['debit'] - $t['credit'];
-            $t['balance'] = $runningBalance;
-
-            return $t;
-        });
-
-        $totalInvoices = $transactions->where('type', 'invoice')->sum('debit');
-        $totalPayments = $transactions->where('type', 'payment')->sum('credit');
-        $closingBalance = $openingBalance + $totalInvoices - $totalPayments;
+        // Same figures as the statement page (session 10): the old opening
+        // balance used today's balances of older invoices, so a payment in
+        // the period for an older invoice was counted twice, and drafts,
+        // cancelled invoices, credit notes and WHT were handled wrongly.
+        $statement = app(StatementBuilder::class)->build($customer, Statement::ACTIVITY, $startDate, $endDate);
+        $transactions = collect($statement->rows)->map(fn ($r) => [
+            'date' => $r['date'],
+            'type' => $r['kind'],
+            'reference' => $r['reference'],
+            'description' => $r['label'],
+            'debit' => $r['charge'],
+            'credit' => $r['credit'],
+            'balance' => $r['balance'],
+        ]);
+        $openingBalance = $statement->opening;
+        $totalInvoices = $statement->totalCharges;
+        $totalPayments = $statement->totalCredits;
+        $closingBalance = $statement->closing;
 
         return $this->success([
             'customer' => ['id' => $customer->id, 'name' => $customer->name, 'email' => $customer->email],
