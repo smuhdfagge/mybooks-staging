@@ -1,6 +1,6 @@
 # MyBooks
 
-MyBooks is online accounting and business software for small and medium businesses, built for Nigeria first (Naira, VAT, PAYE, pension). It runs at [mybooks.cloud](https://mybooks.cloud). Each business that signs up is a separate organisation (tenant) with its own users, roles and data.
+MyBooks is online accounting and business software for small and medium businesses, built for Nigeria first (Naira, VAT, PAYE, pension). Each business that signs up is a separate organisation (tenant) with its own users, roles and data.
 
 ## What it does
 
