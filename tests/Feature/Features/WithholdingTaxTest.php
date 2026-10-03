@@ -837,4 +837,28 @@ class WithholdingTaxTest extends TestCase
         $this->get(route('withholding-tax.receivable', ['start_date' => '2026-09-01', 'end_date' => '2026-09-30']))
             ->assertOk()->assertSee('Kano State Ministry of Works');
     }
+
+    public function test_a_vendor_payment_cant_be_deleted_once_its_wht_is_paid_over(): void
+    {
+        $this->createAuthenticatedUser(array_merge(self::PAY, self::ALL, ['delete payments-made']));
+        $bank = Bank::factory()->create(['tenant_id' => $this->tenant->id, 'current_balance' => 100000]);
+        $this->septemberDeductions();
+        $this->post(route('withholding-tax.remittances.store'), ['period' => '2026-09', 'authority' => 'nrs', 'amount' => 22000,
+            'paid_on' => '2026-10-02', 'payment_method' => 'bank_transfer', 'bank_id' => $bank->id])->assertSessionHasNoErrors();
+
+        $nrs = PaymentMade::whereDate('payment_date', '2026-09-25')->firstOrFail();
+        $state = PaymentMade::whereDate('payment_date', '2026-09-28')->firstOrFail();
+        $october = PaymentMade::whereDate('payment_date', '2026-10-02')->firstOrFail();
+
+        // NRS WHT for September is paid over: deleting would take WHT payable below zero.
+        $this->delete(route('payments-made.destroy', $nrs))->assertSessionHas('error');
+        $this->assertNotSoftDeleted($nrs);
+
+        // Kano's September WHT and October's are not paid over yet.
+        $this->delete(route('payments-made.destroy', $state))->assertSessionDoesntHaveErrors();
+        $this->assertSoftDeleted($state);
+        $this->delete(route('payments-made.destroy', $october))->assertSessionDoesntHaveErrors();
+        $this->assertSoftDeleted($october);
+        $this->assertBooksBalance();
+    }
 }
