@@ -135,6 +135,8 @@ return [
         // "Reverse on" date on manual journals (accruals), posted by journals:post-reversals (S8).
         // Off hides the field and stops all automatic reversals, including pending ones.
         'auto_reversing_journals' => (bool) env('MYBOOKS_FEATURE_AUTO_REVERSING_JOURNALS', true),
+        // Prepaid expense and deferred revenue schedules, released monthly by accruals:release (S9).
+        'prepaid_schedules' => (bool) env('MYBOOKS_FEATURE_PREPAID_SCHEDULES', true),
     ],
 
     /*

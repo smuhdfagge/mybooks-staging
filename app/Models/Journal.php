@@ -26,6 +26,9 @@ class Journal extends Model
     /** The automatic reversal of a journal with a "reverse on" date (accruals). */
     public const TYPE_AUTO_REVERSAL = 'auto_reversal';
 
+    /** One month released from a prepaid expense or deferred revenue schedule (S9). */
+    public const TYPE_SCHEDULE_RELEASE = 'schedule_release';
+
     protected $fillable = [
         'tenant_id',
         'journal_number',
@@ -85,6 +88,11 @@ class Journal extends Model
         return $this->journal_type === self::TYPE_AUTO_REVERSAL;
     }
 
+    public function isScheduleRelease(): bool
+    {
+        return $this->journal_type === self::TYPE_SCHEDULE_RELEASE;
+    }
+
     /** Has a "reverse on" date whose reversal isn't posted yet (and wasn't cancelled). */
     public function hasPendingReversal(): bool
     {
@@ -102,6 +110,11 @@ class Journal extends Model
     {
         if ($this->isAutoReversal()) {
             return "{$this->journal_number} is an automatic reversal and can't be reversed or voided by itself.";
+        }
+        // A month released from a schedule (S9): the schedule tracks it as
+        // released, so undoing the journal alone would leave the two apart.
+        if ($this->isScheduleRelease()) {
+            return "{$this->journal_number} is a monthly release from a prepaid or deferred revenue schedule and can't be reversed or voided by itself. Cancel the schedule instead to stop the months still to come.";
         }
         if ($this->auto_reversal_journal_id) {
             $number = $this->autoReversal()->withoutGlobalScope('tenant')->value('journal_number');

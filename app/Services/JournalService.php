@@ -2024,8 +2024,11 @@ class JournalService implements JournalServiceInterface
         });
     }
 
-    /** The first date on or after $date that isn't in a closed or locked period. */
-    protected function firstOpenDate(int $tenantId, CarbonInterface $date): CarbonInterface
+    /**
+     * The first date on or after $date that isn't in a closed or locked
+     * period. Also used by prepaid / deferred schedule releases (S9).
+     */
+    public function firstOpenDate(int $tenantId, CarbonInterface $date): CarbonInterface
     {
         $day = $date->copy()->startOfDay();
         // Each pass steps past one closed period.

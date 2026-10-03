@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountingPeriodController;
+use App\Http\Controllers\AccrualScheduleController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AllowanceController;
 use App\Http\Controllers\AnalyticsController;
@@ -906,6 +907,27 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     Route::post('journals/{journal}/post', [JournalController::class, 'post'])
         ->middleware('permission:post journals')
         ->name('journals.post');
+
+    // Prepaid expense and deferred revenue schedules, released monthly (S9)
+    Route::middleware('feature:prepaid_schedules')->group(function () {
+        Route::middleware('permission:create accrual-schedules')->group(function () {
+            Route::get('accrual-schedules/create', [AccrualScheduleController::class, 'create'])->name('accrual-schedules.create');
+            Route::post('accrual-schedules', [AccrualScheduleController::class, 'store'])->name('accrual-schedules.store');
+        });
+        Route::middleware('permission:view accrual-schedules')->group(function () {
+            Route::get('accrual-schedules', [AccrualScheduleController::class, 'index'])->name('accrual-schedules.index');
+            Route::get('accrual-schedules/{accrualSchedule}', [AccrualScheduleController::class, 'show'])->name('accrual-schedules.show');
+        });
+        Route::middleware('permission:edit accrual-schedules')->group(function () {
+            Route::get('accrual-schedules/{accrualSchedule}/edit', [AccrualScheduleController::class, 'edit'])->name('accrual-schedules.edit');
+            Route::put('accrual-schedules/{accrualSchedule}', [AccrualScheduleController::class, 'update'])->name('accrual-schedules.update');
+            Route::post('accrual-schedules/{accrualSchedule}/release', [AccrualScheduleController::class, 'release'])->name('accrual-schedules.release');
+            Route::post('accrual-schedules/{accrualSchedule}/cancel', [AccrualScheduleController::class, 'cancel'])->name('accrual-schedules.cancel');
+        });
+        Route::delete('accrual-schedules/{accrualSchedule}', [AccrualScheduleController::class, 'destroy'])
+            ->middleware('permission:delete accrual-schedules')
+            ->name('accrual-schedules.destroy');
+    });
 
     /*
     |--------------------------------------------------------------------------

@@ -17,6 +17,7 @@
         'converted' => 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300',
         'expired' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300',
         'rejected' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
+        'active' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
         'cancelled' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
         'void' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
         'reversed' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',

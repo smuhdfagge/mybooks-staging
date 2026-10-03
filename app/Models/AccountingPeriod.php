@@ -225,9 +225,10 @@ class AccountingPeriod extends Model
     /**
      * Get validation error message for closed period
      */
-    public static function getClosedPeriodMessage($date): string
+    public static function getClosedPeriodMessage($date, $tenantId = null): string
     {
-        $period = static::getPeriodForDate($date);
+        // The business is passed in by commands that run with nobody signed in (S9).
+        $period = static::getPeriodForDate($date, $tenantId);
         if ($period) {
             return "The date falls within a closed accounting period ({$period->name}). Transactions cannot be created or modified in closed periods.";
         }

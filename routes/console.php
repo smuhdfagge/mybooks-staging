@@ -71,6 +71,14 @@ Schedule::command('journals:post-reversals')
     ->onOneServer()
     ->appendOutputTo(storage_path('logs/journal-reversals.log'));
 
+// Release the months due on prepaid expense and deferred revenue schedules
+// (S9), daily at 00:25. A month is released on its last day.
+Schedule::command('accruals:release')
+    ->dailyAt('00:25')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->appendOutputTo(storage_path('logs/accrual-schedules.log'));
+
 // Mark quotations past their expiry date as expired, daily at 00:30
 Schedule::command('quotations:expire')
     ->dailyAt('00:30')
