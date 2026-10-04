@@ -64,7 +64,19 @@
             @if($lockHistory->isEmpty())
                 <p class="text-sm text-gray-500 dark:text-gray-400">No changes yet.</p>
             @else
-                <div class="overflow-x-auto">
+                {{-- Phones: one block per change, so the description gets the full width. --}}
+                <ul class="sm:hidden divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                    @foreach($lockHistory as $change)
+                        <li class="py-3">
+                            <p class="text-gray-900 dark:text-gray-100">{{ $change->description }}</p>
+                            @if($change->reason)
+                                <p class="text-gray-700 dark:text-gray-300 mt-0.5">Reason: {{ $change->reason }}</p>
+                            @endif
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $change->created_at->format('j M Y, g:i a') }} · {{ $change->user?->name ?? 'System' }}</p>
+                        </li>
+                    @endforeach
+                </ul>
+                <div class="hidden sm:block overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
                         <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr>

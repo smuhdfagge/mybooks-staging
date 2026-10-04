@@ -20,8 +20,8 @@ To start a session, say: **"Do session N of docs/FEATURE-PLAN.md"**.
 | 7 | Customer credit notes, with returned goods back into stock (A15) | `feature/customer-credit-notes` | Merged (#28) |
 | 8 | Auto-reversing journals (accruals) | `feature/auto-reversing-journals` | Merged (#29) |
 | 9 | Prepaid expense and deferred revenue schedules | `feature/prepaid-deferred-schedules` | Merged (#30) |
-| 10 | Customer and supplier statements (PDF, email, bulk send) and AR/AP control reconciliation | `feature/statements-reconciliation` | Done, PR open |
-| 11 | Audit lock dates: staff and adviser locks, logged reopen with reason | — | To do |
+| 10 | Customer and supplier statements (PDF, email, bulk send) and AR/AP control reconciliation | `feature/statements-reconciliation` | Merged (#31) |
+| 11 | Audit lock dates: staff and adviser locks, logged reopen with reason | `feature/audit-lock-dates` | Done, PR open |
 | 12 | Warehouses: stock per location, default warehouse for existing stock | — | To do |
 | 13 | Stock transfers between warehouses | — | To do (needs 12) |
 | 14 | Assembly / bill of materials | — | To do (after 12) |
