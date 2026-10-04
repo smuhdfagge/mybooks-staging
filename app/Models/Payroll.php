@@ -206,4 +206,10 @@ class Payroll extends Model
             PayrollDeleting::dispatch($payroll);
         });
     }
+
+    /** The date the period and lock date checks use (session 11: it fell back to created_at). */
+    protected function getPeriodDateField(): string
+    {
+        return 'pay_date';
+    }
 }

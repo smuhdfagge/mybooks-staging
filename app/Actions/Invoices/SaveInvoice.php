@@ -44,7 +44,7 @@ class SaveInvoice
             $this->assertStock($data['items'], $tenantId, null);
             $totals = $this->totals($data);
 
-            $invoice = Invoice::withoutEvents(fn () => Invoice::create([
+            $invoice = new Invoice([
                 'tenant_id' => $tenantId,
                 'customer_id' => $data['customer_id'],
                 'sales_order_id' => $data['sales_order_id'] ?? null,
@@ -64,7 +64,10 @@ class SaveInvoice
                 'amount_paid' => 0,
                 'balance_due' => 0,
                 'created_by' => $userId,
-            ]));
+            ]);
+            // Saved with events off, so check the period and lock dates here (session 11).
+            $invoice->assertPeriodAllowsSave();
+            Invoice::withoutEvents(fn () => $invoice->save());
 
             $this->writeLines($invoice, $totals['lines']);
             $invoice->reserveInventory();
@@ -106,13 +109,16 @@ class SaveInvoice
             $invoice->load('items');
             $invoice->releaseInventoryReservation();
 
-            Invoice::withoutEvents(fn () => $invoice->update(array_filter([
+            $invoice->fill(array_filter([
                 'customer_id' => $data['customer_id'] ?? null,
                 'invoice_date' => $data['invoice_date'] ?? null,
                 'due_date' => $data['due_date'] ?? null,
             ]) + array_intersect_key($data, array_flip(['reference', 'notes', 'terms'])) + [
                 'discount_type' => $data['discount_type'] ?? null,
-            ]));
+            ]);
+            // Saved with events off: the old and new dates are checked here (session 11).
+            $invoice->assertPeriodAllowsSave();
+            Invoice::withoutEvents(fn () => $invoice->save());
 
             $invoice->items()->delete();
             $this->writeLines($invoice, $totals['lines']);

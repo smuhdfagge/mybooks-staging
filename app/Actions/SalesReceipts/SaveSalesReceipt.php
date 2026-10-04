@@ -66,13 +66,16 @@ class SaveSalesReceipt
             }
             $totals = $this->totals($data);
 
-            SalesReceipt::withoutEvents(fn () => $receipt->update([
+            $receipt->fill([
                 'customer_id' => $data['customer_id'] ?? null,
                 'receipt_date' => $data['receipt_date'],
                 'payment_method' => $data['payment_method'],
                 'reference' => $data['reference'] ?? null,
                 'notes' => $data['notes'] ?? null,
-            ]));
+            ]);
+            // Saved with events off: the old and new dates are checked here (session 11).
+            $receipt->assertPeriodAllowsSave();
+            SalesReceipt::withoutEvents(fn () => $receipt->save());
 
             $receipt->items()->delete();
             $this->writeLines($receipt, $totals['lines']);

@@ -140,6 +140,17 @@ trait ValidatesAccountingPeriod
     }
 
     /**
+     * The same check as saving with events on, for actions that save with
+     * events off (SaveInvoice, SaveBill, SaveSalesReceipt): call it after
+     * fill(), before the save. Those saves skipped the check entirely, so a
+     * document in a closed period could be moved out of it or changed.
+     */
+    public function assertPeriodAllowsSave(): void
+    {
+        $this->exists ? $this->validateAccountingPeriodOnUpdate() : $this->validateAccountingPeriod();
+    }
+
+    /**
      * Determine if period validation should be performed
      * Override this method to conditionally skip validation
      */

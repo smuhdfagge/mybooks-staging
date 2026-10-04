@@ -1730,11 +1730,15 @@ class JournalService implements JournalServiceInterface
         ]);
     }
 
-    public function createDepreciationJournal(FixedAsset $asset, Carbon $date, float $amount): ?Journal
+    /** $month is the month charged when the journal had to go on a later, open date (session 11). */
+    public function createDepreciationJournal(FixedAsset $asset, Carbon $date, float $amount, ?Carbon $month = null): ?Journal
     {
         $accounts = $this->fixedAssetAccounts($asset);
+        $month ??= $date;
+        $moved = $date->isSameDay($month) ? null
+            : "due {$month->format('j M Y')}, but that period is closed, so posted on {$date->format('j M Y')}";
 
-        return $this->postSimple($asset, self::ASSET_DEPRECIATION, $date, "Depreciation - {$asset->name} ({$date->format('M Y')})", [
+        return $this->postSimple($asset, self::ASSET_DEPRECIATION, $date, "Depreciation - {$asset->name} ({$month->format('M Y')})".($moved ? " ({$moved})" : ''), [
             [$accounts['expense'], $amount, 0, "Depreciation - {$asset->name}"],
             [$accounts['accumulated'], 0, $amount, "Accumulated Depreciation - {$asset->name}"],
         ]);

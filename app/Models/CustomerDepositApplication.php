@@ -78,4 +78,10 @@ class CustomerDepositApplication extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    /** The date the period and lock date checks use (session 11: it fell back to created_at). */
+    protected function getPeriodDateField(): string
+    {
+        return 'application_date';
+    }
 }

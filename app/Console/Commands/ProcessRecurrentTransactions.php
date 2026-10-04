@@ -10,6 +10,8 @@ use App\Models\Invoice;
 use App\Models\RecurrentBill;
 use App\Models\RecurrentExpense;
 use App\Models\RecurrentInvoice;
+use App\Services\JournalService;
+use Carbon\CarbonInterface;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -78,16 +80,21 @@ class ProcessRecurrentTransactions extends Command
                 continue;
             }
 
+            $date = $this->openDate($profile->tenant_id, $profile->next_invoice_date);
+            if (! $date) {
+                continue;
+            }
+
             try {
-                DB::transaction(function () use ($profile) {
+                DB::transaction(function () use ($profile, $date) {
                     // The same rules as every other invoice (R3): totals from
                     // the profile's lines with today's VAT rules, stock checked
                     // and reserved, journal posted with the lines in place.
                     app(SaveInvoice::class)->create($profile->tenant_id, [
                         'customer_id' => $profile->customer_id,
                         'recurrent_invoice_id' => $profile->id,
-                        'invoice_date' => $profile->next_invoice_date->toDateString(),
-                        'due_date' => $profile->next_invoice_date->copy()->addDays($profile->payment_terms)->toDateString(),
+                        'invoice_date' => $date->toDateString(),
+                        'due_date' => $date->copy()->addDays($profile->payment_terms)->toDateString(),
                         'status' => 'sent',
                         'notes' => $profile->notes,
                         'terms' => $profile->terms,
@@ -138,15 +145,20 @@ class ProcessRecurrentTransactions extends Command
                 continue;
             }
 
+            $date = $this->openDate($profile->tenant_id, $profile->next_bill_date);
+            if (! $date) {
+                continue;
+            }
+
             try {
-                DB::transaction(function () use ($profile) {
+                DB::transaction(function () use ($profile, $date) {
                     // The same rules as every other bill (R3): totals from the
                     // profile's lines, journal by line and stock in (A21).
                     app(SaveBill::class)->create($profile->tenant_id, [
                         'vendor_id' => $profile->vendor_id,
                         'recurrent_bill_id' => $profile->id,
-                        'bill_date' => $profile->next_bill_date->toDateString(),
-                        'due_date' => $profile->next_bill_date->copy()->addDays(30)->toDateString(),
+                        'bill_date' => $date->toDateString(),
+                        'due_date' => $date->copy()->addDays(30)->toDateString(),
                         'status' => 'unpaid',
                         'notes' => $profile->notes,
                         'items' => $profile->items->map(fn ($i) => [
@@ -194,9 +206,14 @@ class ProcessRecurrentTransactions extends Command
                 continue;
             }
 
+            $date = $this->openDate($profile->tenant_id, $profile->next_expense_date);
+            if (! $date) {
+                continue;
+            }
+
             try {
-                DB::transaction(function () use ($profile) {
-                    Expense::withoutEvents(function () use ($profile) {
+                DB::transaction(function () use ($profile, $date) {
+                    Expense::withoutEvents(function () use ($profile, $date) {
                         Expense::create([
                             'tenant_id' => $profile->tenant_id,
                             'vendor_id' => $profile->vendor_id,
@@ -205,7 +222,7 @@ class ProcessRecurrentTransactions extends Command
                             'recurrent_expense_id' => $profile->id,
                             'expense_number' => Expense::generateNumber($profile->tenant_id),
                             'name' => $profile->profile_name,
-                            'expense_date' => $profile->next_expense_date,
+                            'expense_date' => $date->toDateString(),
                             'amount' => $profile->amount,
                             'tax_amount' => $profile->tax_amount ?? 0,
                             'total' => $profile->total,
@@ -230,5 +247,24 @@ class ProcessRecurrentTransactions extends Command
                 Log::error("Recurring expense failed for profile #{$profile->id}: {$e->getMessage()}");
             }
         }
+    }
+
+    /**
+     * The date to give a transaction due on $due: the first date not in a
+     * closed period or on or before a lock date (session 11). One due in a
+     * closed period used to fail every day and never move on. Null when that
+     * date hasn't come yet (it is tried again then).
+     */
+    protected function openDate(int $tenantId, CarbonInterface $due): ?CarbonInterface
+    {
+        $date = app(JournalService::class)->firstOpenDate($tenantId, $due);
+        if ($date->gt(today())) {
+            return null;
+        }
+        if (! $date->isSameDay($due)) {
+            $this->line("  Due {$due->format('j M Y')} but that date is closed or locked, so dated {$date->format('j M Y')}");
+        }
+
+        return $date;
     }
 }

@@ -105,4 +105,10 @@ class SalesReceipt extends Model
     {
         return [['subtotal', 'tax_amount'], ['discount_amount']];
     }
+
+    /** The date the period and lock date checks use (session 11: it fell back to created_at). */
+    protected function getPeriodDateField(): string
+    {
+        return 'receipt_date';
+    }
 }

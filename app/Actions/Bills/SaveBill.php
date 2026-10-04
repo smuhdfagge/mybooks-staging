@@ -48,7 +48,7 @@ class SaveBill
             $order = $this->lockPurchaseOrder($data);
             $totals = $this->totals($data);
 
-            $bill = Bill::withoutEvents(fn () => Bill::create([
+            $bill = new Bill([
                 'tenant_id' => $tenantId,
                 'vendor_id' => $data['vendor_id'],
                 'purchase_order_id' => $order?->id,
@@ -62,7 +62,10 @@ class SaveBill
                 'subtotal' => 0, 'tax_amount' => 0, 'discount_amount' => 0, 'total' => 0,
                 'amount_paid' => 0, 'balance_due' => 0,
                 'created_by' => $userId,
-            ]));
+            ]);
+            // Saved with events off, so check the period and lock dates here (session 11).
+            $bill->assertPeriodAllowsSave();
+            Bill::withoutEvents(fn () => $bill->save());
 
             $this->writeLines($bill, $totals['lines']);
             Bill::withoutEvents(fn () => $bill->update($this->totalsColumns($totals, 0.0)));
@@ -100,12 +103,15 @@ class SaveBill
                 throw ValidationException::withMessages(['items' => 'The new total is less than what has already been paid ('.number_format($paid, 2).').']);
             }
 
-            Bill::withoutEvents(fn () => $bill->update(array_filter([
+            $bill->fill(array_filter([
                 'vendor_id' => $data['vendor_id'] ?? null,
                 'bill_date' => $data['bill_date'] ?? null,
                 'due_date' => $data['due_date'] ?? null,
             ]) + array_intersect_key($data, array_flip(['notes'])) + (array_key_exists('reference', $data) ? ['vendor_bill_number' => $data['reference']] : [])
-               + $this->totalsColumns($totals, $paid)));
+               + $this->totalsColumns($totals, $paid));
+            // Saved with events off: the old and new dates are checked here (session 11).
+            $bill->assertPeriodAllowsSave();
+            Bill::withoutEvents(fn () => $bill->save());
 
             $bill->items()->delete();
             $this->writeLines($bill, $totals['lines']);
