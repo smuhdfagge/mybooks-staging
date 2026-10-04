@@ -1911,7 +1911,7 @@ class JournalService implements JournalServiceInterface
     /**
      * Reverse/void a journal entry
      */
-    public function reverseJournal(Journal $journal, string $reason = 'Reversed'): Journal
+    public function reverseJournal(Journal $journal, string $reason = 'Reversed', ?string $date = null): Journal
     {
         // An automatic reversal, or an original it already reversed, can't
         // be reversed again by hand (S8).
@@ -1919,7 +1919,7 @@ class JournalService implements JournalServiceInterface
             throw new BusinessRuleException($blocked);
         }
 
-        return DB::transaction(function () use ($journal, $reason) {
+        return DB::transaction(function () use ($journal, $reason, $date) {
             // The reversing journal's own lines undo the original when they are
             // applied below. Also un-applying the original here reversed it
             // twice (a 1,075 invoice left receivables at -1,075).
@@ -1927,7 +1927,8 @@ class JournalService implements JournalServiceInterface
             $reversingJournal = Journal::create([
                 'tenant_id' => $journal->tenant_id,
                 'journal_number' => Journal::generateNumber($journal->tenant_id),
-                'journal_date' => now()->toDateString(),
+                // Today, unless the caller dates it (a reopened VAT return, session 11).
+                'journal_date' => $date ?? now()->toDateString(),
                 'reference' => "REV-{$journal->journal_number}",
                 'description' => "{$reason}: {$journal->description}",
                 'reference_type' => $journal->reference_type,

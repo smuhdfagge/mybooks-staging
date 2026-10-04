@@ -33,7 +33,7 @@ interface JournalServiceInterface
 
     public function createPayrollPaymentJournal(Payroll $payroll): ?Journal;
 
-    public function reverseJournal(Journal $journal, string $reason = 'Reversed'): Journal;
+    public function reverseJournal(Journal $journal, string $reason = 'Reversed', ?string $date = null): Journal;
 
     public function deleteJournalForTransaction(string $referenceType, int $referenceId, ?int $tenantId = null): void;
 

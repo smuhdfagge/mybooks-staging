@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Features;
 
+use App\Actions\Invoices\SaveInvoice;
 use App\Actions\LockDates\UpdateLockDates;
+use App\Actions\VatReturns\FileVatReturn;
 use App\Models\AccountingPeriod;
 use App\Models\AccrualSchedule;
 use App\Models\Bill;
@@ -16,7 +18,9 @@ use App\Models\PaymentReceived;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Models\VatReturnFiling;
 use App\Models\Vendor;
+use App\Services\AccountCodeService;
 use App\Services\Accounting\LockDates;
 use App\Services\JournalService;
 use Database\Seeders\DatabaseSeeder;
@@ -442,6 +446,97 @@ class LockDatesTest extends TestCase
         $this->assertTrue($period->fresh()->isLocked());
         $this->assertSame(2, Journal::where('journal_type', Journal::TYPE_CLOSING)->count(), 'accounts to Income Summary, then to Retained Earnings');
         $this->assertStringContainsString('locked permanently', LockDateChange::latest('id')->first()->description);
+    }
+
+    // ── VAT return reopen ──────────────────────────────────────
+
+    /** August: one sale with ₦1,500 VAT, filed on 5 September. */
+    private function filedAugust(): VatReturnFiling
+    {
+        $this->travelTo('2026-08-15 09:00:00');
+        app(SaveInvoice::class)->create($this->tenant->id, [
+            'customer_id' => $this->customer->id, 'invoice_date' => '2026-08-10', 'due_date' => '2026-08-10', 'status' => 'unpaid',
+            'items' => [['description' => 'Work', 'quantity' => 1, 'unit_price' => 20000, 'tax_rate' => 7.5]],
+        ], $this->user->id);
+        $this->travelTo('2026-09-05 09:00:00');
+        $filing = app(FileVatReturn::class)->handle($this->tenant->id, '2026-08', [], $this->user->id, 'NRS-123');
+        $this->travelTo('2026-10-10 09:00:00');
+
+        return $filing;
+    }
+
+    private function vatPayable(): float
+    {
+        return round((float) $this->account(AccountCodeService::resolve($this->tenant->id, 'vat_payable'))->fresh()->current_balance, 2);
+    }
+
+    public function test_a_filed_vat_return_can_be_reopened_with_a_reason_and_filed_again(): void
+    {
+        $this->user->givePermissionTo(Permission::findOrCreate('file vat-returns', 'web'), Permission::findOrCreate('view reports', 'web'));
+        $filing = $this->filedAugust();
+        $settlement = $filing->settlementJournal;
+        $this->assertEqualsWithDelta(1500, $this->vatPayable(), 0.001);
+
+        $this->get(route('reports.vat-return', ['month' => '2026-08']))->assertOk()->assertSee('Reopen this return');
+        $this->post(route('reports.vat-return.reopen'), ['month' => '2026-08'])->assertSessionHasErrors('reason');
+        $this->assertSame(1, VatReturnFiling::count());
+
+        $this->post(route('reports.vat-return.reopen'), ['month' => '2026-08', 'reason' => 'Customer credit note for August came in late'])
+            ->assertSessionHasNoErrors()->assertSessionHas('success');
+
+        $this->assertSame(0, VatReturnFiling::count());
+        $this->assertSame('reversed', $settlement->fresh()->status);
+        $reversal = Journal::where('reference', 'REV-'.$settlement->journal_number)->sole();
+        $this->assertSame('2026-08-31', $reversal->journal_date->toDateString(), 'dated like the settlement');
+        $this->assertEqualsWithDelta(0, $this->vatPayable(), 0.001);
+        $change = LockDateChange::sole();
+        $this->assertSame(LockDates::VAT_RETURN, $change->kind);
+        $this->assertSame('Customer credit note for August came in late', $change->reason);
+        $this->assertStringContainsString('VAT return for August 2026 reopened (filed 5 Sep 2026, NRS reference NRS-123, VAT payable ₦1,500.00)', $change->description);
+
+        // Filed again: settled again.
+        $this->post(route('reports.vat-return.file'), ['month' => '2026-08'])->assertSessionHasNoErrors();
+        $this->assertNotSame($settlement->id, VatReturnFiling::sole()->settlement_journal_id);
+        $this->assertEqualsWithDelta(1500, $this->vatPayable(), 0.001);
+    }
+
+    public function test_a_vat_return_behind_a_lock_date_cannot_be_reopened_except_by_an_admin_behind_the_staff_lock(): void
+    {
+        $this->user->givePermissionTo(Permission::findOrCreate('file vat-returns', 'web'), Permission::findOrCreate('view reports', 'web'));
+        $this->filedAugust();
+        $reopen = ['month' => '2026-08', 'reason' => 'Amended return needed'];
+
+        $this->lock('2026-08-31');
+        $this->post(route('reports.vat-return.reopen'), $reopen)->assertSessionHasErrors(['month' => 'The books are locked up to 31 Aug 2026. Ask an admin to change the lock date if you need to change this.']);
+
+        $admin = $this->admin();
+        $admin->givePermissionTo('file vat-returns', 'view reports');
+        $this->actingAs($admin);
+        $this->lock('2026-08-31', '2026-08-31');
+        $this->post(route('reports.vat-return.reopen'), $reopen)->assertSessionHasErrors('month');
+        $this->assertSame(1, VatReturnFiling::count());
+
+        $this->lock('2026-08-31', '2026-07-31', 'Amended August return');
+        $this->post(route('reports.vat-return.reopen'), $reopen)->assertSessionHasNoErrors();
+        $this->assertSame(0, VatReturnFiling::count());
+    }
+
+    public function test_a_vat_return_cannot_be_reopened_while_a_later_month_is_filed_or_by_another_business(): void
+    {
+        $this->user->givePermissionTo(Permission::findOrCreate('file vat-returns', 'web'), Permission::findOrCreate('view reports', 'web'));
+        $this->filedAugust();
+        app(FileVatReturn::class)->handle($this->tenant->id, '2026-09', [], $this->user->id);
+
+        $this->post(route('reports.vat-return.reopen'), ['month' => '2026-08', 'reason' => 'Amended return needed'])
+            ->assertSessionHasErrors(['month' => 'The return for September 2026 is filed and carried this month\'s figures forward. Reopen it first.']);
+        $this->assertSame(2, VatReturnFiling::count());
+
+        auth()->logout();
+        [$other] = $this->createTenantWithSubscription();
+        $this->actingAs($this->createUserForTenant($other, ['file vat-returns', 'view reports']));
+        $this->post(route('reports.vat-return.reopen'), ['month' => '2026-09', 'reason' => 'Not my return at all'])
+            ->assertSessionHasErrors(['month' => 'The VAT return for this month hasn\'t been filed.']);
+        $this->assertSame(2, VatReturnFiling::withoutGlobalScopes()->count());
     }
 
     // ── Feature flag ───────────────────────────────────────────

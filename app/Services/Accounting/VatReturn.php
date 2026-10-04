@@ -183,6 +183,7 @@ class VatReturn
             ->where('journal_type', self::SETTLEMENT)
             ->where('reference', $this->settlementReference($from, $to))
             ->where('is_posted', true)
+            ->where('status', 'posted') // a reopened return's settlement is reversed (session 11)
             ->first();
     }
 

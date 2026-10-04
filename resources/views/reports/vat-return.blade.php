@@ -86,6 +86,25 @@
                         input VAT @money($lines[75]) (filed @money($filing->input_vat)). The difference is not in the settlement; check with your accountant whether to amend the return.
                     </p>
                 @endif
+                @if(\App\Services\Accounting\LockDates::enabled())
+                    @can('file vat-returns')
+                        {{-- Reopen with a reason (session 11) --}}
+                        <details class="mt-4" @if($errors->has('reason') || $errors->has('month')) open @endif>
+                            <summary class="cursor-pointer text-sm font-medium text-indigo-600 dark:text-indigo-400">Reopen this return</summary>
+                            <form method="POST" action="{{ route('reports.vat-return.reopen') }}" class="mt-3 space-y-3 max-w-xl">
+                                @csrf
+                                <input type="hidden" name="month" value="{{ $month }}">
+                                <p class="text-sm text-gray-600 dark:text-gray-400">
+                                    For an amended return. The settlement journal is reversed on the month's last day and the month can be filed again.
+                                    The reason is kept in the lock date history.
+                                </p>
+                                <x-field name="reason" label="Reason" type="textarea" rows="2" required :value="old('reason')" />
+                                @error('month')<p class="form-error">{{ $message }}</p>@enderror
+                                <button type="submit" class="btn-primary" data-confirm="Reopen the VAT return for this month?">Reopen return</button>
+                            </form>
+                        </details>
+                    @endcan
+                @endif
             </x-card>
         @else
             <x-card class="p-6">
