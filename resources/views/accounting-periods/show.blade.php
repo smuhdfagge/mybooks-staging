@@ -168,6 +168,10 @@
                                 <!-- Reopen Period -->
                                 <form action="{{ route('accounting-periods.reopen', $accountingPeriod) }}" method="POST" class="mb-4">
                                     @csrf
+                                    <div class="mb-3">
+                                        <x-field name="reason" label="Reason for reopening" type="textarea" rows="2" required :value="old('reason')"
+                                                 help="Kept in the lock date history on the accounting periods page." />
+                                    </div>
                                     <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition" data-confirm="Are you sure you want to reopen this period?">
                                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>

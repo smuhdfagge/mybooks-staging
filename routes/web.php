@@ -35,6 +35,7 @@ use App\Http\Controllers\ItemController;
 use App\Http\Controllers\JournalController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\LeaveTypeController;
+use App\Http\Controllers\LockDateController;
 use App\Http\Controllers\PaymentMadeController;
 use App\Http\Controllers\PaymentReceivedController;
 use App\Http\Controllers\PayrollController;
@@ -992,6 +993,9 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     | Accounting Periods Module
     |--------------------------------------------------------------------------
     */
+    // Lock dates (session 11): before the {accountingPeriod} routes.
+    Route::put('accounting-periods/lock-dates', [LockDateController::class, 'update'])->name('lock-dates.update')
+        ->middleware(['permission:manage lock-dates', 'feature:lock_dates']);
     Route::middleware('permission:view chart-of-accounts')->group(function () {
         Route::get('accounting-periods', [AccountingPeriodController::class, 'index'])->name('accounting-periods.index');
         Route::get('accounting-periods/create', [AccountingPeriodController::class, 'create'])->name('accounting-periods.create');

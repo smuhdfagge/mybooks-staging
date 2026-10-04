@@ -21,6 +21,7 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <form action="{{ route('payments-made.store') }}" method="POST" class="p-6" x-data="paymentForm()">
                     @csrf
+                    <x-lock-date-notice field="payment_date" />
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Payment Number -->

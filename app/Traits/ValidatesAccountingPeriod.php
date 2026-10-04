@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use App\Models\AccountingPeriod;
+use App\Services\Accounting\LockDates;
 use Illuminate\Validation\ValidationException;
 
 trait ValidatesAccountingPeriod
@@ -82,6 +83,8 @@ trait ValidatesAccountingPeriod
                 $this->getPeriodDateField() => [AccountingPeriod::getClosedPeriodMessage($date, $tenantId)],
             ]);
         }
+
+        $this->validateLockDate($date, $tenantId, $this->getPeriodDateField());
     }
 
     /**
@@ -106,6 +109,7 @@ trait ValidatesAccountingPeriod
                 $this->getPeriodDateField() => ['This record belongs to a closed accounting period and cannot be modified.'],
             ]);
         }
+        $this->validateLockDate($originalDate, $tenantId, $this->getPeriodDateField());
 
         // Check new date
         $newDate = $this->getTransactionDate();
@@ -114,6 +118,7 @@ trait ValidatesAccountingPeriod
                 $this->getPeriodDateField() => [AccountingPeriod::getClosedPeriodMessage($newDate, $tenantId)],
             ]);
         }
+        $this->validateLockDate($newDate, $tenantId, $this->getPeriodDateField());
     }
 
     /**
@@ -136,6 +141,24 @@ trait ValidatesAccountingPeriod
             throw ValidationException::withMessages([
                 'period' => ['This record belongs to a closed accounting period and cannot be deleted.'],
             ]);
+        }
+
+        $this->validateLockDate($date, $tenantId, 'period');
+    }
+
+    /**
+     * Lock dates (session 11): the staff lock unless the signed-in user may
+     * override it, and the all-users lock for everyone. Not for records with
+     * no date of their own (the created_at fallback, e.g. purchase orders).
+     */
+    protected function validateLockDate(mixed $date, int|string $tenantId, string $key): void
+    {
+        if (! $date || $this->getPeriodDateField() === 'created_at') {
+            return;
+        }
+
+        if ($reason = LockDates::instance()->lockReason($date, (int) $tenantId, auth()->user())) {
+            throw ValidationException::withMessages([$key => [$reason]]);
         }
     }
 

@@ -6,7 +6,6 @@ use App\Contracts\JournalServiceInterface;
 use App\Exceptions\BusinessRuleException;
 use App\Exceptions\UnbalancedJournalException;
 use App\Http\Middleware\EnsureFeatureEnabled;
-use App\Models\AccountingPeriod;
 use App\Models\Bank;
 use App\Models\Bill;
 use App\Models\ChartOfAccount;
@@ -27,6 +26,7 @@ use App\Models\StatutoryRemittance;
 use App\Models\VendorCredit;
 use App\Models\VendorCreditRefund;
 use App\Models\WhtCreditUtilisation;
+use App\Services\Accounting\LockDates;
 use App\Support\PayrollStatutory;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -1735,8 +1735,7 @@ class JournalService implements JournalServiceInterface
     {
         $accounts = $this->fixedAssetAccounts($asset);
         $month ??= $date;
-        $moved = $date->isSameDay($month) ? null
-            : "due {$month->format('j M Y')}, but that period is closed, so posted on {$date->format('j M Y')}";
+        $moved = LockDates::instance()->movedNote($asset->tenant_id, $month, $date);
 
         return $this->postSimple($asset, self::ASSET_DEPRECIATION, $date, "Depreciation - {$asset->name} ({$month->format('M Y')})".($moved ? " ({$moved})" : ''), [
             [$accounts['expense'], $amount, 0, "Depreciation - {$asset->name}"],
@@ -1989,8 +1988,8 @@ class JournalService implements JournalServiceInterface
             if ($date->gt($today)) {
                 return null; // the next open date hasn't come yet; try again then
             }
-            $note = $date->equalTo($due) ? ''
-                : " (due {$due->format('j M Y')}, but that period is closed, so posted on {$date->format('j M Y')})";
+            $moved = LockDates::instance()->movedNote($journal->tenant_id, $due, $date);
+            $note = $moved ? " ({$moved})" : '';
 
             $reversal = new Journal([
                 'tenant_id' => $journal->tenant_id,
@@ -2034,17 +2033,8 @@ class JournalService implements JournalServiceInterface
      */
     public function firstOpenDate(int $tenantId, CarbonInterface $date): CarbonInterface
     {
-        $day = $date->copy()->startOfDay();
-        // Each pass steps past one closed period.
-        for ($i = 0; $i < 500; $i++) {
-            $period = AccountingPeriod::getPeriodForDate($day, $tenantId);
-            if (! $period || ! $period->isClosed()) {
-                break;
-            }
-            $day = Carbon::parse($period->end_date)->addDay()->startOfDay();
-        }
-
-        return $day;
+        // Lock dates count as closed too (session 11).
+        return LockDates::instance()->firstOpenDate($tenantId, $date);
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Accounting\LockDates;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,7 +28,7 @@ class JournalEntry extends Model
     protected static function booted(): void
     {
         // A posted journal's lines can't be added, changed or removed in a
-        // closed period (session 11). The journal
+        // closed period or on or before a lock date (session 11). The journal
         // itself is checked by ValidatesAccountingPeriod, but a journal whose
         // lines were rebuilt with the same totals was never "dirty", so the
         // lines changed with no check.
@@ -43,8 +44,8 @@ class JournalEntry extends Model
             return;
         }
 
-        if (AccountingPeriod::isDateInClosedPeriod($journal->journal_date, $journal->tenant_id)) {
-            throw ValidationException::withMessages(['journal_date' => [AccountingPeriod::getClosedPeriodMessage($journal->journal_date, $journal->tenant_id)]]);
+        if ($reason = LockDates::instance()->blockReason($journal->journal_date, (int) $journal->tenant_id, auth()->user())) {
+            throw ValidationException::withMessages(['journal_date' => [$reason]]);
         }
     }
 

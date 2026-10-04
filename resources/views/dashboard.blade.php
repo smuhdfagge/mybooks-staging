@@ -12,6 +12,19 @@
                 Welcome back, {{ auth()->user()->name }}!
             </h3>
             <p class="text-sm sm:text-base text-gray-600 dark:text-gray-400">Here's what's happening with your business today.</p>
+            @php
+                $bookLock = \App\Services\Accounting\LockDates::instance()->dates((int) auth()->user()->tenant_id);
+            @endphp
+            @if($bookLock['staff'])
+                {{-- Lock dates (session 11) --}}
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400" data-books-locked>
+                    <svg class="inline w-4 h-4 -mt-0.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    Books locked up to {{ $bookLock['staff']->format('j M Y') }}@if($bookLock['all_users']) (for everyone up to {{ $bookLock['all_users']->format('j M Y') }})@endif.
+                    @can('view chart-of-accounts')
+                        <a href="{{ route('accounting-periods.index') }}#lock-dates" class="text-indigo-600 dark:text-indigo-400 hover:underline">Lock dates</a>
+                    @endcan
+                </p>
+            @endif
         </div>
 
         <!-- Stats Cards -->

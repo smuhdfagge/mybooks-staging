@@ -19,6 +19,7 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <form action="{{ route('journals.update', $journal) }}" method="POST" class="p-6" id="journalForm">
                     @csrf
+                    <x-lock-date-notice field="journal_date" />
                     @method('PUT')
 
                     <!-- Journal Information -->

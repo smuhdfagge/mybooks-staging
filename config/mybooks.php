@@ -140,6 +140,9 @@ return [
         // Customer and supplier statements (PDF, email, bulk email) and the
         // receivables / payables control account reconciliation (session 10).
         'statements' => (bool) env('MYBOOKS_FEATURE_STATEMENTS', true),
+        // Staff and all-users lock dates on the accounting periods page, with
+        // their history (session 11). Off stops the lock dates being checked.
+        'lock_dates' => (bool) env('MYBOOKS_FEATURE_LOCK_DATES', true),
     ],
 
     /*

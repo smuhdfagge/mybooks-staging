@@ -17,6 +17,7 @@
         <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
             <form action="{{ route('bills.update', $bill) }}" method="POST" x-data="billForm()" class="space-y-6">
                 @csrf
+                <x-lock-date-notice field="bill_date" />
                 @method('PUT')
 
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">

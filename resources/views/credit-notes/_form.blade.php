@@ -9,6 +9,7 @@
 @endphp
 
 <x-error-summary />
+<x-lock-date-notice field="credit_note_date" />
 
 <x-card>
     <div class="p-4 sm:p-6">
