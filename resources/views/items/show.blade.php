@@ -175,7 +175,11 @@
                                     <p class="text-3xl font-bold text-green-600 dark:text-green-400">{{ ($item->inventory->quantity ?? 0) - ($item->inventory->reserved_quantity ?? 0) }}</p>
                                 </div>
                             </div>
-                            
+
+                            @if(($byWarehouse ?? collect())->isNotEmpty())
+                                <div class="mt-4 -mx-6">@include('inventory._warehouse-split')</div>
+                            @endif
+
                             @if($item->reorder_level && ($item->inventory->quantity ?? 0) <= $item->reorder_level)
                             <div class="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg">
                                 <div class="flex">

@@ -7,6 +7,7 @@ use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\Inventory;
 use App\Models\Item;
 use App\Models\ItemCategory;
+use App\Models\Warehouse;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -19,6 +20,9 @@ class InventoryTable extends Component
     public $categoryFilter = '';
 
     public $stockFilter = '';
+
+    /** Show one warehouse's stock (session 12); empty = all warehouses. */
+    public $warehouseFilter = '';
 
     public $sortField = 'name';
 
@@ -41,6 +45,7 @@ class InventoryTable extends Component
         'search' => ['except' => ''],
         'categoryFilter' => ['except' => ''],
         'stockFilter' => ['except' => ''],
+        'warehouseFilter' => ['except' => ''],
     ];
 
     public function updatingSearch()
@@ -56,6 +61,39 @@ class InventoryTable extends Component
     public function updatingStockFilter()
     {
         $this->resetPage();
+    }
+
+    public function updatingWarehouseFilter()
+    {
+        $this->resetPage();
+    }
+
+    /** The chosen warehouse, if it is one of this business's. */
+    private function warehouseId(): ?int
+    {
+        if ($this->warehouseFilter === '' || $this->warehouseFilter === null) {
+            return null;
+        }
+
+        return Warehouse::whereKey((int) $this->warehouseFilter)->exists() ? (int) $this->warehouseFilter : null;
+    }
+
+    /** In stock / low / out, on the item's total or one warehouse's stock. */
+    private function applyStockFilter($query): void
+    {
+        $onHand = Item::onHandSql($this->warehouseId());
+
+        switch ($this->stockFilter) {
+            case 'in_stock':
+                $query->whereRaw("{$onHand} > 0");
+                break;
+            case 'low_stock':
+                $query->where('reorder_level', '>', 0)->whereRaw("{$onHand} <= items.reorder_level");
+                break;
+            case 'out_of_stock':
+                $query->whereRaw("{$onHand} <= 0");
+                break;
+        }
     }
 
     public function updatingPerPage()
@@ -102,23 +140,7 @@ class InventoryTable extends Component
             $query->where('category_id', $this->categoryFilter);
         }
 
-        if ($this->stockFilter) {
-            switch ($this->stockFilter) {
-                case 'in_stock':
-                    $query->whereHas('inventory', fn ($q) => $q->where('quantity', '>', 0));
-                    break;
-                case 'low_stock':
-                    $query->where('reorder_level', '>', 0)
-                        ->whereHas('inventory', fn ($q) => $q->whereColumn('quantity', '<=', 'items.reorder_level'));
-                    break;
-                case 'out_of_stock':
-                    $query->where(function ($q) {
-                        $q->whereHas('inventory', fn ($iq) => $iq->where('quantity', '<=', 0))
-                            ->orWhereDoesntHave('inventory');
-                    });
-                    break;
-            }
-        }
+        $this->applyStockFilter($query);
 
         return $query->pluck('id')
             ->map(fn ($id) => (string) $id)
@@ -160,10 +182,10 @@ class InventoryTable extends Component
         switch ($this->bulkAction) {
             case 'reset_quantity':
                 foreach ($this->selectedItems as $itemId) {
-                    $inventory = Inventory::where('item_id', $itemId)->first();
-                    if ($inventory) {
-                        $inventory->update(['quantity' => 0]);
-                    }
+                    // Every warehouse's record, or only the one shown (session 12).
+                    Inventory::where('item_id', $itemId)
+                        ->when($this->warehouseId(), fn ($q, $w) => $q->where('warehouse_id', $w))
+                        ->update(['quantity' => 0]);
                 }
                 $this->successMessage = "Successfully reset quantity for {$count} item(s).";
                 break;
@@ -188,7 +210,7 @@ class InventoryTable extends Component
     {
         $query = Item::query()
             ->where('track_inventory', true)
-            ->with(['category', 'inventory']);
+            ->with(['category', 'inventory' => fn ($q) => $q->when($this->warehouseId(), fn ($w, $id) => $w->where('inventories.warehouse_id', $id))]);
 
         if ($this->search) {
             $query->where(function ($q) {
@@ -201,29 +223,14 @@ class InventoryTable extends Component
             $query->where('category_id', $this->categoryFilter);
         }
 
-        if ($this->stockFilter) {
-            switch ($this->stockFilter) {
-                case 'in_stock':
-                    $query->whereHas('inventory', fn ($q) => $q->where('quantity', '>', 0));
-                    break;
-                case 'low_stock':
-                    $query->where('reorder_level', '>', 0)
-                        ->whereHas('inventory', fn ($q) => $q->whereColumn('quantity', '<=', 'items.reorder_level'));
-                    break;
-                case 'out_of_stock':
-                    $query->where(function ($q) {
-                        $q->whereHas('inventory', fn ($iq) => $iq->where('quantity', '<=', 0))
-                            ->orWhereDoesntHave('inventory');
-                    });
-                    break;
-            }
-        }
+        $this->applyStockFilter($query);
 
         $query->orderBy($this->sortField, $this->sortDirection);
 
         return view('livewire.inventory.inventory-table', [
             'items' => $query->paginate($this->pageSize()),
             'categories' => ItemCategory::where('is_active', true)->get(),
+            'warehouses' => Warehouse::moduleOn() ? Warehouse::orderByDesc('is_default')->orderBy('name')->get() : collect(),
         ]);
     }
 }

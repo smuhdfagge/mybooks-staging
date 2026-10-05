@@ -91,6 +91,8 @@
                 </div>
             </div>
 
+            @include('inventory._warehouse-split')
+
             <!-- Low Stock Warning -->
             @if($item->reorder_level && ($inventory->quantity ?? 0) <= $item->reorder_level)
             <div class="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
@@ -129,11 +131,14 @@
                                     </select>
                                 </div>
 
+                                <x-warehouse-picker wrapper-class="md:col-span-2" label="Warehouse" help="Each warehouse is counted on its own." />
+
                                 <div>
                                     <label for="quantity" class="form-label">Quantity</label>
                                     <input type="number" name="quantity" id="quantity" min="0" step="0.0001" required
                                         class="form-control"
                                         placeholder="Enter quantity">
+                                    @error('quantity')<p class="form-error">{{ $message }}</p>@enderror
                                 </div>
 
                                 <div class="md:col-span-2">
