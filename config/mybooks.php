@@ -131,7 +131,7 @@ return [
         'warehouses' => (bool) env('MYBOOKS_FEATURE_WAREHOUSES', true),
         // Moving stock between warehouses (session 13); needs warehouses on.
         'stock_transfers' => (bool) env('MYBOOKS_FEATURE_STOCK_TRANSFERS', true),
-        'assembly' => (bool) env('MYBOOKS_FEATURE_ASSEMBLY', false),              // bills of materials and assembly orders
+        'assembly' => (bool) env('MYBOOKS_FEATURE_ASSEMBLY', true),              // bills of materials and assembly orders
         'inventory_valuation' => (bool) env('MYBOOKS_FEATURE_INVENTORY_VALUATION', false),
         // "Reverse on" date on manual journals (accruals), posted by journals:post-reversals (S8).
         // Off hides the field and stops all automatic reversals, including pending ones.

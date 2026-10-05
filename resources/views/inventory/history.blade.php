@@ -148,6 +148,7 @@
                                                     'purchase' => 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-400',
                                                     'return' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-400',
                                                     'transfer' => 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300',
+                                                    'assembly' => 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300',
                                                 ];
                                                 $typeLabels = [
                                                     'in' => 'Stock In',
@@ -157,6 +158,7 @@
                                                     'purchase' => 'Purchase',
                                                     'return' => 'Return',
                                                     'transfer' => 'Transfer',
+                                                    'assembly' => 'Assembly',
                                                 ];
                                             @endphp
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $typeColors[$record->type] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' }}">
@@ -169,7 +171,7 @@
                                                     +{{ $record->quantity }}
                                                 @elseif($record->type === 'out' || $record->type === 'sale')
                                                     -{{ $record->quantity }}
-                                                @elseif($record->type === 'transfer')
+                                                @elseif(in_array($record->type, ['transfer', 'assembly'], true))
                                                     {{ (float) $record->quantity > 0 ? '+' : '' }}{{ rtrim(rtrim(number_format((float) $record->quantity, 4), '0'), '.') }}
                                                 @else
                                                     {{ $record->quantity }}

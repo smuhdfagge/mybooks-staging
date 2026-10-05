@@ -256,12 +256,14 @@
                                                     'out' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400',
                                                     'adjustment' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400',
                                                     'transfer' => 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300',
+                                                    'assembly' => 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300',
                                                 ];
                                                 $typeLabels = [
                                                     'in' => 'Stock In',
                                                     'out' => 'Stock Out',
                                                     'adjustment' => 'Adjustment',
                                                     'transfer' => 'Transfer',
+                                                    'assembly' => 'Assembly',
                                                 ];
                                             @endphp
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $typeColors[$record->type] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' }}">
@@ -269,7 +271,7 @@
                                             </span>
                                         </td>
                                         <td class="px-4 py-3 text-sm text-right font-medium whitespace-nowrap {{ $record->type === 'in' ? 'text-green-600 dark:text-green-400' : ($record->type === 'out' ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100') }}">
-                                            @if($record->type === 'transfer')
+                                            @if(in_array($record->type, ['transfer', 'assembly'], true))
                                                 {{ (float) $record->quantity > 0 ? '+' : '' }}{{ rtrim(rtrim(number_format((float) $record->quantity, 4), '0'), '.') }}
                                             @else
                                                 {{ $record->type === 'in' ? '+' : ($record->type === 'out' ? '-' : '') }}{{ $record->quantity }}
