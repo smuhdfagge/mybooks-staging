@@ -147,6 +147,7 @@
                                                     'sale' => 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-400',
                                                     'purchase' => 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-400',
                                                     'return' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-400',
+                                                    'transfer' => 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300',
                                                 ];
                                                 $typeLabels = [
                                                     'in' => 'Stock In',
@@ -155,6 +156,7 @@
                                                     'sale' => 'Sale',
                                                     'purchase' => 'Purchase',
                                                     'return' => 'Return',
+                                                    'transfer' => 'Transfer',
                                                 ];
                                             @endphp
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $typeColors[$record->type] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' }}">
@@ -167,6 +169,8 @@
                                                     +{{ $record->quantity }}
                                                 @elseif($record->type === 'out' || $record->type === 'sale')
                                                     -{{ $record->quantity }}
+                                                @elseif($record->type === 'transfer')
+                                                    {{ (float) $record->quantity > 0 ? '+' : '' }}{{ rtrim(rtrim(number_format((float) $record->quantity, 4), '0'), '.') }}
                                                 @else
                                                     {{ $record->quantity }}
                                                 @endif
@@ -176,7 +180,7 @@
                                         <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{{ $record->warehouse->name ?? '-' }}</td>
                                         @endif
                                         <td class="px-4 py-4">
-                                            <div class="text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate">{{ $record->notes ?? '-' }}</div>
+                                            <div class="text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate">@include('inventory._history-note', ['record' => $record])</div>
                                         </td>
                                         <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                             {{ $record->createdBy->name ?? 'System' }}

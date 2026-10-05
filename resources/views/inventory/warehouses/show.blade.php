@@ -52,6 +52,38 @@
                 @endif
             </div>
 
+            @if(($inTransit ?? collect())->isNotEmpty())
+                @php
+                    $incoming = $inTransit->where('to_warehouse_id', $warehouse->id);
+                    $outgoing = $inTransit->where('from_warehouse_id', $warehouse->id);
+                @endphp
+                <x-card title="In transit">
+                    <div class="p-4 sm:p-6 pt-2 space-y-3 text-sm">
+                        <p class="text-gray-600 dark:text-gray-400">Goods on the road are not counted in this warehouse's stock above, but they are still your stock.
+                            @if($incoming->isNotEmpty()) Coming in: <strong class="text-gray-900 dark:text-gray-100">@money($incoming->sum(fn ($t) => $t->shippedCost()))</strong>.@endif
+                            @if($outgoing->isNotEmpty()) Going out: <strong class="text-gray-900 dark:text-gray-100">@money($outgoing->sum(fn ($t) => $t->shippedCost()))</strong>.@endif
+                        </p>
+                        <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+                            @foreach($inTransit as $transfer)
+                                <li class="py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                                    <div>
+                                        <a href="{{ route('stock-transfers.show', $transfer) }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">{{ $transfer->transfer_number }}</a>
+                                        <span class="text-gray-600 dark:text-gray-400">
+                                            {{ $transfer->to_warehouse_id === $warehouse->id ? 'coming from '.$transfer->fromWarehouse?->name : 'going to '.$transfer->toWarehouse?->name }},
+                                            sent {{ $transfer->transfer_date?->format('M d, Y') }}
+                                        </span>
+                                        <span class="block text-xs text-gray-500 dark:text-gray-400">
+                                            {{ $transfer->items->map(fn ($l) => rtrim(rtrim(number_format((float) $l->quantity, 4), '0'), '.').' '.$l->item?->name)->implode(', ') }}
+                                        </span>
+                                    </div>
+                                    <span class="text-gray-900 dark:text-gray-100 whitespace-nowrap">@money($transfer->shippedCost())</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </x-card>
+            @endif
+
             <x-card title="Stock in this warehouse">
                 @if($inventories->isEmpty())
                     <p class="p-6 text-sm text-gray-500 dark:text-gray-400">Nothing in stock here yet. Choose this warehouse on a bill or a stock adjustment to bring goods in.</p>

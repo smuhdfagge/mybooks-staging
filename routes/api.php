@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\SalesOrderController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\SettingsController;
+use App\Http\Controllers\Api\StockTransferController;
 use App\Http\Controllers\Api\SyncController;
 use App\Http\Controllers\Api\TaxRateController;
 use App\Http\Controllers\Api\VendorController;
@@ -252,6 +253,12 @@ Route::prefix('v1')->group(function () {
             Route::get('warehouses', [InventoryController::class, 'warehouses'])->name('api.warehouses.index');
         });
         Route::post('inventory/{inventory}/adjust', [InventoryController::class, 'adjust'])->middleware(['permission:adjust inventory', 'throttle:api-write'])->name('api.inventory.adjust');
+        // Stock transfers between warehouses (session 13).
+        Route::middleware('permission:view inventory')->group(function () {
+            Route::get('stock-transfers', [StockTransferController::class, 'index'])->name('api.stock-transfers.index');
+            Route::get('stock-transfers/{stockTransfer}', [StockTransferController::class, 'show'])->name('api.stock-transfers.show');
+        });
+        Route::post('stock-transfers', [StockTransferController::class, 'store'])->middleware(['permission:adjust inventory', 'throttle:api-write'])->name('api.stock-transfers.store');
 
         // Journals
         Route::middleware('permission:view journals')->group(function () {

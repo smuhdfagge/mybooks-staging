@@ -55,6 +55,15 @@
                     <td colspan="7" class="text-center">No inventory items found.</td>
                 </tr>
             @endforelse
+            @if($inTransit ?? null)
+                <tr>
+                    <td colspan="3">Goods in transit between warehouses (cost when sent: {{ number_format($inTransit['cost'], 2) }})</td>
+                    <td class="text-right">{{ rtrim(rtrim(number_format($inTransit['quantity'], 4), '0'), '.') }}</td>
+                    <td></td>
+                    <td class="text-right">{{ number_format($inTransit['value'], 2) }}</td>
+                    <td></td>
+                </tr>
+            @endif
             <tr class="total-row">
                 <td colspan="5"><strong>Total Stock Value</strong></td>
                 <td class="text-right"><strong>{{ number_format($totalValue, 2) }}</strong></td>

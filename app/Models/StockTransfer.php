@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use App\Enums\StockTransferStatus;
+use App\Http\Middleware\EnsureFeatureEnabled;
 use App\Traits\BelongsToTenant;
+use App\Traits\GuardsStatusTransitions;
 use App\Traits\HasDocumentNumber;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,34 +13,48 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Moving stock from one warehouse to another (session 13). The work is
+ * done by the actions in App\Actions\StockTransfers: shipping takes the
+ * goods and their cost out of the source warehouse, receiving puts the
+ * same cost into the destination. While in transit the goods are in
+ * neither warehouse but still the business's stock.
+ */
 class StockTransfer extends Model
 {
     use BelongsToTenant, HasFactory, LogsActivity;
-    use HasDocumentNumber;
+    use GuardsStatusTransitions, HasDocumentNumber;
 
     const STATUS_DRAFT = 'draft';
 
     const STATUS_IN_TRANSIT = 'in_transit';
 
-    const STATUS_COMPLETED = 'completed';
+    const STATUS_RECEIVED = 'received';
 
     const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [
         'tenant_id',
         'transfer_number',
+        'transfer_date',
         'from_warehouse_id',
         'to_warehouse_id',
         'status',
+        'reference',
         'notes',
         'shipped_at',
         'received_at',
+        'received_date',
+        'cancelled_at',
         'created_by',
     ];
 
     protected $casts = [
+        'transfer_date' => 'date',
+        'received_date' => 'date',
         'shipped_at' => 'datetime',
         'received_at' => 'datetime',
+        'cancelled_at' => 'datetime',
     ];
 
     /** @return BelongsTo<Warehouse, $this> */
@@ -64,148 +81,77 @@ class StockTransfer extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function isDraft(): bool
+    {
+        return $this->status === self::STATUS_DRAFT;
+    }
+
+    public function isInTransit(): bool
+    {
+        return $this->status === self::STATUS_IN_TRANSIT;
+    }
+
+    /** Cost of the goods that left the source warehouse. */
+    public function shippedCost(): float
+    {
+        return round((float) $this->items->sum('shipped_cost'), 2);
+    }
+
+    public static function moduleOn(): bool
+    {
+        return EnsureFeatureEnabled::enabled('stock_transfers') && Warehouse::moduleOn();
+    }
+
+    /**
+     * Quantity of an item on the road (shipped, not yet received), for the
+     * item's stock split. Optionally only what is going to, or coming from,
+     * one warehouse.
+     */
+    public static function inTransitQuantity(Item $item, ?int $toWarehouseId = null, ?int $fromWarehouseId = null): float
+    {
+        if (! static::moduleOn()) {
+            return 0.0;
+        }
+
+        return (float) StockTransferItem::query()
+            ->where('item_id', $item->id)
+            ->whereHas('stockTransfer', fn ($q) => $q->where('stock_transfers.tenant_id', $item->tenant_id)->where('status', self::STATUS_IN_TRANSIT)
+                ->when($toWarehouseId, fn ($w) => $w->where('to_warehouse_id', $toWarehouseId))
+                ->when($fromWarehouseId, fn ($w) => $w->where('from_warehouse_id', $fromWarehouseId)))
+            ->sum('quantity');
+    }
+
+    /**
+     * Quantity and cost of everything on the road, per item:
+     * [item_id => ['quantity' => float, 'cost' => float]].
+     *
+     * @return array<int, array{quantity: float, cost: float}>
+     */
+    public static function inTransitByItem(int $tenantId): array
+    {
+        if (! static::moduleOn()) {
+            return [];
+        }
+
+        return StockTransferItem::query()
+            ->whereHas('stockTransfer', fn ($q) => $q->where('stock_transfers.tenant_id', $tenantId)->where('status', self::STATUS_IN_TRANSIT))
+            ->selectRaw('item_id, SUM(quantity) as qty, SUM(shipped_cost) as cost')
+            ->groupBy('item_id')
+            ->toBase()
+            ->get()
+            ->mapWithKeys(fn ($row) => [(int) $row->item_id => ['quantity' => (float) $row->qty, 'cost' => round((float) $row->cost, 2)]])
+            ->all();
+    }
+
     /** @return array{0: string, 1: string, 2: int} */
     protected static function documentNumberFormat(): array
     {
-        return ['transfer_number', 'ST-', 5];
+        return ['transfer_number', 'TRF-', 6];
     }
 
-    /**
-     * Ship the transfer — deduct from source warehouse.
-     */
-    public function ship(): void
+    /** Allowed status moves. */
+    protected static function statusEnum(): string
     {
-        if ($this->status !== self::STATUS_DRAFT) {
-            throw new \RuntimeException('Only draft transfers can be shipped.');
-        }
-
-        foreach ($this->items as $transferItem) {
-            $item = $transferItem->item;
-            if (! $item || ! $item->track_inventory) {
-                continue;
-            }
-
-            // Deduct from source warehouse inventory
-            $inventory = Inventory::where('tenant_id', $this->tenant_id)
-                ->where('item_id', $transferItem->item_id)
-                ->where('warehouse_id', $this->from_warehouse_id)
-                ->first();
-
-            if ($inventory) {
-                $inventory->quantity -= $transferItem->quantity;
-                $inventory->save();
-            }
-
-            // Record history
-            InventoryHistory::create([
-                'tenant_id' => $this->tenant_id,
-                'item_id' => $transferItem->item_id,
-                'warehouse_id' => $this->from_warehouse_id,
-                'type' => 'transfer',
-                'quantity' => -$transferItem->quantity,
-                'reference_type' => 'stock_transfer',
-                'reference_id' => $this->id,
-                'notes' => "Transfer out to {$this->toWarehouse->name} (#{$this->transfer_number})",
-                'created_by' => auth()->id(),
-            ]);
-        }
-
-        $this->update([
-            'status' => self::STATUS_IN_TRANSIT,
-            'shipped_at' => now(),
-        ]);
-    }
-
-    /**
-     * Receive the transfer — add to destination warehouse.
-     */
-    public function receive(): void
-    {
-        if ($this->status !== self::STATUS_IN_TRANSIT) {
-            throw new \RuntimeException('Only in-transit transfers can be received.');
-        }
-
-        foreach ($this->items as $transferItem) {
-            $item = $transferItem->item;
-            if (! $item || ! $item->track_inventory) {
-                continue;
-            }
-
-            $receivedQty = $transferItem->quantity_received > 0
-                ? $transferItem->quantity_received
-                : $transferItem->quantity;
-
-            // Add to destination warehouse inventory
-            $inventory = Inventory::firstOrCreate(
-                [
-                    'tenant_id' => $this->tenant_id,
-                    'item_id' => $transferItem->item_id,
-                    'warehouse_id' => $this->to_warehouse_id,
-                ],
-                ['quantity' => 0, 'reserved_quantity' => 0, 'unit_cost' => $item->cost_price ?? 0]
-            );
-
-            $inventory->quantity += $receivedQty;
-            $inventory->save();
-
-            // Transfer inventory layers (FIFO support)
-            $this->transferLayers($transferItem, $receivedQty);
-
-            // Record history
-            InventoryHistory::create([
-                'tenant_id' => $this->tenant_id,
-                'item_id' => $transferItem->item_id,
-                'warehouse_id' => $this->to_warehouse_id,
-                'type' => 'transfer',
-                'quantity' => $receivedQty,
-                'reference_type' => 'stock_transfer',
-                'reference_id' => $this->id,
-                'notes' => "Transfer in from {$this->fromWarehouse->name} (#{$this->transfer_number})",
-                'created_by' => auth()->id(),
-            ]);
-        }
-
-        $this->update([
-            'status' => self::STATUS_COMPLETED,
-            'received_at' => now(),
-        ]);
-    }
-
-    /**
-     * Transfer FIFO layers from source to destination warehouse.
-     */
-    protected function transferLayers(StockTransferItem $transferItem, float $quantity): void
-    {
-        $remaining = $quantity;
-        $layers = InventoryLayer::where('tenant_id', $this->tenant_id)
-            ->where('item_id', $transferItem->item_id)
-            ->where('warehouse_id', $this->from_warehouse_id)
-            ->where('remaining_quantity', '>', 0)
-            ->orderBy('received_date')
-            ->orderBy('id')
-            ->get();
-
-        foreach ($layers as $layer) {
-            if ($remaining <= 0) {
-                break;
-            }
-
-            $consumed = $layer->consume($remaining);
-            $remaining -= $consumed;
-
-            // Create new layer at destination
-            InventoryLayer::create([
-                'tenant_id' => $this->tenant_id,
-                'item_id' => $transferItem->item_id,
-                'warehouse_id' => $this->to_warehouse_id,
-                'quantity' => $consumed,
-                'remaining_quantity' => $consumed,
-                'unit_cost' => $layer->unit_cost,
-                'reference_type' => 'stock_transfer',
-                'reference_id' => $this->id,
-                'batch_number' => $layer->batch_number,
-                'received_date' => now()->toDateString(),
-            ]);
-        }
+        return StockTransferStatus::class;
     }
 }

@@ -60,9 +60,9 @@
                 <a href="{{ route('warehouses.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('warehouses.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Warehouses</a>
                 @endcan
                 @endif
-                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('stock_transfers'))
+                @if(\App\Models\StockTransfer::moduleOn())
                 @can('adjust inventory')
-                <a href="{{ route('stock-transfers.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('stock-transfers.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Stock Transfers</a>
+                <a href="{{ route('stock-transfers.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('stock-transfers.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Stock transfers</a>
                 @endcan
                 @endif
                 @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('assembly'))

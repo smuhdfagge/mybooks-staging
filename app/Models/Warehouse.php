@@ -202,13 +202,16 @@ class Warehouse extends Model
         return $list->count() > 1 ? $list : new Collection;
     }
 
-    /** Whether any stock (on hand or in cost layers) is in this warehouse. */
+    /** Whether any stock (on hand, in cost layers or in transit) is in this warehouse. */
     public function holdsStock(): bool
     {
         return Inventory::withoutGlobalScopes()->where('warehouse_id', $this->id)
             ->where(fn ($q) => $q->where('quantity', '>', 0.00001)->orWhere('quantity', '<', -0.00001)->orWhere('reserved_quantity', '>', 0.00001))
             ->exists()
-            || InventoryLayer::withoutGlobalScopes()->where('warehouse_id', $this->id)->where('remaining_quantity', '>', 0.00001)->exists();
+            || InventoryLayer::withoutGlobalScopes()->where('warehouse_id', $this->id)->where('remaining_quantity', '>', 0.00001)->exists()
+            // Goods on the road to or from here (session 13).
+            || StockTransfer::withoutGlobalScopes()->where('status', StockTransfer::STATUS_IN_TRANSIT)
+                ->where(fn ($q) => $q->where('from_warehouse_id', $this->id)->orWhere('to_warehouse_id', $this->id))->exists();
     }
 
     /** Whether documents or stock history point at this warehouse. */
@@ -220,7 +223,8 @@ class Warehouse extends Model
             }
         }
 
-        return false;
+        // Stock transfers (session 13); deleting the warehouse would delete them.
+        return DB::table('stock_transfers')->where('from_warehouse_id', $this->id)->orWhere('to_warehouse_id', $this->id)->exists();
     }
 
     /**

@@ -56,6 +56,9 @@
                 </div>
                 <div class="p-4">{{ $warehouses->links() }}</div>
             </x-card>
+            @if(($inTransitValue ?? 0) > 0)
+                <p class="text-sm text-gray-700 dark:text-gray-300">Also on the road between warehouses: <a href="{{ route('stock-transfers.index', ['status' => 'in_transit']) }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">@money($inTransitValue) in transit</a>.</p>
+            @endif
             <p class="text-xs text-gray-500 dark:text-gray-400">Stock value is the quantity on hand at each warehouse's average cost.</p>
         </div>
     </div>
