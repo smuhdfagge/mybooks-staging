@@ -26,6 +26,7 @@
                             <div><x-field name="delivery_date" label="Delivery date" type="date" required :value="old('delivery_date', date('Y-m-d'))" /></div>
                             <div><x-field name="shipping_method" label="Delivered by (driver, courier)" :value="old('shipping_method')" maxlength="100" /></div>
                             <div><x-field name="tracking_number" label="Vehicle / tracking number" :value="old('tracking_number')" maxlength="100" /></div>
+                            <x-warehouse-picker label="Sent from warehouse" />
                             <div class="md:col-span-3"><x-field name="shipping_address" label="Delivery address" type="textarea" rows="2" :value="old('shipping_address', $salesOrder->customer->address)" /></div>
                         </div>
                     </div>

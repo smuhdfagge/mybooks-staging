@@ -35,6 +35,9 @@
                             </div>
                             <div><p class="text-gray-500 dark:text-gray-400">Delivered by</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $deliveryNote->shipping_method ?: '—' }}</p></div>
                             <div><p class="text-gray-500 dark:text-gray-400">Vehicle / tracking</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $deliveryNote->tracking_number ?: '—' }}</p></div>
+                            @if($warehouseName = \App\Models\Warehouse::nameIfMany($deliveryNote->warehouse_id))
+                                <div><p class="text-gray-500 dark:text-gray-400">Sent from</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $warehouseName }}</p></div>
+                            @endif
                             <div><p class="text-gray-500 dark:text-gray-400">Dispatched</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $deliveryNote->dispatched_at?->format('M d, Y H:i') ?? '—' }}</p></div>
                             <div><p class="text-gray-500 dark:text-gray-400">Received by</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $deliveryNote->received_by ?: '—' }}</p></div>
                             <div><p class="text-gray-500 dark:text-gray-400">Received</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $deliveryNote->received_at?->format('M d, Y H:i') ?? '—' }}</p></div>

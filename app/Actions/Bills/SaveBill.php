@@ -6,6 +6,7 @@ use App\Enums\BillStatus;
 use App\Models\Bill;
 use App\Models\BillItem;
 use App\Models\PurchaseOrder;
+use App\Models\Warehouse;
 use App\Services\Sales\DocumentTotals;
 use App\Support\Money;
 use Illuminate\Support\Facades\DB;
@@ -30,7 +31,8 @@ use Illuminate\Validation\ValidationException;
  * number), notes, discount_amount (document discount, money),
  * purchase_order_id, status (draft or unpaid; default unpaid),
  * recurrent_bill_id, items[] (item_id, account_id, description, quantity,
- * unit_price, discount (money), tax_rate).
+ * unit_price, discount (money), tax_rate), warehouse_id (where the goods
+ * go; the default warehouse if left out, session 12).
  */
 class SaveBill
 {
@@ -44,13 +46,16 @@ class SaveBill
             throw ValidationException::withMessages(['status' => 'A new bill can only be draft or unpaid; payments mark it paid.']);
         }
 
-        return DB::transaction(function () use ($tenantId, $data, $userId, $status) {
+        $warehouseId = Warehouse::resolveIdFor($tenantId, $data['warehouse_id'] ?? null, true);
+
+        return DB::transaction(function () use ($tenantId, $data, $userId, $status, $warehouseId) {
             $order = $this->lockPurchaseOrder($data);
             $totals = $this->totals($data);
 
             $bill = new Bill([
                 'tenant_id' => $tenantId,
                 'vendor_id' => $data['vendor_id'],
+                'warehouse_id' => $warehouseId,
                 'purchase_order_id' => $order?->id,
                 'recurrent_bill_id' => $data['recurrent_bill_id'] ?? null,
                 'bill_number' => Bill::generateNumber($tenantId),
@@ -84,7 +89,14 @@ class SaveBill
             throw ValidationException::withMessages(['bill' => "A {$bill->status} bill can't be changed."]);
         }
 
-        return DB::transaction(function () use ($bill, $data) {
+        $warehouseId = array_key_exists('warehouse_id', $data)
+            ? Warehouse::resolveIdFor($bill->tenant_id, $data['warehouse_id'], (int) $data['warehouse_id'] !== (int) $bill->warehouse_id)
+            : $bill->warehouseIdOrDefault();
+        if ($bill->inventory_updated_at && $warehouseId !== $bill->warehouseIdOrDefault()) {
+            throw ValidationException::withMessages(['warehouse_id' => 'The goods on this bill are already in stock, so their warehouse can\'t change.']);
+        }
+
+        return DB::transaction(function () use ($bill, $data, $warehouseId) {
             $lines = $data['items'] ?? $bill->items()->get()
                 ->map(fn ($l) => $l->only(['item_id', 'account_id', 'description', 'quantity', 'unit_price', 'discount', 'tax_rate', 'vat_treatment']))->all();
 
@@ -108,7 +120,7 @@ class SaveBill
                 'bill_date' => $data['bill_date'] ?? null,
                 'due_date' => $data['due_date'] ?? null,
             ]) + array_intersect_key($data, array_flip(['notes'])) + (array_key_exists('reference', $data) ? ['vendor_bill_number' => $data['reference']] : [])
-               + $this->totalsColumns($totals, $paid));
+               + ['warehouse_id' => $warehouseId] + $this->totalsColumns($totals, $paid));
             // Saved with events off: the old and new dates are checked here (session 11).
             $bill->assertPeriodAllowsSave();
             Bill::withoutEvents(fn () => $bill->save());

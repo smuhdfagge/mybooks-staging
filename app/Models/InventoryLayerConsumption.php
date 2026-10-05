@@ -17,6 +17,7 @@ class InventoryLayerConsumption extends Model
     protected $fillable = [
         'tenant_id',
         'item_id',
+        'warehouse_id',
         'inventory_layer_id',
         'source_type',
         'source_id',
@@ -31,9 +32,25 @@ class InventoryLayerConsumption extends Model
         'reduced_on_hand' => 'boolean',
     ];
 
+    /** Stock with no warehouse given goes into the business's default one (session 12). */
+    protected static function booted(): void
+    {
+        static::creating(function (self $model) {
+            if (empty($model->warehouse_id) && $model->tenant_id) {
+                $model->warehouse_id = Warehouse::defaultIdFor((int) $model->tenant_id);
+            }
+        });
+    }
+
     /** @return BelongsTo<InventoryLayer, $this> */
     public function layer(): BelongsTo
     {
         return $this->belongsTo(InventoryLayer::class, 'inventory_layer_id');
+    }
+
+    /** @return BelongsTo<Warehouse, $this> */
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
     }
 }

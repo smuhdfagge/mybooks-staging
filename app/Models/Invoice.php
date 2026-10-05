@@ -5,11 +5,13 @@ namespace App\Models;
 use App\Enums\InvoiceStatus;
 use App\Events\InvoiceDeleting;
 use App\Events\InvoiceSaved;
+use App\Exceptions\BusinessRuleException;
 use App\Services\JournalService;
 use App\Support\DocumentNumber;
 use App\Traits\BelongsToTenant;
 use App\Traits\GuardsStatusTransitions;
 use App\Traits\HasDocumentNumber;
+use App\Traits\HasWarehouse;
 use App\Traits\KeepsTotalsBalanced;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
@@ -23,7 +25,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Invoice extends Model
 {
     use BelongsToTenant, HasFactory, KeepsTotalsBalanced, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
-    use GuardsStatusTransitions, HasDocumentNumber;
+    use GuardsStatusTransitions, HasDocumentNumber, HasWarehouse;
 
     protected $fillable = [
         'tenant_id',
@@ -199,8 +201,11 @@ class Invoice extends Model
      * @param  array<int, array{item_id?: mixed, quantity: mixed}>  $lines
      * @return array<string, string> validation errors keyed by field
      */
-    public static function stockShortages(array $lines, int $tenantId, ?self $existing = null): array
+    public static function stockShortages(array $lines, int $tenantId, ?self $existing = null, ?int $warehouseId = null): array
     {
+        // Free stock is counted in the invoice's warehouse (session 12).
+        $warehouseId ??= Warehouse::defaultIdFor($tenantId);
+
         $requested = [];
         $firstLine = [];
         foreach ($lines as $index => $line) {
@@ -212,8 +217,9 @@ class Invoice extends Model
             $firstLine[$id] ??= $index;
         }
 
+        // What this invoice already holds counts as free, if it is held in the same warehouse.
         $heldByThisInvoice = [];
-        if ($existing && ! $existing->isReleased()) {
+        if ($existing && ! $existing->isReleased() && $existing->warehouseIdOrDefault() === $warehouseId) {
             foreach ($existing->items()->get() as $line) {
                 if ($line->item_id) {
                     $heldByThisInvoice[$line->item_id] = ($heldByThisInvoice[$line->item_id] ?? 0) + (float) $line->quantity;
@@ -230,14 +236,16 @@ class Invoice extends Model
 
             $inventory = Inventory::where('item_id', $itemId)
                 ->where('tenant_id', $tenantId)
+                ->where('warehouse_id', $warehouseId)
                 ->lockForUpdate()
                 ->first();
 
             $available = ($inventory ? (float) $inventory->available_quantity : 0) + ($heldByThisInvoice[$itemId] ?? 0);
 
             if ($quantity - $available > 0.00001) {
+                $where = Warehouse::choicesFor($tenantId)->isNotEmpty() ? ' in '.Warehouse::withoutGlobalScopes()->whereKey($warehouseId)->value('name') : '';
                 $errors["items.{$firstLine[$itemId]}.quantity"] =
-                    "Insufficient stock for '{$item->name}'. Available: {$available}, Requested: {$quantity}";
+                    "Insufficient stock for '{$item->name}'{$where}. Available: {$available}, Requested: {$quantity}";
             }
         }
 
@@ -246,13 +254,15 @@ class Invoice extends Model
 
     /**
      * Reserve stock for this invoice's lines (moves it from available to
-     * reserved). Services and items that don't track stock are skipped.
+     * reserved) in the invoice's warehouse. Services and items that don't
+     * track stock are skipped.
      */
     public function reserveInventory(): void
     {
         if ($this->isReleased()) {
             return;
         }
+        $warehouseId = $this->warehouseIdOrDefault();
 
         foreach ($this->items()->get() as $invoiceItem) {
             if (! $invoiceItem->item_id) {
@@ -266,6 +276,7 @@ class Invoice extends Model
 
             $inventory = Inventory::where('item_id', $invoiceItem->item_id)
                 ->where('tenant_id', $this->tenant_id)
+                ->where('warehouse_id', $warehouseId)
                 ->first();
 
             if (! $inventory) {
@@ -278,6 +289,7 @@ class Invoice extends Model
             InventoryHistory::create([
                 'tenant_id' => $this->tenant_id,
                 'item_id' => $invoiceItem->item_id,
+                'warehouse_id' => $warehouseId,
                 'type' => 'reserved',
                 'quantity' => $invoiceItem->quantity,
                 'reference_type' => 'invoice',
@@ -301,6 +313,7 @@ class Invoice extends Model
         }
 
         $tenantId = $this->tenant_id;
+        $warehouseId = $this->warehouseIdOrDefault();
 
         foreach ($this->items as $invoiceItem) {
             if ($invoiceItem->item_id) {
@@ -314,6 +327,7 @@ class Invoice extends Model
 
                 $inventory = Inventory::where('item_id', $invoiceItem->item_id)
                     ->where('tenant_id', $tenantId)
+                    ->where('warehouse_id', $warehouseId)
                     ->first();
 
                 if ($inventory) {
@@ -324,6 +338,7 @@ class Invoice extends Model
                     InventoryHistory::create([
                         'tenant_id' => $tenantId,
                         'item_id' => $invoiceItem->item_id,
+                        'warehouse_id' => $warehouseId,
                         'type' => 'unreserved',
                         'quantity' => -$invoiceItem->quantity,
                         'reference_type' => 'invoice',
@@ -334,6 +349,58 @@ class Invoice extends Model
                 }
             }
         }
+    }
+
+    /**
+     * Hand the goods over: take them off hand (and out of reserved) in the
+     * invoice's warehouse and mark the invoice released with a waybill
+     * number. One place for the web and the API (session 12). Refuses
+     * rather than letting stock go below zero (M4). Call inside a transaction.
+     */
+    public function releaseStock(): string
+    {
+        $waybillNumber = static::generateWaybillNumber($this->tenant_id);
+        $warehouseId = $this->warehouseIdOrDefault();
+
+        foreach ($this->items as $invoiceItem) {
+            if (! $invoiceItem->item_id) {
+                continue;
+            }
+            $inventory = Inventory::where('item_id', $invoiceItem->item_id)
+                ->where('tenant_id', $this->tenant_id)
+                ->where('warehouse_id', $warehouseId)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $inventory) {
+                continue;
+            }
+            if ((float) $inventory->quantity < (float) $invoiceItem->quantity) {
+                throw new BusinessRuleException("Not enough stock to release {$invoiceItem->description}: {$inventory->quantity} on hand, {$invoiceItem->quantity} needed.");
+            }
+            $inventory->quantity = $inventory->quantity - $invoiceItem->quantity;
+            $inventory->reserved_quantity = max(0, $inventory->reserved_quantity - $invoiceItem->quantity);
+            $inventory->save();
+
+            InventoryHistory::create([
+                'tenant_id' => $this->tenant_id,
+                'item_id' => $invoiceItem->item_id,
+                'warehouse_id' => $warehouseId,
+                'type' => 'out',
+                'quantity' => -$invoiceItem->quantity,
+                'reference_type' => 'invoice',
+                'reference_id' => $this->id,
+                'notes' => "Released via Invoice #{$this->invoice_number}, Waybill #{$waybillNumber}",
+                'created_by' => auth()->id(),
+            ]);
+        }
+
+        $this->update([
+            'released_at' => now(),
+            'waybill_number' => $waybillNumber,
+        ]);
+
+        return $waybillNumber;
     }
 
     /**

@@ -83,6 +83,8 @@ class AssemblyOrder extends Model
 
         DB::transaction(function () use ($bom) {
             $totalCost = 0;
+            // Stock is kept per warehouse (session 12): none chosen means the default one.
+            $warehouseId = $this->warehouse_id ?: Warehouse::defaultIdFor($this->tenant_id);
 
             // 1. Consume component items
             foreach ($bom->components as $component) {
@@ -96,9 +98,7 @@ class AssemblyOrder extends Model
                 $inventoryQuery = Inventory::where('tenant_id', $this->tenant_id)
                     ->where('item_id', $component->item_id);
 
-                if ($this->warehouse_id) {
-                    $inventoryQuery->where('warehouse_id', $this->warehouse_id);
-                }
+                $inventoryQuery->where('warehouse_id', $warehouseId);
 
                 $inventory = $inventoryQuery->first();
 
@@ -130,7 +130,7 @@ class AssemblyOrder extends Model
                     [
                         'tenant_id' => $this->tenant_id,
                         'item_id' => $finishedItem->id,
-                        'warehouse_id' => $this->warehouse_id,
+                        'warehouse_id' => $warehouseId,
                     ],
                     ['quantity' => 0, 'reserved_quantity' => 0, 'unit_cost' => 0]
                 );
@@ -147,7 +147,7 @@ class AssemblyOrder extends Model
                 InventoryLayer::create([
                     'tenant_id' => $this->tenant_id,
                     'item_id' => $finishedItem->id,
-                    'warehouse_id' => $this->warehouse_id,
+                    'warehouse_id' => $warehouseId,
                     'quantity' => $outputQty,
                     'remaining_quantity' => $outputQty,
                     'unit_cost' => $outputQty > 0 ? $totalCost / $outputQty : 0,

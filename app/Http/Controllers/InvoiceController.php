@@ -8,11 +8,9 @@ use App\Http\Requests\StoreInvoiceRequest;
 use App\Http\Requests\UpdateInvoiceRequest;
 use App\Models\ActivityLog;
 use App\Models\Customer;
-use App\Models\Inventory;
-use App\Models\InventoryHistory;
 use App\Models\Invoice;
 use App\Models\InvoiceTemplate;
-use App\Models\Item;
+use App\Models\Warehouse;
 use App\Services\NotificationService;
 use Illuminate\Support\Facades\DB;
 
@@ -39,6 +37,8 @@ class InvoiceController extends Controller
         // Same rules as the API, sales-order conversion and recurring
         // invoices (R3): stock check, totals, lines, reservation, journal.
         $invoice = $save->create(auth()->user()->tenant_id, $request->validated(), auth()->id());
+
+        Warehouse::rememberChoice($request->input('warehouse_id'));
 
         return redirect()->route('invoices.show', $invoice)->with('success', 'Invoice created successfully.');
     }
@@ -149,48 +149,8 @@ class InvoiceController extends Controller
 
         try {
             $waybillNumber = DB::transaction(function () use ($invoice) {
-                // Generate waybill number
-                $waybillNumber = Invoice::generateWaybillNumber(auth()->user()->tenant_id);
-
-                // Deduct inventory for each item (move from reserved to sold)
-                foreach ($invoice->items as $invoiceItem) {
-                    if ($invoiceItem->item_id) {
-                        $inventory = Inventory::where('item_id', $invoiceItem->item_id)
-                            ->where('tenant_id', auth()->user()->tenant_id)
-                            ->lockForUpdate()
-                            ->first();
-
-                        if ($inventory) {
-                            // Deduct from both quantity and reserved_quantity
-                            $previousQty = $inventory->quantity;
-                            // Refuse rather than silently clamping stock at zero (M4)
-                            if ((float) $inventory->quantity < (float) $invoiceItem->quantity) {
-                                throw new \RuntimeException("Not enough stock to release {$invoiceItem->description}: {$inventory->quantity} on hand, {$invoiceItem->quantity} needed.");
-                            }
-                            $inventory->quantity = $inventory->quantity - $invoiceItem->quantity;
-                            $inventory->reserved_quantity = max(0, $inventory->reserved_quantity - $invoiceItem->quantity);
-                            $inventory->save();
-
-                            // Record inventory history
-                            InventoryHistory::create([
-                                'tenant_id' => auth()->user()->tenant_id,
-                                'item_id' => $invoiceItem->item_id,
-                                'type' => 'out',
-                                'quantity' => -$invoiceItem->quantity,
-                                'reference_type' => 'invoice',
-                                'reference_id' => $invoice->id,
-                                'notes' => "Released via Invoice #{$invoice->invoice_number}, Waybill #{$waybillNumber}",
-                                'created_by' => auth()->id(),
-                            ]);
-                        }
-                    }
-                }
-
-                // Update invoice with release info
-                $invoice->update([
-                    'released_at' => now(),
-                    'waybill_number' => $waybillNumber,
-                ]);
+                // Out of the invoice's warehouse (session 12).
+                $waybillNumber = $invoice->releaseStock();
 
                 // Log the activity
                 $invoice->logCustomActivity(ActivityLog::ACTION_RELEASED, "Invoice '{$invoice->invoice_number}' was released with Waybill #{$waybillNumber}");

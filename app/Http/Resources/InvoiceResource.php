@@ -20,6 +20,8 @@ class InvoiceResource extends JsonResource
             'status' => $this->status,
             'released_at' => $this->released_at?->toISOString(),
             'waybill_number' => $this->waybill_number,
+            // Where the goods came from / went to (session 12).
+            'warehouse_id' => $this->warehouse_id,
             'subtotal' => (float) $this->subtotal,
             'tax_amount' => (float) $this->tax_amount,
             'discount_amount' => (float) $this->discount_amount,

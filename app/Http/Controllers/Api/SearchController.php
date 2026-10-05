@@ -200,7 +200,7 @@ class SearchController extends BaseApiController
         $inStock = $request->boolean('in_stock', false);
 
         $items = Item::where('tenant_id', $this->getTenantId())
-            ->with(['inventory:id,item_id,quantity,reserved_quantity', 'taxRate', 'taxGroup.taxRates'])
+            ->with(['inventory', 'taxRate', 'taxGroup.taxRates'])
             ->when($query, function ($q) use ($query) {
                 $q->where(function ($sq) use ($query) {
                     $sq->where('name', 'like', "%{$query}%")
@@ -213,7 +213,7 @@ class SearchController extends BaseApiController
                 $q->where(function ($sq) {
                     $sq->where('track_inventory', false)
                         ->orWhere('type', 'service')
-                        ->orWhereHas('inventory', fn ($iq) => $iq->whereRaw('quantity - COALESCE(reserved_quantity, 0) > 0'));
+                        ->orWhereRaw(Item::onHandSql().' - '.Item::onHandSql(null, 'reserved_quantity').' > 0');
                 });
             })
             ->orderBy('name')

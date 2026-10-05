@@ -60,6 +60,12 @@
                                     <p class="text-sm text-gray-500 dark:text-gray-400">Payment Method</p>
                                     <p class="font-medium text-gray-900 dark:text-gray-100">{{ ucfirst(str_replace('_', ' ', $salesReceipt->payment_method)) }}</p>
                                 </div>
+                                @if($warehouseName = \App\Models\Warehouse::nameIfMany($salesReceipt->warehouse_id))
+                                <div>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Warehouse</p>
+                                    <p class="font-medium text-gray-900 dark:text-gray-100">{{ $warehouseName }}</p>
+                                </div>
+                                @endif
                                 <div>
                                     <p class="text-sm text-gray-500 dark:text-gray-400">Reference</p>
                                     <p class="font-medium text-gray-900 dark:text-gray-100">{{ $salesReceipt->reference ?? 'N/A' }}</p>

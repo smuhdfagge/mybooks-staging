@@ -117,6 +117,8 @@
                             </div>
                         </div>
 
+                        <x-warehouse-picker wrapper-class="mb-6 md:w-1/2" label="Receive into warehouse" />
+
                         <div class="mb-6">
                             <label for="reference" class="form-label">Vendor Bill Number / Reference</label>
                             <input type="text" name="reference" id="reference" value="{{ old('reference', $purchaseOrder?->order_number) }}"

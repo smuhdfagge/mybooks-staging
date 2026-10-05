@@ -11,7 +11,6 @@ use App\Http\Requests\UpdateInvoiceRequest;
 use App\Http\Resources\InvoiceResource;
 use App\Models\ActivityLog;
 use App\Models\Inventory;
-use App\Models\InventoryHistory;
 use App\Models\Invoice;
 use App\Services\NotificationService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -201,42 +200,8 @@ class InvoiceController extends BaseApiController
 
         try {
             $waybillNumber = DB::transaction(function () use ($invoice) {
-                $waybillNumber = Invoice::generateWaybillNumber($invoice->tenant_id);
-
-                foreach ($invoice->items as $invoiceItem) {
-                    if ($invoiceItem->item_id) {
-                        $inventory = Inventory::where('item_id', $invoiceItem->item_id)
-                            ->where('tenant_id', $invoice->tenant_id)
-                            ->lockForUpdate()
-                            ->first();
-
-                        if ($inventory) {
-                            // Refuse rather than silently clamping stock at zero (M4)
-                            if ((float) $inventory->quantity < (float) $invoiceItem->quantity) {
-                                throw new BusinessRuleException("Not enough stock to release {$invoiceItem->description}: {$inventory->quantity} on hand, {$invoiceItem->quantity} needed.");
-                            }
-                            $inventory->quantity = $inventory->quantity - $invoiceItem->quantity;
-                            $inventory->reserved_quantity = max(0, $inventory->reserved_quantity - $invoiceItem->quantity);
-                            $inventory->save();
-
-                            InventoryHistory::create([
-                                'tenant_id' => $invoice->tenant_id,
-                                'item_id' => $invoiceItem->item_id,
-                                'type' => 'out',
-                                'quantity' => -$invoiceItem->quantity,
-                                'reference_type' => 'invoice',
-                                'reference_id' => $invoice->id,
-                                'notes' => "Released via Invoice #{$invoice->invoice_number}, Waybill #{$waybillNumber}",
-                                'created_by' => auth()->id(),
-                            ]);
-                        }
-                    }
-                }
-
-                $invoice->update([
-                    'released_at' => now(),
-                    'waybill_number' => $waybillNumber,
-                ]);
+                // Out of the invoice's warehouse (session 12).
+                $waybillNumber = $invoice->releaseStock();
 
                 $invoice->logCustomActivity(ActivityLog::ACTION_RELEASED, "Invoice '{$invoice->invoice_number}' was released with waybill #{$waybillNumber}");
 

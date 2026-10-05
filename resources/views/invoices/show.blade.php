@@ -100,6 +100,10 @@
                             <p class="font-medium {{ $invoice->due_date->isPast() && $invoice->balance_due > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100' }}">
                                 {{ $invoice->due_date->format('F d, Y') }}
                             </p>
+                            @if($warehouseName = \App\Models\Warehouse::nameIfMany($invoice->warehouse_id))
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Warehouse</p>
+                                <p class="font-medium text-gray-900 dark:text-gray-100">{{ $warehouseName }}</p>
+                            @endif
                         </div>
                     </div>
 

@@ -15,6 +15,7 @@ use App\Models\ChartOfAccount;
 use App\Models\Item;
 use App\Models\Vendor;
 use App\Models\VendorCredit;
+use App\Models\Warehouse;
 use App\Services\Accounting\VatTreatment;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -76,6 +77,8 @@ class VendorCreditController extends Controller
             'vendor_reference' => ['nullable', 'string', 'max:100'],
             'reason' => ['nullable', Rule::in(array_keys(VendorCredit::REASONS))],
             'notes' => ['nullable', 'string', 'max:2000'],
+            // Goods go back from here; empty = the bill's warehouse (session 12).
+            'warehouse_id' => Warehouse::rule($tenantId),
             'status' => ['nullable', Rule::in(VendorCreditStatus::startValues())],
             'items' => ['required', 'array', 'min:1'],
             'items.*.item_id' => ['nullable', Rule::exists('items', 'id')->where('tenant_id', $tenantId)],

@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\CreditNoteStatus;
 use App\Models\CreditNote;
+use App\Models\Warehouse;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -31,6 +32,8 @@ class SaveCreditNoteRequest extends FormRequest
             'reason' => ['nullable', Rule::in(array_keys(CreditNote::REASONS))],
             'restock' => ['sometimes', 'boolean'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            // Returned goods go back here; empty = where they left from (session 12).
+            'warehouse_id' => Warehouse::rule($tenantId),
             // Create only: save as a draft or open (post) straight away.
             'status' => ['nullable', Rule::in(CreditNoteStatus::startValues())],
             ...$this->salesLineRules($tenantId),

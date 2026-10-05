@@ -7,6 +7,7 @@ use App\Models\DeliveryNote;
 use App\Models\DeliveryNoteItem;
 use App\Models\SalesOrder;
 use App\Models\SalesOrderItem;
+use App\Models\Warehouse;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -24,8 +25,12 @@ use Illuminate\Validation\ValidationException;
  * well would take the same goods out twice. The note is the shipping paper
  * and the record of what the customer has received.
  *
+ * The note records the warehouse the goods are sent from (session 12;
+ * default warehouse if none is chosen). It is printed on the note.
+ *
  * $data keys: delivery_date, shipping_method, tracking_number,
- * shipping_address, notes, lines[] (sales_order_item_id, quantity).
+ * shipping_address, notes, warehouse_id, lines[] (sales_order_item_id,
+ * quantity).
  */
 class SaveDeliveryNote
 {
@@ -69,6 +74,7 @@ class SaveDeliveryNote
                 'sales_order_id' => $order->id,
                 'customer_id' => $order->customer_id,
                 'delivery_number' => DeliveryNote::generateNumber($order->tenant_id),
+                'warehouse_id' => Warehouse::resolveIdFor($order->tenant_id, $data['warehouse_id'] ?? null, true),
                 'delivery_date' => $data['delivery_date'],
                 'status' => DeliveryNoteStatus::Draft->value,
                 'shipping_method' => $data['shipping_method'] ?? null,

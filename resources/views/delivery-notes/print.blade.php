@@ -21,6 +21,7 @@
                 @endif
                 @if($deliveryNote->shipping_method)Delivered by: {{ $deliveryNote->shipping_method }}<br>@endif
                 @if($deliveryNote->tracking_number)Vehicle / tracking: {{ $deliveryNote->tracking_number }}@endif
+                @if($warehouseName = \App\Models\Warehouse::nameIfMany($deliveryNote->warehouse_id))<br>Sent from: {{ $warehouseName }}@endif
             </td>
         </tr>
     </table>

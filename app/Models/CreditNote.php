@@ -8,6 +8,7 @@ use App\Enums\CreditNoteStatus;
 use App\Traits\BelongsToTenant;
 use App\Traits\GuardsStatusTransitions;
 use App\Traits\HasDocumentNumber;
+use App\Traits\HasWarehouse;
 use App\Traits\KeepsTotalsBalanced;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
@@ -27,7 +28,7 @@ use Illuminate\Validation\ValidationException;
  */
 class CreditNote extends Model
 {
-    use BelongsToTenant, HasFactory, KeepsTotalsBalanced, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
+    use BelongsToTenant, HasFactory, HasWarehouse, KeepsTotalsBalanced, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
     use GuardsStatusTransitions, HasDocumentNumber;
 
     const STATUS_DRAFT = 'draft';

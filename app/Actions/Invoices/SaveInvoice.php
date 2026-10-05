@@ -5,6 +5,7 @@ namespace App\Actions\Invoices;
 use App\Enums\InvoiceStatus;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\Warehouse;
 use App\Services\Sales\DocumentTotals;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -23,7 +24,9 @@ use Illuminate\Validation\ValidationException;
  * $data keys: customer_id, invoice_date, due_date, reference, notes, terms,
  * discount_type, discount_amount, items[] (item_id, description, quantity,
  * unit_price, discount, discount_type, tax_rate), and optionally status
- * (draft or unpaid; default draft), sales_order_id, recurrent_invoice_id.
+ * (draft or unpaid; default draft), sales_order_id, recurrent_invoice_id,
+ * warehouse_id (where the goods come from; default warehouse if left out,
+ * session 12).
  */
 class SaveInvoice
 {
@@ -40,13 +43,16 @@ class SaveInvoice
             throw ValidationException::withMessages(['status' => 'A new invoice can only be draft, sent or unpaid.']);
         }
 
-        return DB::transaction(function () use ($tenantId, $data, $userId, $status) {
-            $this->assertStock($data['items'], $tenantId, null);
+        $warehouseId = Warehouse::resolveIdFor($tenantId, $data['warehouse_id'] ?? null, true);
+
+        return DB::transaction(function () use ($tenantId, $data, $userId, $status, $warehouseId) {
+            $this->assertStock($data['items'], $tenantId, null, $warehouseId);
             $totals = $this->totals($data);
 
             $invoice = new Invoice([
                 'tenant_id' => $tenantId,
                 'customer_id' => $data['customer_id'],
+                'warehouse_id' => $warehouseId,
                 'sales_order_id' => $data['sales_order_id'] ?? null,
                 'recurrent_invoice_id' => $data['recurrent_invoice_id'] ?? null,
                 'invoice_number' => Invoice::generateNumber($tenantId),
@@ -88,11 +94,18 @@ class SaveInvoice
             throw ValidationException::withMessages(['invoice' => "A {$invoice->status} invoice can't be changed."]);
         }
 
-        return DB::transaction(function () use ($invoice, $data) {
+        $warehouseId = array_key_exists('warehouse_id', $data)
+            ? Warehouse::resolveIdFor($invoice->tenant_id, $data['warehouse_id'], (int) $data['warehouse_id'] !== (int) $invoice->warehouse_id)
+            : $invoice->warehouseIdOrDefault();
+        if ($invoice->isReleased() && $warehouseId !== $invoice->warehouseIdOrDefault()) {
+            throw ValidationException::withMessages(['warehouse_id' => 'The goods on this invoice have already left the warehouse, so it can\'t change.']);
+        }
+
+        return DB::transaction(function () use ($invoice, $data, $warehouseId) {
             $lines = $data['items'] ?? $invoice->items()->get()->map(fn ($l) => $l->only(['item_id', 'description', 'quantity', 'unit_price', 'discount', 'tax_rate', 'vat_treatment']))->all();
 
             if (! $invoice->isReleased()) {
-                $this->assertStock($lines, $invoice->tenant_id, $invoice);
+                $this->assertStock($lines, $invoice->tenant_id, $invoice, $warehouseId);
             }
 
             // No new document discount sent: keep the current one (stored as money).
@@ -115,6 +128,7 @@ class SaveInvoice
                 'due_date' => $data['due_date'] ?? null,
             ]) + array_intersect_key($data, array_flip(['reference', 'notes', 'terms'])) + [
                 'discount_type' => $data['discount_type'] ?? null,
+                'warehouse_id' => $warehouseId,
             ]);
             // Saved with events off: the old and new dates are checked here (session 11).
             $invoice->assertPeriodAllowsSave();
@@ -137,9 +151,9 @@ class SaveInvoice
     /**
      * @param  array<int|string, array<string, mixed>>  $lines
      */
-    protected function assertStock(array $lines, int $tenantId, ?Invoice $existing): void
+    protected function assertStock(array $lines, int $tenantId, ?Invoice $existing, int $warehouseId): void
     {
-        $shortages = Invoice::stockShortages($lines, $tenantId, $existing);
+        $shortages = Invoice::stockShortages($lines, $tenantId, $existing, $warehouseId);
         if ($shortages) {
             throw ValidationException::withMessages($shortages);
         }

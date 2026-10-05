@@ -8,6 +8,7 @@ use App\Models\CreditNoteItem;
 use App\Models\Inventory;
 use App\Models\InventoryHistory;
 use App\Models\Invoice;
+use App\Models\Warehouse;
 use App\Services\JournalService;
 use App\Services\StockValuationService;
 use Illuminate\Support\Collection;
@@ -27,6 +28,10 @@ use Illuminate\Validation\ValidationException;
  * credited invoice took them out at (its lines' stored unit cost); for a
  * credit note without an invoice, the item's current average cost. Each
  * line keeps its cost, so voiding takes back exactly the same value.
+ *
+ * The goods go back into the credit note's warehouse if one was chosen,
+ * else the warehouse the invoice took them from, else the default one
+ * (session 12). The warehouse used is kept on the note for voiding.
  *
  * Goods on an invoice that hasn't been released are still in the store
  * (only reserved), so they can't be "returned": credit the amount only, or
@@ -79,22 +84,27 @@ class OpenCreditNote
             $this->assertNotMoreThanSold($note, $invoice, $lines);
         }
 
+        $warehouseId = $note->warehouse_id
+            ? Warehouse::resolveIdFor($note->tenant_id, $note->warehouse_id)
+            : ($invoice?->warehouse_id ? (int) $invoice->warehouse_id : Warehouse::defaultIdFor($note->tenant_id));
+        $note->forceFill(['warehouse_id' => $warehouseId])->saveQuietly();
+
         foreach ($lines as $line) {
             $quantity = (float) $line->quantity;
-            $unitCost = $this->costOf($line, $invoice);
+            $unitCost = $this->costOf($line, $invoice, $warehouseId);
             $line->forceFill(['unit_cost' => $unitCost])->saveQuietly();
 
-            $inventory = Inventory::where('tenant_id', $note->tenant_id)->where('item_id', $line->item_id)->lockForUpdate()->first()
-                ?? Inventory::create(['tenant_id' => $note->tenant_id, 'item_id' => $line->item_id, 'quantity' => 0, 'reserved_quantity' => 0, 'unit_cost' => 0]);
+            $inventory = $this->valuation->stockRow($note->tenant_id, (int) $line->item_id, $warehouseId);
             $this->valuation->updateWeightedAverageCost($inventory, $quantity, $unitCost);
             $inventory->quantity = round((float) $inventory->quantity + $quantity, 4);
             $inventory->save();
 
-            $this->valuation->addLayer($note->tenant_id, (int) $line->item_id, $quantity, $unitCost, $inventory->warehouse_id, CreditNote::class, $note->id);
+            $this->valuation->addLayer($note->tenant_id, (int) $line->item_id, $quantity, $unitCost, $warehouseId, CreditNote::class, $note->id);
 
             InventoryHistory::create([
                 'tenant_id' => $note->tenant_id,
                 'item_id' => $line->item_id,
+                'warehouse_id' => $warehouseId,
                 'type' => 'in',
                 'quantity' => $quantity,
                 'reference_type' => 'credit_note',
@@ -131,7 +141,7 @@ class OpenCreditNote
     }
 
     /** The cost the invoice took the goods out at, else the item's average cost now. */
-    protected function costOf(CreditNoteItem $line, ?Invoice $invoice): float
+    protected function costOf(CreditNoteItem $line, ?Invoice $invoice, ?int $warehouseId = null): float
     {
         $sold = $invoice?->items->filter(fn ($i) => (int) $i->item_id === (int) $line->item_id && $i->unit_cost !== null && (float) $i->quantity > 0);
         if ($sold && $sold->isNotEmpty()) {
@@ -140,6 +150,6 @@ class OpenCreditNote
             return round($sold->sum(fn ($i) => (float) $i->unit_cost * (float) $i->quantity) / $qty, 4);
         }
 
-        return round($this->valuation->getWeightedAverageCost($line->item), 4);
+        return round($this->valuation->getWeightedAverageCost($line->item, $warehouseId), 4);
     }
 }

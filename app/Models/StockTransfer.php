@@ -100,6 +100,7 @@ class StockTransfer extends Model
             InventoryHistory::create([
                 'tenant_id' => $this->tenant_id,
                 'item_id' => $transferItem->item_id,
+                'warehouse_id' => $this->from_warehouse_id,
                 'type' => 'transfer',
                 'quantity' => -$transferItem->quantity,
                 'reference_type' => 'stock_transfer',
@@ -154,6 +155,7 @@ class StockTransfer extends Model
             InventoryHistory::create([
                 'tenant_id' => $this->tenant_id,
                 'item_id' => $transferItem->item_id,
+                'warehouse_id' => $this->to_warehouse_id,
                 'type' => 'transfer',
                 'quantity' => $receivedQty,
                 'reference_type' => 'stock_transfer',

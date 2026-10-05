@@ -143,10 +143,39 @@ class Item extends Model
         return $amount * (($this->tax_rate ?? 0) / 100);
     }
 
-    /** @return HasOne<Inventory, $this> */
+    /**
+     * The item's stock across all its warehouses, as one record: quantity
+     * and reserved are the sums, unit_cost the average (session 12). Read
+     * only; stock is changed per warehouse (inventories()).
+     *
+     * @return HasOne<Inventory, $this>
+     */
     public function inventory(): HasOne
     {
-        return $this->hasOne(Inventory::class);
+        return $this->hasOne(Inventory::class)
+            ->select('inventories.item_id')
+            ->selectRaw('MIN(inventories.id) as id, MIN(inventories.tenant_id) as tenant_id')
+            ->selectRaw('SUM(inventories.quantity) as quantity, SUM(inventories.reserved_quantity) as reserved_quantity')
+            ->selectRaw('CASE WHEN SUM(inventories.quantity) > 0 THEN SUM(inventories.quantity * inventories.unit_cost) / SUM(inventories.quantity) ELSE MAX(inventories.unit_cost) END as unit_cost')
+            ->selectRaw('MIN(inventories.created_at) as created_at, MAX(inventories.updated_at) as updated_at')
+            ->groupBy('inventories.item_id');
+    }
+
+    /** @return HasMany<Inventory, $this> stock per warehouse */
+    public function inventories(): HasMany
+    {
+        return $this->hasMany(Inventory::class);
+    }
+
+    /**
+     * SQL for the item's total quantity on hand across warehouses (or in
+     * one), for filters such as "in stock" and "low stock".
+     */
+    public static function onHandSql(?int $warehouseId = null, string $column = 'quantity'): string
+    {
+        $where = $warehouseId ? ' AND inventories.warehouse_id = '.(int) $warehouseId : '';
+
+        return "(SELECT COALESCE(SUM(inventories.{$column}), 0) FROM inventories WHERE inventories.item_id = items.id{$where})";
     }
 
     /** @return HasMany<InventoryHistory, $this> */

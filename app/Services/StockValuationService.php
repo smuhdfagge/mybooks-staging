@@ -8,6 +8,7 @@ use App\Models\InventoryLayer;
 use App\Models\InventoryLayerConsumption;
 use App\Models\Item;
 use App\Models\VendorCredit;
+use App\Models\Warehouse;
 
 class StockValuationService
 {
@@ -58,6 +59,7 @@ class StockValuationService
      */
     public function consumeStock(Item $item, float $quantity, ?int $warehouseId = null): float
     {
+        $warehouseId ??= Warehouse::defaultIdFor($item->tenant_id);
         $method = $item->valuation_method ?? 'weighted_average';
 
         return match ($method) {
@@ -80,12 +82,17 @@ class StockValuationService
      * $reduceOnHand also lowers the quantity on hand (cash sales). Invoices
      * leave it alone: their quantity is reserved when created and reduced
      * when released.
+     *
+     * Stock and cost layers are per warehouse (session 12): the goods come
+     * out of the given warehouse (default: the business's default one), at
+     * that warehouse's FIFO layers or average cost.
      */
     public function issue(Item $item, float $quantity, string $sourceType, int $sourceId, bool $reduceOnHand = false, ?int $warehouseId = null): float
     {
         if ($quantity <= 0) {
             return 0.0;
         }
+        $warehouseId ??= Warehouse::defaultIdFor($item->tenant_id);
 
         $layers = InventoryLayer::where('tenant_id', $item->tenant_id)
             ->forItem($item->id, $warehouseId)
@@ -139,6 +146,7 @@ class StockValuationService
             InventoryLayerConsumption::create([
                 'tenant_id' => $item->tenant_id,
                 'item_id' => $item->id,
+                'warehouse_id' => $warehouseId,
                 'inventory_layer_id' => $layer?->id,
                 'source_type' => $sourceType,
                 'source_id' => $sourceId,
@@ -151,7 +159,7 @@ class StockValuationService
         }
 
         if ($reduceOnHand) {
-            $this->adjustOnHand($item->tenant_id, $item->id, -$quantity, $sourceType, $sourceId, 'out');
+            $this->adjustOnHand($item->tenant_id, $item->id, -$quantity, $sourceType, $sourceId, 'out', $warehouseId);
         }
 
         return round($cost, 2);
@@ -168,13 +176,14 @@ class StockValuationService
      * The stock record's average cost is worked out again without the
      * returned goods, the same way Bill::reverseInventory() does.
      */
-    public function returnToSupplier(Item $item, float $quantity, string $sourceType, int $sourceId, ?int $billId = null): float
+    public function returnToSupplier(Item $item, float $quantity, string $sourceType, int $sourceId, ?int $billId = null, ?int $warehouseId = null): float
     {
         if ($quantity <= 0) {
             return 0.0;
         }
+        $warehouseId ??= Warehouse::defaultIdFor($item->tenant_id);
 
-        $inventory = Inventory::where('tenant_id', $item->tenant_id)->where('item_id', $item->id)->lockForUpdate()->first();
+        $inventory = $this->stockRow($item->tenant_id, $item->id, $warehouseId, false);
         $qtyBefore = (float) ($inventory->quantity ?? 0);
         $avgBefore = (float) ($inventory->unit_cost ?? 0);
 
@@ -183,7 +192,7 @@ class StockValuationService
 
         if ($billId) {
             $layers = InventoryLayer::where('tenant_id', $item->tenant_id)
-                ->forItem($item->id)
+                ->forItem($item->id, $warehouseId)
                 ->where('reference_type', 'bill')
                 ->where('reference_id', $billId)
                 ->withStock()
@@ -202,6 +211,7 @@ class StockValuationService
                 InventoryLayerConsumption::create([
                     'tenant_id' => $item->tenant_id,
                     'item_id' => $item->id,
+                    'warehouse_id' => $warehouseId,
                     'inventory_layer_id' => $layer->id,
                     'source_type' => $sourceType,
                     'source_id' => $sourceId,
@@ -216,12 +226,12 @@ class StockValuationService
             }
 
             if ($taken > 0) {
-                $this->adjustOnHand($item->tenant_id, $item->id, -$taken, $sourceType, $sourceId, 'out');
+                $this->adjustOnHand($item->tenant_id, $item->id, -$taken, $sourceType, $sourceId, 'out', $warehouseId);
             }
         }
 
         if ($remaining > 0.00001) {
-            $cost += $this->issue($item, $remaining, $sourceType, $sourceId, true);
+            $cost += $this->issue($item, $remaining, $sourceType, $sourceId, true, $warehouseId);
         }
 
         $cost = round($cost, 2);
@@ -256,24 +266,43 @@ class StockValuationService
                     ->increment('remaining_quantity', (float) $row->quantity);
             }
             if ($row->reduced_on_hand) {
-                $key = $row->tenant_id.':'.$row->item_id;
+                // Back into the warehouse it came out of (session 12).
+                $key = $row->tenant_id.':'.$row->item_id.':'.(int) $row->warehouse_id;
                 $onHand[$key] = ($onHand[$key] ?? 0) + (float) $row->quantity;
             }
             $row->delete();
         }
 
         foreach ($onHand as $key => $quantity) {
-            [$tenantId, $itemId] = array_map('intval', explode(':', $key));
-            $this->adjustOnHand($tenantId, $itemId, $quantity, $sourceType, $sourceId, 'in');
+            [$tenantId, $itemId, $warehouseId] = array_map('intval', explode(':', $key));
+            $this->adjustOnHand($tenantId, $itemId, $quantity, $sourceType, $sourceId, 'in', $warehouseId ?: null);
         }
     }
 
-    protected function adjustOnHand(int $tenantId, int $itemId, float $delta, string $sourceType, int $sourceId, string $type): void
+    /**
+     * An item's stock record in one warehouse, locked for the change. Made
+     * (empty) when $create is true and there is none yet.
+     */
+    public function stockRow(int $tenantId, int $itemId, ?int $warehouseId = null, bool $create = true): ?Inventory
     {
-        $inventory = Inventory::where('tenant_id', $tenantId)->where('item_id', $itemId)->lockForUpdate()->first();
-        if (! $inventory) {
-            return;
+        $warehouseId ??= Warehouse::defaultIdFor($tenantId);
+
+        $row = Inventory::withoutGlobalScopes()->where('tenant_id', $tenantId)->where('item_id', $itemId)
+            ->where('warehouse_id', $warehouseId)->lockForUpdate()->first();
+
+        if (! $row && $create) {
+            $row = new Inventory(['tenant_id' => $tenantId, 'item_id' => $itemId, 'warehouse_id' => $warehouseId, 'quantity' => 0, 'reserved_quantity' => 0, 'unit_cost' => 0]);
+            $row->skipTenantGuard = true;
+            $row->save();
         }
+
+        return $row;
+    }
+
+    protected function adjustOnHand(int $tenantId, int $itemId, float $delta, string $sourceType, int $sourceId, string $type, ?int $warehouseId = null): void
+    {
+        $warehouseId ??= Warehouse::defaultIdFor($tenantId);
+        $inventory = $this->stockRow($tenantId, $itemId, $warehouseId);
 
         $inventory->quantity = round((float) $inventory->quantity + $delta, 4);
         $inventory->save();
@@ -281,6 +310,7 @@ class StockValuationService
         InventoryHistory::create([
             'tenant_id' => $tenantId,
             'item_id' => $itemId,
+            'warehouse_id' => $warehouseId,
             'type' => $type,
             'quantity' => $delta,
             'reference_type' => strtolower(class_basename($sourceType)),

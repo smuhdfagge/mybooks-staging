@@ -7,6 +7,7 @@ use App\Models\InventoryLayerConsumption;
 use App\Models\Item;
 use App\Models\SalesReceipt;
 use App\Models\SalesReceiptItem;
+use App\Models\Warehouse;
 use App\Services\Sales\DocumentTotals;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -23,19 +24,23 @@ use Illuminate\Validation\ValidationException;
  *
  * $data keys: customer_id, receipt_date, payment_method, reference, notes,
  * discount_type, discount_amount, items[] (item_id, description, quantity,
- * unit_price, discount, discount_type, tax_rate).
+ * unit_price, discount, discount_type, tax_rate), warehouse_id (where the
+ * goods leave from; the default warehouse if left out, session 12).
  */
 class SaveSalesReceipt
 {
     /** @param array<string, mixed> $data */
     public function create(int $tenantId, array $data, ?int $userId = null): SalesReceipt
     {
-        return DB::transaction(function () use ($tenantId, $data, $userId) {
-            $this->assertStockAvailable($tenantId, $data['items']);
+        $warehouseId = Warehouse::resolveIdFor($tenantId, $data['warehouse_id'] ?? null, true);
+
+        return DB::transaction(function () use ($tenantId, $data, $userId, $warehouseId) {
+            $this->assertStockAvailable($tenantId, $data['items'], null, $warehouseId);
             $totals = $this->totals($data);
 
             $receipt = SalesReceipt::create([
                 'tenant_id' => $tenantId,
+                'warehouse_id' => $warehouseId,
                 'customer_id' => $data['customer_id'] ?? null,
                 'receipt_number' => SalesReceipt::generateNumber($tenantId),
                 'receipt_date' => $data['receipt_date'],
@@ -56,8 +61,12 @@ class SaveSalesReceipt
     /** @param array<string, mixed> $data  same keys as create() */
     public function update(SalesReceipt $receipt, array $data): SalesReceipt
     {
-        return DB::transaction(function () use ($receipt, $data) {
-            $this->assertStockAvailable($receipt->tenant_id, $data['items'], $receipt);
+        $warehouseId = array_key_exists('warehouse_id', $data)
+            ? Warehouse::resolveIdFor($receipt->tenant_id, $data['warehouse_id'], (int) $data['warehouse_id'] !== (int) $receipt->warehouse_id)
+            : $receipt->warehouseIdOrDefault();
+
+        return DB::transaction(function () use ($receipt, $data, $warehouseId) {
+            $this->assertStockAvailable($receipt->tenant_id, $data['items'], $receipt, $warehouseId);
 
             // No new document discount sent: keep the current one (stored as money).
             if (! array_key_exists('discount_amount', $data)) {
@@ -72,6 +81,7 @@ class SaveSalesReceipt
                 'payment_method' => $data['payment_method'],
                 'reference' => $data['reference'] ?? null,
                 'notes' => $data['notes'] ?? null,
+                'warehouse_id' => $warehouseId,
             ]);
             // Saved with events off: the old and new dates are checked here (session 11).
             $receipt->assertPeriodAllowsSave();
@@ -88,13 +98,15 @@ class SaveSalesReceipt
 
     /**
      * A cash sale hands the goods over at once, so there must be enough
-     * unreserved stock. Stock this receipt already took (when editing)
-     * counts as available again. Rows stay locked until the receipt is saved.
+     * unreserved stock in the warehouse it leaves from. Stock this receipt
+     * already took from that warehouse (when editing) counts as available
+     * again. Rows stay locked until the receipt is saved.
      *
      * @param  array<int|string, array<string, mixed>>  $lines
      */
-    public function assertStockAvailable(int $tenantId, array $lines, ?SalesReceipt $receipt = null): void
+    public function assertStockAvailable(int $tenantId, array $lines, ?SalesReceipt $receipt = null, ?int $warehouseId = null): void
     {
+        $warehouseId ??= Warehouse::defaultIdFor($tenantId);
         $needed = [];
         foreach ($lines as $index => $line) {
             if (! empty($line['item_id'])) {
@@ -109,11 +121,12 @@ class SaveSalesReceipt
                 continue;
             }
 
-            $inventory = Inventory::where('tenant_id', $tenantId)->where('item_id', $itemId)->lockForUpdate()->first();
+            $inventory = Inventory::where('tenant_id', $tenantId)->where('item_id', $itemId)->where('warehouse_id', $warehouseId)->lockForUpdate()->first();
             $available = $inventory ? (float) $inventory->available_quantity : 0.0;
             if ($receipt) {
                 $available += (float) InventoryLayerConsumption::where('source_type', SalesReceipt::class)
-                    ->where('source_id', $receipt->id)->where('item_id', $itemId)->where('reduced_on_hand', true)->sum('quantity');
+                    ->where('source_id', $receipt->id)->where('item_id', $itemId)->where('warehouse_id', $warehouseId)
+                    ->where('reduced_on_hand', true)->sum('quantity');
             }
 
             $total = array_sum(array_column($uses, 1));

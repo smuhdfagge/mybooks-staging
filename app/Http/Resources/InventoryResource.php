@@ -14,6 +14,9 @@ class InventoryResource extends JsonResource
         return [
             'id' => $this->id,
             'item_id' => $this->item_id,
+            // Stock is per warehouse (session 12); null on an item's all-warehouse total.
+            'warehouse_id' => $this->warehouse_id,
+            'warehouse' => $this->whenLoaded('warehouse', fn () => ['id' => $this->warehouse->id, 'name' => $this->warehouse->name, 'code' => $this->warehouse->code]),
             'quantity' => (float) $this->quantity,
             'reserved_quantity' => (float) $this->reserved_quantity,
             'available_quantity' => (float) ($this->quantity - $this->reserved_quantity),

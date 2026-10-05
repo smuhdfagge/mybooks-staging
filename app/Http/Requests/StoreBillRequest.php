@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Actions\Bills\SaveBill;
+use App\Models\Warehouse;
 use App\Services\Accounting\VatTreatment;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -37,6 +38,8 @@ class StoreBillRequest extends FormRequest
             // Shared with the API (Q5).
             'vendor_bill_number' => ['nullable', 'string', 'max:100'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
+            // Where the goods come from or go to (session 12).
+            'warehouse_id' => Warehouse::rule($tenantId),
             'status' => ['sometimes', Rule::in(SaveBill::START_STATUSES)],
         ];
     }
