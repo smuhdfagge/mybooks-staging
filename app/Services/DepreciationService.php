@@ -197,8 +197,10 @@ class DepreciationService
                 $newAccumulated = $asset->depreciable_amount;
             }
 
-            // Create journal entry
-            $journal = $this->createDepreciationJournal($asset, $depreciationDate, $depreciationAmount);
+            // A month that is closed or locked is posted on the first open
+            // date after it, and says so (session 11); it used to fail.
+            $postOn = Carbon::instance(app(JournalService::class)->firstOpenDate($asset->tenant_id, $depreciationDate));
+            $journal = $this->createDepreciationJournal($asset, $postOn, $depreciationAmount, $depreciationDate);
 
             // Create depreciation record
             $depreciation = FixedAssetDepreciation::create([
@@ -232,9 +234,9 @@ class DepreciationService
      * Dr depreciation expense, Cr accumulated depreciation, with mapped or
      * category accounts (A11).
      */
-    protected function createDepreciationJournal(FixedAsset $asset, Carbon $date, float $amount): ?Journal
+    protected function createDepreciationJournal(FixedAsset $asset, Carbon $date, float $amount, ?Carbon $month = null): ?Journal
     {
-        return app(JournalService::class)->createDepreciationJournal($asset, $date, $amount);
+        return app(JournalService::class)->createDepreciationJournal($asset, $date, $amount, $month);
     }
 
     /**

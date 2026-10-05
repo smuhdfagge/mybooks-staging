@@ -99,6 +99,7 @@ class DatabaseSeeder extends Seeder
             'view banks', 'create banks', 'edit banks', 'delete banks', 'reconcile banks',
             'view withholding-tax', 'manage withholding-tax', 'remit withholding-tax',
             'view accrual-schedules', 'create accrual-schedules', 'edit accrual-schedules', 'delete accrual-schedules',
+            'manage lock-dates', 'override lock-date',
 
             // Budgets
             'view budgets', 'create budgets', 'edit budgets', 'delete budgets',
@@ -171,6 +172,7 @@ class DatabaseSeeder extends Seeder
             'view fixed-assets', 'create fixed-assets', 'edit fixed-assets', 'depreciate fixed-assets',
             'view reports', 'export reports', 'file vat-returns',
             'export data', 'import data',
+            'override lock-date',
         ]);
 
         // Sales

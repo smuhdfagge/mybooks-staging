@@ -18,6 +18,7 @@
             <x-form-auto-save formKey="invoice-create">
             <form action="{{ route('invoices.store') }}" method="POST" x-data="invoiceForm()" class="space-y-6">
                 @csrf
+                <x-lock-date-notice field="invoice_date" />
 
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">

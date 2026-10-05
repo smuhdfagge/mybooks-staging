@@ -45,6 +45,14 @@ class YearEndCloseService
         $end = $period->end_date->toDateString();
 
         return DB::transaction(function () use ($period, $tenantId, $start, $end, $notes) {
+            // The screen offers the year-end close on a closed period, whose
+            // closing journals were then refused as "in a closed period". It
+            // is opened inside this transaction and locked at the end
+            // (session 11); if anything fails it stays closed.
+            if ($period->isClosed()) {
+                $period->forceFill(['status' => AccountingPeriod::STATUS_OPEN])->save();
+            }
+
             $retainedCode = AccountCodeService::resolve($tenantId, 'retained_earnings');
             $summaryCode = AccountCodeService::resolve($tenantId, 'income_summary');
             $this->ensureAccount($tenantId, $retainedCode, 'Retained Earnings', 'retained_earnings');

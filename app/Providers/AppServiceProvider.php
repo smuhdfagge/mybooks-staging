@@ -8,6 +8,7 @@ use App\Http\Middleware\CheckSubscription;
 use App\Http\Middleware\EnsureAccountActive;
 use App\Listeners;
 use App\Models\User;
+use App\Services\Accounting\LockDates;
 use App\Services\ActivityLogService;
 use App\Services\JournalService;
 use Illuminate\Auth\Events\Failed;
@@ -40,6 +41,9 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->bind(JournalServiceInterface::class, JournalService::class);
+
+        // Lock dates read once per request (session 11).
+        $this->app->scoped(LockDates::class);
     }
 
     /**

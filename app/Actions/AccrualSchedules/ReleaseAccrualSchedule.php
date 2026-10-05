@@ -7,6 +7,7 @@ use App\Models\AccrualSchedule;
 use App\Models\AccrualScheduleRelease;
 use App\Models\ChartOfAccount;
 use App\Models\Journal;
+use App\Services\Accounting\LockDates;
 use App\Services\JournalService;
 use App\Support\Money;
 use Carbon\CarbonInterface;
@@ -58,8 +59,7 @@ class ReleaseAccrualSchedule
                 if ($date->gt($asOf)) {
                     break; // the next open date hasn't come yet; try again then
                 }
-                $note = $date->equalTo($due) ? null
-                    : "due {$due->format('j M Y')}, but that period is closed, so posted on {$date->format('j M Y')}";
+                $note = LockDates::instance()->movedNote($schedule->tenant_id, $due, $date);
 
                 $label = "{$schedule->description} - month {$sequence} of {$schedule->months} ({$schedule->schedule_number})";
                 $lines = $schedule->isPrepaid()

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\AccountingPeriod;
 use App\Models\Journal;
+use App\Models\LockDateChange;
+use App\Services\Accounting\LockDates;
 use App\Services\YearEndCloseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +17,11 @@ class AccountingPeriodController extends Controller
         $periods = AccountingPeriod::orderBy('start_date', 'desc')->get();
         $fiscalYears = AccountingPeriod::distinct()->pluck('fiscal_year')->filter()->sort()->reverse();
 
-        return view('accounting-periods.index', compact('periods', 'fiscalYears'));
+        // Lock dates card and history (session 11).
+        $lockDates = LockDates::enabled() ? LockDates::instance()->dates(auth()->user()->tenant_id) : null;
+        $lockHistory = LockDates::enabled() ? LockDateChange::with('user')->latest('id')->limit(50)->get() : collect();
+
+        return view('accounting-periods.index', compact('periods', 'fiscalYears', 'lockDates', 'lockHistory'));
     }
 
     public function create()
@@ -144,6 +150,8 @@ class AccountingPeriodController extends Controller
 
         DB::transaction(function () use ($accountingPeriod, $validated) {
             $accountingPeriod->close($validated['closing_notes'] ?? null);
+            LockDateChange::record($accountingPeriod->tenant_id, LockDates::PERIOD, null, $accountingPeriod->end_date,
+                $validated['closing_notes'] ?? null, "Period {$accountingPeriod->name} closed");
         });
 
         return redirect()->route('accounting-periods.show', $accountingPeriod)
@@ -153,7 +161,7 @@ class AccountingPeriodController extends Controller
     /**
      * Reopen a closed accounting period
      */
-    public function reopen(AccountingPeriod $accountingPeriod)
+    public function reopen(Request $request, AccountingPeriod $accountingPeriod)
     {
         if ($accountingPeriod->isLocked()) {
             return redirect()->route('accounting-periods.show', $accountingPeriod)
@@ -165,7 +173,24 @@ class AccountingPeriodController extends Controller
                 ->with('error', 'This period is already open.');
         }
 
-        $accountingPeriod->reopen();
+        // A reason is required and kept in the lock date history (session 11).
+        $validated = $request->validate(['reason' => ['required', 'string', 'min:5', 'max:1000']], [
+            'reason.required' => 'Say why this period is being reopened. It is kept in the history.',
+            'reason.min' => 'Say why this period is being reopened (at least 5 characters).',
+        ]);
+
+        // Nobody reopens a period behind the lock date for everyone.
+        $all = LockDates::instance()->dates($accountingPeriod->tenant_id)['all_users'];
+        if ($all && $accountingPeriod->start_date->lte($all)) {
+            return redirect()->route('accounting-periods.show', $accountingPeriod)
+                ->with('error', "The books are locked for everyone up to {$all->format('j M Y')}. Move that lock date back first.");
+        }
+
+        DB::transaction(function () use ($accountingPeriod, $validated) {
+            $accountingPeriod->reopen();
+            LockDateChange::record($accountingPeriod->tenant_id, LockDates::PERIOD, $accountingPeriod->end_date, null,
+                $validated['reason'], "Period {$accountingPeriod->name} reopened");
+        });
 
         return redirect()->route('accounting-periods.show', $accountingPeriod)
             ->with('success', 'Accounting period reopened successfully.');
@@ -192,6 +217,8 @@ class AccountingPeriodController extends Controller
                 $accountingPeriod,
                 $validated['closing_notes'] ?? null
             );
+            LockDateChange::record($accountingPeriod->tenant_id, LockDates::PERIOD, null, $accountingPeriod->end_date,
+                $validated['closing_notes'] ?? null, "Period {$accountingPeriod->name} locked permanently (year-end close)");
 
             $message = sprintf(
                 'Year-end close completed. Net income: %s, %d closing journal(s) created. Period permanently locked.',

@@ -18,6 +18,7 @@
             <x-form-auto-save formKey="bill-create">
             <form action="{{ route('bills.store') }}" method="POST" x-data="billForm()" class="space-y-6">
                 @csrf
+                <x-lock-date-notice field="bill_date" />
                 @if($purchaseOrder)
                     <input type="hidden" name="purchase_order_id" value="{{ $purchaseOrder->id }}">
                     <div class="rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 p-4 text-sm text-indigo-800 dark:text-indigo-200">

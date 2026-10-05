@@ -18,6 +18,7 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <form action="{{ route('expenses.store') }}" method="POST" class="p-6">
                     @csrf
+                    <x-lock-date-notice field="expense_date" />
 
                     <!-- Expense Information -->
                     <div class="mb-8">

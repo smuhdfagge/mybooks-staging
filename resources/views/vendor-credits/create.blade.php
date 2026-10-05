@@ -19,6 +19,7 @@
             <form method="POST" action="{{ route('vendor-credits.store') }}" class="space-y-6"
                   x-data="vendorCreditForm(@js(array_values($oldLines)), @js($items->keyBy('id')))">
                 @csrf
+                <x-lock-date-notice field="credit_date" />
                 @if($bill)
                     <input type="hidden" name="bill_id" value="{{ $bill->id }}">
                     <input type="hidden" name="vendor_id" value="{{ $bill->vendor_id }}">

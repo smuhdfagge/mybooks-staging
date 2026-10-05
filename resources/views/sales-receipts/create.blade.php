@@ -18,6 +18,7 @@
             <x-form-auto-save formKey="sales-receipt-create">
             <form action="{{ route('sales-receipts.store') }}" method="POST" x-data="salesReceiptForm()" class="space-y-6">
                 @csrf
+                <x-lock-date-notice field="receipt_date" />
 
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">

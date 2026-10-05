@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Accounting\LockDates;
 use App\Services\Accounting\VatDefaults;
 use App\Services\ChartOfAccountService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -26,6 +27,7 @@ class Tenant extends Model
             WhtCategory::seedDefaults($tenant->id);
             VatDefaults::seedForTenant($tenant->id);
         });
+        static::saved(fn (Tenant $tenant) => LockDates::instance()->forget($tenant->id));
     }
 
     protected $fillable = [
@@ -60,6 +62,8 @@ class Tenant extends Model
         'tax_per_line_item' => 'boolean',
         'closure_requested_at' => 'datetime',
         'closure_purge_at' => 'datetime',
+        'staff_lock_date' => 'date',
+        'all_users_lock_date' => 'date',
     ];
 
     /** Days between closing a business and erasing its data (O7). */

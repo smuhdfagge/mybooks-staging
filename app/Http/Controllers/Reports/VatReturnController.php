@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Reports;
 
 use App\Actions\VatReturns\FileVatReturn;
+use App\Actions\VatReturns\ReopenVatReturn;
 use App\Models\BillItem;
 use App\Models\CreditNoteItem;
 use App\Models\InvoiceItem;
@@ -237,6 +238,26 @@ class VatReturnController extends ReportController
             : "VAT return for {$label} filed. No VAT to pay; ₦".number_format((float) $filing->credit_carried_forward, 2).' credit carried forward.';
 
         return redirect()->route('reports.vat-return', ['month' => $filing->month])->with('success', $message);
+    }
+
+    /**
+     * Reopen a filed month with a reason (session 11): its settlement is
+     * reversed and it can be filed again (ReopenVatReturn).
+     */
+    public function reopen(Request $request, ReopenVatReturn $reopen)
+    {
+        $validated = $request->validate([
+            'month' => ['required', 'date_format:Y-m'],
+            'reason' => ['required', 'string', 'min:5', 'max:1000'],
+        ], [
+            'reason.required' => 'Say why the return is being reopened. It is kept in the history.',
+        ]);
+
+        $reopen->handle(auth()->user()->tenant_id, $validated['month'], $validated['reason'], auth()->user());
+        $label = Carbon::createFromFormat('Y-m-d', $validated['month'].'-01')->format('F Y');
+
+        return redirect()->route('reports.vat-return', ['month' => $validated['month']])
+            ->with('success', "VAT return for {$label} reopened. Its settlement journal was reversed; file it again when it is ready.");
     }
 
     /** YYYY-MM from the request; last month by default (the one usually being filed). */

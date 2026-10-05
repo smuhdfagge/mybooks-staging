@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Resources\TaxRateResource;
 use App\Models\TaxRate;
 use App\Models\Tenant;
+use App\Services\Accounting\LockDates;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -24,6 +25,7 @@ class SettingsController extends BaseApiController
         }
 
         $tenant->load(['defaultSalesTax', 'defaultPurchaseTax']);
+        $lockDates = LockDates::instance()->dates($tenant->id);
 
         return $this->success([
             'organization' => [
@@ -43,6 +45,12 @@ class SettingsController extends BaseApiController
             'accounting' => [
                 'currency' => $tenant->currency ?? 'NGN',
                 'fiscal_year_start' => $tenant->fiscal_year_start?->format('Y-m-d'),
+                // Read only (session 11); changed on the accounting periods page.
+                'lock_dates' => [
+                    'staff_lock_date' => $lockDates['staff']?->toDateString(),
+                    'all_users_lock_date' => $lockDates['all_users']?->toDateString(),
+                    'locked_for_you_up_to' => LockDates::instance()->lockedUpTo($tenant->id, $user)?->toDateString(),
+                ],
             ],
             'tax' => [
                 'default_sales_tax_id' => $tenant->default_sales_tax_id,

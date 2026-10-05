@@ -6,7 +6,6 @@ use App\Contracts\JournalServiceInterface;
 use App\Exceptions\BusinessRuleException;
 use App\Exceptions\UnbalancedJournalException;
 use App\Http\Middleware\EnsureFeatureEnabled;
-use App\Models\AccountingPeriod;
 use App\Models\Bank;
 use App\Models\Bill;
 use App\Models\ChartOfAccount;
@@ -27,6 +26,7 @@ use App\Models\StatutoryRemittance;
 use App\Models\VendorCredit;
 use App\Models\VendorCreditRefund;
 use App\Models\WhtCreditUtilisation;
+use App\Services\Accounting\LockDates;
 use App\Support\PayrollStatutory;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -1730,11 +1730,14 @@ class JournalService implements JournalServiceInterface
         ]);
     }
 
-    public function createDepreciationJournal(FixedAsset $asset, Carbon $date, float $amount): ?Journal
+    /** $month is the month charged when the journal had to go on a later, open date (session 11). */
+    public function createDepreciationJournal(FixedAsset $asset, Carbon $date, float $amount, ?Carbon $month = null): ?Journal
     {
         $accounts = $this->fixedAssetAccounts($asset);
+        $month ??= $date;
+        $moved = LockDates::instance()->movedNote($asset->tenant_id, $month, $date);
 
-        return $this->postSimple($asset, self::ASSET_DEPRECIATION, $date, "Depreciation - {$asset->name} ({$date->format('M Y')})", [
+        return $this->postSimple($asset, self::ASSET_DEPRECIATION, $date, "Depreciation - {$asset->name} ({$month->format('M Y')})".($moved ? " ({$moved})" : ''), [
             [$accounts['expense'], $amount, 0, "Depreciation - {$asset->name}"],
             [$accounts['accumulated'], 0, $amount, "Accumulated Depreciation - {$asset->name}"],
         ]);
@@ -1908,7 +1911,7 @@ class JournalService implements JournalServiceInterface
     /**
      * Reverse/void a journal entry
      */
-    public function reverseJournal(Journal $journal, string $reason = 'Reversed'): Journal
+    public function reverseJournal(Journal $journal, string $reason = 'Reversed', ?string $date = null): Journal
     {
         // An automatic reversal, or an original it already reversed, can't
         // be reversed again by hand (S8).
@@ -1916,7 +1919,7 @@ class JournalService implements JournalServiceInterface
             throw new BusinessRuleException($blocked);
         }
 
-        return DB::transaction(function () use ($journal, $reason) {
+        return DB::transaction(function () use ($journal, $reason, $date) {
             // The reversing journal's own lines undo the original when they are
             // applied below. Also un-applying the original here reversed it
             // twice (a 1,075 invoice left receivables at -1,075).
@@ -1924,7 +1927,8 @@ class JournalService implements JournalServiceInterface
             $reversingJournal = Journal::create([
                 'tenant_id' => $journal->tenant_id,
                 'journal_number' => Journal::generateNumber($journal->tenant_id),
-                'journal_date' => now()->toDateString(),
+                // Today, unless the caller dates it (a reopened VAT return, session 11).
+                'journal_date' => $date ?? now()->toDateString(),
                 'reference' => "REV-{$journal->journal_number}",
                 'description' => "{$reason}: {$journal->description}",
                 'reference_type' => $journal->reference_type,
@@ -1985,8 +1989,8 @@ class JournalService implements JournalServiceInterface
             if ($date->gt($today)) {
                 return null; // the next open date hasn't come yet; try again then
             }
-            $note = $date->equalTo($due) ? ''
-                : " (due {$due->format('j M Y')}, but that period is closed, so posted on {$date->format('j M Y')})";
+            $moved = LockDates::instance()->movedNote($journal->tenant_id, $due, $date);
+            $note = $moved ? " ({$moved})" : '';
 
             $reversal = new Journal([
                 'tenant_id' => $journal->tenant_id,
@@ -2030,17 +2034,8 @@ class JournalService implements JournalServiceInterface
      */
     public function firstOpenDate(int $tenantId, CarbonInterface $date): CarbonInterface
     {
-        $day = $date->copy()->startOfDay();
-        // Each pass steps past one closed period.
-        for ($i = 0; $i < 500; $i++) {
-            $period = AccountingPeriod::getPeriodForDate($day, $tenantId);
-            if (! $period || ! $period->isClosed()) {
-                break;
-            }
-            $day = Carbon::parse($period->end_date)->addDay()->startOfDay();
-        }
-
-        return $day;
+        // Lock dates count as closed too (session 11).
+        return LockDates::instance()->firstOpenDate($tenantId, $date);
     }
 
     /**
