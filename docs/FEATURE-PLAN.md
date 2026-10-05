@@ -21,8 +21,8 @@ To start a session, say: **"Do session N of docs/FEATURE-PLAN.md"**.
 | 8 | Auto-reversing journals (accruals) | `feature/auto-reversing-journals` | Merged (#29) |
 | 9 | Prepaid expense and deferred revenue schedules | `feature/prepaid-deferred-schedules` | Merged (#30) |
 | 10 | Customer and supplier statements (PDF, email, bulk send) and AR/AP control reconciliation | `feature/statements-reconciliation` | Merged (#31) |
-| 11 | Audit lock dates: staff and adviser locks, logged reopen with reason | `feature/audit-lock-dates` | Done, PR open |
-| 12 | Warehouses: stock per location, default warehouse for existing stock | — | To do |
+| 11 | Audit lock dates: staff and adviser locks, logged reopen with reason | `feature/audit-lock-dates` | Merged (#33) |
+| 12 | Warehouses: stock per location, default warehouse for existing stock | `feature/warehouses` | Done, PR open |
 | 13 | Stock transfers between warehouses | — | To do (needs 12) |
 | 14 | Assembly / bill of materials | — | To do (after 12) |
 
