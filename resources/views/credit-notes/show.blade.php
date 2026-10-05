@@ -68,7 +68,7 @@
                 </div>
             @elseif($cn->restock && $cn->status !== 'void')
                 <div class="rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-4 text-sm text-green-800 dark:text-green-200">
-                    The customer returned the goods: the stock items on this credit note went back into stock at what they cost you.
+                    The customer returned the goods: the stock items on this credit note went back into stock at what they cost you.@if($warehouseName = \App\Models\Warehouse::nameIfMany($cn->warehouse_id)) They went into {{ $warehouseName }}.@endif
                 </div>
             @endif
 

@@ -26,6 +26,8 @@ class Tenant extends Model
             ChartOfAccountService::createDefaultAccountsForTenant($tenant);
             WhtCategory::seedDefaults($tenant->id);
             VatDefaults::seedForTenant($tenant->id);
+            // Every business keeps its stock in at least one warehouse (session 12).
+            Warehouse::ensureDefaultFor($tenant->id);
         });
         static::saved(fn (Tenant $tenant) => LockDates::instance()->forget($tenant->id));
     }

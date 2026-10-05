@@ -7,6 +7,7 @@ use App\Actions\DeliveryNotes\SaveDeliveryNote;
 use App\Enums\DeliveryNoteStatus;
 use App\Models\DeliveryNote;
 use App\Models\SalesOrder;
+use App\Models\Warehouse;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -57,6 +58,8 @@ class DeliveryNoteController extends Controller
             'tracking_number' => 'nullable|string|max:100',
             'shipping_address' => 'nullable|string|max:1000',
             'notes' => 'nullable|string|max:2000',
+            // The warehouse the goods are sent from (session 12).
+            'warehouse_id' => Warehouse::rule($tenantId),
             'lines' => 'required|array|min:1',
             'lines.*.sales_order_item_id' => 'required|integer',
             'lines.*.quantity' => 'nullable|numeric|min:0',
@@ -64,6 +67,8 @@ class DeliveryNoteController extends Controller
 
         $order = SalesOrder::findOrFail($validated['sales_order_id']);
         $note = $save->create($order, $validated, auth()->id());
+
+        Warehouse::rememberChoice($request->input('warehouse_id'));
 
         return redirect()->route('delivery-notes.show', $note)->with('success', "Delivery note {$note->delivery_number} created.");
     }

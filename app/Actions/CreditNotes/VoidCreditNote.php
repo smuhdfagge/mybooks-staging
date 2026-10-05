@@ -64,13 +64,15 @@ class VoidCreditNote
     protected function takeGoodsBack(CreditNote $note): void
     {
         $lines = $note->items()->with('item')->whereNotNull('unit_cost')->get();
+        // Out of the warehouse the goods were returned to (session 12).
+        $warehouseId = $note->warehouseIdOrDefault();
 
         foreach ($lines->groupBy('item_id') as $itemId => $group) {
             $item = $group->first()->item;
             $quantity = (float) $group->sum('quantity');
             $cost = round($group->sum(fn ($l) => (float) $l->unit_cost * (float) $l->quantity), 2);
 
-            $inventory = Inventory::where('tenant_id', $note->tenant_id)->where('item_id', $itemId)->lockForUpdate()->first();
+            $inventory = Inventory::where('tenant_id', $note->tenant_id)->where('item_id', $itemId)->where('warehouse_id', $warehouseId)->lockForUpdate()->first();
             $free = $inventory ? (float) $inventory->quantity - (float) $inventory->reserved_quantity : 0.0;
             if (! $item || $free < $quantity - 0.0001) {
                 $name = $group->first()->description;
@@ -79,7 +81,7 @@ class VoidCreditNote
 
             // The credit note's own stock layers first.
             $remaining = $quantity;
-            $layers = InventoryLayer::where('tenant_id', $note->tenant_id)->where('item_id', $itemId)
+            $layers = InventoryLayer::where('tenant_id', $note->tenant_id)->where('item_id', $itemId)->where('warehouse_id', $warehouseId)
                 ->where('reference_type', CreditNote::class)->where('reference_id', $note->id)
                 ->where('remaining_quantity', '>', 0)->lockForUpdate()->get();
             foreach ($layers as $layer) {
@@ -93,7 +95,7 @@ class VoidCreditNote
             }
             // Any sold since: the rest comes out of the item's other stock layers.
             if ($remaining > 0.00001) {
-                $this->valuation->issue($item, $remaining, CreditNote::class, $note->id);
+                $this->valuation->issue($item, $remaining, CreditNote::class, $note->id, false, $warehouseId);
             }
 
             // Average cost as it was before the goods came back.
@@ -108,6 +110,7 @@ class VoidCreditNote
             InventoryHistory::create([
                 'tenant_id' => $note->tenant_id,
                 'item_id' => $itemId,
+                'warehouse_id' => $warehouseId,
                 'type' => 'out',
                 'quantity' => -$quantity,
                 'reference_type' => 'credit_note',

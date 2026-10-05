@@ -6,6 +6,7 @@ use App\Enums\VendorCreditStatus;
 use App\Traits\BelongsToTenant;
 use App\Traits\GuardsStatusTransitions;
 use App\Traits\HasDocumentNumber;
+use App\Traits\HasWarehouse;
 use App\Traits\KeepsTotalsBalanced;
 use App\Traits\ValidatesAccountingPeriod;
 use Illuminate\Database\Eloquent\Model;
@@ -22,7 +23,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class VendorCredit extends Model
 {
-    use BelongsToTenant, KeepsTotalsBalanced, SoftDeletes, ValidatesAccountingPeriod;
+    use BelongsToTenant, HasWarehouse, KeepsTotalsBalanced, SoftDeletes, ValidatesAccountingPeriod;
     use GuardsStatusTransitions, HasDocumentNumber;
 
     public const REASONS = [

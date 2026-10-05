@@ -84,6 +84,8 @@
                             </div>
                         </div>
 
+                        <x-warehouse-picker wrapper-class="mb-6 md:w-1/2" label="Sell from warehouse" :selected="$invoice->warehouse_id" :disabled="$invoice->isReleased()" />
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>
                                 <label for="reference" class="form-label">Reference / PO Number</label>

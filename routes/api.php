@@ -248,6 +248,8 @@ Route::prefix('v1')->group(function () {
             Route::get('inventory', [InventoryController::class, 'index'])->name('api.inventory.index');
             Route::get('inventory/{inventory}', [InventoryController::class, 'show'])->name('api.inventory.show');
             Route::get('inventory/{inventory}/history', [InventoryController::class, 'history'])->name('api.inventory.history');
+            // Warehouses to choose from on documents (session 12).
+            Route::get('warehouses', [InventoryController::class, 'warehouses'])->name('api.warehouses.index');
         });
         Route::post('inventory/{inventory}/adjust', [InventoryController::class, 'adjust'])->middleware(['permission:adjust inventory', 'throttle:api-write'])->name('api.inventory.adjust');
 

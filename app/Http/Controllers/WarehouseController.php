@@ -2,58 +2,74 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Inventory;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
+/**
+ * Warehouses (session 12): where a business keeps its stock. Every
+ * business has at least one, and exactly one default; the default is used
+ * whenever a document doesn't say. A warehouse holding stock can't be
+ * deleted or switched off, and the last one can't be deleted.
+ */
 class WarehouseController extends Controller
 {
     public function index()
     {
-        $warehouses = Warehouse::withCount('inventories')
-            ->orderBy('is_default', 'desc')
-            ->orderBy('name')
-            ->paginate(20);
+        $warehouses = Warehouse::orderByDesc('is_default')->orderBy('name')->paginate(20);
 
-        return view('inventory.warehouses.index', compact('warehouses'));
+        // Stock value (quantity at each warehouse's average cost) and lines in stock.
+        $totals = Inventory::query()
+            ->selectRaw('warehouse_id, SUM(quantity * unit_cost) as stock_value, SUM(CASE WHEN quantity > 0 THEN 1 ELSE 0 END) as items_in_stock')
+            ->groupBy('warehouse_id')
+            ->get()
+            ->keyBy('warehouse_id');
+
+        return view('inventory.warehouses.index', compact('warehouses', 'totals'));
     }
 
     public function create()
     {
-        return view('inventory.warehouses.create');
+        return view('inventory.warehouses.create', ['warehouse' => new Warehouse(['is_active' => true])]);
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'code' => 'required|string|max:20|unique:warehouses,code',
-            'address' => 'nullable|string',
-            'contact_person' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:255',
-            'is_default' => 'boolean',
-        ]);
+        $tenantId = auth()->user()->tenant_id;
+        $validated = $this->validated($request, $tenantId);
 
-        $validated['tenant_id'] = auth()->user()->tenant_id;
+        $warehouse = DB::transaction(function () use ($validated, $request, $tenantId) {
+            $warehouse = Warehouse::create($validated + [
+                'tenant_id' => $tenantId,
+                'is_active' => $request->boolean('is_active', true),
+                'is_default' => false,
+            ]);
+            if ($request->boolean('is_default')) {
+                $warehouse->setAsDefault();
+            }
 
-        $warehouse = Warehouse::create($validated);
-
-        if (! empty($validated['is_default'])) {
-            $warehouse->setAsDefault();
-        }
+            return $warehouse;
+        });
 
         return redirect()->route('warehouses.show', $warehouse)
-            ->with('success', 'Warehouse created successfully.');
+            ->with('success', "Warehouse {$warehouse->name} added.");
     }
 
     public function show(Warehouse $warehouse)
     {
         $inventories = $warehouse->inventories()
             ->with('item')
-            ->where('quantity', '>', 0)
-            ->paginate(20);
+            ->where(fn ($q) => $q->where('inventories.quantity', '!=', 0)->orWhere('inventories.reserved_quantity', '!=', 0))
+            ->join('items', 'items.id', '=', 'inventories.item_id')
+            ->orderBy('items.name')
+            ->select('inventories.*')
+            ->paginate(25);
 
-        return view('inventory.warehouses.show', compact('warehouse', 'inventories'));
+        $stockValue = $warehouse->total_stock_value;
+
+        return view('inventory.warehouses.show', compact('warehouse', 'inventories', 'stockValue'));
     }
 
     public function edit(Warehouse $warehouse)
@@ -63,40 +79,66 @@ class WarehouseController extends Controller
 
     public function update(Request $request, Warehouse $warehouse)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'code' => 'required|string|max:20|unique:warehouses,code,'.$warehouse->id,
-            'address' => 'nullable|string',
-            'contact_person' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:255',
-            'is_default' => 'boolean',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $this->validated($request, $warehouse->tenant_id, $warehouse);
+        $active = $request->boolean('is_active');
+        $makeDefault = $request->boolean('is_default');
 
-        $warehouse->update($validated);
-
-        if (! empty($validated['is_default'])) {
-            $warehouse->setAsDefault();
+        if ($warehouse->is_default && ! $makeDefault) {
+            return back()->withInput()->withErrors(['is_default' => 'There must always be a default warehouse. Make another warehouse the default instead.']);
+        }
+        if (! $active && ($warehouse->is_default || $makeDefault)) {
+            return back()->withInput()->withErrors(['is_active' => 'The default warehouse must stay in use.']);
+        }
+        if (! $active && $warehouse->is_active && $warehouse->holdsStock()) {
+            return back()->withInput()->withErrors(['is_active' => "{$warehouse->name} still holds stock. Sell or move it before you stop using this warehouse."]);
         }
 
+        DB::transaction(function () use ($warehouse, $validated, $active, $makeDefault) {
+            $warehouse->update($validated + ['is_active' => $active]);
+            if ($makeDefault && ! $warehouse->is_default) {
+                $warehouse->setAsDefault();
+            }
+        });
+
         return redirect()->route('warehouses.show', $warehouse)
-            ->with('success', 'Warehouse updated successfully.');
+            ->with('success', "Warehouse {$warehouse->name} updated.");
     }
 
     public function destroy(Warehouse $warehouse)
     {
+        if (Warehouse::count() <= 1) {
+            return back()->with('error', 'This is your only warehouse, so it can\'t be deleted.');
+        }
         if ($warehouse->is_default) {
-            return redirect()->back()->with('error', 'Cannot delete the default warehouse.');
+            return back()->with('error', 'You can\'t delete the default warehouse. Make another warehouse the default first.');
+        }
+        if ($warehouse->holdsStock()) {
+            return back()->with('error', "{$warehouse->name} still holds stock, so it can't be deleted.");
+        }
+        if ($warehouse->hasBeenUsed()) {
+            return back()->with('error', "{$warehouse->name} has been used on documents, so it can't be deleted. Edit it and untick \"In use\" instead.");
         }
 
-        if ($warehouse->inventories()->where('quantity', '>', 0)->exists()) {
-            return redirect()->back()->with('error', 'Cannot delete warehouse with stock. Transfer stock first.');
-        }
+        DB::transaction(function () use ($warehouse) {
+            $warehouse->inventories()->delete();
+            $warehouse->delete();
+        });
 
-        $warehouse->delete();
+        return redirect()->route('warehouses.index')->with('success', 'Warehouse deleted.');
+    }
 
-        return redirect()->route('warehouses.index')
-            ->with('success', 'Warehouse deleted successfully.');
+    /** @return array<string, mixed> */
+    private function validated(Request $request, int $tenantId, ?Warehouse $warehouse = null): array
+    {
+        return $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:20', Rule::unique('warehouses', 'code')->where('tenant_id', $tenantId)->ignore($warehouse?->id)],
+            'address' => ['nullable', 'string', 'max:1000'],
+            'contact_person' => ['nullable', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'email' => ['nullable', 'email', 'max:255'],
+        ], [
+            'code.unique' => 'Another warehouse already uses this code.',
+        ]);
     }
 }

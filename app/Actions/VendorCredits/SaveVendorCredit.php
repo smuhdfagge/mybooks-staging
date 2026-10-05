@@ -6,6 +6,7 @@ use App\Enums\VendorCreditStatus;
 use App\Models\Bill;
 use App\Models\VendorCredit;
 use App\Models\VendorCreditItem;
+use App\Models\Warehouse;
 use App\Services\Sales\DocumentTotals;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -50,9 +51,13 @@ class SaveVendorCredit
             throw ValidationException::withMessages(['items' => 'The credit must be for more than zero.']);
         }
 
-        return DB::transaction(function () use ($tenantId, $data, $userId, $status, $bill, $totals) {
+        // Goods go back from the chosen warehouse; empty = the bill's (session 12).
+        $warehouseId = empty($data['warehouse_id']) ? null : Warehouse::resolveIdFor($tenantId, $data['warehouse_id'], true);
+
+        return DB::transaction(function () use ($tenantId, $data, $userId, $status, $bill, $totals, $warehouseId) {
             $credit = VendorCredit::create([
                 'tenant_id' => $tenantId,
+                'warehouse_id' => $warehouseId,
                 'vendor_id' => $data['vendor_id'],
                 'bill_id' => $bill?->id,
                 'vendor_credit_number' => VendorCredit::generateNumber($tenantId),

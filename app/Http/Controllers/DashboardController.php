@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Bill;
 use App\Models\Employee;
 use App\Models\Expense;
-use App\Models\Inventory;
 use App\Models\Invoice;
+use App\Models\Item;
 use App\Support\SqlDate;
 use Illuminate\Support\Facades\Cache;
 
@@ -103,14 +103,15 @@ class DashboardController extends Controller
 
         // Low Stock Items widget
         if ($user->can('low-stock dashboard-widgets')) {
-            $data['lowStockItems'] = Inventory::where('tenant_id', $tenantId)
-                ->with('item')
-                ->whereHas('item', function ($query) {
-                    $query->where('track_inventory', true)
-                        ->whereColumn('inventories.quantity', '<=', 'items.reorder_level');
-                })
+            // Per item, all warehouses together (session 12).
+            $data['lowStockItems'] = Item::where('tenant_id', $tenantId)
+                ->where('track_inventory', true)
+                ->whereHas('inventories')
+                ->whereRaw(Item::onHandSql().' <= items.reorder_level')
+                ->with('inventory')
                 ->take(5)
-                ->get();
+                ->get()
+                ->map(fn (Item $item) => $item->inventory->setRelation('item', $item));
         }
 
         return view('dashboard', $data);

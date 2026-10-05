@@ -164,18 +164,22 @@
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 text-center">
                                     <p class="text-sm text-gray-500 dark:text-gray-400">On Hand</p>
-                                    <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ $item->inventory->quantity ?? 0 }}</p>
+                                    <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ rtrim(rtrim(number_format((float) ($item->inventory->quantity ?? 0), 4), '0'), '.') }}</p>
                                 </div>
                                 <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 text-center">
                                     <p class="text-sm text-gray-500 dark:text-gray-400">Reserved</p>
-                                    <p class="text-3xl font-bold text-orange-600 dark:text-orange-400">{{ $item->inventory->reserved_quantity ?? 0 }}</p>
+                                    <p class="text-3xl font-bold text-orange-600 dark:text-orange-400">{{ rtrim(rtrim(number_format((float) ($item->inventory->reserved_quantity ?? 0), 4), '0'), '.') }}</p>
                                 </div>
                                 <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 text-center">
                                     <p class="text-sm text-gray-500 dark:text-gray-400">Available</p>
-                                    <p class="text-3xl font-bold text-green-600 dark:text-green-400">{{ ($item->inventory->quantity ?? 0) - ($item->inventory->reserved_quantity ?? 0) }}</p>
+                                    <p class="text-3xl font-bold text-green-600 dark:text-green-400">{{ rtrim(rtrim(number_format((float) (($item->inventory->quantity ?? 0) - ($item->inventory->reserved_quantity ?? 0)), 4), '0'), '.') }}</p>
                                 </div>
                             </div>
-                            
+
+                            @if(($byWarehouse ?? collect())->isNotEmpty())
+                                <div class="mt-4 -mx-6">@include('inventory._warehouse-split')</div>
+                            @endif
+
                             @if($item->reorder_level && ($item->inventory->quantity ?? 0) <= $item->reorder_level)
                             <div class="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg">
                                 <div class="flex">

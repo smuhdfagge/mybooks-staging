@@ -37,7 +37,8 @@ class VoidVendorCredit
                 if ($credit->stock_returned_at) {
                     // Put the average cost back as it was, then the layers and quantity.
                     foreach ($credit->items()->with('item')->get()->filter->isStocked() as $line) {
-                        $inventory = Inventory::where('tenant_id', $credit->tenant_id)->where('item_id', $line->item_id)->lockForUpdate()->first();
+                        $inventory = Inventory::where('tenant_id', $credit->tenant_id)->where('item_id', $line->item_id)
+                            ->where('warehouse_id', $credit->warehouseIdOrDefault())->lockForUpdate()->first();
                         if ($inventory) {
                             $qty = (float) $inventory->quantity;
                             $back = (float) $line->quantity;

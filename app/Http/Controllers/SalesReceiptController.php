@@ -7,6 +7,7 @@ use App\Http\Requests\StoreSalesReceiptRequest;
 use App\Models\Customer;
 use App\Models\Item;
 use App\Models\SalesReceipt;
+use App\Models\Warehouse;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 
@@ -30,6 +31,8 @@ class SalesReceiptController extends Controller
     {
         // VAT and discounts by the same rules as invoices (R3).
         $receipt = $save->create(auth()->user()->tenant_id, $request->validated(), auth()->id());
+
+        Warehouse::rememberChoice($request->input('warehouse_id'));
 
         return redirect()->route('sales-receipts.show', $receipt)->with('success', 'Sales receipt created.');
     }

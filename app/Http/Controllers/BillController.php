@@ -9,6 +9,7 @@ use App\Http\Requests\UpdateBillRequest;
 use App\Models\Bill;
 use App\Models\PurchaseOrder;
 use App\Models\Vendor;
+use App\Models\Warehouse;
 use Illuminate\Http\Request;
 
 class BillController extends Controller
@@ -61,6 +62,8 @@ class BillController extends Controller
     {
         // Same rules as the API and recurring bills (R3).
         $bill = $save->create(auth()->user()->tenant_id, $request->validated(), auth()->id());
+
+        Warehouse::rememberChoice($request->input('warehouse_id'));
 
         return redirect()->route('bills.show', $bill)->with('success', 'Bill created.');
     }

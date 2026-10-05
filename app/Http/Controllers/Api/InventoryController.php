@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Resources\InventoryResource;
 use App\Models\Inventory;
 use App\Models\InventoryHistory;
+use App\Models\Item;
+use App\Models\Warehouse;
 use App\Services\StockValuationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,7 +19,12 @@ class InventoryController extends BaseApiController
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Inventory::with(['item.category']);
+        // One record per item per warehouse (session 12).
+        $query = Inventory::with(['item.category', 'warehouse']);
+
+        if ($warehouseId = $request->input('warehouse_id')) {
+            $query->where('warehouse_id', (int) $warehouseId);
+        }
 
         // Search
         if ($search = $request->input('search')) {
@@ -61,7 +68,7 @@ class InventoryController extends BaseApiController
      */
     public function show(Inventory $inventory): JsonResponse
     {
-        $inventory->load(['item.category']);
+        $inventory->load(['item.category', 'warehouse']);
 
         return $this->success(new InventoryResource($inventory));
     }
@@ -111,6 +118,7 @@ class InventoryController extends BaseApiController
             InventoryHistory::create([
                 'tenant_id' => $inventory->tenant_id,
                 'item_id' => $inventory->item_id,
+                'warehouse_id' => $inventory->warehouse_id,
                 'type' => 'adjustment',
                 'quantity' => $change,
                 'reference_type' => 'api_adjustment',
@@ -136,9 +144,10 @@ class InventoryController extends BaseApiController
      */
     public function history(Request $request, Inventory $inventory): JsonResponse
     {
-        // inventory_histories is kept per item, not per inventory row
+        // History of this item in this record's warehouse (session 12).
         $query = InventoryHistory::where('tenant_id', $inventory->tenant_id)
             ->where('item_id', $inventory->item_id)
+            ->where('warehouse_id', $inventory->warehouse_id)
             ->with('createdBy');
 
         // Filter by type
@@ -168,25 +177,16 @@ class InventoryController extends BaseApiController
     {
         $tenantId = $this->getTenantId();
 
-        $totalItems = Inventory::where('tenant_id', $tenantId)->count();
+        // Counted per item across its warehouses (session 12).
+        $totalItems = Inventory::where('tenant_id', $tenantId)->distinct()->count('item_id');
         $totalQuantity = Inventory::where('tenant_id', $tenantId)->sum('quantity');
         $totalValue = Inventory::where('tenant_id', $tenantId)
             ->selectRaw('SUM(quantity * unit_cost) as total')
             ->value('total') ?? 0;
 
-        $lowStockCount = Inventory::where('tenant_id', $tenantId)
-            ->whereHas('item', function ($q) {
-                $q->where('track_inventory', true)
-                    ->whereColumn('inventories.quantity', '<=', 'items.reorder_level');
-            })
-            ->count();
-
-        $outOfStockCount = Inventory::where('tenant_id', $tenantId)
-            ->where('quantity', '<=', 0)
-            ->whereHas('item', function ($q) {
-                $q->where('track_inventory', true);
-            })
-            ->count();
+        $stocked = Item::where('tenant_id', $tenantId)->where('track_inventory', true)->whereHas('inventories');
+        $lowStockCount = (clone $stocked)->whereRaw(Item::onHandSql().' <= items.reorder_level')->count();
+        $outOfStockCount = (clone $stocked)->whereRaw(Item::onHandSql().' <= 0')->count();
 
         return $this->success([
             'total_items' => $totalItems,
@@ -195,5 +195,24 @@ class InventoryController extends BaseApiController
             'low_stock_count' => $lowStockCount,
             'out_of_stock_count' => $outOfStockCount,
         ]);
+    }
+
+    /**
+     * The business's warehouses (session 12), default first. Documents
+     * take an optional warehouse_id; without one they use the default.
+     */
+    public function warehouses(): JsonResponse
+    {
+        $warehouses = Warehouse::orderByDesc('is_default')->orderBy('name')->get()
+            ->map(fn (Warehouse $w) => [
+                'id' => $w->id,
+                'name' => $w->name,
+                'code' => $w->code,
+                'address' => $w->address,
+                'is_default' => (bool) $w->is_default,
+                'is_active' => (bool) $w->is_active,
+            ]);
+
+        return $this->success($warehouses);
     }
 }

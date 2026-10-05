@@ -10,6 +10,7 @@ use App\Services\StockValuationService;
 use App\Traits\BelongsToTenant;
 use App\Traits\GuardsStatusTransitions;
 use App\Traits\HasDocumentNumber;
+use App\Traits\HasWarehouse;
 use App\Traits\KeepsTotalsBalanced;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
@@ -23,7 +24,7 @@ use Illuminate\Support\Facades\DB;
 
 class Bill extends Model
 {
-    use BelongsToTenant, HasFactory, KeepsTotalsBalanced, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
+    use BelongsToTenant, HasFactory, HasWarehouse, KeepsTotalsBalanced, LogsActivity, SoftDeletes, ValidatesAccountingPeriod;
     use GuardsStatusTransitions, HasDocumentNumber;
 
     protected $fillable = [
@@ -169,21 +170,15 @@ class Bill extends Model
     public function updateInventory()
     {
         DB::transaction(function () {
+            // Goods go into the bill's warehouse (session 12).
+            $warehouseId = $this->warehouseIdOrDefault();
+            $valuationService = app(StockValuationService::class);
+
             foreach ($this->items as $billItem) {
                 if ($billItem->item_id) {
                     $item = Item::find($billItem->item_id);
                     if ($item && $item->track_inventory) {
-                        // Find or create inventory record
-                        $inventory = Inventory::firstOrCreate(
-                            [
-                                'tenant_id' => $this->tenant_id,
-                                'item_id' => $billItem->item_id,
-                            ],
-                            [
-                                'quantity' => 0,
-                                'reserved_quantity' => 0,
-                            ]
-                        );
+                        $inventory = $valuationService->stockRow($this->tenant_id, (int) $billItem->item_id, $warehouseId);
 
                         // Update weighted average cost
                         // Cost per unit excludes VAT: the tax goes to input tax in the
@@ -193,7 +188,6 @@ class Bill extends Model
                         $unitCost = $billItem->quantity > 0
                             ? round($netLine / $billItem->quantity, 4)
                             : ($item->cost_price ?? 0);
-                        $valuationService = app(StockValuationService::class);
                         $valuationService->updateWeightedAverageCost($inventory, $billItem->quantity, $unitCost);
 
                         // Add quantity
@@ -204,7 +198,7 @@ class Bill extends Model
                         InventoryLayer::create([
                             'tenant_id' => $this->tenant_id,
                             'item_id' => $billItem->item_id,
-                            'warehouse_id' => $inventory->warehouse_id,
+                            'warehouse_id' => $warehouseId,
                             'quantity' => $billItem->quantity,
                             'remaining_quantity' => $billItem->quantity,
                             'unit_cost' => $unitCost,
@@ -217,6 +211,7 @@ class Bill extends Model
                         InventoryHistory::create([
                             'tenant_id' => $this->tenant_id,
                             'item_id' => $billItem->item_id,
+                            'warehouse_id' => $warehouseId,
                             'type' => 'in',
                             'quantity' => $billItem->quantity,
                             'reference_type' => 'bill',
@@ -256,9 +251,11 @@ class Bill extends Model
             ->get();
 
         foreach ($layers as $layer) {
+            // Out of the warehouse the bill's goods went into.
             $inventory = Inventory::withoutGlobalScopes()
                 ->where('tenant_id', $this->tenant_id)
                 ->where('item_id', $layer->item_id)
+                ->where('warehouse_id', $layer->warehouse_id)
                 ->lockForUpdate()
                 ->first();
 
@@ -277,6 +274,7 @@ class Bill extends Model
             InventoryHistory::create([
                 'tenant_id' => $this->tenant_id,
                 'item_id' => $layer->item_id,
+                'warehouse_id' => $layer->warehouse_id,
                 'type' => 'out',
                 'quantity' => -$layer->quantity,
                 'reference_type' => 'bill',

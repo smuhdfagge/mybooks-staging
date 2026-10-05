@@ -1281,7 +1281,8 @@ class JournalService implements JournalServiceInterface
             $valuation->returnStock($documentType, $document->id);
 
             foreach ($stockLines as $line) {
-                $cost = $valuation->issue($line->item, (float) $line->quantity, $documentType, $document->id, $reduceOnHand);
+                // Out of the document's warehouse, at that warehouse's cost (session 12).
+                $cost = $valuation->issue($line->item, (float) $line->quantity, $documentType, $document->id, $reduceOnHand, $document->warehouse_id ? (int) $document->warehouse_id : null);
                 $line->forceFill(['unit_cost' => round($cost / (float) $line->quantity, 4)])->saveQuietly();
             }
         }

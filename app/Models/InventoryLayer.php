@@ -32,6 +32,16 @@ class InventoryLayer extends Model
         'received_date' => 'date',
     ];
 
+    /** Stock with no warehouse given goes into the business's default one (session 12). */
+    protected static function booted(): void
+    {
+        static::creating(function (self $model) {
+            if (empty($model->warehouse_id) && $model->tenant_id) {
+                $model->warehouse_id = Warehouse::defaultIdFor((int) $model->tenant_id);
+            }
+        });
+    }
+
     /** @return BelongsTo<Item, $this> */
     public function item(): BelongsTo
     {

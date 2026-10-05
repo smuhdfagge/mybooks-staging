@@ -42,7 +42,10 @@ class ItemController extends Controller
 
     public function show(Item $item)
     {
-        return view('items.show', compact('item'));
+        // On hand in each warehouse, when there is more than one (session 12).
+        $byWarehouse = InventoryController::stockByWarehouse($item);
+
+        return view('items.show', compact('item', 'byWarehouse'));
     }
 
     public function edit(Item $item)

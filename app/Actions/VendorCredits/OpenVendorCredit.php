@@ -6,6 +6,7 @@ use App\Enums\VendorCreditStatus;
 use App\Models\Inventory;
 use App\Models\VendorCredit;
 use App\Models\VendorCreditItem;
+use App\Models\Warehouse;
 use App\Services\JournalService;
 use App\Services\StockValuationService;
 use Illuminate\Support\Collection;
@@ -18,6 +19,10 @@ use Illuminate\Validation\ValidationException;
  *   cost layers first, otherwise the item's FIFO or weighted average cost;
  * - the journal is posted (JournalService::createVendorCreditJournal);
  * - the whole credit becomes available to use against bills or refund.
+ *
+ * Goods leave the credit's warehouse if one was chosen, else the linked
+ * bill's, else the default one (session 12); the one used is kept on the
+ * credit so voiding puts the goods back there.
  */
 class OpenVendorCredit
 {
@@ -37,10 +42,15 @@ class OpenVendorCredit
             $lines = $credit->items()->with('item')->get();
             $stocked = $lines->filter(fn (VendorCreditItem $l) => $l->isStocked());
 
-            $this->checkQuantities($credit, $stocked);
+            $warehouseId = $credit->warehouse_id
+                ? (int) $credit->warehouse_id
+                : ($credit->bill?->warehouse_id ? (int) $credit->bill->warehouse_id : Warehouse::defaultIdFor($credit->tenant_id));
+            $credit->forceFill(['warehouse_id' => $warehouseId]);
+
+            $this->checkQuantities($credit, $stocked, $warehouseId);
 
             foreach ($stocked as $line) {
-                $cost = $this->stock->returnToSupplier($line->item, (float) $line->quantity, VendorCredit::class, $credit->id, $credit->bill_id);
+                $cost = $this->stock->returnToSupplier($line->item, (float) $line->quantity, VendorCredit::class, $credit->id, $credit->bill_id, $warehouseId);
                 $line->forceFill(['unit_cost' => round($cost / (float) $line->quantity, 4)])->save();
             }
 
@@ -62,7 +72,7 @@ class OpenVendorCredit
      *
      * @param  Collection<int, VendorCreditItem>  $stocked
      */
-    protected function checkQuantities(VendorCredit $credit, $stocked): void
+    protected function checkQuantities(VendorCredit $credit, $stocked, int $warehouseId): void
     {
         foreach ($stocked->groupBy('item_id') as $itemId => $group) {
             $qty = (float) $group->sum('quantity');
@@ -81,7 +91,7 @@ class OpenVendorCredit
                 }
             }
 
-            $onHand = (float) Inventory::where('tenant_id', $credit->tenant_id)->where('item_id', $itemId)->value('quantity');
+            $onHand = (float) Inventory::where('tenant_id', $credit->tenant_id)->where('item_id', $itemId)->where('warehouse_id', $warehouseId)->value('quantity');
             if ($qty - $onHand > 0.0001) {
                 throw ValidationException::withMessages(['items' => "Only {$this->qty($onHand)} of {$name} is in stock, so {$this->qty($qty)} can't be sent back."]);
             }

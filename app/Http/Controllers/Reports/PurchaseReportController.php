@@ -6,6 +6,7 @@ use App\Models\Bill;
 use App\Models\Inventory;
 use App\Models\Item;
 use App\Models\Vendor;
+use App\Models\Warehouse;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -79,26 +80,45 @@ class PurchaseReportController extends ReportController
     public function inventorySummary(Request $request)
     {
         $tenantId = auth()->user()->tenant_id;
+        // All warehouses, or one (session 12).
+        $warehouseId = $this->reportWarehouse($request);
+        $items = $this->inventorySummaryItems($tenantId, $warehouseId);
 
-        $items = Item::where('tenant_id', $tenantId)
+        $totalItems = $items->count();
+        $totalValue = $items->sum('stock_value');
+        $lowStockItems = $items->where('is_low_stock', true)->count();
+        $warehouses = Warehouse::moduleOn() ? Warehouse::orderByDesc('is_default')->orderBy('name')->get() : collect();
+
+        return view('reports.inventory-summary', compact(
+            'items', 'totalItems', 'totalValue', 'lowStockItems', 'warehouses', 'warehouseId'
+        ));
+    }
+
+    /** The warehouse a stock report is filtered by, if it is one of this business's. */
+    private function reportWarehouse(Request $request): ?int
+    {
+        $id = (int) $request->query('warehouse_id');
+
+        return $id && Warehouse::whereKey($id)->exists() ? $id : null;
+    }
+
+    /**
+     * Stock items with quantity on hand (in all warehouses or one) and its
+     * value at cost price.
+     */
+    private function inventorySummaryItems(int $tenantId, ?int $warehouseId)
+    {
+        return Item::where('tenant_id', $tenantId)
             ->where('track_inventory', true)
-            ->with('inventory')
+            ->with(['inventory' => fn ($q) => $q->when($warehouseId, fn ($w) => $w->where('inventories.warehouse_id', $warehouseId))])
             ->get()
             ->map(function ($item) {
-                $item->stock_quantity = $item->inventory->quantity ?? 0;
+                $item->stock_quantity = (float) ($item->inventory->quantity ?? 0);
                 $item->stock_value = $item->stock_quantity * $item->cost_price;
                 $item->is_low_stock = $item->stock_quantity <= $item->reorder_level;
 
                 return $item;
             });
-
-        $totalItems = $items->count();
-        $totalValue = $items->sum('stock_value');
-        $lowStockItems = $items->where('is_low_stock', true)->count();
-
-        return view('reports.inventory-summary', compact(
-            'items', 'totalItems', 'totalValue', 'lowStockItems'
-        ));
     }
 
     /**
@@ -206,17 +226,10 @@ class PurchaseReportController extends ReportController
         $tenantId = auth()->user()->tenant_id;
         $format = $request->get('format', 'pdf');
 
-        $items = Item::where('tenant_id', $tenantId)
-            ->where('track_inventory', true)
-            ->with('inventory')
-            ->get()
-            ->map(function ($item) {
-                $item->stock_quantity = $item->inventory->quantity ?? 0;
-                $item->stock_value = $item->stock_quantity * $item->cost_price;
-                $item->is_low_stock = $item->stock_quantity <= $item->reorder_level;
-
-                return $item;
-            });
+        $warehouseId = $this->reportWarehouse($request);
+        $items = $this->inventorySummaryItems($tenantId, $warehouseId);
+        $filters = ['Generated' => now()->format('Y-m-d')]
+            + ($warehouseId ? ['Warehouse' => Warehouse::whereKey($warehouseId)->value('name')] : []);
 
         $totalItems = $items->count();
         $totalValue = $items->sum('stock_value');
@@ -229,13 +242,13 @@ class PurchaseReportController extends ReportController
 
             return $this->exportService
                 ->setTitle('Inventory Summary')
-                ->setFilters(['Generated' => now()->format('Y-m-d')])
+                ->setFilters($filters)
                 ->exportToCsv($exportData['rows'], $exportData['headers']);
         }
 
         return $this->exportService
             ->setTitle('Inventory Summary')
-            ->setFilters(['Generated' => now()->format('Y-m-d')])
+            ->setFilters($filters)
             ->exportToPdf('reports.pdf.inventory-summary', $data);
     }
 }

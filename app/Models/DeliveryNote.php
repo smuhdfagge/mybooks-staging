@@ -6,6 +6,7 @@ use App\Enums\DeliveryNoteStatus;
 use App\Traits\BelongsToTenant;
 use App\Traits\GuardsStatusTransitions;
 use App\Traits\HasDocumentNumber;
+use App\Traits\HasWarehouse;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 
 class DeliveryNote extends Model
 {
-    use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
+    use BelongsToTenant, HasFactory, HasWarehouse, LogsActivity, SoftDeletes;
     use GuardsStatusTransitions, HasDocumentNumber;
 
     const STATUS_DRAFT = 'draft';

@@ -33,6 +33,18 @@
             </select>
         </div>
 
+        @if($warehouses->count() > 1)
+        <div>
+            <label for="warehouseFilter" class="form-label">Warehouse</label>
+            <select wire:model.live="warehouseFilter" id="warehouseFilter" class="form-control">
+                <option value="">All warehouses</option>
+                @foreach($warehouses as $warehouse)
+                    <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        @endif
+
         <div>
             <label for="perPage" class="form-label">Per Page</label>
             <select wire:model.live="perPage" id="perPage"

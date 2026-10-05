@@ -8,6 +8,7 @@ use App\Models\CreditNoteItem;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Item;
+use App\Models\Warehouse;
 use App\Services\Sales\DocumentTotals;
 use App\Support\Money;
 use Illuminate\Support\Collection;
@@ -30,7 +31,8 @@ use Illuminate\Validation\ValidationException;
  * credit notes.
  *
  * $data keys: customer_id, invoice_id, credit_note_date, reason, notes,
- * restock (goods returned), status (draft|open, create only; default
+ * restock (goods returned), warehouse_id (where returned goods go; empty =
+ * the warehouse they left from, session 12), status (draft|open, create only; default
  * draft), items[] (item_id, description, quantity, unit_price, tax_rate,
  * vat_treatment).
  */
@@ -58,6 +60,7 @@ class SaveCreditNote
                 'credit_note_date' => $data['credit_note_date'],
                 'reason' => $data['reason'] ?? null,
                 'restock' => (bool) ($data['restock'] ?? false),
+                'warehouse_id' => $this->warehouseId($tenantId, $data),
                 'notes' => $data['notes'] ?? null,
                 'status' => CreditNoteStatus::Draft->value,
                 'created_by' => $userId,
@@ -90,6 +93,7 @@ class SaveCreditNote
                 'credit_note_date' => $data['credit_note_date'],
                 'reason' => $data['reason'] ?? null,
                 'restock' => (bool) ($data['restock'] ?? false),
+                'warehouse_id' => $this->warehouseId($note->tenant_id, $data),
                 'notes' => $data['notes'] ?? null,
             ] + $this->totalsColumns($totals));
 
@@ -98,6 +102,17 @@ class SaveCreditNote
 
             return $note->fresh(['items']);
         });
+    }
+
+    /**
+     * The warehouse chosen for returned goods, or null to send them back
+     * where they left from (worked out when the note is opened).
+     *
+     * @param  array<string, mixed>  $data
+     */
+    protected function warehouseId(int $tenantId, array $data): ?int
+    {
+        return empty($data['warehouse_id']) ? null : Warehouse::resolveIdFor($tenantId, $data['warehouse_id'], true);
     }
 
     /**

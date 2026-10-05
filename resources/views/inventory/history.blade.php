@@ -100,6 +100,20 @@
                         </svg>
                         Inventory History
                     </h3>
+
+                    @if($warehouses->count() > 1)
+                    <form method="GET" class="mb-4 flex flex-col sm:flex-row sm:items-end gap-3">
+                        <div class="sm:w-64">
+                            <x-field name="warehouse_id" label="Warehouse" type="select">
+                                <option value="">All warehouses</option>
+                                @foreach($warehouses as $warehouse)
+                                    <option value="{{ $warehouse->id }}" @selected($warehouseId === $warehouse->id)>{{ $warehouse->name }}</option>
+                                @endforeach
+                            </x-field>
+                        </div>
+                        <button type="submit" class="btn-primary">Show</button>
+                    </form>
+                    @endif
                     
                     @if($history->count() > 0)
                     <div class="overflow-x-auto -mx-6">
@@ -110,6 +124,9 @@
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date & Time</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
                                         <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Quantity</th>
+                                        @if($warehouses->count() > 1)
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Warehouse</th>
+                                        @endif
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Notes</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">By</th>
                                     </tr>
@@ -155,6 +172,9 @@
                                                 @endif
                                             </span>
                                         </td>
+                                        @if($warehouses->count() > 1)
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{{ $record->warehouse->name ?? '-' }}</td>
+                                        @endif
                                         <td class="px-4 py-4">
                                             <div class="text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate">{{ $record->notes ?? '-' }}</div>
                                         </td>

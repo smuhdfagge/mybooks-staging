@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Warehouse;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -28,6 +29,8 @@ class StoreSalesReceiptRequest extends FormRequest
             'payment_method' => ['required', 'string', 'max:50'],
             'reference' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string'],
+            // Which warehouse the goods leave from (session 12).
+            'warehouse_id' => Warehouse::rule($tenantId),
             ...$this->salesLineRules($tenantId),
         ];
     }

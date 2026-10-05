@@ -49,6 +49,7 @@
                 @error('restock')<p class="form-error">{{ $message }}</p>@enderror
             </div>
         </div>
+        <x-warehouse-picker wrapper-class="mt-4 md:w-1/2" label="Returned goods go to" empty-label="The warehouse they left from" :selected="$cn->warehouse_id ?? null" help="Only used when the customer returned the goods." />
     </div>
 </x-card>
 

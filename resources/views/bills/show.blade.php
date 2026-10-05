@@ -118,6 +118,12 @@
                                 <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $bill->vendor_bill_number }}</dd>
                             </div>
                             @endif
+                            @if($warehouseName = \App\Models\Warehouse::nameIfMany($bill->warehouse_id))
+                            <div class="flex justify-between">
+                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Warehouse</dt>
+                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $warehouseName }}</dd>
+                            </div>
+                            @endif
                             <div class="flex justify-between">
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Bill Date</dt>
                                 <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $bill->bill_date->format('M d, Y') }}</dd>

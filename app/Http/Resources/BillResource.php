@@ -18,6 +18,8 @@ class BillResource extends JsonResource
             'bill_date' => $this->bill_date?->format('Y-m-d'),
             'due_date' => $this->due_date?->format('Y-m-d'),
             'status' => $this->status,
+            // Where the goods came from / went to (session 12).
+            'warehouse_id' => $this->warehouse_id,
             'subtotal' => (float) $this->subtotal,
             'tax_amount' => (float) $this->tax_amount,
             'discount_amount' => (float) $this->discount_amount,

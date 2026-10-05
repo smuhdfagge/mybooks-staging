@@ -7,7 +7,7 @@
             <div class="flex flex-wrap items-center gap-2">
                 <x-report-export-buttons 
                     report-type="inventory-summary" 
-                    :filters="[]" 
+                    :filters="array_filter(['warehouse_id' => $warehouseId ?? null])" 
                 />
                 <a href="{{ route('reports.index') }}" class="inline-flex items-center justify-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -20,6 +20,24 @@
     </x-slot>
 
     <div class="space-y-6">
+        @if(($warehouses ?? collect())->count() > 1)
+            <!-- Warehouse filter (session 12) -->
+            <form method="GET" class="no-print bg-white dark:bg-gray-800 shadow-sm rounded-lg p-4 flex flex-col sm:flex-row sm:items-end gap-3">
+                <div class="sm:w-64">
+                    <x-field name="warehouse_id" label="Warehouse" type="select">
+                        <option value="">All warehouses</option>
+                        @foreach($warehouses as $warehouse)
+                            <option value="{{ $warehouse->id }}" @selected(($warehouseId ?? null) === $warehouse->id)>{{ $warehouse->name }}</option>
+                        @endforeach
+                    </x-field>
+                </div>
+                <button type="submit" class="btn-primary">Show</button>
+            </form>
+            @if($warehouseId ?? null)
+                <p class="text-sm text-gray-600 dark:text-gray-300">Showing stock in <strong>{{ $warehouses->firstWhere('id', $warehouseId)?->name }}</strong> only.</p>
+            @endif
+        @endif
+
         <!-- Summary Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">

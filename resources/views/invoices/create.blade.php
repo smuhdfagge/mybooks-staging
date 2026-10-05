@@ -116,6 +116,8 @@
                             </div>
                         </div>
 
+                        <x-warehouse-picker wrapper-class="mb-6 md:w-1/2" label="Sell from warehouse" />
+
                         <div class="mb-6">
                             <label for="reference" class="form-label">Reference / PO Number</label>
                             <input type="text" name="reference" id="reference" value="{{ old('reference') }}"

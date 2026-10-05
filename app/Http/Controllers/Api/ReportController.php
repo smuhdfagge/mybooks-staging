@@ -11,6 +11,7 @@ use App\Models\Item;
 use App\Models\JournalEntry;
 use App\Models\Payroll;
 use App\Models\Vendor;
+use App\Models\Warehouse;
 use App\Services\Accounting\FinancialStatements;
 use App\Services\Reports\PayrollReportService;
 use App\Services\Statements\Statement;
@@ -682,9 +683,15 @@ class ReportController extends BaseApiController
     {
         $tenantId = $this->getTenantId();
 
+        // Optional warehouse_id: stock in that warehouse only (session 12).
+        $warehouseId = (int) $request->input('warehouse_id') ?: null;
+        if ($warehouseId && ! Warehouse::where('tenant_id', $tenantId)->whereKey($warehouseId)->exists()) {
+            return $this->validationError(['warehouse_id' => ['Choose one of your own warehouses.']]);
+        }
+
         $items = Item::where('tenant_id', $tenantId)
             ->where('track_inventory', true)
-            ->with('inventory')
+            ->with(['inventory' => fn ($q) => $q->when($warehouseId, fn ($w) => $w->where('inventories.warehouse_id', $warehouseId))])
             ->get()
             ->map(fn ($item) => [
                 'id' => $item->id,
@@ -698,6 +705,7 @@ class ReportController extends BaseApiController
             ]);
 
         return $this->success([
+            'warehouse_id' => $warehouseId,
             'items' => $items->values(),
             'summary' => [
                 'total_items' => $items->count(),

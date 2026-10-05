@@ -47,6 +47,7 @@
                         <div>
                             <x-field name="vendor_reference" label="Supplier's credit note number" :value="old('vendor_reference')" />
                         </div>
+                        <x-warehouse-picker label="Goods go back from" :empty-label="$bill ? 'Same warehouse as the bill' : 'The default warehouse'" help="Only used for stock items." />
                         <div>
                             <x-field name="reason" label="Reason" type="select">
                                 <option value="">—</option>

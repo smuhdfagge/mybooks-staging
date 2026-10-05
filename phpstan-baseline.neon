@@ -183,19 +183,19 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Models\\Item\:\:\$is_low_stock\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: app/Http/Controllers/Reports/PurchaseReportController.php
 
 		-
 			message: '#^Access to an undefined property App\\Models\\Item\:\:\$stock_quantity\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: app/Http/Controllers/Reports/PurchaseReportController.php
 
 		-
 			message: '#^Access to an undefined property App\\Models\\Item\:\:\$stock_value\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: app/Http/Controllers/Reports/PurchaseReportController.php
 
 		-
@@ -245,12 +245,6 @@ parameters:
 			identifier: argument.type
 			count: 3
 			path: app/Http/Controllers/StockTransferController.php
-
-		-
-			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
-			identifier: argument.type
-			count: 4
-			path: app/Http/Controllers/WarehouseController.php
 
 		-
 			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'

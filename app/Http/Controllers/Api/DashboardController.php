@@ -6,8 +6,8 @@ use App\Models\Bill;
 use App\Models\Customer;
 use App\Models\Employee;
 use App\Models\Expense;
-use App\Models\Inventory;
 use App\Models\Invoice;
+use App\Models\Item;
 use App\Models\PaymentReceived;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -63,11 +63,11 @@ class DashboardController extends BaseApiController
             ->count();
 
         // Low stock items count
-        $lowStockCount = Inventory::where('tenant_id', $tenantId)
-            ->whereHas('item', function ($query) {
-                $query->where('track_inventory', true)
-                    ->whereColumn('inventories.quantity', '<=', 'items.reorder_level');
-            })
+        // Per item, all warehouses together (session 12).
+        $lowStockCount = Item::where('tenant_id', $tenantId)
+            ->where('track_inventory', true)
+            ->whereHas('inventories')
+            ->whereRaw(Item::onHandSql().' <= items.reorder_level')
             ->count();
 
         return $this->success([
