@@ -70,6 +70,7 @@ class ChartOfAccountService
             ['account_code' => '5100', 'name' => 'Purchases', 'type' => 'expense', 'sub_type' => 'cost_of_goods_sold'],
             ['account_code' => '5200', 'name' => 'Purchase Returns', 'type' => 'expense', 'sub_type' => 'cost_of_goods_sold'],
             ['account_code' => '5300', 'name' => 'Freight In', 'type' => 'expense', 'sub_type' => 'cost_of_goods_sold'],
+            ['account_code' => '5400', 'name' => 'Stock Losses', 'type' => 'expense', 'sub_type' => 'cost_of_goods_sold'],
 
             // Expenses (6000-6999)
             ['account_code' => '6000', 'name' => 'Salaries & Wages', 'type' => 'expense', 'sub_type' => 'expense'],

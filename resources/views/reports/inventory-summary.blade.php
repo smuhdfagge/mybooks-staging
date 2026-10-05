@@ -205,6 +205,19 @@
                                 @endforeach
                             </tbody>
                             <tfoot class="bg-gray-50 dark:bg-gray-700">
+                                @if($inTransit ?? null)
+                                    {{-- Shipped between warehouses, not yet received (session 13). --}}
+                                    <tr data-in-transit>
+                                        <td colspan="3" class="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                                            <a href="{{ route('stock-transfers.index', ['status' => 'in_transit']) }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">Goods in transit</a> between warehouses
+                                            <span class="block text-xs text-gray-500 dark:text-gray-400">Cost when sent: {{ number_format($inTransit['cost'], 2) }}</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">{{ rtrim(rtrim(number_format($inTransit['quantity'], 4), '0'), '.') }}</td>
+                                        <td></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">{{ number_format($inTransit['value'], 2) }}</td>
+                                        <td></td>
+                                    </tr>
+                                @endif
                                 <tr>
                                     <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
                                         Total Stock Value

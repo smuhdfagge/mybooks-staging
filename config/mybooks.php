@@ -129,7 +129,8 @@ return [
         'delivery_notes' => (bool) env('MYBOOKS_FEATURE_DELIVERY_NOTES', true),
         'credit_notes' => (bool) env('MYBOOKS_FEATURE_CREDIT_NOTES', true),
         'warehouses' => (bool) env('MYBOOKS_FEATURE_WAREHOUSES', true),
-        'stock_transfers' => (bool) env('MYBOOKS_FEATURE_STOCK_TRANSFERS', false),
+        // Moving stock between warehouses (session 13); needs warehouses on.
+        'stock_transfers' => (bool) env('MYBOOKS_FEATURE_STOCK_TRANSFERS', true),
         'assembly' => (bool) env('MYBOOKS_FEATURE_ASSEMBLY', false),              // bills of materials and assembly orders
         'inventory_valuation' => (bool) env('MYBOOKS_FEATURE_INVENTORY_VALUATION', false),
         // "Reverse on" date on manual journals (accruals), posted by journals:post-reversals (S8).

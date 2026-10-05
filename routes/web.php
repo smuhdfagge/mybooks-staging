@@ -270,17 +270,21 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
             ->name('warehouses.destroy');
     });
 
-    Route::middleware('feature:stock_transfers')->group(function () {
-        // Stock Transfers
-        Route::middleware('permission:adjust inventory')->group(function () {
-            Route::get('stock-transfers', [StockTransferController::class, 'index'])->name('stock-transfers.index');
-            Route::get('stock-transfers/create', [StockTransferController::class, 'create'])->name('stock-transfers.create');
-            Route::post('stock-transfers', [StockTransferController::class, 'store'])->name('stock-transfers.store');
-            Route::get('stock-transfers/{stockTransfer}', [StockTransferController::class, 'show'])->name('stock-transfers.show');
-            Route::post('stock-transfers/{stockTransfer}/ship', [StockTransferController::class, 'ship'])->name('stock-transfers.ship');
-            Route::post('stock-transfers/{stockTransfer}/receive', [StockTransferController::class, 'receive'])->name('stock-transfers.receive');
-            Route::delete('stock-transfers/{stockTransfer}', [StockTransferController::class, 'destroy'])->name('stock-transfers.destroy');
-        });
+    // Stock transfers between warehouses (session 13).
+    Route::middleware(['feature:warehouses', 'feature:stock_transfers', 'permission:adjust inventory'])->group(function () {
+        Route::get('stock-transfers', [StockTransferController::class, 'index'])->name('stock-transfers.index');
+        Route::get('stock-transfers/create', [StockTransferController::class, 'create'])->name('stock-transfers.create');
+        Route::get('stock-transfers/items', [StockTransferController::class, 'items'])->middleware('throttle:120,1')->name('stock-transfers.items');
+        Route::post('stock-transfers', [StockTransferController::class, 'store'])->name('stock-transfers.store');
+        Route::get('stock-transfers/{stockTransfer}', [StockTransferController::class, 'show'])->name('stock-transfers.show');
+        Route::get('stock-transfers/{stockTransfer}/edit', [StockTransferController::class, 'edit'])->name('stock-transfers.edit');
+        Route::put('stock-transfers/{stockTransfer}', [StockTransferController::class, 'update'])->name('stock-transfers.update');
+        Route::get('stock-transfers/{stockTransfer}/print', [StockTransferController::class, 'print'])->name('stock-transfers.print');
+        Route::post('stock-transfers/{stockTransfer}/ship', [StockTransferController::class, 'ship'])->name('stock-transfers.ship');
+        Route::post('stock-transfers/{stockTransfer}/transfer-now', [StockTransferController::class, 'transferNow'])->name('stock-transfers.transfer-now');
+        Route::post('stock-transfers/{stockTransfer}/receive', [StockTransferController::class, 'receive'])->name('stock-transfers.receive');
+        Route::post('stock-transfers/{stockTransfer}/cancel', [StockTransferController::class, 'cancel'])->name('stock-transfers.cancel');
+        Route::delete('stock-transfers/{stockTransfer}', [StockTransferController::class, 'destroy'])->name('stock-transfers.destroy');
     });
 
     Route::middleware('feature:assembly')->group(function () {

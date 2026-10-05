@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Reports;
 use App\Models\Bill;
 use App\Models\Inventory;
 use App\Models\Item;
+use App\Models\StockTransfer;
 use App\Models\Vendor;
 use App\Models\Warehouse;
 use Carbon\Carbon;
@@ -85,13 +86,37 @@ class PurchaseReportController extends ReportController
         $items = $this->inventorySummaryItems($tenantId, $warehouseId);
 
         $totalItems = $items->count();
-        $totalValue = $items->sum('stock_value');
+        $inTransit = $warehouseId ? null : $this->inTransit($tenantId, $items);
+        $totalValue = $items->sum('stock_value') + ($inTransit['value'] ?? 0);
         $lowStockItems = $items->where('is_low_stock', true)->count();
         $warehouses = Warehouse::moduleOn() ? Warehouse::orderByDesc('is_default')->orderBy('name')->get() : collect();
 
         return view('reports.inventory-summary', compact(
-            'items', 'totalItems', 'totalValue', 'lowStockItems', 'warehouses', 'warehouseId'
+            'items', 'totalItems', 'totalValue', 'lowStockItems', 'warehouses', 'warehouseId', 'inTransit'
         ));
+    }
+
+    /**
+     * Goods shipped between warehouses and not yet received (session 13),
+     * as their own line so the total doesn't dip while they are on the
+     * road. Valued like the rest of this report (quantity at cost price);
+     * 'cost' is what they cost when they left. Null when there are none.
+     *
+     * @return array{quantity: float, value: float, cost: float}|null
+     */
+    private function inTransit(int $tenantId, $items): ?array
+    {
+        $byItem = StockTransfer::inTransitByItem($tenantId);
+        if ($byItem === []) {
+            return null;
+        }
+        $prices = $items->pluck('cost_price', 'id');
+
+        return [
+            'quantity' => array_sum(array_column($byItem, 'quantity')),
+            'value' => round(array_sum(array_map(fn ($row, $id) => $row['quantity'] * (float) ($prices[$id] ?? 0), $byItem, array_keys($byItem))), 2),
+            'cost' => round(array_sum(array_column($byItem, 'cost')), 2),
+        ];
     }
 
     /** The warehouse a stock report is filtered by, if it is one of this business's. */
@@ -232,13 +257,17 @@ class PurchaseReportController extends ReportController
             + ($warehouseId ? ['Warehouse' => Warehouse::whereKey($warehouseId)->value('name')] : []);
 
         $totalItems = $items->count();
-        $totalValue = $items->sum('stock_value');
+        $inTransit = $warehouseId ? null : $this->inTransit($tenantId, $items);
+        $totalValue = $items->sum('stock_value') + ($inTransit['value'] ?? 0);
         $lowStockItems = $items->where('is_low_stock', true)->count();
 
-        $data = compact('items', 'totalItems', 'totalValue', 'lowStockItems');
+        $data = compact('items', 'totalItems', 'totalValue', 'lowStockItems', 'inTransit');
 
         if ($format === 'csv') {
             $exportData = $this->exportService->inventorySummaryData($items);
+            if ($inTransit) {
+                $exportData['rows'][] = ['Goods in transit between warehouses', '', $inTransit['quantity'], '', '', number_format($inTransit['value'], 2), ''];
+            }
 
             return $this->exportService
                 ->setTitle('Inventory Summary')

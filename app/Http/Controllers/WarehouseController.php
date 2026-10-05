@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Inventory;
+use App\Models\StockTransfer;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -27,7 +28,10 @@ class WarehouseController extends Controller
             ->get()
             ->keyBy('warehouse_id');
 
-        return view('inventory.warehouses.index', compact('warehouses', 'totals'));
+        // Goods shipped between warehouses and not yet received (session 13).
+        $inTransitValue = array_sum(array_column(StockTransfer::inTransitByItem((int) auth()->user()->tenant_id), 'cost'));
+
+        return view('inventory.warehouses.index', compact('warehouses', 'totals', 'inTransitValue'));
     }
 
     public function create()
@@ -69,7 +73,15 @@ class WarehouseController extends Controller
 
         $stockValue = $warehouse->total_stock_value;
 
-        return view('inventory.warehouses.show', compact('warehouse', 'inventories', 'stockValue'));
+        // Goods on the road to or from here (session 13): in neither warehouse's stock yet.
+        $inTransit = StockTransfer::moduleOn()
+            ? StockTransfer::with(['fromWarehouse', 'toWarehouse', 'items.item'])
+                ->where('status', StockTransfer::STATUS_IN_TRANSIT)
+                ->where(fn ($q) => $q->where('from_warehouse_id', $warehouse->id)->orWhere('to_warehouse_id', $warehouse->id))
+                ->orderBy('transfer_date')->get()
+            : collect();
+
+        return view('inventory.warehouses.show', compact('warehouse', 'inventories', 'stockValue', 'inTransit'));
     }
 
     public function edit(Warehouse $warehouse)
