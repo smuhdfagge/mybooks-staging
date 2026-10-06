@@ -3,8 +3,11 @@
 namespace App\Livewire\Subscriptions;
 
 use App\Livewire\Concerns\ChecksPermissions;
+use App\Models\BillingCard;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Models\SubscriptionRenewalAttempt;
+use App\Services\Billing\AutoRenewal;
 use App\Services\Billing\PaystackGateway;
 use App\Services\Billing\SubscriptionBilling;
 use Illuminate\Support\Facades\Auth;
@@ -190,10 +193,77 @@ class SubscriptionManager extends Component
         session()->flash('success', 'Your subscription has been reactivated!');
     }
 
+    /** Turn automatic renewal with the saved card on or off (session 15). */
+    public function toggleAutoRenew()
+    {
+        $this->requirePermission('manage subscription');
+
+        $card = $this->savedCard();
+        if (! $card) {
+            return;
+        }
+
+        $card->forceFill(['auto_renew' => ! $card->auto_renew])->save();
+
+        // A retry waiting for this card stops when renewal is switched off.
+        if (! $card->auto_renew) {
+            $this->cancelRetries();
+        }
+
+        session()->flash('success', $card->auto_renew
+            ? "Automatic renewal is on. We'll charge {$card->label()} when your subscription is due."
+            : 'Automatic renewal is off. Remember to pay before your subscription ends.');
+    }
+
+    /** Forget the saved card; this also turns automatic renewal off. */
+    public function removeCard()
+    {
+        $this->requirePermission('manage subscription');
+
+        $card = $this->savedCard();
+        if (! $card) {
+            return;
+        }
+
+        $label = $card->label();
+        $card->delete();
+        $this->cancelRetries();
+
+        session()->flash('success', "{$label} has been removed. Automatic renewal is off.");
+    }
+
+    /** The current business's card only: the tenant scope plus an explicit check. */
+    private function savedCard(): ?BillingCard
+    {
+        $tenantId = Auth::user()?->tenant_id;
+        if (! $tenantId || ! app(AutoRenewal::class)->enabled()) {
+            return null;
+        }
+
+        return BillingCard::where('tenant_id', $tenantId)->first();
+    }
+
+    private function cancelRetries(): void
+    {
+        SubscriptionRenewalAttempt::where('tenant_id', Auth::user()->tenant_id)
+            ->whereNotNull('next_retry_at')
+            ->update(['next_retry_at' => null]);
+    }
+
     public function render()
     {
+        $canManage = auth()->user()?->can('manage subscription') ?? false;
+        $autoRenewal = app(AutoRenewal::class);
+        $showBilling = $canManage && $autoRenewal->enabled() && Auth::user()?->tenant_id;
+
         return view('livewire.subscriptions.subscription-manager', [
-            'canManage' => auth()->user()?->can('manage subscription') ?? false,
+            'canManage' => $canManage,
+            'showAutoRenewal' => (bool) $showBilling,
+            'savedCard' => $showBilling ? $this->savedCard() : null,
+            'nextRenewal' => $showBilling ? $autoRenewal->nextRenewal((int) Auth::user()->tenant_id) : null,
+            'renewalAttempts' => $showBilling
+                ? SubscriptionRenewalAttempt::where('tenant_id', Auth::user()->tenant_id)->latest('id')->limit(12)->get()
+                : collect(),
         ]);
     }
 }

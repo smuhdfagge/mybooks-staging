@@ -116,6 +116,7 @@ Unfinished modules answer 404 until they are switched on in `.env`. Only switch 
 | `MYBOOKS_FEATURE_STOCK_TRANSFERS` | Stock transfers |
 | `MYBOOKS_FEATURE_ASSEMBLY` | Bills of materials and assembly orders |
 | `MYBOOKS_FEATURE_INVENTORY_VALUATION` | Stock valuation page |
+| `MYBOOKS_FEATURE_AUTO_RENEWAL` | Saved card and automatic renewal of subscriptions (`MYBOOKS_AUTO_RENEW_DAYS_BEFORE`, `MYBOOKS_AUTO_RENEW_RETRY_DAYS`, `MYBOOKS_CARD_EXPIRY_WARNING_DAYS`) |
 
 Other settings in `config/mybooks.php` include support email, import size limit, data retention periods, and HSTS. Leave `MYBOOKS_HSTS_INCLUDE_SUBDOMAINS` and `MYBOOKS_HSTS_PRELOAD` off unless every subdomain is permanently on HTTPS.
 
@@ -125,6 +126,7 @@ Other settings in `config/mybooks.php` include support email, import size limit,
 |---|---|
 | `php artisan accounts:recalculate --dry-run` | Compares stored account balances with the journals; without `--dry-run` it corrects them |
 | `php artisan subscriptions:expire` | Expires ended subscriptions and sends reminders (runs daily) |
+| `php artisan subscriptions:auto-renew` | Charges saved cards for subscriptions ending tomorrow, retries failed charges, warns about expiring cards (runs daily at 06:00) |
 | `php artisan subscriptions:grace --days=14` | Gives active subscriptions time to renew (one-off) |
 | `php artisan bills:receive-pending-stock --dry-run` | Once after the October 2026 update: brings in stock for posted, unpaid bills (stock used to wait for payment) |
 | `php artisan mybooks:backup` | Backs up the database and uploaded files now (`--only-db` for the database alone) |

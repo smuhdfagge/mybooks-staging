@@ -136,6 +136,13 @@ Schedule::command('subscriptions:expire')
     ->withoutOverlapping()
     ->onOneServer();
 
+// Charge saved cards for subscriptions ending tomorrow, retry failed
+// charges and warn about cards that expire first (session 15)
+Schedule::command('subscriptions:auto-renew')
+    ->dailyAt('06:00')
+    ->withoutOverlapping(60)
+    ->onOneServer();
+
 /*
 |--------------------------------------------------------------------------
 | Backups (finding O1)

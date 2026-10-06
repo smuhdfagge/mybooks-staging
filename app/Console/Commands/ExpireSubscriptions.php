@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Http\Middleware\EnsureFeatureEnabled;
+use App\Models\BillingCard;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Notifications\SubscriptionExpiringNotification;
@@ -59,6 +61,12 @@ class ExpireSubscriptions extends Command
                 continue;
             }
 
+            // The saved card will be charged instead (session 15); a failed
+            // charge sends its own email with a Pay now link.
+            if ($this->willAutoRenew($subscription)) {
+                continue;
+            }
+
             $key = "reminded_{$daysLeft}";
             $metadata = $subscription->metadata ?? [];
             if (($metadata[$key] ?? null) === $subscription->ends_at->toDateString()) {
@@ -74,6 +82,17 @@ class ExpireSubscriptions extends Command
         $this->info("Expired: {$expired}. Reminders sent: {$reminded}.");
 
         return self::SUCCESS;
+    }
+
+    private function willAutoRenew(Subscription $subscription): bool
+    {
+        if (! EnsureFeatureEnabled::enabled('auto_renewal')) {
+            return false;
+        }
+
+        $card = BillingCard::withoutGlobalScopes()->where('tenant_id', $subscription->tenant_id)->first();
+
+        return $card !== null && $card->auto_renew && $subscription->ends_at && ! $card->hasExpiredBy($subscription->ends_at);
     }
 
     private function notifyAdmins(Subscription $subscription, int $daysLeft): void

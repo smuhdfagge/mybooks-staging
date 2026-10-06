@@ -2,9 +2,12 @@
 
 namespace App\Services\Billing;
 
+use App\Http\Middleware\EnsureFeatureEnabled;
+use App\Models\BillingCard;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\SubscriptionPayment;
+use App\Models\SubscriptionRenewalAttempt;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -23,6 +26,9 @@ use InvalidArgumentException;
  *    browser.
  * 3. applyCharge() checks the amount and currency, marks the payment paid
  *    once (it is safe to call twice) and starts or extends the subscription.
+ *    It also saves a reusable card for auto-renewal, and completes an
+ *    automatic renewal charge (session 15), so the webhook covers a renewal
+ *    whose direct reply from Paystack was lost.
  */
 class SubscriptionBilling
 {
@@ -126,7 +132,9 @@ class SubscriptionBilling
             return null;
         }
 
-        return DB::transaction(function () use ($reference, $data) {
+        $renewed = null;
+
+        $payment = DB::transaction(function () use ($reference, $data, &$renewed) {
             $payment = SubscriptionPayment::withoutGlobalScopes()
                 ->where('reference', $reference)
                 ->lockForUpdate()
@@ -172,8 +180,97 @@ class SubscriptionBilling
             $subscription = $this->applyPayment($payment);
             $payment->forceFill(['subscription_id' => $subscription->id])->save();
 
+            $renewed = $this->completeRenewalAttempt($payment, $data);
+            if (! $renewed) {
+                $this->rememberCard($payment, $data);
+            }
+
             return $payment;
         });
+
+        if ($renewed) {
+            app(AutoRenewal::class)->sendReceipt($renewed);
+        }
+
+        return $payment;
+    }
+
+    /**
+     * An automatic renewal charge went through (session 15): mark its
+     * attempt as paid and stop any retry. Returns the attempt, or null when
+     * $payment is an ordinary checkout.
+     */
+    private function completeRenewalAttempt(SubscriptionPayment $payment, array $data): ?SubscriptionRenewalAttempt
+    {
+        $attempt = SubscriptionRenewalAttempt::withoutGlobalScopes()
+            ->where('reference', $payment->reference)
+            ->lockForUpdate()
+            ->first();
+
+        if (! $attempt) {
+            return null;
+        }
+
+        $attempt->forceFill([
+            'status' => SubscriptionRenewalAttempt::STATUS_SUCCESS,
+            'message' => (string) ($data['gateway_response'] ?? 'Approved'),
+            'next_retry_at' => null,
+            'subscription_payment_id' => $payment->id,
+        ])->save();
+
+        // An earlier failed attempt for the same period must not retry now.
+        SubscriptionRenewalAttempt::withoutGlobalScopes()
+            ->where('subscription_id', $attempt->subscription_id)
+            ->where('period_end', $attempt->period_end)
+            ->whereNotNull('next_retry_at')
+            ->update(['next_retry_at' => null]);
+
+        return $attempt;
+    }
+
+    /**
+     * Save the card a business just paid with, for auto-renewal (session 15).
+     * Only a card Paystack marks reusable can be charged again. One card per
+     * business: a new one replaces the old and keeps the auto-renew choice.
+     */
+    private function rememberCard(SubscriptionPayment $payment, array $data): void
+    {
+        $auth = (array) ($data['authorization'] ?? []);
+
+        if (! EnsureFeatureEnabled::enabled('auto_renewal') || ($auth['reusable'] ?? false) !== true
+            || blank($auth['authorization_code'] ?? null) || blank($auth['last4'] ?? null)) {
+            return;
+        }
+
+        $email = (string) ($data['customer']['email'] ?? '');
+        if ($email === '') {
+            $email = (string) User::withoutGlobalScopes()->whereKey($payment->user_id)->value('email');
+        }
+        if ($email === '') {
+            return;
+        }
+
+        $card = BillingCard::withoutGlobalScopes()->firstOrNew(['tenant_id' => $payment->tenant_id]);
+        $card->skipTenantGuard = true;
+        $card->forceFill([
+            'tenant_id' => $payment->tenant_id,
+            'user_id' => $payment->user_id,
+            'authorization_code' => (string) $auth['authorization_code'],
+            'signature' => isset($auth['signature']) ? substr((string) $auth['signature'], 0, 100) : null,
+            'card_type' => isset($auth['card_type']) ? substr(trim((string) $auth['card_type']), 0, 30) : null,
+            'bank' => isset($auth['bank']) ? substr((string) $auth['bank'], 0, 100) : null,
+            'last4' => substr((string) $auth['last4'], -4),
+            'exp_month' => str_pad(substr((string) ($auth['exp_month'] ?? ''), -2), 2, '0', STR_PAD_LEFT),
+            'exp_year' => substr((string) ($auth['exp_year'] ?? ''), -4),
+            'email' => $email,
+            'customer_code' => $data['customer']['customer_code'] ?? null,
+            'auto_renew' => $card->exists ? $card->auto_renew : true,
+            'expiry_warned_for' => null,
+        ])->save();
+
+        Log::info('Saved card for auto-renewal', [
+            'tenant_id' => $payment->tenant_id, 'reference' => $payment->reference, 'last4' => $card->last4,
+        ]);
     }
 
     /**

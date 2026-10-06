@@ -50,7 +50,9 @@ class BillingController extends Controller
 
     /**
      * Paystack's server calls this for each event. Only signed requests are
-     * acted on.
+     * acted on. charge.success covers checkouts and automatic renewals
+     * (session 15), so a renewal whose direct reply was lost still counts;
+     * applyCharge() acts once per reference, so repeats are ignored.
      */
     public function webhook(Request $request, PaystackGateway $gateway): JsonResponse
     {

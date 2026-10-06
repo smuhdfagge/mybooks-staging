@@ -24,12 +24,20 @@ To start a session, say: **"Do session N of docs/FEATURE-PLAN.md"**.
 | 11 | Audit lock dates: staff and adviser locks, logged reopen with reason | `feature/audit-lock-dates` | Merged (#33) |
 | 12 | Warehouses: stock per location, default warehouse for existing stock | `feature/warehouses` | Merged (#34) |
 | 13 | Stock transfers between warehouses | `feature/stock-transfers` | Merged (#35) |
-| 14 | Assembly / bill of materials | `feature/assembly` | Done, PR open |
+| 14 | Assembly / bill of materials | `feature/assembly` | Merged (#36) |
+| — | Follow-up: journals for stock adjustments, opening stock, bulk asset disposal | `fix/stock-and-disposal-journals` | Merged (#37) |
+| 15 | Paystack auto-renewal: saved card, automatic renewal charge, retries, webhooks | `feature/paystack-auto-renewal` | Done, PR open |
+| 16 | SMS and WhatsApp reminders (Termii): overdue invoices, payment receipts, opt-out | `feature/sms-whatsapp-reminders` | To do |
+| 17 | Bank feeds with Mono: link accounts, pull transactions, match in bank reconciliation | `feature/bank-feeds` | To do |
+| 18 | NRS e-invoicing (MBS): TIN, IRN, QR code, submit invoices and credit notes | `feature/e-invoicing` | To do |
 
 `wip/payroll-remit-alt` is an earlier duplicate of item 1; ignore it and delete it once #17 merges.
 
-Later, not in this batch: multi-currency, bank feeds (Mono/Okra),
-SMS/WhatsApp reminders, Paystack auto-renewal, e-invoicing.
+Sessions 15 to 18 are stacked: each branch starts from the one before,
+so merge their PRs in order. Okra shut down in May 2025, so bank feeds
+use Mono only, behind a driver so another provider can be added later.
+
+Later, not in this batch: multi-currency.
 
 ## Rules every session follows
 
