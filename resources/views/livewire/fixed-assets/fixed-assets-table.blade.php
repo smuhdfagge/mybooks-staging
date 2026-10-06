@@ -60,7 +60,7 @@
                     </select>
                 </div>
                 <!-- Bulk Actions -->
-                <x-bulk-actions :actions="['activate' => 'Activate', 'dispose' => 'Dispose', 'delete' => 'Delete']" :selectedCount="count($selectedItems)" />
+                <x-bulk-actions :actions="['activate' => 'Activate', 'dispose' => 'Dispose (write off)', 'delete' => 'Delete']" :selectedCount="count($selectedItems)" />
             </div>
         </div>
     </div>
@@ -171,4 +171,52 @@
             </div>
         @endif
     </div>
+
+    <!-- Bulk write-off (F2) -->
+    @if($showDisposeModal)
+    <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="dispose-modal-title" role="dialog" aria-modal="true" x-data x-trap.inert.noscroll="true" @keydown.escape.window="$wire.closeDisposeModal()">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-75 transition-opacity" wire:click="closeDisposeModal"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="px-4 pt-5 pb-4 sm:p-6 space-y-4">
+                    <h3 id="dispose-modal-title" class="text-lg font-medium text-gray-900 dark:text-gray-100">Write off {{ count($selectedItems) }} asset(s)</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-300">
+                        Each asset is taken out of the books with no money received: its cost and depreciation are removed and what is left of its value is posted as a loss.
+                        <strong>If you sold an asset, dispose of it on its own page instead</strong>, so you can enter what you got for it.
+                    </p>
+                    <div>
+                        <label for="disposalDate" class="form-label">Disposal date <span class="text-red-500">*</span></label>
+                        <input type="date" id="disposalDate" wire:model="disposalDate" max="{{ now()->toDateString() }}" class="form-control">
+                        @error('disposalDate')<p class="form-error">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label for="disposalMethod" class="form-label">What happened to them</label>
+                        <select id="disposalMethod" wire:model="disposalMethod" class="form-control">
+                            <option value="scrapped">Scrapped</option>
+                            <option value="donated">Donated</option>
+                            <option value="lost">Lost or stolen</option>
+                            <option value="other">Other</option>
+                        </select>
+                        @error('disposalMethod')<p class="form-error">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label for="disposalReason" class="form-label">Reason</label>
+                        <textarea id="disposalReason" wire:model="disposalReason" rows="2" class="form-control" placeholder="e.g. Broken beyond repair"></textarea>
+                        @error('disposalReason')<p class="form-error">{{ $message }}</p>@enderror
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Assets already disposed of or sold are skipped.</p>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
+                    <button wire:click="disposeSelected" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:w-auto sm:text-sm">
+                        Write off
+                    </button>
+                    <button wire:click="closeDisposeModal" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 sm:mt-0 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>

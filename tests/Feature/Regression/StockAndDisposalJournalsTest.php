@@ -13,9 +13,11 @@ use App\Actions\StockTransfers\SaveStockTransfer;
 use App\Actions\StockTransfers\ShipStockTransfer;
 use App\Actions\StockTransfers\TransferNow;
 use App\Console\Commands\PostMissingAdjustmentJournals;
+use App\Livewire\FixedAssets\FixedAssetsTable;
 use App\Livewire\Inventory\InventoryTable;
 use App\Models\ChartOfAccount;
 use App\Models\Customer;
+use App\Models\FixedAsset;
 use App\Models\Import;
 use App\Models\Inventory;
 use App\Models\InventoryHistory;
@@ -26,12 +28,15 @@ use App\Models\Tenant;
 use App\Models\Vendor;
 use App\Models\Warehouse;
 use App\Services\AccountCodeService;
+use App\Services\DepreciationService;
 use App\Services\ImportService;
+use App\Services\JournalService;
 use App\Services\StockValuationService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
+use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -516,5 +521,152 @@ class StockAndDisposalJournalsTest extends TestCase
         $this->assertSame('3900', $this->code('opening_balance_equity'));
         $this->assertSame('Building fund', ChartOfAccount::withoutGlobalScopes()->where('tenant_id', $other->id)->where('account_code', '3900')->value('name'));
         $this->assertSame('3910', AccountCodeService::resolve($other->id, 'opening_balance_equity'));
+    }
+
+    // ---- F2: bulk dispose -------------------------------------------------------------
+
+    private function asset(string $name = 'Generator', float $cost = 1200000): FixedAsset
+    {
+        $asset = FixedAsset::create([
+            'tenant_id' => $this->tenant->id, 'name' => $name,
+            'purchase_date' => '2026-01-01', 'in_service_date' => '2026-01-01',
+            'purchase_cost' => $cost, 'salvage_value' => 0, 'depreciable_amount' => $cost,
+            'useful_life' => 5, 'depreciation_method' => 'straight_line', 'accumulated_depreciation' => 0,
+            'book_value' => $cost, 'status' => 'active',
+        ]);
+        app(DepreciationService::class)->recordDepreciation($asset, Carbon::parse('2026-01-31'));
+
+        return $asset->fresh();
+    }
+
+    private function disposalJournal(FixedAsset $asset): ?Journal
+    {
+        return Journal::where('reference_type', FixedAsset::class)->where('reference_id', $asset->id)
+            ->where('journal_type', JournalService::ASSET_DISPOSAL)->first();
+    }
+
+    private function bulkDispose(array $assets, string $date = '2026-10-10', string $method = 'scrapped'): Testable
+    {
+        return Livewire::test(FixedAssetsTable::class)
+            ->set('selectedItems', array_map(fn ($a) => (string) $a->id, $assets))
+            ->set('bulkAction', 'dispose')
+            ->call('applyBulkAction')
+            ->set('disposalDate', $date)
+            ->set('disposalMethod', $method)
+            ->set('disposalReason', 'Broken')
+            ->call('disposeSelected');
+    }
+
+    public function test_f2_bulk_dispose_posts_the_same_journal_as_disposing_one_asset(): void
+    {
+        $single = $this->asset('Generator A');
+        $bulkOne = $this->asset('Generator B');
+        $bulkTwo = $this->asset('Laptop', 600000);
+
+        app(DepreciationService::class)->disposeAsset($single, 'scrapped', 0, Carbon::parse('2026-10-10'), 'Broken');
+        $this->bulkDispose([$bulkOne, $bulkTwo])->assertHasNoErrors()->assertSee('Disposed of 2 asset(s)');
+
+        $this->assertSame($this->lines($this->disposalJournal($single)), $this->lines($this->disposalJournal($bulkOne)));
+        $this->assertEquals([
+            $this->code('accumulated_depreciation') => [10000.0, 0.0],
+            $this->code('fixed_assets') => [0.0, 600000.0],
+            $this->code('miscellaneous_expense') => [590000.0, 0.0],
+        ], $this->lines($this->disposalJournal($bulkTwo)));
+        $this->assertSame('2026-10-10', $this->disposalJournal($bulkTwo)->journal_date->toDateString());
+        $bulkOne->refresh();
+        $this->assertSame(['disposed', 'scrapped', '2026-10-10', -1180000.0, 'Broken'],
+            [$bulkOne->status, $bulkOne->disposal_method, $bulkOne->disposal_date->toDateString(), (float) $bulkOne->gain_loss_on_disposal, $bulkOne->disposal_notes]);
+        // The single flow doesn't catch up depreciation to the disposal date; neither does bulk.
+        $this->assertSame(1, $bulkOne->depreciations()->count());
+    }
+
+    public function test_f2_bulk_dispose_skips_disposed_assets_and_respects_lock_dates(): void
+    {
+        $done = $this->asset('Old van');
+        app(DepreciationService::class)->disposeAsset($done, 'scrapped', 0, Carbon::parse('2026-09-01'));
+        $fresh = $this->asset('Printer', 300000);
+        $this->lockUpTo('2026-10-05');
+
+        $this->bulkDispose([$done, $fresh], '2026-10-01')->assertSee('could not be disposed')->assertSee('Printer');
+        $this->assertSame('active', $fresh->fresh()->status);
+        $this->assertNull($this->disposalJournal($fresh));
+
+        $this->bulkDispose([$done, $fresh], '2026-10-06')->assertSee('Disposed of 1 asset(s)')->assertSee('Skipped 1 already disposed');
+        $this->assertSame(1, Journal::where('reference_id', $done->id)->where('reference_type', FixedAsset::class)->where('journal_type', JournalService::ASSET_DISPOSAL)->count());
+        $this->assertNotNull($this->disposalJournal($fresh));
+
+        $this->bulkDispose([$fresh], '2026-10-25')->assertHasErrors('disposalDate');
+    }
+
+    public function test_f2_bulk_activate_does_not_bring_back_a_disposed_asset(): void
+    {
+        $asset = $this->asset();
+        app(DepreciationService::class)->disposeAsset($asset, 'scrapped', 0, Carbon::parse('2026-10-01'));
+
+        Livewire::test(FixedAssetsTable::class)->set('selectedItems', [(string) $asset->id])->set('bulkAction', 'activate')->call('applyBulkAction');
+
+        $this->assertSame('disposed', $asset->fresh()->status);
+    }
+
+    public function test_f2_bulk_dispose_cannot_touch_another_businesss_assets(): void
+    {
+        $other = $this->otherTenant();
+        $theirs = FixedAsset::withoutTenantGuard(fn () => FixedAsset::create([
+            'tenant_id' => $other->id, 'name' => 'Their truck', 'purchase_date' => '2026-01-01', 'in_service_date' => '2026-01-01',
+            'purchase_cost' => 500000, 'salvage_value' => 0, 'depreciable_amount' => 500000, 'useful_life' => 5,
+            'depreciation_method' => 'straight_line', 'accumulated_depreciation' => 0, 'book_value' => 500000, 'status' => 'active',
+        ]));
+
+        $this->bulkDispose([$theirs]);
+
+        $this->assertSame('active', FixedAsset::withoutGlobalScopes()->find($theirs->id)->status);
+    }
+
+    // ---- F2: the catch-up command ---------------------------------------------------
+
+    public function test_f2_command_posts_missing_disposal_journals_once_and_skips_locked_dates(): void
+    {
+        $old = $this->asset('Old generator');
+        $old->forceFill(['status' => 'disposed', 'disposal_date' => '2026-10-08'])->withoutPeriodValidation()->save();
+        $locked = $this->asset('Old laptop', 600000);
+        $locked->forceFill(['status' => 'disposed', 'disposal_date' => '2026-09-15'])->withoutPeriodValidation()->save();
+        $fine = $this->asset('Kept');
+        app(DepreciationService::class)->disposeAsset($fine, 'scrapped', 0, Carbon::parse('2026-10-01'));
+        $this->lockUpTo('2026-09-30');
+
+        $other = $this->otherTenant();
+        $theirs = FixedAsset::withoutTenantGuard(fn () => FixedAsset::create([
+            'tenant_id' => $other->id, 'name' => 'Their truck', 'purchase_date' => '2026-01-01', 'in_service_date' => '2026-01-01',
+            'purchase_cost' => 500000, 'salvage_value' => 0, 'depreciable_amount' => 500000, 'useful_life' => 5,
+            'depreciation_method' => 'straight_line', 'accumulated_depreciation' => 0, 'book_value' => 500000, 'status' => 'disposed',
+            'disposal_date' => '2026-10-02',
+        ]));
+        auth()->forgetGuards();
+        $count = Journal::withoutGlobalScopes()->count();
+
+        $this->artisan('assets:post-missing-disposal-journals', ['--dry-run' => true])
+            ->expectsOutputToContain('Old generator')->expectsOutputToContain('Their truck')
+            ->expectsOutputToContain('Would post 2 disposal journal(s); 1 skipped')->assertSuccessful();
+        $this->assertSame($count, Journal::withoutGlobalScopes()->count());
+
+        $this->artisan('assets:post-missing-disposal-journals', ['--tenant' => $other->id])->expectsOutputToContain('Posted 1 disposal journal(s)')->assertSuccessful();
+        $theirJournal = Journal::withoutGlobalScopes()->where('reference_type', FixedAsset::class)->where('reference_id', $theirs->id)->sole();
+        $this->assertSame($other->id, $theirJournal->tenant_id);
+        $this->assertNull(Journal::withoutGlobalScopes()->where('reference_type', FixedAsset::class)->where('reference_id', $old->id)->where('journal_type', JournalService::ASSET_DISPOSAL)->first());
+
+        $this->artisan('assets:post-missing-disposal-journals')->expectsOutputToContain('Posted 1 disposal journal(s); 1 skipped')->assertSuccessful();
+        $this->artisan('assets:post-missing-disposal-journals')->expectsOutputToContain('Posted 0 disposal journal(s); 1 skipped')->assertSuccessful();
+        $this->actingAs($this->user);
+
+        $journal = $this->disposalJournal($old);
+        $this->assertSame('2026-10-08', $journal->journal_date->toDateString());
+        $this->assertEquals([
+            $this->code('accumulated_depreciation') => [20000.0, 0.0],
+            $this->code('fixed_assets') => [0.0, 1200000.0],
+            $this->code('miscellaneous_expense') => [1180000.0, 0.0],
+        ], $this->lines($journal));
+        $this->assertSame(-1180000.0, (float) $old->fresh()->gain_loss_on_disposal);
+        $this->assertNull($this->disposalJournal($locked));
+        $this->assertSame(1, Journal::where('reference_type', FixedAsset::class)->where('reference_id', $fine->id)->where('journal_type', JournalService::ASSET_DISPOSAL)->count());
     }
 }
