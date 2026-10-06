@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Inventory\AdjustStock;
 use App\Http\Resources\InventoryResource;
 use App\Models\Inventory;
 use App\Models\InventoryHistory;
 use App\Models\Item;
 use App\Models\Warehouse;
-use App\Services\StockValuationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class InventoryController extends BaseApiController
 {
@@ -74,67 +74,43 @@ class InventoryController extends BaseApiController
     }
 
     /**
-     * Adjust inventory quantity
+     * Adjust inventory quantity. Posts the adjustment journal at cost like
+     * the web form (F1): optional unit_cost (stock in), account_id (instead
+     * of Stock Losses), date and warehouse via the record.
      */
-    public function adjust(Request $request, Inventory $inventory): JsonResponse
+    public function adjust(Request $request, Inventory $inventory, AdjustStock $adjust): JsonResponse
     {
         $validated = $request->validate([
-            'quantity' => 'required|numeric',
+            'quantity' => 'required|numeric|min:0',
             'type' => 'required|in:add,subtract,set',
             'reason' => 'required|string|max:255',
             'reference' => 'nullable|string|max:100',
+            'unit_cost' => 'nullable|numeric|min:0',
+            'account_id' => 'nullable|integer',
+            'date' => 'nullable|date|before_or_equal:today',
         ]);
 
-        // The history row used columns inventory_histories doesn't have, so
-        // every API adjustment failed; cost layers weren't kept either. Now
-        // mirrors the web adjustment (found by PHPStan, L5).
-        $result = DB::transaction(function () use ($validated, $inventory) {
-            $inventory = Inventory::whereKey($inventory->id)->lockForUpdate()->firstOrFail();
-            $item = $inventory->item;
-            $previous = (float) $inventory->quantity;
-            $quantity = (float) $validated['quantity'];
+        $mode = match ($validated['type']) {
+            'add' => AdjustStock::IN,
+            'subtract' => AdjustStock::OUT,
+            default => AdjustStock::SET,
+        };
 
-            $new = match ($validated['type']) {
-                'add' => $previous + $quantity,
-                'subtract' => $previous - $quantity,
-                'set' => $quantity,
-            };
-
-            if ($new < 0) {
-                return null;
-            }
-
-            $change = round($new - $previous, 4);
-            $valuation = app(StockValuationService::class);
-            if ($change > 0) {
-                $valuation->addLayer($inventory->tenant_id, $item->id, $change, (float) ($item->cost_price ?? 0),
-                    $inventory->warehouse_id, 'adjustment');
-            } elseif ($change < 0) {
-                $valuation->consumeStock($item, abs($change), $inventory->warehouse_id);
-            }
-
-            $inventory->update(['quantity' => $new]);
-
-            InventoryHistory::create([
-                'tenant_id' => $inventory->tenant_id,
-                'item_id' => $inventory->item_id,
-                'warehouse_id' => $inventory->warehouse_id,
-                'type' => 'adjustment',
-                'quantity' => $change,
-                'reference_type' => 'api_adjustment',
-                'notes' => trim($validated['reason'].(! empty($validated['reference']) ? " (ref {$validated['reference']})" : '')),
-                'created_by' => auth()->id(),
-            ]);
-
-            return $inventory;
-        });
-
-        if (! $result) {
-            return $this->validationError(['quantity' => ['Insufficient inventory quantity']]);
+        try {
+            $adjust->handle($inventory->item, $mode, (float) $validated['quantity'],
+                warehouseId: (int) $inventory->warehouse_id,
+                unitCost: isset($validated['unit_cost']) ? (float) $validated['unit_cost'] : null,
+                reason: trim($validated['reason'].(! empty($validated['reference']) ? " (ref {$validated['reference']})" : '')),
+                accountId: ! empty($validated['account_id']) ? (int) $validated['account_id'] : null,
+                date: $validated['date'] ?? null,
+                label: $mode === AdjustStock::SET ? 'Stock count' : 'Stock adjustment',
+                referenceType: 'api_adjustment',
+                historyType: 'adjustment');
+        } catch (ValidationException $e) {
+            return $this->validationError($e->errors());
         }
-        $inventory = $result;
 
-        $inventory->load(['item']);
+        $inventory = $inventory->fresh(['item']);
 
         return $this->success(new InventoryResource($inventory), 'Inventory adjusted successfully');
     }

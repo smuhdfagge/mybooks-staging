@@ -241,6 +241,7 @@ class Import extends Model
                 'is_taxable' => 'Is Taxable (yes/no)',
                 'track_inventory' => 'Track Inventory (yes/no)',
                 'initial_stock' => 'Initial Stock Quantity',
+                'opening_stock_date' => 'Opening Stock Date (default: today)',
                 'reorder_level' => 'Reorder Level',
                 'sales_account' => 'Sales Account Code',
                 'purchase_account' => 'Purchase Account Code',

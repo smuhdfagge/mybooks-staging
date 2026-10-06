@@ -42,7 +42,7 @@ class LivewirePermissionTest extends TestCase
      * requirePermission(), requireAdmin() or authorizeBulkAction().
      */
     private const UI_ONLY_METHODS = [
-        'cancelDelete', 'clearFilters', 'close', 'closeCancelModal', 'closeRejectModal',
+        'cancelDelete', 'clearFilters', 'close', 'closeCancelModal', 'closeDisposeModal', 'closeRejectModal',
         'closeUpgradeModal', 'getSettingsArray', 'goToStep', 'nextStep', 'openCancelModal',
         'openUpgradeModal', 'previousStep', 'register', 'resetToDefaults', 'selectResult',
         'submit', 'toggleType',

@@ -57,6 +57,7 @@ class AccountCodeService
         'owners_capital' => '3000',
         'retained_earnings' => '3200',
         'income_summary' => '3300',
+        'opening_balance_equity' => '3900', // the other side of opening stock (F1)
 
         // Income
         'sales_revenue' => '4000',

@@ -39,7 +39,7 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Quantity on Hand</p>
-                            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ $inventory->quantity ?? 0 }}</p>
+                            <p class="text-xl font-bold text-gray-900 dark:text-gray-100">{{ rtrim(rtrim(number_format((float) ($inventory->quantity ?? 0), 4), '0'), '.') }}</p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">{{ $item->unit ?? 'units' }}</p>
                         </div>
                     </div>
@@ -54,7 +54,7 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Reserved</p>
-                            <p class="text-2xl font-bold text-orange-600 dark:text-orange-400">{{ $inventory->reserved_quantity ?? 0 }}</p>
+                            <p class="text-xl font-bold text-orange-600 dark:text-orange-400">{{ rtrim(rtrim(number_format((float) ($inventory->reserved_quantity ?? 0), 4), '0'), '.') }}</p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">{{ $item->unit ?? 'units' }}</p>
                         </div>
                     </div>
@@ -69,7 +69,7 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Available</p>
-                            <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ ($inventory->quantity ?? 0) - ($inventory->reserved_quantity ?? 0) }}</p>
+                            <p class="text-xl font-bold text-green-600 dark:text-green-400">{{ rtrim(rtrim(number_format((float) (($inventory->quantity ?? 0) - ($inventory->reserved_quantity ?? 0)), 4), '0'), '.') }}</p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">{{ $item->unit ?? 'units' }}</p>
                         </div>
                     </div>
@@ -84,7 +84,7 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Stock Value</p>
-                            <p class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ number_format(($inventory->quantity ?? 0) * ($item->cost_price ?? 0), 2) }}</p>
+                            <p class="text-lg font-bold whitespace-nowrap text-purple-600 dark:text-purple-400">{{ number_format(($inventory->quantity ?? 0) * ($item->cost_price ?? 0), 2) }}</p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">at cost price</p>
                         </div>
                     </div>
@@ -102,7 +102,7 @@
                     </svg>
                     <div class="ml-3">
                         <p class="text-sm font-medium text-yellow-800 dark:text-yellow-200">Low Stock Warning</p>
-                        <p class="text-sm text-yellow-700 dark:text-yellow-300">Current stock ({{ $inventory->quantity ?? 0 }}) is at or below reorder level ({{ $item->reorder_level }}). Consider reordering.</p>
+                        <p class="text-sm text-yellow-700 dark:text-yellow-300">Current stock ({{ rtrim(rtrim(number_format((float) ($inventory->quantity ?? 0), 4), '0'), '.') }}) is at or below reorder level ({{ $item->reorder_level }}). Consider reordering.</p>
                     </div>
                 </div>
             </div>
@@ -118,34 +118,52 @@
                             </svg>
                             Adjust Inventory
                         </h3>
-                        <form action="{{ route('inventory.adjust', $item) }}" method="POST">
+                        <form action="{{ route('inventory.adjust', $item) }}" method="POST" x-data="{ type: @js(old('type', 'in')) }">
                             @csrf
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label for="type" class="form-label">Adjustment Type</label>
-                                    <select name="type" id="type" required
+                                    <select name="type" id="type" required x-model="type"
                                         class="form-control">
                                         <option value="in">Stock In (Add)</option>
                                         <option value="out">Stock Out (Remove)</option>
-                                        <option value="adjustment">Set Quantity (Override)</option>
+                                        <option value="adjustment">Set Quantity (Stock count)</option>
                                     </select>
+                                </div>
+
+                                <div>
+                                    <x-field name="date" label="Date" type="date" :value="old('date', now()->toDateString())" max="{{ now()->toDateString() }}" />
                                 </div>
 
                                 <x-warehouse-picker wrapper-class="md:col-span-2" label="Warehouse" help="Each warehouse is counted on its own." />
 
                                 <div>
-                                    <label for="quantity" class="form-label">Quantity</label>
-                                    <input type="number" name="quantity" id="quantity" min="0" step="0.0001" required
+                                    <label for="quantity" class="form-label" x-text="type === 'adjustment' ? 'Quantity counted' : 'Quantity'">Quantity</label>
+                                    <input type="number" name="quantity" id="quantity" min="0" step="0.0001" required value="{{ old('quantity') }}"
                                         class="form-control"
                                         placeholder="Enter quantity">
                                     @error('quantity')<p class="form-error">{{ $message }}</p>@enderror
                                 </div>
 
+                                <div x-show="type !== 'out'">
+                                    <x-field name="unit_cost" label="Cost per unit (for stock added)" type="number" step="0.01" min="0" :value="old('unit_cost')"
+                                        placeholder="Current average cost" help="Leave empty to use the current average cost." />
+                                </div>
+
                                 <div class="md:col-span-2">
-                                    <label for="notes" class="form-label">Notes / Reason</label>
-                                    <textarea name="notes" id="notes" rows="2"
-                                        class="form-control"
-                                        placeholder="e.g., Purchase order #123, Damaged goods, Physical count adjustment"></textarea>
+                                    <x-field name="account_id" label="Post against" type="select"
+                                        help="Stock lost or found goes to Stock Losses. If you paid for found stock, choose the account you paid from. Goods bought from a supplier should be entered as a bill instead.">
+                                        <option value="">Stock Losses (usual)</option>
+                                        @foreach($accounts as $account)
+                                            @continue($account->account_code === $stockLosses)
+                                            <option value="{{ $account->id }}" @selected((string) old('account_id') === (string) $account->id)>{{ $account->account_code }} - {{ $account->name }}</option>
+                                        @endforeach
+                                    </x-field>
+                                </div>
+
+                                <div class="md:col-span-2">
+                                    <x-field name="notes" label="Reason" type="textarea" rows="2" :value="old('notes')"
+                                        placeholder="e.g. Physical count, damaged in store, found in back room" />
                                 </div>
 
                                 <div class="md:col-span-2">

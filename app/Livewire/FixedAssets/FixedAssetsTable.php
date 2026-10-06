@@ -2,6 +2,7 @@
 
 namespace App\Livewire\FixedAssets;
 
+use App\Actions\FixedAssets\WriteOffAssets;
 use App\Livewire\Concerns\ChecksPermissions;
 use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\FixedAsset;
@@ -35,6 +36,15 @@ class FixedAssetsTable extends Component
     public $successMessage = '';
 
     public $errorMessage = '';
+
+    // Bulk write-off (F2)
+    public bool $showDisposeModal = false;
+
+    public $disposalDate = '';
+
+    public $disposalMethod = 'scrapped';
+
+    public $disposalReason = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
@@ -143,16 +153,20 @@ class FixedAssetsTable extends Component
 
         switch ($this->bulkAction) {
             case 'activate':
-                FixedAsset::whereIn('id', $this->selectedItems)->update(['status' => 'active']);
-                $this->successMessage = "Successfully activated {$count} asset(s).";
+                // A disposed or sold asset is out of the books; making it
+                // active again here would leave its disposal journal standing (F2).
+                $activated = FixedAsset::whereIn('id', $this->selectedItems)
+                    ->whereNotIn('status', [FixedAsset::STATUS_DISPOSED, FixedAsset::STATUS_SOLD])
+                    ->update(['status' => 'active']);
+                $this->successMessage = "Successfully activated {$activated} asset(s).".($activated < $count ? ' Disposed or sold assets were left as they are.' : '');
                 break;
 
             case 'dispose':
-                FixedAsset::whereIn('id', $this->selectedItems)
-                    ->where('status', 'active')
-                    ->update(['status' => 'disposed', 'disposal_date' => now()]);
-                $this->successMessage = 'Successfully disposed selected asset(s).';
-                break;
+                // Ask for the date and reason first; disposeSelected() does it (F2).
+                $this->disposalDate = $this->disposalDate ?: now()->toDateString();
+                $this->showDisposeModal = true;
+
+                return;
 
             case 'delete':
                 $deletedCount = 0;
@@ -193,6 +207,40 @@ class FixedAssetsTable extends Component
         $this->selectedItems = [];
         $this->selectAll = false;
         $this->bulkAction = '';
+    }
+
+    /**
+     * Write off the selected assets (F2): each through the normal disposal,
+     * with no money received, so each posts its disposal journal.
+     */
+    public function disposeSelected(WriteOffAssets $writeOff): void
+    {
+        $this->bulkAction = 'dispose';
+        $this->authorizeBulkAction();
+        $this->validate([
+            'disposalDate' => 'required|date|before_or_equal:today',
+            'disposalMethod' => 'required|in:'.implode(',', WriteOffAssets::METHODS),
+            'disposalReason' => 'nullable|string|max:500',
+        ], [], ['disposalDate' => 'disposal date', 'disposalMethod' => 'how they were disposed of']);
+
+        $result = $writeOff->handle($this->selectedItems, $this->disposalDate, $this->disposalMethod, $this->disposalReason);
+
+        $this->successMessage = "Disposed of {$result['disposed']} asset(s), each with its disposal journal."
+            .($result['skipped'] ? " Skipped {$result['skipped']} already disposed or sold." : '');
+        $this->errorMessage = $result['failed']
+            ? count($result['failed']).' could not be disposed: '.collect($result['failed'])->map(fn ($why, $name) => "{$name} ({$why})")->implode('; ').'.'
+            : '';
+
+        $this->showDisposeModal = false;
+        $this->disposalReason = '';
+        $this->selectedItems = [];
+        $this->selectAll = false;
+        $this->bulkAction = '';
+    }
+
+    public function closeDisposeModal(): void
+    {
+        $this->showDisposeModal = false;
     }
 
     public function render()
