@@ -57,6 +57,7 @@ class ChartOfAccountService
             ['account_code' => '3000', 'name' => 'Owner\'s Capital', 'type' => 'equity', 'sub_type' => 'equity'],
             ['account_code' => '3100', 'name' => 'Owner\'s Draw', 'type' => 'equity', 'sub_type' => 'equity'],
             ['account_code' => '3200', 'name' => 'Retained Earnings', 'type' => 'equity', 'sub_type' => 'retained_earnings'],
+            ['account_code' => '3900', 'name' => 'Opening Balance Equity', 'type' => 'equity', 'sub_type' => 'equity'],
 
             // Revenue (4000-4999)
             ['account_code' => '4000', 'name' => 'Sales Revenue', 'type' => 'income', 'sub_type' => 'income'],

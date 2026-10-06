@@ -2,12 +2,14 @@
 
 namespace App\Livewire\Inventory;
 
+use App\Actions\Inventory\AdjustStock;
 use App\Livewire\Concerns\ChecksPermissions;
 use App\Livewire\Concerns\LimitsPageSize;
 use App\Models\Inventory;
 use App\Models\Item;
 use App\Models\ItemCategory;
 use App\Models\Warehouse;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -181,13 +183,28 @@ class InventoryTable extends Component
 
         switch ($this->bulkAction) {
             case 'reset_quantity':
-                foreach ($this->selectedItems as $itemId) {
-                    // Every warehouse's record, or only the one shown (session 12).
-                    Inventory::where('item_id', $itemId)
-                        ->when($this->warehouseId(), fn ($q, $w) => $q->where('warehouse_id', $w))
-                        ->update(['quantity' => 0]);
+                // A count to zero for each record, through the adjustment
+                // action so the stock leaves its cost layers and posts
+                // Dr Stock Losses, Cr Inventory (F1). It used to set the
+                // quantity straight in the table.
+                $reset = 0;
+                $problems = [];
+                $records = Inventory::with('item')->whereIn('item_id', $this->selectedItems)
+                    ->when($this->warehouseId(), fn ($q, $w) => $q->where('warehouse_id', $w))
+                    ->where('quantity', '!=', 0)->get();
+                foreach ($records as $record) {
+                    try {
+                        app(AdjustStock::class)->handle($record->item, AdjustStock::SET, 0, warehouseId: (int) $record->warehouse_id,
+                            reason: 'Reset to zero from the stock list', label: 'Stock reset');
+                        $reset++;
+                    } catch (ValidationException $e) {
+                        $problems[] = $record->item->name.': '.collect($e->errors())->flatten()->first();
+                    }
                 }
-                $this->successMessage = "Successfully reset quantity for {$count} item(s).";
+                $this->successMessage = "Reset the quantity to zero for {$reset} stock record(s).";
+                if ($problems) {
+                    $this->errorMessage = count($problems).' could not be reset: '.implode(' ', $problems);
+                }
                 break;
 
             case 'disable_tracking':

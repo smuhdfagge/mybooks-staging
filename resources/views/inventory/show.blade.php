@@ -118,34 +118,52 @@
                             </svg>
                             Adjust Inventory
                         </h3>
-                        <form action="{{ route('inventory.adjust', $item) }}" method="POST">
+                        <form action="{{ route('inventory.adjust', $item) }}" method="POST" x-data="{ type: @js(old('type', 'in')) }">
                             @csrf
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label for="type" class="form-label">Adjustment Type</label>
-                                    <select name="type" id="type" required
+                                    <select name="type" id="type" required x-model="type"
                                         class="form-control">
                                         <option value="in">Stock In (Add)</option>
                                         <option value="out">Stock Out (Remove)</option>
-                                        <option value="adjustment">Set Quantity (Override)</option>
+                                        <option value="adjustment">Set Quantity (Stock count)</option>
                                     </select>
+                                </div>
+
+                                <div>
+                                    <x-field name="date" label="Date" type="date" :value="old('date', now()->toDateString())" max="{{ now()->toDateString() }}" />
                                 </div>
 
                                 <x-warehouse-picker wrapper-class="md:col-span-2" label="Warehouse" help="Each warehouse is counted on its own." />
 
                                 <div>
-                                    <label for="quantity" class="form-label">Quantity</label>
-                                    <input type="number" name="quantity" id="quantity" min="0" step="0.0001" required
+                                    <label for="quantity" class="form-label" x-text="type === 'adjustment' ? 'Quantity counted' : 'Quantity'">Quantity</label>
+                                    <input type="number" name="quantity" id="quantity" min="0" step="0.0001" required value="{{ old('quantity') }}"
                                         class="form-control"
                                         placeholder="Enter quantity">
                                     @error('quantity')<p class="form-error">{{ $message }}</p>@enderror
                                 </div>
 
+                                <div x-show="type !== 'out'">
+                                    <x-field name="unit_cost" label="Cost per unit (for stock added)" type="number" step="0.01" min="0" :value="old('unit_cost')"
+                                        placeholder="Current average cost" help="Leave empty to use the current average cost." />
+                                </div>
+
                                 <div class="md:col-span-2">
-                                    <label for="notes" class="form-label">Notes / Reason</label>
-                                    <textarea name="notes" id="notes" rows="2"
-                                        class="form-control"
-                                        placeholder="e.g., Purchase order #123, Damaged goods, Physical count adjustment"></textarea>
+                                    <x-field name="account_id" label="Post against" type="select"
+                                        help="Stock lost or found goes to Stock Losses. If you paid for found stock, choose the account you paid from. Goods bought from a supplier should be entered as a bill instead.">
+                                        <option value="">Stock Losses (usual)</option>
+                                        @foreach($accounts as $account)
+                                            @continue($account->account_code === $stockLosses)
+                                            <option value="{{ $account->id }}" @selected((string) old('account_id') === (string) $account->id)>{{ $account->account_code }} - {{ $account->name }}</option>
+                                        @endforeach
+                                    </x-field>
+                                </div>
+
+                                <div class="md:col-span-2">
+                                    <x-field name="notes" label="Reason" type="textarea" rows="2" :value="old('notes')"
+                                        placeholder="e.g. Physical count, damaged in store, found in back room" />
                                 </div>
 
                                 <div class="md:col-span-2">

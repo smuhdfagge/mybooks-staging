@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Actions\Inventory\AdjustStock;
 use App\Models\Budget;
 use App\Models\BudgetLine;
 use App\Models\ChartOfAccount;
@@ -11,8 +12,6 @@ use App\Models\Designation;
 use App\Models\Employee;
 use App\Models\Expense;
 use App\Models\Import;
-use App\Models\Inventory;
-use App\Models\InventoryHistory;
 use App\Models\Item;
 use App\Models\ItemCategory;
 use App\Models\Journal;
@@ -478,55 +477,19 @@ class ImportService
 
                 if ($existing) {
                     if ($updateExisting) {
-                        $existing->update($this->prepareItemData($mapped, $type, $categories, $accounts));
+                        DB::transaction(function () use ($existing, $mapped, $type, $categories, $accounts) {
+                            $existing->update($this->prepareItemData($mapped, $type, $categories, $accounts));
 
-                        // Create inventory record if doesn't exist and tracking is enabled
-                        if ($existing->track_inventory && ! $existing->inventory) {
-                            $initialStock = isset($mapped['initial_stock']) && $mapped['initial_stock'] !== '' ? (int) $mapped['initial_stock'] : 0;
-
-                            Inventory::create([
-                                'tenant_id' => $this->tenantId,
-                                'item_id' => $existing->id,
-                                'quantity' => $initialStock,
-                                'reserved_quantity' => 0,
-                                'unit_cost' => $existing->cost_price ?? 0,
-                            ]);
-
-                            if ($initialStock > 0) {
-                                InventoryHistory::create([
-                                    'tenant_id' => $this->tenantId,
-                                    'item_id' => $existing->id,
-                                    'type' => 'in',
-                                    'quantity' => $initialStock,
-                                    'notes' => 'Initial stock from import',
-                                    'created_by' => auth()->id(),
-                                ]);
+                            // Create inventory record if doesn't exist and tracking is enabled
+                            if ($existing->track_inventory && ! $existing->inventory) {
+                                $this->openingStock($existing, $mapped);
                             }
-                        }
+                        });
                         $successful++;
                     } elseif ($skipDuplicates) {
                         // Still create inventory record if missing for skipped duplicates
                         if ($existing->track_inventory && ! $existing->inventory) {
-                            $initialStock = isset($mapped['initial_stock']) && $mapped['initial_stock'] !== '' ? (int) $mapped['initial_stock'] : 0;
-
-                            Inventory::create([
-                                'tenant_id' => $this->tenantId,
-                                'item_id' => $existing->id,
-                                'quantity' => $initialStock,
-                                'reserved_quantity' => 0,
-                                'unit_cost' => $existing->cost_price ?? 0,
-                            ]);
-
-                            if ($initialStock > 0) {
-                                InventoryHistory::create([
-                                    'tenant_id' => $this->tenantId,
-                                    'item_id' => $existing->id,
-                                    'type' => 'in',
-                                    'quantity' => $initialStock,
-                                    'notes' => 'Initial stock from import',
-                                    'created_by' => auth()->id(),
-                                ]);
-                            }
+                            $this->openingStock($existing, $mapped);
                         }
                         $skipped++;
                     } else {
@@ -557,32 +520,13 @@ class ImportService
                     $this->prepareItemData($mapped, $type, $categories, $accounts)
                 );
 
-                $item = Item::create($itemData);
-
-                // Create inventory record if tracking inventory
-                if ($item->track_inventory) {
-                    $initialStock = isset($mapped['initial_stock']) && $mapped['initial_stock'] !== '' ? (int) $mapped['initial_stock'] : 0;
-
-                    Inventory::create([
-                        'tenant_id' => $this->tenantId,
-                        'item_id' => $item->id,
-                        'quantity' => $initialStock,
-                        'reserved_quantity' => 0,
-                        'unit_cost' => $item->cost_price ?? 0,
-                    ]);
-
-                    // Record initial stock in history if there's stock
-                    if ($initialStock > 0) {
-                        InventoryHistory::create([
-                            'tenant_id' => $this->tenantId,
-                            'item_id' => $item->id,
-                            'type' => 'in',
-                            'quantity' => $initialStock,
-                            'notes' => 'Initial stock from import',
-                            'created_by' => auth()->id(),
-                        ]);
+                // The item and its opening stock together, or neither (F1).
+                DB::transaction(function () use ($itemData, $mapped) {
+                    $item = Item::create($itemData);
+                    if ($item->track_inventory) {
+                        $this->openingStock($item, $mapped);
                     }
-                }
+                });
 
                 $successful++;
 
@@ -601,6 +545,36 @@ class ImportService
         ]);
 
         return true;
+    }
+
+    /**
+     * An imported item's stock record and opening stock (F1). The opening
+     * quantity goes in as a cost layer at the item's cost price and posts
+     * Dr Inventory, Cr Opening Balance Equity, dated the row's opening stock
+     * date (default today). It used to set the quantity with no cost layer
+     * and no journal, so the Inventory account never saw it.
+     */
+    protected function openingStock(Item $item, array $mapped): void
+    {
+        $quantity = isset($mapped['initial_stock']) && $mapped['initial_stock'] !== '' ? round((float) $mapped['initial_stock'], 4) : 0.0;
+        $valuation = app(StockValuationService::class);
+        $row = $valuation->stockRow($this->tenantId, $item->id);
+        if ($row->wasRecentlyCreated) {
+            $row->unit_cost = $item->cost_price ?? 0;
+            $row->save();
+        }
+        if ($quantity <= 0) {
+            return;
+        }
+
+        $date = ! empty($mapped['opening_stock_date']) ? $this->parseDate((string) $mapped['opening_stock_date']) : now()->toDateString();
+        app(AdjustStock::class)->handle($item, AdjustStock::IN, $quantity,
+            unitCost: (float) ($item->cost_price ?? 0),
+            reason: 'Initial stock from import',
+            date: $date,
+            label: 'Opening stock',
+            referenceType: 'opening_stock',
+            offsetKey: 'opening_balance_equity');
     }
 
     /**

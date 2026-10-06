@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Inventory\AdjustStock;
+use App\Models\ChartOfAccount;
 use App\Models\Inventory;
-use App\Models\InventoryHistory;
 use App\Models\InventoryLayer;
 use App\Models\Item;
 use App\Models\Warehouse;
+use App\Services\AccountCodeService;
 use App\Services\StockValuationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 class InventoryController extends Controller
 {
@@ -25,8 +25,14 @@ class InventoryController extends Controller
         $inventory = $item->inventory;
         $history = $item->inventoryHistory()->with('warehouse')->latest()->paginate(20);
         $byWarehouse = $this->stockByWarehouse($item);
+        // Accounts the adjustment can post against instead of Stock Losses (F1).
+        $tenantId = auth()->user()->tenant_id;
+        $inventoryCode = AccountCodeService::resolve($tenantId, 'inventory');
+        $accounts = ChartOfAccount::where('is_active', true)->where('account_code', '!=', $inventoryCode)
+            ->orderBy('account_code')->get(['id', 'account_code', 'name']);
+        $stockLosses = AccountCodeService::resolve($tenantId, 'stock_losses');
 
-        return view('inventory.show', compact('item', 'inventory', 'history', 'byWarehouse'));
+        return view('inventory.show', compact('item', 'inventory', 'history', 'byWarehouse', 'accounts', 'stockLosses'));
     }
 
     /**
@@ -51,75 +57,33 @@ class InventoryController extends Controller
             ->values();
     }
 
-    public function adjust(Request $request, Item $item)
+    public function adjust(Request $request, Item $item, AdjustStock $adjust)
     {
+        $tenantId = auth()->user()->tenant_id;
         $validated = $request->validate([
             'type' => 'required|in:in,out,adjustment',
-            'quantity' => 'required|numeric|min:0.0001',
+            'quantity' => 'required|numeric|min:0',
             'unit_cost' => 'nullable|numeric|min:0',
-            'warehouse_id' => Warehouse::rule(auth()->user()->tenant_id),
+            'warehouse_id' => Warehouse::rule($tenantId),
+            'account_id' => 'nullable|integer',
+            'date' => 'nullable|date|before_or_equal:today',
             'batch_number' => 'nullable|string|max:100',
-            'notes' => 'nullable|string',
+            'notes' => 'nullable|string|max:500',
         ]);
 
-        $tenantId = auth()->user()->tenant_id;
         // Each warehouse is counted on its own (session 12); default warehouse if none is chosen.
         $warehouseId = Warehouse::resolveIdFor($tenantId, $validated['warehouse_id'] ?? null, true);
-        $valuationService = app(StockValuationService::class);
-        $quantity = (float) $validated['quantity'];
-        $unitCost = (float) ($validated['unit_cost'] ?? ($item->cost_price ?? 0));
+        $mode = $validated['type'] === 'adjustment' ? AdjustStock::SET : $validated['type'];
 
-        DB::transaction(function () use ($validated, $item, $tenantId, $warehouseId, $valuationService, $quantity, $unitCost) {
-            $inventory = $valuationService->stockRow($tenantId, $item->id, $warehouseId);
-            if ($inventory->wasRecentlyCreated) {
-                $inventory->unit_cost = $item->cost_price ?? 0;
-            }
-
-            $change = match ($validated['type']) {
-                'in' => $quantity,
-                'out' => -$quantity,
-                default => round($quantity - (float) $inventory->quantity, 4),
-            };
-
-            // Stock can't go below what is reserved for invoices, or below zero.
-            $free = (float) $inventory->quantity - (float) $inventory->reserved_quantity;
-            if ($change < 0 && -$change - $free > 0.00001) {
-                throw ValidationException::withMessages(['quantity' => 'Only '.rtrim(rtrim(number_format(max(0, $free), 4, '.', ''), '0'), '.').' is free in this warehouse, so you can\'t take out '.rtrim(rtrim(number_format(-$change, 4, '.', ''), '0'), '.').'.']);
-            }
-
-            if ($change > 0) {
-                $valuationService->updateWeightedAverageCost($inventory, $change, $unitCost);
-                InventoryLayer::create([
-                    'tenant_id' => $tenantId,
-                    'item_id' => $item->id,
-                    'warehouse_id' => $warehouseId,
-                    'quantity' => $change,
-                    'remaining_quantity' => $change,
-                    'unit_cost' => $unitCost,
-                    'reference_type' => 'adjustment',
-                    'batch_number' => $validated['batch_number'] ?? null,
-                    'received_date' => now()->toDateString(),
-                ]);
-            } elseif ($change < 0) {
-                // Counting stock down used to leave the cost layers as they were.
-                $valuationService->consumeStock($item, -$change, $warehouseId);
-            }
-
-            $inventory->quantity = round((float) $inventory->quantity + $change, 4);
-            $inventory->save();
-
-            InventoryHistory::create([
-                'tenant_id' => $tenantId,
-                'item_id' => $item->id,
-                'warehouse_id' => $warehouseId,
-                'type' => $validated['type'],
-                'quantity' => $validated['type'] === 'adjustment' ? $change : $quantity,
-                'notes' => $validated['type'] === 'adjustment'
-                    ? trim('Counted: '.rtrim(rtrim(number_format($quantity, 4, '.', ''), '0'), '.').'. '.($validated['notes'] ?? ''))
-                    : ($validated['notes'] ?? null),
-                'created_by' => auth()->id(),
-            ]);
-        });
+        // Posts Dr/Cr Stock Losses against Inventory at cost (F1).
+        $adjust->handle($item, $mode, (float) $validated['quantity'],
+            warehouseId: $warehouseId,
+            unitCost: isset($validated['unit_cost']) && $validated['unit_cost'] !== '' ? (float) $validated['unit_cost'] : null,
+            reason: $validated['notes'] ?? null,
+            accountId: ! empty($validated['account_id']) ? (int) $validated['account_id'] : null,
+            date: $validated['date'] ?? null,
+            batchNumber: $validated['batch_number'] ?? null,
+            label: $mode === AdjustStock::SET ? 'Stock count' : 'Stock adjustment');
 
         $request->session()->put('warehouse.last', $warehouseId);
 
