@@ -66,6 +66,7 @@ class AccountCodeService
         // COGS
         'cost_of_goods_sold' => '5000',
         'stock_losses' => '5400', // goods lost on a stock transfer (session 13)
+        'production_costs_applied' => '5500', // assembly extra costs moved into stock (session 14)
 
         // Expenses
         'salaries_wages' => '6000',

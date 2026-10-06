@@ -23,8 +23,8 @@ To start a session, say: **"Do session N of docs/FEATURE-PLAN.md"**.
 | 10 | Customer and supplier statements (PDF, email, bulk send) and AR/AP control reconciliation | `feature/statements-reconciliation` | Merged (#31) |
 | 11 | Audit lock dates: staff and adviser locks, logged reopen with reason | `feature/audit-lock-dates` | Merged (#33) |
 | 12 | Warehouses: stock per location, default warehouse for existing stock | `feature/warehouses` | Merged (#34) |
-| 13 | Stock transfers between warehouses | `feature/stock-transfers` | Done, PR open |
-| 14 | Assembly / bill of materials | — | To do (after 12) |
+| 13 | Stock transfers between warehouses | `feature/stock-transfers` | Merged (#35) |
+| 14 | Assembly / bill of materials | `feature/assembly` | Done, PR open |
 
 `wip/payroll-remit-alt` is an earlier duplicate of item 1; ignore it and delete it once #17 merges.
 

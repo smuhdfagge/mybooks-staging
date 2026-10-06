@@ -2,56 +2,131 @@
 
 namespace App\Models;
 
+use App\Enums\AssemblyOrderStatus;
+use App\Http\Middleware\EnsureFeatureEnabled;
 use App\Traits\BelongsToTenant;
+use App\Traits\GuardsStatusTransitions;
 use App\Traits\HasDocumentNumber;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * An assembly order (session 14): making a quantity of a finished item from
+ * its bill of materials ("build"), or taking finished items apart again
+ * ("break down", for kits and hampers).
+ *
+ * The quantity is always in units of the finished item (bags, hampers,
+ * blocks), not batches: 80 bags from a bill that makes 40 is 2 batches.
+ * warehouse_id is where the components come from (a build) or the
+ * finished items (a break-down); to_warehouse_id is where the result goes.
+ *
+ * The work is done by the actions in App\Actions\Assembly. The old
+ * complete() method here costed components at their cost price, took
+ * nothing out of the cost layers, let stock go negative and never found its
+ * bill of materials (wrong column), so it is gone.
+ */
 class AssemblyOrder extends Model
 {
     use BelongsToTenant, HasFactory, LogsActivity;
-    use HasDocumentNumber;
+    use GuardsStatusTransitions, HasDocumentNumber;
 
     const STATUS_DRAFT = 'draft';
-
-    const STATUS_IN_PROGRESS = 'in_progress';
 
     const STATUS_COMPLETED = 'completed';
 
     const STATUS_CANCELLED = 'cancelled';
 
+    const KIND_BUILD = 'build';
+
+    const KIND_BREAKDOWN = 'breakdown';
+
     protected $fillable = [
         'tenant_id',
         'order_number',
+        'kind',
+        'assembly_date',
         'bill_of_materials_id',
         'warehouse_id',
+        'to_warehouse_id',
         'quantity',
+        'planned_quantity',
+        'quantity_made',
         'status',
+        'components_cost',
+        'extra_cost',
         'total_cost',
+        'unit_cost',
         'notes',
         'completed_at',
+        'cancelled_at',
         'created_by',
     ];
 
     protected $casts = [
+        'assembly_date' => 'date',
         'quantity' => 'decimal:4',
+        'planned_quantity' => 'decimal:4',
+        'quantity_made' => 'decimal:4',
+        'components_cost' => 'decimal:2',
+        'extra_cost' => 'decimal:2',
         'total_cost' => 'decimal:2',
+        'unit_cost' => 'decimal:4',
         'completed_at' => 'datetime',
+        'cancelled_at' => 'datetime',
     ];
 
-    /** @return BelongsTo<BillOfMaterial, $this> */
+    /**
+     * The old relation looked for bill_of_material_id, so it never found
+     * the bill (session 14).
+     *
+     * @return BelongsTo<BillOfMaterial, $this>
+     */
     public function billOfMaterial(): BelongsTo
     {
-        return $this->belongsTo(BillOfMaterial::class);
+        return $this->belongsTo(BillOfMaterial::class, 'bill_of_materials_id');
     }
 
-    /** @return BelongsTo<Warehouse, $this> */
+    /**
+     * Where the components (a build) or finished items (a break-down) come from.
+     *
+     * @return BelongsTo<Warehouse, $this>
+     */
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class);
+    }
+
+    /**
+     * Where the result goes.
+     *
+     * @return BelongsTo<Warehouse, $this>
+     */
+    public function toWarehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class, 'to_warehouse_id');
+    }
+
+    /**
+     * Components used (a build) or got back (a break-down).
+     *
+     * @return HasMany<AssemblyOrderItem, $this>
+     */
+    public function items(): HasMany
+    {
+        return $this->hasMany(AssemblyOrderItem::class);
+    }
+
+    /**
+     * Extra costs (builds only).
+     *
+     * @return HasMany<AssemblyOrderCost, $this>
+     */
+    public function costs(): HasMany
+    {
+        return $this->hasMany(AssemblyOrderCost::class);
     }
 
     /** @return BelongsTo<User, $this> */
@@ -60,119 +135,58 @@ class AssemblyOrder extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function isDraft(): bool
+    {
+        return $this->status === self::STATUS_DRAFT;
+    }
+
+    public function isCompleted(): bool
+    {
+        return $this->status === self::STATUS_COMPLETED;
+    }
+
+    public function isBreakdown(): bool
+    {
+        return $this->kind === self::KIND_BREAKDOWN;
+    }
+
+    /** Finished units planned (old orders kept batches in quantity). */
+    public function plannedQuantity(): float
+    {
+        if ($this->planned_quantity !== null) {
+            return (float) $this->planned_quantity;
+        }
+        $output = (float) ($this->billOfMaterial()->withoutGlobalScopes()->value('output_quantity') ?: 1);
+
+        return round((float) $this->quantity * $output, 4);
+    }
+
+    /** The date stock moves on (old orders had none: the day they were made). */
+    public function movementDate(): string
+    {
+        return ($this->assembly_date ?? $this->created_at ?? now())->toDateString();
+    }
+
+    /** "Build" or "Break-down", for headings. */
+    public function kindLabel(): string
+    {
+        return $this->isBreakdown() ? 'Break-down' : 'Build';
+    }
+
+    public static function moduleOn(): bool
+    {
+        return EnsureFeatureEnabled::enabled('assembly');
+    }
+
     /** @return array{0: string, 1: string, 2: int} */
     protected static function documentNumberFormat(): array
     {
-        return ['order_number', 'ASM-', 5];
+        return ['order_number', 'ASM-', 6];
     }
 
-    /**
-     * Build/assemble: consume components, produce finished item.
-     */
-    public function complete(): void
+    /** Allowed status moves. */
+    protected static function statusEnum(): string
     {
-        if ($this->status !== self::STATUS_DRAFT && $this->status !== self::STATUS_IN_PROGRESS) {
-            throw new \RuntimeException('Only draft or in-progress assembly orders can be completed.');
-        }
-
-        $bom = $this->billOfMaterial()->with('components.item')->first();
-
-        if (! $bom) {
-            throw new \RuntimeException('Bill of materials not found.');
-        }
-
-        DB::transaction(function () use ($bom) {
-            $totalCost = 0;
-            // Stock is kept per warehouse (session 12): none chosen means the default one.
-            $warehouseId = $this->warehouse_id ?: Warehouse::defaultIdFor($this->tenant_id);
-
-            // 1. Consume component items
-            foreach ($bom->components as $component) {
-                $required = $component->effective_quantity * (float) $this->quantity;
-                $item = $component->item;
-
-                if (! $item || ! $item->track_inventory) {
-                    continue;
-                }
-
-                $inventoryQuery = Inventory::where('tenant_id', $this->tenant_id)
-                    ->where('item_id', $component->item_id);
-
-                $inventoryQuery->where('warehouse_id', $warehouseId);
-
-                $inventory = $inventoryQuery->first();
-
-                if ($inventory) {
-                    $inventory->quantity -= $required;
-                    $inventory->save();
-                }
-
-                $totalCost += $required * ($item->cost_price ?? 0);
-
-                InventoryHistory::create([
-                    'tenant_id' => $this->tenant_id,
-                    'item_id' => $component->item_id,
-                    'type' => 'out',
-                    'quantity' => $required,
-                    'reference_type' => 'assembly_order',
-                    'reference_id' => $this->id,
-                    'notes' => "Consumed for assembly #{$this->order_number}",
-                    'created_by' => auth()->id(),
-                ]);
-            }
-
-            // 2. Produce finished goods
-            $outputQty = (float) $this->quantity * (float) $bom->output_quantity;
-            $finishedItem = $bom->item;
-
-            if ($finishedItem && $finishedItem->track_inventory) {
-                $inventory = Inventory::firstOrCreate(
-                    [
-                        'tenant_id' => $this->tenant_id,
-                        'item_id' => $finishedItem->id,
-                        'warehouse_id' => $warehouseId,
-                    ],
-                    ['quantity' => 0, 'reserved_quantity' => 0, 'unit_cost' => 0]
-                );
-
-                // Update weighted average cost
-                $existingValue = (float) $inventory->quantity * (float) $inventory->unit_cost;
-                $newValue = $existingValue + $totalCost;
-                $newTotalQty = (float) $inventory->quantity + $outputQty;
-                $inventory->unit_cost = $newTotalQty > 0 ? $newValue / $newTotalQty : 0;
-                $inventory->quantity += $outputQty;
-                $inventory->save();
-
-                // Create inventory layer
-                InventoryLayer::create([
-                    'tenant_id' => $this->tenant_id,
-                    'item_id' => $finishedItem->id,
-                    'warehouse_id' => $warehouseId,
-                    'quantity' => $outputQty,
-                    'remaining_quantity' => $outputQty,
-                    'unit_cost' => $outputQty > 0 ? $totalCost / $outputQty : 0,
-                    'reference_type' => 'assembly_order',
-                    'reference_id' => $this->id,
-                    'received_date' => now()->toDateString(),
-                ]);
-
-                InventoryHistory::create([
-                    'tenant_id' => $this->tenant_id,
-                    'item_id' => $finishedItem->id,
-                    'type' => 'in',
-                    'quantity' => $outputQty,
-                    'reference_type' => 'assembly_order',
-                    'reference_id' => $this->id,
-                    'notes' => "Assembled via #{$this->order_number}",
-                    'created_by' => auth()->id(),
-                ]);
-            }
-
-            $this->update([
-                'status' => self::STATUS_COMPLETED,
-                'total_cost' => $totalCost,
-                'completed_at' => now(),
-            ]);
-        });
+        return AssemblyOrderStatus::class;
     }
 }

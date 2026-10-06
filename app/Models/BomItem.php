@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/** A component line of a bill of materials: quantity per batch and wastage %. */
 class BomItem extends Model
 {
     use HasFactory;

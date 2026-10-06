@@ -6,6 +6,7 @@ use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AllowanceController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\Api\SearchController;
+use App\Http\Controllers\AssemblyOrderController;
 use App\Http\Controllers\BankController;
 use App\Http\Controllers\BillController;
 use App\Http\Controllers\BillingController;
@@ -287,14 +288,16 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::delete('stock-transfers/{stockTransfer}', [StockTransferController::class, 'destroy'])->name('stock-transfers.destroy');
     });
 
+    // Assembly with bills of materials (session 14).
     Route::middleware('feature:assembly')->group(function () {
-        // Bill of Materials
+        // Bills of materials
         Route::middleware('permission:create items')->group(function () {
             Route::get('bill-of-materials/create', [BillOfMaterialController::class, 'create'])->name('bill-of-materials.create');
             Route::post('bill-of-materials', [BillOfMaterialController::class, 'store'])->name('bill-of-materials.store');
         });
         Route::middleware('permission:view items')->group(function () {
             Route::get('bill-of-materials', [BillOfMaterialController::class, 'index'])->name('bill-of-materials.index');
+            Route::get('bill-of-materials/items', [BillOfMaterialController::class, 'items'])->middleware('throttle:120,1')->name('bill-of-materials.items');
             Route::get('bill-of-materials/{billOfMaterial}', [BillOfMaterialController::class, 'show'])->name('bill-of-materials.show');
         });
         Route::middleware('permission:edit items')->group(function () {
@@ -305,13 +308,21 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
             ->middleware('permission:delete items')
             ->name('bill-of-materials.destroy');
 
-        // Assembly Orders
+        // Assembly orders (builds and break-downs)
         Route::middleware('permission:adjust inventory')->group(function () {
-            Route::get('assembly-orders', [BillOfMaterialController::class, 'assemblyOrders'])->name('assembly-orders.index');
-            Route::get('bill-of-materials/{billOfMaterial}/assemble', [BillOfMaterialController::class, 'createAssemblyOrder'])->name('assembly-orders.create');
-            Route::post('bill-of-materials/{billOfMaterial}/assemble', [BillOfMaterialController::class, 'storeAssemblyOrder'])->name('assembly-orders.store');
-            Route::get('assembly-orders/{assemblyOrder}', [BillOfMaterialController::class, 'showAssemblyOrder'])->name('assembly-orders.show');
-            Route::post('assembly-orders/{assemblyOrder}/complete', [BillOfMaterialController::class, 'completeAssemblyOrder'])->name('assembly-orders.complete');
+            Route::get('assembly-orders', [AssemblyOrderController::class, 'index'])->name('assembly-orders.index');
+            Route::get('assembly-orders/create', [AssemblyOrderController::class, 'create'])->name('assembly-orders.create');
+            Route::get('assembly-orders/availability', [AssemblyOrderController::class, 'availability'])->middleware('throttle:120,1')->name('assembly-orders.availability');
+            Route::get('assembly-orders/report', [AssemblyOrderController::class, 'report'])->name('assembly-orders.report');
+            Route::post('assembly-orders', [AssemblyOrderController::class, 'store'])->name('assembly-orders.store');
+            Route::get('assembly-orders/{assemblyOrder}', [AssemblyOrderController::class, 'show'])->name('assembly-orders.show');
+            Route::get('assembly-orders/{assemblyOrder}/edit', [AssemblyOrderController::class, 'edit'])->name('assembly-orders.edit');
+            Route::put('assembly-orders/{assemblyOrder}', [AssemblyOrderController::class, 'update'])->name('assembly-orders.update');
+            Route::get('assembly-orders/{assemblyOrder}/print', [AssemblyOrderController::class, 'print'])->name('assembly-orders.print');
+            Route::post('assembly-orders/{assemblyOrder}/complete', [AssemblyOrderController::class, 'complete'])->name('assembly-orders.complete');
+            Route::post('assembly-orders/{assemblyOrder}/undo', [AssemblyOrderController::class, 'undo'])->name('assembly-orders.undo');
+            Route::post('assembly-orders/{assemblyOrder}/cancel', [AssemblyOrderController::class, 'cancel'])->name('assembly-orders.cancel');
+            Route::delete('assembly-orders/{assemblyOrder}', [AssemblyOrderController::class, 'destroy'])->name('assembly-orders.destroy');
         });
     });
 

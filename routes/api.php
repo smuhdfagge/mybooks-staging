@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AssemblyOrderController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BankController;
 use App\Http\Controllers\Api\BillController;
@@ -259,6 +260,13 @@ Route::prefix('v1')->group(function () {
             Route::get('stock-transfers/{stockTransfer}', [StockTransferController::class, 'show'])->name('api.stock-transfers.show');
         });
         Route::post('stock-transfers', [StockTransferController::class, 'store'])->middleware(['permission:adjust inventory', 'throttle:api-write'])->name('api.stock-transfers.store');
+        // Assembly (session 14).
+        Route::get('bill-of-materials', [AssemblyOrderController::class, 'bills'])->middleware('permission:view items')->name('api.bill-of-materials.index');
+        Route::middleware('permission:view inventory')->group(function () {
+            Route::get('assembly-orders', [AssemblyOrderController::class, 'index'])->name('api.assembly-orders.index');
+            Route::get('assembly-orders/{assemblyOrder}', [AssemblyOrderController::class, 'show'])->name('api.assembly-orders.show');
+        });
+        Route::post('assembly-orders', [AssemblyOrderController::class, 'store'])->middleware(['permission:adjust inventory', 'throttle:api-write'])->name('api.assembly-orders.store');
 
         // Journals
         Route::middleware('permission:view journals')->group(function () {

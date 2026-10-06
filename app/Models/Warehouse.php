@@ -224,7 +224,9 @@ class Warehouse extends Model
         }
 
         // Stock transfers (session 13); deleting the warehouse would delete them.
-        return DB::table('stock_transfers')->where('from_warehouse_id', $this->id)->orWhere('to_warehouse_id', $this->id)->exists();
+        // Assembly orders (session 14) would lose where their stock went.
+        return DB::table('stock_transfers')->where('from_warehouse_id', $this->id)->orWhere('to_warehouse_id', $this->id)->exists()
+            || DB::table('assembly_orders')->where('warehouse_id', $this->id)->orWhere('to_warehouse_id', $this->id)->exists();
     }
 
     /**

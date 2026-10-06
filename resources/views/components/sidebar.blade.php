@@ -67,10 +67,10 @@
                 @endif
                 @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('assembly'))
                 @can('view items')
-                <a href="{{ route('bill-of-materials.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('bill-of-materials.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Bills of Materials</a>
+                <a href="{{ route('bill-of-materials.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('bill-of-materials.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Bills of materials</a>
                 @endcan
                 @can('adjust inventory')
-                <a href="{{ route('assembly-orders.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('assembly-orders.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Assembly Orders</a>
+                <a href="{{ route('assembly-orders.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('assembly-orders.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Assembly orders</a>
                 @endcan
                 @endif
             </div>

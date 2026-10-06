@@ -2,212 +2,143 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AssemblyOrder;
+use App\Actions\Assembly\DeleteBillOfMaterial;
+use App\Actions\Assembly\SaveBillOfMaterial;
+use App\Http\Requests\SaveBillOfMaterialRequest;
 use App\Models\BillOfMaterial;
+use App\Models\ChartOfAccount;
+use App\Models\Inventory;
 use App\Models\Item;
-use App\Models\Warehouse;
+use App\Services\AccountCodeService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
+/**
+ * Bills of materials (session 14): what goes into a batch of a finished
+ * item. The work is in App\Actions\Assembly. Assembly orders have their
+ * own controller (the old assembly methods here rendered views that never
+ * existed).
+ */
 class BillOfMaterialController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $boms = BillOfMaterial::with(['item', 'components.item'])
-            ->latest()
-            ->paginate(20);
+        $search = trim((string) $request->query('search', ''));
+        $boms = BillOfMaterial::with(['item', 'components', 'costs'])
+            ->withCount('assemblyOrders')
+            ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w->where('name', 'like', "%{$search}%")
+                ->orWhereHas('item', fn ($i) => $i->where('name', 'like', "%{$search}%"))))
+            ->orderByDesc('is_active')->orderBy('name')
+            ->paginate(20)->withQueryString();
 
-        return view('inventory.bom.index', compact('boms'));
+        return view('inventory.bom.index', compact('boms', 'search'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $items = Item::where('track_inventory', true)->active()->orderBy('name')->get();
-
-        return view('inventory.bom.create', compact('items'));
-    }
-
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'item_id' => ['required', Rule::exists('items', 'id')->where('tenant_id', auth()->user()->tenant_id), 'unique:bill_of_materials,item_id'],
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'output_quantity' => 'required|numeric|min:0.0001',
-            'components' => 'required|array|min:1',
-            'components.*.item_id' => ['required', Rule::exists('items', 'id')->where('tenant_id', auth()->user()->tenant_id)],
-            'components.*.quantity' => 'required|numeric|min:0.0001',
-            'components.*.waste_percentage' => 'nullable|numeric|min:0|max:100',
-            'components.*.notes' => 'nullable|string',
-        ]);
-
-        $tenantId = auth()->user()->tenant_id;
-
-        // Prevent circular reference
-        foreach ($validated['components'] as $component) {
-            if ($component['item_id'] == $validated['item_id']) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', 'A product cannot be a component of itself.');
-            }
+        $bom = new BillOfMaterial(['output_quantity' => 1, 'is_active' => true]);
+        // ?item= from an item's page.
+        $finished = Item::where('track_inventory', true)->find($request->integer('item'));
+        if ($finished) {
+            $bom->item_id = $finished->id;
+            $bom->name = $finished->name;
         }
 
-        $bom = DB::transaction(function () use ($validated, $tenantId) {
-            $bom = BillOfMaterial::create([
-                'tenant_id' => $tenantId,
-                'item_id' => $validated['item_id'],
-                'name' => $validated['name'],
-                'description' => $validated['description'] ?? null,
-                'output_quantity' => $validated['output_quantity'],
-            ]);
+        return view('inventory.bom.create', $this->formData($bom, $finished));
+    }
 
-            foreach ($validated['components'] as $component) {
-                $bom->components()->create([
-                    'item_id' => $component['item_id'],
-                    'quantity' => $component['quantity'],
-                    'waste_percentage' => $component['waste_percentage'] ?? 0,
-                    'notes' => $component['notes'] ?? null,
-                ]);
-            }
+    public function store(SaveBillOfMaterialRequest $request, SaveBillOfMaterial $save)
+    {
+        $bom = $save->create(auth()->user()->tenant_id, $request->validated());
 
-            return $bom;
-        });
-
-        return redirect()->route('bill-of-materials.show', $bom)
-            ->with('success', 'Bill of Materials created successfully.');
+        return redirect()->route('bill-of-materials.show', $bom)->with('success', "Bill of materials \"{$bom->label()}\" saved.");
     }
 
     public function show(BillOfMaterial $billOfMaterial)
     {
-        $billOfMaterial->load(['item', 'components.item', 'assemblyOrders']);
+        $billOfMaterial->load(['item', 'components.item', 'costs.account']);
+        $estimate = $billOfMaterial->estimate();
+        $orders = $billOfMaterial->assemblyOrders()->latest('id')->limit(10)->get();
 
-        return view('inventory.bom.show', compact('billOfMaterial'));
+        return view('inventory.bom.show', ['bom' => $billOfMaterial, 'estimate' => $estimate, 'orders' => $orders]);
     }
 
     public function edit(BillOfMaterial $billOfMaterial)
     {
-        $billOfMaterial->load('components');
-        $items = Item::where('track_inventory', true)->active()->orderBy('name')->get();
+        $billOfMaterial->load(['item', 'components.item', 'costs']);
 
-        return view('inventory.bom.edit', compact('billOfMaterial', 'items'));
+        return view('inventory.bom.edit', $this->formData($billOfMaterial, $billOfMaterial->item));
     }
 
-    public function update(Request $request, BillOfMaterial $billOfMaterial)
+    public function update(SaveBillOfMaterialRequest $request, BillOfMaterial $billOfMaterial, SaveBillOfMaterial $save)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'output_quantity' => 'required|numeric|min:0.0001',
-            'is_active' => 'boolean',
-            'components' => 'required|array|min:1',
-            'components.*.item_id' => ['required', Rule::exists('items', 'id')->where('tenant_id', auth()->user()->tenant_id)],
-            'components.*.quantity' => 'required|numeric|min:0.0001',
-            'components.*.waste_percentage' => 'nullable|numeric|min:0|max:100',
-            'components.*.notes' => 'nullable|string',
-        ]);
+        $bom = $save->update($billOfMaterial, $request->validated());
 
-        foreach ($validated['components'] as $component) {
-            if ($component['item_id'] == $billOfMaterial->item_id) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', 'A product cannot be a component of itself.');
-            }
-        }
-
-        DB::transaction(function () use ($validated, $billOfMaterial) {
-            $billOfMaterial->update([
-                'name' => $validated['name'],
-                'description' => $validated['description'] ?? null,
-                'output_quantity' => $validated['output_quantity'],
-                'is_active' => $validated['is_active'] ?? true,
-            ]);
-
-            $billOfMaterial->components()->delete();
-
-            foreach ($validated['components'] as $component) {
-                $billOfMaterial->components()->create([
-                    'item_id' => $component['item_id'],
-                    'quantity' => $component['quantity'],
-                    'waste_percentage' => $component['waste_percentage'] ?? 0,
-                    'notes' => $component['notes'] ?? null,
-                ]);
-            }
-        });
-
-        return redirect()->route('bill-of-materials.show', $billOfMaterial)
-            ->with('success', 'Bill of Materials updated successfully.');
+        return redirect()->route('bill-of-materials.show', $bom)->with('success', "Bill of materials \"{$bom->label()}\" updated.");
     }
 
-    public function destroy(BillOfMaterial $billOfMaterial)
+    public function destroy(BillOfMaterial $billOfMaterial, DeleteBillOfMaterial $delete)
     {
-        if ($billOfMaterial->assemblyOrders()->exists()) {
-            return redirect()->back()
-                ->with('error', 'Cannot delete BOM with existing assembly orders.');
+        if ($reason = $delete->blockedBecause($billOfMaterial)) {
+            return redirect()->back()->with('error', $reason);
         }
+        $delete->handle($billOfMaterial);
 
-        $billOfMaterial->components()->delete();
-        $billOfMaterial->delete();
-
-        return redirect()->route('bill-of-materials.index')
-            ->with('success', 'Bill of Materials deleted successfully.');
+        return redirect()->route('bill-of-materials.index')->with('success', 'Bill of materials deleted.');
     }
 
     /**
-     * Create a new assembly order from this BOM.
+     * Stock items to pick on the forms, with their unit and current cost,
+     * and how many are free in a warehouse when one is given.
      */
-    public function createAssemblyOrder(BillOfMaterial $billOfMaterial)
+    public function items(Request $request): JsonResponse
     {
-        $warehouses = Warehouse::active()->orderBy('name')->get();
-
-        return view('inventory.assembly.create', compact('billOfMaterial', 'warehouses'));
-    }
-
-    public function storeAssemblyOrder(Request $request, BillOfMaterial $billOfMaterial)
-    {
-        $validated = $request->validate([
-            'quantity' => 'required|numeric|min:0.0001',
-            'warehouse_id' => ['nullable', Rule::exists('warehouses', 'id')->where('tenant_id', auth()->user()->tenant_id)],
-            'notes' => 'nullable|string',
-        ]);
-
         $tenantId = auth()->user()->tenant_id;
+        $q = trim((string) $request->query('q', ''));
+        $ids = array_filter(array_map('intval', explode(',', (string) $request->query('ids', ''))));
+        $warehouseId = (int) $request->query('warehouse_id');
 
-        $order = AssemblyOrder::create([
-            'tenant_id' => $tenantId,
-            'order_number' => AssemblyOrder::generateNumber($tenantId),
-            'bill_of_materials_id' => $billOfMaterial->id,
-            'warehouse_id' => $validated['warehouse_id'] ?? null,
-            'quantity' => $validated['quantity'],
-            'notes' => $validated['notes'] ?? null,
-            'created_by' => auth()->id(),
-        ]);
+        $items = Item::where('tenant_id', $tenantId)->where('track_inventory', true)
+            ->when($ids, fn ($query) => $query->whereIn('id', $ids), fn ($query) => $query->where('is_active', true))
+            ->when($q !== '' && ! $ids, fn ($query) => $query->where(fn ($w) => $w->where('name', 'like', "%{$q}%")->orWhere('sku', 'like', "%{$q}%")))
+            ->orderBy('name')->limit(20)->get();
+        $free = $warehouseId ? Inventory::where('warehouse_id', $warehouseId)->whereIn('item_id', $items->pluck('id'))->get()
+            ->mapWithKeys(fn (Inventory $row) => [(int) $row->item_id => max(0, round((float) $row->quantity - (float) $row->reserved_quantity, 4))]) : collect();
 
-        return redirect()->route('assembly-orders.show', $order)
-            ->with('success', 'Assembly order created.');
+        return response()->json(['data' => $items->map(fn (Item $i) => [
+            'id' => $i->id, 'name' => $i->name, 'sku' => $i->sku, 'unit' => $i->unit,
+            'cost' => round(BillOfMaterial::currentUnitCost($i), 4), 'free' => $free[$i->id] ?? 0,
+        ])->values()]);
     }
 
-    public function showAssemblyOrder(AssemblyOrder $assemblyOrder)
+    /** @return array<string, mixed> */
+    private function formData(BillOfMaterial $bom, ?Item $finished): array
     {
-        $assemblyOrder->load(['billOfMaterial.item', 'billOfMaterial.components.item', 'warehouse', 'createdBy']);
+        $tenantId = auth()->user()->tenant_id;
+        $inventoryCode = AccountCodeService::resolve($tenantId, 'inventory');
+        $accounts = ChartOfAccount::where('is_active', true)->where('account_code', '!=', $inventoryCode)
+            ->orderBy('account_code')->get(['id', 'account_code', 'name']);
+        $defaultAccount = SaveBillOfMaterial::defaultCostAccount($tenantId);
 
-        return view('inventory.assembly.show', compact('assemblyOrder'));
-    }
+        $components = $bom->exists ? $bom->components->map(fn ($c) => [
+            'item_id' => (string) $c->item_id,
+            'itemSearch' => $c->item->name ?? '',
+            'unit' => $c->item->unit ?? '',
+            'cost' => $c->item ? round(BillOfMaterial::currentUnitCost($c->item), 4) : 0,
+            'quantity' => (float) $c->quantity,
+            'waste_percentage' => (float) $c->waste_percentage,
+        ])->all() : [];
+        $costs = $bom->exists ? $bom->costs->map(fn ($c) => [
+            'description' => $c->description, 'amount' => (float) $c->amount, 'account_id' => (string) $c->account_id,
+        ])->all() : [];
 
-    public function completeAssemblyOrder(AssemblyOrder $assemblyOrder)
-    {
-        $assemblyOrder->complete();
-
-        return redirect()->route('assembly-orders.show', $assemblyOrder)
-            ->with('success', 'Assembly order completed. Finished goods added to inventory.');
-    }
-
-    public function assemblyOrders()
-    {
-        $orders = AssemblyOrder::with(['billOfMaterial.item', 'warehouse', 'createdBy'])
-            ->latest()
-            ->paginate(20);
-
-        return view('inventory.assembly.index', compact('orders'));
+        return [
+            'bom' => $bom,
+            'finished' => $finished,
+            'accounts' => $accounts,
+            'defaultAccountId' => $defaultAccount?->id,
+            'components' => $components,
+            'costs' => $costs,
+        ];
     }
 }
