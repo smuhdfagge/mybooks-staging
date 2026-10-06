@@ -39,7 +39,7 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Quantity on Hand</p>
-                            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ $inventory->quantity ?? 0 }}</p>
+                            <p class="text-xl font-bold text-gray-900 dark:text-gray-100">{{ rtrim(rtrim(number_format((float) ($inventory->quantity ?? 0), 4), '0'), '.') }}</p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">{{ $item->unit ?? 'units' }}</p>
                         </div>
                     </div>
@@ -54,7 +54,7 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Reserved</p>
-                            <p class="text-2xl font-bold text-orange-600 dark:text-orange-400">{{ $inventory->reserved_quantity ?? 0 }}</p>
+                            <p class="text-xl font-bold text-orange-600 dark:text-orange-400">{{ rtrim(rtrim(number_format((float) ($inventory->reserved_quantity ?? 0), 4), '0'), '.') }}</p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">{{ $item->unit ?? 'units' }}</p>
                         </div>
                     </div>
@@ -69,7 +69,7 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Available</p>
-                            <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ ($inventory->quantity ?? 0) - ($inventory->reserved_quantity ?? 0) }}</p>
+                            <p class="text-xl font-bold text-green-600 dark:text-green-400">{{ rtrim(rtrim(number_format((float) (($inventory->quantity ?? 0) - ($inventory->reserved_quantity ?? 0)), 4), '0'), '.') }}</p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">{{ $item->unit ?? 'units' }}</p>
                         </div>
                     </div>
@@ -84,7 +84,7 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Stock Value</p>
-                            <p class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ number_format(($inventory->quantity ?? 0) * ($item->cost_price ?? 0), 2) }}</p>
+                            <p class="text-lg font-bold whitespace-nowrap text-purple-600 dark:text-purple-400">{{ number_format(($inventory->quantity ?? 0) * ($item->cost_price ?? 0), 2) }}</p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">at cost price</p>
                         </div>
                     </div>
@@ -102,7 +102,7 @@
                     </svg>
                     <div class="ml-3">
                         <p class="text-sm font-medium text-yellow-800 dark:text-yellow-200">Low Stock Warning</p>
-                        <p class="text-sm text-yellow-700 dark:text-yellow-300">Current stock ({{ $inventory->quantity ?? 0 }}) is at or below reorder level ({{ $item->reorder_level }}). Consider reordering.</p>
+                        <p class="text-sm text-yellow-700 dark:text-yellow-300">Current stock ({{ rtrim(rtrim(number_format((float) ($inventory->quantity ?? 0), 4), '0'), '.') }}) is at or below reorder level ({{ $item->reorder_level }}). Consider reordering.</p>
                     </div>
                 </div>
             </div>
