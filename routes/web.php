@@ -1053,6 +1053,7 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::middleware('permission:edit banks')->group(function () {
             Route::get('bank-feeds/connect', [BankFeedController::class, 'connect'])->name('bank-feeds.connect');
             Route::post('bank-feeds', [BankFeedController::class, 'start'])->middleware('throttle:20,1')->name('bank-feeds.start');
+            Route::get('bank-feeds/go', [BankFeedController::class, 'go'])->name('bank-feeds.go');
             Route::get('bank-feeds/callback', [BankFeedController::class, 'callback'])->name('bank-feeds.callback');
             Route::post('bank-feeds/{connection}/sync', [BankFeedController::class, 'sync'])->middleware('throttle:20,1')->name('bank-feeds.sync');
             Route::post('bank-feeds/{connection}/reconnect', [BankFeedController::class, 'reconnect'])->middleware('throttle:20,1')->name('bank-feeds.reconnect');

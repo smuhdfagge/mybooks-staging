@@ -11,6 +11,7 @@ use App\Services\BankFeeds\BankFeedLimit;
 use App\Services\BankFeeds\BankFeedLinker;
 use App\Services\BankFeeds\BankFeedProviders;
 use App\Services\BankFeeds\BankFeedSync;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -81,7 +82,29 @@ class BankFeedController extends Controller
             return back()->withInput()->with('error', $e->getMessage());
         }
 
-        return redirect()->away($url);
+        return $this->toBank($url);
+    }
+
+    /**
+     * The page sends forms only to this site (Content-Security-Policy), so
+     * the hop to Mono's page is a plain link on a small page of our own.
+     */
+    private function toBank(string $url): RedirectResponse
+    {
+        return redirect()->route('bank-feeds.go')->with('bank_link_url', $url);
+    }
+
+    /** "Taking you to your bank": opens the link kept from the step before. */
+    public function go(Request $request): View|RedirectResponse
+    {
+        $url = $request->session()->get('bank_link_url');
+        if (! is_string($url) || ! str_starts_with($url, 'https://')) {
+            return redirect()->route('bank-feeds.index')->with('error', 'That link has expired. Please start again.');
+        }
+        // Kept one more request so a refresh of this page still works.
+        $request->session()->reflash();
+
+        return view('bank-feeds.go', ['url' => $url]);
     }
 
     /** The customer is back from their bank (Mono sends them here). */
@@ -150,7 +173,7 @@ class BankFeedController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect()->away($url);
+        return $this->toBank($url);
     }
 
     public function disconnect(BankFeedConnection $connection): RedirectResponse

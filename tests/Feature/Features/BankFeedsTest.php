@@ -210,7 +210,7 @@ class BankFeedsTest extends TestCase
     private function link(?Bank $bank = null, string $code = 'code-1', ?string $ref = null): BankFeedConnection
     {
         $bank ??= $this->bank;
-        $this->post(route('bank-feeds.start'), ['bank_id' => $bank->id])->assertRedirect('https://link.mono.test/ABC123');
+        $this->post(route('bank-feeds.start'), ['bank_id' => $bank->id])->assertRedirect(route('bank-feeds.go'))->assertSessionHas('bank_link_url', 'https://link.mono.test/ABC123');
         $connection = BankFeedConnection::where('bank_id', $bank->id)->where('status', 'pending')->latest('id')->firstOrFail();
         $this->get(route('bank-feeds.callback', ['ref' => $connection->link_ref, 'code' => $code]))->assertRedirect(route('bank-feeds.index'));
 
@@ -340,7 +340,7 @@ class BankFeedsTest extends TestCase
     public function test_linking_an_existing_or_new_account_and_one_feed_per_bank(): void
     {
         $this->bankTx('acc_1', 'credit', 500, '2026-10-05', 'NIP');
-        $this->post(route('bank-feeds.start'), ['new_bank_name' => 'Main current'])->assertRedirect('https://link.mono.test/ABC123');
+        $this->post(route('bank-feeds.start'), ['new_bank_name' => 'Main current'])->assertRedirect(route('bank-feeds.go'))->assertSessionHas('bank_link_url', 'https://link.mono.test/ABC123');
         $pending = BankFeedConnection::where('status', 'pending')->firstOrFail();
         $this->get(route('bank-feeds.callback', ['ref' => $pending->link_ref, 'code' => 'code-1']));
 
@@ -498,7 +498,7 @@ class BankFeedsTest extends TestCase
         $this->assertSame('needs_reauthorisation', $connection->fresh()->status);
 
         $this->get(route('bank-feeds.index'))->assertSee('Reconnect')->assertSee('Needs you to log in again');
-        $this->post(route('bank-feeds.reconnect', $connection))->assertRedirect('https://link.mono.test/ABC123');
+        $this->post(route('bank-feeds.reconnect', $connection))->assertRedirect(route('bank-feeds.go'))->assertSessionHas('bank_link_url', 'https://link.mono.test/ABC123');
         $call = collect($this->monoCalls())->last()[0];
         $this->assertSame('reauth', $call['scope']);
         $this->assertSame('acc_1', $call['account']);
@@ -508,6 +508,17 @@ class BankFeedsTest extends TestCase
         $ref = $connection->fresh()->link_ref;
         $this->get(route('bank-feeds.callback', ['ref' => $ref]))->assertRedirect(route('bank-feeds.index'));
         $this->assertSame('linked', $connection->fresh()->status);
+    }
+
+    public function test_the_go_page_opens_the_bank_link_with_a_plain_link(): void
+    {
+        // The security policy only lets forms post to this site, so the hop to Mono is a link.
+        $this->post(route('bank-feeds.start'), ['bank_id' => $this->bank->id])->assertRedirect(route('bank-feeds.go'));
+        $this->get(route('bank-feeds.go'))->assertOk()->assertSee('href="https://link.mono.test/ABC123"', false);
+
+        // Without a link in the session it goes back to the list with a message.
+        $this->flushSession();
+        $this->get(route('bank-feeds.go'))->assertRedirect(route('bank-feeds.index'))->assertSessionHas('error');
     }
 
     // ---- webhook ----------------------------------------------------------
@@ -1009,7 +1020,7 @@ class BankFeedsTest extends TestCase
         $this->assertSame($calls, count($this->monoCalls()));
         $this->get(route('bank-feeds.lines'))->assertSee('KEEP ME');
         $this->assertSame(0, BankFeedConnection::counted()->count());
-        $this->post(route('bank-feeds.start'), ['bank_id' => $this->bank->id])->assertRedirect('https://link.mono.test/ABC123');
+        $this->post(route('bank-feeds.start'), ['bank_id' => $this->bank->id])->assertRedirect(route('bank-feeds.go'))->assertSessionHas('bank_link_url', 'https://link.mono.test/ABC123');
     }
 
     // ---- tenants, permissions, plan, flag ---------------------------------------
@@ -1135,7 +1146,7 @@ class BankFeedsTest extends TestCase
 
         // Disconnecting frees the place; no limit when the column is empty.
         $this->delete(route('bank-feeds.disconnect', BankFeedConnection::firstOrFail()));
-        $this->post(route('bank-feeds.start'), ['bank_id' => $bank2->id])->assertRedirect('https://link.mono.test/ABC123');
+        $this->post(route('bank-feeds.start'), ['bank_id' => $bank2->id])->assertRedirect(route('bank-feeds.go'))->assertSessionHas('bank_link_url', 'https://link.mono.test/ABC123');
         $this->plan->update(['bank_feed_accounts_limit' => null]);
         $this->actingAs($this->user->fresh());
         $this->get(route('bank-feeds.index'))->assertSee('0 bank accounts linked');
