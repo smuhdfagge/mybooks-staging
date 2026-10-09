@@ -49,7 +49,7 @@
 
             @if(session('error'))
                 <div class="mb-4 p-4 bg-red-100 dark:bg-red-900/50 border border-red-200 dark:border-red-700 rounded-lg">
-                    <p class="text-sm text-red-600 dark:text-red-400">{{ session('error') }}</p>
+                    <p class="text-sm text-red-600 dark:text-red-300">{{ session('error') }}</p>
                 </div>
             @endif
 
@@ -68,7 +68,7 @@
                                class="mt-1 w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                                placeholder="admin@example.com" @error('email') aria-invalid="true" aria-describedby="email-error" @enderror>
                         @error('email')
-                            <p id="email-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            <p id="email-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                         @enderror
                     </div>
 
@@ -81,7 +81,7 @@
                                class="mt-1 w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                                placeholder="••••••••" @error('password') aria-invalid="true" aria-describedby="password-error" @enderror>
                         @error('password')
-                            <p id="password-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            <p id="password-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                         @enderror
                     </div>
 

@@ -19,7 +19,7 @@
                             <div>
                                 <x-field name="name" label="Company Name" :value="old('name', $tenant->name)" required />
                                 @error('name')
-                                    <p id="name-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="name-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -27,7 +27,7 @@
                             <div>
                                 <x-field name="email" label="Email" type="email" :value="old('email', $tenant->email)" required />
                                 @error('email')
-                                    <p id="email-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="email-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -35,7 +35,7 @@
                             <div>
                                 <x-field name="phone" label="Phone" :value="old('phone', $tenant->phone)" />
                                 @error('phone')
-                                    <p id="phone-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="phone-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -43,7 +43,7 @@
                             <div>
                                 <x-field name="website" label="Website" type="url" :value="old('website', $tenant->website)" placeholder="https://example.com" />
                                 @error('website')
-                                    <p id="website-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="website-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -57,7 +57,7 @@
                             <div class="md:col-span-2">
                                 <x-field name="address" label="Street Address" type="textarea" :value="old('address', $tenant->address)" rows="2" />
                                 @error('address')
-                                    <p id="address-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="address-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -65,7 +65,7 @@
                             <div>
                                 <x-field name="city" label="City" :value="old('city', $tenant->city)" />
                                 @error('city')
-                                    <p id="city-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="city-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -80,7 +80,7 @@
                                     search-placeholder="Search states..."
                                     :has-error="$errors->has('state')" />
                                 @error('state')
-                                    <p id="state-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="state-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -95,7 +95,7 @@
                                     search-placeholder="Search countries..."
                                     :has-error="$errors->has('country')" />
                                 @error('country')
-                                    <p id="country-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="country-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -103,7 +103,7 @@
                             <div>
                                 <x-field name="postal_code" label="Postal Code" :value="old('postal_code', $tenant->postal_code)" />
                                 @error('postal_code')
-                                    <p id="postal_code-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="postal_code-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -117,7 +117,7 @@
                             <div>
                                 <x-field name="tax_number" label="TIN (Tax Identification Number)" help="Printed on your invoices and sent to NRS with e-invoices. Digits, hyphens allowed." :value="old('tax_number', $tenant->tax_number)" />
                                 @error('tax_number')
-                                    <p id="tax_number-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="tax_number-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -137,7 +137,7 @@
                                     <option value="CNY" {{ old('currency', $tenant->currency) == 'CNY' ? 'selected' : '' }}>CNY - Chinese Yuan</option>
                                 </select>
                                 @error('currency')
-                                    <p id="currency-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="currency-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -145,7 +145,7 @@
                             <div>
                                 <x-field name="fiscal_year_start" label="Fiscal Year Start" type="date" :value="old('fiscal_year_start', $tenant->fiscal_year_start?->format('Y-m-d'))" />
                                 @error('fiscal_year_start')
-                                    <p id="fiscal_year_start-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="fiscal_year_start-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -166,7 +166,7 @@
                                     class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-50 dark:file:bg-brand-900 file:text-brand-700 dark:file:text-brand-300 hover:file:bg-brand-100 dark:hover:file:bg-brand-800" @error('logo') aria-invalid="true" aria-describedby="logo-error" @enderror>
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">PNG, JPG, GIF up to 2MB</p>
                                 @error('logo')
-                                    <p id="logo-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="logo-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -196,7 +196,7 @@
                             @endif
                         </p>
                     </div>
-                    <a href="{{ route('settings.close-organisation') }}" class="text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400">Manage</a>
+                    <a href="{{ route('settings.close-organisation') }}" class="text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-300">Manage</a>
                 </div>
             @endif
         </div>

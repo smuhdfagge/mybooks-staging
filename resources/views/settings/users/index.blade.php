@@ -17,9 +17,9 @@
                     <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
                         {{ $currentUsers }} of {{ $maxUsers }} users 
                         @if($remainingSlots > 0)
-                            <span class="text-green-600 dark:text-green-400">({{ $remainingSlots }} slots remaining)</span>
+                            <span class="text-green-700 dark:text-green-400">({{ $remainingSlots }} slots remaining)</span>
                         @else
-                            <span class="text-red-600 dark:text-red-400">(limit reached)</span>
+                            <span class="text-red-600 dark:text-red-300">(limit reached)</span>
                         @endif
                     </p>
                 @endif
@@ -39,7 +39,7 @@
                         </svg>
                         Add User
                     </span>
-                    <a href="{{ route('settings.subscription') }}" class="inline-flex items-center justify-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition ease-in-out duration-150">
+                    <a href="{{ route('settings.subscription') }}" class="inline-flex items-center justify-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition ease-in-out duration-150">
                         Upgrade Plan
                     </a>
                 </div>
@@ -100,7 +100,7 @@
                                                     Active
                                                 </span>
                                             @else
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300">
                                                     Inactive
                                                 </span>
                                             @endif
@@ -111,7 +111,7 @@
                                                 <form action="{{ route('settings.users.destroy', $user) }}" method="POST" class="inline" data-confirm="Are you sure you want to delete this user?">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">Delete</button>
+                                                    <button type="submit" class="text-red-600 dark:text-red-300 hover:text-red-900 dark:hover:text-red-300">Delete</button>
                                                 </form>
                                             @endif
                                         </td>

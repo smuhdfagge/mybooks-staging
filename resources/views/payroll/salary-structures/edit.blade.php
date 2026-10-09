@@ -60,7 +60,7 @@
                     <!-- Allowances -->
                     <div class="mb-8">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 mr-2 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                             </svg>
                             Allowances
@@ -101,7 +101,7 @@
                                     </select>
                                 </div>
                                 <div class="col-span-1">
-                                    <button type="button" @click="removeAllowance(index)" class="p-2 text-red-600 hover:text-red-800 dark:text-red-400">
+                                    <button type="button" @click="removeAllowance(index)" class="p-2 text-red-600 hover:text-red-800 dark:text-red-300">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     </button>
                                 </div>
@@ -117,7 +117,7 @@
                     <!-- Deductions -->
                     <div class="mb-8">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
                             </svg>
                             Deductions
@@ -158,14 +158,14 @@
                                     </select>
                                 </div>
                                 <div class="col-span-1">
-                                    <button type="button" @click="removeDeduction(index)" class="p-2 text-red-600 hover:text-red-800 dark:text-red-400">
+                                    <button type="button" @click="removeDeduction(index)" class="p-2 text-red-600 hover:text-red-800 dark:text-red-300">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     </button>
                                 </div>
                             </div>
                         </template>
 
-                        <button type="button" @click="addDeduction()" class="inline-flex items-center px-3 py-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-700 rounded-md text-sm hover:bg-red-100 dark:hover:bg-red-900/40">
+                        <button type="button" @click="addDeduction()" class="inline-flex items-center px-3 py-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700 rounded-md text-sm hover:bg-red-100 dark:hover:bg-red-900/40">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                             Add Deduction
                         </button>
@@ -181,7 +181,7 @@
                             </div>
                             <div>
                                 <span class="text-gray-500 dark:text-gray-400">Total Allowances</span>
-                                <p class="font-semibold text-green-600 dark:text-green-400" x-text="'+' + formatCurrency(totalAllowances())"></p>
+                                <p class="font-semibold text-green-700 dark:text-green-400" x-text="'+' + formatCurrency(totalAllowances())"></p>
                             </div>
                             <div>
                                 <span class="text-gray-500 dark:text-gray-400">Gross Salary</span>
@@ -189,7 +189,7 @@
                             </div>
                             <div>
                                 <span class="text-gray-500 dark:text-gray-400">Total Deductions</span>
-                                <p class="font-semibold text-red-600 dark:text-red-400" x-text="'-' + formatCurrency(totalDeductions())"></p>
+                                <p class="font-semibold text-red-600 dark:text-red-300" x-text="'-' + formatCurrency(totalDeductions())"></p>
                             </div>
                         </div>
                         <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">

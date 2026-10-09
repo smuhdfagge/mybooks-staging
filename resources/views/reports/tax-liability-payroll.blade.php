@@ -59,7 +59,7 @@
                         <div class="ml-5">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Tax Liability</dt>
-                                <dd class="text-lg font-semibold text-yellow-600 dark:text-yellow-400">{{ number_format($totals['total_tax'], 2) }}</dd>
+                                <dd class="text-lg font-semibold text-yellow-700 dark:text-yellow-400">{{ number_format($totals['total_tax'], 2) }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -100,7 +100,7 @@
                                     <td class="px-6 py-3 text-sm text-gray-900 dark:text-gray-100">{{ \Carbon\Carbon::parse($row['month'] . '-01')->format('F Y') }}</td>
                                     <td class="px-6 py-3 text-sm text-center text-gray-900 dark:text-gray-100">{{ $row['employee_count'] }}</td>
                                     <td class="px-6 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($row['total_taxable'], 2) }}</td>
-                                    <td class="px-6 py-3 text-sm text-right font-medium text-yellow-600 dark:text-yellow-400">{{ number_format($row['total_tax'], 2) }}</td>
+                                    <td class="px-6 py-3 text-sm text-right font-medium text-yellow-700 dark:text-yellow-400">{{ number_format($row['total_tax'], 2) }}</td>
                                     <td class="px-6 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ $row['effective_rate'] }}%</td>
                                 </tr>
                             @empty
@@ -134,7 +134,7 @@
                                     <td class="px-6 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $dept['department_name'] }}</td>
                                     <td class="px-6 py-3 text-sm text-center text-gray-900 dark:text-gray-100">{{ $dept['employee_count'] }}</td>
                                     <td class="px-6 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($dept['total_taxable'], 2) }}</td>
-                                    <td class="px-6 py-3 text-sm text-right font-medium text-yellow-600 dark:text-yellow-400">{{ number_format($dept['total_tax'], 2) }}</td>
+                                    <td class="px-6 py-3 text-sm text-right font-medium text-yellow-700 dark:text-yellow-400">{{ number_format($dept['total_tax'], 2) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -166,7 +166,7 @@
                                     <td class="px-6 py-3 text-sm text-gray-500 dark:text-gray-400">{{ $record['employee']->department->name ?? 'N/A' }}</td>
                                     <td class="px-6 py-3 text-sm text-center text-gray-900 dark:text-gray-100">{{ $record['pay_periods'] }}</td>
                                     <td class="px-6 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($record['taxable_income'], 2) }}</td>
-                                    <td class="px-6 py-3 text-sm text-right font-medium text-yellow-600 dark:text-yellow-400">{{ number_format($record['tax_deducted'], 2) }}</td>
+                                    <td class="px-6 py-3 text-sm text-right font-medium text-yellow-700 dark:text-yellow-400">{{ number_format($record['tax_deducted'], 2) }}</td>
                                     <td class="px-6 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ $record['effective_rate'] }}%</td>
                                 </tr>
                             @empty
@@ -180,7 +180,7 @@
                             <tr>
                                 <td colspan="3" class="px-6 py-3 text-sm font-bold text-gray-900 dark:text-white">Totals</td>
                                 <td class="px-6 py-3 text-sm text-right font-bold text-gray-900 dark:text-white">{{ number_format($totals['total_taxable'], 2) }}</td>
-                                <td class="px-6 py-3 text-sm text-right font-bold text-yellow-600 dark:text-yellow-400">{{ number_format($totals['total_tax'], 2) }}</td>
+                                <td class="px-6 py-3 text-sm text-right font-bold text-yellow-700 dark:text-yellow-400">{{ number_format($totals['total_tax'], 2) }}</td>
                                 <td class="px-6 py-3 text-sm text-right font-bold text-gray-900 dark:text-white">{{ $totals['effective_rate'] }}%</td>
                             </tr>
                         </tfoot>

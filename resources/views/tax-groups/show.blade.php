@@ -138,7 +138,7 @@
                         </div>
                         <div class="flex justify-between">
                             <span class="font-semibold text-gray-900 dark:text-gray-100">Grand Total</span>
-                            <span class="font-semibold text-green-600 dark:text-green-400">@money(100 + $totalTax)</span>
+                            <span class="font-semibold text-green-700 dark:text-green-400">@money(100 + $totalTax)</span>
                         </div>
                     </div>
                 </div>

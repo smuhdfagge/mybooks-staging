@@ -30,7 +30,7 @@
                             <input type="text" name="name" id="name" value="{{ old('name', $budget->name) }}" required
                                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                             @error('name')
-                                <p id="name-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="name-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
                         <div>
@@ -48,7 +48,7 @@
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Budget Line Items</h3>
                             <div class="flex gap-2">
                                 <button type="button" @click="showImportModal = true"
-                                        class="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
+                                        class="inline-flex items-center px-3 py-2 bg-green-700 text-white text-sm rounded-md hover:bg-green-700">
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
                                     </svg>
@@ -226,7 +226,7 @@
 
                             <div class="flex justify-end gap-2">
                                 <button type="button" @click="showImportModal = false" class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">Cancel</button>
-                                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">Import</button>
+                                <button type="submit" class="px-4 py-2 bg-green-700 text-white rounded-md hover:bg-green-700">Import</button>
                             </div>
                         </form>
                     </div>

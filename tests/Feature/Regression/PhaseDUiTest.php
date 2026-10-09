@@ -287,7 +287,7 @@ class PhaseDUiTest extends TestCase
     {
         $html = $this->page('customers.create', $this->permissionsFor('customers.create'));
 
-        $this->assertStringContainsString('<label for="name" class="form-label">Customer Name <span class="text-red-500">*</span></label>', $html);
+        $this->assertStringContainsString('<label for="name" class="form-label">Customer Name <span class="text-red-600 dark:text-red-300">*</span></label>', $html);
         $this->assertMatchesRegularExpression('/<input type="text" name="name" id="name" value="" required(="required")? class="form-control">/', $html);
         $this->assertStringContainsString('class="card"', $html);
         $this->assertStringContainsString('class="btn-primary', $html);

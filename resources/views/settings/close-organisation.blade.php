@@ -44,13 +44,13 @@
                             <label for="confirm_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Type the business name, <strong>{{ $tenant->name }}</strong>, to confirm</label>
                             <input type="text" name="confirm_name" id="confirm_name" value="{{ old('confirm_name') }}" autocomplete="off" required
                                 class="mt-1 w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm">
-                            @error('confirm_name')<p class="mt-1 text-sm text-red-500">{{ $message }}</p>@enderror
+                            @error('confirm_name')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
                             <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Your password</label>
                             <input type="password" name="password" id="password" autocomplete="current-password" required
                                 class="mt-1 w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm">
-                            @error('password')<p class="mt-1 text-sm text-red-500">{{ $message }}</p>@enderror
+                            @error('password')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
                             <label for="reason" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Reason (optional)</label>

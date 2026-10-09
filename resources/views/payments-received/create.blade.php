@@ -36,7 +36,7 @@
                         <div>
                             <x-field name="payment_date" label="Payment Date" type="date" :value="old('payment_date', date('Y-m-d'))" required />
                             @error('payment_date')
-                                <p id="payment_date-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="payment_date-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -46,7 +46,7 @@
                             selectedId: '{{ old('customer_id', $invoice?->customer_id) }}',
                             onSelect: (id) => { selectedCustomer = id; filterInvoices(); filterDeposits(); }
                         })" class="relative">
-                            <label for="customer_search" class="form-label">Customer <span class="text-red-500">*</span></label>
+                            <label for="customer_search" class="form-label">Customer <span class="text-red-600 dark:text-red-300">*</span></label>
                             <input type="hidden" name="customer_id" :value="selectedId" required @error('customer_id') aria-invalid="true" aria-describedby="customer_id-error" @enderror>
                             <div class="relative">
                                 <input 
@@ -93,7 +93,7 @@
                                 </div>
                             </div>
                             @error('customer_id')
-                                <p id="customer_id-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="customer_id-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -114,14 +114,14 @@
 
                         <!-- Amount -->
                         <div>
-                            <label for="amount" class="form-label">Amount <span class="text-red-500">*</span></label>
+                            <label for="amount" class="form-label">Amount <span class="text-red-600 dark:text-red-300">*</span></label>
                             <div class="relative">
                                 <input type="number" name="amount" id="amount" step="0.01" min="0.01" x-model="amount" required placeholder="0.00"
                                     class="form-control @error('amount') border-red-500 @enderror" @error('amount') aria-invalid="true" aria-describedby="amount-error" @enderror>
                             </div>
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" x-show="hasWht">Money received in the bank, after the customer's WHT.</p>
                             @error('amount')
-                                <p id="amount-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="amount-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -142,7 +142,7 @@
                                         @endforeach
                                     </select>
                                     @error('wht_category_id')
-                                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>
                                 <div>
@@ -155,7 +155,7 @@
                                         = settles <span class="font-semibold" x-text="formatMoney((parseFloat(amount) || 0) + (parseFloat(whtAmount) || 0))"></span>.
                                     </p>
                                     @error('wht_amount')
-                                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>
                             </div>
@@ -163,7 +163,7 @@
 
                         <!-- Payment Method -->
                         <div x-data="{ paymentMethod: '{{ old('payment_method', '') }}' }">
-                            <label for="payment_method" class="form-label">Payment Method <span class="text-red-500">*</span></label>
+                            <label for="payment_method" class="form-label">Payment Method <span class="text-red-600 dark:text-red-300">*</span></label>
                             <select name="payment_method" id="payment_method" required x-model="paymentMethod"
                                 class="form-control @error('payment_method') border-red-500 @enderror" @error('payment_method') aria-invalid="true" aria-describedby="payment_method-error" @enderror>
                                 <option value="">Select Method</option>
@@ -174,7 +174,7 @@
                                 <option value="other">Other</option>
                             </select>
                             @error('payment_method')
-                                <p id="payment_method-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="payment_method-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
 
                             <!-- Bank Account -->
@@ -191,7 +191,7 @@
                                 </select>
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Select which bank account received this payment</p>
                                 @error('bank_id')
-                                    <p id="bank_id-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="bank_id-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -219,7 +219,7 @@
                         <div class="md:col-span-2" x-show="!isDeposit && selectedCustomer && availableDeposits.length > 0">
                             <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-4">
                                 <div class="flex items-center mb-3">
-                                    <svg class="w-5 h-5 text-green-600 dark:text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-5 h-5 text-green-700 dark:text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                     </svg>
                                     <span class="text-sm font-medium text-green-800 dark:text-green-300">
@@ -228,7 +228,7 @@
                                 </div>
                                 <div class="flex items-center">
                                     <input type="checkbox" id="use_deposit" x-model="useDeposit"
-                                        class="rounded border-gray-300 dark:border-gray-600 text-green-600 shadow-sm focus:border-green-500 focus:ring-green-500 dark:bg-gray-700">
+                                        class="rounded border-gray-300 dark:border-gray-600 text-green-700 shadow-sm focus:border-green-500 focus:ring-green-500 dark:bg-gray-700">
                                     <label for="use_deposit" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
                                         Apply deposit to this invoice
                                     </label>
@@ -270,7 +270,7 @@
                         <a href="{{ route('payments-received.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             Cancel
                         </a>
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>

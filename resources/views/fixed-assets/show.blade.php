@@ -64,12 +64,12 @@
                 </div>
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-6">
                     <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Accumulated Depreciation</div>
-                    <div class="mt-1 text-2xl font-semibold text-red-600 dark:text-red-400">{{ number_format($fixedAsset->accumulated_depreciation, 2) }}</div>
+                    <div class="mt-1 text-2xl font-semibold text-red-600 dark:text-red-300">{{ number_format($fixedAsset->accumulated_depreciation, 2) }}</div>
                     <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ number_format($fixedAsset->depreciation_percentage, 1) }}% depreciated</div>
                 </div>
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-6">
                     <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Book Value</div>
-                    <div class="mt-1 text-2xl font-semibold text-green-600 dark:text-green-400">{{ number_format($fixedAsset->book_value, 2) }}</div>
+                    <div class="mt-1 text-2xl font-semibold text-green-700 dark:text-green-400">{{ number_format($fixedAsset->book_value, 2) }}</div>
                     <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 mt-2">
                         <div class="bg-green-600 h-2 rounded-full" style="width: {{ 100 - $fixedAsset->depreciation_percentage }}%"></div>
                     </div>
@@ -272,7 +272,7 @@
                                 @if($fixedAsset->gain_loss_on_disposal !== null)
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Gain/Loss</dt>
-                                    <dd class="mt-1 text-sm {{ $fixedAsset->gain_loss_on_disposal >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                    <dd class="mt-1 text-sm {{ $fixedAsset->gain_loss_on_disposal >= 0 ? 'text-green-700' : 'text-red-600' }}">
                                         {{ $fixedAsset->gain_loss_on_disposal >= 0 ? 'Gain' : 'Loss' }}: {{ number_format(abs($fixedAsset->gain_loss_on_disposal), 2) }}
                                     </dd>
                                 </div>

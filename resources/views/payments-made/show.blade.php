@@ -48,7 +48,7 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                             </svg>
                             Payment Details
@@ -83,7 +83,7 @@
                             @endif
                             <div class="flex justify-between py-2">
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Amount</dt>
-                                <dd class="text-lg font-bold text-red-600 dark:text-red-400">@money($paymentMade->amount)</dd>
+                                <dd class="text-lg font-bold text-red-600 dark:text-red-300">@money($paymentMade->amount)</dd>
                             </div>
                         </dl>
                     </div>
@@ -93,7 +93,7 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                             </svg>
                             Vendor Information
@@ -132,7 +132,7 @@
                             @if($paymentMade->bill)
                             <div class="flex justify-between py-2">
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Bill Balance</dt>
-                                <dd class="text-sm {{ $paymentMade->bill->balance_due > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }} font-medium">
+                                <dd class="text-sm {{ $paymentMade->bill->balance_due > 0 ? 'text-red-600 dark:text-red-300' : 'text-green-700 dark:text-green-400' }} font-medium">
                                     @money($paymentMade->bill->balance_due)
                                     @if($paymentMade->bill->balance_due <= 0)
                                         <span class="ml-1 text-xs">(Paid)</span>
@@ -150,7 +150,7 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
                 <div class="p-6">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                         </svg>
                         Notes

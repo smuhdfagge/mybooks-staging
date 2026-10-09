@@ -10,7 +10,7 @@
             <div class="flex flex-wrap gap-2">
                 <form action="{{ route('recurrent-bills.toggle', $recurrentBill) }}" method="POST" class="inline">
                     @csrf
-                    <button type="submit" class="inline-flex items-center px-4 py-2 {{ $recurrentBill->status === 'active' ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700' }} border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest transition">
+                    <button type="submit" class="inline-flex items-center px-4 py-2 {{ $recurrentBill->status === 'active' ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-700 hover:bg-green-700' }} border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest transition">
                         @if($recurrentBill->status === 'active')
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -104,7 +104,7 @@
                     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                                <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 mr-2 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                                 </svg>
                                 Bill Items
@@ -221,7 +221,7 @@
                     <!-- Danger Zone -->
                     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg border border-red-200 dark:border-red-800">
                         <div class="p-6">
-                            <h3 class="text-lg font-medium text-red-600 dark:text-red-400 mb-4">Danger Zone</h3>
+                            <h3 class="text-lg font-medium text-red-600 dark:text-red-300 mb-4">Danger Zone</h3>
                             <form action="{{ route('recurrent-bills.destroy', $recurrentBill) }}" method="POST" data-confirm="Are you sure you want to delete this profile? This action cannot be undone.">
                                 @csrf
                                 @method('DELETE')

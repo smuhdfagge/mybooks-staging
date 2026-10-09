@@ -70,7 +70,7 @@
                     <div class="mb-6">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Column Mapping</h3>
                         <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                            Match each column from your file to the corresponding field. Fields marked with <span class="text-red-500">*</span> are required.
+                            Match each column from your file to the corresponding field. Fields marked with <span class="text-red-600 dark:text-red-300">*</span> are required.
                         </p>
 
                         <div class="overflow-x-auto">

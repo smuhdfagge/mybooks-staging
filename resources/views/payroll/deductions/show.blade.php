@@ -48,7 +48,7 @@
                             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Pre-Tax Deduction</dt>
                             <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">
                                 @if($deduction->is_taxable)
-                                    <span class="text-green-600 dark:text-green-400 font-medium">Yes</span>
+                                    <span class="text-green-700 dark:text-green-400 font-medium">Yes</span>
                                 @else
                                     <span class="text-gray-500 dark:text-gray-400">No</span>
                                 @endif

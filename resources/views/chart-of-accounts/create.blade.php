@@ -29,22 +29,22 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label for="account_code" class="form-label">Account Code <span class="text-red-500">*</span></label>
+                                <label for="account_code" class="form-label">Account Code <span class="text-red-600 dark:text-red-300">*</span></label>
                                 <input type="text" name="account_code" id="account_code" value="{{ old('account_code') }}" required
                                     class="form-control @error('account_code') border-red-500 @enderror"
                                     placeholder="e.g., 1000, 2000, 3000" @error('account_code') aria-invalid="true" aria-describedby="account_code-error" @enderror>
                                 @error('account_code')
-                                    <p id="account_code-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="account_code-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
-                                <label for="name" class="form-label">Account Name <span class="text-red-500">*</span></label>
+                                <label for="name" class="form-label">Account Name <span class="text-red-600 dark:text-red-300">*</span></label>
                                 <input type="text" name="name" id="name" value="{{ old('name') }}" required
                                     class="form-control @error('name') border-red-500 @enderror"
                                     placeholder="e.g., Cash, Accounts Receivable" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                                 @error('name')
-                                    <p id="name-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="name-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -58,7 +58,7 @@
                                     search-placeholder="Search types..."
                                     :has-error="$errors->has('type')" />
                                 @error('type')
-                                    <p id="type-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="type-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -68,7 +68,7 @@
                                     class="form-control @error('sub_type') border-red-500 @enderror"
                                     placeholder="e.g., Current Asset, Fixed Asset" @error('sub_type') aria-invalid="true" aria-describedby="sub_type-error" @enderror>
                                 @error('sub_type')
-                                    <p id="sub_type-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="sub_type-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -82,7 +82,7 @@
                                     search-placeholder="Search accounts..."
                                     :has-error="$errors->has('parent_id')" />
                                 @error('parent_id')
-                                    <p id="parent_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="parent_id-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -93,7 +93,7 @@
                                         class="form-control @error('opening_balance') border-red-500 @enderror" @error('opening_balance') aria-invalid="true" aria-describedby="opening_balance-error" @enderror>
                                 </div>
                                 @error('opening_balance')
-                                    <p id="opening_balance-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="opening_balance-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -113,7 +113,7 @@
                                 class="form-control @error('description') border-red-500 @enderror"
                                 placeholder="Describe the purpose of this account..." @error('description') aria-invalid="true" aria-describedby="description-error" @enderror>{{ old('description') }}</textarea>
                             @error('description')
-                                <p id="description-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="description-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>

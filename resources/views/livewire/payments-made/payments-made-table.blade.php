@@ -173,12 +173,12 @@
                         <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                             <div class="flex items-center justify-end space-x-2">
                                 <a href="{{ route('payments-made.show', $payment) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300">View</a>
-                                <a href="{{ route('payments-made.edit', $payment) }}" class="text-yellow-600 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-300">Edit</a>
+                                <a href="{{ route('payments-made.edit', $payment) }}" class="text-yellow-700 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-300">Edit</a>
                                 <form action="{{ route('payments-made.destroy', $payment) }}" method="POST" class="inline"
                                     data-confirm="Are you sure you want to delete this payment?">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">Delete</button>
+                                    <button type="submit" class="text-red-600 dark:text-red-300 hover:text-red-900 dark:hover:text-red-300">Delete</button>
                                 </form>
                             </div>
                         </td>

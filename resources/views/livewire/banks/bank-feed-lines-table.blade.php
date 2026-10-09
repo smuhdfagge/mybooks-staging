@@ -81,7 +81,7 @@
                                     <div class="break-words">{{ $line->narration ?: '—' }}</div>
                                     <div class="text-xs text-gray-500 dark:text-gray-400">{{ $line->connection?->title() }}</div>
                                 </td>
-                                <td class="px-3 py-3 whitespace-nowrap text-sm text-right font-medium {{ $line->isCredit() ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}" data-label="Amount">
+                                <td class="px-3 py-3 whitespace-nowrap text-sm text-right font-medium {{ $line->isCredit() ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}" data-label="Amount">
                                     {{ $line->isCredit() ? '+' : '−' }}@money($line->amount)
                                 </td>
                                 <td class="px-3 py-3 text-sm" data-cell="main">

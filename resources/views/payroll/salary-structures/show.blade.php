@@ -29,11 +29,11 @@
                 </div>
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-4">
                     <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Allowances</div>
-                    <div class="text-xl font-bold text-green-600 dark:text-green-400 mt-1">+{{ number_format($salaryStructure->total_allowances, 2) }}</div>
+                    <div class="text-xl font-bold text-green-700 dark:text-green-400 mt-1">+{{ number_format($salaryStructure->total_allowances, 2) }}</div>
                 </div>
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-4">
                     <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Deductions</div>
-                    <div class="text-xl font-bold text-red-600 dark:text-red-400 mt-1">-{{ number_format($salaryStructure->total_deductions, 2) }}</div>
+                    <div class="text-xl font-bold text-red-600 dark:text-red-300 mt-1">-{{ number_format($salaryStructure->total_deductions, 2) }}</div>
                 </div>
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-4">
                     <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Net Salary</div>
@@ -76,7 +76,7 @@
             @if($salaryStructure->allowances->count() > 0)
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">
-                    <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    <svg class="w-5 h-5 mr-2 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                     Allowances
                 </h3>
                 <div class="overflow-x-auto">
@@ -98,12 +98,12 @@
                                 <td class="px-4 py-2 text-sm text-right text-gray-900 dark:text-gray-100">
                                     {{ $item->amount_type === 'percentage' ? $item->amount . '%' : number_format($item->amount, 2) }}
                                 </td>
-                                <td class="px-4 py-2 text-sm text-right font-medium text-green-600 dark:text-green-400">
+                                <td class="px-4 py-2 text-sm text-right font-medium text-green-700 dark:text-green-400">
                                     {{ number_format($item->calculated_amount, 2) }}
                                 </td>
                                 <td class="px-4 py-2 text-sm text-center">
                                     @if($item->is_taxable)
-                                        <span class="text-yellow-600 dark:text-yellow-400">Yes</span>
+                                        <span class="text-yellow-700 dark:text-yellow-400">Yes</span>
                                     @else
                                         <span class="text-gray-500 dark:text-gray-400">No</span>
                                     @endif
@@ -114,7 +114,7 @@
                         <tfoot>
                             <tr class="bg-gray-50 dark:bg-gray-700/50">
                                 <td colspan="3" class="px-4 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 text-right">Total Allowances</td>
-                                <td class="px-4 py-2 text-sm font-bold text-right text-green-600 dark:text-green-400">{{ number_format($salaryStructure->total_allowances, 2) }}</td>
+                                <td class="px-4 py-2 text-sm font-bold text-right text-green-700 dark:text-green-400">{{ number_format($salaryStructure->total_allowances, 2) }}</td>
                                 <td></td>
                             </tr>
                         </tfoot>
@@ -127,7 +127,7 @@
             @if($salaryStructure->deductions->count() > 0)
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">
-                    <svg class="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+                    <svg class="w-5 h-5 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
                     Deductions
                 </h3>
                 <div class="overflow-x-auto">
@@ -148,7 +148,7 @@
                                 <td class="px-4 py-2 text-sm text-right text-gray-900 dark:text-gray-100">
                                     {{ $item->amount_type === 'percentage' ? $item->amount . '%' : number_format($item->amount, 2) }}
                                 </td>
-                                <td class="px-4 py-2 text-sm text-right font-medium text-red-600 dark:text-red-400">
+                                <td class="px-4 py-2 text-sm text-right font-medium text-red-600 dark:text-red-300">
                                     {{ number_format($item->calculated_amount, 2) }}
                                 </td>
                             </tr>
@@ -157,7 +157,7 @@
                         <tfoot>
                             <tr class="bg-gray-50 dark:bg-gray-700/50">
                                 <td colspan="3" class="px-4 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 text-right">Total Deductions</td>
-                                <td class="px-4 py-2 text-sm font-bold text-right text-red-600 dark:text-red-400">{{ number_format($salaryStructure->total_deductions, 2) }}</td>
+                                <td class="px-4 py-2 text-sm font-bold text-right text-red-600 dark:text-red-300">{{ number_format($salaryStructure->total_deductions, 2) }}</td>
                             </tr>
                         </tfoot>
                     </table>

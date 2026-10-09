@@ -78,7 +78,7 @@
             <div class="flex items-end gap-2">
                 <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open" type="button"
-                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-700 hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                         <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                         </svg>
@@ -185,7 +185,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <a href="{{ route('activity-logs.show', $log) }}" 
-                                    class="text-brand-600 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-300">
+                                    class="text-brand-600 hover:text-brand-900 dark:text-brand-200 dark:hover:text-white">
                                     View
                                 </a>
                             </td>

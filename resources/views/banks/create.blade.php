@@ -27,7 +27,7 @@
                                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500"
                                    placeholder="e.g., Main Business Account" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                             @error('name')
-                                <p id="name-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="name-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -42,7 +42,7 @@
                                 search-placeholder="Search types..."
                                 :has-error="$errors->has('account_type')" />
                             @error('account_type')
-                                <p id="account_type-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="account_type-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -57,7 +57,7 @@
                                 search-placeholder="Search currencies..."
                                 :has-error="$errors->has('currency')" />
                             @error('currency')
-                                <p id="currency-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="currency-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -68,7 +68,7 @@
                                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500"
                                    placeholder="e.g., Chase, Bank of America" @error('bank_name') aria-invalid="true" aria-describedby="bank_name-error" @enderror>
                             @error('bank_name')
-                                <p id="bank_name-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="bank_name-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -78,7 +78,7 @@
                             <input type="text" name="account_number" id="account_number" value="{{ old('account_number') }}"
                                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500" @error('account_number') aria-invalid="true" aria-describedby="account_number-error" @enderror>
                             @error('account_number')
-                                <p id="account_number-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="account_number-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -88,7 +88,7 @@
                             <input type="text" name="routing_number" id="routing_number" value="{{ old('routing_number') }}"
                                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500" @error('routing_number') aria-invalid="true" aria-describedby="routing_number-error" @enderror>
                             @error('routing_number')
-                                <p id="routing_number-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="routing_number-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -98,7 +98,7 @@
                             <input type="text" name="swift_code" id="swift_code" value="{{ old('swift_code') }}"
                                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500" @error('swift_code') aria-invalid="true" aria-describedby="swift_code-error" @enderror>
                             @error('swift_code')
-                                <p id="swift_code-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="swift_code-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -108,7 +108,7 @@
                             <input type="text" name="iban" id="iban" value="{{ old('iban') }}"
                                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500" @error('iban') aria-invalid="true" aria-describedby="iban-error" @enderror>
                             @error('iban')
-                                <p id="iban-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="iban-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -118,7 +118,7 @@
                             <input type="text" name="branch_name" id="branch_name" value="{{ old('branch_name') }}"
                                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500" @error('branch_name') aria-invalid="true" aria-describedby="branch_name-error" @enderror>
                             @error('branch_name')
-                                <p id="branch_name-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="branch_name-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -128,7 +128,7 @@
                             <input type="text" name="branch_address" id="branch_address" value="{{ old('branch_address') }}"
                                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500" @error('branch_address') aria-invalid="true" aria-describedby="branch_address-error" @enderror>
                             @error('branch_address')
-                                <p id="branch_address-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="branch_address-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -138,7 +138,7 @@
                             <input type="number" step="0.01" name="opening_balance" id="opening_balance" value="{{ old('opening_balance', '0.00') }}"
                                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500" @error('opening_balance') aria-invalid="true" aria-describedby="opening_balance-error" @enderror>
                             @error('opening_balance')
-                                <p id="opening_balance-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="opening_balance-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -148,7 +148,7 @@
                             <input type="date" name="opening_balance_date" id="opening_balance_date" value="{{ old('opening_balance_date', date('Y-m-d')) }}"
                                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500" @error('opening_balance_date') aria-invalid="true" aria-describedby="opening_balance_date-error" @enderror>
                             @error('opening_balance_date')
-                                <p id="opening_balance_date-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="opening_balance_date-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -164,7 +164,7 @@
                                 :has-error="$errors->has('chart_of_account_id')" />
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Link this bank account to an asset account in your Chart of Accounts for journal entries.</p>
                             @error('chart_of_account_id')
-                                <p id="chart_of_account_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="chart_of_account_id-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -174,7 +174,7 @@
                             <textarea name="description" id="description" rows="3"
                                       class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500" @error('description') aria-invalid="true" aria-describedby="description-error" @enderror>{{ old('description') }}</textarea>
                             @error('description')
-                                <p id="description-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="description-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
 

@@ -49,11 +49,11 @@
                     @method('PUT')
 
                     <div class="mb-6">
-                        <label for="name" class="form-label">Role Name <span class="text-red-500">*</span></label>
+                        <label for="name" class="form-label">Role Name <span class="text-red-600 dark:text-red-300">*</span></label>
                         <input type="text" name="name" id="name" value="{{ old('name', $role->name) }}" required
                             class="w-full max-w-md rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 @error('name') border-red-500 @enderror" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                         @error('name')
-                            <p id="name-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            <p id="name-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                         @if($isCustomizing ?? false)
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">You can keep the same name or give it a custom name for your organization.</p>

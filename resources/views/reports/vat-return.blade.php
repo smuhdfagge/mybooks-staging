@@ -19,7 +19,7 @@
                 <a href="{{ route('reports.vat-return.export', ['month' => $month, 'format' => 'pdf'] + ($filing ? [] : array_filter($manual))) }}" class="inline-flex items-center px-3 py-2 bg-red-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700">PDF (Form 002)</a>
                 <x-dropdown align="right" width="w-64">
                     <x-slot name="trigger">
-                        <button type="button" class="inline-flex items-center px-3 py-2 bg-green-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">CSV</button>
+                        <button type="button" class="inline-flex items-center px-3 py-2 bg-green-700 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">CSV</button>
                     </x-slot>
                     <x-slot name="content">
                         <x-dropdown-link :href="route('reports.vat-return.export', ['month' => $month, 'format' => 'csv', 'schedule' => 'sales-upload'])">Sales schedule (NRS upload)</x-dropdown-link>

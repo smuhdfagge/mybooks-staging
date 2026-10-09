@@ -25,7 +25,7 @@
                     
                     <!-- Step Label -->
                     <span class="ml-3 text-sm font-medium hidden sm:block
-                        {{ $i <= $currentStep ? 'text-gray-100' : 'text-gray-500' }}">
+                        {{ $i <= $currentStep ? 'text-gray-100' : 'text-slate-400' }}">
                         @if ($i === 1)
                             Select Plan
                         @elseif ($i === 2)
@@ -92,7 +92,7 @@
                                 </div>
                                 <div class="mt-3 flex items-center justify-between">
                                     <span class="text-gray-400">{{ $plan->description }}</span>
-                                    <span class="text-gray-500 text-sm">Up to {{ $plan->max_users }} users</span>
+                                    <span class="text-slate-400 text-sm">Up to {{ $plan->max_users }} users</span>
                                 </div>
                                 @if($plan->features && count($plan->features) > 0)
                                     <div class="mt-3 flex flex-wrap gap-2">
@@ -383,7 +383,7 @@
                         class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
                         placeholder="you@example.com"
                     >
-                    <p class="text-gray-500 text-sm mt-1">We'll send a verification email to this address</p>
+                    <p class="text-slate-400 text-sm mt-1">We'll send a verification email to this address</p>
                     @error('email')
                         <p id="email-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
                     @enderror
@@ -443,29 +443,29 @@
                     <h4 class="text-sm font-semibold text-gray-300 mb-3">Registration Summary</h4>
                     <div class="space-y-2 text-sm">
                         <div class="flex justify-between">
-                            <span class="text-gray-500">Plan:</span>
+                            <span class="text-slate-400">Plan:</span>
                             <span class="text-white font-medium">{{ $this->selectedPlan?->name ?? 'Not selected' }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-gray-500">Billing:</span>
+                            <span class="text-slate-400">Billing:</span>
                             <span class="text-white font-medium">{{ ucfirst($billing_cycle) }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-gray-500">Company:</span>
+                            <span class="text-slate-400">Company:</span>
                             <span class="text-white font-medium">{{ $company_name ?: 'Not entered' }}</span>
                         </div>
                         <div class="flex justify-between border-t border-gray-700 pt-2 mt-2">
                             <span class="text-gray-400">Total:</span>
                             <span class="text-xl font-bold text-brand-400">
                                 ₦{{ number_format($billing_cycle === 'annual' ? ($this->selectedPlan?->annual_price ?? 0) : ($this->selectedPlan?->monthly_price ?? 0)) }}
-                                <span class="text-sm font-normal text-gray-500">/{{ $billing_cycle === 'annual' ? 'year' : 'month' }}</span>
+                                <span class="text-sm font-normal text-slate-400">/{{ $billing_cycle === 'annual' ? 'year' : 'month' }}</span>
                             </span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Terms Notice -->
-                <p class="text-sm text-gray-500 text-center">
+                <p class="text-sm text-slate-400 text-center">
                     By creating an account, you agree to our 
                     <a href="#" class="text-brand-400 hover:text-brand-300">Terms of Service</a> and 
                     <a href="#" class="text-brand-400 hover:text-brand-300">Privacy Policy</a>

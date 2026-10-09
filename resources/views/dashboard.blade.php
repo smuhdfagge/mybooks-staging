@@ -270,7 +270,7 @@
                                     <p class="text-xs text-gray-500 dark:text-gray-400 truncate">SKU: {{ $inventory->item->sku ?? 'N/A' }}</p>
                                 </div>
                                 <div class="text-right flex-shrink-0">
-                                    <p class="text-sm font-medium text-red-600 dark:text-red-400">{{ $inventory->quantity }} units</p>
+                                    <p class="text-sm font-medium text-red-600 dark:text-red-300">{{ $inventory->quantity }} units</p>
                                     <p class="text-xs text-gray-500 dark:text-gray-400">Reorder: {{ $inventory->item->reorder_level ?? 0 }}</p>
                                 </div>
                             </div>

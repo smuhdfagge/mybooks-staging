@@ -54,7 +54,7 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 bg-green-100 dark:bg-green-900/50 rounded-full p-3">
-                            <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 text-green-700 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                         </div>
@@ -71,7 +71,7 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 bg-yellow-100 dark:bg-yellow-900/50 rounded-full p-3">
-                            <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 text-yellow-700 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                             </svg>
                         </div>
@@ -151,7 +151,7 @@
                                         @elseif($employee->status === 'on_leave')
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-400">On Leave</span>
                                         @else
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-400">{{ ucfirst($employee->status ?? 'Inactive') }}</span>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300">{{ ucfirst($employee->status ?? 'Inactive') }}</span>
                                         @endif
                                     </dd>
                                 </div>
@@ -282,7 +282,7 @@
                                                     $statusColors = [
                                                         'pending' => 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-400',
                                                         'approved' => 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-400',
-                                                        'rejected' => 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-400',
+                                                        'rejected' => 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300',
                                                     ];
                                                 @endphp
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$leave->status] ?? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300' }}">
@@ -326,10 +326,10 @@
                                             <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-right">
                                                 {{ number_format($payroll->gross_salary ?? 0, 2) }}
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-red-600 dark:text-red-400 text-right">
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-red-600 dark:text-red-300 text-right">
                                                 -{{ number_format($payroll->total_deductions ?? 0, 2) }}
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-green-600 dark:text-green-400 text-right font-medium">
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-green-700 dark:text-green-400 text-right font-medium">
                                                 {{ number_format($payroll->net_salary ?? 0, 2) }}
                                             </td>
                                             <td class="px-4 py-3 whitespace-nowrap">

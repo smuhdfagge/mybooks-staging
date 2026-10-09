@@ -107,7 +107,7 @@
                             <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-right">
                                 <div class="font-medium text-gray-900 dark:text-white">@money($invoice->total)</div>
                                 @if($invoice->balance_due > 0)
-                                    <div class="text-xs text-red-600 dark:text-red-400">Due: @money($invoice->balance_due)</div>
+                                    <div class="text-xs text-red-600 dark:text-red-300">Due: @money($invoice->balance_due)</div>
                                 @endif
                             </td>
                             <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-center">
@@ -129,11 +129,11 @@
                                     <a href="{{ route('invoices.print', $invoice) }}" class="p-1 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200" title="Print" aria-label="Print" target="_blank">
                                         <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                                     </a>
-                                    <a href="{{ route('invoices.edit', $invoice) }}" class="p-1 text-yellow-600 hover:text-yellow-900 dark:text-yellow-400" title="Edit" aria-label="Edit">
+                                    <a href="{{ route('invoices.edit', $invoice) }}" class="p-1 text-yellow-700 hover:text-yellow-900 dark:text-yellow-400" title="Edit" aria-label="Edit">
                                         <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                     </a>
                                     @if($invoice->status === 'draft')
-                                    <button wire:click="sendInvoice({{ $invoice->id }})" class="p-1 text-green-600 hover:text-green-900 dark:text-green-400" title="Send" aria-label="Send">
+                                    <button wire:click="sendInvoice({{ $invoice->id }})" class="p-1 text-green-700 hover:text-green-900 dark:text-green-400" title="Send" aria-label="Send">
                                         <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                                     </button>
                                     @endif

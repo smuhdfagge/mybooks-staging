@@ -93,7 +93,7 @@
                                                     </td>
                                                 @elseif($order->isDraft() && ! $breakdown)
                                                     @php $freeQty = $free[$line->item_id] ?? 0; @endphp
-                                                    <td class="px-3 py-2 text-right whitespace-nowrap {{ $freeQty + 0.00001 < (float) $line->planned_quantity ? 'text-red-600 dark:text-red-400 font-medium' : '' }}">{{ $fmt($freeQty) }}{{ $lineUnit }}</td>
+                                                    <td class="px-3 py-2 text-right whitespace-nowrap {{ $freeQty + 0.00001 < (float) $line->planned_quantity ? 'text-red-600 dark:text-red-300 font-medium' : '' }}">{{ $fmt($freeQty) }}{{ $lineUnit }}</td>
                                                 @endif
                                             </tr>
                                         @empty
@@ -177,7 +177,7 @@
                                     <button type="submit" class="{{ $secondary }} w-full">Cancel order</button>
                                 </form>
                                 <form method="POST" action="{{ route('assembly-orders.destroy', $order) }}" data-confirm="Delete draft {{ $order->order_number }}?">@csrf @method('DELETE')
-                                    <button type="submit" class="{{ $btn }} w-full bg-white dark:bg-gray-800 border-red-300 text-red-700 dark:text-red-400 hover:bg-red-50">Delete</button>
+                                    <button type="submit" class="{{ $btn }} w-full bg-white dark:bg-gray-800 border-red-300 text-red-700 dark:text-red-300 hover:bg-red-50">Delete</button>
                                 </form>
                             </div>
                         </x-card>
@@ -204,7 +204,7 @@
                             <div class="p-4 sm:p-6 space-y-3 text-sm">
                                 <p class="text-gray-600 dark:text-gray-400">This order was cancelled. Nothing moved in stock.</p>
                                 <form method="POST" action="{{ route('assembly-orders.destroy', $order) }}" data-confirm="Delete {{ $order->order_number }}?">@csrf @method('DELETE')
-                                    <button type="submit" class="{{ $btn }} w-full bg-white dark:bg-gray-800 border-red-300 text-red-700 dark:text-red-400 hover:bg-red-50">Delete</button>
+                                    <button type="submit" class="{{ $btn }} w-full bg-white dark:bg-gray-800 border-red-300 text-red-700 dark:text-red-300 hover:bg-red-50">Delete</button>
                                 </form>
                             </div>
                         </x-card>

@@ -48,7 +48,7 @@
                                 <div class="space-y-4">
                                     <div class="flex items-center justify-between">
                                         <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">Revenue This Month</span>
-                                        <span class="text-green-500 text-sm font-semibold">+12.5%</span>
+                                        <span class="text-green-700 text-sm font-semibold">+12.5%</span>
                                     </div>
                                     <div class="text-3xl font-bold text-gray-900 dark:text-white">₦5,239,343</div>
                                     <div class="h-32 flex items-end gap-2 border-b border-gray-200" aria-hidden="true"><div class="flex-1 rounded-t bg-brand-200" style="height: 35%"></div><div class="flex-1 rounded-t bg-brand-200" style="height: 50%"></div><div class="flex-1 rounded-t bg-brand-200" style="height: 42%"></div><div class="flex-1 rounded-t bg-brand-300" style="height: 64%"></div><div class="flex-1 rounded-t bg-brand-300" style="height: 58%"></div><div class="flex-1 rounded-t bg-brand-500" style="height: 78%"></div><div class="flex-1 rounded-t bg-brand-600" style="height: 92%"></div></div>
@@ -171,19 +171,19 @@
                             <p class="text-lg text-gray-600 dark:text-gray-300">Manage your entire sales process from quotes to payment collection.</p>
                             <ul class="space-y-3">
                                 <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                     <div><strong class="text-gray-900 dark:text-white">Customer Management:</strong> <span class="text-gray-600 dark:text-gray-300">Track customer information, purchase history, and outstanding balances</span></div>
                                 </li>
                                 <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                     <div><strong class="text-gray-900 dark:text-white">Sales Orders:</strong> <span class="text-gray-600 dark:text-gray-300">Create, confirm, and convert sales orders to invoices automatically</span></div>
                                 </li>
                                 <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                     <div><strong class="text-gray-900 dark:text-white">Invoicing:</strong> <span class="text-gray-600 dark:text-gray-300">Generate professional invoices, send via email, download PDFs, and track payment status</span></div>
                                 </li>
                                 <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                     <div><strong class="text-gray-900 dark:text-white">Payment Tracking:</strong> <span class="text-gray-600 dark:text-gray-300">Record payments received, manage partial payments, and reconcile accounts</span></div>
                                 </li>
                             </ul>
@@ -226,15 +226,15 @@
                             <p class="text-lg text-gray-600 dark:text-gray-300">Control your spending and manage vendor relationships effectively.</p>
                             <ul class="space-y-3">
                                 <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                     <div><strong class="text-gray-900 dark:text-white">Vendor Management:</strong> <span class="text-gray-600 dark:text-gray-300">Maintain vendor database with contact info and payment terms</span></div>
                                 </li>
                                 <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                     <div><strong class="text-gray-900 dark:text-white">Bills & Expenses:</strong> <span class="text-gray-600 dark:text-gray-300">Record vendor bills, one-time expenses, and recurring expenses automatically</span></div>
                                 </li>
                                 <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                     <div><strong class="text-gray-900 dark:text-white">Payment Processing:</strong> <span class="text-gray-600 dark:text-gray-300">Track payments made to vendors and reconcile accounts payable</span></div>
                                 </li>
                             </ul>
@@ -245,21 +245,21 @@
                     <div class="grid lg:grid-cols-2 gap-8 items-center">
                         <div class="space-y-4">
                             <div class="inline-block px-4 py-2 bg-green-100 dark:bg-green-900/30 rounded-full">
-                                <span class="text-sm font-semibold text-green-600 dark:text-green-400">Inventory Module</span>
+                                <span class="text-sm font-semibold text-green-700 dark:text-green-400">Inventory Module</span>
                             </div>
                             <h3 class="text-3xl font-bold text-gray-900 dark:text-white">Real-Time Inventory Control</h3>
                             <p class="text-lg text-gray-600 dark:text-gray-300">Never run out of stock or overstock with intelligent inventory tracking.</p>
                             <ul class="space-y-3">
                                 <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                     <div><strong class="text-gray-900 dark:text-white">Item Management:</strong> <span class="text-gray-600 dark:text-gray-300">Manage products, SKUs, categories, pricing, and tax rates</span></div>
                                 </li>
                                 <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                     <div><strong class="text-gray-900 dark:text-white">Stock Tracking:</strong> <span class="text-gray-600 dark:text-gray-300">Monitor current stock levels, view inventory value, and track movement</span></div>
                                 </li>
                                 <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                     <div><strong class="text-gray-900 dark:text-white">Inventory Adjustments:</strong> <span class="text-gray-600 dark:text-gray-300">Adjust stock levels for damages, returns, or inventory counts with full audit trail</span></div>
                                 </li>
                             </ul>
@@ -271,7 +271,7 @@
                                 </div>
                                 <div class="space-y-2 text-sm">
                                     <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">SKU:</span><span class="text-gray-900 dark:text-white font-medium">DXPS-15-001</span></div>
-                                    <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">In Stock:</span><span class="text-green-600 dark:text-green-400 font-semibold">11 units</span></div>
+                                    <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">In Stock:</span><span class="text-green-700 dark:text-green-400 font-semibold">11 units</span></div>
                                     <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Reorder Level:</span><span class="text-gray-900 dark:text-white">20 units</span></div>
                                     <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Value:</span><span class="text-gray-900 dark:text-white font-semibold">₦10,615,000</span></div>
                                 </div>
@@ -296,21 +296,21 @@
                         </div>
                         <div class="space-y-4 lg:order-2 order-1">
                             <div class="inline-block px-4 py-2 bg-orange-100 dark:bg-orange-900/30 rounded-full">
-                                <span class="text-sm font-semibold text-orange-600 dark:text-orange-400">HR & Payroll Module</span>
+                                <span class="text-sm font-semibold text-orange-700 dark:text-orange-400">HR & Payroll Module</span>
                             </div>
                             <h3 class="text-3xl font-bold text-gray-900 dark:text-white">Comprehensive Employee Management</h3>
                             <p class="text-lg text-gray-600 dark:text-gray-300">Manage your workforce and payroll with ease and accuracy.</p>
                             <ul class="space-y-3">
                                 <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                     <div><strong class="text-gray-900 dark:text-white">Employee Records:</strong> <span class="text-gray-600 dark:text-gray-300">Store employee details, departments, designations, and employment history</span></div>
                                 </li>
                                 <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                     <div><strong class="text-gray-900 dark:text-white">Payroll Processing:</strong> <span class="text-gray-600 dark:text-gray-300">Calculate salaries, deductions, bonuses, and generate payslips automatically</span></div>
                                 </li>
                                 <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                     <div><strong class="text-gray-900 dark:text-white">Leave Management:</strong> <span class="text-gray-600 dark:text-gray-300">Track leave types, requests, approvals, and employee leave balances</span></div>
                                 </li>
                             </ul>
@@ -403,7 +403,7 @@
                         </div>
                         <p class="text-gray-600 dark:text-gray-300 mb-4 italic">"Best value for money. The multi-tenant feature allows us to manage multiple business entities seamlessly. Excellent support team!"</p>
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold">JR</div>
+                            <div class="w-10 h-10 bg-green-700 rounded-full flex items-center justify-center text-white font-semibold">JR</div>
                             <div>
                                 <p class="font-semibold text-gray-900 dark:text-white">Jamil Rabiu</p>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">Chairman, El-Jameel Plastics</p>
@@ -431,28 +431,28 @@
                                 <span class="text-5xl font-bold text-gray-900 dark:text-white">₦25,000</span>
                                 <span class="text-gray-600 dark:text-gray-400">/month</span>
                             </div>
-                            <p class="text-sm text-green-600 dark:text-green-400 mb-6">or ₦250,000/year (Save 17%)</p>
+                            <p class="text-sm text-green-700 dark:text-green-400 mb-6">or ₦250,000/year (Save 17%)</p>
                             <a href="{{ route('register', ['plan' => 'starter']) }}" class="block w-full px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition font-semibold">Get Started</a>
                         </div>
                         <ul class="mt-8 space-y-4">
                             <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                <svg class="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                 <span class="text-gray-600 dark:text-gray-300">Up to 5 users</span>
                             </li>
                             <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                <svg class="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                 <span class="text-gray-600 dark:text-gray-300">All core features</span>
                             </li>
                             <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                <svg class="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                 <span class="text-gray-600 dark:text-gray-300">Invoicing & expenses</span>
                             </li>
                             <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                <svg class="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                 <span class="text-gray-600 dark:text-gray-300">Financial reports</span>
                             </li>
                             <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                <svg class="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                 <span class="text-gray-600 dark:text-gray-300">Email support</span>
                             </li>
                         </ul>
@@ -504,28 +504,28 @@
                                 <span class="text-5xl font-bold text-gray-900 dark:text-white">₦150,000</span>
                                 <span class="text-gray-600 dark:text-gray-400">/month</span>
                             </div>
-                            <p class="text-sm text-green-600 dark:text-green-400 mb-6">or ₦1,500,000/year (Save 17%)</p>
+                            <p class="text-sm text-green-700 dark:text-green-400 mb-6">or ₦1,500,000/year (Save 17%)</p>
                             <a href="{{ route('register', ['plan' => 'enterprise']) }}" class="block w-full px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition font-semibold">Get Started</a>
                         </div>
                         <ul class="mt-8 space-y-4">
                             <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                <svg class="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                 <span class="text-gray-600 dark:text-gray-300">Up to 50 users</span>
                             </li>
                             <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                <svg class="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                 <span class="text-gray-600 dark:text-gray-300">All Professional features</span>
                             </li>
                             <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                <svg class="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                 <span class="text-gray-600 dark:text-gray-300">Multi-branch support</span>
                             </li>
                             <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                <svg class="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                 <span class="text-gray-600 dark:text-gray-300">Custom integrations & API</span>
                             </li>
                             <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                <svg class="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                 <span class="text-gray-600 dark:text-gray-300">24/7 phone support</span>
                             </li>
                         </ul>

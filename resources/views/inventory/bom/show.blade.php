@@ -128,7 +128,7 @@
                     @can('delete items')
                         @if(! $bom->assemblyOrders()->exists())
                             <form method="POST" action="{{ route('bill-of-materials.destroy', $bom) }}" data-confirm="Delete {{ $bom->label() }}?">@csrf @method('DELETE')
-                                <button type="submit" class="{{ $btn }} w-full bg-white dark:bg-gray-800 border-red-300 text-red-700 dark:text-red-400 hover:bg-red-50">Delete bill of materials</button>
+                                <button type="submit" class="{{ $btn }} w-full bg-white dark:bg-gray-800 border-red-300 text-red-700 dark:text-red-300 hover:bg-red-50">Delete bill of materials</button>
                             </form>
                         @endif
                     @endcan

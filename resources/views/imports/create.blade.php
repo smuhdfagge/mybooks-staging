@@ -52,7 +52,7 @@
                     <!-- Import Type -->
                     <div class="mb-6">
                         <label for="type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            What would you like to import? <span class="text-red-500">*</span>
+                            What would you like to import? <span class="text-red-600 dark:text-red-300">*</span>
                         </label>
                         <select name="type" id="type" required
                                 class="form-control">
@@ -68,7 +68,7 @@
                     <!-- File Upload -->
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Upload File <span class="text-red-500">*</span>
+                            Upload File <span class="text-red-600 dark:text-red-300">*</span>
                         </label>
                         <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg hover:border-brand-500 dark:hover:border-brand-500 transition" 
                              x-data="{ dragging: false, fileName: '' }"

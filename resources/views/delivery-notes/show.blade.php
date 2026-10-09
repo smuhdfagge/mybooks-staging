@@ -108,7 +108,7 @@
                     @can('delete invoices')
                         @if(in_array($status, ['draft', 'cancelled'], true))
                             <form method="POST" action="{{ route('delivery-notes.destroy', $deliveryNote) }}" data-confirm="Delete this delivery note?">@csrf @method('DELETE')
-                                <button type="submit" class="{{ $btn }} w-full bg-white dark:bg-gray-800 border-red-300 text-red-700 dark:text-red-400 hover:bg-red-50">Delete</button>
+                                <button type="submit" class="{{ $btn }} w-full bg-white dark:bg-gray-800 border-red-300 text-red-700 dark:text-red-300 hover:bg-red-50">Delete</button>
                             </form>
                         @endif
                     @endcan

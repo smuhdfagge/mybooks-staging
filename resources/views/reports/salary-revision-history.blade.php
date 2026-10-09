@@ -78,12 +78,12 @@
                                     <td class="px-6 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($row['basic_salary'], 2) }}</td>
                                     <td class="px-6 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($row['allowances'], 2) }}</td>
                                     <td class="px-6 py-3 text-sm text-right font-medium text-gray-900 dark:text-gray-100">{{ number_format($row['gross_salary'], 2) }}</td>
-                                    <td class="px-6 py-3 text-sm text-right text-green-600 dark:text-green-400">{{ number_format($row['net_salary'], 2) }}</td>
+                                    <td class="px-6 py-3 text-sm text-right text-green-700 dark:text-green-400">{{ number_format($row['net_salary'], 2) }}</td>
                                     <td class="px-6 py-3 text-sm text-right">
                                         @if($change > 0)
-                                            <span class="text-green-600 dark:text-green-400">+{{ number_format($change, 2) }}</span>
+                                            <span class="text-green-700 dark:text-green-400">+{{ number_format($change, 2) }}</span>
                                         @elseif($change < 0)
-                                            <span class="text-red-600 dark:text-red-400">{{ number_format($change, 2) }}</span>
+                                            <span class="text-red-600 dark:text-red-300">{{ number_format($change, 2) }}</span>
                                         @else
                                             <span class="text-gray-500 dark:text-gray-400">—</span>
                                         @endif

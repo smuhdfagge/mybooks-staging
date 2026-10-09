@@ -48,7 +48,7 @@
                             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Taxable</dt>
                             <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">
                                 @if($allowance->is_taxable)
-                                    <span class="text-yellow-600 dark:text-yellow-400 font-medium">Yes</span>
+                                    <span class="text-yellow-700 dark:text-yellow-400 font-medium">Yes</span>
                                 @else
                                     <span class="text-gray-500 dark:text-gray-400">No</span>
                                 @endif

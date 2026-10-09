@@ -81,7 +81,7 @@
                                 @endcan
                                 @can('delete fixed-asset-categories')
                                     @if($category->assets_count == 0)
-                                        <button wire:click="delete({{ $category->id }})" wire:confirm="Are you sure you want to delete this category?" class="text-red-600 hover:text-red-900 dark:text-red-400">Delete</button>
+                                        <button wire:click="delete({{ $category->id }})" wire:confirm="Are you sure you want to delete this category?" class="text-red-600 hover:text-red-900 dark:text-red-300">Delete</button>
                                     @endif
                                 @endcan
                             </div>

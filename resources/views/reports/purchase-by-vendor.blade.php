@@ -140,7 +140,7 @@
                                             <div class="flex items-center">
                                                 <div class="flex-shrink-0 h-10 w-10">
                                                     <div class="h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900 flex items-center justify-center">
-                                                        <span class="text-orange-600 dark:text-orange-400 font-medium text-sm">
+                                                        <span class="text-orange-700 dark:text-orange-400 font-medium text-sm">
                                                             {{ strtoupper(substr($vendor->name, 0, 2)) }}
                                                         </span>
                                                     </div>
@@ -166,10 +166,10 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900 dark:text-white">
                                             {{ number_format($vendor->bills_sum_total ?? 0, 2) }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-green-600 dark:text-green-400">
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-green-700 dark:text-green-400">
                                             {{ number_format($vendor->bills_sum_amount_paid ?? 0, 2) }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm {{ ($vendor->bills_sum_total ?? 0) - ($vendor->bills_sum_amount_paid ?? 0) > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400' }}">
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm {{ ($vendor->bills_sum_total ?? 0) - ($vendor->bills_sum_amount_paid ?? 0) > 0 ? 'text-red-600 dark:text-red-300' : 'text-gray-500 dark:text-gray-400' }}">
                                             {{ number_format(($vendor->bills_sum_total ?? 0) - ($vendor->bills_sum_amount_paid ?? 0), 2) }}
                                         </td>
                                     </tr>
@@ -183,10 +183,10 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-gray-900 dark:text-white">
                                         {{ number_format($totalPurchases, 2) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-green-600 dark:text-green-400">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-green-700 dark:text-green-400">
                                         {{ number_format($totalPaid, 2) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-red-600 dark:text-red-400">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-red-600 dark:text-red-300">
                                         {{ number_format($totalPurchases - $totalPaid, 2) }}
                                     </td>
                                 </tr>

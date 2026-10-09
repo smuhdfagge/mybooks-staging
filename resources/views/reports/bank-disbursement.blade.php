@@ -67,7 +67,7 @@
                         <div class="ml-5">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Disbursement</dt>
-                                <dd class="text-lg font-semibold text-green-600 dark:text-green-400">{{ number_format($totals['total_net'], 2) }}</dd>
+                                <dd class="text-lg font-semibold text-green-700 dark:text-green-400">{{ number_format($totals['total_net'], 2) }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -96,7 +96,7 @@
                                 <h4 class="text-sm font-medium text-gray-900 dark:text-white capitalize">{{ str_replace('_', ' ', $method['method']) }}</h4>
                                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $method['count'] }} payments</p>
                             </div>
-                            <span class="text-lg font-semibold text-green-600 dark:text-green-400">{{ number_format($method['total'], 2) }}</span>
+                            <span class="text-lg font-semibold text-green-700 dark:text-green-400">{{ number_format($method['total'], 2) }}</span>
                         </div>
                     </div>
                     @endforeach
@@ -140,7 +140,7 @@
                                     </td>
                                     <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{{ $payroll->pay_date?->format('M d, Y') }}</td>
                                     <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 capitalize">{{ str_replace('_', ' ', $payroll->payment_method ?? 'N/A') }}</td>
-                                    <td class="px-4 py-3 text-sm text-right font-semibold text-green-600 dark:text-green-400">{{ number_format($payroll->net_salary, 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right font-semibold text-green-700 dark:text-green-400">{{ number_format($payroll->net_salary, 2) }}</td>
                                     <td class="px-4 py-3 text-sm text-center">
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                             {{ $payroll->status === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : '' }}
@@ -159,7 +159,7 @@
                         <tfoot class="bg-gray-50 dark:bg-gray-700">
                             <tr>
                                 <td colspan="7" class="px-4 py-3 text-sm font-bold text-gray-900 dark:text-white">Total</td>
-                                <td class="px-4 py-3 text-sm text-right font-bold text-green-600 dark:text-green-400">{{ number_format($totals['total_net'], 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right font-bold text-green-700 dark:text-green-400">{{ number_format($totals['total_net'], 2) }}</td>
                                 <td></td>
                             </tr>
                         </tfoot>

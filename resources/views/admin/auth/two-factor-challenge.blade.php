@@ -51,7 +51,7 @@
 
             @if(session('error'))
                 <div class="mb-4 p-4 bg-red-100 dark:bg-red-900/50 border border-red-200 dark:border-red-700 rounded-lg">
-                    <p class="text-sm text-red-600 dark:text-red-400">{{ session('error') }}</p>
+                    <p class="text-sm text-red-600 dark:text-red-300">{{ session('error') }}</p>
                 </div>
             @endif
 

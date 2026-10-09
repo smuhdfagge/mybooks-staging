@@ -11,7 +11,7 @@
         </div>
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-4">
             <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Active Assets</div>
-            <div class="mt-1 text-2xl font-semibold text-green-600 dark:text-green-400">{{ $activeAssets }}</div>
+            <div class="mt-1 text-2xl font-semibold text-green-700 dark:text-green-400">{{ $activeAssets }}</div>
         </div>
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-4">
             <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Cost</div>
@@ -111,7 +111,7 @@
                                 {{ number_format($asset->purchase_cost, 2) }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
-                                <span class="font-medium {{ $asset->book_value > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-500' }}">
+                                <span class="font-medium {{ $asset->book_value > 0 ? 'text-green-700 dark:text-green-400' : 'text-gray-500' }}">
                                     {{ number_format($asset->book_value, 2) }}
                                 </span>
                                 <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5 mt-1">
@@ -186,7 +186,7 @@
                         <strong>If you sold an asset, dispose of it on its own page instead</strong>, so you can enter what you got for it.
                     </p>
                     <div>
-                        <label for="disposalDate" class="form-label">Disposal date <span class="text-red-500">*</span></label>
+                        <label for="disposalDate" class="form-label">Disposal date <span class="text-red-600 dark:text-red-300">*</span></label>
                         <input type="date" id="disposalDate" wire:model="disposalDate" max="{{ now()->toDateString() }}" class="form-control">
                         @error('disposalDate')<p class="form-error">{{ $message }}</p>@enderror
                     </div>

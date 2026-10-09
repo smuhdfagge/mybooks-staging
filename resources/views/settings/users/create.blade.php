@@ -27,7 +27,7 @@
                         <div>
                             <x-field name="name" label="Name" :value="old('name')" required />
                             @error('name')
-                                <p id="name-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="name-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -35,7 +35,7 @@
                         <div>
                             <x-field name="email" label="Email" type="email" :value="old('email')" required />
                             @error('email')
-                                <p id="email-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="email-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -43,7 +43,7 @@
                         <div>
                             <x-field name="phone" label="Phone" :value="old('phone')" />
                             @error('phone')
-                                <p id="phone-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="phone-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -51,13 +51,13 @@
                         <div>
                             <x-field name="password" label="Password" type="password" required />
                             @error('password')
-                                <p id="password-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="password-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
                         <!-- Confirm Password -->
                         <div class="md:col-span-2">
-                            <label for="password_confirmation" class="form-label">Confirm Password <span class="text-red-500">*</span></label>
+                            <label for="password_confirmation" class="form-label">Confirm Password <span class="text-red-600 dark:text-red-300">*</span></label>
                             <input type="password" name="password_confirmation" id="password_confirmation" required
                                 class="w-full max-w-md rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         </div>

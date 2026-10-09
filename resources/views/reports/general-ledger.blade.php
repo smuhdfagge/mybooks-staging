@@ -73,7 +73,7 @@
                         </div>
                         <div class="text-right">
                             <p class="text-sm text-gray-500 dark:text-gray-400">Closing Balance</p>
-                            <p class="text-2xl font-bold {{ $closingBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                            <p class="text-2xl font-bold {{ $closingBalance >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                 {{ number_format(abs($closingBalance), 2) }} {{ $closingBalance >= 0 ? 'Dr' : 'Cr' }}
                             </p>
                         </div>
@@ -128,14 +128,14 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
                                         -
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium {{ ($openingBalance ?? 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium {{ ($openingBalance ?? 0) >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                         {{ number_format(abs($openingBalance ?? 0), 2) }} {{ ($openingBalance ?? 0) >= 0 ? 'Dr' : 'Cr' }}
                                     </td>
                                 </tr>
                                 @if($entries->currentPage() > 1)
                                     <tr class="bg-gray-50 dark:bg-gray-700/50">
                                         <td colspan="5" class="px-6 py-3 text-sm text-gray-600 dark:text-gray-300">Brought forward from earlier pages</td>
-                                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-medium {{ $pageOpeningBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-medium {{ $pageOpeningBalance >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                             {{ number_format(abs($pageOpeningBalance), 2) }} {{ $pageOpeningBalance >= 0 ? 'Dr' : 'Cr' }}
                                         </td>
                                     </tr>
@@ -164,7 +164,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm {{ $entry->credit > 0 ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-500 dark:text-gray-400' }}">
                                             {{ $entry->credit > 0 ? number_format($entry->credit, 2) : '-' }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium {{ $runningBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium {{ $runningBalance >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                             {{ number_format(abs($runningBalance), 2) }} {{ $runningBalance >= 0 ? 'Dr' : 'Cr' }}
                                         </td>
                                     </tr>
@@ -187,7 +187,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-gray-900 dark:text-white">
                                         {{ number_format($totalCredit, 2) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold {{ $closingBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold {{ $closingBalance >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                         {{ number_format(abs($closingBalance), 2) }} {{ $closingBalance >= 0 ? 'Dr' : 'Cr' }}
                                     </td>
                                 </tr>
@@ -204,20 +204,20 @@
                         <div class="grid grid-cols-3 gap-4 text-center">
                             <div>
                                 <p class="text-xs text-gray-500 dark:text-gray-400">Opening Balance</p>
-                                <p class="text-lg font-semibold {{ ($openingBalance ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                <p class="text-lg font-semibold {{ ($openingBalance ?? 0) >= 0 ? 'text-green-700' : 'text-red-600' }}">
                                     {{ number_format(abs($openingBalance ?? 0), 2) }} {{ ($openingBalance ?? 0) >= 0 ? 'Dr' : 'Cr' }}
                                 </p>
                             </div>
                             <div>
                                 <p class="text-xs text-gray-500 dark:text-gray-400">Net Movement</p>
                                 @php $netMovement = $totalDebit - $totalCredit; @endphp
-                                <p class="text-lg font-semibold {{ $netMovement >= 0 ? 'text-brand-600 dark:text-brand-300' : 'text-orange-600' }}">
+                                <p class="text-lg font-semibold {{ $netMovement >= 0 ? 'text-brand-600 dark:text-brand-300' : 'text-orange-700' }}">
                                     {{ $netMovement >= 0 ? '+' : '-' }}{{ number_format(abs($netMovement), 2) }}
                                 </p>
                             </div>
                             <div>
                                 <p class="text-xs text-gray-500 dark:text-gray-400">Closing Balance</p>
-                                <p class="text-lg font-semibold {{ $closingBalance >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                <p class="text-lg font-semibold {{ $closingBalance >= 0 ? 'text-green-700' : 'text-red-600' }}">
                                     {{ number_format(abs($closingBalance), 2) }} {{ $closingBalance >= 0 ? 'Dr' : 'Cr' }}
                                 </p>
                             </div>

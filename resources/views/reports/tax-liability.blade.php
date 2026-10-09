@@ -61,10 +61,10 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Tax Collected</p>
-                            <p class="text-2xl font-bold text-red-600 dark:text-red-400">{{ number_format($totalTaxCollected, 2) }}</p>
+                            <p class="text-2xl font-bold text-red-600 dark:text-red-300">{{ number_format($totalTaxCollected, 2) }}</p>
                         </div>
                         <div class="p-3 bg-red-100 dark:bg-red-900/30 rounded-full">
-                            <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 text-red-600 dark:text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                         </div>
@@ -81,10 +81,10 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Tax Paid</p>
-                            <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ number_format($totalTaxPaid, 2) }}</p>
+                            <p class="text-2xl font-bold text-green-700 dark:text-green-400">{{ number_format($totalTaxPaid, 2) }}</p>
                         </div>
                         <div class="p-3 bg-green-100 dark:bg-green-900/30 rounded-full">
-                            <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 text-green-700 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                         </div>
@@ -103,12 +103,12 @@
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
                                 Net {{ $totalNetLiability >= 0 ? 'Liability' : 'Credit' }}
                             </p>
-                            <p class="text-2xl font-bold {{ $totalNetLiability >= 0 ? 'text-orange-600 dark:text-orange-400' : 'text-brand-600 dark:text-brand-300' }}">
+                            <p class="text-2xl font-bold {{ $totalNetLiability >= 0 ? 'text-orange-700 dark:text-orange-400' : 'text-brand-600 dark:text-brand-300' }}">
                                 {{ number_format(abs($totalNetLiability), 2) }}
                             </p>
                         </div>
                         <div class="p-3 {{ $totalNetLiability >= 0 ? 'bg-orange-100 dark:bg-orange-900/30' : 'bg-brand-100 dark:bg-brand-900/30' }} rounded-full">
-                            <svg class="w-6 h-6 {{ $totalNetLiability >= 0 ? 'text-orange-600 dark:text-orange-400' : 'text-brand-600 dark:text-brand-300' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 {{ $totalNetLiability >= 0 ? 'text-orange-700 dark:text-orange-400' : 'text-brand-600 dark:text-brand-300' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                             </svg>
                         </div>
@@ -165,10 +165,10 @@
                             <tr>
                                 <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{{ $period['period_label'] }}</td>
                                 <td class="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">{{ number_format($period['taxable_sales'], 2) }}</td>
-                                <td class="px-4 py-3 text-sm text-right text-red-600 dark:text-red-400 font-medium">{{ number_format($period['tax_collected'], 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right text-red-600 dark:text-red-300 font-medium">{{ number_format($period['tax_collected'], 2) }}</td>
                                 <td class="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">{{ number_format($period['taxable_purchases'], 2) }}</td>
-                                <td class="px-4 py-3 text-sm text-right text-green-600 dark:text-green-400 font-medium">{{ number_format($period['tax_paid'], 2) }}</td>
-                                <td class="px-4 py-3 text-sm text-right font-semibold {{ $period['net_liability'] >= 0 ? 'text-orange-600 dark:text-orange-400' : 'text-brand-600 dark:text-brand-300' }}">
+                                <td class="px-4 py-3 text-sm text-right text-green-700 dark:text-green-400 font-medium">{{ number_format($period['tax_paid'], 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right font-semibold {{ $period['net_liability'] >= 0 ? 'text-orange-700 dark:text-orange-400' : 'text-brand-600 dark:text-brand-300' }}">
                                     {{ $period['net_liability'] >= 0 ? '' : '(' }}{{ number_format(abs($period['net_liability']), 2) }}{{ $period['net_liability'] >= 0 ? '' : ')' }}
                                 </td>
                                 <td class="px-4 py-3 text-sm text-right font-bold {{ $period['cumulative_liability'] >= 0 ? 'text-orange-700 dark:text-orange-300' : 'text-brand-700 dark:text-brand-300' }}">
@@ -186,10 +186,10 @@
                             <tr>
                                 <td class="px-4 py-3 text-sm font-bold text-gray-900 dark:text-white">Total</td>
                                 <td class="px-4 py-3 text-sm text-right font-bold text-gray-900 dark:text-white">{{ number_format($totalTaxableSales, 2) }}</td>
-                                <td class="px-4 py-3 text-sm text-right font-bold text-red-600 dark:text-red-400">{{ number_format($totalTaxCollected, 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right font-bold text-red-600 dark:text-red-300">{{ number_format($totalTaxCollected, 2) }}</td>
                                 <td class="px-4 py-3 text-sm text-right font-bold text-gray-900 dark:text-white">{{ number_format($totalTaxablePurchases, 2) }}</td>
-                                <td class="px-4 py-3 text-sm text-right font-bold text-green-600 dark:text-green-400">{{ number_format($totalTaxPaid, 2) }}</td>
-                                <td class="px-4 py-3 text-sm text-right font-bold {{ $totalNetLiability >= 0 ? 'text-orange-600 dark:text-orange-400' : 'text-brand-600 dark:text-brand-300' }}">
+                                <td class="px-4 py-3 text-sm text-right font-bold text-green-700 dark:text-green-400">{{ number_format($totalTaxPaid, 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right font-bold {{ $totalNetLiability >= 0 ? 'text-orange-700 dark:text-orange-400' : 'text-brand-600 dark:text-brand-300' }}">
                                     {{ $totalNetLiability >= 0 ? '' : '(' }}{{ number_format(abs($totalNetLiability), 2) }}{{ $totalNetLiability >= 0 ? '' : ')' }}
                                 </td>
                                 <td class="px-4 py-3 text-sm text-right font-bold {{ $totalNetLiability >= 0 ? 'text-orange-700 dark:text-orange-300' : 'text-brand-700 dark:text-brand-300' }}">
@@ -227,7 +227,7 @@
                                         </span>
                                     </td>
                                     <td class="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">{{ number_format($row->taxable_amount, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right font-medium text-red-600 dark:text-red-400">{{ number_format($row->tax_amount, 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right font-medium text-red-600 dark:text-red-300">{{ number_format($row->tax_amount, 2) }}</td>
                                 </tr>
                                 @empty
                                 <tr>
@@ -240,7 +240,7 @@
                                 <tr>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900 dark:text-white">Total</td>
                                     <td class="px-4 py-3 text-sm text-right font-bold text-gray-900 dark:text-white">{{ number_format($taxByRateOutput->sum('taxable_amount'), 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right font-bold text-red-600 dark:text-red-400">{{ number_format($taxByRateOutput->sum('tax_amount'), 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right font-bold text-red-600 dark:text-red-300">{{ number_format($taxByRateOutput->sum('tax_amount'), 2) }}</td>
                                 </tr>
                             </tfoot>
                             @endif
@@ -271,7 +271,7 @@
                                         </span>
                                     </td>
                                     <td class="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">{{ number_format($row->taxable_amount, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right font-medium text-green-600 dark:text-green-400">{{ number_format($row->tax_amount, 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right font-medium text-green-700 dark:text-green-400">{{ number_format($row->tax_amount, 2) }}</td>
                                 </tr>
                                 @empty
                                 <tr>
@@ -284,7 +284,7 @@
                                 <tr>
                                     <td class="px-4 py-3 text-sm font-bold text-gray-900 dark:text-white">Total</td>
                                     <td class="px-4 py-3 text-sm text-right font-bold text-gray-900 dark:text-white">{{ number_format($taxByRateInput->sum('taxable_amount'), 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right font-bold text-green-600 dark:text-green-400">{{ number_format($taxByRateInput->sum('tax_amount'), 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right font-bold text-green-700 dark:text-green-400">{{ number_format($taxByRateInput->sum('tax_amount'), 2) }}</td>
                                 </tr>
                             </tfoot>
                             @endif
@@ -331,7 +331,7 @@
                                 </div>
                             </div>
                             <div class="w-24 text-right">
-                                <span class="text-sm font-semibold {{ $period['net_liability'] >= 0 ? 'text-orange-600 dark:text-orange-400' : 'text-brand-600 dark:text-brand-300' }}">
+                                <span class="text-sm font-semibold {{ $period['net_liability'] >= 0 ? 'text-orange-700 dark:text-orange-400' : 'text-brand-600 dark:text-brand-300' }}">
                                     {{ $period['net_liability'] >= 0 ? '+' : '-' }}{{ number_format(abs($period['net_liability']), 2) }}
                                 </span>
                             </div>

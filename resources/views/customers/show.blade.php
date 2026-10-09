@@ -58,13 +58,13 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 bg-green-100 dark:bg-green-900/50 rounded-full p-3">
-                            <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 text-green-700 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
                             </svg>
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Deposit Balance</p>
-                            <p class="text-2xl font-bold {{ ($customer->deposit_balance ?? 0) > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-gray-100' }}">{{ number_format($customer->deposit_balance ?? 0, 2) }}</p>
+                            <p class="text-2xl font-bold {{ ($customer->deposit_balance ?? 0) > 0 ? 'text-green-700 dark:text-green-400' : 'text-gray-900 dark:text-gray-100' }}">{{ number_format($customer->deposit_balance ?? 0, 2) }}</p>
                         </div>
                     </div>
                 </div>
@@ -150,7 +150,7 @@
                                         @if($customer->is_active)
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-400">Active</span>
                                         @else
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-400">Inactive</span>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300">Inactive</span>
                                         @endif
                                     </dd>
                                 </div>
@@ -228,7 +228,7 @@
                                                     {{ $invoice->invoice_number }}
                                                 </a>
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                 {{ $invoice->invoice_date->format('M d, Y') }}
                                             </td>
                                             <td class="px-4 py-3 whitespace-nowrap">
@@ -239,7 +239,7 @@
                                                         'viewed' => 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-400',
                                                         'partial' => 'bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300',
                                                         'paid' => 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-400',
-                                                        'overdue' => 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-400',
+                                                        'overdue' => 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300',
                                                         'cancelled' => 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300',
                                                     ];
                                                 @endphp
@@ -250,7 +250,7 @@
                                             <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 text-right">
                                                 {{ number_format($invoice->total_amount, 2) }}
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-right {{ $invoice->balance_due > 0 ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-500 dark:text-gray-400' }}">
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-right {{ $invoice->balance_due > 0 ? 'text-red-600 dark:text-red-300 font-medium' : 'text-gray-500 dark:text-gray-400' }}">
                                                 {{ number_format($invoice->balance_due, 2) }}
                                             </td>
                                         </tr>
@@ -312,7 +312,7 @@
                                             <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                 {{ ucfirst($payment->payment_method) }}
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-green-600 dark:text-green-400 text-right font-medium">
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-green-700 dark:text-green-400 text-right font-medium">
                                                 +{{ number_format($payment->amount, 2) }}
                                             </td>
                                         </tr>
@@ -374,7 +374,7 @@
                             <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-4 mb-4">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center">
-                                        <svg class="w-5 h-5 text-green-600 dark:text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="w-5 h-5 text-green-700 dark:text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                         </svg>
                                         <span class="text-sm font-medium text-green-800 dark:text-green-300">Available Deposit Balance</span>
@@ -411,7 +411,7 @@
                                             </td>
                                             <td class="px-4 py-3 whitespace-nowrap text-sm text-right">
                                                 @if($deposit->unused_amount > 0)
-                                                    <span class="text-green-600 dark:text-green-400 font-medium">{{ number_format($deposit->unused_amount, 2) }}</span>
+                                                    <span class="text-green-700 dark:text-green-400 font-medium">{{ number_format($deposit->unused_amount, 2) }}</span>
                                                 @else
                                                     <span class="text-gray-500 dark:text-gray-400">Used</span>
                                                 @endif

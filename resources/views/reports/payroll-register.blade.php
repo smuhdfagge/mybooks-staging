@@ -72,11 +72,11 @@
             </div>
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-4">
                 <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">Total Deductions</dt>
-                <dd class="mt-1 text-lg font-semibold text-red-600 dark:text-red-400">{{ number_format($totals['total_deductions'], 2) }}</dd>
+                <dd class="mt-1 text-lg font-semibold text-red-600 dark:text-red-300">{{ number_format($totals['total_deductions'], 2) }}</dd>
             </div>
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-4">
                 <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">Net Salary</dt>
-                <dd class="mt-1 text-lg font-semibold text-green-600 dark:text-green-400">{{ number_format($totals['net_salary'], 2) }}</dd>
+                <dd class="mt-1 text-lg font-semibold text-green-700 dark:text-green-400">{{ number_format($totals['net_salary'], 2) }}</dd>
             </div>
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-4">
                 <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">Employer Cost</dt>
@@ -98,11 +98,11 @@
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Approved</p>
                     </div>
                     <div class="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                        <span class="text-2xl font-bold text-green-600 dark:text-green-400">{{ $statusCounts['paid'] }}</span>
+                        <span class="text-2xl font-bold text-green-700 dark:text-green-400">{{ $statusCounts['paid'] }}</span>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Paid</p>
                     </div>
                     <div class="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                        <span class="text-2xl font-bold text-red-600 dark:text-red-400">{{ $statusCounts['cancelled'] }}</span>
+                        <span class="text-2xl font-bold text-red-600 dark:text-red-300">{{ $statusCounts['cancelled'] }}</span>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Cancelled</p>
                     </div>
                 </div>
@@ -141,9 +141,9 @@
                                     <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($payroll->allowances, 2) }}</td>
                                     <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($payroll->overtime_amount, 2) }}</td>
                                     <td class="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-gray-100">{{ number_format($payroll->gross_salary, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-red-600 dark:text-red-400">{{ number_format($payroll->tax_deduction, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-red-600 dark:text-red-400">{{ number_format($payroll->other_deductions, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right font-semibold text-green-600 dark:text-green-400">{{ number_format($payroll->net_salary, 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right text-red-600 dark:text-red-300">{{ number_format($payroll->tax_deduction, 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right text-red-600 dark:text-red-300">{{ number_format($payroll->other_deductions, 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right font-semibold text-green-700 dark:text-green-400">{{ number_format($payroll->net_salary, 2) }}</td>
                                     <td class="px-4 py-3 text-sm text-right text-accent-700 dark:text-accent-300">{{ number_format($payroll->employer_contributions, 2) }}</td>
                                     <td class="px-4 py-3 text-sm text-center">
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
@@ -168,9 +168,9 @@
                                 <td class="px-4 py-3 text-sm text-right font-bold text-gray-900 dark:text-white">{{ number_format($totals['allowances'], 2) }}</td>
                                 <td class="px-4 py-3 text-sm text-right font-bold text-gray-900 dark:text-white">{{ number_format($totals['overtime_amount'], 2) }}</td>
                                 <td class="px-4 py-3 text-sm text-right font-bold text-gray-900 dark:text-white">{{ number_format($totals['gross_salary'], 2) }}</td>
-                                <td class="px-4 py-3 text-sm text-right font-bold text-red-600 dark:text-red-400">{{ number_format($totals['tax_deduction'], 2) }}</td>
-                                <td class="px-4 py-3 text-sm text-right font-bold text-red-600 dark:text-red-400">{{ number_format($totals['other_deductions'], 2) }}</td>
-                                <td class="px-4 py-3 text-sm text-right font-bold text-green-600 dark:text-green-400">{{ number_format($totals['net_salary'], 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right font-bold text-red-600 dark:text-red-300">{{ number_format($totals['tax_deduction'], 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right font-bold text-red-600 dark:text-red-300">{{ number_format($totals['other_deductions'], 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right font-bold text-green-700 dark:text-green-400">{{ number_format($totals['net_salary'], 2) }}</td>
                                 <td class="px-4 py-3 text-sm text-right font-bold text-accent-700 dark:text-accent-300">{{ number_format($totals['employer_contributions'], 2) }}</td>
                                 <td></td>
                             </tr>

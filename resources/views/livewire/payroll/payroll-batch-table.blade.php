@@ -62,7 +62,7 @@
                             <td class="hidden lg:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right">
                                 {{ number_format($batch->total_gross, 2) }}
                             </td>
-                            <td class="hidden lg:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-red-600 dark:text-red-400 text-right">
+                            <td class="hidden lg:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-red-600 dark:text-red-300 text-right">
                                 {{ number_format($batch->total_deductions, 2) }}
                             </td>
                             <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white text-right">

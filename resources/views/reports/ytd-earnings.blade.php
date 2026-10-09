@@ -63,15 +63,15 @@
             </div>
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-4">
                 <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">YTD Tax</dt>
-                <dd class="mt-1 text-lg font-semibold text-yellow-600 dark:text-yellow-400">{{ number_format($grandTotals['tax'], 2) }}</dd>
+                <dd class="mt-1 text-lg font-semibold text-yellow-700 dark:text-yellow-400">{{ number_format($grandTotals['tax'], 2) }}</dd>
             </div>
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-4">
                 <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">YTD Deductions</dt>
-                <dd class="mt-1 text-lg font-semibold text-red-600 dark:text-red-400">{{ number_format($grandTotals['deductions'], 2) }}</dd>
+                <dd class="mt-1 text-lg font-semibold text-red-600 dark:text-red-300">{{ number_format($grandTotals['deductions'], 2) }}</dd>
             </div>
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-4">
                 <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">YTD Net</dt>
-                <dd class="mt-1 text-lg font-semibold text-green-600 dark:text-green-400">{{ number_format($grandTotals['net'], 2) }}</dd>
+                <dd class="mt-1 text-lg font-semibold text-green-700 dark:text-green-400">{{ number_format($grandTotals['net'], 2) }}</dd>
             </div>
         </div>
 
@@ -105,9 +105,9 @@
                                     <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($record['ytd_allowances'], 2) }}</td>
                                     <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($record['ytd_overtime'], 2) }}</td>
                                     <td class="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-gray-100">{{ number_format($record['ytd_gross'], 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-yellow-600 dark:text-yellow-400">{{ number_format($record['ytd_tax'], 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-red-600 dark:text-red-400">{{ number_format($record['ytd_total_deductions'], 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right font-semibold text-green-600 dark:text-green-400">{{ number_format($record['ytd_net'], 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right text-yellow-700 dark:text-yellow-400">{{ number_format($record['ytd_tax'], 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right text-red-600 dark:text-red-300">{{ number_format($record['ytd_total_deductions'], 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right font-semibold text-green-700 dark:text-green-400">{{ number_format($record['ytd_net'], 2) }}</td>
                                 </tr>
                                 @if($record['monthly_breakdown']->count() > 1)
                                 <tr class="bg-gray-50/50 dark:bg-gray-900/30">
@@ -160,9 +160,9 @@
                                 <td class="px-4 py-3 text-sm text-right font-bold text-gray-900 dark:text-white">{{ number_format($grandTotals['allowances'], 2) }}</td>
                                 <td class="px-4 py-3 text-sm text-right font-bold text-gray-900 dark:text-white">{{ number_format($grandTotals['overtime'], 2) }}</td>
                                 <td class="px-4 py-3 text-sm text-right font-bold text-gray-900 dark:text-white">{{ number_format($grandTotals['gross'], 2) }}</td>
-                                <td class="px-4 py-3 text-sm text-right font-bold text-yellow-600 dark:text-yellow-400">{{ number_format($grandTotals['tax'], 2) }}</td>
-                                <td class="px-4 py-3 text-sm text-right font-bold text-red-600 dark:text-red-400">{{ number_format($grandTotals['deductions'], 2) }}</td>
-                                <td class="px-4 py-3 text-sm text-right font-bold text-green-600 dark:text-green-400">{{ number_format($grandTotals['net'], 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right font-bold text-yellow-700 dark:text-yellow-400">{{ number_format($grandTotals['tax'], 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right font-bold text-red-600 dark:text-red-300">{{ number_format($grandTotals['deductions'], 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right font-bold text-green-700 dark:text-green-400">{{ number_format($grandTotals['net'], 2) }}</td>
                             </tr>
                         </tfoot>
                         @endif

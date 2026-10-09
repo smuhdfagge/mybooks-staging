@@ -11,7 +11,7 @@
                 <div class="p-6 text-gray-900 dark:text-gray-100">
 
                     @if (session('error'))
-                        <div class="mb-4 p-4 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">
+                        <div class="mb-4 p-4 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800">
                             {{ session('error') }}
                         </div>
                     @endif
@@ -26,11 +26,11 @@
                         {{-- 2FA is already enabled --}}
                         <div class="text-center">
                             <div class="flex justify-center mb-4">
-                                <svg class="h-16 w-16 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg class="h-16 w-16 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                                 </svg>
                             </div>
-                            <h3 class="text-lg font-semibold text-green-600 dark:text-green-400 mb-2">
+                            <h3 class="text-lg font-semibold text-green-700 dark:text-green-400 mb-2">
                                 Two-Factor Authentication is Enabled
                             </h3>
                             <p class="text-gray-600 dark:text-gray-400 mb-6">
@@ -106,7 +106,7 @@
                                     required
                                     autofocus @error('code') aria-invalid="true" aria-describedby="code-error" @enderror/>
                                 @error('code')
-                                    <p id="code-error" class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                    <p id="code-error" class="text-red-600 text-sm mt-1">{{ $message }}</p>
                                 @enderror
                             </div>
 

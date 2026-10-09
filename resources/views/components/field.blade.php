@@ -30,7 +30,7 @@
 @endphp
 
 @if($label)
-    <label for="{{ $id }}" class="form-label">{{ $label }}@if($required) <span class="text-red-500">*</span>@endif</label>
+    <label for="{{ $id }}" class="form-label">{{ $label }}@if($required) <span class="text-red-600 dark:text-red-300">*</span>@endif</label>
 @endif
 
 @if($type === 'textarea')

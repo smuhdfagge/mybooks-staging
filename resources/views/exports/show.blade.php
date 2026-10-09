@@ -36,7 +36,7 @@
                         <dt class="text-sm text-gray-500 dark:text-gray-400">Available until</dt>
                         <dd class="mt-1 text-gray-900 dark:text-gray-100">
                             @if($export->expires_at)
-                                {{ $export->expires_at->format('M j, Y g:i A') }}@if($export->isExpired()) <span class="text-red-600 dark:text-red-400">(expired)</span>@endif
+                                {{ $export->expires_at->format('M j, Y g:i A') }}@if($export->isExpired()) <span class="text-red-600 dark:text-red-300">(expired)</span>@endif
                             @else
                                 —
                             @endif
@@ -62,7 +62,7 @@
                     <form action="{{ route('exports.destroy', $export) }}" method="POST" data-confirm="Delete this export?">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-red-300 dark:border-red-600 rounded-md font-semibold text-xs text-red-600 dark:text-red-400 uppercase tracking-widest hover:bg-red-50 dark:hover:bg-red-900/20 transition ease-in-out duration-150">Delete</button>
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-red-300 dark:border-red-600 rounded-md font-semibold text-xs text-red-600 dark:text-red-300 uppercase tracking-widest hover:bg-red-50 dark:hover:bg-red-900/20 transition ease-in-out duration-150">Delete</button>
                     </form>
                 </div>
             </div>

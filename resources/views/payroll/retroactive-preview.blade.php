@@ -25,7 +25,7 @@
                     </div>
                     <div class="text-right">
                         <p class="text-sm text-gray-500 dark:text-gray-400">Total Adjustment</p>
-                        <p class="text-2xl font-bold {{ $totalAdjustment >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                        <p class="text-2xl font-bold {{ $totalAdjustment >= 0 ? 'text-green-700' : 'text-red-600' }}">
                             {{ number_format($totalAdjustment, 2) }}
                         </p>
                     </div>
@@ -69,7 +69,7 @@
                                     <td class="px-4 py-2 text-sm text-right text-gray-900 dark:text-gray-100">
                                         {{ number_format($adj['new_net'], 2) }}
                                     </td>
-                                    <td class="px-4 py-2 text-sm text-right font-medium {{ $adj['difference'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                    <td class="px-4 py-2 text-sm text-right font-medium {{ $adj['difference'] >= 0 ? 'text-green-700' : 'text-red-600' }}">
                                         {{ $adj['difference'] >= 0 ? '+' : '' }}{{ number_format($adj['difference'], 2) }}
                                     </td>
                                 </tr>
@@ -80,7 +80,7 @@
                                 <td colspan="6" class="px-4 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 text-right">
                                     Total Net Adjustment
                                 </td>
-                                <td class="px-4 py-2 text-sm text-right font-bold {{ $totalAdjustment >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                <td class="px-4 py-2 text-sm text-right font-bold {{ $totalAdjustment >= 0 ? 'text-green-700' : 'text-red-600' }}">
                                     {{ $totalAdjustment >= 0 ? '+' : '' }}{{ number_format($totalAdjustment, 2) }}
                                 </td>
                             </tr>

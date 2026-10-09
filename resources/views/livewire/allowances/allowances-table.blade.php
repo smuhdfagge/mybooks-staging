@@ -63,7 +63,7 @@
                             <td class="px-4 sm:px-6 py-4">
                                 <div class="flex items-center">
                                     <div class="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center">
-                                        <svg class="h-5 w-5 text-green-600 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="h-5 w-5 text-green-700 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                                         </svg>
                                     </div>
@@ -87,7 +87,7 @@
                             </td>
                             <td class="hidden md:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-center text-sm">
                                 @if($allowance->is_taxable)
-                                    <span class="text-yellow-600 dark:text-yellow-400">Yes</span>
+                                    <span class="text-yellow-700 dark:text-yellow-400">Yes</span>
                                 @else
                                     <span class="text-gray-500 dark:text-gray-400">No</span>
                                 @endif

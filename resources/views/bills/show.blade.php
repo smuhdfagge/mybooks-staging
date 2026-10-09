@@ -46,9 +46,9 @@
                         @else bg-brand-100 dark:bg-brand-900
                         @endif">
                         <svg class="w-6 h-6 
-                            @if($bill->status === 'paid') text-green-600 dark:text-green-400
-                            @elseif($bill->status === 'partial') text-yellow-600 dark:text-yellow-400
-                            @elseif($bill->status === 'overdue') text-red-600 dark:text-red-400
+                            @if($bill->status === 'paid') text-green-700 dark:text-green-400
+                            @elseif($bill->status === 'partial') text-yellow-700 dark:text-yellow-400
+                            @elseif($bill->status === 'overdue') text-red-600 dark:text-red-300
                             @else text-brand-600 dark:text-brand-300
                             @endif" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -73,10 +73,10 @@
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Amount Paid</p>
-                        <p class="text-xl font-bold text-green-600 dark:text-green-400">{{ number_format($bill->amount_paid, 2) }}</p>
+                        <p class="text-xl font-bold text-green-700 dark:text-green-400">{{ number_format($bill->amount_paid, 2) }}</p>
                     </div>
                     <div class="p-3 rounded-full bg-green-100 dark:bg-green-900">
-                        <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-6 h-6 text-green-700 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>
                     </div>
@@ -86,10 +86,10 @@
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Balance Due</p>
-                        <p class="text-xl font-bold {{ $bill->balance_due > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white' }}">{{ number_format($bill->balance_due, 2) }}</p>
+                        <p class="text-xl font-bold {{ $bill->balance_due > 0 ? 'text-red-600 dark:text-red-300' : 'text-gray-900 dark:text-white' }}">{{ number_format($bill->balance_due, 2) }}</p>
                     </div>
                     <div class="p-3 rounded-full {{ $bill->balance_due > 0 ? 'bg-red-100 dark:bg-red-900' : 'bg-gray-100 dark:bg-gray-700' }}">
-                        <svg class="w-6 h-6 {{ $bill->balance_due > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-6 h-6 {{ $bill->balance_due > 0 ? 'text-red-600 dark:text-red-300' : 'text-gray-600 dark:text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
                         </svg>
                     </div>
@@ -130,7 +130,7 @@
                             </div>
                             <div class="flex justify-between">
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Due Date</dt>
-                                <dd class="text-sm {{ $bill->due_date->isPast() && $bill->balance_due > 0 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-900 dark:text-gray-100' }}">
+                                <dd class="text-sm {{ $bill->due_date->isPast() && $bill->balance_due > 0 ? 'text-red-600 dark:text-red-300 font-semibold' : 'text-gray-900 dark:text-gray-100' }}">
                                     {{ $bill->due_date->format('M d, Y') }}
                                     @if($bill->due_date->isPast() && $bill->balance_due > 0)
                                         <span class="text-xs ml-1">(Overdue)</span>
@@ -186,7 +186,7 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 mr-2 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
                         </svg>
                         Bill Items
@@ -233,7 +233,7 @@
                                 @if($bill->discount_amount > 0)
                                 <tr>
                                     <td colspan="4" class="px-4 py-2 text-sm text-right text-gray-600 dark:text-gray-400">Discount</td>
-                                    <td class="px-4 py-2 text-sm text-right font-medium text-red-600 dark:text-red-400">-{{ number_format($bill->discount_amount, 2) }}</td>
+                                    <td class="px-4 py-2 text-sm text-right font-medium text-red-600 dark:text-red-300">-{{ number_format($bill->discount_amount, 2) }}</td>
                                 </tr>
                                 @endif
                                 <tr class="border-t-2 border-gray-300 dark:border-gray-600">
@@ -276,7 +276,7 @@
                                     <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $payment->payment_number ?? '-' }}</td>
                                     <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ ucfirst($payment->payment_method ?? '-') }}</td>
                                     <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $payment->reference ?? '-' }}</td>
-                                    <td class="px-4 py-3 text-sm font-medium text-green-600 dark:text-green-400 text-right">{{ number_format($payment->amount, 2) }}</td>
+                                    <td class="px-4 py-3 text-sm font-medium text-green-700 dark:text-green-400 text-right">{{ number_format($payment->amount, 2) }}</td>
                                     <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{{ (float) $payment->wht_amount > 0 ? number_format($payment->wht_amount, 2) : '-' }}</td>
                                 </tr>
                                 @endforeach
@@ -308,9 +308,9 @@
                 <div class="p-6 flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600 dark:text-gray-400">Balance remaining on this bill</p>
-                        <p class="text-2xl font-bold text-red-600 dark:text-red-400">{{ number_format($bill->balance_due, 2) }}</p>
+                        <p class="text-2xl font-bold text-red-600 dark:text-red-300">{{ number_format($bill->balance_due, 2) }}</p>
                     </div>
-                    <a href="{{ route('payments-made.create', ['bill_id' => $bill->id]) }}" class="inline-flex items-center px-6 py-3 bg-green-600 border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                    <a href="{{ route('payments-made.create', ['bill_id' => $bill->id]) }}" class="inline-flex items-center px-6 py-3 bg-green-700 border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
                         </svg>
@@ -424,7 +424,7 @@
                                         <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                                             <div>
                                                 <p class="text-sm text-gray-900 dark:text-gray-100">
-                                                    Payment made: <span class="font-semibold text-green-600 dark:text-green-400">{{ number_format($payment->amount, 2) }}</span>
+                                                    Payment made: <span class="font-semibold text-green-700 dark:text-green-400">{{ number_format($payment->amount, 2) }}</span>
                                                     @if((float) $payment->wht_amount > 0)
                                                         <span class="text-gray-500 dark:text-gray-400">+ WHT withheld {{ number_format($payment->wht_amount, 2) }}</span>
                                                     @endif

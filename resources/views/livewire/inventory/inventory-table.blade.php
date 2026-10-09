@@ -115,7 +115,7 @@
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-right text-amber-700 dark:text-amber-300">
                                 {{ number_format($reserved, 2) }}
                             </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-sm text-right font-medium {{ $available > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-right font-medium {{ $available > 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                 {{ number_format($available, 2) }}
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
@@ -123,7 +123,7 @@
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap text-center">
                                 @if($isOutOfStock)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300">
                                         Out of Stock
                                     </span>
                                 @elseif($isLowStock)

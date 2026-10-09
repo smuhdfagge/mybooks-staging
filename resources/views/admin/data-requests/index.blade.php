@@ -28,7 +28,7 @@
             <button type="submit" class="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 text-sm font-medium">Log request</button>
         </form>
         @if ($errors->any())
-            <p class="mt-2 text-sm text-red-500">{{ $errors->first() }}</p>
+            <p class="mt-2 text-sm text-red-600">{{ $errors->first() }}</p>
         @endif
     </div>
 

@@ -104,20 +104,20 @@
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Change</h3>
                     <div class="text-center">
                         <p class="text-sm text-gray-500 dark:text-gray-400">Difference</p>
-                        <p class="text-3xl font-bold {{ $changes['totalAssets']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                        <p class="text-3xl font-bold {{ $changes['totalAssets']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                             {{ $changes['totalAssets']['difference'] >= 0 ? '+' : '' }}{{ number_format($changes['totalAssets']['difference'], 2) }}
                         </p>
                         <div class="flex items-center justify-center mt-2">
                             @if($changes['totalAssets']['improved'])
-                                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
                                 </svg>
                             @else
-                                <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
                                 </svg>
                             @endif
-                            <span class="ml-1 text-sm {{ $changes['totalAssets']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                            <span class="ml-1 text-sm {{ $changes['totalAssets']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                 {{ number_format(abs($changes['totalAssets']['percentChange']), 1) }}%
                             </span>
                         </div>
@@ -170,7 +170,7 @@
                                 </td>
                                 @endforeach
                                 @if(isset($changes['accountsReceivable']))
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['accountsReceivable']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['accountsReceivable']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                     {{ $changes['accountsReceivable']['difference'] >= 0 ? '+' : '' }}{{ number_format($changes['accountsReceivable']['difference'], 2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
@@ -194,7 +194,7 @@
                                 </td>
                                 @endforeach
                                 @if(isset($changes['totalAssets']))
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['totalAssets']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['totalAssets']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                     {{ $changes['totalAssets']['difference'] >= 0 ? '+' : '' }}{{ number_format($changes['totalAssets']['difference'], 2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
@@ -225,7 +225,7 @@
                                 </td>
                                 @endforeach
                                 @if(isset($changes['accountsPayable']))
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['accountsPayable']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['accountsPayable']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                     {{ $changes['accountsPayable']['difference'] >= 0 ? '+' : '' }}{{ number_format($changes['accountsPayable']['difference'], 2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
@@ -256,7 +256,7 @@
                                 </td>
                                 @endforeach
                                 @if(isset($changes['equity']))
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['equity']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['equity']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                     {{ $changes['equity']['difference'] >= 0 ? '+' : '' }}{{ number_format($changes['equity']['difference'], 2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
@@ -280,7 +280,7 @@
                                 </td>
                                 @endforeach
                                 @if(isset($changes['totalLiabilitiesEquity']))
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['totalLiabilitiesEquity']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['totalLiabilitiesEquity']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                     {{ $changes['totalLiabilitiesEquity']['difference'] >= 0 ? '+' : '' }}{{ number_format($changes['totalLiabilitiesEquity']['difference'], 2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
@@ -330,7 +330,7 @@
                             <div>
                                 <div class="flex justify-between text-sm mb-1">
                                     <span class="text-gray-600 dark:text-gray-400">Liabilities</span>
-                                    <span class="text-red-600 dark:text-red-400 font-medium">{{ number_format($period['accountsPayable'], 2) }}</span>
+                                    <span class="text-red-600 dark:text-red-300 font-medium">{{ number_format($period['accountsPayable'], 2) }}</span>
                                 </div>
                                 <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-6">
                                     @php
@@ -349,7 +349,7 @@
                             <div>
                                 <div class="flex justify-between text-sm mb-1">
                                     <span class="text-gray-600 dark:text-gray-400">Equity</span>
-                                    <span class="{{ $period['equity'] >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }} font-medium">
+                                    <span class="{{ $period['equity'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }} font-medium">
                                         {{ $period['equity'] >= 0 ? '' : '-' }}{{ number_format(abs($period['equity']), 2) }}
                                     </span>
                                 </div>

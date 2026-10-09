@@ -63,13 +63,13 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 bg-green-100 dark:bg-green-900 rounded-full p-3">
-                            <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 text-green-700 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Available</p>
-                            <p class="text-xl font-bold text-green-600 dark:text-green-400">{{ rtrim(rtrim(number_format((float) (($inventory->quantity ?? 0) - ($inventory->reserved_quantity ?? 0)), 4), '0'), '.') }}</p>
+                            <p class="text-xl font-bold text-green-700 dark:text-green-400">{{ rtrim(rtrim(number_format((float) (($inventory->quantity ?? 0) - ($inventory->reserved_quantity ?? 0)), 4), '0'), '.') }}</p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">{{ $item->unit ?? 'units' }}</p>
                         </div>
                     </div>
@@ -271,7 +271,7 @@
                                             @php
                                                 $typeColors = [
                                                     'in' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400',
-                                                    'out' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400',
+                                                    'out' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
                                                     'adjustment' => 'bg-brand-100 text-brand-800 dark:bg-brand-900/50 dark:text-brand-300',
                                                     'transfer' => 'bg-brand-100 text-brand-800 dark:bg-brand-900/50 dark:text-brand-300',
                                                     'assembly' => 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300',
@@ -288,7 +288,7 @@
                                                 {{ $typeLabels[$record->type] ?? $record->type }}
                                             </span>
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-right font-medium whitespace-nowrap {{ $record->type === 'in' ? 'text-green-600 dark:text-green-400' : ($record->type === 'out' ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100') }}">
+                                        <td class="px-4 py-3 text-sm text-right font-medium whitespace-nowrap {{ $record->type === 'in' ? 'text-green-700 dark:text-green-400' : ($record->type === 'out' ? 'text-red-600 dark:text-red-300' : 'text-gray-900 dark:text-gray-100') }}">
                                             @if(in_array($record->type, ['transfer', 'assembly'], true))
                                                 {{ (float) $record->quantity > 0 ? '+' : '' }}{{ rtrim(rtrim(number_format((float) $record->quantity, 4), '0'), '.') }}
                                             @else
