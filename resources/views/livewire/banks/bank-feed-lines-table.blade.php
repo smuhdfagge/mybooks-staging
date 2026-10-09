@@ -15,7 +15,7 @@
 
     <div class="card">
         <div class="p-4 sm:p-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 mb-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-3 mb-4">
                 <input aria-label="Search narration or amount" wire:model.live.debounce.300ms="search" type="text" placeholder="Search words or amount..." class="form-control lg:col-span-2">
                 <select aria-label="Account" wire:model.live="connectionFilter" class="form-control">
                     <option value="">All accounts</option>
@@ -35,9 +35,9 @@
                     <option value="credit">Money in</option>
                     <option value="debit">Money out</option>
                 </select>
-                <div class="flex gap-2">
-                    <input aria-label="From date" wire:model.live="dateFrom" type="date" class="form-control">
-                    <input aria-label="To date" wire:model.live="dateTo" type="date" class="form-control">
+                <div class="flex gap-2 sm:col-span-2 2xl:col-span-1">
+                    <input aria-label="From date" wire:model.live="dateFrom" type="date" class="form-control min-w-0 flex-1">
+                    <input aria-label="To date" wire:model.live="dateTo" type="date" class="form-control min-w-0 flex-1">
                 </div>
             </div>
 
