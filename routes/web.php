@@ -8,6 +8,9 @@ use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\AssemblyOrderController;
 use App\Http\Controllers\BankController;
+use App\Http\Controllers\BankFeedController;
+use App\Http\Controllers\BankFeedLineController;
+use App\Http\Controllers\BankFeedWebhookController;
 use App\Http\Controllers\BillController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BillOfMaterialController;
@@ -187,6 +190,17 @@ Route::middleware(['feature:sms_whatsapp', 'throttle:600,1'])->withoutMiddleware
     Route::get('/webhooks/messaging/whatsapp/{token}', [MessagingWebhookController::class, 'whatsappVerify'])->name('messaging.webhooks.whatsapp.verify');
     Route::post('/webhooks/messaging/whatsapp/{token}', [MessagingWebhookController::class, 'whatsapp'])->name('messaging.webhooks.whatsapp');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Bank feed events from Mono (session 17)
+|--------------------------------------------------------------------------
+| Called by Mono. The mono-webhook-secret header is checked in the controller.
+*/
+Route::post('/webhooks/bank-feeds/mono', [BankFeedWebhookController::class, 'mono'])
+    ->middleware(['feature:bank_feeds', 'throttle:600,1'])
+    ->withoutMiddleware([PreventRequestForgery::class])
+    ->name('bank-feeds.webhooks.mono');
 
 /*
 |--------------------------------------------------------------------------
@@ -1023,6 +1037,36 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::get('banks/{bank}/reconcile', [BankController::class, 'reconcile'])->name('banks.reconcile');
         Route::post('banks/{bank}/reconcile', [BankController::class, 'processReconciliation'])->name('banks.reconcile.process');
         Route::post('banks/{bank}/unreconcile', [BankController::class, 'unreconcile'])->name('banks.unreconcile');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Bank feeds (session 17)
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('feature:bank_feeds')->group(function () {
+        Route::middleware('permission:view banks')->group(function () {
+            Route::get('bank-feeds', [BankFeedController::class, 'index'])->name('bank-feeds.index');
+            Route::get('bank-feeds/lines', [BankFeedController::class, 'lines'])->name('bank-feeds.lines');
+            Route::get('bank-feeds/lines/{line}', [BankFeedLineController::class, 'show'])->name('bank-feeds.lines.show');
+        });
+        Route::middleware('permission:edit banks')->group(function () {
+            Route::get('bank-feeds/connect', [BankFeedController::class, 'connect'])->name('bank-feeds.connect');
+            Route::post('bank-feeds', [BankFeedController::class, 'start'])->middleware('throttle:20,1')->name('bank-feeds.start');
+            Route::get('bank-feeds/callback', [BankFeedController::class, 'callback'])->name('bank-feeds.callback');
+            Route::post('bank-feeds/{connection}/sync', [BankFeedController::class, 'sync'])->middleware('throttle:20,1')->name('bank-feeds.sync');
+            Route::post('bank-feeds/{connection}/reconnect', [BankFeedController::class, 'reconnect'])->middleware('throttle:20,1')->name('bank-feeds.reconnect');
+            Route::delete('bank-feeds/{connection}', [BankFeedController::class, 'disconnect'])->name('bank-feeds.disconnect');
+        });
+        // Recording something from a bank line: needs the permission for that
+        // kind of record as well as reconciling.
+        Route::middleware('permission:reconcile banks')->prefix('bank-feeds/lines/{line}')->group(function () {
+            Route::post('payment-received', [BankFeedLineController::class, 'paymentReceived'])->middleware('permission:create payments-received')->name('bank-feeds.lines.payment-received');
+            Route::post('expense', [BankFeedLineController::class, 'expense'])->middleware('permission:create expenses')->name('bank-feeds.lines.expense');
+            Route::post('other-income', [BankFeedLineController::class, 'otherIncome'])->middleware('permission:create journals')->name('bank-feeds.lines.other-income');
+            Route::post('bank-charge', [BankFeedLineController::class, 'bankCharge'])->middleware('permission:create journals')->name('bank-feeds.lines.bank-charge');
+            Route::post('transfer', [BankFeedLineController::class, 'transfer'])->middleware('permission:create journals')->name('bank-feeds.lines.transfer');
+        });
     });
 
     /*

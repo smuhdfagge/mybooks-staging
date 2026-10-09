@@ -21,6 +21,7 @@ class Plan extends Model
         'max_users',
         'sms_monthly_limit',
         'whatsapp_monthly_limit',
+        'bank_feed_accounts_limit',
         'features',
         'is_active',
         'sort_order',
@@ -34,6 +35,7 @@ class Plan extends Model
         'max_users' => 'integer',
         'sms_monthly_limit' => 'integer',
         'whatsapp_monthly_limit' => 'integer',
+        'bank_feed_accounts_limit' => 'integer',
         'features' => 'array',
         'is_active' => 'boolean',
     ];

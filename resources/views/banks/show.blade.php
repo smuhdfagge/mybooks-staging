@@ -22,6 +22,16 @@
                     Edit
                 </a>
                 @endcan
+                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('bank_feeds'))
+                @can('edit banks')
+                    @if(! $feed)
+                    <a href="{{ route('bank-feeds.connect', ['bank' => $bank->id]) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition ease-in-out duration-150" data-testid="connect-feed">Connect bank feed</a>
+                    @endif
+                @endcan
+                @if($feed)
+                <a href="{{ route('bank-feeds.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-500 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest" data-testid="feed-status">Bank feed: {{ $feed->statusEnum()->label() }}</a>
+                @endif
+                @endif
                 @can('reconcile banks')
                 <a href="{{ route('banks.reconcile', $bank) }}" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition ease-in-out duration-150">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

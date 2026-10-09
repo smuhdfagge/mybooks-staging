@@ -45,6 +45,14 @@ Schedule::command('messages:send-queued')
     ->withoutOverlapping()
     ->onOneServer();
 
+// Pull new bank transactions for linked bank accounts (session 17). Mono
+// itself refreshes each account about once a day and calls the webhook when
+// there is more; this catches anything the webhook missed.
+Schedule::command('bankfeeds:sync')
+    ->everyThreeHours()
+    ->withoutOverlapping()
+    ->onOneServer();
+
 // Send bill reminders daily at 8:00 AM
 Schedule::command('notifications:send-bill-reminders')
     ->dailyAt('08:00')

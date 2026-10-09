@@ -236,7 +236,7 @@
 
         <!-- Accountant Module -->
         @canany(['view journals', 'view chart-of-accounts', 'view banks', 'view budgets', 'view withholding-tax', 'view accrual-schedules'])
-        <div x-data="{ open: {{ request()->is('accountant*') || request()->is('journals*') || request()->is('accrual-schedules*') || request()->is('chart-of-accounts*') || request()->is('banks*') || request()->is('budgets*') || request()->is('withholding-tax*') ? 'true' : 'false' }} }">
+        <div x-data="{ open: {{ request()->is('accountant*') || request()->is('journals*') || request()->is('accrual-schedules*') || request()->is('chart-of-accounts*') || request()->is('banks*') || request()->is('bank-feeds*') || request()->is('budgets*') || request()->is('withholding-tax*') ? 'true' : 'false' }} }">
             <button @click="open = !open" 
                     class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors">
                 <div class="flex items-center">
@@ -252,6 +252,11 @@
             <div x-show="open" x-collapse x-cloak class="mt-1 space-y-1 pl-10">
                 @can('view banks')
                 <a href="{{ route('banks.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('banks.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Banks</a>
+                @endcan
+                @can('view banks')
+                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('bank_feeds'))
+                <a href="{{ route('bank-feeds.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('bank-feeds.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Bank feeds</a>
+                @endif
                 @endcan
                 @can('view journals')
                 <a href="{{ route('journals.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('journals.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Manual Journals</a>

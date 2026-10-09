@@ -76,4 +76,16 @@ return [
         'language' => env('WHATSAPP_TEMPLATE_LANGUAGE', 'en'),
     ],
 
+    // Bank feeds (session 17). MyBooks holds one Mono account for all businesses.
+    // Mono docs (checked 2026-10-09): https://docs.mono.co/docs/financial-data/connect-link
+    // The secret key goes in the mono-sec-key header; test keys use the sandbox.
+    'mono' => [
+        'secret_key' => env('MONO_SECRET_KEY'),
+        // Only needed if the Connect widget is used instead of the hosted link.
+        'public_key' => env('MONO_PUBLIC_KEY'),
+        // Sent back by Mono in the mono-webhook-secret header on every event.
+        'webhook_secret' => env('MONO_WEBHOOK_SECRET'),
+        'base_url' => env('MONO_BASE_URL', 'https://api.withmono.com'),
+    ],
+
 ];

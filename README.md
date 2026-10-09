@@ -63,6 +63,7 @@ composer analyse           # PHPStan; new code must not add to phpstan-baseline.
    - database and mail settings
    - `PAYSTACK_SECRET_KEY` and `PAYSTACK_PUBLIC_KEY` for subscription payments. In the Paystack dashboard, set the webhook URL to `https://<your domain>/billing/paystack/webhook`.
    - for SMS and WhatsApp to customers, the Termii keys and `MESSAGING_WEBHOOK_TOKEN` (see [SMS and WhatsApp](#sms-and-whatsapp) below).
+   - for bank feeds, the Mono keys and webhook secret (see [Bank feeds (Mono)](#bank-feeds-mono) below).
 3. **Install and migrate.**
    ```bash
    composer install --no-dev --optimize-autoloader
@@ -118,6 +119,7 @@ Unfinished modules answer 404 until they are switched on in `.env`. Only switch 
 | `MYBOOKS_FEATURE_ASSEMBLY` | Bills of materials and assembly orders |
 | `MYBOOKS_FEATURE_INVENTORY_VALUATION` | Stock valuation page |
 | `MYBOOKS_FEATURE_SMS_WHATSAPP` | SMS and WhatsApp reminders and receipts to customers (sends nothing until the keys below are set) |
+| `MYBOOKS_FEATURE_BANK_FEEDS` | Bank feeds with Mono (reads nothing until the Mono keys below are set) |
 | `MYBOOKS_FEATURE_AUTO_RENEWAL` | Saved card and automatic renewal of subscriptions (`MYBOOKS_AUTO_RENEW_DAYS_BEFORE`, `MYBOOKS_AUTO_RENEW_RETRY_DAYS`, `MYBOOKS_CARD_EXPIRY_WARNING_DAYS`) |
 
 Other settings in `config/mybooks.php` include support email, import size limit, data retention periods, and HSTS. Leave `MYBOOKS_HSTS_INCLUDE_SUBDOMAINS` and `MYBOOKS_HSTS_PRELOAD` off unless every subdomain is permanently on HTTPS.
@@ -143,6 +145,19 @@ To switch it on:
 
 Without keys nothing is sent: messages are only written to the log, and the settings page says it is not set up yet. A customer who replies STOP on WhatsApp is opted out automatically; SMS replies can't reach a letters-only sender ID, so a business ticks "Does not want SMS messages" on the customer's page when asked.
 
+## Bank feeds (Mono)
+
+A business can link a naira bank account through Mono (Banks > Connect bank feed, or Accountant > Bank feeds). MyBooks reads the account's transactions, read only, and keeps them as bank lines to review. Each line is matched to something already in MyBooks (same amount, within 5 days, name or reference similar) or recorded from the line. Nothing is ever posted until a person clicks. MyBooks stores no bank login and only the last 4 digits of the account number. One Mono account serves all businesses; each plan can limit how many accounts a business links (`bank_feed_accounts_limit`, empty means unlimited; seeded 1, 3 and 10).
+
+To switch it on:
+
+1. **Mono account** (mono.co). Create an app in the dashboard with the Connect product and the Data product enabled. Put the keys in `.env`: `MONO_SECRET_KEY` and `MONO_PUBLIC_KEY`. Test with the sandbox keys first. `MONO_BASE_URL` stays `https://api.withmono.com`.
+2. **Webhook.** In the Mono dashboard set the webhook URL to `https://<your domain>/webhooks/bank-feeds/mono` and a secret of your choosing, and put the same value in `MONO_WEBHOOK_SECRET`. Calls without the right `mono-webhook-secret` header are refused.
+3. **Redirect.** The customer returns to `https://<your domain>/bank-feeds/callback`; allow that address if your Mono app restricts redirects.
+4. **Scheduler.** `bankfeeds:sync` runs every three hours (the normal `schedule:run` cron). Mono's webhook and the "Sync now" button (once every 5 minutes per account) fetch sooner.
+
+The first pull reads the last 90 days (`BANK_FEEDS_FIRST_PULL_DAYS`). Later pulls re-read 5 days back and add only transactions not seen before. If the bank asks for a new login, the account shows "Needs you to log in again" with a Reconnect button. Without the keys nothing is called and the screens say it is not set up yet. Mono is listed under data processors on the privacy page.
+
 ## Useful commands
 
 | Command | What it does |
@@ -151,6 +166,7 @@ Without keys nothing is sent: messages are only written to the log, and the sett
 | `php artisan subscriptions:expire` | Expires ended subscriptions and sends reminders (runs daily) |
 | `php artisan subscriptions:auto-renew` | Charges saved cards for subscriptions ending tomorrow, retries failed charges, warns about expiring cards (runs daily at 06:00) |
 | `php artisan messages:send-queued` | Sends SMS / WhatsApp messages held over the night and retries failed ones (runs every 5 minutes) |
+| `php artisan bankfeeds:sync` | Reads new transactions for every linked bank account and removes abandoned link attempts (runs every 3 hours) |
 | `php artisan subscriptions:grace --days=14` | Gives active subscriptions time to renew (one-off) |
 | `php artisan bills:receive-pending-stock --dry-run` | Once after the October 2026 update: brings in stock for posted, unpaid bills (stock used to wait for payment) |
 | `php artisan mybooks:backup` | Backs up the database and uploaded files now (`--only-db` for the database alone) |

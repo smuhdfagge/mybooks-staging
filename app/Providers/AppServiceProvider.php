@@ -7,9 +7,16 @@ use App\Events;
 use App\Http\Middleware\CheckSubscription;
 use App\Http\Middleware\EnsureAccountActive;
 use App\Listeners;
+use App\Models\CreditNoteRefund;
+use App\Models\Expense;
+use App\Models\PaymentMade;
+use App\Models\PaymentReceived;
+use App\Models\StatutoryRemittance;
 use App\Models\User;
+use App\Models\VendorCreditRefund;
 use App\Services\Accounting\LockDates;
 use App\Services\ActivityLogService;
+use App\Services\BankFeeds\LineActions;
 use App\Services\JournalService;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
@@ -202,5 +209,11 @@ class AppServiceProvider extends ServiceProvider
 
         // Invoice Refunds
         Event::listen(Events\InvoiceRefundDeleting::class, Listeners\DeleteInvoiceRefundJournal::class);
+
+        // Deleting a record that a bank feed line was matched to (or made from)
+        // frees the line again (session 17).
+        foreach ([PaymentReceived::class, PaymentMade::class, Expense::class, StatutoryRemittance::class, VendorCreditRefund::class, CreditNoteRefund::class] as $class) {
+            $class::deleting(fn (Model $record) => app(LineActions::class)->releaseFor($record));
+        }
     }
 }

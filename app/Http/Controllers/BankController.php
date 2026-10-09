@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreBankRequest;
 use App\Http\Requests\UpdateBankRequest;
 use App\Models\Bank;
+use App\Models\BankFeedConnection;
 use App\Models\ChartOfAccount;
 use App\Models\Expense;
 use App\Models\PaymentMade;
 use App\Models\PaymentReceived;
+use App\Services\BankFeeds\FeedStatement;
 use App\Services\BankReconciliationService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -104,7 +106,9 @@ class BankController extends Controller
             ->take(10)
             ->values();
 
-        return view('banks.show', compact('bank', 'recentTransactions'));
+        $feed = config('mybooks.features.bank_feeds') ? BankFeedConnection::counted()->where('bank_id', $bank->id)->first() : null;
+
+        return view('banks.show', compact('bank', 'recentTransactions', 'feed'));
     }
 
     public function edit(Bank $bank)
@@ -199,7 +203,7 @@ class BankController extends Controller
         return view('banks.transactions', compact('bank', 'transactions'));
     }
 
-    public function reconcile(Request $request, Bank $bank, BankReconciliationService $reconciliationService)
+    public function reconcile(Request $request, Bank $bank, BankReconciliationService $reconciliationService, FeedStatement $feedStatement)
     {
         $fromDate = $request->query('from_date');
         $toDate = $request->query('to_date');
@@ -207,7 +211,10 @@ class BankController extends Controller
         $unreconciledTransactions = $reconciliationService->getUnreconciledTransactions($bank, $fromDate, $toDate);
         $summary = $reconciliationService->getSummary($bank);
 
-        return view('banks.reconcile', compact('bank', 'unreconciledTransactions', 'summary', 'fromDate', 'toDate'));
+        // A linked bank feed is the statement: its balance and lines (session 17)
+        $feed = config('mybooks.features.bank_feeds') ? $feedStatement->forBank($bank) : null;
+
+        return view('banks.reconcile', compact('bank', 'unreconciledTransactions', 'summary', 'fromDate', 'toDate', 'feed'));
     }
 
     public function processReconciliation(Request $request, Bank $bank, BankReconciliationService $reconciliationService)
