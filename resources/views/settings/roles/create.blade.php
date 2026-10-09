@@ -23,19 +23,19 @@
                     @csrf
 
                     <div class="mb-6">
-                        <label for="name" class="form-label">Role Name <span class="text-red-500">*</span></label>
+                        <label for="name" class="form-label">Role Name <span class="text-red-600 dark:text-red-300">*</span></label>
                         <input type="text" name="name" id="name" value="{{ old('name') }}" required
                             placeholder="e.g., Manager, Accountant, Sales Rep"
-                            class="w-full max-w-md rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('name') border-red-500 @enderror" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
+                            class="w-full max-w-md rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 @error('name') border-red-500 @enderror" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                         @error('name')
-                            <p id="name-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            <p id="name-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
 
                     <div class="mb-6">
                         <div class="flex items-center justify-between mb-3">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Permissions</label>
-                            <button type="button" id="toggle-all" class="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
+                            <button type="button" id="toggle-all" class="text-sm text-brand-600 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-300">
                                 Select All
                             </button>
                         </div>
@@ -79,7 +79,7 @@
                                                 <td class="px-4 py-3 text-center">
                                                     @if(isset($permissionMap[$action]))
                                                         <input type="checkbox" name="permissions[]" value="{{ $permissionMap[$action] }}"
-                                                            class="rounded border-gray-300 dark:border-gray-600 text-indigo-600 shadow-sm focus:ring-indigo-500 permission-checkbox"
+                                                            class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 permission-checkbox dark:text-brand-300"
                                                             data-resource="{{ $resource }}"
                                                             {{ in_array($permissionMap[$action], $oldPermissions) ? 'checked' : '' }}>
                                                     @else
@@ -96,7 +96,7 @@
                                                             @endphp
                                                             <label class="inline-flex items-center text-xs" title="{{ $otherPerm->name }}">
                                                                 <input type="checkbox" name="permissions[]" value="{{ $otherPerm->name }}"
-                                                                    class="rounded border-gray-300 dark:border-gray-600 text-indigo-600 shadow-sm focus:ring-indigo-500 permission-checkbox"
+                                                                    class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 permission-checkbox dark:text-brand-300"
                                                                     data-resource="{{ $resource }}"
                                                                     {{ in_array($otherPerm->name, $oldPermissions) ? 'checked' : '' }}>
                                                                 <span class="ml-1 text-gray-600 dark:text-gray-400">{{ ucwords(str_replace('-', ' ', $otherAction)) }}</span>
@@ -108,7 +108,7 @@
                                                 @endif
                                             </td>
                                             <td class="px-4 py-3 text-center">
-                                                <input type="checkbox" class="rounded border-gray-300 dark:border-gray-600 text-indigo-600 shadow-sm focus:ring-indigo-500 row-toggle"
+                                                <input type="checkbox" class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 row-toggle dark:text-brand-300"
                                                     data-resource="{{ $resource }}" title="Toggle all for {{ $resourceLabel }}">
                                             </td>
                                         </tr>
@@ -119,10 +119,10 @@
                     </div>
 
                     <div class="flex justify-end gap-3">
-                        <a href="{{ route('settings.roles') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <a href="{{ route('settings.roles') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             Cancel
                         </a>
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>

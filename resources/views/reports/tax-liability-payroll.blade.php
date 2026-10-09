@@ -27,15 +27,15 @@
                     <div>
                         <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Start Date</label>
                         <input type="date" name="start_date" id="start_date" value="{{ $startDate }}" 
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                     </div>
                     <div>
                         <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">End Date</label>
                         <input type="date" name="end_date" id="end_date" value="{{ $endDate }}" 
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                     </div>
                     <div class="flex items-end">
-                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
                             </svg>
@@ -59,7 +59,7 @@
                         <div class="ml-5">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Tax Liability</dt>
-                                <dd class="text-lg font-semibold text-yellow-600 dark:text-yellow-400">{{ number_format($totals['total_tax'], 2) }}</dd>
+                                <dd class="text-lg font-semibold text-yellow-700 dark:text-yellow-400">{{ number_format($totals['total_tax'], 2) }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -100,7 +100,7 @@
                                     <td class="px-6 py-3 text-sm text-gray-900 dark:text-gray-100">{{ \Carbon\Carbon::parse($row['month'] . '-01')->format('F Y') }}</td>
                                     <td class="px-6 py-3 text-sm text-center text-gray-900 dark:text-gray-100">{{ $row['employee_count'] }}</td>
                                     <td class="px-6 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($row['total_taxable'], 2) }}</td>
-                                    <td class="px-6 py-3 text-sm text-right font-medium text-yellow-600 dark:text-yellow-400">{{ number_format($row['total_tax'], 2) }}</td>
+                                    <td class="px-6 py-3 text-sm text-right font-medium text-yellow-700 dark:text-yellow-400">{{ number_format($row['total_tax'], 2) }}</td>
                                     <td class="px-6 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ $row['effective_rate'] }}%</td>
                                 </tr>
                             @empty
@@ -134,7 +134,7 @@
                                     <td class="px-6 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $dept['department_name'] }}</td>
                                     <td class="px-6 py-3 text-sm text-center text-gray-900 dark:text-gray-100">{{ $dept['employee_count'] }}</td>
                                     <td class="px-6 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($dept['total_taxable'], 2) }}</td>
-                                    <td class="px-6 py-3 text-sm text-right font-medium text-yellow-600 dark:text-yellow-400">{{ number_format($dept['total_tax'], 2) }}</td>
+                                    <td class="px-6 py-3 text-sm text-right font-medium text-yellow-700 dark:text-yellow-400">{{ number_format($dept['total_tax'], 2) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -166,7 +166,7 @@
                                     <td class="px-6 py-3 text-sm text-gray-500 dark:text-gray-400">{{ $record['employee']->department->name ?? 'N/A' }}</td>
                                     <td class="px-6 py-3 text-sm text-center text-gray-900 dark:text-gray-100">{{ $record['pay_periods'] }}</td>
                                     <td class="px-6 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($record['taxable_income'], 2) }}</td>
-                                    <td class="px-6 py-3 text-sm text-right font-medium text-yellow-600 dark:text-yellow-400">{{ number_format($record['tax_deducted'], 2) }}</td>
+                                    <td class="px-6 py-3 text-sm text-right font-medium text-yellow-700 dark:text-yellow-400">{{ number_format($record['tax_deducted'], 2) }}</td>
                                     <td class="px-6 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ $record['effective_rate'] }}%</td>
                                 </tr>
                             @empty
@@ -180,7 +180,7 @@
                             <tr>
                                 <td colspan="3" class="px-6 py-3 text-sm font-bold text-gray-900 dark:text-white">Totals</td>
                                 <td class="px-6 py-3 text-sm text-right font-bold text-gray-900 dark:text-white">{{ number_format($totals['total_taxable'], 2) }}</td>
-                                <td class="px-6 py-3 text-sm text-right font-bold text-yellow-600 dark:text-yellow-400">{{ number_format($totals['total_tax'], 2) }}</td>
+                                <td class="px-6 py-3 text-sm text-right font-bold text-yellow-700 dark:text-yellow-400">{{ number_format($totals['total_tax'], 2) }}</td>
                                 <td class="px-6 py-3 text-sm text-right font-bold text-gray-900 dark:text-white">{{ $totals['effective_rate'] }}%</td>
                             </tr>
                         </tfoot>

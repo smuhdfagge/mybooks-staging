@@ -25,7 +25,7 @@
                         <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No salary structures found</h3>
                         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">You need to set up salary structures for employees before generating payroll.</p>
                         <div class="mt-6">
-                            <a href="{{ route('salary-structures.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
+                            <a href="{{ route('salary-structures.create') }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
                                 Setup Salary Structure
                             </a>
                         </div>
@@ -39,7 +39,7 @@
                         <!-- Period & Settings -->
                         <div class="mb-8">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">
-                                <svg class="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 mr-2 text-brand-500 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                 </svg>
                                 Payroll Period & Settings
@@ -57,7 +57,7 @@
                         <!-- Employee Selection -->
                         <div class="mb-8">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">
-                                <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 mr-2 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                                 </svg>
                                 Select Employees ({{ $employeesWithStructures->count() }} with salary structures)
@@ -65,7 +65,7 @@
 
                             <div class="mb-4">
                                 <label class="inline-flex items-center">
-                                    <input type="checkbox" @click="toggleAll()" :checked="allSelected" class="rounded border-gray-300 dark:border-gray-600 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:bg-gray-700">
+                                    <input type="checkbox" @click="toggleAll()" :checked="allSelected" class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
                                     <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Select All Employees</span>
                                 </label>
                             </div>
@@ -96,7 +96,7 @@
                                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                                 <td class="px-4 py-3">
                                                     <input type="checkbox" name="employee_ids[]" value="{{ $employee->id }}"
-                                                        class="employee-checkbox rounded border-gray-300 dark:border-gray-600 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:bg-gray-700"
+                                                        class="employee-checkbox rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300"
                                                         @click="updateSelectAll()"
                                                         {{ in_array($employee->id, old('employee_ids', [])) ? 'checked' : '' }}>
                                                 </td>
@@ -110,10 +110,10 @@
                                                 <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">
                                                     {{ number_format($structure->basic_salary ?? 0, 2) }}
                                                 </td>
-                                                <td class="px-4 py-3 text-sm text-right text-green-600 dark:text-green-400">
+                                                <td class="px-4 py-3 text-sm text-right text-green-700 dark:text-green-400">
                                                     +{{ number_format($totalAllow, 2) }}
                                                 </td>
-                                                <td class="px-4 py-3 text-sm text-right text-red-600 dark:text-red-400">
+                                                <td class="px-4 py-3 text-sm text-right text-red-600 dark:text-red-300">
                                                     -{{ number_format($totalDeduct, 2) }}
                                                 </td>
                                                 <td class="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-gray-100">
@@ -134,7 +134,7 @@
                             <a href="{{ route('payroll.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600">
                                 Cancel
                             </a>
-                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                                 Generate Payroll
                             </button>

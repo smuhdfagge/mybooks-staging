@@ -27,7 +27,7 @@
                         <div>
                             <x-field name="name" label="Name" :value="old('name')" required />
                             @error('name')
-                                <p id="name-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="name-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -35,7 +35,7 @@
                         <div>
                             <x-field name="email" label="Email" type="email" :value="old('email')" required />
                             @error('email')
-                                <p id="email-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="email-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -43,7 +43,7 @@
                         <div>
                             <x-field name="phone" label="Phone" :value="old('phone')" />
                             @error('phone')
-                                <p id="phone-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="phone-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -51,15 +51,15 @@
                         <div>
                             <x-field name="password" label="Password" type="password" required />
                             @error('password')
-                                <p id="password-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="password-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
                         <!-- Confirm Password -->
                         <div class="md:col-span-2">
-                            <label for="password_confirmation" class="form-label">Confirm Password <span class="text-red-500">*</span></label>
+                            <label for="password_confirmation" class="form-label">Confirm Password <span class="text-red-600 dark:text-red-300">*</span></label>
                             <input type="password" name="password_confirmation" id="password_confirmation" required
-                                class="w-full max-w-md rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                class="w-full max-w-md rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         </div>
                     </div>
 
@@ -70,7 +70,7 @@
                             @foreach($roles as $role)
                                 <label class="flex items-center">
                                     <input type="checkbox" name="roles[]" value="{{ $role->id }}"
-                                        class="rounded border-gray-300 dark:border-gray-600 text-indigo-600 shadow-sm focus:ring-indigo-500"
+                                        class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300"
                                         {{ in_array($role->id, array_map('intval', old('roles', []))) ? 'checked' : '' }}>
                                     <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">{{ $role->name }}</span>
                                 </label>
@@ -79,10 +79,10 @@
                     </div>
 
                     <div class="flex justify-end gap-3">
-                        <a href="{{ route('settings.users') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <a href="{{ route('settings.users') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             Cancel
                         </a>
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>

@@ -17,15 +17,15 @@
                     <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
                         {{ $currentUsers }} of {{ $maxUsers }} users 
                         @if($remainingSlots > 0)
-                            <span class="text-green-600 dark:text-green-400">({{ $remainingSlots }} slots remaining)</span>
+                            <span class="text-green-700 dark:text-green-400">({{ $remainingSlots }} slots remaining)</span>
                         @else
-                            <span class="text-red-600 dark:text-red-400">(limit reached)</span>
+                            <span class="text-red-600 dark:text-red-300">(limit reached)</span>
                         @endif
                     </p>
                 @endif
             </div>
             @if($canAddUsers)
-                <a href="{{ route('settings.users.create') }}" class="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                <a href="{{ route('settings.users.create') }}" class="inline-flex items-center justify-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </svg>
@@ -39,7 +39,7 @@
                         </svg>
                         Add User
                     </span>
-                    <a href="{{ route('settings.subscription') }}" class="inline-flex items-center justify-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition ease-in-out duration-150">
+                    <a href="{{ route('settings.subscription') }}" class="inline-flex items-center justify-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition ease-in-out duration-150">
                         Upgrade Plan
                     </a>
                 </div>
@@ -68,8 +68,8 @@
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
                                                 <div class="flex-shrink-0 h-10 w-10">
-                                                    <div class="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
-                                                        <span class="text-indigo-600 dark:text-indigo-400 font-medium text-sm">{{ substr($user->name, 0, 2) }}</span>
+                                                    <div class="h-10 w-10 rounded-full bg-brand-100 dark:bg-brand-900 flex items-center justify-center">
+                                                        <span class="text-brand-600 dark:text-brand-300 font-medium text-sm">{{ substr($user->name, 0, 2) }}</span>
                                                     </div>
                                                 </div>
                                                 <div class="ml-4">
@@ -86,7 +86,7 @@
                                         <td class="px-6 py-4">
                                             <div class="flex flex-wrap gap-1">
                                                 @forelse($user->roles as $role)
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-brand-100 text-brand-800 dark:bg-brand-900/50 dark:text-brand-300">
                                                         {{ $role->name }}
                                                     </span>
                                                 @empty
@@ -100,18 +100,18 @@
                                                     Active
                                                 </span>
                                             @else
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300">
                                                     Inactive
                                                 </span>
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <a href="{{ route('settings.users.edit', $user) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 mr-3">Edit</a>
+                                            <a href="{{ route('settings.users.edit', $user) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300 mr-3">Edit</a>
                                             @if($user->id !== auth()->id())
                                                 <form action="{{ route('settings.users.destroy', $user) }}" method="POST" class="inline" data-confirm="Are you sure you want to delete this user?">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">Delete</button>
+                                                    <button type="submit" class="text-red-600 dark:text-red-300 hover:text-red-900 dark:hover:text-red-300">Delete</button>
                                                 </form>
                                             @endif
                                         </td>
@@ -125,7 +125,7 @@
                                             <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No users found</h3>
                                             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by adding a new user.</p>
                                             <div class="mt-6">
-                                                <a href="{{ route('settings.users.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
+                                                <a href="{{ route('settings.users.create') }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
                                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                                     </svg>

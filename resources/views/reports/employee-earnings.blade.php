@@ -26,7 +26,7 @@
                 <form method="GET" action="{{ route('reports.employee-earnings') }}" class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                     <div>
                         <label for="employee_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Employee</label>
-                        <select name="employee_id" id="employee_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                        <select name="employee_id" id="employee_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                             <option value="">All Employees</option>
                             @foreach($employees as $employee)
                                 <option value="{{ $employee->id }}" {{ $employeeId == $employee->id ? 'selected' : '' }}>
@@ -38,15 +38,15 @@
                     <div>
                         <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Start Date</label>
                         <input type="date" name="start_date" id="start_date" value="{{ $startDate }}" 
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                     </div>
                     <div>
                         <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">End Date</label>
                         <input type="date" name="end_date" id="end_date" value="{{ $endDate }}" 
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                     </div>
                     <div class="flex items-end">
-                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
                             </svg>
@@ -68,31 +68,31 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
                 <div class="p-4">
                     <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">Allowances</dt>
-                    <dd class="mt-1 text-lg font-semibold text-blue-600 dark:text-blue-400">{{ number_format($totalAllowances, 2) }}</dd>
+                    <dd class="mt-1 text-lg font-semibold text-brand-600 dark:text-brand-300">{{ number_format($totalAllowances, 2) }}</dd>
                 </div>
             </div>
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
                 <div class="p-4">
                     <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">Overtime</dt>
-                    <dd class="mt-1 text-lg font-semibold text-orange-600 dark:text-orange-400">{{ number_format($totalOvertime, 2) }}</dd>
+                    <dd class="mt-1 text-lg font-semibold text-orange-700 dark:text-orange-400">{{ number_format($totalOvertime, 2) }}</dd>
                 </div>
             </div>
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
                 <div class="p-4">
                     <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">Tax</dt>
-                    <dd class="mt-1 text-lg font-semibold text-yellow-600 dark:text-yellow-400">{{ number_format($totalTax, 2) }}</dd>
+                    <dd class="mt-1 text-lg font-semibold text-yellow-700 dark:text-yellow-400">{{ number_format($totalTax, 2) }}</dd>
                 </div>
             </div>
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
                 <div class="p-4">
                     <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">Total Deductions</dt>
-                    <dd class="mt-1 text-lg font-semibold text-red-600 dark:text-red-400">{{ number_format($totalDeductions, 2) }}</dd>
+                    <dd class="mt-1 text-lg font-semibold text-red-600 dark:text-red-300">{{ number_format($totalDeductions, 2) }}</dd>
                 </div>
             </div>
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
                 <div class="p-4">
                     <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">Net Salary</dt>
-                    <dd class="mt-1 text-lg font-semibold text-green-600 dark:text-green-400">{{ number_format($totalNet, 2) }}</dd>
+                    <dd class="mt-1 text-lg font-semibold text-green-700 dark:text-green-400">{{ number_format($totalNet, 2) }}</dd>
                 </div>
             </div>
         </div>
@@ -145,22 +145,22 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
                                         {{ number_format($payroll->basic_salary, 2) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-blue-600 dark:text-blue-400">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-brand-600 dark:text-brand-300">
                                         {{ number_format($payroll->allowances, 2) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-orange-600 dark:text-orange-400">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-orange-700 dark:text-orange-400">
                                         {{ number_format($payroll->overtime_amount, 2) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900 dark:text-white">
                                         {{ number_format($payroll->gross_salary, 2) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-yellow-600 dark:text-yellow-400">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-yellow-700 dark:text-yellow-400">
                                         {{ number_format($payroll->tax_deduction, 2) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-red-600 dark:text-red-400">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-red-600 dark:text-red-300">
                                         {{ number_format($payroll->total_deductions, 2) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-green-600 dark:text-green-400">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-green-700 dark:text-green-400">
                                         {{ number_format($payroll->net_salary, 2) }}
                                     </td>
                                 </tr>
@@ -177,12 +177,12 @@
                                 <tr>
                                     <td class="px-6 py-3 text-left text-sm font-bold text-gray-900 dark:text-white" colspan="3">Totals</td>
                                     <td class="px-6 py-3 text-right text-sm font-bold text-gray-900 dark:text-white">{{ number_format($payrolls->sum('basic_salary'), 2) }}</td>
-                                    <td class="px-6 py-3 text-right text-sm font-bold text-blue-600 dark:text-blue-400">{{ number_format($totalAllowances, 2) }}</td>
-                                    <td class="px-6 py-3 text-right text-sm font-bold text-orange-600 dark:text-orange-400">{{ number_format($totalOvertime, 2) }}</td>
+                                    <td class="px-6 py-3 text-right text-sm font-bold text-brand-600 dark:text-brand-300">{{ number_format($totalAllowances, 2) }}</td>
+                                    <td class="px-6 py-3 text-right text-sm font-bold text-orange-700 dark:text-orange-400">{{ number_format($totalOvertime, 2) }}</td>
                                     <td class="px-6 py-3 text-right text-sm font-bold text-gray-900 dark:text-white">{{ number_format($totalGross, 2) }}</td>
-                                    <td class="px-6 py-3 text-right text-sm font-bold text-yellow-600 dark:text-yellow-400">{{ number_format($totalTax, 2) }}</td>
-                                    <td class="px-6 py-3 text-right text-sm font-bold text-red-600 dark:text-red-400">{{ number_format($totalDeductions, 2) }}</td>
-                                    <td class="px-6 py-3 text-right text-sm font-bold text-green-600 dark:text-green-400">{{ number_format($totalNet, 2) }}</td>
+                                    <td class="px-6 py-3 text-right text-sm font-bold text-yellow-700 dark:text-yellow-400">{{ number_format($totalTax, 2) }}</td>
+                                    <td class="px-6 py-3 text-right text-sm font-bold text-red-600 dark:text-red-300">{{ number_format($totalDeductions, 2) }}</td>
+                                    <td class="px-6 py-3 text-right text-sm font-bold text-green-700 dark:text-green-400">{{ number_format($totalNet, 2) }}</td>
                                 </tr>
                             </tfoot>
                         @endif

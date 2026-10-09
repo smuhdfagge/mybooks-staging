@@ -76,10 +76,10 @@
                             <div class="mt-4 ml-auto max-w-xs space-y-1 text-sm">
                                 <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Subtotal</span><span class="text-gray-900 dark:text-gray-100">@money($quotation->subtotal)</span></div>
                                 @if((float) $quotation->discount_amount > 0)
-                                    <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Discount</span><span class="text-red-600 dark:text-red-400">-@money($quotation->discount_amount)</span></div>
+                                    <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Discount</span><span class="text-red-600 dark:text-red-300">-@money($quotation->discount_amount)</span></div>
                                 @endif
                                 <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">VAT</span><span class="text-gray-900 dark:text-gray-100">@money($quotation->tax_amount)</span></div>
-                                <div class="flex justify-between border-t border-gray-200 dark:border-gray-700 pt-2 text-base font-bold"><span class="text-gray-900 dark:text-gray-100">Total</span><span class="text-indigo-600 dark:text-indigo-400">@money($quotation->total)</span></div>
+                                <div class="flex justify-between border-t border-gray-200 dark:border-gray-700 pt-2 text-base font-bold"><span class="text-gray-900 dark:text-gray-100">Total</span><span class="text-brand-600 dark:text-brand-300">@money($quotation->total)</span></div>
                             </div>
                         </div>
                     </x-card>
@@ -110,10 +110,10 @@
                             <div class="p-4 sm:p-6 text-sm">
                                 <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Converted to</h3>
                                 @if($quotation->salesOrder)
-                                    <a href="{{ route('sales-orders.show', $quotation->salesOrder) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Sales order {{ $quotation->salesOrder->order_number }}</a>
+                                    <a href="{{ route('sales-orders.show', $quotation->salesOrder) }}" class="text-brand-600 dark:text-brand-300 hover:underline">Sales order {{ $quotation->salesOrder->order_number }}</a>
                                 @endif
                                 @if($quotation->invoice)
-                                    <a href="{{ route('invoices.show', $quotation->invoice) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Invoice {{ $quotation->invoice->invoice_number }}</a>
+                                    <a href="{{ route('invoices.show', $quotation->invoice) }}" class="text-brand-600 dark:text-brand-300 hover:underline">Invoice {{ $quotation->invoice->invoice_number }}</a>
                                 @endif
                             </div>
                         </x-card>
@@ -131,7 +131,7 @@
                                 @if($answerable)
                                     <div class="grid grid-cols-2 gap-2">
                                         <form method="POST" action="{{ route('quotations.accept', $quotation) }}">@csrf
-                                            <button type="submit" class="{{ $btn }} w-full bg-green-600 border-transparent text-white hover:bg-green-700">Accepted</button>
+                                            <button type="submit" class="{{ $btn }} w-full bg-green-700 border-transparent text-white hover:bg-green-700">Accepted</button>
                                         </form>
                                         <form method="POST" action="{{ route('quotations.reject', $quotation) }}" data-confirm="Mark this quotation as rejected by the customer?">@csrf
                                             <button type="submit" class="{{ $btn }} w-full bg-red-600 border-transparent text-white hover:bg-red-700">Rejected</button>
@@ -156,7 +156,7 @@
                             @can('delete invoices')
                                 @if(! in_array($status, ['accepted', 'converted'], true))
                                     <form method="POST" action="{{ route('quotations.destroy', $quotation) }}" data-confirm="Delete this quotation?">@csrf @method('DELETE')
-                                        <button type="submit" class="{{ $btn }} w-full bg-white dark:bg-gray-800 border-red-300 text-red-700 dark:text-red-400 hover:bg-red-50">Delete</button>
+                                        <button type="submit" class="{{ $btn }} w-full bg-white dark:bg-gray-800 border-red-300 text-red-700 dark:text-red-300 hover:bg-red-50">Delete</button>
                                     </form>
                                 @endif
                             @endcan

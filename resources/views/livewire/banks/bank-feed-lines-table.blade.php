@@ -4,7 +4,7 @@
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         @foreach(['new' => 'To review', 'matched' => 'Matched', 'created' => 'Recorded', 'ignored' => 'Ignored'] as $key => $label)
             <button type="button" wire:click="$set('statusFilter', '{{ $key }}')" data-testid="count-{{ $key }}"
-                    class="card p-3 text-left {{ $statusFilter === $key ? 'ring-2 ring-indigo-500' : '' }}">
+                    class="card p-3 text-left {{ $statusFilter === $key ? 'ring-2 ring-brand-500' : '' }}">
                 <span class="block text-xs text-gray-500 dark:text-gray-400">{{ $label }}</span>
                 <span class="block text-xl font-semibold text-gray-900 dark:text-gray-100">{{ $counts[$key] }}</span>
             </button>
@@ -74,21 +74,21 @@
                             @php($s = $suggestions[$line->id] ?? null)
                             <tr wire:key="line-{{ $line->id }}" data-testid="line-{{ $line->id }}">
                                 @if($canReconcile && $statusFilter === 'new')
-                                    <td class="px-3 py-3" data-cell="main"><input aria-label="Select line" type="checkbox" wire:model.live="selectedItems" value="{{ $line->id }}" class="rounded border-gray-300 text-indigo-600"></td>
+                                    <td class="px-3 py-3" data-cell="main"><input aria-label="Select line" type="checkbox" wire:model.live="selectedItems" value="{{ $line->id }}" class="rounded border-gray-300 text-brand-600 dark:text-brand-300"></td>
                                 @endif
                                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100" data-label="Date">{{ $line->date->format('j M Y') }}</td>
                                 <td class="px-3 py-3 text-sm text-gray-900 dark:text-gray-100" data-cell="main">
                                     <div class="break-words">{{ $line->narration ?: '—' }}</div>
                                     <div class="text-xs text-gray-500 dark:text-gray-400">{{ $line->connection?->title() }}</div>
                                 </td>
-                                <td class="px-3 py-3 whitespace-nowrap text-sm text-right font-medium {{ $line->isCredit() ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}" data-label="Amount">
+                                <td class="px-3 py-3 whitespace-nowrap text-sm text-right font-medium {{ $line->isCredit() ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}" data-label="Amount">
                                     {{ $line->isCredit() ? '+' : '−' }}@money($line->amount)
                                 </td>
                                 <td class="px-3 py-3 text-sm" data-cell="main">
                                     @if($line->status === 'new')
                                         @if($s)
                                             <div class="text-gray-900 dark:text-gray-100">
-                                                <a class="text-indigo-600 dark:text-indigo-400 hover:underline" href="{{ $s->candidate->url ?? '#' }}" target="_blank" rel="noopener">{{ $s->candidate->describe() }}</a>
+                                                <a class="text-brand-600 dark:text-brand-300 hover:underline" href="{{ $s->candidate->url ?? '#' }}" target="_blank" rel="noopener">{{ $s->candidate->describe() }}</a>
                                                 <span class="text-xs text-gray-500 dark:text-gray-400">· {{ $s->candidate->date->format('j M') }}</span>
                                             </div>
                                             <span class="mt-1 px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ ['High' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300', 'Medium' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300', 'Low' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'][$s->label()] }}" data-testid="confidence-{{ $line->id }}">{{ $s->label() }} confidence</span>

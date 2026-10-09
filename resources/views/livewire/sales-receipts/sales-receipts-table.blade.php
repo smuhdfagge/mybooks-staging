@@ -8,7 +8,7 @@
         <div>
             <label for="search" class="form-label">Search</label>
             <input type="text" id="search" wire:model.live.debounce.300ms="search" placeholder="Receipt #, Reference, Customer..."
-                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:placeholder-gray-500 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
         </div>
 
         <div>
@@ -53,7 +53,7 @@
 
     @if($search || $paymentMethod || $customer || $dateFrom || $dateTo)
         <div class="mb-4">
-            <button wire:click="clearFilters" class="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
+            <button wire:click="clearFilters" class="text-sm text-brand-600 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-300">
                 Clear all filters
             </button>
         </div>
@@ -66,7 +66,7 @@
                 <tr>
                     <th scope="col" class="px-4 py-3 text-left">
                         <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
-                            class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
+                            class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
                     </th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Receipt #</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Customer</th>
@@ -81,10 +81,10 @@
                     <tr wire:key="receipt-{{ $receipt->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                         <td class="px-4 py-4">
                             <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $receipt->id }}"
-                                class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
+                                class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <a href="{{ route('sales-receipts.show', $receipt) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 font-medium">
+                            <a href="{{ route('sales-receipts.show', $receipt) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300 font-medium">
                                 {{ $receipt->receipt_number }}
                             </a>
                             @if($receipt->reference)
@@ -113,8 +113,8 @@
                             @money($receipt->total)
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="{{ route('sales-receipts.show', $receipt) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 mr-3">View</a>
-                            <a href="{{ route('sales-receipts.edit', $receipt) }}" class="text-yellow-600 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-300">Edit</a>
+                            <a href="{{ route('sales-receipts.show', $receipt) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300 mr-3">View</a>
+                            <a href="{{ route('sales-receipts.edit', $receipt) }}" class="text-yellow-700 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-300">Edit</a>
                         </td>
                     </tr>
                 @empty
@@ -126,7 +126,7 @@
                             <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No sales receipts found</h3>
                             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new sales receipt.</p>
                             <div class="mt-6">
-                                <a href="{{ route('sales-receipts.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                <a href="{{ route('sales-receipts.create') }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                                     </svg>

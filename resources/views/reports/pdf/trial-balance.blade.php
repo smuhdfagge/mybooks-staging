@@ -10,9 +10,9 @@
     <!-- Balance Status -->
     <div style="text-align: center; margin-bottom: 10px; padding: 8px; background-color: {{ abs($difference) <= 0.01 ? '#ecfdf5' : '#fef2f2' }}; border-radius: 4px; border: 1px solid {{ abs($difference) <= 0.01 ? '#a7f3d0' : '#fecaca' }};">
         @if(abs($difference) <= 0.01)
-            <p style="font-size: 9px; color: #059669; font-weight: bold;">✓ Trial Balance is Balanced</p>
+            <p style="font-size: 9px; color: #2E7D32; font-weight: bold;">✓ Trial Balance is Balanced</p>
         @else
-            <p style="font-size: 9px; color: #dc2626; font-weight: bold;">✗ Out of Balance by {{ number_format(abs($difference), 2) }}</p>
+            <p style="font-size: 9px; color: #C62828; font-weight: bold;">✗ Out of Balance by {{ number_format(abs($difference), 2) }}</p>
         @endif
     </div>
 

@@ -25,7 +25,7 @@
                     <!-- Journal Information -->
                     <div class="mb-8">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 mr-2 text-brand-500 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
                             Journal Details
@@ -47,7 +47,7 @@
                                     class="form-control @error('reference') border-red-500 @enderror"
                                     placeholder="e.g., Check #123" @error('reference') aria-invalid="true" aria-describedby="reference-error" @enderror>
                                 @error('reference')
-                                    <p id="reference-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="reference-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -60,12 +60,12 @@
                         @endif
 
                         <div class="mt-4">
-                            <label for="description" class="form-label">Description <span class="text-red-500">*</span></label>
+                            <label for="description" class="form-label">Description <span class="text-red-600 dark:text-red-300">*</span></label>
                             <textarea name="description" id="description" rows="2" required maxlength="500"
                                 class="form-control @error('description') border-red-500 @enderror"
                                 placeholder="Enter journal description..." @error('description') aria-invalid="true" aria-describedby="description-error" @enderror>{{ old('description') }}</textarea>
                             @error('description')
-                                <p id="description-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="description-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>
@@ -73,7 +73,7 @@
                     <!-- Journal Entries -->
                     <div class="mb-8">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 mr-2 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                             </svg>
                             Journal Line Items
@@ -98,7 +98,7 @@
                                             <tr class="entry-row">
                                                 <td class="px-4 py-2">
                                                     <select name="entries[{{ $index }}][account_id]" required
-                                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                                         <option value="">Select Account</option>
                                                         @foreach($accounts as $account)
                                                             <option value="{{ $account->id }}" {{ $entry['account_id'] == $account->id ? 'selected' : '' }}>
@@ -109,21 +109,21 @@
                                                 </td>
                                                 <td class="px-4 py-2">
                                                     <input aria-label="Line description" type="text" name="entries[{{ $index }}][description]" value="{{ $entry['description'] ?? '' }}"
-                                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                                                         placeholder="Line description">
                                                 </td>
                                                 <td class="px-4 py-2">
                                                     <input aria-label="Debit" type="number" name="entries[{{ $index }}][debit]" value="{{ $entry['debit'] ?? '' }}" min="0" step="0.01"
-                                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right debit-input"
+                                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 text-right debit-input"
                                                         placeholder="0.00">
                                                 </td>
                                                 <td class="px-4 py-2">
                                                     <input aria-label="Credit" type="number" name="entries[{{ $index }}][credit]" value="{{ $entry['credit'] ?? '' }}" min="0" step="0.01"
-                                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right credit-input"
+                                                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 text-right credit-input"
                                                         placeholder="0.00">
                                                 </td>
                                                 <td class="px-4 py-2 text-center">
-                                                    <button type="button" class="remove-row-btn text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                                    <button type="button" class="remove-row-btn text-red-600 hover:text-red-900 dark:text-red-300 dark:hover:text-red-300">
                                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                                         </svg>
@@ -135,7 +135,7 @@
                                         <tr class="entry-row">
                                             <td class="px-4 py-2">
                                                 <select name="entries[0][account_id]" required
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                                     <option value="">Select Account</option>
                                                     @foreach($accounts as $account)
                                                         <option value="{{ $account->id }}">{{ $account->account_code }} - {{ $account->name }}</option>
@@ -144,21 +144,21 @@
                                             </td>
                                             <td class="px-4 py-2">
                                                 <input aria-label="Line description" type="text" name="entries[0][description]"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                                                     placeholder="Line description">
                                             </td>
                                             <td class="px-4 py-2">
                                                 <input aria-label="Debit" type="number" name="entries[0][debit]" min="0" step="0.01"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right debit-input"
+                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 text-right debit-input"
                                                     placeholder="0.00">
                                             </td>
                                             <td class="px-4 py-2">
                                                 <input aria-label="Credit" type="number" name="entries[0][credit]" min="0" step="0.01"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right credit-input"
+                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 text-right credit-input"
                                                     placeholder="0.00">
                                             </td>
                                             <td class="px-4 py-2 text-center">
-                                                <button type="button" class="remove-row-btn text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                                <button type="button" class="remove-row-btn text-red-600 hover:text-red-900 dark:text-red-300 dark:hover:text-red-300">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                                     </svg>
@@ -168,7 +168,7 @@
                                         <tr class="entry-row">
                                             <td class="px-4 py-2">
                                                 <select name="entries[1][account_id]" required
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                                     <option value="">Select Account</option>
                                                     @foreach($accounts as $account)
                                                         <option value="{{ $account->id }}">{{ $account->account_code }} - {{ $account->name }}</option>
@@ -177,21 +177,21 @@
                                             </td>
                                             <td class="px-4 py-2">
                                                 <input aria-label="Line description" type="text" name="entries[1][description]"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                                                     placeholder="Line description">
                                             </td>
                                             <td class="px-4 py-2">
                                                 <input aria-label="Debit" type="number" name="entries[1][debit]" min="0" step="0.01"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right debit-input"
+                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 text-right debit-input"
                                                     placeholder="0.00">
                                             </td>
                                             <td class="px-4 py-2">
                                                 <input aria-label="Credit" type="number" name="entries[1][credit]" min="0" step="0.01"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right credit-input"
+                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 text-right credit-input"
                                                     placeholder="0.00">
                                             </td>
                                             <td class="px-4 py-2 text-center">
-                                                <button type="button" class="remove-row-btn text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                                <button type="button" class="remove-row-btn text-red-600 hover:text-red-900 dark:text-red-300 dark:hover:text-red-300">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                                     </svg>
@@ -214,10 +214,10 @@
                                         <td></td>
                                     </tr>
                                     <tr id="differenceRow" class="hidden">
-                                        <td colspan="2" class="px-4 py-2 text-right text-sm font-medium text-red-600 dark:text-red-400">
+                                        <td colspan="2" class="px-4 py-2 text-right text-sm font-medium text-red-600 dark:text-red-300">
                                             Difference:
                                         </td>
-                                        <td colspan="2" class="px-4 py-2 text-center text-sm font-bold text-red-600 dark:text-red-400">
+                                        <td colspan="2" class="px-4 py-2 text-center text-sm font-bold text-red-600 dark:text-red-300">
                                             $<span id="difference">0.00</span>
                                         </td>
                                         <td></td>
@@ -227,7 +227,7 @@
                         </div>
 
                         <div class="mt-4">
-                            <button type="button" id="addLineBtn" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
+                            <button type="button" id="addLineBtn" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                                 </svg>
@@ -241,7 +241,7 @@
                         <a href="{{ route('journals.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-600 transition">
                             Cancel
                         </a>
-                        <button type="submit" class="inline-flex items-center px-6 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <button type="submit" class="inline-flex items-center px-6 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>
@@ -267,27 +267,27 @@
             row.innerHTML = `
                 <td class="px-4 py-2">
                     <select name="entries[${rowIndex}][account_id]" required
-                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         <option value="">Select Account</option>
                     </select>
                 </td>
                 <td class="px-4 py-2">
                     <input aria-label="Line description" type="text" name="entries[${rowIndex}][description]"
-                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                         placeholder="Line description">
                 </td>
                 <td class="px-4 py-2">
                     <input aria-label="Debit" type="number" name="entries[${rowIndex}][debit]" min="0" step="0.01"
-                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right debit-input"
+                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 text-right debit-input"
                         placeholder="0.00">
                 </td>
                 <td class="px-4 py-2">
                     <input aria-label="Credit" type="number" name="entries[${rowIndex}][credit]" min="0" step="0.01"
-                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right credit-input"
+                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 text-right credit-input"
                         placeholder="0.00">
                 </td>
                 <td class="px-4 py-2 text-center">
-                    <button type="button" class="remove-row-btn text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                    <button type="button" class="remove-row-btn text-red-600 hover:text-red-900 dark:text-red-300 dark:hover:text-red-300">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                         </svg>

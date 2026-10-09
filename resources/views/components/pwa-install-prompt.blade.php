@@ -12,15 +12,11 @@
     
     <!-- Install Banner -->
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <!-- Header with gradient -->
-        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3">
+        <!-- Header -->
+        <div class="bg-brand-900 px-4 py-3">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                        </svg>
-                    </div>
+                    <x-brand-mark class="w-10 h-10 flex-shrink-0" />
                     <div>
                         <h3 class="text-white font-semibold text-sm">Install MyBooks</h3>
                         <p class="text-white/80 text-xs">Add to your device</p>
@@ -43,19 +39,19 @@
             <!-- Benefits -->
             <div class="space-y-2 mb-4">
                 <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <svg class="w-4 h-4 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4 text-green-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
                     <span>Quick access from home screen</span>
                 </div>
                 <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <svg class="w-4 h-4 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4 text-green-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
                     <span>Works offline</span>
                 </div>
                 <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <svg class="w-4 h-4 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4 text-green-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
                     <span>No app store required</span>
@@ -69,7 +65,7 @@
                     Not Now
                 </button>
                 <button @click="installApp()" 
-                        class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition flex items-center justify-center gap-2">
+                        class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-xl transition flex items-center justify-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                     </svg>
@@ -107,8 +103,8 @@
                  class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-sm sm:p-6">
                 
                 <div class="text-center">
-                    <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/50 mb-4">
-                        <svg class="w-8 h-8 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-900/50 mb-4">
+                        <svg class="w-8 h-8 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                         </svg>
                     </div>
@@ -118,7 +114,7 @@
                     
                     <div class="text-left space-y-4">
                         <div class="flex items-start gap-3">
-                            <span class="flex-shrink-0 w-6 h-6 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center text-sm font-medium">1</span>
+                            <span class="flex-shrink-0 w-6 h-6 bg-brand-100 dark:bg-brand-900/50 text-brand-600 dark:text-brand-300 rounded-full flex items-center justify-center text-sm font-medium">1</span>
                             <div>
                                 <p class="text-sm text-gray-700 dark:text-gray-300">Tap the <strong>Share</strong> button</p>
                                 <div class="mt-1 flex items-center gap-1 text-gray-500">
@@ -131,14 +127,14 @@
                         </div>
                         
                         <div class="flex items-start gap-3">
-                            <span class="flex-shrink-0 w-6 h-6 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center text-sm font-medium">2</span>
+                            <span class="flex-shrink-0 w-6 h-6 bg-brand-100 dark:bg-brand-900/50 text-brand-600 dark:text-brand-300 rounded-full flex items-center justify-center text-sm font-medium">2</span>
                             <div>
                                 <p class="text-sm text-gray-700 dark:text-gray-300">Scroll down and tap <strong>"Add to Home Screen"</strong></p>
                             </div>
                         </div>
                         
                         <div class="flex items-start gap-3">
-                            <span class="flex-shrink-0 w-6 h-6 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center text-sm font-medium">3</span>
+                            <span class="flex-shrink-0 w-6 h-6 bg-brand-100 dark:bg-brand-900/50 text-brand-600 dark:text-brand-300 rounded-full flex items-center justify-center text-sm font-medium">3</span>
                             <div>
                                 <p class="text-sm text-gray-700 dark:text-gray-300">Tap <strong>"Add"</strong> to confirm</p>
                             </div>
@@ -148,7 +144,7 @@
                 
                 <div class="mt-6">
                     <button @click="showIosModal = false" 
-                            class="w-full px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition">
+                            class="w-full px-4 py-2.5 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-xl transition">
                         Got it!
                     </button>
                 </div>

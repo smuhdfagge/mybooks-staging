@@ -41,7 +41,7 @@
                 @forelse($transfers as $transfer)
                     <tr wire:key="st-{{ $transfer->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                         <td class="px-4 py-3 whitespace-nowrap">
-                            <a href="{{ route('stock-transfers.show', $transfer) }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">{{ $transfer->transfer_number }}</a>
+                            <a href="{{ route('stock-transfers.show', $transfer) }}" class="font-medium text-brand-600 dark:text-brand-300 hover:underline">{{ $transfer->transfer_number }}</a>
                             @if($transfer->reference)<span class="block text-xs text-gray-500 dark:text-gray-400">{{ $transfer->reference }}</span>@endif
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-100">{{ $transfer->transfer_date?->format('M d, Y') }}</td>

@@ -4,13 +4,13 @@
             <div>
                 <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Supplier advance {{ $advance->payment_number }}</h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400">
-                    <a href="{{ route('vendors.show', $advance->vendor) }}" class="text-indigo-600 dark:text-indigo-400">{{ $advance->vendor->name }}</a>
+                    <a href="{{ route('vendors.show', $advance->vendor) }}" class="text-brand-600 dark:text-brand-300">{{ $advance->vendor->name }}</a>
                     · paid {{ $advance->payment_date->format('d M Y') }}{{ $advance->bank ? ' from '.$advance->bank->name : '' }}
                 </p>
             </div>
             <div class="flex gap-2">
-                <a href="{{ route('payments-made.show', $advance) }}" class="text-sm text-indigo-600 dark:text-indigo-400">Payment details</a>
-                <a href="{{ route('supplier-advances.index') }}" class="text-sm text-indigo-600 dark:text-indigo-400">Back</a>
+                <a href="{{ route('payments-made.show', $advance) }}" class="text-sm text-brand-600 dark:text-brand-300">Payment details</a>
+                <a href="{{ route('supplier-advances.index') }}" class="text-sm text-brand-600 dark:text-brand-300">Back</a>
             </div>
         </div>
     </x-slot>
@@ -28,7 +28,7 @@
                 </x-card>
                 <x-card class="p-4">
                     <p class="text-sm text-gray-500 dark:text-gray-400">Not yet used</p>
-                    <p class="text-2xl font-semibold text-indigo-600 dark:text-indigo-400">@money($advance->unused_amount)</p>
+                    <p class="text-2xl font-semibold text-brand-600 dark:text-brand-300">@money($advance->unused_amount)</p>
                 </x-card>
             </div>
 
@@ -67,8 +67,8 @@
                     <ul class="divide-y divide-gray-200 dark:divide-gray-700 p-6 pt-3 text-sm text-gray-900 dark:text-gray-100">
                         @foreach($advance->advanceApplications as $application)
                             <li class="py-2 flex justify-between gap-3">
-                                <span>{{ $application->application_date->format('d M Y') }} · bill <a href="{{ route('bills.show', $application->bill) }}" class="text-indigo-600 dark:text-indigo-400">{{ $application->bill->bill_number }}</a>
-                                    @if($application->appliedPayment) (payment <a href="{{ route('payments-made.show', $application->appliedPayment) }}" class="text-indigo-600 dark:text-indigo-400">{{ $application->appliedPayment->payment_number }}</a>)@endif
+                                <span>{{ $application->application_date->format('d M Y') }} · bill <a href="{{ route('bills.show', $application->bill) }}" class="text-brand-600 dark:text-brand-300">{{ $application->bill->bill_number }}</a>
+                                    @if($application->appliedPayment) (payment <a href="{{ route('payments-made.show', $application->appliedPayment) }}" class="text-brand-600 dark:text-brand-300">{{ $application->appliedPayment->payment_number }}</a>)@endif
                                 </span>
                                 <span class="font-medium">@money($application->amount)</span>
                             </li>

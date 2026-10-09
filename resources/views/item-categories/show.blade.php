@@ -44,7 +44,7 @@
                         <div>
                             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Parent Category</dt>
                             <dd class="mt-1 text-sm text-gray-900 dark:text-white">
-                                <a href="{{ route('item-categories.show', $itemCategory->parent) }}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400">
+                                <a href="{{ route('item-categories.show', $itemCategory->parent) }}" class="text-brand-600 hover:text-brand-800 dark:text-brand-300">
                                     {{ $itemCategory->parent->name }}
                                 </a>
                             </dd>
@@ -81,12 +81,12 @@
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Statistics</h3>
                     
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                            <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ $itemCategory->items->count() }}</div>
+                        <div class="text-center p-4 bg-brand-50 dark:bg-brand-900/20 rounded-lg">
+                            <div class="text-2xl font-bold text-brand-600 dark:text-brand-300">{{ $itemCategory->items->count() }}</div>
                             <div class="text-xs text-gray-500 dark:text-gray-400">Items</div>
                         </div>
-                        <div class="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                            <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ $itemCategory->children->count() }}</div>
+                        <div class="text-center p-4 bg-accent-50 dark:bg-accent-900/20 rounded-lg">
+                            <div class="text-2xl font-bold text-accent-700 dark:text-accent-300">{{ $itemCategory->children->count() }}</div>
                             <div class="text-xs text-gray-500 dark:text-gray-400">Subcategories</div>
                         </div>
                     </div>
@@ -127,8 +127,8 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <a href="{{ route('item-categories.show', $child) }}" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 mr-3">View</a>
-                                        <a href="{{ route('item-categories.edit', $child) }}" class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400">Edit</a>
+                                        <a href="{{ route('item-categories.show', $child) }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300 mr-3">View</a>
+                                        <a href="{{ route('item-categories.edit', $child) }}" class="text-yellow-700 hover:text-yellow-900 dark:text-yellow-400">Edit</a>
                                     </td>
                                 </tr>
                                 @endforeach
@@ -144,7 +144,7 @@
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Items in this Category</h3>
-                        <a href="{{ route('items.create') }}" class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400">
+                        <a href="{{ route('items.create') }}" class="text-sm text-brand-600 hover:text-brand-800 dark:text-brand-300">
                             + Add Item
                         </a>
                     </div>
@@ -164,7 +164,7 @@
                                 @foreach($itemCategory->items->take(10) as $item)
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <a href="{{ route('items.show', $item) }}" class="text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400">
+                                        <a href="{{ route('items.show', $item) }}" class="text-sm font-medium text-brand-600 hover:text-brand-800 dark:text-brand-300">
                                             {{ $item->name }}
                                         </a>
                                     </td>

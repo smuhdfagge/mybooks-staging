@@ -27,7 +27,7 @@
         </div>
         @if($canRemind && ! $mobile)
             <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">To send a reminder by SMS or WhatsApp, add the customer's mobile number on
-                <a href="{{ route('customers.edit', $invoice->customer) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">their page</a>.</p>
+                <a href="{{ route('customers.edit', $invoice->customer) }}" class="text-brand-600 dark:text-brand-300 hover:underline">their page</a>.</p>
         @endif
         @include('settings.messaging._list', ['messages' => $invoiceMessages, 'showCustomer' => false])
     </div>

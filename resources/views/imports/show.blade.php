@@ -31,8 +31,8 @@
                         @php
                             $statusColors = [
                                 'pending' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-                                'validating' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-                                'mapping' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+                                'validating' => 'bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-300',
+                                'mapping' => 'bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-300',
                                 'processing' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
                                 'completed' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
                                 'failed' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
@@ -63,16 +63,16 @@
                             <p class="text-sm text-gray-500 dark:text-gray-400">Processed</p>
                         </div>
                         <div class="bg-green-50 dark:bg-green-900/30 rounded-lg p-4 text-center">
-                            <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ number_format($import->successful_rows) }}</p>
-                            <p class="text-sm text-green-600 dark:text-green-400">Successful</p>
+                            <p class="text-2xl font-bold text-green-700 dark:text-green-400">{{ number_format($import->successful_rows) }}</p>
+                            <p class="text-sm text-green-700 dark:text-green-400">Successful</p>
                         </div>
                         <div class="bg-red-50 dark:bg-red-900/30 rounded-lg p-4 text-center">
-                            <p class="text-2xl font-bold text-red-600 dark:text-red-400">{{ number_format($import->failed_rows) }}</p>
-                            <p class="text-sm text-red-600 dark:text-red-400">Failed</p>
+                            <p class="text-2xl font-bold text-red-600 dark:text-red-300">{{ number_format($import->failed_rows) }}</p>
+                            <p class="text-sm text-red-600 dark:text-red-300">Failed</p>
                         </div>
                         <div class="bg-yellow-50 dark:bg-yellow-900/30 rounded-lg p-4 text-center">
-                            <p class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{{ number_format($import->skipped_rows) }}</p>
-                            <p class="text-sm text-yellow-600 dark:text-yellow-400">Skipped</p>
+                            <p class="text-2xl font-bold text-yellow-700 dark:text-yellow-400">{{ number_format($import->skipped_rows) }}</p>
+                            <p class="text-sm text-yellow-700 dark:text-yellow-400">Skipped</p>
                         </div>
                     </div>
 
@@ -91,7 +91,7 @@
                                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $import->getProgressPercentage() }}%</span>
                             </div>
                             <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3">
-                                <div class="bg-indigo-600 h-3 rounded-full transition-all duration-300" style="width: {{ $import->getProgressPercentage() }}%"></div>
+                                <div class="bg-brand-600 h-3 rounded-full transition-all duration-300" style="width: {{ $import->getProgressPercentage() }}%"></div>
                             </div>
                         </div>
                     @endif
@@ -131,7 +131,7 @@
                         </svg>
                         <div class="ml-3">
                             <h3 class="text-sm font-medium text-red-800 dark:text-red-300">Import Error</h3>
-                            <p class="mt-1 text-sm text-red-700 dark:text-red-400">{{ $import->error_message }}</p>
+                            <p class="mt-1 text-sm text-red-700 dark:text-red-300">{{ $import->error_message }}</p>
                         </div>
                     </div>
                 </div>
@@ -142,7 +142,7 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
                     <div class="p-6">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                            <svg class="w-5 h-5 inline mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 inline mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                             </svg>
                             Errors ({{ count($import->errors) }})
@@ -150,7 +150,7 @@
                         <div class="max-h-64 overflow-y-auto">
                             <ul class="space-y-2">
                                 @foreach(array_slice($import->errors, 0, 50) as $error)
-                                    <li class="text-sm text-red-600 dark:text-red-400 flex items-start">
+                                    <li class="text-sm text-red-600 dark:text-red-300 flex items-start">
                                         <svg class="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
                                         </svg>
@@ -181,7 +181,7 @@
                         <div class="max-h-48 overflow-y-auto">
                             <ul class="space-y-2">
                                 @foreach(array_slice($import->warnings, 0, 20) as $warning)
-                                    <li class="text-sm text-yellow-600 dark:text-yellow-400 flex items-start">
+                                    <li class="text-sm text-yellow-700 dark:text-yellow-400 flex items-start">
                                         <svg class="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
                                         </svg>
@@ -208,7 +208,7 @@
                             </button>
                         </form>
                     @endif
-                    <a href="{{ route('imports.create', ['type' => $import->type]) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                    <a href="{{ route('imports.create', ['type' => $import->type]) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>

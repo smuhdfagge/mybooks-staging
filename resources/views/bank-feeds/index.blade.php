@@ -38,7 +38,7 @@
                                 <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">{{ $c->title() }}</h3>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">
                                     {{ $c->account_name }}
-                                    @if($c->bank) · feeds <a class="text-indigo-600 dark:text-indigo-400 hover:underline" href="{{ route('banks.show', $c->bank_id) }}">{{ $c->bank->name }}</a> @endif
+                                    @if($c->bank) · feeds <a class="text-brand-600 dark:text-brand-300 hover:underline" href="{{ route('banks.show', $c->bank_id) }}">{{ $c->bank->name }}</a> @endif
                                 </p>
                                 <p class="mt-2 text-sm">
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ match($status->value) { 'linked' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300', 'needs_reauthorisation', 'pending' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300', 'error' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300', default => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' } }}">{{ $status->label() }}</span>
@@ -47,13 +47,13 @@
                                     </span>
                                 </p>
                                 @if($c->last_error && $c->isActive())
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $c->last_error }}</p>
+                                    <p class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $c->last_error }}</p>
                                 @endif
                                 @if($c->providerBalance() !== null)
                                     <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">Balance at the bank: <strong>@money($c->providerBalance())</strong></p>
                                 @endif
                                 @if(($toReview[$c->id] ?? 0) > 0)
-                                    <p class="mt-1 text-sm"><a class="text-indigo-600 dark:text-indigo-400 hover:underline" href="{{ route('bank-feeds.lines', ['connectionFilter' => $c->id]) }}">{{ $toReview[$c->id] }} {{ \Illuminate\Support\Str::plural('line', $toReview[$c->id]) }} to review</a></p>
+                                    <p class="mt-1 text-sm"><a class="text-brand-600 dark:text-brand-300 hover:underline" href="{{ route('bank-feeds.lines', ['connectionFilter' => $c->id]) }}">{{ $toReview[$c->id] }} {{ \Illuminate\Support\Str::plural('line', $toReview[$c->id]) }} to review</a></p>
                                 @endif
                             </div>
                             @can('edit banks')

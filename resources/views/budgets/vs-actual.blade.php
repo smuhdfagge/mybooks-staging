@@ -35,7 +35,7 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="text-sm text-gray-500 dark:text-gray-400">Budget Utilization</div>
                     <div class="mt-1">
-                        <span class="text-2xl font-semibold {{ $ytdUtilization['utilization_percent'] > 100 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
+                        <span class="text-2xl font-semibold {{ $ytdUtilization['utilization_percent'] > 100 ? 'text-red-600 dark:text-red-300' : 'text-green-700 dark:text-green-400' }}">
                             {{ $ytdUtilization['utilization_percent'] }}%
                         </span>
                     </div>
@@ -46,7 +46,7 @@
                 </div>
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="text-sm text-gray-500 dark:text-gray-400">Remaining Budget</div>
-                    <div class="mt-1 text-2xl font-semibold {{ $ytdUtilization['remaining'] >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                    <div class="mt-1 text-2xl font-semibold {{ $ytdUtilization['remaining'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                         {{ number_format($ytdUtilization['remaining'], 2) }}
                     </div>
                 </div>
@@ -63,7 +63,7 @@
                         <h3 class="text-sm font-medium text-red-800 dark:text-red-300">
                             {{ $ytdUtilization['over_budget_count'] }} Account(s) Over Budget
                         </h3>
-                        <div class="mt-2 text-sm text-red-700 dark:text-red-400">
+                        <div class="mt-2 text-sm text-red-700 dark:text-red-300">
                             <ul class="list-disc pl-5 space-y-1">
                                 @foreach($ytdUtilization['over_budget_accounts'] as $item)
                                 <li>{{ $item['account_name'] }}: {{ number_format(abs($item['variance']), 2) }} over budget ({{ abs($item['variance_percent']) }}%)</li>
@@ -114,10 +114,10 @@
                                     <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">
                                         {{ number_format($item['actual'], 2) }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $item['variance'] >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                    <td class="px-4 py-3 text-sm text-right {{ $item['variance'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                         {{ $item['variance'] >= 0 ? '+' : '' }}{{ number_format($item['variance'], 2) }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $item['variance'] >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                    <td class="px-4 py-3 text-sm text-right {{ $item['variance'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                         {{ $item['variance'] >= 0 ? '+' : '' }}{{ number_format($item['variance_percent'], 1) }}%
                                     </td>
                                     <td class="px-4 py-3 text-center">
@@ -151,10 +151,10 @@
                                     <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">
                                         {{ number_format($item['actual'], 2) }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $item['variance'] >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                    <td class="px-4 py-3 text-sm text-right {{ $item['variance'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                         {{ $item['variance'] >= 0 ? '+' : '' }}{{ number_format($item['variance'], 2) }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $item['variance'] >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                    <td class="px-4 py-3 text-sm text-right {{ $item['variance'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                         {{ $item['variance'] >= 0 ? '+' : '' }}{{ number_format($item['variance_percent'], 1) }}%
                                     </td>
                                     <td class="px-4 py-3 text-center">
@@ -189,7 +189,7 @@
                                     <th class="px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
                                         {{ number_format($comparison->sum('actual'), 2) }}
                                     </th>
-                                    <th class="px-4 py-3 text-right text-sm font-semibold {{ $comparison->sum('variance') >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                    <th class="px-4 py-3 text-right text-sm font-semibold {{ $comparison->sum('variance') >= 0 ? 'text-green-700' : 'text-red-600' }}">
                                         {{ $comparison->sum('variance') >= 0 ? '+' : '' }}{{ number_format($comparison->sum('variance'), 2) }}
                                     </th>
                                     <th colspan="2"></th>

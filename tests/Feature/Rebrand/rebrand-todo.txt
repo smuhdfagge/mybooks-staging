@@ -1,0 +1,4 @@
+# Rebrand to-do list (R1). Files that still use old colours.
+# Each rebrand session takes its files off this list when they are done.
+# The guard test (BrandColoursTest) fails if a file not listed here uses an
+# old colour, or if a listed file no longer does.

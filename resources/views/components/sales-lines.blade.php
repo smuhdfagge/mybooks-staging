@@ -66,7 +66,7 @@
                                             class="absolute z-[100] mt-1 w-full bg-white dark:bg-gray-700 shadow-lg max-h-60 rounded-md py-1 ring-1 ring-black ring-opacity-5 overflow-auto text-sm">
                                             <template x-for="(product, pIndex) in (line.results || [])" :key="product.id">
                                                 <div @mousedown.prevent @click="pick(index, product)" @mouseenter="line.highlighted = pIndex"
-                                                    :class="line.highlighted === pIndex ? 'bg-indigo-600 text-white' : 'text-gray-900 dark:text-gray-100'"
+                                                    :class="line.highlighted === pIndex ? 'bg-brand-600 text-white' : 'text-gray-900 dark:text-gray-100'"
                                                     class="cursor-pointer select-none py-2 px-3" x-text="product.name"></div>
                                             </template>
                                             <div x-show="(line.results || []).length === 0" class="py-2 px-3 text-gray-500 dark:text-gray-400">No items found</div>
@@ -88,7 +88,7 @@
                                 </td>
                                 <td class="py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100" data-label="Total" x-text="money(lineTotal(line))"></td>
                                 <td class="py-2 text-center" data-cell="actions">
-                                    <button type="button" @click="remove(index)" x-show="lines.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-400 text-sm" aria-label="Remove line">Remove</button>
+                                    <button type="button" @click="remove(index)" x-show="lines.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-300 text-sm" aria-label="Remove line">Remove</button>
                                 </td>
                             </tr>
                         </template>
@@ -122,7 +122,7 @@
                             <input type="number" name="discount_amount" aria-label="Discount amount" x-model.number="discountValue" x-show="discountType" min="0" step="0.01"
                                 class="w-24 text-xs rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 py-1">
                         </div>
-                        <span class="font-medium text-red-600 dark:text-red-400" x-text="'-' + money(discount)"></span>
+                        <span class="font-medium text-red-600 dark:text-red-300" x-text="'-' + money(discount)"></span>
                     </div>
                 @endif
                 <div class="flex justify-between text-sm">
@@ -131,7 +131,7 @@
                 </div>
                 <div class="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between">
                     <span class="text-lg font-bold text-gray-900 dark:text-gray-100">Total</span>
-                    <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400" x-text="money(total)"></span>
+                    <span class="text-lg font-bold text-brand-600 dark:text-brand-300" x-text="money(total)"></span>
                 </div>
             </div>
         </x-card>

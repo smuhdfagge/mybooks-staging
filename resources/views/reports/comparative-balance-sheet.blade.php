@@ -24,7 +24,7 @@
                         <div class="lg:col-span-1">
                             <label for="comparison_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Comparison Type</label>
                             <select name="comparison_type" id="comparison_type" data-call="toggleCustomDates" data-pass-value
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                                 <option value="month" {{ $comparisonType === 'month' ? 'selected' : '' }}>Month over Month</option>
                                 <option value="quarter" {{ $comparisonType === 'quarter' ? 'selected' : '' }}>Quarter over Quarter</option>
                                 <option value="year" {{ $comparisonType === 'year' ? 'selected' : '' }}>Year over Year</option>
@@ -38,29 +38,29 @@
                                 <div>
                                     <label for="current_start" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Current Start</label>
                                     <input type="date" name="current_start" id="current_start" value="{{ request('current_start', now()->startOfMonth()->format('Y-m-d')) }}"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                                 </div>
                                 <div>
                                     <label for="current_end" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Current End</label>
                                     <input type="date" name="current_end" id="current_end" value="{{ request('current_end', now()->format('Y-m-d')) }}"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                                 </div>
                                 <div>
                                     <label for="previous_start" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Previous Start</label>
                                     <input type="date" name="previous_start" id="previous_start" value="{{ request('previous_start', now()->subMonth()->startOfMonth()->format('Y-m-d')) }}"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                                 </div>
                                 <div>
                                     <label for="previous_end" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Previous End</label>
                                     <input type="date" name="previous_end" id="previous_end" value="{{ request('previous_end', now()->subMonth()->endOfMonth()->format('Y-m-d')) }}"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                                 </div>
                             </div>
                         </div>
                     </div>
                     
                     <div class="flex justify-end">
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                             </svg>
@@ -79,14 +79,14 @@
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $period['label'] }}</h3>
                         @if($key === 'current')
-                            <span class="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">Current</span>
+                            <span class="px-2 py-1 text-xs font-semibold bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200 rounded-full">Current</span>
                         @else
                             <span class="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 rounded-full">Previous</span>
                         @endif
                     </div>
                     <div class="text-center">
                         <p class="text-sm text-gray-500 dark:text-gray-400">Total Assets</p>
-                        <p class="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                        <p class="text-3xl font-bold text-brand-600 dark:text-brand-300">
                             {{ number_format($period['totalAssets'], 2) }}
                         </p>
                         <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
@@ -104,20 +104,20 @@
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Change</h3>
                     <div class="text-center">
                         <p class="text-sm text-gray-500 dark:text-gray-400">Difference</p>
-                        <p class="text-3xl font-bold {{ $changes['totalAssets']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                        <p class="text-3xl font-bold {{ $changes['totalAssets']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                             {{ $changes['totalAssets']['difference'] >= 0 ? '+' : '' }}{{ number_format($changes['totalAssets']['difference'], 2) }}
                         </p>
                         <div class="flex items-center justify-center mt-2">
                             @if($changes['totalAssets']['improved'])
-                                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
                                 </svg>
                             @else
-                                <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
                                 </svg>
                             @endif
-                            <span class="ml-1 text-sm {{ $changes['totalAssets']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                            <span class="ml-1 text-sm {{ $changes['totalAssets']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                 {{ number_format(abs($changes['totalAssets']['percentChange']), 1) }}%
                             </span>
                         </div>
@@ -153,8 +153,8 @@
                         </thead>
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             <!-- Assets Section -->
-                            <tr class="bg-blue-50 dark:bg-blue-900/20">
-                                <td colspan="5" class="px-6 py-3 text-sm font-semibold text-blue-800 dark:text-blue-200">
+                            <tr class="bg-brand-50 dark:bg-brand-900/20">
+                                <td colspan="5" class="px-6 py-3 text-sm font-semibold text-brand-800 dark:text-brand-200">
                                     ASSETS
                                 </td>
                             </tr>
@@ -170,7 +170,7 @@
                                 </td>
                                 @endforeach
                                 @if(isset($changes['accountsReceivable']))
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['accountsReceivable']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['accountsReceivable']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                     {{ $changes['accountsReceivable']['difference'] >= 0 ? '+' : '' }}{{ number_format($changes['accountsReceivable']['difference'], 2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
@@ -184,17 +184,17 @@
                             </tr>
 
                             <!-- Total Assets -->
-                            <tr class="bg-blue-100 dark:bg-blue-900/30 font-semibold">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-800 dark:text-blue-200">
+                            <tr class="bg-brand-100 dark:bg-brand-900/30 font-semibold">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-brand-800 dark:text-brand-200">
                                     Total Assets
                                 </td>
                                 @foreach($periodData as $period)
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-blue-800 dark:text-blue-200">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-brand-800 dark:text-brand-200">
                                     {{ number_format($period['totalAssets'], 2) }}
                                 </td>
                                 @endforeach
                                 @if(isset($changes['totalAssets']))
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['totalAssets']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['totalAssets']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                     {{ $changes['totalAssets']['difference'] >= 0 ? '+' : '' }}{{ number_format($changes['totalAssets']['difference'], 2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
@@ -225,7 +225,7 @@
                                 </td>
                                 @endforeach
                                 @if(isset($changes['accountsPayable']))
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['accountsPayable']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['accountsPayable']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                     {{ $changes['accountsPayable']['difference'] >= 0 ? '+' : '' }}{{ number_format($changes['accountsPayable']['difference'], 2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
@@ -256,7 +256,7 @@
                                 </td>
                                 @endforeach
                                 @if(isset($changes['equity']))
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['equity']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['equity']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                     {{ $changes['equity']['difference'] >= 0 ? '+' : '' }}{{ number_format($changes['equity']['difference'], 2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
@@ -280,7 +280,7 @@
                                 </td>
                                 @endforeach
                                 @if(isset($changes['totalLiabilitiesEquity']))
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['totalLiabilitiesEquity']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['totalLiabilitiesEquity']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                     {{ $changes['totalLiabilitiesEquity']['difference'] >= 0 ? '+' : '' }}{{ number_format($changes['totalLiabilitiesEquity']['difference'], 2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
@@ -311,14 +311,14 @@
                             <div>
                                 <div class="flex justify-between text-sm mb-1">
                                     <span class="text-gray-600 dark:text-gray-400">Assets</span>
-                                    <span class="text-blue-600 dark:text-blue-400 font-medium">{{ number_format($period['totalAssets'], 2) }}</span>
+                                    <span class="text-brand-600 dark:text-brand-300 font-medium">{{ number_format($period['totalAssets'], 2) }}</span>
                                 </div>
                                 <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-6">
                                     @php
                                         $maxAssets = max(array_column($periodData, 'totalAssets'));
                                         $assetsPercent = $maxAssets > 0 ? ($period['totalAssets'] / $maxAssets) * 100 : 0;
                                     @endphp
-                                    <div class="bg-blue-500 h-6 rounded-full flex items-center justify-end pr-2 transition-all duration-500" style="width: {{ max($assetsPercent, 5) }}%">
+                                    <div class="bg-brand-500 h-6 rounded-full flex items-center justify-end pr-2 transition-all duration-500" style="width: {{ max($assetsPercent, 5) }}%">
                                         @if($assetsPercent > 20)
                                         <span class="text-xs text-white font-medium">{{ number_format($assetsPercent, 0) }}%</span>
                                         @endif
@@ -330,7 +330,7 @@
                             <div>
                                 <div class="flex justify-between text-sm mb-1">
                                     <span class="text-gray-600 dark:text-gray-400">Liabilities</span>
-                                    <span class="text-red-600 dark:text-red-400 font-medium">{{ number_format($period['accountsPayable'], 2) }}</span>
+                                    <span class="text-red-600 dark:text-red-300 font-medium">{{ number_format($period['accountsPayable'], 2) }}</span>
                                 </div>
                                 <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-6">
                                     @php
@@ -349,7 +349,7 @@
                             <div>
                                 <div class="flex justify-between text-sm mb-1">
                                     <span class="text-gray-600 dark:text-gray-400">Equity</span>
-                                    <span class="{{ $period['equity'] >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }} font-medium">
+                                    <span class="{{ $period['equity'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }} font-medium">
                                         {{ $period['equity'] >= 0 ? '' : '-' }}{{ number_format(abs($period['equity']), 2) }}
                                     </span>
                                 </div>

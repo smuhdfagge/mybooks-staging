@@ -9,7 +9,7 @@
             </div>
             <div class="flex gap-2">
                 @if($budget->isActive() || $budget->isLocked())
-                <a href="{{ route('budgets.vs-actual', $budget) }}" class="inline-flex items-center px-4 py-2 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700">
+                <a href="{{ route('budgets.vs-actual', $budget) }}" class="btn-secondary">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                     </svg>
@@ -62,7 +62,7 @@
                         @if($budget->isDraft() && $budget->lines->count() > 0)
                         <form action="{{ route('budgets.activate', $budget) }}" method="POST" class="inline">
                             @csrf
-                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700"
+                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700"
                                     data-confirm="Activate this budget? Once active, budget amounts will be compared against actual transactions.">
                                 Activate Budget
                             </button>
@@ -89,19 +89,19 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="text-sm text-gray-500 dark:text-gray-400">Total Income Budget</div>
-                    <div class="mt-1 text-2xl font-semibold text-green-600 dark:text-green-400">
+                    <div class="mt-1 text-2xl font-semibold text-green-700 dark:text-green-400">
                         {{ number_format($summary['income_budget'], 2) }}
                     </div>
                 </div>
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="text-sm text-gray-500 dark:text-gray-400">Total Expense Budget</div>
-                    <div class="mt-1 text-2xl font-semibold text-red-600 dark:text-red-400">
+                    <div class="mt-1 text-2xl font-semibold text-red-600 dark:text-red-300">
                         {{ number_format($summary['expense_budget'], 2) }}
                     </div>
                 </div>
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="text-sm text-gray-500 dark:text-gray-400">Net Budget (Income - Expense)</div>
-                    <div class="mt-1 text-2xl font-semibold {{ $summary['net_budget'] >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                    <div class="mt-1 text-2xl font-semibold {{ $summary['net_budget'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                         {{ number_format($summary['net_budget'], 2) }}
                     </div>
                 </div>
@@ -128,13 +128,13 @@
                     </div>
                     <div>
                         <div class="text-sm text-gray-500 dark:text-gray-400">Utilization</div>
-                        <div class="mt-1 text-xl font-semibold {{ $ytdUtilization['utilization_percent'] > 100 ? 'text-red-600' : 'text-green-600' }}">
+                        <div class="mt-1 text-xl font-semibold {{ $ytdUtilization['utilization_percent'] > 100 ? 'text-red-600' : 'text-green-700' }}">
                             {{ $ytdUtilization['utilization_percent'] }}%
                         </div>
                     </div>
                     <div>
                         <div class="text-sm text-gray-500 dark:text-gray-400">Accounts Over Budget</div>
-                        <div class="mt-1 text-xl font-semibold {{ $ytdUtilization['over_budget_count'] > 0 ? 'text-red-600' : 'text-green-600' }}">
+                        <div class="mt-1 text-xl font-semibold {{ $ytdUtilization['over_budget_count'] > 0 ? 'text-red-600' : 'text-green-700' }}">
                             {{ $ytdUtilization['over_budget_count'] }}
                         </div>
                     </div>
@@ -216,7 +216,7 @@
                         No budget line items yet.
                         @can('edit budgets')
                         @if(!$budget->isLocked())
-                        <a href="{{ route('budgets.edit', $budget) }}" class="text-blue-600 dark:text-blue-400 hover:underline">Add budget lines</a>
+                        <a href="{{ route('budgets.edit', $budget) }}" class="text-brand-600 dark:text-brand-300 hover:underline">Add budget lines</a>
                         @endif
                         @endcan
                     </div>

@@ -14,7 +14,7 @@
                         <p class="text-sm text-gray-500 dark:text-gray-400">{{ $line->date->format('j M Y') }} · {{ $line->connection?->title() }} · {{ $line->bank?->name }}</p>
                         <p class="mt-1 text-gray-900 dark:text-gray-100 break-words" data-testid="line-narration">{{ $line->narration ?: 'No description from the bank' }}</p>
                     </div>
-                    <p class="text-xl font-semibold whitespace-nowrap {{ $line->isCredit() ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">{{ $line->isCredit() ? '+' : '−' }}@money($line->amount)</p>
+                    <p class="text-xl font-semibold whitespace-nowrap {{ $line->isCredit() ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">{{ $line->isCredit() ? '+' : '−' }}@money($line->amount)</p>
                 </div>
                 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
                     {{ $line->isCredit() ? 'Money came in.' : 'Money went out.' }}

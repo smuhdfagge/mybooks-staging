@@ -11,7 +11,7 @@
                     <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">{{ $taxGroup->name }}</h2>
                     <div class="flex items-center gap-2 mt-1">
                         @if($taxGroup->is_default)
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">Default</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200">Default</span>
                         @endif
                         @if($taxGroup->is_active)
                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Active</span>
@@ -23,7 +23,7 @@
             </div>
             <div class="flex gap-2">
                 @can('edit tax-rates')
-                <a href="{{ route('tax-groups.edit', $taxGroup) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition">
+                <a href="{{ route('tax-groups.edit', $taxGroup) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                     Edit
                 </a>
@@ -51,7 +51,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-500 dark:text-gray-400">Combined Rate</label>
-                    <p class="mt-1 text-lg text-gray-900 dark:text-gray-100 font-semibold text-blue-600 dark:text-blue-400">{{ $taxGroup->formatted_rate }}</p>
+                    <p class="mt-1 text-lg text-gray-900 dark:text-gray-100 font-semibold text-brand-600 dark:text-brand-300">{{ $taxGroup->formatted_rate }}</p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-500 dark:text-gray-400">Number of Taxes</label>
@@ -85,16 +85,16 @@
                                 <tr>
                                     <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $index + 1 }}</td>
                                     <td class="px-6 py-4">
-                                        <a href="{{ route('tax-rates.show', $taxRate) }}" class="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400">
+                                        <a href="{{ route('tax-rates.show', $taxRate) }}" class="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-brand-600 dark:hover:text-brand-300">
                                             {{ $taxRate->name }}
                                             @if($taxRate->code) <span class="text-gray-500">({{ $taxRate->code }})</span> @endif
                                         </a>
                                     </td>
-                                    <td class="px-6 py-4 text-sm font-semibold text-blue-600 dark:text-blue-400">{{ $taxRate->formatted_rate }}</td>
+                                    <td class="px-6 py-4 text-sm font-semibold text-brand-600 dark:text-brand-300">{{ $taxRate->formatted_rate }}</td>
                                     <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 capitalize">{{ $taxRate->type }}</td>
                                     <td class="px-6 py-4">
                                         @if($taxRate->is_compound)
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">Yes</span>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent-100 text-accent-800 dark:bg-accent-900/50 dark:text-accent-200">Yes</span>
                                         @else
                                             <span class="text-gray-500 dark:text-gray-400 text-sm">No</span>
                                         @endif
@@ -126,7 +126,7 @@
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-700 dark:text-gray-300">
                                     {{ $tax['name'] }} ({{ rtrim(rtrim(number_format($tax['rate'], 4), '0'), '.') }}%)
-                                    @if($tax['is_compound']) <span class="text-purple-600 dark:text-purple-400 text-xs">(compound)</span> @endif
+                                    @if($tax['is_compound']) <span class="text-accent-700 dark:text-accent-300 text-xs">(compound)</span> @endif
                                 </span>
                                 <span class="font-medium text-gray-900 dark:text-gray-100">@money($tax['amount'])</span>
                             </div>
@@ -134,11 +134,11 @@
                         
                         <div class="pt-2 border-t border-gray-300 dark:border-gray-600 flex justify-between">
                             <span class="font-semibold text-gray-900 dark:text-gray-100">Total Tax</span>
-                            <span class="font-semibold text-blue-600 dark:text-blue-400">@money($totalTax)</span>
+                            <span class="font-semibold text-brand-600 dark:text-brand-300">@money($totalTax)</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="font-semibold text-gray-900 dark:text-gray-100">Grand Total</span>
-                            <span class="font-semibold text-green-600 dark:text-green-400">@money(100 + $totalTax)</span>
+                            <span class="font-semibold text-green-700 dark:text-green-400">@money(100 + $totalTax)</span>
                         </div>
                     </div>
                 </div>

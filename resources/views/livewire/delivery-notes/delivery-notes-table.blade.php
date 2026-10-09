@@ -30,7 +30,7 @@
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 text-sm">
                 @forelse($notes as $note)
                     <tr wire:key="dn-{{ $note->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                        <td class="px-4 py-3 whitespace-nowrap"><a href="{{ route('delivery-notes.show', $note) }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">{{ $note->delivery_number }}</a></td>
+                        <td class="px-4 py-3 whitespace-nowrap"><a href="{{ route('delivery-notes.show', $note) }}" class="font-medium text-brand-600 dark:text-brand-300 hover:underline">{{ $note->delivery_number }}</a></td>
                         <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $note->customer?->name }}</td>
                         <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-100">{{ $note->salesOrder?->order_number ?? '—' }}</td>
                         <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-100">{{ $note->delivery_date->format('M d, Y') }}</td>

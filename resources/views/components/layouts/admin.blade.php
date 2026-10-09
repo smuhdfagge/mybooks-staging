@@ -6,25 +6,7 @@
     @include('partials.theme-init', ['key' => 'adminDark'])
     <meta name="csrf-token" content="{{ csrf_token() }}">
     
-    <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#4f46e5">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="MyBooks">
-    <link rel="manifest" href="/manifest.json">
-    
-    <!-- iOS Touch Icons (multiple sizes for different devices) -->
-    <link rel="apple-touch-icon" href="/icons/icon-180x180.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png">
-    <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144x144.png">
-    <link rel="apple-touch-icon" sizes="120x120" href="/icons/icon-120x120.png">
-    <link rel="apple-touch-icon" sizes="114x114" href="/icons/icon-114x114.png">
-    <link rel="apple-touch-icon" sizes="76x76" href="/icons/icon-76x76.png">
-    <link rel="apple-touch-icon" sizes="72x72" href="/icons/icon-72x72.png">
-    <link rel="apple-touch-icon" sizes="60x60" href="/icons/icon-60x60.png">
-    <link rel="apple-touch-icon" sizes="57x57" href="/icons/icon-57x57.png">
+    @include('partials.pwa-head')
 
     <title>{{ $header ?? 'Admin' }} - MyBooks Admin</title>
 
@@ -35,8 +17,8 @@
         [x-cloak] { display: none !important; }
         .sidebar-scroll::-webkit-scrollbar { width: 4px; }
         .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
-        .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.3); border-radius: 2px; }
-        .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.5); }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(95, 132, 176, 0.35); border-radius: 2px; }
+        .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: rgba(95, 132, 176, 0.6); }
         .sidebar-transition { transition: transform 0.3s ease-in-out; }
     </style>
 </head>
@@ -51,7 +33,7 @@
             <header class="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
                 <div class="flex h-16 items-center justify-between px-4 sm:px-6">
                     <!-- Mobile menu button -->
-                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500">
                         <span class="sr-only">Open sidebar</span>
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -78,7 +60,7 @@
 
                         <!-- Admin User Info -->
                         <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800">
-                            <div class="h-7 w-7 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center">
+                            <div class="h-7 w-7 rounded-full bg-brand-600 flex items-center justify-center">
                                 <span class="text-xs font-medium text-white">{{ strtoupper(substr(auth('admin')->user()->name, 0, 1)) }}</span>
                             </div>
                             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ auth('admin')->user()->name }}</span>
@@ -103,7 +85,7 @@
                 @if(session('success'))
                     <div class="mb-6 p-4 bg-green-100 dark:bg-green-900/50 border border-green-200 dark:border-green-700 rounded-xl">
                         <div class="flex items-center">
-                            <svg class="w-5 h-5 text-green-600 dark:text-green-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 text-green-700 dark:text-green-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                             <p class="text-green-700 dark:text-green-300">{{ session('success') }}</p>
@@ -114,7 +96,7 @@
                 @if(session('error'))
                     <div class="mb-6 p-4 bg-red-100 dark:bg-red-900/50 border border-red-200 dark:border-red-700 rounded-xl">
                         <div class="flex items-center">
-                            <svg class="w-5 h-5 text-red-600 dark:text-red-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 text-red-600 dark:text-red-300 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                             <p class="text-red-700 dark:text-red-300">{{ session('error') }}</p>

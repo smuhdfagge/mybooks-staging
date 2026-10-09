@@ -31,9 +31,9 @@
                     <x-card>
                         <div class="p-4 sm:p-6 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                             <div><p class="text-gray-500 dark:text-gray-400">From</p>
-                                <a href="{{ route('warehouses.show', $transfer->from_warehouse_id) }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">{{ $transfer->fromWarehouse?->name }}</a></div>
+                                <a href="{{ route('warehouses.show', $transfer->from_warehouse_id) }}" class="font-medium text-brand-600 dark:text-brand-300 hover:underline">{{ $transfer->fromWarehouse?->name }}</a></div>
                             <div><p class="text-gray-500 dark:text-gray-400">To</p>
-                                <a href="{{ route('warehouses.show', $transfer->to_warehouse_id) }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">{{ $transfer->toWarehouse?->name }}</a></div>
+                                <a href="{{ route('warehouses.show', $transfer->to_warehouse_id) }}" class="font-medium text-brand-600 dark:text-brand-300 hover:underline">{{ $transfer->toWarehouse?->name }}</a></div>
                             <div><p class="text-gray-500 dark:text-gray-400">Date sent</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $transfer->transfer_date?->format('M d, Y') }}</p></div>
                             <div><p class="text-gray-500 dark:text-gray-400">Reference</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $transfer->reference ?: '—' }}</p></div>
                             <div><p class="text-gray-500 dark:text-gray-400">Date received</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $transfer->received_date?->format('M d, Y') ?? '—' }}</p></div>
@@ -64,7 +64,7 @@
                                         @foreach($transfer->items as $line)
                                             <tr>
                                                 <td class="px-3 py-2">
-                                                    <a href="{{ route('inventory.show', $line->item_id) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $line->item?->name }}</a>
+                                                    <a href="{{ route('inventory.show', $line->item_id) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $line->item?->name }}</a>
                                                     @if($line->item?->sku)<span class="block text-xs text-gray-500 dark:text-gray-400 font-mono">{{ $line->item->sku }}</span>@endif
                                                     @unless($transfer->isDraft())
                                                         <span class="sm:hidden block text-xs text-gray-500 dark:text-gray-400">Cost @money($line->shipped_cost)</span>
@@ -80,7 +80,7 @@
                                                 @if($done)
                                                     <td class="px-3 py-2 text-right font-medium">{{ $fmt($line->quantity_received) }}</td>
                                                     <td class="px-3 py-2 text-right hidden sm:table-cell">{{ $fmt($line->quantity_returned) }}</td>
-                                                    <td class="px-3 py-2 text-right hidden sm:table-cell {{ (float) $line->quantity_lost > 0 ? 'text-red-600 dark:text-red-400' : '' }}">{{ $fmt($line->quantity_lost) }}</td>
+                                                    <td class="px-3 py-2 text-right hidden sm:table-cell {{ (float) $line->quantity_lost > 0 ? 'text-red-600 dark:text-red-300' : '' }}">{{ $fmt($line->quantity_lost) }}</td>
                                                 @endif
                                                 @unless($transfer->isDraft())
                                                     <td class="px-3 py-2 text-right whitespace-nowrap hidden sm:table-cell">@money($line->shipped_cost)
@@ -97,7 +97,7 @@
                                 <dl class="mt-3 border-t border-gray-200 dark:border-gray-700 pt-3 space-y-1 text-sm font-semibold">
                                     <div class="flex justify-between gap-4 text-gray-900 dark:text-gray-100"><dt>Cost of goods sent</dt><dd class="whitespace-nowrap">@money($transfer->shippedCost())</dd></div>
                                     @if((float) $transfer->items->sum('lost_cost') > 0)
-                                        <div class="flex justify-between gap-4 text-red-700 dark:text-red-400"><dt>Lost on the way</dt><dd class="whitespace-nowrap">@money($transfer->items->sum('lost_cost'))</dd></div>
+                                        <div class="flex justify-between gap-4 text-red-700 dark:text-red-300"><dt>Lost on the way</dt><dd class="whitespace-nowrap">@money($transfer->items->sum('lost_cost'))</dd></div>
                                     @endif
                                 </dl>
                             @endunless
@@ -134,7 +134,7 @@
                                     <button type="submit" class="{{ $secondary }} w-full">Ship only (goods on the road)</button>
                                 </form>
                                 <form method="POST" action="{{ route('stock-transfers.destroy', $transfer) }}" data-confirm="Delete this draft transfer?">@csrf @method('DELETE')
-                                    <button type="submit" class="{{ $btn }} w-full bg-white dark:bg-gray-800 border-red-300 text-red-700 dark:text-red-400 hover:bg-red-50">Delete</button>
+                                    <button type="submit" class="{{ $btn }} w-full bg-white dark:bg-gray-800 border-red-300 text-red-700 dark:text-red-300 hover:bg-red-50">Delete</button>
                                 </form>
                             </div>
                         </x-card>
@@ -165,7 +165,7 @@
                                 <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Loss posted</h3>
                                 <p class="text-gray-600 dark:text-gray-400">Stock Losses @money($lossJournal->total_debit) (debit), Inventory (credit).</p>
                                 @can('view journals')
-                                    <a href="{{ route('journals.show', $lossJournal) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Journal {{ $lossJournal->journal_number }}</a>
+                                    <a href="{{ route('journals.show', $lossJournal) }}" class="text-brand-600 dark:text-brand-300 hover:underline">Journal {{ $lossJournal->journal_number }}</a>
                                 @else
                                     <p class="text-gray-900 dark:text-gray-100">Journal {{ $lossJournal->journal_number }}</p>
                                 @endcan

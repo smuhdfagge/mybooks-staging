@@ -6,23 +6,21 @@
     "id": "/",
     "display": "standalone",
     "background_color": "#ffffff",
-    "theme_color": "#4f46e5",
+    "theme_color": "#1F4E79",
     "orientation": "any",
     "scope": "/",
     "lang": "en",
-    "categories": ["business", "finance", "productivity"],
+    "categories": [
+        "business",
+        "finance",
+        "productivity"
+    ],
     "icons": [
         {
-            "src": "/favicon.svg",
+            "src": "/icons/icon.svg",
             "sizes": "any",
             "type": "image/svg+xml",
             "purpose": "any"
-        },
-        {
-            "src": "/favicon.svg",
-            "sizes": "any",
-            "type": "image/svg+xml",
-            "purpose": "maskable"
         },
         {
             "src": "/icons/icon-57x57.png",
@@ -109,26 +107,16 @@
             "purpose": "any"
         },
         {
-            "src": "/icons/icon-512x512.png",
+            "src": "/icons/maskable-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/icons/maskable-512x512.png",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "maskable"
-        }
-    ],
-    "screenshots": [
-        {
-            "src": "/icons/screenshot-wide.png",
-            "sizes": "1280x720",
-            "type": "image/png",
-            "form_factor": "wide",
-            "label": "MyBooks Dashboard"
-        },
-        {
-            "src": "/icons/screenshot-narrow.png",
-            "sizes": "720x1280",
-            "type": "image/png",
-            "form_factor": "narrow",
-            "label": "MyBooks Mobile View"
         }
     ],
     "shortcuts": [
@@ -137,21 +125,36 @@
             "short_name": "Dashboard",
             "description": "View your dashboard",
             "url": "/dashboard",
-            "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+            "icons": [
+                {
+                    "src": "/icons/icon-96x96.png",
+                    "sizes": "96x96"
+                }
+            ]
         },
         {
             "name": "Create Invoice",
             "short_name": "Invoice",
             "description": "Create a new invoice",
             "url": "/invoices/create",
-            "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+            "icons": [
+                {
+                    "src": "/icons/icon-96x96.png",
+                    "sizes": "96x96"
+                }
+            ]
         },
         {
             "name": "Expenses",
             "short_name": "Expenses",
             "description": "View expenses",
             "url": "/expenses",
-            "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+            "icons": [
+                {
+                    "src": "/icons/icon-96x96.png",
+                    "sizes": "96x96"
+                }
+            ]
         }
     ],
     "related_applications": [],

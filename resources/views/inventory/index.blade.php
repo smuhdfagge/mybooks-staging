@@ -13,8 +13,8 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="flex items-center">
-                        <div class="flex-shrink-0 bg-blue-100 dark:bg-blue-900 rounded-full p-3">
-                            <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="flex-shrink-0 bg-brand-100 dark:bg-brand-900 rounded-full p-3">
+                            <svg class="w-6 h-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                             </svg>
                         </div>
@@ -28,13 +28,13 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 bg-green-100 dark:bg-green-900 rounded-full p-3">
-                            <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 text-green-700 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">In Stock</p>
-                            <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ \App\Models\Inventory::where('quantity', '>', 0)->count() }}</p>
+                            <p class="text-2xl font-bold text-green-700 dark:text-green-400">{{ \App\Models\Inventory::where('quantity', '>', 0)->count() }}</p>
                         </div>
                     </div>
                 </div>
@@ -42,13 +42,13 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 bg-yellow-100 dark:bg-yellow-900 rounded-full p-3">
-                            <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 text-yellow-700 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                             </svg>
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Low Stock</p>
-                            <p class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{{ \App\Models\Item::where('track_inventory', true)->whereHas('inventory', fn($q) => $q->whereColumn('quantity', '<=', 'items.reorder_level'))->where('reorder_level', '>', 0)->count() }}</p>
+                            <p class="text-2xl font-bold text-yellow-700 dark:text-yellow-400">{{ \App\Models\Item::where('track_inventory', true)->whereHas('inventory', fn($q) => $q->whereColumn('quantity', '<=', 'items.reorder_level'))->where('reorder_level', '>', 0)->count() }}</p>
                         </div>
                     </div>
                 </div>
@@ -56,13 +56,13 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 bg-red-100 dark:bg-red-900 rounded-full p-3">
-                            <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 text-red-600 dark:text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Out of Stock</p>
-                            <p class="text-2xl font-bold text-red-600 dark:text-red-400">{{ \App\Models\Inventory::where('quantity', '<=', 0)->count() }}</p>
+                            <p class="text-2xl font-bold text-red-600 dark:text-red-300">{{ \App\Models\Inventory::where('quantity', '<=', 0)->count() }}</p>
                         </div>
                     </div>
                 </div>

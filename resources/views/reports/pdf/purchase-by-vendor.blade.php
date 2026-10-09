@@ -11,7 +11,7 @@
     <div style="margin-bottom: 12px; overflow: hidden;">
         <div style="float: left; width: 48%; padding: 8px; background-color: #fef2f2; border-radius: 4px; text-align: center; border: 1px solid #fecaca;">
             <p style="font-size: 8px; color: #6b7280; margin-bottom: 2px;">Total Purchases</p>
-            <p style="font-size: 14px; font-weight: bold; color: #dc2626;">{{ number_format($totalPurchases, 2) }}</p>
+            <p style="font-size: 14px; font-weight: bold; color: #C62828;">{{ number_format($totalPurchases, 2) }}</p>
         </div>
         <div style="float: right; width: 48%; padding: 8px; background-color: #f3f4f6; border-radius: 4px; text-align: center; border: 1px solid #e5e7eb;">
             <p style="font-size: 8px; color: #6b7280; margin-bottom: 2px;">Amount Paid</p>

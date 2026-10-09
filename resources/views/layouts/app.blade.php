@@ -7,35 +7,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="currency-symbol" content="@currencySymbol">
     
-    <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#4f46e5">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="MyBooks">
-    <link rel="manifest" href="/manifest.json">
-    
-    <!-- iOS Touch Icons (multiple sizes for different devices) -->
-    <link rel="apple-touch-icon" href="/icons/icon-180x180.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png">
-    <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144x144.png">
-    <link rel="apple-touch-icon" sizes="120x120" href="/icons/icon-120x120.png">
-    <link rel="apple-touch-icon" sizes="114x114" href="/icons/icon-114x114.png">
-    <link rel="apple-touch-icon" sizes="76x76" href="/icons/icon-76x76.png">
-    <link rel="apple-touch-icon" sizes="72x72" href="/icons/icon-72x72.png">
-    <link rel="apple-touch-icon" sizes="60x60" href="/icons/icon-60x60.png">
-    <link rel="apple-touch-icon" sizes="57x57" href="/icons/icon-57x57.png">
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    @include('partials.pwa-head')
 
     <title>{{ $title ?? config('app.name', 'MyBooks') }}</title>
-
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -149,7 +123,7 @@
 </head>
 <body class="h-full font-sans antialiased bg-gray-50 dark:bg-gray-900" x-data="{ sidebarOpen: false }">
     {{-- Skip to main content (accessibility) --}}
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:rounded-md focus:shadow-lg focus:outline-none">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-brand-600 focus:text-white focus:rounded-md focus:shadow-lg focus:outline-none">
         Skip to main content
     </a>
 
@@ -203,7 +177,7 @@
                             <div class="ml-3 flex-1">
                                 <p class="text-sm font-medium text-green-800 dark:text-green-200">{{ session('success') }}</p>
                             </div>
-                            <button @click="show = false" class="ml-3 flex-shrink-0 text-green-500 hover:text-green-600">
+                            <button @click="show = false" class="ml-3 flex-shrink-0 text-green-700 hover:text-green-600">
                                 <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
                                 </svg>
@@ -223,7 +197,7 @@
                             <div class="ml-3 flex-1">
                                 <p class="text-sm font-medium text-red-800 dark:text-red-200">{{ session('error') }}</p>
                             </div>
-                            <button @click="show = false" class="ml-3 flex-shrink-0 text-red-500 hover:text-red-600">
+                            <button @click="show = false" class="ml-3 flex-shrink-0 text-red-600 hover:text-red-600">
                                 <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
                                 </svg>

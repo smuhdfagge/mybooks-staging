@@ -27,15 +27,15 @@
                     <div>
                         <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Start Date</label>
                         <input type="date" name="start_date" id="start_date" value="{{ $startDate }}" 
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                     </div>
                     <div>
                         <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">End Date</label>
                         <input type="date" name="end_date" id="end_date" value="{{ $endDate }}" 
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                     </div>
                     <div class="flex items-end">
-                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
                             </svg>
@@ -57,7 +57,7 @@
                         </p>
                     </div>
                     <div class="text-right">
-                        <p class="text-3xl font-bold {{ $netProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                        <p class="text-3xl font-bold {{ $netProfit >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                             {{ $netProfit >= 0 ? '' : '-' }}{{ number_format(abs($netProfit), 2) }}
                         </p>
                         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -85,7 +85,7 @@
                         <div class="ml-5">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Revenue</dt>
-                                <dd class="text-lg font-semibold text-green-600 dark:text-green-400">{{ number_format($revenue, 2) }}</dd>
+                                <dd class="text-lg font-semibold text-green-700 dark:text-green-400">{{ number_format($revenue, 2) }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -103,7 +103,7 @@
                         <div class="ml-5">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Expenses</dt>
-                                <dd class="text-lg font-semibold text-red-600 dark:text-red-400">{{ number_format($totalExpenses, 2) }}</dd>
+                                <dd class="text-lg font-semibold text-red-600 dark:text-red-300">{{ number_format($totalExpenses, 2) }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -133,12 +133,12 @@
                                         <p class="text-xs text-gray-500 dark:text-gray-400">Income from sales</p>
                                     </div>
                                 </div>
-                                <span class="text-sm font-semibold text-green-600 dark:text-green-400">{{ number_format($revenue, 2) }}</span>
+                                <span class="text-sm font-semibold text-green-700 dark:text-green-400">{{ number_format($revenue, 2) }}</span>
                             </div>
                         </div>
                         <div class="flex justify-between mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
                             <span class="text-sm font-semibold text-gray-900 dark:text-white">Total Revenue</span>
-                            <span class="text-sm font-semibold text-green-600 dark:text-green-400">{{ number_format($revenue, 2) }}</span>
+                            <span class="text-sm font-semibold text-green-700 dark:text-green-400">{{ number_format($revenue, 2) }}</span>
                         </div>
                     </div>
 
@@ -158,21 +158,21 @@
                                         <p class="text-xs text-gray-500 dark:text-gray-400">Direct costs of products/services sold</p>
                                     </div>
                                 </div>
-                                <span class="text-sm font-semibold text-red-600 dark:text-red-400">({{ number_format($costOfGoodsSold, 2) }})</span>
+                                <span class="text-sm font-semibold text-red-600 dark:text-red-300">({{ number_format($costOfGoodsSold, 2) }})</span>
                             </div>
                         </div>
                         <div class="flex justify-between mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
                             <span class="text-sm font-semibold text-gray-900 dark:text-white">Total COGS</span>
-                            <span class="text-sm font-semibold text-red-600 dark:text-red-400">({{ number_format($costOfGoodsSold, 2) }})</span>
+                            <span class="text-sm font-semibold text-red-600 dark:text-red-300">({{ number_format($costOfGoodsSold, 2) }})</span>
                         </div>
                     </div>
 
                     <!-- Gross Profit -->
-                    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                    <div class="bg-brand-50 dark:bg-brand-900/20 rounded-lg p-4 border border-brand-200 dark:border-brand-800">
                         <div class="flex justify-between items-center">
                             <div>
-                                <span class="text-base font-bold text-blue-900 dark:text-blue-100">Gross Profit</span>
-                                <p class="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                <span class="text-base font-bold text-brand-900 dark:text-brand-100">Gross Profit</span>
+                                <p class="text-xs text-brand-600 dark:text-brand-300 mt-1">
                                     @if($revenue > 0)
                                         {{ number_format(($grossProfit / $revenue) * 100, 1) }}% gross margin
                                     @else
@@ -180,7 +180,7 @@
                                     @endif
                                 </p>
                             </div>
-                            <span class="text-lg font-bold {{ $grossProfit >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400' }}">
+                            <span class="text-lg font-bold {{ $grossProfit >= 0 ? 'text-brand-600 dark:text-brand-300' : 'text-red-600 dark:text-red-300' }}">
                                 {{ $grossProfit >= 0 ? '' : '-' }}{{ number_format(abs($grossProfit), 2) }}
                             </span>
                         </div>
@@ -204,7 +204,7 @@
                                             <p class="text-xs text-gray-500 dark:text-gray-400">Rent, utilities, office supplies, etc.</p>
                                         </div>
                                     </div>
-                                    <span class="text-sm font-semibold text-red-600 dark:text-red-400">({{ number_format($operatingExpenses, 2) }})</span>
+                                    <span class="text-sm font-semibold text-red-600 dark:text-red-300">({{ number_format($operatingExpenses, 2) }})</span>
                                 </div>
                             </div>
 
@@ -212,7 +212,7 @@
                             <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center">
-                                        <div class="flex-shrink-0 bg-purple-500 rounded-full p-2">
+                                        <div class="flex-shrink-0 bg-accent-500 rounded-full p-2">
                                             <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                                             </svg>
@@ -222,13 +222,13 @@
                                             <p class="text-xs text-gray-500 dark:text-gray-400">Employee compensation</p>
                                         </div>
                                     </div>
-                                    <span class="text-sm font-semibold text-red-600 dark:text-red-400">({{ number_format($payroll, 2) }})</span>
+                                    <span class="text-sm font-semibold text-red-600 dark:text-red-300">({{ number_format($payroll, 2) }})</span>
                                 </div>
                             </div>
                         </div>
                         <div class="flex justify-between mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
                             <span class="text-sm font-semibold text-gray-900 dark:text-white">Total Operating Expenses</span>
-                            <span class="text-sm font-semibold text-red-600 dark:text-red-400">({{ number_format($operatingExpenses + $payroll, 2) }})</span>
+                            <span class="text-sm font-semibold text-red-600 dark:text-red-300">({{ number_format($operatingExpenses + $payroll, 2) }})</span>
                         </div>
                     </div>
                 </div>
@@ -242,27 +242,27 @@
                 <div class="space-y-3">
                     <div class="flex justify-between py-2 border-b border-gray-200 dark:border-gray-700">
                         <span class="text-sm text-gray-600 dark:text-gray-400">Revenue</span>
-                        <span class="text-sm font-medium text-green-600 dark:text-green-400">{{ number_format($revenue, 2) }}</span>
+                        <span class="text-sm font-medium text-green-700 dark:text-green-400">{{ number_format($revenue, 2) }}</span>
                     </div>
                     <div class="flex justify-between py-2 border-b border-gray-200 dark:border-gray-700">
                         <span class="text-sm text-gray-600 dark:text-gray-400">Less: Cost of Goods Sold</span>
-                        <span class="text-sm font-medium text-red-600 dark:text-red-400">({{ number_format($costOfGoodsSold, 2) }})</span>
+                        <span class="text-sm font-medium text-red-600 dark:text-red-300">({{ number_format($costOfGoodsSold, 2) }})</span>
                     </div>
-                    <div class="flex justify-between py-2 border-b-2 border-blue-300 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20 px-3 rounded">
-                        <span class="text-sm font-semibold text-blue-900 dark:text-blue-100">Gross Profit</span>
-                        <span class="text-sm font-semibold {{ $grossProfit >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400' }}">{{ $grossProfit >= 0 ? '' : '-' }}{{ number_format(abs($grossProfit), 2) }}</span>
+                    <div class="flex justify-between py-2 border-b-2 border-brand-300 dark:border-brand-600 bg-brand-50 dark:bg-brand-900/20 px-3 rounded">
+                        <span class="text-sm font-semibold text-brand-900 dark:text-brand-100">Gross Profit</span>
+                        <span class="text-sm font-semibold {{ $grossProfit >= 0 ? 'text-brand-600 dark:text-brand-300' : 'text-red-600 dark:text-red-300' }}">{{ $grossProfit >= 0 ? '' : '-' }}{{ number_format(abs($grossProfit), 2) }}</span>
                     </div>
                     <div class="flex justify-between py-2 border-b border-gray-200 dark:border-gray-700">
                         <span class="text-sm text-gray-600 dark:text-gray-400">Less: Operating Expenses</span>
-                        <span class="text-sm font-medium text-red-600 dark:text-red-400">({{ number_format($operatingExpenses, 2) }})</span>
+                        <span class="text-sm font-medium text-red-600 dark:text-red-300">({{ number_format($operatingExpenses, 2) }})</span>
                     </div>
                     <div class="flex justify-between py-2 border-b border-gray-200 dark:border-gray-700">
                         <span class="text-sm text-gray-600 dark:text-gray-400">Less: Salaries & Wages</span>
-                        <span class="text-sm font-medium text-red-600 dark:text-red-400">({{ number_format($payroll, 2) }})</span>
+                        <span class="text-sm font-medium text-red-600 dark:text-red-300">({{ number_format($payroll, 2) }})</span>
                     </div>
                     <div class="flex justify-between py-3 bg-gray-50 dark:bg-gray-700 rounded-lg px-4 mt-4">
                         <span class="text-base font-semibold text-gray-900 dark:text-white">Net {{ $netProfit >= 0 ? 'Profit' : 'Loss' }}</span>
-                        <span class="text-base font-semibold {{ $netProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                        <span class="text-base font-semibold {{ $netProfit >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                             {{ $netProfit >= 0 ? '' : '-' }}{{ number_format(abs($netProfit), 2) }}
                         </span>
                     </div>

@@ -30,19 +30,19 @@
         .page { padding: 0; }
         .screen .page { max-width: 800px; margin: 0 auto; padding: 32px 40px; }
         table { border-collapse: collapse; }
-        .header { width: 100%; border-bottom: 2px solid #4f46e5; margin-bottom: 16px; }
+        .header { width: 100%; border-bottom: 2px solid #1F4E79; margin-bottom: 16px; }
         .header td { vertical-align: top; padding-bottom: 12px; }
         .logo { max-height: 56px; max-width: 170px; margin-bottom: 6px; }
         .company { font-size: 16px; font-weight: bold; color: #111827; }
         .muted { color: #6b7280; }
-        .title { font-size: 18px; font-weight: bold; color: #4f46e5; text-align: right; }
+        .title { font-size: 18px; font-weight: bold; color: #1F4E79; text-align: right; }
         .meta { width: 100%; margin-bottom: 14px; }
         .meta td { vertical-align: top; width: 50%; }
         .label { font-size: 8.5px; text-transform: uppercase; color: #6b7280; letter-spacing: .5px; }
         .summary { width: 100%; margin-bottom: 14px; }
         .summary td { border: 1px solid #e5e7eb; background: #f9fafb; padding: 6px 8px; width: 25%; }
         .summary .value { font-size: 12.5px; font-weight: bold; }
-        .summary .due { background: #eef2ff; border-color: #c7d2fe; }
+        .summary .due { background: #EEF3F8; border-color: #B4C8DD; }
         table.lines { width: 100%; margin-bottom: 12px; }
         table.lines th { background: #f3f4f6; text-align: left; font-size: 8.5px; text-transform: uppercase; padding: 6px; border-bottom: 1px solid #d1d5db; color: #374151; }
         table.lines td { padding: 5px 6px; border-bottom: 1px solid #eef0f3; vertical-align: top; }
@@ -56,10 +56,10 @@
         table.ageing { width: 100%; margin-top: 8px; page-break-inside: avoid; }
         table.ageing th { font-size: 8.5px; text-transform: uppercase; color: #374151; background: #f3f4f6; padding: 5px 6px; border: 1px solid #e5e7eb; text-align: right; }
         table.ageing td { padding: 6px; border: 1px solid #e5e7eb; text-align: right; white-space: nowrap; }
-        table.ageing td.total, table.ageing th.total { background: #eef2ff; font-weight: bold; }
+        table.ageing td.total, table.ageing th.total { background: #EEF3F8; font-weight: bold; }
         .note { margin-top: 14px; padding: 8px 10px; background: #f9fafb; border: 1px solid #e5e7eb; font-size: 9.5px; color: #4b5563; }
-        .print-bar { padding: 10px 40px; background: #eef2ff; text-align: right; }
-        .print-bar button { padding: 6px 14px; background: #4f46e5; color: #fff; border: 0; border-radius: 4px; cursor: pointer; }
+        .print-bar { padding: 10px 40px; background: #EEF3F8; text-align: right; }
+        .print-bar button { padding: 6px 14px; background: #1F4E79; color: #fff; border: 0; border-radius: 4px; cursor: pointer; }
         @media print { .print-bar { display: none; } .screen .page { padding: 0; } }
     </style>
 </head>

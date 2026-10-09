@@ -3,16 +3,17 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">{{ __('Leave Types') }}</h2>
             @can('create leave-types')
-                <a href="{{ route('leave-types.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition ease-in-out duration-150">Add Leave Type</a>
+                <a href="{{ route('leave-types.create') }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition ease-in-out duration-150">Add Leave Type</a>
             @endcan
         </div>
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            @foreach(['success' => 'green', 'error' => 'red'] as $key => $color)
+            @foreach(['success' => 'border-green-200 bg-green-50 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-200',
+                      'error' => 'border-red-200 bg-red-50 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-200'] as $key => $tone)
                 @if(session($key))
-                    <div class="mb-4 rounded-lg border border-{{ $color }}-200 bg-{{ $color }}-50 dark:bg-{{ $color }}-900/20 dark:border-{{ $color }}-800 p-4 text-sm text-{{ $color }}-800 dark:text-{{ $color }}-200">{{ session($key) }}</div>
+                    <div class="mb-4 rounded-lg border p-4 text-sm {{ $tone }}">{{ session($key) }}</div>
                 @endif
             @endforeach
 
@@ -40,7 +41,7 @@
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                 @foreach($leaveTypes as $type)
                                     <tr>
-                                        <td class="px-6 py-3 text-sm"><a href="{{ route('leave-types.show', $type) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $type->name }}</a></td>
+                                        <td class="px-6 py-3 text-sm"><a href="{{ route('leave-types.show', $type) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $type->name }}</a></td>
                                         <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{{ $type->code ?: '—' }}</td>
                                         <td class="px-6 py-3 text-sm text-right text-gray-700 dark:text-gray-300">{{ $type->days_per_year }}</td>
                                         <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{{ $type->is_paid ? 'Yes' : 'No' }}</td>
@@ -51,14 +52,14 @@
                                         </td>
                                         <td class="px-6 py-3 text-sm text-right whitespace-nowrap">
                                             @can('edit leave-types')
-                                                <a href="{{ route('leave-types.edit', $type) }}" class="text-yellow-600 dark:text-yellow-400 hover:underline">Edit</a>
+                                                <a href="{{ route('leave-types.edit', $type) }}" class="text-yellow-700 dark:text-yellow-400 hover:underline">Edit</a>
                                             @endcan
                                             @can('delete leave-types')
                                                 @if($type->leaves_count === 0)
                                                     <form action="{{ route('leave-types.destroy', $type) }}" method="POST" class="inline ml-3" data-confirm="Delete this leave type?">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" class="text-red-600 dark:text-red-400 hover:underline">Delete</button>
+                                                        <button type="submit" class="text-red-600 dark:text-red-300 hover:underline">Delete</button>
                                                     </form>
                                                 @endif
                                             @endcan

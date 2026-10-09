@@ -27,15 +27,15 @@
                     <div>
                         <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Start Date</label>
                         <input type="date" name="start_date" id="start_date" value="{{ $startDate }}" 
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                     </div>
                     <div>
                         <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">End Date</label>
                         <input type="date" name="end_date" id="end_date" value="{{ $endDate }}" 
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                     </div>
                     <div class="flex items-end">
-                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
                             </svg>
@@ -57,7 +57,7 @@
                         </p>
                     </div>
                     <div class="text-right">
-                        <p class="text-3xl font-bold {{ $netCashFlow >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                        <p class="text-3xl font-bold {{ $netCashFlow >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                             {{ $netCashFlow >= 0 ? '+' : '-' }}{{ number_format(abs($netCashFlow), 2) }}
                         </p>
                         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -81,7 +81,7 @@
                         <div class="ml-5">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Cash Inflows</dt>
-                                <dd class="text-lg font-semibold text-green-600 dark:text-green-400">+{{ number_format($totalInflows, 2) }}</dd>
+                                <dd class="text-lg font-semibold text-green-700 dark:text-green-400">+{{ number_format($totalInflows, 2) }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -99,7 +99,7 @@
                         <div class="ml-5">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Cash Outflows</dt>
-                                <dd class="text-lg font-semibold text-red-600 dark:text-red-400">-{{ number_format($totalOutflows, 2) }}</dd>
+                                <dd class="text-lg font-semibold text-red-600 dark:text-red-300">-{{ number_format($totalOutflows, 2) }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -118,13 +118,13 @@
                     </div>
                     <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                         <p class="text-sm text-gray-500 dark:text-gray-400">Net Cash Change</p>
-                        <p class="text-xl font-bold {{ $netCashFlow >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                        <p class="text-xl font-bold {{ $netCashFlow >= 0 ? 'text-green-700' : 'text-red-600' }}">
                             {{ $netCashFlow >= 0 ? '+' : '-' }}{{ number_format(abs($netCashFlow), 2) }}
                         </p>
                     </div>
-                    <div class="text-center p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+                    <div class="text-center p-4 bg-brand-50 dark:bg-brand-900/30 rounded-lg">
                         <p class="text-sm text-gray-500 dark:text-gray-400">Ending Cash</p>
-                        <p class="text-xl font-bold text-blue-600 dark:text-blue-400">{{ number_format($endingCash ?? 0, 2) }}</p>
+                        <p class="text-xl font-bold text-brand-600 dark:text-brand-300">{{ number_format($endingCash ?? 0, 2) }}</p>
                     </div>
                 </div>
             </div>
@@ -137,8 +137,8 @@
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Operating Activities</h3>
-                        <div class="flex-shrink-0 bg-blue-100 dark:bg-blue-900 rounded-md p-2">
-                            <svg class="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="flex-shrink-0 bg-brand-100 dark:bg-brand-900 rounded-md p-2">
+                            <svg class="h-5 w-5 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                             </svg>
                         </div>
@@ -147,24 +147,24 @@
                     <div class="space-y-3">
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-600 dark:text-gray-400">Customer Payments</span>
-                            <span class="text-green-600 dark:text-green-400">+{{ number_format($paymentsReceived, 2) }}</span>
+                            <span class="text-green-700 dark:text-green-400">+{{ number_format($paymentsReceived, 2) }}</span>
                         </div>
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-600 dark:text-gray-400">Vendor Payments</span>
-                            <span class="text-red-600 dark:text-red-400">-{{ number_format($paymentsMade, 2) }}</span>
+                            <span class="text-red-600 dark:text-red-300">-{{ number_format($paymentsMade, 2) }}</span>
                         </div>
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-600 dark:text-gray-400">Operating Expenses</span>
-                            <span class="text-red-600 dark:text-red-400">-{{ number_format($expensesPaid, 2) }}</span>
+                            <span class="text-red-600 dark:text-red-300">-{{ number_format($expensesPaid, 2) }}</span>
                         </div>
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-600 dark:text-gray-400">Payroll</span>
-                            <span class="text-red-600 dark:text-red-400">-{{ number_format($payrollPaid, 2) }}</span>
+                            <span class="text-red-600 dark:text-red-300">-{{ number_format($payrollPaid, 2) }}</span>
                         </div>
                         <div class="border-t border-gray-200 dark:border-gray-600 pt-3">
                             <div class="flex justify-between">
                                 <span class="font-semibold text-gray-900 dark:text-white">Net Operating</span>
-                                <span class="font-semibold {{ ($netOperatingCashFlow ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                <span class="font-semibold {{ ($netOperatingCashFlow ?? 0) >= 0 ? 'text-green-700' : 'text-red-600' }}">
                                     {{ ($netOperatingCashFlow ?? 0) >= 0 ? '+' : '-' }}{{ number_format(abs($netOperatingCashFlow ?? 0), 2) }}
                                 </span>
                             </div>
@@ -178,8 +178,8 @@
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Investing Activities</h3>
-                        <div class="flex-shrink-0 bg-purple-100 dark:bg-purple-900 rounded-md p-2">
-                            <svg class="h-5 w-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="flex-shrink-0 bg-accent-100 dark:bg-accent-900/50 rounded-md p-2">
+                            <svg class="h-5 w-5 text-accent-700 dark:text-accent-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
                             </svg>
                         </div>
@@ -188,16 +188,16 @@
                     <div class="space-y-3">
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-600 dark:text-gray-400">Asset Purchases</span>
-                            <span class="text-red-600 dark:text-red-400">-{{ number_format($fixedAssetPurchases ?? 0, 2) }}</span>
+                            <span class="text-red-600 dark:text-red-300">-{{ number_format($fixedAssetPurchases ?? 0, 2) }}</span>
                         </div>
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-600 dark:text-gray-400">Asset Sales</span>
-                            <span class="text-green-600 dark:text-green-400">+{{ number_format($fixedAssetSales ?? 0, 2) }}</span>
+                            <span class="text-green-700 dark:text-green-400">+{{ number_format($fixedAssetSales ?? 0, 2) }}</span>
                         </div>
                         <div class="border-t border-gray-200 dark:border-gray-600 pt-3">
                             <div class="flex justify-between">
                                 <span class="font-semibold text-gray-900 dark:text-white">Net Investing</span>
-                                <span class="font-semibold {{ ($netInvestingCashFlow ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                <span class="font-semibold {{ ($netInvestingCashFlow ?? 0) >= 0 ? 'text-green-700' : 'text-red-600' }}">
                                     {{ ($netInvestingCashFlow ?? 0) >= 0 ? '+' : '-' }}{{ number_format(abs($netInvestingCashFlow ?? 0), 2) }}
                                 </span>
                             </div>
@@ -212,7 +212,7 @@
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Financing Activities</h3>
                         <div class="flex-shrink-0 bg-yellow-100 dark:bg-yellow-900 rounded-md p-2">
-                            <svg class="h-5 w-5 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="h-5 w-5 text-yellow-700 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                         </div>
@@ -221,24 +221,24 @@
                     <div class="space-y-3">
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-600 dark:text-gray-400">Borrowings</span>
-                            <span class="text-green-600 dark:text-green-400">+{{ number_format($borrowingsReceived ?? 0, 2) }}</span>
+                            <span class="text-green-700 dark:text-green-400">+{{ number_format($borrowingsReceived ?? 0, 2) }}</span>
                         </div>
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-600 dark:text-gray-400">Loan Repayments</span>
-                            <span class="text-red-600 dark:text-red-400">-{{ number_format($loanRepayments ?? 0, 2) }}</span>
+                            <span class="text-red-600 dark:text-red-300">-{{ number_format($loanRepayments ?? 0, 2) }}</span>
                         </div>
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-600 dark:text-gray-400">Capital Contributions</span>
-                            <span class="text-green-600 dark:text-green-400">+{{ number_format($capitalContributions ?? 0, 2) }}</span>
+                            <span class="text-green-700 dark:text-green-400">+{{ number_format($capitalContributions ?? 0, 2) }}</span>
                         </div>
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-600 dark:text-gray-400">Owner Drawings</span>
-                            <span class="text-red-600 dark:text-red-400">-{{ number_format($drawings ?? 0, 2) }}</span>
+                            <span class="text-red-600 dark:text-red-300">-{{ number_format($drawings ?? 0, 2) }}</span>
                         </div>
                         <div class="border-t border-gray-200 dark:border-gray-600 pt-3">
                             <div class="flex justify-between">
                                 <span class="font-semibold text-gray-900 dark:text-white">Net Financing</span>
-                                <span class="font-semibold {{ ($netFinancingCashFlow ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                <span class="font-semibold {{ ($netFinancingCashFlow ?? 0) >= 0 ? 'text-green-700' : 'text-red-600' }}">
                                     {{ ($netFinancingCashFlow ?? 0) >= 0 ? '+' : '-' }}{{ number_format(abs($netFinancingCashFlow ?? 0), 2) }}
                                 </span>
                             </div>

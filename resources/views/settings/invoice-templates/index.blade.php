@@ -5,7 +5,7 @@
                 {{ __('Invoice Templates') }}
             </h2>
             <a href="{{ route('settings.invoice-templates.create') }}"
-                class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                class="inline-flex items-center px-4 py-2 bg-brand-600 text-white text-sm font-medium rounded-md hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500">
                 <svg class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
@@ -18,7 +18,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @forelse($templates as $template)
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden group relative {{ $template->is_default ? 'ring-2 ring-indigo-500' : '' }}">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden group relative {{ $template->is_default ? 'ring-2 ring-brand-500' : '' }}">
                     {{-- Template Preview Thumbnail --}}
                     <div class="p-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700" style="height: 280px; overflow: hidden;">
                         <div style="transform: scale(0.35); transform-origin: top left; width: 286%; pointer-events: none;">
@@ -31,7 +31,7 @@
                         <div class="flex items-center justify-between mb-2">
                             <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $template->name }}</h3>
                             @if($template->is_default)
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-800 dark:text-indigo-100">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-brand-100 text-brand-800 dark:bg-brand-800 dark:text-brand-100">
                                 Default
                             </span>
                             @endif
@@ -41,7 +41,7 @@
                         </p>
                         <div class="flex items-center gap-2">
                             <a href="{{ route('settings.invoice-templates.edit', $template) }}"
-                                class="flex-1 inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/50 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/80 transition">
+                                class="flex-1 inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/50 rounded-md hover:bg-brand-100 dark:hover:bg-brand-900/80 transition">
                                 <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                 </svg>
@@ -75,7 +75,7 @@
 
                     {{-- Color Swatches --}}
                     <div class="px-4 pb-3 flex items-center gap-1">
-                        <div class="w-4 h-4 rounded-full border border-gray-200" style="background: {{ $template->settings['primary_color'] ?? '#3B82F6' }};"></div>
+                        <div class="w-4 h-4 rounded-full border border-gray-200" style="background: {{ $template->settings['primary_color'] ?? '#1F4E79' }};"></div>
                         <div class="w-4 h-4 rounded-full border border-gray-200" style="background: {{ $template->settings['secondary_color'] ?? '#1F2937' }};"></div>
                         <div class="w-4 h-4 rounded-full border border-gray-200" style="background: {{ $template->settings['accent_color'] ?? '#059669' }};"></div>
                     </div>
@@ -89,7 +89,7 @@
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating your first invoice template.</p>
                     <div class="mt-6">
                         <a href="{{ route('settings.invoice-templates.create') }}"
-                            class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
+                            class="inline-flex items-center px-4 py-2 bg-brand-600 text-white text-sm font-medium rounded-md hover:bg-brand-700">
                             <svg class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                             </svg>

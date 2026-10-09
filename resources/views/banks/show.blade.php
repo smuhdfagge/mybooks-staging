@@ -15,7 +15,7 @@
                     Back
                 </a>
                 @can('edit banks')
-                <a href="{{ route('banks.edit', $bank) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition ease-in-out duration-150">
+                <a href="{{ route('banks.edit', $bank) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition ease-in-out duration-150">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                     </svg>
@@ -25,7 +25,7 @@
                 @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('bank_feeds'))
                 @can('edit banks')
                     @if(! $feed)
-                    <a href="{{ route('bank-feeds.connect', ['bank' => $bank->id]) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition ease-in-out duration-150" data-testid="connect-feed">Connect bank feed</a>
+                    <a href="{{ route('bank-feeds.connect', ['bank' => $bank->id]) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition ease-in-out duration-150" data-testid="connect-feed">Connect bank feed</a>
                     @endif
                 @endcan
                 @if($feed)
@@ -33,7 +33,7 @@
                 @endif
                 @endif
                 @can('reconcile banks')
-                <a href="{{ route('banks.reconcile', $bank) }}" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition ease-in-out duration-150">
+                <a href="{{ route('banks.reconcile', $bank) }}" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition ease-in-out duration-150">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
@@ -129,7 +129,7 @@
                                 <div>
                                     <dt class="text-sm text-gray-500 dark:text-gray-400">Linked Account</dt>
                                     <dd class="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                        <a href="{{ route('chart-of-accounts.show', $bank->chartOfAccount) }}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400">
+                                        <a href="{{ route('chart-of-accounts.show', $bank->chartOfAccount) }}" class="text-brand-600 hover:text-brand-800 dark:text-brand-300">
                                             {{ $bank->chartOfAccount->account_code }} - {{ $bank->chartOfAccount->name }}
                                         </a>
                                     </dd>
@@ -158,7 +158,7 @@
                         <div class="p-6">
                             <div class="flex justify-between items-center mb-4">
                                 <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Transactions</h3>
-                                <a href="{{ route('banks.transactions', $bank) }}" class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400">View All</a>
+                                <a href="{{ route('banks.transactions', $bank) }}" class="text-sm text-brand-600 hover:text-brand-800 dark:text-brand-300">View All</a>
                             </div>
                             
                             @if($recentTransactions->count() > 0)
@@ -191,11 +191,11 @@
                                                         </span>
                                                     @endif
                                                 </td>
-                                                <td class="px-4 py-3 text-sm text-right font-medium {{ $transaction['type'] === 'deposit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                                <td class="px-4 py-3 text-sm text-right font-medium {{ $transaction['type'] === 'deposit' ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                                     {{ $transaction['type'] === 'deposit' ? '+' : '-' }}@money($transaction['amount'], $bank->currency)
                                                 </td>
                                                 <td class="px-4 py-3 text-sm text-center">
-                                                    <a href="{{ $transaction['route'] }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+                                                    <a href="{{ $transaction['route'] }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-300">
                                                         View
                                                     </a>
                                                 </td>

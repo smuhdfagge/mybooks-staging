@@ -30,7 +30,7 @@
     <x-card>
         <div class="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="sm:col-span-2">
-                <label for="finished-search" class="form-label">Item this makes <span class="text-red-500">*</span></label>
+                <label for="finished-search" class="form-label">Item this makes <span class="text-red-600 dark:text-red-300">*</span></label>
                 <div class="relative">
                     <input type="hidden" name="item_id" :value="finished.id">
                     <input type="hidden" name="item_search" :value="finished.name">
@@ -45,7 +45,7 @@
                         class="absolute z-[100] mt-1 w-full bg-white dark:bg-gray-700 shadow-lg max-h-60 rounded-md py-1 ring-1 ring-black ring-opacity-5 overflow-auto text-sm">
                         <template x-for="(product, pIndex) in finished.results" :key="product.id">
                             <div role="option" @mousedown.prevent @click="pickFinished(product)" @mouseenter="finished.highlighted = pIndex"
-                                :class="finished.highlighted === pIndex ? 'bg-indigo-600 text-white' : 'text-gray-900 dark:text-gray-100'"
+                                :class="finished.highlighted === pIndex ? 'bg-brand-600 text-white' : 'text-gray-900 dark:text-gray-100'"
                                 class="cursor-pointer select-none py-2 px-3" x-text="product.name"></div>
                         </template>
                         <div x-show="finished.results.length === 0" class="py-2 px-3 text-gray-500 dark:text-gray-400">No stock items found</div>
@@ -61,7 +61,7 @@
                 <x-field name="version" label="Version" :value="old('version', $bom->version)" placeholder="e.g. 2026 recipe" maxlength="50" help="Optional. Use it when an item has more than one recipe." />
             </div>
             <div>
-                <label for="output_quantity" class="form-label">One batch makes <span class="text-red-500">*</span></label>
+                <label for="output_quantity" class="form-label">One batch makes <span class="text-red-600 dark:text-red-300">*</span></label>
                 <div class="flex items-center gap-2">
                     <input type="number" id="output_quantity" name="output_quantity" x-model.number="output" min="0.0001" step="any" inputmode="decimal" required class="form-control {{ $errors->has('output_quantity') ? 'border-red-500' : '' }}">
                     <span class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap" x-text="finished.unit"></span>
@@ -72,7 +72,7 @@
             <div class="flex items-end pb-2">
                 <input type="hidden" name="is_active" value="0">
                 <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                    <input type="checkbox" name="is_active" value="1" @checked($active) class="rounded border-gray-300 dark:border-gray-600 text-indigo-600">
+                    <input type="checkbox" name="is_active" value="1" @checked($active) class="rounded border-gray-300 dark:border-gray-600 text-brand-600 dark:text-brand-300">
                     In use (can be built from)
                 </label>
             </div>
@@ -115,7 +115,7 @@
                                         class="absolute z-[100] mt-1 w-full bg-white dark:bg-gray-700 shadow-lg max-h-60 rounded-md py-1 ring-1 ring-black ring-opacity-5 overflow-auto text-sm">
                                         <template x-for="(product, pIndex) in line.results" :key="product.id">
                                             <div role="option" @mousedown.prevent @click="pick(line, product)" @mouseenter="line.highlighted = pIndex"
-                                                :class="line.highlighted === pIndex ? 'bg-indigo-600 text-white' : 'text-gray-900 dark:text-gray-100'"
+                                                :class="line.highlighted === pIndex ? 'bg-brand-600 text-white' : 'text-gray-900 dark:text-gray-100'"
                                                 class="cursor-pointer select-none py-2 px-3" x-text="product.name"></div>
                                         </template>
                                         <div x-show="line.results.length === 0" class="py-2 px-3 text-gray-500 dark:text-gray-400">No stock items found</div>
@@ -136,7 +136,7 @@
                             </td>
                             <td class="py-2 text-right text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap" data-label="Est. cost" x-text="money(lineCost(line))"></td>
                             <td class="py-2 text-center" data-cell="actions">
-                                <button type="button" @click="lines.splice(index, 1)" x-show="lines.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-400 text-sm" aria-label="Remove component">Remove</button>
+                                <button type="button" @click="lines.splice(index, 1)" x-show="lines.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-300 text-sm" aria-label="Remove component">Remove</button>
                             </td>
                         </tr>
                     </template>
@@ -173,7 +173,7 @@
                             <p class="form-error" x-show="errors[`costs.${index}.account_id`]" x-text="errors[`costs.${index}.account_id`]"></p>
                         </div>
                         <div class="sm:col-span-1 text-right">
-                            <button type="button" @click="costs.splice(index, 1)" class="text-red-600 hover:text-red-800 dark:text-red-400 text-sm py-2" aria-label="Remove cost">Remove</button>
+                            <button type="button" @click="costs.splice(index, 1)" class="text-red-600 hover:text-red-800 dark:text-red-300 text-sm py-2" aria-label="Remove cost">Remove</button>
                         </div>
                     </div>
                 </template>

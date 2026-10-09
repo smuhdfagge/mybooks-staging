@@ -15,7 +15,7 @@
                 @endforeach
             </div>
 
-            <a href="{{ route('admin.tenants.index') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition">
+            <a href="{{ route('admin.tenants.index') }}" class="inline-flex items-center px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-lg transition">
                 I have saved them, continue
             </a>
         </div>

@@ -29,15 +29,15 @@
                         </div>
                         <div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">Amount Paid</p>
-                            <p class="text-lg font-semibold text-green-600 dark:text-green-400">{{ number_format($invoice->amount_paid, 2) }}</p>
+                            <p class="text-lg font-semibold text-green-700 dark:text-green-400">{{ number_format($invoice->amount_paid, 2) }}</p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">Already Refunded</p>
-                            <p class="text-lg font-semibold text-orange-600 dark:text-orange-400">{{ number_format($invoice->total_refunded ?? 0, 2) }}</p>
+                            <p class="text-lg font-semibold text-amber-700 dark:text-amber-300">{{ number_format($invoice->total_refunded ?? 0, 2) }}</p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">Available to Refund</p>
-                            <p class="text-lg font-semibold text-indigo-600 dark:text-indigo-400">{{ number_format($maxRefundable, 2) }}</p>
+                            <p class="text-lg font-semibold text-brand-600 dark:text-brand-300">{{ number_format($maxRefundable, 2) }}</p>
                         </div>
                     </div>
                 </div>
@@ -54,7 +54,7 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label for="amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        Refund Amount <span class="text-red-500">*</span>
+                                        Refund Amount <span class="text-red-600 dark:text-red-300">*</span>
                                     </label>
                                     <div class="mt-1 relative">
                                         <input type="number" 
@@ -69,13 +69,13 @@
                                     </div>
                                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Max: {{ number_format($maxRefundable, 2) }}</p>
                                     @error('amount')
-                                        <p id="amount-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                        <p id="amount-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                     @enderror
                                 </div>
 
                                 <div>
                                     <label for="refund_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        Refund Date <span class="text-red-500">*</span>
+                                        Refund Date <span class="text-red-600 dark:text-red-300">*</span>
                                     </label>
                                     <input type="date" 
                                            name="refund_date" 
@@ -85,7 +85,7 @@
                                            required
                                            class="mt-1 block form-control" @error('refund_date') aria-invalid="true" aria-describedby="refund_date-error" @enderror>
                                     @error('refund_date')
-                                        <p id="refund_date-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                        <p id="refund_date-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                     @enderror
                                 </div>
                             </div>
@@ -94,7 +94,7 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label for="refund_method" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        Refund Method <span class="text-red-500">*</span>
+                                        Refund Method <span class="text-red-600 dark:text-red-300">*</span>
                                     </label>
                                     <select name="refund_method" 
                                             id="refund_method" 
@@ -108,7 +108,7 @@
                                         @endforeach
                                     </select>
                                     @error('refund_method')
-                                        <p id="refund_method-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                        <p id="refund_method-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                     @enderror
                                 </div>
 
@@ -127,7 +127,7 @@
                                         @endforeach
                                     </select>
                                     @error('reason')
-                                        <p id="reason-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                        <p id="reason-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                     @enderror
                                 </div>
                             </div>
@@ -144,7 +144,7 @@
                                        placeholder="e.g., Check number, transaction ID"
                                        class="mt-1 block form-control" @error('reference') aria-invalid="true" aria-describedby="reference-error" @enderror>
                                 @error('reference')
-                                    <p id="reference-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="reference-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -159,7 +159,7 @@
                                           placeholder="Additional details about this refund..."
                                           class="mt-1 block form-control" @error('notes') aria-invalid="true" aria-describedby="notes-error" @enderror>{{ old('notes') }}</textarea>
                                 @error('notes')
-                                    <p id="notes-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="notes-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -169,7 +169,7 @@
                                 <div class="flex flex-wrap gap-2">
                                     <button type="button" 
                                             data-set-value="amount" data-value="{{ $maxRefundable }}"
-                                            class="px-3 py-1 text-sm bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-md hover:bg-indigo-200 dark:hover:bg-indigo-800 transition">
+                                            class="px-3 py-1 text-sm bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 rounded-md hover:bg-brand-200 dark:hover:bg-brand-800 transition">
                                         Full Refund ({{ number_format($maxRefundable, 2) }})
                                     </button>
                                     @if($maxRefundable > 0)

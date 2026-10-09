@@ -34,7 +34,7 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="text-sm text-gray-500 dark:text-gray-400">Reconciled Balance</div>
-                    <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ $bank->currency }} {{ number_format($summary['reconciled_balance'], 2) }}</div>
+                    <div class="text-2xl font-bold text-green-700 dark:text-green-400">{{ $bank->currency }} {{ number_format($summary['reconciled_balance'], 2) }}</div>
                 </div>
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="text-sm text-gray-500 dark:text-gray-400">Book Balance</div>
@@ -42,7 +42,7 @@
                 </div>
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="text-sm text-gray-500 dark:text-gray-400">Difference</div>
-                    <div class="text-2xl font-bold {{ $summary['difference'] == 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                    <div class="text-2xl font-bold {{ $summary['difference'] == 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                         {{ $bank->currency }} {{ number_format($summary['difference'], 2) }}
                     </div>
                 </div>
@@ -73,7 +73,7 @@
                             <input type="date" name="to_date" id="to_date" value="{{ $toDate }}"
                                    class="mt-1 block form-control sm:text-sm">
                         </div>
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition ease-in-out duration-150">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition ease-in-out duration-150">
                             Filter
                         </button>
                     </form>
@@ -109,11 +109,11 @@
                             <div class="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm">
                                 <div class="flex justify-between">
                                     <span class="text-gray-600 dark:text-gray-300">Selected deposits:</span>
-                                    <span class="font-medium text-green-600 dark:text-green-400" x-text="formatMoney(selectedDeposits, '{{ $bank->currency }} ')"></span>
+                                    <span class="font-medium text-green-700 dark:text-green-400" x-text="formatMoney(selectedDeposits, '{{ $bank->currency }} ')"></span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-gray-600 dark:text-gray-300">Selected withdrawals:</span>
-                                    <span class="font-medium text-red-600 dark:text-red-400" x-text="formatMoney(selectedWithdrawals, '{{ $bank->currency }} ')"></span>
+                                    <span class="font-medium text-red-600 dark:text-red-300" x-text="formatMoney(selectedWithdrawals, '{{ $bank->currency }} ')"></span>
                                 </div>
                                 <div class="flex justify-between border-t border-gray-200 dark:border-gray-600 mt-2 pt-2">
                                     <span class="text-gray-600 dark:text-gray-300">Selected count:</span>
@@ -127,7 +127,7 @@
                                         <tr>
                                             <th scope="col" class="px-4 py-3 text-left">
                                                 <input type="checkbox" x-on:change="toggleAll($event.target.checked)"
-                                                       class="rounded border-gray-300 dark:border-gray-600 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                       class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
                                             </th>
                                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
                                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
@@ -146,7 +146,7 @@
                                                            x-on:change="updateTotals()"
                                                            data-amount="{{ $txn->amount }}"
                                                            data-inflow="{{ $txn->isInflow() ? '1' : '0' }}"
-                                                           class="txn-checkbox rounded border-gray-300 dark:border-gray-600 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                           class="txn-checkbox rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
                                                 </td>
                                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                                                     {{ $txn->date->format('M d, Y') }}
@@ -171,12 +171,12 @@
                                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                                                     {{ $txn->payee ?? '-' }}
                                                 </td>
-                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-right font-medium text-green-600 dark:text-green-400">
+                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-right font-medium text-green-700 dark:text-green-400">
                                                     @if($txn->isInflow())
                                                         {{ number_format($txn->amount, 2) }}
                                                     @endif
                                                 </td>
-                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-right font-medium text-red-600 dark:text-red-400">
+                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-right font-medium text-red-600 dark:text-red-300">
                                                     @if($txn->isOutflow())
                                                         {{ number_format($txn->amount, 2) }}
                                                     @endif
@@ -189,7 +189,7 @@
 
                             <div class="mt-4 flex justify-end">
                                 <button type="submit"
-                                        class="inline-flex items-center px-6 py-3 bg-green-600 border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                        class="inline-flex items-center px-6 py-3 bg-green-700 border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
                                         x-bind:disabled="selectedCount === 0">
                                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>

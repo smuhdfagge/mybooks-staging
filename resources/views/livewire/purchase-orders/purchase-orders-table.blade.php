@@ -8,7 +8,7 @@
         <div>
             <label for="search" class="form-label">Search</label>
             <input type="text" id="search" wire:model.live.debounce.300ms="search" placeholder="Order #, Reference, Vendor..."
-                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:placeholder-gray-500 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
         </div>
 
         <div>
@@ -53,7 +53,7 @@
 
     @if($search || $status || $vendor || $dateFrom || $dateTo)
         <div class="mb-4">
-            <button wire:click="clearFilters" class="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
+            <button wire:click="clearFilters" class="text-sm text-brand-600 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-300">
                 Clear all filters
             </button>
         </div>
@@ -66,7 +66,7 @@
                 <tr>
                     <th scope="col" class="px-4 py-3 text-left">
                         <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
-                            class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
+                            class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
                     </th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Order #</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Vendor</th>
@@ -82,10 +82,10 @@
                     <tr wire:key="order-{{ $order->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                         <td class="px-4 py-4">
                             <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $order->id }}"
-                                class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
+                                class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <a href="{{ route('purchase-orders.show', $order) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 font-medium">
+                            <a href="{{ route('purchase-orders.show', $order) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300 font-medium">
                                 {{ $order->order_number }}
                             </a>
                             @if($order->reference)
@@ -110,7 +110,7 @@
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                                 @if($order->status === 'draft') bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300
-                                @elseif($order->status === 'confirmed') bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300
+                                @elseif($order->status === 'confirmed') bg-brand-100 text-brand-800 dark:bg-brand-900/50 dark:text-brand-300
                                 @elseif($order->status === 'partially_received') bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300
                                 @elseif($order->status === 'received') bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300
                                 @elseif($order->status === 'cancelled') bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300
@@ -119,9 +119,9 @@
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="{{ route('purchase-orders.show', $order) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 mr-3" title="View" aria-label="View {{ $order->order_number }}">View</a>
+                            <a href="{{ route('purchase-orders.show', $order) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300 mr-3" title="View" aria-label="View {{ $order->order_number }}">View</a>
                             @if($order->status === 'draft')
-                                <a href="{{ route('purchase-orders.edit', $order) }}" class="text-yellow-600 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-300" title="Edit" aria-label="Edit {{ $order->order_number }}">Edit</a>
+                                <a href="{{ route('purchase-orders.edit', $order) }}" class="text-yellow-700 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-300" title="Edit" aria-label="Edit {{ $order->order_number }}">Edit</a>
                             @endif
                         </td>
                     </tr>
@@ -134,7 +134,7 @@
                             <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No purchase orders found</h3>
                             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new purchase order.</p>
                             <div class="mt-6">
-                                <a href="{{ route('purchase-orders.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                <a href="{{ route('purchase-orders.create') }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                                     <svg class="w-4 h-4 mr-2" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                                     </svg>

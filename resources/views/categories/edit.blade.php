@@ -26,28 +26,28 @@
                                 <div>
                                     <label for="name" class="block text-sm font-medium mb-2">Category Name *</label>
                                     <input type="text" name="name" id="name" value="{{ old('name', $category->name) }}" required
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
+                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-brand-500 dark:focus:border-brand-600 focus:ring-brand-500 dark:focus:ring-brand-600" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                                     @error('name')
-                                        <p id="name-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                        <p id="name-error" class="text-red-600 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
 
                                 <div>
                                     <label for="code" class="block text-sm font-medium mb-2">Category Code</label>
                                     <input type="text" name="code" id="code" value="{{ old('code', $category->code) }}"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600"
+                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-brand-500 dark:focus:border-brand-600 focus:ring-brand-500 dark:focus:ring-brand-600"
                                         placeholder="e.g., COMP, FURN, VEH" @error('code') aria-invalid="true" aria-describedby="code-error" @enderror>
                                     @error('code')
-                                        <p id="code-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                        <p id="code-error" class="text-red-600 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
 
                                 <div class="md:col-span-2">
                                     <label for="description" class="block text-sm font-medium mb-2">Description</label>
                                     <textarea name="description" id="description" rows="3"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600" @error('description') aria-invalid="true" aria-describedby="description-error" @enderror>{{ old('description', $category->description) }}</textarea>
+                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-brand-500 dark:focus:border-brand-600 focus:ring-brand-500 dark:focus:ring-brand-600" @error('description') aria-invalid="true" aria-describedby="description-error" @enderror>{{ old('description', $category->description) }}</textarea>
                                     @error('description')
-                                        <p id="description-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                        <p id="description-error" class="text-red-600 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
                             </div>
@@ -61,9 +61,9 @@
                                 <div>
                                     <label for="default_useful_life" class="block text-sm font-medium mb-2">Default Useful Life (years)</label>
                                     <input type="number" name="default_useful_life" id="default_useful_life" value="{{ old('default_useful_life', $category->default_useful_life) }}" min="1" step="0.5"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600" @error('default_useful_life') aria-invalid="true" aria-describedby="default_useful_life-error" @enderror>
+                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-brand-500 dark:focus:border-brand-600 focus:ring-brand-500 dark:focus:ring-brand-600" @error('default_useful_life') aria-invalid="true" aria-describedby="default_useful_life-error" @enderror>
                                     @error('default_useful_life')
-                                        <p id="default_useful_life-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                        <p id="default_useful_life-error" class="text-red-600 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
 
@@ -77,7 +77,7 @@
                                         search-placeholder="Search methods..."
                                         :has-error="$errors->has('default_depreciation_method')" />
                                     @error('default_depreciation_method')
-                                        <p id="default_depreciation_method-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                        <p id="default_depreciation_method-error" class="text-red-600 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
                             </div>
@@ -98,7 +98,7 @@
                                         search-placeholder="Search accounts..."
                                         :has-error="$errors->has('asset_account_id')" />
                                     @error('asset_account_id')
-                                        <p id="asset_account_id-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                        <p id="asset_account_id-error" class="text-red-600 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
 
@@ -112,7 +112,7 @@
                                         search-placeholder="Search accounts..."
                                         :has-error="$errors->has('accumulated_depreciation_account_id')" />
                                     @error('accumulated_depreciation_account_id')
-                                        <p id="accumulated_depreciation_account_id-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                        <p id="accumulated_depreciation_account_id-error" class="text-red-600 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
 
@@ -126,7 +126,7 @@
                                         search-placeholder="Search accounts..."
                                         :has-error="$errors->has('depreciation_expense_account_id')" />
                                     @error('depreciation_expense_account_id')
-                                        <p id="depreciation_expense_account_id-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                        <p id="depreciation_expense_account_id-error" class="text-red-600 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
 
@@ -140,7 +140,7 @@
                                         search-placeholder="Search accounts..."
                                         :has-error="$errors->has('gain_loss_account_id')" />
                                     @error('gain_loss_account_id')
-                                        <p id="gain_loss_account_id-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                        <p id="gain_loss_account_id-error" class="text-red-600 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
                             </div>
@@ -150,7 +150,7 @@
                             <a href="{{ route('fixed-asset-categories.show', $category) }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
                                 Cancel
                             </a>
-                            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                            <button type="submit" class="bg-brand-500 hover:bg-brand-700 text-white font-bold py-2 px-4 rounded">
                                 Update Category
                             </button>
                         </div>

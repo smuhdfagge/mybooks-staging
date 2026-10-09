@@ -3,7 +3,7 @@
     <div class="flex h-16 items-center justify-between px-3 sm:px-4 lg:px-6 gap-3">
         <!-- Mobile menu button -->
         <button @click="sidebarOpen = true" 
-                class="lg:hidden -ml-1 p-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+                class="lg:hidden -ml-1 p-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand-500">
             <span class="sr-only">Open sidebar</span>
             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -51,8 +51,8 @@
             <!-- User dropdown -->
             <div x-data="{ open: false }" class="relative">
                 <button @click="open = !open" 
-                        class="flex items-center gap-2 p-1 sm:p-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <div class="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
+                        class="flex items-center gap-2 p-1 sm:p-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    <div class="h-8 w-8 rounded-full bg-brand-600 flex items-center justify-center flex-shrink-0">
                         <span class="text-sm font-medium text-white">{{ auth()->user() ? strtoupper(substr(auth()->user()->name, 0, 1)) : 'G' }}</span>
                     </div>
                     <span class="hidden md:block text-gray-700 dark:text-gray-300 max-w-[120px] truncate">{{ auth()->user()->name ?? 'Guest' }}</span>

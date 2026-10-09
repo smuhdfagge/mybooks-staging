@@ -15,7 +15,7 @@
                         <span class="text-gray-500 dark:text-gray-400">· {{ $message->customer->name }}</span>
                     @endif
                     @if($showCustomer && $message->invoice)
-                        <a href="{{ route('invoices.show', $message->invoice) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $message->invoice->invoice_number }}</a>
+                        <a href="{{ route('invoices.show', $message->invoice) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $message->invoice->invoice_number }}</a>
                     @endif
                 </div>
                 <x-status-badge :status="$message->status" />
@@ -26,7 +26,7 @@
                 @if($message->status === 'queued' && $message->send_after) · goes at {{ $message->send_after->setTimezone($tz)->format('j M, g:ia') }} @endif
                 @if($message->channel === 'sms' && $message->segments > 1) · counts as {{ $message->segments }} SMS @endif
                 @if($message->creator) · by {{ $message->creator->name }} @endif
-                @if($message->status === 'failed' && $message->error) · <span class="text-red-600 dark:text-red-400">{{ $message->error }}</span> @endif
+                @if($message->status === 'failed' && $message->error) · <span class="text-red-600 dark:text-red-300">{{ $message->error }}</span> @endif
             </p>
         </li>
     @empty

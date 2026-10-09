@@ -22,7 +22,7 @@
         </div>
         <div>
             <dt class="text-sm text-gray-500 dark:text-gray-400">Difference</dt>
-            <dd class="text-xl font-bold {{ $feed['difference'] === null ? 'text-gray-500' : ($feed['difference'] == 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400') }}" data-testid="feed-difference">{{ $feed['difference'] === null ? '—' : $bank->currency.' '.number_format($feed['difference'], 2) }}</dd>
+            <dd class="text-xl font-bold {{ $feed['difference'] === null ? 'text-gray-500' : ($feed['difference'] == 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300') }}" data-testid="feed-difference">{{ $feed['difference'] === null ? '—' : $bank->currency.' '.number_format($feed['difference'], 2) }}</dd>
         </div>
     </dl>
 
@@ -34,7 +34,7 @@
                 @forelse($feed['unmatched_lines'] as $l)
                     <li class="py-2 flex justify-between gap-3">
                         <span class="min-w-0 break-words text-gray-800 dark:text-gray-200">{{ $l->date->format('j M') }} · {{ \Illuminate\Support\Str::limit($l->narration ?: 'No description', 60) }}</span>
-                        <span class="whitespace-nowrap {{ $l->isCredit() ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">{{ $l->isCredit() ? '+' : '−' }}{{ number_format($l->amount, 2) }}</span>
+                        <span class="whitespace-nowrap {{ $l->isCredit() ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">{{ $l->isCredit() ? '+' : '−' }}{{ number_format($l->amount, 2) }}</span>
                     </li>
                 @empty
                     <li class="py-2 text-gray-500 dark:text-gray-400">Every bank line has been dealt with.</li>
@@ -47,7 +47,7 @@
             <ul class="mt-2 divide-y divide-gray-200 dark:divide-gray-700 text-sm" data-testid="feed-unmatched-books">
                 @forelse($feed['books_without_line'] as $c)
                     <li class="py-2 flex justify-between gap-3">
-                        <span class="min-w-0 break-words text-gray-800 dark:text-gray-200">{{ $c->date->format('j M') }} · @if($c->url)<a class="text-indigo-600 dark:text-indigo-400 hover:underline" href="{{ $c->url }}">{{ $c->describe() }}</a>@else{{ $c->describe() }}@endif</span>
+                        <span class="min-w-0 break-words text-gray-800 dark:text-gray-200">{{ $c->date->format('j M') }} · @if($c->url)<a class="text-brand-600 dark:text-brand-300 hover:underline" href="{{ $c->url }}">{{ $c->describe() }}</a>@else{{ $c->describe() }}@endif</span>
                         <span class="whitespace-nowrap text-gray-700 dark:text-gray-300">{{ number_format($c->amount, 2) }}</span>
                     </li>
                 @empty

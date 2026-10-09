@@ -27,7 +27,7 @@
                             <div><p class="text-gray-500 dark:text-gray-400">Sales order</p>
                                 @if($deliveryNote->salesOrder)
                                     @can('view sales-orders')
-                                        <a href="{{ route('sales-orders.show', $deliveryNote->salesOrder) }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">{{ $deliveryNote->salesOrder->order_number }}</a>
+                                        <a href="{{ route('sales-orders.show', $deliveryNote->salesOrder) }}" class="font-medium text-brand-600 dark:text-brand-300 hover:underline">{{ $deliveryNote->salesOrder->order_number }}</a>
                                     @else
                                         <p class="font-medium text-gray-900 dark:text-gray-100">{{ $deliveryNote->salesOrder->order_number }}</p>
                                     @endcan
@@ -108,7 +108,7 @@
                     @can('delete invoices')
                         @if(in_array($status, ['draft', 'cancelled'], true))
                             <form method="POST" action="{{ route('delivery-notes.destroy', $deliveryNote) }}" data-confirm="Delete this delivery note?">@csrf @method('DELETE')
-                                <button type="submit" class="{{ $btn }} w-full bg-white dark:bg-gray-800 border-red-300 text-red-700 dark:text-red-400 hover:bg-red-50">Delete</button>
+                                <button type="submit" class="{{ $btn }} w-full bg-white dark:bg-gray-800 border-red-300 text-red-700 dark:text-red-300 hover:bg-red-50">Delete</button>
                             </form>
                         @endif
                     @endcan

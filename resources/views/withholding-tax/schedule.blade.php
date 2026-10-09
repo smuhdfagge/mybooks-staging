@@ -7,7 +7,7 @@
             </div>
             <div class="flex flex-wrap gap-2 no-print">
                 <a href="{{ route('withholding-tax.schedule.export', ['month' => $month->format('Y-m'), 'format' => 'pdf']) }}" class="inline-flex items-center px-3 py-2 bg-red-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700">PDF</a>
-                <a href="{{ route('withholding-tax.schedule.export', ['month' => $month->format('Y-m'), 'format' => 'csv']) }}" class="inline-flex items-center px-3 py-2 bg-green-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">CSV</a>
+                <a href="{{ route('withholding-tax.schedule.export', ['month' => $month->format('Y-m'), 'format' => 'csv']) }}" class="inline-flex items-center px-3 py-2 bg-green-700 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">CSV</a>
             </div>
         </div>
     </x-slot>
@@ -52,7 +52,7 @@
                             <p class="text-gray-600 dark:text-gray-400">Deducted <span class="font-semibold text-gray-900 dark:text-gray-100">@money($group['deducted'])</span></p>
                             <p class="text-gray-600 dark:text-gray-400">Paid over <span class="font-semibold text-gray-900 dark:text-gray-100">@money($group['remitted'])</span></p>
                             @if($group['outstanding'] > 0.005)
-                                <p class="font-semibold {{ now()->greaterThan($group['due']->copy()->endOfDay()) ? 'text-red-600 dark:text-red-400' : 'text-yellow-700 dark:text-yellow-400' }}">Still to pay @money($group['outstanding'])</p>
+                                <p class="font-semibold {{ now()->greaterThan($group['due']->copy()->endOfDay()) ? 'text-red-600 dark:text-red-300' : 'text-yellow-700 dark:text-yellow-400' }}">Still to pay @money($group['outstanding'])</p>
                             @else
                                 <p class="font-semibold text-green-700 dark:text-green-400">Paid in full</p>
                             @endif
@@ -75,7 +75,7 @@
                                     <tr>
                                         <td class="px-3 py-2">{{ $vendor['name'] }}</td>
                                         <td class="px-3 py-2">
-                                            @if($vendor['tin']){{ $vendor['tin'] }}@else<span class="text-red-600 dark:text-red-400">No TIN</span>@endif
+                                            @if($vendor['tin']){{ $vendor['tin'] }}@else<span class="text-red-600 dark:text-red-300">No TIN</span>@endif
                                         </td>
                                         <td class="px-3 py-2 text-right">{{ $vendor['payments'] }}</td>
                                         <td class="px-3 py-2 text-right">@money($vendor['base'])</td>
@@ -87,7 +87,7 @@
 
                         @if($group['rows']->isNotEmpty())
                         <details class="mt-4">
-                            <summary class="cursor-pointer text-sm text-indigo-600 dark:text-indigo-400">Show each payment ({{ $group['rows']->count() }})</summary>
+                            <summary class="cursor-pointer text-sm text-brand-600 dark:text-brand-300">Show each payment ({{ $group['rows']->count() }})</summary>
                             <table class="mt-3 min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
                                 <thead>
                                     <tr class="text-left text-gray-600 dark:text-gray-300">
@@ -105,7 +105,7 @@
                                     @foreach($group['rows'] as $payment)
                                         <tr>
                                             <td class="px-3 py-2 whitespace-nowrap">{{ $payment->payment_date->format('d M Y') }}</td>
-                                            <td class="px-3 py-2"><a href="{{ route('payments-made.show', $payment) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $payment->payment_number }}</a></td>
+                                            <td class="px-3 py-2"><a href="{{ route('payments-made.show', $payment) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $payment->payment_number }}</a></td>
                                             <td class="px-3 py-2">{{ $payment->vendor?->name }}</td>
                                             <td class="px-3 py-2">{{ $payment->bill?->bill_number ?? ($payment->is_advance ? 'Advance' : '-') }}</td>
                                             <td class="px-3 py-2">{{ $payment->whtCategory?->name ?? '-' }}</td>
@@ -134,7 +134,7 @@
                                             <form method="POST" action="{{ route('withholding-tax.remittances.destroy', $remittance) }}" data-confirm="Delete this WHT payment? Its journal will be reversed.">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="text-xs text-red-600 dark:text-red-400 hover:underline">Delete</button>
+                                                <button type="submit" class="text-xs text-red-600 dark:text-red-300 hover:underline">Delete</button>
                                             </form>
                                         @endif
                                     </li>

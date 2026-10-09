@@ -3,9 +3,9 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div class="flex items-center gap-4">
                 @if($employee->photo_path)
-                    <img src="{{ asset('storage/' . $employee->photo_path) }}" alt="{{ $employee->full_name }}" class="h-14 w-14 rounded-full object-cover ring-2 ring-indigo-500/20">
+                    <img src="{{ asset('storage/' . $employee->photo_path) }}" alt="{{ $employee->full_name }}" class="h-14 w-14 rounded-full object-cover ring-2 ring-brand-500/20">
                 @else
-                    <div class="h-14 w-14 rounded-full bg-indigo-600 flex items-center justify-center ring-2 ring-indigo-500/20">
+                    <div class="h-14 w-14 rounded-full bg-brand-600 flex items-center justify-center ring-2 ring-brand-500/20">
                         <span class="text-lg font-bold text-white">{{ strtoupper(substr($employee->first_name, 0, 1) . substr($employee->last_name, 0, 1)) }}</span>
                     </div>
                 @endif
@@ -17,7 +17,7 @@
                 </div>
             </div>
             <div class="flex flex-wrap gap-2">
-                <a href="{{ route('employees.edit', $employee) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                <a href="{{ route('employees.edit', $employee) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                     </svg>
@@ -39,8 +39,8 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="flex items-center">
-                        <div class="flex-shrink-0 bg-blue-100 dark:bg-blue-900/50 rounded-full p-3">
-                            <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="flex-shrink-0 bg-brand-100 dark:bg-brand-900/50 rounded-full p-3">
+                            <svg class="w-6 h-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                             </svg>
                         </div>
@@ -54,7 +54,7 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 bg-green-100 dark:bg-green-900/50 rounded-full p-3">
-                            <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 text-green-700 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                         </div>
@@ -71,7 +71,7 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 bg-yellow-100 dark:bg-yellow-900/50 rounded-full p-3">
-                            <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 text-yellow-700 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                             </svg>
                         </div>
@@ -84,8 +84,8 @@
 
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="flex items-center">
-                        <div class="flex-shrink-0 bg-purple-100 dark:bg-purple-900/50 rounded-full p-3">
-                            <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="flex-shrink-0 bg-accent-100 dark:bg-accent-900/50 rounded-full p-3">
+                            <svg class="w-6 h-6 text-accent-700 dark:text-accent-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                         </div>
@@ -108,7 +108,7 @@
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Email</dt>
                                     <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">
-                                        <a href="mailto:{{ $employee->email }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">{{ $employee->email }}</a>
+                                        <a href="mailto:{{ $employee->email }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300">{{ $employee->email }}</a>
                                     </dd>
                                 </div>
                                 @endif
@@ -117,7 +117,7 @@
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Phone</dt>
                                     <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">
-                                        <a href="tel:{{ $employee->phone }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">{{ $employee->phone }}</a>
+                                        <a href="tel:{{ $employee->phone }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300">{{ $employee->phone }}</a>
                                     </dd>
                                 </div>
                                 @endif
@@ -151,7 +151,7 @@
                                         @elseif($employee->status === 'on_leave')
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-400">On Leave</span>
                                         @else
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-400">{{ ucfirst($employee->status ?? 'Inactive') }}</span>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300">{{ ucfirst($employee->status ?? 'Inactive') }}</span>
                                         @endif
                                     </dd>
                                 </div>
@@ -193,7 +193,7 @@
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Phone</dt>
                                     <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">
-                                        <a href="tel:{{ $employee->emergency_contact_phone }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">{{ $employee->emergency_contact_phone }}</a>
+                                        <a href="tel:{{ $employee->emergency_contact_phone }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300">{{ $employee->emergency_contact_phone }}</a>
                                     </dd>
                                 </div>
                                 @endif
@@ -282,7 +282,7 @@
                                                     $statusColors = [
                                                         'pending' => 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-400',
                                                         'approved' => 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-400',
-                                                        'rejected' => 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-400',
+                                                        'rejected' => 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300',
                                                     ];
                                                 @endphp
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$leave->status] ?? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300' }}">
@@ -326,17 +326,17 @@
                                             <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-right">
                                                 {{ number_format($payroll->gross_salary ?? 0, 2) }}
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-red-600 dark:text-red-400 text-right">
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-red-600 dark:text-red-300 text-right">
                                                 -{{ number_format($payroll->total_deductions ?? 0, 2) }}
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-green-600 dark:text-green-400 text-right font-medium">
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-green-700 dark:text-green-400 text-right font-medium">
                                                 {{ number_format($payroll->net_salary ?? 0, 2) }}
                                             </td>
                                             <td class="px-4 py-3 whitespace-nowrap">
                                                 @php
                                                     $payrollStatusColors = [
                                                         'pending' => 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-400',
-                                                        'processed' => 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-400',
+                                                        'processed' => 'bg-brand-100 dark:bg-brand-900/50 text-brand-800 dark:text-brand-300',
                                                         'paid' => 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-400',
                                                     ];
                                                 @endphp

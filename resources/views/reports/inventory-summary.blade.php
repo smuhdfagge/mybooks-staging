@@ -87,7 +87,7 @@
                         <div class="ml-5">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Low Stock Items</dt>
-                                <dd class="text-lg font-semibold text-red-600 dark:text-red-400">{{ number_format($lowStockItems) }}</dd>
+                                <dd class="text-lg font-semibold text-red-600 dark:text-red-300">{{ number_format($lowStockItems) }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -177,7 +177,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
                                             {{ number_format($item->cost_price ?? 0, 2) }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium {{ $item->is_low_stock ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white' }}">
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium {{ $item->is_low_stock ? 'text-red-600 dark:text-red-300' : 'text-gray-900 dark:text-white' }}">
                                             {{ number_format($item->stock_quantity) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
@@ -209,7 +209,7 @@
                                     {{-- Shipped between warehouses, not yet received (session 13). --}}
                                     <tr data-in-transit>
                                         <td colspan="3" class="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                                            <a href="{{ route('stock-transfers.index', ['status' => 'in_transit']) }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">Goods in transit</a> between warehouses
+                                            <a href="{{ route('stock-transfers.index', ['status' => 'in_transit']) }}" class="font-medium text-brand-600 dark:text-brand-300 hover:underline">Goods in transit</a> between warehouses
                                             <span class="block text-xs text-gray-500 dark:text-gray-400">Cost when sent: {{ number_format($inTransit['cost'], 2) }}</span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">{{ rtrim(rtrim(number_format($inTransit['quantity'], 4), '0'), '.') }}</td>

@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex flex-wrap items-center justify-between gap-2">
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">E-invoicing (NRS)</h2>
-            <a href="{{ route('e-invoices.index') }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">See e-invoices</a>
+            <a href="{{ route('e-invoices.index') }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">See e-invoices</a>
         </div>
     </x-slot>
 
@@ -15,7 +15,7 @@
         ][$state];
         $colours = [
             'green' => 'border-green-300 bg-green-50 text-green-800 dark:bg-green-900/30 dark:border-green-700 dark:text-green-200',
-            'blue' => 'border-blue-300 bg-blue-50 text-blue-800 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-200',
+            'blue' => 'border-brand-300 bg-brand-50 text-brand-800 dark:bg-brand-900/30 dark:border-brand-700 dark:text-brand-200',
             'yellow' => 'border-yellow-300 bg-yellow-50 text-yellow-800 dark:bg-yellow-900/30 dark:border-yellow-700 dark:text-yellow-200',
         ];
         $secretHint = fn ($value) => $value ? 'Saved ('.\App\Models\EInvoiceSetting::mask($value).'). Leave empty to keep it.' : 'Not saved yet.';
@@ -36,7 +36,7 @@
                 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Dates vary by business size (reported: large businesses from 1 July 2026, small businesses from 1 July 2027). Ask your tax adviser when it applies to you.</p>
                 <p class="mt-2 text-sm {{ filled($tin) ? 'text-gray-600 dark:text-gray-400' : 'text-red-700 dark:text-red-300' }}">
                     Your business TIN:
-                    @if(filled($tin))<strong class="font-mono">{{ $tin }}</strong> (from your <a href="{{ route('settings.company') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">company profile</a>).
+                    @if(filled($tin))<strong class="font-mono">{{ $tin }}</strong> (from your <a href="{{ route('settings.company') }}" class="text-brand-600 dark:text-brand-300 hover:underline">company profile</a>).
                     @else not set. <a href="{{ route('settings.company') }}" class="underline">Add it in your company profile</a> before sending anything.@endif
                 </p>
             </x-card>
@@ -50,7 +50,7 @@
 
                     <input type="hidden" name="enabled" value="0">
                     <label class="inline-flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200">
-                        <input type="checkbox" name="enabled" value="1" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700" @checked(old('enabled', $settings->enabled)) @disabled(! $canManage)>
+                        <input type="checkbox" name="enabled" value="1" class="rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-brand-300" @checked(old('enabled', $settings->enabled)) @disabled(! $canManage)>
                         Use e-invoicing in my business
                     </label>
 

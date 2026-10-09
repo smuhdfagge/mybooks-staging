@@ -32,7 +32,7 @@
                             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 text-gray-900 dark:text-gray-100">
                                 @forelse($boms as $bom)
                                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                        <td class="px-4 py-3"><a href="{{ route('bill-of-materials.show', $bom) }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">{{ $bom->label() }}</a></td>
+                                        <td class="px-4 py-3"><a href="{{ route('bill-of-materials.show', $bom) }}" class="font-medium text-brand-600 dark:text-brand-300 hover:underline">{{ $bom->label() }}</a></td>
                                         <td class="px-4 py-3">{{ $fmt($bom->output_quantity) }} {{ $bom->item?->unit }} {{ $bom->item?->name }}</td>
                                         <td class="px-4 py-3 text-right hidden sm:table-cell">{{ $bom->components->count() }}</td>
                                         <td class="px-4 py-3 text-right hidden md:table-cell">{{ $bom->assembly_orders_count }}</td>

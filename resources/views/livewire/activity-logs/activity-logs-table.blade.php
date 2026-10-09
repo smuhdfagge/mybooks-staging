@@ -66,7 +66,7 @@
             <!-- Clear Filters -->
             <div class="flex items-end">
                 <button wire:click="clearFilters" type="button"
-                    class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500">
                     <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
@@ -78,7 +78,7 @@
             <div class="flex items-end gap-2">
                 <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open" type="button"
-                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-700 hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                         <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                         </svg>
@@ -156,10 +156,10 @@
                                 @php
                                     $colorClasses = match($log->action_color) {
                                         'green' => 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100',
-                                        'blue' => 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100',
+                                        'blue' => 'bg-brand-100 text-brand-800 dark:bg-brand-800 dark:text-brand-100',
                                         'red' => 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100',
-                                        'purple' => 'bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-100',
-                                        'indigo' => 'bg-indigo-100 text-indigo-800 dark:bg-indigo-800 dark:text-indigo-100',
+                                        'purple' => 'bg-accent-100 text-accent-800 dark:bg-accent-900/50 dark:text-accent-100',
+                                        'indigo' => 'bg-brand-100 text-brand-800 dark:bg-brand-800 dark:text-brand-100',
                                         default => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
                                     };
                                 @endphp
@@ -185,7 +185,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <a href="{{ route('activity-logs.show', $log) }}" 
-                                    class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+                                    class="text-brand-600 hover:text-brand-900 dark:text-brand-200 dark:hover:text-white">
                                     View
                                 </a>
                             </td>

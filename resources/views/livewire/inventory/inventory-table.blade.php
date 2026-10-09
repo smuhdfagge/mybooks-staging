@@ -68,7 +68,7 @@
                     <tr>
                         <th scope="col" class="px-4 py-3 text-left">
                             <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
-                                class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
+                                class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
                         </th>
                         <x-sort-header field="name" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">Item</x-sort-header>
                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">SKU</th>
@@ -95,7 +95,7 @@
                         <tr wire:key="item-{{ $item->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors {{ $isOutOfStock ? 'bg-red-50 dark:bg-red-900/20' : ($isLowStock ? 'bg-yellow-50 dark:bg-yellow-900/20' : '') }}">
                             <td class="px-4 py-4">
                                 <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $item->id }}"
-                                    class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
+                                    class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
                             </td>
                             <td class="px-4 py-4">
                                 <div class="font-medium text-gray-900 dark:text-gray-100">{{ $item->name }}</div>
@@ -112,10 +112,10 @@
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900 dark:text-gray-100">
                                 {{ number_format($onHand, 2) }}
                             </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-sm text-right text-orange-600 dark:text-orange-400">
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-right text-amber-700 dark:text-amber-300">
                                 {{ number_format($reserved, 2) }}
                             </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-sm text-right font-medium {{ $available > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-right font-medium {{ $available > 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                 {{ number_format($available, 2) }}
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
@@ -123,7 +123,7 @@
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap text-center">
                                 @if($isOutOfStock)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300">
                                         Out of Stock
                                     </span>
                                 @elseif($isLowStock)
@@ -137,7 +137,7 @@
                                 @endif
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <a href="{{ route('inventory.show', $item) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 mr-3">Adjust</a>
+                                <a href="{{ route('inventory.show', $item) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300 mr-3">Adjust</a>
                                 <a href="{{ route('inventory.history', $item) }}" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200">History</a>
                             </td>
                         </tr>

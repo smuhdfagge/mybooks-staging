@@ -25,17 +25,17 @@
             <input type="text" name="requester" placeholder="Who asked" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-sm" required>
             <input type="number" name="tenant_id" placeholder="Business ID (optional)" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-sm">
             <input type="text" name="details" placeholder="Details" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-sm">
-            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium">Log request</button>
+            <button type="submit" class="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 text-sm font-medium">Log request</button>
         </form>
         @if ($errors->any())
-            <p class="mt-2 text-sm text-red-500">{{ $errors->first() }}</p>
+            <p class="mt-2 text-sm text-red-600">{{ $errors->first() }}</p>
         @endif
     </div>
 
     <div class="mb-3 text-sm">
-        <a href="{{ route('admin.data-requests.index') }}" class="{{ request('status') ? 'text-gray-500' : 'font-semibold text-indigo-600' }}">All</a>
+        <a href="{{ route('admin.data-requests.index') }}" class="{{ request('status') ? 'text-gray-500' : 'font-semibold text-brand-600 dark:text-brand-300' }}">All</a>
         &middot;
-        <a href="{{ route('admin.data-requests.index', ['status' => 'open']) }}" class="{{ request('status') === 'open' ? 'font-semibold text-indigo-600' : 'text-gray-500' }}">Open</a>
+        <a href="{{ route('admin.data-requests.index', ['status' => 'open']) }}" class="{{ request('status') === 'open' ? 'font-semibold text-brand-600 dark:text-brand-300' : 'text-gray-500' }}">Open</a>
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-x-auto">
@@ -71,7 +71,7 @@
                                 <form method="POST" action="{{ route('admin.data-requests.complete', $dataRequest) }}">
                                     @csrf
                                     @method('PATCH')
-                                    <button type="submit" class="text-indigo-600 hover:text-indigo-800 text-sm">Mark done</button>
+                                    <button type="submit" class="text-brand-600 hover:text-brand-800 text-sm dark:text-brand-300 dark:hover:text-brand-200">Mark done</button>
                                 </form>
                             @endif
                         </td>

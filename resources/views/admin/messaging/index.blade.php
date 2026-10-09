@@ -56,7 +56,7 @@
                     </tbody>
                 </table>
             </div>
-            <button type="submit" class="mt-3 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium">Save allowances</button>
+            <button type="submit" class="mt-3 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 text-sm font-medium">Save allowances</button>
         </form>
     </div>
 
@@ -77,14 +77,14 @@
                     <tr>
                         <td class="px-4 py-3 text-gray-900 dark:text-white">
                             @if($line['tenant'])
-                                <a href="{{ route('admin.tenants.show', $line['tenant']) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $line['tenant']->name }}</a>
+                                <a href="{{ route('admin.tenants.show', $line['tenant']) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $line['tenant']->name }}</a>
                             @else
                                 (deleted)
                             @endif
                         </td>
                         <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ $line['plan']?->name ?? 'No active plan' }}</td>
                         @foreach(['sms', 'whatsapp'] as $channel)
-                            <td class="px-4 py-3 text-right {{ $line[$channel]['used'] >= $line[$channel]['limit'] && $line[$channel]['used'] > 0 ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-900 dark:text-white' }}">
+                            <td class="px-4 py-3 text-right {{ $line[$channel]['used'] >= $line[$channel]['limit'] && $line[$channel]['used'] > 0 ? 'text-red-600 dark:text-red-300 font-medium' : 'text-gray-900 dark:text-white' }}">
                                 {{ number_format($line[$channel]['used']) }} / {{ number_format($line[$channel]['limit']) }}
                             </td>
                         @endforeach

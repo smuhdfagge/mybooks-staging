@@ -42,7 +42,7 @@
                         <div class="p-4 sm:p-6 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                             <div class="col-span-2 md:col-span-1"><p class="text-gray-500 dark:text-gray-400">{{ $breakdown ? 'Broken down' : 'Making' }}</p>
                                 @if($finished)
-                                    <a href="{{ route('inventory.show', $finished->id) }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">{{ $finished->name }}</a>
+                                    <a href="{{ route('inventory.show', $finished->id) }}" class="font-medium text-brand-600 dark:text-brand-300 hover:underline">{{ $finished->name }}</a>
                                 @endif
                                 @if($bom)
                                     <span class="block text-xs text-gray-500 dark:text-gray-400">@can('view items')<a href="{{ route('bill-of-materials.show', $bom) }}" class="hover:underline">{{ $bom->label() }}</a>@else{{ $bom->label() }}@endcan</span>
@@ -82,7 +82,7 @@
                                             @php $lineUnit = $line->item?->unit ? ' '.$line->item->unit : ''; @endphp
                                             <tr>
                                                 <td class="px-3 py-2">
-                                                    <a href="{{ route('inventory.show', $line->item_id) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $line->item?->name }}</a>
+                                                    <a href="{{ route('inventory.show', $line->item_id) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $line->item?->name }}</a>
                                                     @if($done)<span class="sm:hidden block text-xs text-gray-500 dark:text-gray-400">Cost @money($line->cost)</span>@endif
                                                 </td>
                                                 <td class="px-3 py-2 text-right whitespace-nowrap">{{ $fmt($line->planned_quantity) }}{{ $lineUnit }}</td>
@@ -93,7 +93,7 @@
                                                     </td>
                                                 @elseif($order->isDraft() && ! $breakdown)
                                                     @php $freeQty = $free[$line->item_id] ?? 0; @endphp
-                                                    <td class="px-3 py-2 text-right whitespace-nowrap {{ $freeQty + 0.00001 < (float) $line->planned_quantity ? 'text-red-600 dark:text-red-400 font-medium' : '' }}">{{ $fmt($freeQty) }}{{ $lineUnit }}</td>
+                                                    <td class="px-3 py-2 text-right whitespace-nowrap {{ $freeQty + 0.00001 < (float) $line->planned_quantity ? 'text-red-600 dark:text-red-300 font-medium' : '' }}">{{ $fmt($freeQty) }}{{ $lineUnit }}</td>
                                                 @endif
                                             </tr>
                                         @empty
@@ -177,7 +177,7 @@
                                     <button type="submit" class="{{ $secondary }} w-full">Cancel order</button>
                                 </form>
                                 <form method="POST" action="{{ route('assembly-orders.destroy', $order) }}" data-confirm="Delete draft {{ $order->order_number }}?">@csrf @method('DELETE')
-                                    <button type="submit" class="{{ $btn }} w-full bg-white dark:bg-gray-800 border-red-300 text-red-700 dark:text-red-400 hover:bg-red-50">Delete</button>
+                                    <button type="submit" class="{{ $btn }} w-full bg-white dark:bg-gray-800 border-red-300 text-red-700 dark:text-red-300 hover:bg-red-50">Delete</button>
                                 </form>
                             </div>
                         </x-card>
@@ -204,7 +204,7 @@
                             <div class="p-4 sm:p-6 space-y-3 text-sm">
                                 <p class="text-gray-600 dark:text-gray-400">This order was cancelled. Nothing moved in stock.</p>
                                 <form method="POST" action="{{ route('assembly-orders.destroy', $order) }}" data-confirm="Delete {{ $order->order_number }}?">@csrf @method('DELETE')
-                                    <button type="submit" class="{{ $btn }} w-full bg-white dark:bg-gray-800 border-red-300 text-red-700 dark:text-red-400 hover:bg-red-50">Delete</button>
+                                    <button type="submit" class="{{ $btn }} w-full bg-white dark:bg-gray-800 border-red-300 text-red-700 dark:text-red-300 hover:bg-red-50">Delete</button>
                                 </form>
                             </div>
                         </x-card>
@@ -218,7 +218,7 @@
                                 @foreach($journals as $journal)
                                     <p>
                                         @can('view journals')
-                                            <a href="{{ route('journals.show', $journal) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Journal {{ $journal->journal_number }}</a>
+                                            <a href="{{ route('journals.show', $journal) }}" class="text-brand-600 dark:text-brand-300 hover:underline">Journal {{ $journal->journal_number }}</a>
                                         @else
                                             Journal {{ $journal->journal_number }}
                                         @endcan

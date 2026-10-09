@@ -41,7 +41,7 @@
         .company-logo-placeholder {
             width: {{ $s['layout'] === 'compact' ? '40px' : '70px' }};
             height: {{ $s['layout'] === 'compact' ? '40px' : '70px' }};
-            background: linear-gradient(135deg, {{ $s['primary_color'] }} 0%, {{ $s['accent_color'] }} 100%);
+            background: {{ $s['primary_color'] }};
             border-radius: {{ $s['layout'] === 'modern' ? '12px' : '10px' }};
             display: flex;
             align-items: center;
@@ -84,7 +84,7 @@
             margin-top: 8px;
         }
         .status-draft { background: #F3F4F6; color: #6B7280; }
-        .status-sent { background: #DBEAFE; color: #1D4ED8; }
+        .status-sent { background: #D9E4EF; color: #183E61; }
         .status-paid { background: #D1FAE5; color: #059669; }
         .status-partial { background: #FEF3C7; color: #D97706; }
         .status-overdue { background: #FEE2E2; color: #DC2626; }

@@ -15,10 +15,10 @@
                        name="search" 
                        value="{{ request('search') }}" 
                        placeholder="Search by name or email..."
-                       class="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                       class="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 shadow-sm focus:border-brand-500 focus:ring-brand-500">
             </div>
             <div class="w-40">
-                <select name="status" class="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                <select name="status" class="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500">
                     <option value="">All Statuses</option>
                     <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
                     <option value="trial" {{ request('status') === 'trial' ? 'selected' : '' }}>On Trial</option>
@@ -28,14 +28,14 @@
                 </select>
             </div>
             <div class="w-40">
-                <select name="plan" class="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                <select name="plan" class="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500">
                     <option value="">All Plans</option>
                     @foreach($plans as $plan)
                         <option value="{{ $plan->id }}" {{ request('plan') == $plan->id ? 'selected' : '' }}>{{ $plan->name }}</option>
                     @endforeach
                 </select>
             </div>
-            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium">
+            <button type="submit" class="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition font-medium">
                 Filter
             </button>
             @if(request()->hasAny(['search', 'status', 'plan']))
@@ -65,7 +65,7 @@
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
-                                    <div class="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                                    <div class="h-10 w-10 rounded-lg bg-brand-600 flex items-center justify-center flex-shrink-0">
                                         <span class="text-white font-bold text-sm">{{ strtoupper(substr($tenant->name, 0, 2)) }}</span>
                                     </div>
                                     <div class="ml-3">
@@ -81,8 +81,8 @@
                                     </span>
                                     @if($tenant->activeSubscription)
                                         <span class="px-2.5 py-1 text-xs font-semibold rounded-full inline-flex w-fit 
-                                            @if($tenant->activeSubscription->status === 'active') bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700
-                                            @elseif($tenant->activeSubscription->status === 'trialing') bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-700
+                                            @if($tenant->activeSubscription->status === 'active') bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-700
+                                            @elseif($tenant->activeSubscription->status === 'trialing') bg-accent-100 dark:bg-accent-900/50 text-accent-800 dark:text-accent-300 border border-accent-200 dark:border-brand-700
                                             @else bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-700
                                             @endif">
                                             {{ ucfirst($tenant->activeSubscription->status) }}
@@ -106,7 +106,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @if($tenant->activeSubscription?->ends_at)
-                                    <span class="text-sm @if($tenant->activeSubscription->ends_at->isPast()) text-red-600 dark:text-red-400 @elseif($tenant->activeSubscription->ends_at->diffInDays(now()) <= 7) text-yellow-600 dark:text-yellow-400 @else text-gray-600 dark:text-gray-400 @endif">
+                                    <span class="text-sm @if($tenant->activeSubscription->ends_at->isPast()) text-red-600 dark:text-red-300 @elseif((int) now()->diffInDays($tenant->activeSubscription->ends_at) <= 7) text-yellow-700 dark:text-yellow-400 @else text-gray-600 dark:text-gray-400 @endif">
                                         {{ $tenant->activeSubscription->ends_at->format('M d, Y') }}
                                     </span>
                                 @else
@@ -114,7 +114,7 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right">
-                                <a href="{{ route('admin.tenants.show', $tenant) }}" class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition">
+                                <a href="{{ route('admin.tenants.show', $tenant) }}" class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-brand-600 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-300 transition">
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
@@ -131,7 +131,7 @@
                                 </svg>
                                 <p class="text-gray-500 dark:text-gray-400 mt-2">No tenants found</p>
                                 @if(request()->hasAny(['search', 'status', 'plan']))
-                                    <a href="{{ route('admin.tenants.list') }}" class="mt-2 inline-block text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition">
+                                    <a href="{{ route('admin.tenants.list') }}" class="mt-2 inline-block text-brand-600 dark:text-brand-300 hover:text-brand-500 dark:hover:text-brand-300 transition">
                                         Clear filters
                                     </a>
                                 @endif

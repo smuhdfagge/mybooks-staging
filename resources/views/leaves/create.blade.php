@@ -22,7 +22,7 @@
                     <div class="space-y-6">
                         <!-- Employee -->
                         <div>
-                            <label for="employee_id" class="form-label">Employee <span class="text-red-500">*</span></label>
+                            <label for="employee_id" class="form-label">Employee <span class="text-red-600 dark:text-red-300">*</span></label>
                             <select name="employee_id" id="employee_id" required
                                 class="form-control @error('employee_id') border-red-500 @enderror" @error('employee_id') aria-invalid="true" aria-describedby="employee_id-error" @enderror>
                                 <option value="">Select Employee</option>
@@ -33,13 +33,13 @@
                                 @endforeach
                             </select>
                             @error('employee_id')
-                                <p id="employee_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="employee_id-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
 
                         <!-- Leave Type -->
                         <div>
-                            <label for="leave_type_id" class="form-label">Leave Type <span class="text-red-500">*</span></label>
+                            <label for="leave_type_id" class="form-label">Leave Type <span class="text-red-600 dark:text-red-300">*</span></label>
                             <select name="leave_type_id" id="leave_type_id" required
                                 class="form-control @error('leave_type_id') border-red-500 @enderror" @error('leave_type_id') aria-invalid="true" aria-describedby="leave_type_id-error" @enderror>
                                 <option value="">Select Leave Type</option>
@@ -50,7 +50,7 @@
                                 @endforeach
                             </select>
                             @error('leave_type_id')
-                                <p id="leave_type_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="leave_type_id-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -72,17 +72,17 @@
                                 class="form-control @error('reason') border-red-500 @enderror"
                                 placeholder="Optional: Provide a reason for your leave request" @error('reason') aria-invalid="true" aria-describedby="reason-error" @enderror>{{ old('reason') }}</textarea>
                             @error('reason')
-                                <p id="reason-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="reason-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>
 
                     <!-- Submit Buttons -->
                     <div class="mt-8 flex flex-col sm:flex-row justify-end gap-3">
-                        <a href="{{ route('leaves.index') }}" class="inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <a href="{{ route('leaves.index') }}" class="inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             Cancel
                         </a>
-                        <button type="submit" class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <button type="submit" class="inline-flex items-center justify-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>

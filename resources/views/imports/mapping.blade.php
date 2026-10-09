@@ -34,9 +34,9 @@
                                 </div>
                                 <span class="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400">Upload File</span>
                             </div>
-                            <div class="w-24 h-1 mx-4 bg-indigo-600"></div>
+                            <div class="w-24 h-1 mx-4 bg-brand-600"></div>
                             <div class="flex items-center">
-                                <div class="flex items-center justify-center w-10 h-10 bg-indigo-600 rounded-full">
+                                <div class="flex items-center justify-center w-10 h-10 bg-brand-600 rounded-full">
                                     <span class="text-white font-semibold">2</span>
                                 </div>
                                 <span class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">Map Columns</span>
@@ -60,7 +60,7 @@
                                     {{ strtoupper($import->format) }} • {{ number_format($preview['total_rows']) }} rows detected
                                 </p>
                             </div>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-300">
                                 {{ \App\Models\Import::getImportTypes()[$import->type] ?? $import->type }}
                             </span>
                         </div>
@@ -70,7 +70,7 @@
                     <div class="mb-6">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Column Mapping</h3>
                         <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                            Match each column from your file to the corresponding field. Fields marked with <span class="text-red-500">*</span> are required.
+                            Match each column from your file to the corresponding field. Fields marked with <span class="text-red-600 dark:text-red-300">*</span> are required.
                         </p>
 
                         <div class="overflow-x-auto">
@@ -99,7 +99,7 @@
                                             </td>
                                             <td class="px-4 py-3">
                                                 <select name="mapping[{{ $header }}]" 
-                                                        class="w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                        class="w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                                     <option value="">-- Skip this column --</option>
                                                     @foreach($availableFields as $field => $label)
                                                         <option value="{{ $field }}" 
@@ -157,12 +157,12 @@
                         <div class="space-y-3">
                             <label class="flex items-center">
                                 <input type="checkbox" name="options[skip_duplicates]" value="1" checked
-                                       class="rounded border-gray-300 dark:border-gray-600 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                       class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
                                 <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Skip duplicate records</span>
                             </label>
                             <label class="flex items-center">
                                 <input type="checkbox" name="options[update_existing]" value="1"
-                                       class="rounded border-gray-300 dark:border-gray-600 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                       class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
                                 <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Update existing records if found</span>
                             </label>
                         </div>
@@ -192,7 +192,7 @@
                             </svg>
                             Back
                         </a>
-                        <button type="submit" class="inline-flex items-center px-6 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition">
+                        <button type="submit" class="inline-flex items-center px-6 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
                             </svg>

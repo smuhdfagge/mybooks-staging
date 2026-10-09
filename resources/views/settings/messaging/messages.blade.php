@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex flex-wrap items-center justify-between gap-2">
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">SMS &amp; WhatsApp messages</h2>
-            <a href="{{ route('settings.messaging') }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">SMS &amp; WhatsApp settings</a>
+            <a href="{{ route('settings.messaging') }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">SMS &amp; WhatsApp settings</a>
         </div>
     </x-slot>
 

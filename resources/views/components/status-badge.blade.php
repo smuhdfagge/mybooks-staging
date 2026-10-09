@@ -1,35 +1,37 @@
 {{--
     Coloured status label for documents: <x-status-badge :status="$quotation->status" />
+    Colours follow the rebrand rule (badge-* in app.css): green done, red
+    problem, amber waiting, navy open or information, grey draft or expired.
 --}}
 @props(['status', 'label' => null])
 
 @php
     $colours = [
-        'draft' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-        'sent' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
-        'open' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
-        'dispatched' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
-        'in_transit' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
-        'accepted' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
-        'received' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
-        'delivered' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
-        'completed' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
-        'closed' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
-        'converted' => 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300',
-        'expired' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300',
-        'rejected' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
-        'active' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
-        'cancelled' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
-        'void' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
-        'reversed' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
-        'success' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
-        'failed' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
-        'queued' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
-        'sending' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
-        'pending' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
+        'draft' => 'badge-muted',
+        'sent' => 'badge-info',
+        'open' => 'badge-info',
+        'dispatched' => 'badge-info',
+        'in_transit' => 'badge-warning',
+        'accepted' => 'badge-success',
+        'received' => 'badge-success',
+        'delivered' => 'badge-success',
+        'completed' => 'badge-success',
+        'closed' => 'badge-success',
+        'converted' => 'badge-info',
+        'expired' => 'badge-muted',
+        'rejected' => 'badge-danger',
+        'active' => 'badge-info',
+        'cancelled' => 'badge-danger',
+        'void' => 'badge-danger',
+        'reversed' => 'badge-danger',
+        'success' => 'badge-success',
+        'failed' => 'badge-danger',
+        'queued' => 'badge-warning',
+        'sending' => 'badge-warning',
+        'pending' => 'badge-warning',
     ];
 @endphp
 
-<span {{ $attributes->merge(['class' => 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full '.($colours[$status] ?? $colours['draft'])]) }}>
+<span {{ $attributes->merge(['class' => 'badge '.($colours[$status] ?? $colours['draft'])]) }}>
     {{ $label ?? ucwords(str_replace('_', ' ', $status)) }}
 </span>

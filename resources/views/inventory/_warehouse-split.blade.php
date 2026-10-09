@@ -20,21 +20,21 @@
                     <tr>
                         <td class="px-6 py-2 text-gray-900 dark:text-gray-100">
                             @if($row->warehouse && Route::has('warehouses.show'))
-                                <a href="{{ route('warehouses.show', $row->warehouse) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $row->warehouse->name }}</a>
+                                <a href="{{ route('warehouses.show', $row->warehouse) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $row->warehouse->name }}</a>
                             @else
                                 {{ $row->warehouse->name ?? '-' }}
                             @endif
                             @if($row->warehouse?->is_default)<span class="ml-1 text-xs text-gray-500 dark:text-gray-400">(default)</span>@endif
                         </td>
                         <td class="px-6 py-2 text-right text-gray-900 dark:text-gray-100">{{ rtrim(rtrim(number_format((float) $row->quantity, 4), '0'), '.') }}</td>
-                        <td class="px-6 py-2 text-right text-orange-600 dark:text-orange-400 hidden sm:table-cell">{{ rtrim(rtrim(number_format((float) $row->reserved_quantity, 4), '0'), '.') }}</td>
+                        <td class="px-6 py-2 text-right text-amber-700 dark:text-amber-300 hidden sm:table-cell">{{ rtrim(rtrim(number_format((float) $row->reserved_quantity, 4), '0'), '.') }}</td>
                         <td class="px-6 py-2 text-right text-green-700 dark:text-green-400">{{ rtrim(rtrim(number_format((float) $row->quantity - (float) $row->reserved_quantity, 4), '0'), '.') }}</td>
                     </tr>
                 @endforeach
                 @if($inTransit > 0)
                     <tr class="bg-yellow-50/60 dark:bg-yellow-900/10">
                         <td class="px-6 py-2 text-gray-900 dark:text-gray-100">
-                            <a href="{{ route('stock-transfers.index', ['status' => 'in_transit']) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">In transit</a>
+                            <a href="{{ route('stock-transfers.index', ['status' => 'in_transit']) }}" class="text-brand-600 dark:text-brand-300 hover:underline">In transit</a>
                             <span class="ml-1 text-xs text-gray-500 dark:text-gray-400">(on the road)</span>
                         </td>
                         <td class="px-6 py-2 text-right text-gray-900 dark:text-gray-100">{{ rtrim(rtrim(number_format($inTransit, 4), '0'), '.') }}</td>

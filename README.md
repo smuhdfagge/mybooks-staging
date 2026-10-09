@@ -191,6 +191,22 @@ There is no webhook: NRS's answer is read from the reply to the submission, and 
 - whether NRS treats a repeated IRN as an error (so a lost reply is checked with Confirm before it is sent again), and whether B2C reports use the same call as B2B;
 - the timeline and the N50,000 B2C limit, and whether the 24-hour clock starts at issue.
 
+## Look and brand
+
+MyBooks uses one main colour, navy `#1F4E79`, with a muted ochre accent for
+small highlights, and IBM Plex Sans (bundled, no outside font service). Green,
+red and amber only ever mean done, problem and waiting.
+
+- Colours live in `tailwind.config.js` (`brand`, `accent`) and
+  `config/brand.php` (PDFs, emails, charts). A test checks the two agree.
+- Use the shared classes in `resources/css/app.css` (`btn-primary`,
+  `btn-secondary`, `link`, `badge-*`, `card`, `form-control`) rather than raw colours.
+- Logo: `<x-brand-mark>`; files in `public/images/brand/`.
+- Never build a colour class from a variable (`text-{{ $c }}-700`): Tailwind
+  never sees it and the text turns black. Write the full class names.
+- `BrandColoursTest` fails if indigo, purple, pink or gradients come back.
+- The full rules are in `docs/REBRAND-PLAN.md`.
+
 ## Useful commands
 
 | Command | What it does |

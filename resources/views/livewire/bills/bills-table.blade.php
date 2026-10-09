@@ -57,7 +57,7 @@
 
         @if($search || $status || $vendor_id || $dateFrom || $dateTo)
             <div class="mt-4 flex items-center">
-                <button wire:click="clearFilters" class="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
+                <button wire:click="clearFilters" class="text-sm text-brand-600 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-300">
                     Clear all filters
                 </button>
             </div>
@@ -73,7 +73,7 @@
                     <tr>
                         <th scope="col" class="px-4 py-3 text-left">
                             <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
-                                class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
+                                class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
                         </th>
                         <x-sort-header field="bill_number" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200">Bill #</x-sort-header>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -96,10 +96,10 @@
                         <tr wire:key="bill-{{ $bill->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700">
                             <td class="px-4 py-4">
                                 <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $bill->id }}"
-                                    class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
+                                    class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <a href="{{ route('bills.show', $bill) }}" class="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
+                                <a href="{{ route('bills.show', $bill) }}" class="text-sm font-medium text-brand-600 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-300">
                                     {{ $bill->bill_number }}
                                 </a>
                                 @if($bill->vendor_bill_number)
@@ -115,7 +115,7 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                                 {{ $bill->bill_date->format('M d, Y') }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm {{ $bill->due_date->isPast() && $bill->balance_due > 0 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-900 dark:text-gray-100' }}">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm {{ $bill->due_date->isPast() && $bill->balance_due > 0 ? 'text-red-600 dark:text-red-300 font-semibold' : 'text-gray-900 dark:text-gray-100' }}">
                                 {{ $bill->due_date->format('M d, Y') }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -125,7 +125,7 @@
                                     @elseif($bill->status === 'overdue') bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
                                     @elseif($bill->status === 'draft') bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200
                                     @elseif($bill->status === 'cancelled') bg-gray-100 text-gray-500 dark:bg-gray-900 dark:text-gray-400
-                                    @else bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200
+                                    @else bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200
                                     @endif">
                                     {{ ucfirst($bill->status) }}
                                 </span>
@@ -133,12 +133,12 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 text-right">
                                 @money($bill->total)
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $bill->balance_due > 0 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-900 dark:text-gray-100' }}">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $bill->balance_due > 0 ? 'text-red-600 dark:text-red-300 font-semibold' : 'text-gray-900 dark:text-gray-100' }}">
                                 @money($bill->balance_due)
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex items-center justify-end gap-2">
-                                    <a href="{{ route('bills.show', $bill) }}" class="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400" title="View" aria-label="View">
+                                    <a href="{{ route('bills.show', $bill) }}" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300" title="View" aria-label="View">
                                         <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
@@ -175,11 +175,11 @@
                                     </svg>
                                     <p class="text-gray-500 dark:text-gray-400 text-sm">No bills found.</p>
                                     @if($search || $status || $vendor_id || $dateFrom || $dateTo)
-                                        <button wire:click="clearFilters" class="mt-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-sm">
+                                        <button wire:click="clearFilters" class="mt-2 text-brand-600 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-300 text-sm">
                                             Clear filters
                                         </button>
                                     @else
-                                        <a href="{{ route('bills.create') }}" class="mt-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-sm">
+                                        <a href="{{ route('bills.create') }}" class="mt-2 text-brand-600 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-300 text-sm">
                                             Create your first bill
                                         </a>
                                     @endif

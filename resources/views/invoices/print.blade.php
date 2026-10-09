@@ -28,7 +28,7 @@
         
         .invoice-header {
             padding: 30px 40px;
-            border-bottom: 3px solid #3B82F6;
+            border-bottom: 3px solid #1F4E79;
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
@@ -49,7 +49,7 @@
         .company-logo-placeholder {
             width: 70px;
             height: 70px;
-            background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+            background: #1F4E79;
             border-radius: 10px;
             display: flex;
             align-items: center;
@@ -79,7 +79,7 @@
         .invoice-title {
             font-size: 32px;
             font-weight: 700;
-            color: #3B82F6;
+            color: #1F4E79;
             letter-spacing: 1px;
             margin-bottom: 5px;
         }
@@ -101,10 +101,10 @@
         }
         
         .status-draft { background: #F3F4F6; color: #6B7280; }
-        .status-sent { background: #DBEAFE; color: #1D4ED8; }
-        .status-paid { background: #D1FAE5; color: #059669; }
+        .status-sent { background: #D9E4EF; color: #183E61; }
+        .status-paid { background: #D1FAE5; color: #2E7D32; }
         .status-partial { background: #FEF3C7; color: #D97706; }
-        .status-overdue { background: #FEE2E2; color: #DC2626; }
+        .status-overdue { background: #FEE2E2; color: #C62828; }
         .status-cancelled { background: #F3F4F6; color: #9CA3AF; }
         
         .invoice-body {
@@ -258,7 +258,7 @@
         }
         
         .total-row.discount .value {
-            color: #DC2626;
+            color: #C62828;
         }
         
         .total-row.grand {
@@ -277,7 +277,7 @@
         .total-row.grand .value {
             font-size: 18px;
             font-weight: 700;
-            color: #3B82F6;
+            color: #1F4E79;
         }
         
         .total-row.balance-due {
@@ -293,7 +293,7 @@
         
         .total-row.balance-due .value {
             font-weight: 700;
-            color: #DC2626;
+            color: #C62828;
         }
         
         .notes-terms-section {
@@ -309,7 +309,7 @@
             background: #F9FAFB;
             padding: 15px;
             border-radius: 8px;
-            border-left: 3px solid #3B82F6;
+            border-left: 3px solid #1F4E79;
         }
         
         .notes-box h4, .terms-box h4 {
@@ -346,13 +346,13 @@
         }
         
         .footer-contact a {
-            color: #3B82F6;
+            color: #1F4E79;
             text-decoration: none;
         }
         
         .thank-you {
             font-size: 14px;
-            color: #3B82F6;
+            color: #1F4E79;
             font-weight: 500;
             margin-bottom: 10px;
         }
@@ -381,12 +381,12 @@
         }
         
         .btn-primary {
-            background: #3B82F6;
+            background: #1F4E79;
             color: white;
         }
         
         .btn-primary:hover {
-            background: #2563EB;
+            background: #1F4E79;
         }
         
         .btn-secondary {
@@ -588,7 +588,7 @@
                     @if($invoice->amount_paid > 0)
                     <div class="total-row" style="margin-top: 10px;">
                         <span class="label">Amount Paid</span>
-                        <span class="value" style="color: #059669;">{{ $tenant->currency_symbol }}{{ number_format($invoice->amount_paid, 2) }}</span>
+                        <span class="value" style="color: #2E7D32;">{{ $tenant->currency_symbol }}{{ number_format($invoice->amount_paid, 2) }}</span>
                     </div>
                     @endif
                     @if($invoice->balance_due > 0 && $invoice->balance_due != $invoice->total)

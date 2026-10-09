@@ -24,7 +24,7 @@
                         <div class="lg:col-span-1">
                             <label for="comparison_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Comparison Type</label>
                             <select name="comparison_type" id="comparison_type" data-call="toggleCustomDates" data-pass-value
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                                 <option value="month" {{ $comparisonType === 'month' ? 'selected' : '' }}>Month over Month</option>
                                 <option value="quarter" {{ $comparisonType === 'quarter' ? 'selected' : '' }}>Quarter over Quarter</option>
                                 <option value="year" {{ $comparisonType === 'year' ? 'selected' : '' }}>Year over Year</option>
@@ -38,29 +38,29 @@
                                 <div>
                                     <label for="current_start" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Current Start</label>
                                     <input type="date" name="current_start" id="current_start" value="{{ request('current_start', now()->startOfMonth()->format('Y-m-d')) }}"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                                 </div>
                                 <div>
                                     <label for="current_end" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Current End</label>
                                     <input type="date" name="current_end" id="current_end" value="{{ request('current_end', now()->format('Y-m-d')) }}"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                                 </div>
                                 <div>
                                     <label for="previous_start" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Previous Start</label>
                                     <input type="date" name="previous_start" id="previous_start" value="{{ request('previous_start', now()->subMonth()->startOfMonth()->format('Y-m-d')) }}"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                                 </div>
                                 <div>
                                     <label for="previous_end" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Previous End</label>
                                     <input type="date" name="previous_end" id="previous_end" value="{{ request('previous_end', now()->subMonth()->endOfMonth()->format('Y-m-d')) }}"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                                 </div>
                             </div>
                         </div>
                     </div>
                     
                     <div class="flex justify-end">
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                             </svg>
@@ -79,19 +79,19 @@
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $period['label'] }}</h3>
                         @if($key === 'current')
-                            <span class="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">Current</span>
+                            <span class="px-2 py-1 text-xs font-semibold bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200 rounded-full">Current</span>
                         @else
                             <span class="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 rounded-full">Previous</span>
                         @endif
                     </div>
                     <div class="text-center">
                         <p class="text-sm text-gray-500 dark:text-gray-400">Net Cash Flow</p>
-                        <p class="text-3xl font-bold {{ $period['netCashFlow'] >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                        <p class="text-3xl font-bold {{ $period['netCashFlow'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                             {{ $period['netCashFlow'] >= 0 ? '+' : '' }}{{ number_format($period['netCashFlow'], 2) }}
                         </p>
                         <div class="mt-2 flex justify-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-                            <span class="text-green-600 dark:text-green-400">In: {{ number_format($period['totalInflows'], 2) }}</span>
-                            <span class="text-red-600 dark:text-red-400">Out: {{ number_format($period['totalOutflows'], 2) }}</span>
+                            <span class="text-green-700 dark:text-green-400">In: {{ number_format($period['totalInflows'], 2) }}</span>
+                            <span class="text-red-600 dark:text-red-300">Out: {{ number_format($period['totalOutflows'], 2) }}</span>
                         </div>
                     </div>
                 </div>
@@ -105,20 +105,20 @@
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Change</h3>
                     <div class="text-center">
                         <p class="text-sm text-gray-500 dark:text-gray-400">Difference</p>
-                        <p class="text-3xl font-bold {{ $changes['netCashFlow']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                        <p class="text-3xl font-bold {{ $changes['netCashFlow']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                             {{ $changes['netCashFlow']['difference'] >= 0 ? '+' : '' }}{{ number_format($changes['netCashFlow']['difference'], 2) }}
                         </p>
                         <div class="flex items-center justify-center mt-2">
                             @if($changes['netCashFlow']['improved'])
-                                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
                                 </svg>
                             @else
-                                <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
                                 </svg>
                             @endif
-                            <span class="ml-1 text-sm {{ $changes['netCashFlow']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                            <span class="ml-1 text-sm {{ $changes['netCashFlow']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                 {{ number_format(abs($changes['netCashFlow']['percentChange']), 1) }}%
                             </span>
                         </div>
@@ -166,12 +166,12 @@
                                     Payments Received
                                 </td>
                                 @foreach($periodData as $period)
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-green-600 dark:text-green-400">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-green-700 dark:text-green-400">
                                     {{ number_format($period['paymentsReceived'], 2) }}
                                 </td>
                                 @endforeach
                                 @if(isset($changes['paymentsReceived']))
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['paymentsReceived']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['paymentsReceived']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                     {{ $changes['paymentsReceived']['difference'] >= 0 ? '+' : '' }}{{ number_format($changes['paymentsReceived']['difference'], 2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
@@ -195,7 +195,7 @@
                                 </td>
                                 @endforeach
                                 @if(isset($changes['totalInflows']))
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['totalInflows']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['totalInflows']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                     {{ $changes['totalInflows']['difference'] >= 0 ? '+' : '' }}{{ number_format($changes['totalInflows']['difference'], 2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
@@ -221,12 +221,12 @@
                                     Payments to Vendors
                                 </td>
                                 @foreach($periodData as $period)
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600 dark:text-red-400">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600 dark:text-red-300">
                                     ({{ number_format($period['paymentsMade'], 2) }})
                                 </td>
                                 @endforeach
                                 @if(isset($changes['paymentsMade']))
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['paymentsMade']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['paymentsMade']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                     {{ $changes['paymentsMade']['difference'] >= 0 ? '+' : '' }}{{ number_format($changes['paymentsMade']['difference'], 2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
@@ -245,12 +245,12 @@
                                     Operating Expenses
                                 </td>
                                 @foreach($periodData as $period)
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600 dark:text-red-400">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600 dark:text-red-300">
                                     ({{ number_format($period['expensesPaid'], 2) }})
                                 </td>
                                 @endforeach
                                 @if(isset($changes['expensesPaid']))
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['expensesPaid']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['expensesPaid']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                     {{ $changes['expensesPaid']['difference'] >= 0 ? '+' : '' }}{{ number_format($changes['expensesPaid']['difference'], 2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
@@ -269,12 +269,12 @@
                                     Payroll
                                 </td>
                                 @foreach($periodData as $period)
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600 dark:text-red-400">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600 dark:text-red-300">
                                     ({{ number_format($period['payrollPaid'], 2) }})
                                 </td>
                                 @endforeach
                                 @if(isset($changes['payrollPaid']))
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['payrollPaid']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['payrollPaid']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                     {{ $changes['payrollPaid']['difference'] >= 0 ? '+' : '' }}{{ number_format($changes['payrollPaid']['difference'], 2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
@@ -298,7 +298,7 @@
                                 </td>
                                 @endforeach
                                 @if(isset($changes['totalOutflows']))
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['totalOutflows']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $changes['totalOutflows']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                     {{ $changes['totalOutflows']['difference'] >= 0 ? '+' : '' }}{{ number_format($changes['totalOutflows']['difference'], 2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
@@ -317,12 +317,12 @@
                                     Net Cash Flow
                                 </td>
                                 @foreach($periodData as $period)
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-bold {{ $period['netCashFlow'] >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-bold {{ $period['netCashFlow'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                     {{ $period['netCashFlow'] >= 0 ? '+' : '' }}{{ number_format($period['netCashFlow'], 2) }}
                                 </td>
                                 @endforeach
                                 @if(isset($changes['netCashFlow']))
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-bold {{ $changes['netCashFlow']['improved'] ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-bold {{ $changes['netCashFlow']['improved'] ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                     {{ $changes['netCashFlow']['difference'] >= 0 ? '+' : '' }}{{ number_format($changes['netCashFlow']['difference'], 2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
@@ -353,7 +353,7 @@
                             <div>
                                 <div class="flex justify-between text-sm mb-1">
                                     <span class="text-gray-600 dark:text-gray-400">Cash Inflows</span>
-                                    <span class="text-green-600 dark:text-green-400 font-medium">{{ number_format($period['totalInflows'], 2) }}</span>
+                                    <span class="text-green-700 dark:text-green-400 font-medium">{{ number_format($period['totalInflows'], 2) }}</span>
                                 </div>
                                 <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-6">
                                     @php
@@ -372,7 +372,7 @@
                             <div>
                                 <div class="flex justify-between text-sm mb-1">
                                     <span class="text-gray-600 dark:text-gray-400">Cash Outflows</span>
-                                    <span class="text-red-600 dark:text-red-400 font-medium">{{ number_format($period['totalOutflows'], 2) }}</span>
+                                    <span class="text-red-600 dark:text-red-300 font-medium">{{ number_format($period['totalOutflows'], 2) }}</span>
                                 </div>
                                 <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-6">
                                     @php
@@ -391,7 +391,7 @@
                             <div class="pt-2 border-t border-gray-200 dark:border-gray-600">
                                 <div class="flex justify-between text-sm mb-1">
                                     <span class="text-gray-600 dark:text-gray-400 font-medium">Net Cash Flow</span>
-                                    <span class="{{ $period['netCashFlow'] >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }} font-bold">
+                                    <span class="{{ $period['netCashFlow'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }} font-bold">
                                         {{ $period['netCashFlow'] >= 0 ? '+' : '' }}{{ number_format($period['netCashFlow'], 2) }}
                                     </span>
                                 </div>
