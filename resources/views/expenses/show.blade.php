@@ -9,7 +9,7 @@
             </div>
             <div class="flex flex-wrap gap-2">
                 @if($expense->canBeEdited())
-                    <a href="{{ route('expenses.edit', $expense) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                    <a href="{{ route('expenses.edit', $expense) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                         </svg>
@@ -51,7 +51,7 @@
                                 $statusColors = [
                                     'draft' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
                                     'pending_approval' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400',
-                                    'approved' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400',
+                                    'approved' => 'bg-brand-100 text-brand-800 dark:bg-brand-900/50 dark:text-brand-300',
                                     'rejected' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400',
                                     'paid' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400',
                                 ];
@@ -74,7 +74,7 @@
                             @if($expense->canBeSubmitted())
                                 <form action="{{ route('expenses.submit', $expense) }}" method="POST" class="inline">
                                     @csrf
-                                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition">
+                                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                         </svg>
@@ -208,7 +208,7 @@
                                 <div class="flex justify-between">
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Name</dt>
                                     <dd class="text-sm text-gray-900 dark:text-gray-100">
-                                        <a href="{{ route('vendors.show', $expense->vendor) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900">
+                                        <a href="{{ route('vendors.show', $expense->vendor) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900">
                                             {{ $expense->vendor->name }}
                                         </a>
                                     </dd>
@@ -223,7 +223,7 @@
                                 <div class="flex justify-between">
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Email</dt>
                                     <dd class="text-sm text-gray-900 dark:text-gray-100">
-                                        <a href="mailto:{{ $expense->vendor->email }}" class="text-indigo-600 dark:text-indigo-400">{{ $expense->vendor->email }}</a>
+                                        <a href="mailto:{{ $expense->vendor->email }}" class="text-brand-600 dark:text-brand-300">{{ $expense->vendor->email }}</a>
                                     </dd>
                                 </div>
                                 @endif
@@ -277,7 +277,7 @@
                             </svg>
                             Journal Entry
                         </span>
-                        <a href="{{ route('journals.show', $expense->journal) }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+                        <a href="{{ route('journals.show', $expense->journal) }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">
                             {{ $expense->journal->journal_number }}
                         </a>
                     </h3>
@@ -339,7 +339,7 @@
             @if($expense->canBeEdited())
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
                 <div class="p-6 flex flex-wrap gap-4">
-                    <a href="{{ route('expenses.edit', $expense) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                    <a href="{{ route('expenses.edit', $expense) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                         </svg>
@@ -396,7 +396,7 @@
                         <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:w-auto sm:text-sm">
                             Reject Expense
                         </button>
-                        <button type="button" data-close-modal="reject-expense" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm">
+                        <button type="button" data-close-modal="reject-expense" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 sm:mt-0 sm:w-auto sm:text-sm">
                             Cancel
                         </button>
                     </div>

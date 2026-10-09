@@ -6,7 +6,7 @@
             </h2>
             <div class="flex space-x-2">
                 @can('edit fixed-asset-categories')
-                <a href="{{ route('fixed-asset-categories.edit', $category) }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                <a href="{{ route('fixed-asset-categories.edit', $category) }}" class="bg-brand-500 hover:bg-brand-700 text-white font-bold py-2 px-4 rounded">
                     Edit Category
                 </a>
                 @endcan
@@ -180,7 +180,7 @@
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                            <a href="{{ route('fixed-assets.show', $asset) }}" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                                            <a href="{{ route('fixed-assets.show', $asset) }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-300">
                                                 View
                                             </a>
                                         </td>

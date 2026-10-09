@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex items-center justify-between gap-4">
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Pay a Supplier in Advance</h2>
-            <a href="{{ route('supplier-advances.index') }}" class="text-sm text-indigo-600 dark:text-indigo-400">Back</a>
+            <a href="{{ route('supplier-advances.index') }}" class="text-sm text-brand-600 dark:text-brand-300">Back</a>
         </div>
     </x-slot>
 

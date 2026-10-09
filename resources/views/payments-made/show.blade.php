@@ -8,7 +8,7 @@
                 <p class="text-sm text-gray-500 dark:text-gray-400">Payment made on {{ $paymentMade->payment_date?->format('M d, Y') ?? 'N/A' }}</p>
             </div>
             <div class="flex flex-wrap gap-2">
-                <a href="{{ route('payments-made.edit', $paymentMade) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                <a href="{{ route('payments-made.edit', $paymentMade) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                     </svg>
@@ -27,10 +27,10 @@
     <div class="py-6">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <!-- Payment Amount Card -->
-            <div class="bg-gradient-to-r from-red-500 to-red-600 rounded-lg shadow-lg p-6 mb-6 text-white">
+            <div class="bg-brand-900 rounded-lg shadow-sm p-6 mb-6 text-white">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-red-100 text-sm font-medium">Amount Paid</p>
+                        <p class="text-brand-100 text-sm font-medium">Amount Paid</p>
                         <p class="text-4xl font-bold mt-1">@money($paymentMade->amount)</p>
                     </div>
                     <div class="bg-white/20 rounded-full p-4">
@@ -66,10 +66,10 @@
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Payment Method</dt>
                                 <dd>
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                        {{ $paymentMade->payment_method === 'cash' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400' : '' }}
-                                        {{ $paymentMade->payment_method === 'bank_transfer' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400' : '' }}
-                                        {{ $paymentMade->payment_method === 'check' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400' : '' }}
-                                        {{ $paymentMade->payment_method === 'credit_card' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-400' : '' }}
+                                        {{ $paymentMade->payment_method === 'cash' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' : '' }}
+                                        {{ $paymentMade->payment_method === 'bank_transfer' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' : '' }}
+                                        {{ $paymentMade->payment_method === 'check' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' : '' }}
+                                        {{ $paymentMade->payment_method === 'credit_card' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' : '' }}
                                         {{ !in_array($paymentMade->payment_method, ['cash', 'bank_transfer', 'check', 'credit_card']) ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' : '' }}">
                                         {{ ucfirst(str_replace('_', ' ', $paymentMade->payment_method)) }}
                                     </span>
@@ -103,7 +103,7 @@
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Vendor</dt>
                                 <dd class="text-sm text-gray-900 dark:text-gray-100">
                                     @if($paymentMade->vendor)
-                                        <a href="{{ route('vendors.show', $paymentMade->vendor) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">
+                                        <a href="{{ route('vendors.show', $paymentMade->vendor) }}" class="text-brand-600 dark:text-brand-300 hover:underline">
                                             {{ $paymentMade->vendor->name }}
                                         </a>
                                     @else
@@ -121,7 +121,7 @@
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Applied to Bill</dt>
                                 <dd>
                                     @if($paymentMade->bill)
-                                        <a href="{{ route('bills.show', $paymentMade->bill) }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+                                        <a href="{{ route('bills.show', $paymentMade->bill) }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">
                                             {{ $paymentMade->bill->bill_number }}
                                         </a>
                                     @else
@@ -171,7 +171,7 @@
                             </svg>
                             Journal Entry
                         </span>
-                        <a href="{{ route('journals.show', $paymentMade->journal) }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+                        <a href="{{ route('journals.show', $paymentMade->journal) }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">
                             {{ $paymentMade->journal->journal_number }}
                         </a>
                     </h3>

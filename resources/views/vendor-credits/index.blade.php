@@ -50,7 +50,7 @@
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                 @foreach($credits as $credit)
                                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                        <td class="px-4 py-3 whitespace-nowrap"><a href="{{ route('vendor-credits.show', $credit) }}" class="text-indigo-600 dark:text-indigo-400 font-medium">{{ $credit->vendor_credit_number }}</a></td>
+                                        <td class="px-4 py-3 whitespace-nowrap"><a href="{{ route('vendor-credits.show', $credit) }}" class="text-brand-600 dark:text-brand-300 font-medium">{{ $credit->vendor_credit_number }}</a></td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{{ $credit->credit_date->format('d M Y') }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $credit->vendor->name }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 hidden md:table-cell">{{ $credit->bill?->bill_number ?? '—' }}</td>

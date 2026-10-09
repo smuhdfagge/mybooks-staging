@@ -14,8 +14,8 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
             <div class="flex gap-3 text-sm">
-                <a href="{{ route('supplier-advances.index') }}" class="{{ request()->boolean('unused') ? 'text-gray-500' : 'font-semibold text-indigo-600 dark:text-indigo-400' }}">All</a>
-                <a href="{{ route('supplier-advances.index', ['unused' => 1]) }}" class="{{ request()->boolean('unused') ? 'font-semibold text-indigo-600 dark:text-indigo-400' : 'text-gray-500' }}">Not yet used</a>
+                <a href="{{ route('supplier-advances.index') }}" class="{{ request()->boolean('unused') ? 'text-gray-500' : 'font-semibold text-brand-600 dark:text-brand-300' }}">All</a>
+                <a href="{{ route('supplier-advances.index', ['unused' => 1]) }}" class="{{ request()->boolean('unused') ? 'font-semibold text-brand-600 dark:text-brand-300' : 'text-gray-500' }}">Not yet used</a>
             </div>
             <x-card>
                 @if($advances->isEmpty())
@@ -35,7 +35,7 @@
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                 @foreach($advances as $advance)
                                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                        <td class="px-4 py-3 whitespace-nowrap"><a href="{{ route('supplier-advances.show', $advance) }}" class="text-indigo-600 dark:text-indigo-400 font-medium">{{ $advance->payment_number }}</a></td>
+                                        <td class="px-4 py-3 whitespace-nowrap"><a href="{{ route('supplier-advances.show', $advance) }}" class="text-brand-600 dark:text-brand-300 font-medium">{{ $advance->payment_number }}</a></td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{{ $advance->payment_date->format('d M Y') }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $advance->vendor->name }}</td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100">@money($advance->amount)</td>

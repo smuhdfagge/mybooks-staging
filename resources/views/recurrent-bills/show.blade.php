@@ -25,7 +25,7 @@
                         @endif
                     </button>
                 </form>
-                <a href="{{ route('recurrent-bills.edit', $recurrentBill) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                <a href="{{ route('recurrent-bills.edit', $recurrentBill) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                     </svg>
@@ -74,7 +74,7 @@
                     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                                <svg class="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 mr-2 text-brand-500 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                 </svg>
                                 Schedule Details
@@ -184,7 +184,7 @@
                                     @if($recurrentBill->vendor->phone)
                                         <p class="text-sm text-gray-600 dark:text-gray-400">{{ $recurrentBill->vendor->phone }}</p>
                                     @endif
-                                    <a href="{{ route('vendors.show', $recurrentBill->vendor) }}" class="inline-flex items-center text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 mt-2">
+                                    <a href="{{ route('vendors.show', $recurrentBill->vendor) }}" class="inline-flex items-center text-sm text-brand-600 dark:text-brand-300 hover:text-brand-900 mt-2">
                                         View Vendor →
                                     </a>
                                 </div>
@@ -202,7 +202,7 @@
                                 <ul class="space-y-2">
                                     @foreach($recurrentBill->bills->take(10) as $bill)
                                         <li class="flex justify-between items-center text-sm">
-                                            <a href="{{ route('bills.show', $bill) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900">
+                                            <a href="{{ route('bills.show', $bill) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900">
                                                 {{ $bill->bill_number }}
                                             </a>
                                             <span class="text-gray-500 dark:text-gray-400">{{ $bill->bill_date->format('M d, Y') }}</span>

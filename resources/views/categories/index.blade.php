@@ -6,7 +6,7 @@
             </h2>
             <div class="flex space-x-2">
                 @can('create fixed-asset-categories')
-                <a href="{{ route('fixed-asset-categories.create') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                <a href="{{ route('fixed-asset-categories.create') }}" class="bg-brand-500 hover:bg-brand-700 text-white font-bold py-2 px-4 rounded">
                     Add New Category
                 </a>
                 @endcan

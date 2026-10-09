@@ -36,13 +36,13 @@
         <div>
             <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
             <input wire:model.live.debounce.300ms="search" type="text" id="search" placeholder="Search payments..."
-                class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400 sm:text-sm">
+                class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:focus:border-brand-400 dark:focus:ring-brand-400 sm:text-sm">
         </div>
 
         <div>
             <label for="vendor" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Vendor</label>
             <select wire:model.live="vendor" id="vendor"
-                class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400 sm:text-sm">
+                class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:focus:border-brand-400 dark:focus:ring-brand-400 sm:text-sm">
                 <option value="">All Vendors</option>
                 @foreach($vendors as $v)
                     <option value="{{ $v->id }}">{{ $v->company_name ?: $v->contact_name }}</option>
@@ -53,7 +53,7 @@
         <div>
             <label for="paymentMethod" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Payment Method</label>
             <select wire:model.live="paymentMethod" id="paymentMethod"
-                class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400 sm:text-sm">
+                class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:focus:border-brand-400 dark:focus:ring-brand-400 sm:text-sm">
                 <option value="">All Methods</option>
                 @foreach($paymentMethods as $method)
                     <option value="{{ $method }}">{{ ucfirst($method) }}</option>
@@ -64,13 +64,13 @@
         <div>
             <label for="dateFrom" class="block text-sm font-medium text-gray-700 dark:text-gray-300">From Date</label>
             <input wire:model.live="dateFrom" type="date" id="dateFrom"
-                class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400 sm:text-sm">
+                class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:focus:border-brand-400 dark:focus:ring-brand-400 sm:text-sm">
         </div>
 
         <div>
             <label for="dateTo" class="block text-sm font-medium text-gray-700 dark:text-gray-300">To Date</label>
             <input wire:model.live="dateTo" type="date" id="dateTo"
-                class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400 sm:text-sm">
+                class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:focus:border-brand-400 dark:focus:ring-brand-400 sm:text-sm">
         </div>
     </div>
 
@@ -86,13 +86,13 @@
             @if(count($selectedItems) > 0)
                 <span class="text-sm text-gray-600 dark:text-gray-400">{{ count($selectedItems) }} selected</span>
             @endif
-            <select aria-label="Bulk action" wire:model="bulkAction" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400">
+            <select aria-label="Bulk action" wire:model="bulkAction" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:focus:border-brand-400 dark:focus:ring-brand-400">
                 <option value="">Bulk Actions</option>
                 <option value="delete">Delete Selected</option>
             </select>
             <button wire:click="applyBulkAction" wire:loading.attr="disabled" 
                 wire:confirm="Are you sure you want to perform this action on the selected payments?"
-                class="inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                class="inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
                 @if(empty($selectedItems)) disabled @endif>
                 Apply
             </button>
@@ -106,7 +106,7 @@
                 <tr>
                     <th scope="col" class="w-12 px-6 py-3">
                         <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
-                            class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700 dark:checked:bg-indigo-500">
+                            class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-brand-600 focus:ring-brand-500 dark:bg-gray-700 dark:checked:bg-brand-500 dark:text-brand-300">
                     </th>
                     <x-sort-header field="payment_number" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Payment #</x-sort-header>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
@@ -133,16 +133,16 @@
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td class="px-6 py-4">
                             <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $payment->id }}"
-                                class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700 dark:checked:bg-indigo-500">
+                                class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-brand-600 focus:ring-brand-500 dark:bg-gray-700 dark:checked:bg-brand-500 dark:text-brand-300">
                         </td>
                         <td class="whitespace-nowrap px-6 py-4">
-                            <a href="{{ route('payments-made.show', $payment) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">
+                            <a href="{{ route('payments-made.show', $payment) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300">
                                 {{ $payment->payment_number }}
                             </a>
                         </td>
                         <td class="whitespace-nowrap px-6 py-4">
                             @if($payment->vendor)
-                                <a href="{{ route('vendors.show', $payment->vendor) }}" class="text-gray-900 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-indigo-400">
+                                <a href="{{ route('vendors.show', $payment->vendor) }}" class="text-gray-900 dark:text-gray-100 hover:text-brand-600 dark:hover:text-brand-300">
                                     {{ $payment->vendor->company_name ?: $payment->vendor->contact_name }}
                                 </a>
                             @else
@@ -154,7 +154,7 @@
                         </td>
                         <td class="whitespace-nowrap px-6 py-4">
                             @if($payment->bill)
-                                <a href="{{ route('bills.show', $payment->bill) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">
+                                <a href="{{ route('bills.show', $payment->bill) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300">
                                     {{ $payment->bill->bill_number }}
                                 </a>
                             @else
@@ -172,7 +172,7 @@
                         </td>
                         <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                             <div class="flex items-center justify-end space-x-2">
-                                <a href="{{ route('payments-made.show', $payment) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">View</a>
+                                <a href="{{ route('payments-made.show', $payment) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300">View</a>
                                 <a href="{{ route('payments-made.edit', $payment) }}" class="text-yellow-600 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-300">Edit</a>
                                 <form action="{{ route('payments-made.destroy', $payment) }}" method="POST" class="inline"
                                     data-confirm="Are you sure you want to delete this payment?">
@@ -199,7 +199,7 @@
         <div class="flex items-center gap-2">
             <label for="perPage" class="text-sm text-gray-600 dark:text-gray-400">Show</label>
             <select wire:model.live="perPage" id="perPage"
-                class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400">
+                class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:focus:border-brand-400 dark:focus:ring-brand-400">
                 <option value="10">10</option>
                 <option value="25">25</option>
                 <option value="50">50</option>
