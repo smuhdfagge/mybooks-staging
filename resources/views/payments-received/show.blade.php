@@ -10,7 +10,7 @@
                         </span>
                     @endif
                     @if($paymentReceived->payment_method === 'deposit')
-                        <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400">
+                        <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800 dark:bg-brand-900/50 dark:text-brand-300">
                             From Deposit
                         </span>
                     @endif
@@ -32,7 +32,7 @@
                         Apply to Invoice
                     </a>
                 @endif
-                <a href="{{ route('payments-received.edit', $paymentReceived) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                <a href="{{ route('payments-received.edit', $paymentReceived) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                     </svg>
@@ -51,7 +51,7 @@
     <div class="py-6">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <!-- Payment Amount Card -->
-            <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow-lg p-6 mb-6 text-white">
+            <div class="bg-green-700 rounded-lg shadow-sm p-6 mb-6 text-white">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-green-100 text-sm font-medium">
@@ -106,10 +106,10 @@
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Payment Method</dt>
                                 <dd>
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                        {{ $paymentReceived->payment_method === 'cash' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400' : '' }}
-                                        {{ $paymentReceived->payment_method === 'bank_transfer' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400' : '' }}
-                                        {{ $paymentReceived->payment_method === 'check' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400' : '' }}
-                                        {{ $paymentReceived->payment_method === 'credit_card' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-400' : '' }}
+                                        {{ $paymentReceived->payment_method === 'cash' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' : '' }}
+                                        {{ $paymentReceived->payment_method === 'bank_transfer' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' : '' }}
+                                        {{ $paymentReceived->payment_method === 'check' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' : '' }}
+                                        {{ $paymentReceived->payment_method === 'credit_card' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' : '' }}
                                         {{ !in_array($paymentReceived->payment_method, ['cash', 'bank_transfer', 'check', 'credit_card']) ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' : '' }}">
                                         {{ ucfirst(str_replace('_', ' ', $paymentReceived->payment_method)) }}
                                     </span>
@@ -143,7 +143,7 @@
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Customer</dt>
                                 <dd class="text-sm text-gray-900 dark:text-gray-100">
                                     @if($paymentReceived->customer)
-                                        <a href="{{ route('customers.show', $paymentReceived->customer) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">
+                                        <a href="{{ route('customers.show', $paymentReceived->customer) }}" class="text-brand-600 dark:text-brand-300 hover:underline">
                                             {{ $paymentReceived->customer->name }}
                                         </a>
                                     @else
@@ -161,7 +161,7 @@
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Applied to Invoice</dt>
                                 <dd>
                                     @if($paymentReceived->invoice)
-                                        <a href="{{ route('invoices.show', $paymentReceived->invoice) }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+                                        <a href="{{ route('invoices.show', $paymentReceived->invoice) }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">
                                             {{ $paymentReceived->invoice->invoice_number }}
                                         </a>
                                     @elseif($paymentReceived->is_deposit)
@@ -208,7 +208,7 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
                 <div class="p-6">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 mr-2 text-brand-500 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                         </svg>
                         Deposit Applications
@@ -229,7 +229,7 @@
                                         {{ $application->application_date->format('M d, Y') }}
                                     </td>
                                     <td class="px-4 py-3 text-sm">
-                                        <a href="{{ route('invoices.show', $application->invoice) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">
+                                        <a href="{{ route('invoices.show', $application->invoice) }}" class="text-brand-600 dark:text-brand-300 hover:underline">
                                             {{ $application->invoice->invoice_number }}
                                         </a>
                                     </td>
@@ -277,7 +277,7 @@
                             </svg>
                             Journal Entry
                         </span>
-                        <a href="{{ route('journals.show', $paymentReceived->journal) }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+                        <a href="{{ route('journals.show', $paymentReceived->journal) }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">
                             {{ $paymentReceived->journal->journal_number }}
                         </a>
                     </h3>

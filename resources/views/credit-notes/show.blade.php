@@ -8,9 +8,9 @@
                     <x-status-badge :status="$cn->status" :label="$cn->status === 'closed' ? 'Used up' : null" />
                 </h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400">
-                    <a href="{{ route('customers.show', $cn->customer) }}" class="text-indigo-600 dark:text-indigo-400">{{ $cn->customer->name }}</a>
+                    <a href="{{ route('customers.show', $cn->customer) }}" class="text-brand-600 dark:text-brand-300">{{ $cn->customer->name }}</a>
                     · {{ $cn->credit_note_date->format('d M Y') }}
-                    @if($cn->invoice) · for invoice <a href="{{ route('invoices.show', $cn->invoice) }}" class="text-indigo-600 dark:text-indigo-400">{{ $cn->invoice->invoice_number }}</a>@endif
+                    @if($cn->invoice) · for invoice <a href="{{ route('invoices.show', $cn->invoice) }}" class="text-brand-600 dark:text-brand-300">{{ $cn->invoice->invoice_number }}</a>@endif
                     @if($cn->reason) · {{ \App\Models\CreditNote::REASONS[$cn->reason] ?? $cn->reason }}@endif
                 </p>
             </div>
@@ -35,8 +35,8 @@
                         </form>
                     @endif
                 @endcan
-                <a href="{{ route('credit-notes.print', $cn) }}" target="_blank" class="inline-flex items-center px-4 py-2 rounded-md bg-blue-600 text-white text-xs font-semibold uppercase tracking-widest hover:bg-blue-700">Print</a>
-                <a href="{{ route('credit-notes.pdf', $cn) }}" class="inline-flex items-center px-4 py-2 rounded-md bg-blue-600 text-white text-xs font-semibold uppercase tracking-widest hover:bg-blue-700">PDF</a>
+                <a href="{{ route('credit-notes.print', $cn) }}" target="_blank" class="inline-flex items-center px-4 py-2 rounded-md bg-brand-600 text-white text-xs font-semibold uppercase tracking-widest hover:bg-brand-700">Print</a>
+                <a href="{{ route('credit-notes.pdf', $cn) }}" class="inline-flex items-center px-4 py-2 rounded-md bg-brand-600 text-white text-xs font-semibold uppercase tracking-widest hover:bg-brand-700">PDF</a>
                 <a href="{{ route('credit-notes.index') }}" class="inline-flex items-center px-4 py-2 rounded-md bg-gray-600 text-white text-xs font-semibold uppercase tracking-widest">Back</a>
             </div>
         </div>
@@ -58,7 +58,7 @@
                 </x-card>
                 <x-card class="p-4">
                     <p class="text-sm text-gray-500 dark:text-gray-400">Left to use</p>
-                    <p class="text-2xl font-semibold text-indigo-600 dark:text-indigo-400">@money($cn->isOpen() ? $cn->balance : 0)</p>
+                    <p class="text-2xl font-semibold text-brand-600 dark:text-brand-300">@money($cn->isOpen() ? $cn->balance : 0)</p>
                 </x-card>
             </div>
 
@@ -170,7 +170,7 @@
                     <ul class="divide-y divide-gray-200 dark:divide-gray-700 p-6 pt-3 text-sm text-gray-900 dark:text-gray-100">
                         @foreach($cn->applications as $application)
                             <li class="py-2 flex justify-between gap-3">
-                                <span>{{ $application->applied_date->format('d M Y') }} · applied to invoice <a href="{{ route('invoices.show', $application->invoice) }}" class="text-indigo-600 dark:text-indigo-400">{{ $application->invoice->invoice_number }}</a></span>
+                                <span>{{ $application->applied_date->format('d M Y') }} · applied to invoice <a href="{{ route('invoices.show', $application->invoice) }}" class="text-brand-600 dark:text-brand-300">{{ $application->invoice->invoice_number }}</a></span>
                                 <span class="font-medium">@money($application->amount)</span>
                             </li>
                         @endforeach

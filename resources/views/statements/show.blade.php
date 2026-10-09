@@ -107,9 +107,9 @@
                             <p class="text-lg sm:text-2xl font-semibold text-red-600 dark:text-red-400">@money($s->ageing['1_30'] + $s->ageing['31_60'] + $s->ageing['61_90'] + $s->ageing['over_90'])</p>
                         </x-card>
                     @endif
-                    <x-card class="p-4 ring-1 ring-indigo-200 dark:ring-indigo-800">
+                    <x-card class="p-4 ring-1 ring-brand-200 dark:ring-brand-800">
                         <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{{ $s->isActivity() ? 'Closing balance' : $s->balanceText() }}</p>
-                        <p class="text-lg sm:text-2xl font-semibold text-indigo-600 dark:text-indigo-400">@money($s->closing)</p>
+                        <p class="text-lg sm:text-2xl font-semibold text-brand-600 dark:text-brand-300">@money($s->closing)</p>
                         @if($s->isActivity())<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $s->balanceText() }}</p>@endif
                     </x-card>
                 </div>
@@ -138,7 +138,7 @@
                                         <tr>
                                             <td class="px-3 sm:px-4 py-2 whitespace-nowrap text-gray-700 dark:text-gray-300 text-xs sm:text-sm">{{ \Carbon\Carbon::parse($row['date'])->format('j M y') }}</td>
                                             <td class="px-3 sm:px-4 py-2 text-gray-900 dark:text-gray-100">
-                                                @if($row['url'])<a href="{{ $row['url'] }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $row['label'] }}</a>@else{{ $row['label'] }}@endif
+                                                @if($row['url'])<a href="{{ $row['url'] }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $row['label'] }}</a>@else{{ $row['label'] }}@endif
                                                 @if($row['due_date'] && $row['charge'] > 0)<span class="block text-xs text-gray-500 dark:text-gray-400">Due {{ \Carbon\Carbon::parse($row['due_date'])->format('j M Y') }}</span>@endif
                                                 {{-- Amounts under the details on phones --}}
                                                 <span class="sm:hidden block text-xs mt-0.5">
@@ -160,7 +160,7 @@
                                         <td class="px-3 sm:px-4 py-3 text-gray-900 dark:text-gray-100">Closing balance</td>
                                         <td class="hidden sm:table-cell px-4 py-3 text-right whitespace-nowrap">@money($s->totalCharges)</td>
                                         <td class="hidden sm:table-cell px-4 py-3 text-right whitespace-nowrap text-green-600 dark:text-green-400">@money($s->totalCredits)</td>
-                                        <td class="px-3 sm:px-4 py-3 text-right whitespace-nowrap text-indigo-600 dark:text-indigo-400">@money($s->closing)</td>
+                                        <td class="px-3 sm:px-4 py-3 text-right whitespace-nowrap text-brand-600 dark:text-brand-300">@money($s->closing)</td>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -183,7 +183,7 @@
                                     @forelse($s->open['items'] as $item)
                                         <tr>
                                             <td class="px-3 sm:px-4 py-2 text-gray-900 dark:text-gray-100">
-                                                @if($item['url'])<a href="{{ $item['url'] }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $item['label'] }}</a>@else{{ $item['label'] }}@endif
+                                                @if($item['url'])<a href="{{ $item['url'] }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $item['label'] }}</a>@else{{ $item['label'] }}@endif
                                                 <span class="block text-xs text-gray-500 dark:text-gray-400">{{ \Carbon\Carbon::parse($item['date'])->format('j M Y') }}<span class="sm:hidden"> · due {{ \Carbon\Carbon::parse($item['due_date'])->format('j M Y') }}</span></span>
                                             </td>
                                             <td class="hidden sm:table-cell px-4 py-2 whitespace-nowrap text-gray-700 dark:text-gray-300">{{ \Carbon\Carbon::parse($item['due_date'])->format('j M Y') }}</td>
@@ -205,7 +205,7 @@
                                     <li class="px-4 sm:px-6 py-3 flex justify-between gap-3 text-sm">
                                         <span class="text-gray-900 dark:text-gray-100">
                                             {{ $credit['label'] }} ·
-                                            @if($credit['url'])<a href="{{ $credit['url'] }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $credit['reference'] }}</a>@else{{ $credit['reference'] }}@endif
+                                            @if($credit['url'])<a href="{{ $credit['url'] }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $credit['reference'] }}</a>@else{{ $credit['reference'] }}@endif
                                             <span class="block text-xs text-gray-500 dark:text-gray-400">{{ \Carbon\Carbon::parse($credit['date'])->format('j M Y') }}</span>
                                         </span>
                                         <span class="whitespace-nowrap text-green-600 dark:text-green-400 font-medium">-@money($credit['amount'])</span>
@@ -219,7 +219,7 @@
                 <x-card title="Ageing as at {{ \Carbon\Carbon::parse($s->to)->format('j M Y') }}">
                     <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-px bg-gray-200 dark:bg-gray-700 m-4 sm:m-6 mt-3 rounded-md overflow-hidden">
                         @foreach(\App\Services\Statements\Subledger::AGEING_LABELS as $key => $label)
-                            <div class="p-3 {{ $key === 'total' ? 'col-span-2 sm:col-span-1 bg-indigo-50 dark:bg-indigo-900/40' : 'bg-white dark:bg-gray-800' }}">
+                            <div class="p-3 {{ $key === 'total' ? 'col-span-2 sm:col-span-1 bg-brand-50 dark:bg-brand-900/40' : 'bg-white dark:bg-gray-800' }}">
                                 <p class="text-xs text-gray-500 dark:text-gray-400">{{ $label }}</p>
                                 <p class="text-sm sm:text-base font-semibold {{ in_array($key, ['31_60', '61_90', 'over_90'], true) && $s->ageing[$key] > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100' }}">@money($s->ageing[$key])</p>
                             </div>

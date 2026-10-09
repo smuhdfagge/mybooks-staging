@@ -22,7 +22,7 @@
                 <div>
                     <input type="hidden" name="{{ $field }}" value="0">
                     <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                        <input type="checkbox" name="{{ $field }}" value="1" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700" @checked(old($field, $party?->{$field}))>
+                        <input type="checkbox" name="{{ $field }}" value="1" class="rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-brand-300" @checked(old($field, $party?->{$field}))>
                         {{ $label }}
                     </label>
                 </div>

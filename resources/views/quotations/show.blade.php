@@ -79,7 +79,7 @@
                                     <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Discount</span><span class="text-red-600 dark:text-red-400">-@money($quotation->discount_amount)</span></div>
                                 @endif
                                 <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">VAT</span><span class="text-gray-900 dark:text-gray-100">@money($quotation->tax_amount)</span></div>
-                                <div class="flex justify-between border-t border-gray-200 dark:border-gray-700 pt-2 text-base font-bold"><span class="text-gray-900 dark:text-gray-100">Total</span><span class="text-indigo-600 dark:text-indigo-400">@money($quotation->total)</span></div>
+                                <div class="flex justify-between border-t border-gray-200 dark:border-gray-700 pt-2 text-base font-bold"><span class="text-gray-900 dark:text-gray-100">Total</span><span class="text-brand-600 dark:text-brand-300">@money($quotation->total)</span></div>
                             </div>
                         </div>
                     </x-card>
@@ -110,10 +110,10 @@
                             <div class="p-4 sm:p-6 text-sm">
                                 <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Converted to</h3>
                                 @if($quotation->salesOrder)
-                                    <a href="{{ route('sales-orders.show', $quotation->salesOrder) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Sales order {{ $quotation->salesOrder->order_number }}</a>
+                                    <a href="{{ route('sales-orders.show', $quotation->salesOrder) }}" class="text-brand-600 dark:text-brand-300 hover:underline">Sales order {{ $quotation->salesOrder->order_number }}</a>
                                 @endif
                                 @if($quotation->invoice)
-                                    <a href="{{ route('invoices.show', $quotation->invoice) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Invoice {{ $quotation->invoice->invoice_number }}</a>
+                                    <a href="{{ route('invoices.show', $quotation->invoice) }}" class="text-brand-600 dark:text-brand-300 hover:underline">Invoice {{ $quotation->invoice->invoice_number }}</a>
                                 @endif
                             </div>
                         </x-card>

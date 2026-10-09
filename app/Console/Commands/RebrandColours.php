@@ -61,7 +61,7 @@ class RebrandColours extends Command
 
         $this->newLine();
         $this->line(sprintf(
-            '%d file(s) with old colours: %d swap(s) %s, %d line(s) to decide by hand.',
+            '%d file(s) to change: %d swap(s) %s, %d line(s) to decide by hand.',
             $touched,
             $totalChanges,
             $this->option('apply') ? 'made' : 'ready (run again with --apply)',

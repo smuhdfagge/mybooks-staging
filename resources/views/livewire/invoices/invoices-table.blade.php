@@ -8,11 +8,11 @@
             <div class="sm:col-span-2 lg:col-span-1">
                 <label class="form-label">Search</label>
                 <input aria-label="Search invoices" type="text" wire:model.live.debounce.300ms="search" placeholder="Search invoices..."
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
             </div>
             <div>
                 <label for="status" class="form-label">Status</label>
-                <select id="status" wire:model.live="status" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <select id="status" wire:model.live="status" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
                     <option value="">All Status</option>
                     <option value="draft">Draft</option>
                     <option value="sent">Sent</option>
@@ -24,7 +24,7 @@
             </div>
             <div>
                 <label for="dateRange" class="form-label">Date Range</label>
-                <select id="dateRange" wire:model.live="dateRange" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <select id="dateRange" wire:model.live="dateRange" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
                     <option value="">All Time</option>
                     <option value="today">Today</option>
                     <option value="week">This Week</option>
@@ -34,7 +34,7 @@
             </div>
             <div>
                 <label for="perPage" class="form-label">Per Page</label>
-                <select id="perPage" wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <select id="perPage" wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
                     <option value="10">10</option>
                     <option value="25">25</option>
                     <option value="50">50</option>
@@ -45,20 +45,20 @@
 
     <!-- Bulk Actions -->
     @if(count($selectedItems) > 0)
-        <div class="mb-4 bg-blue-50 dark:bg-blue-900/50 border border-blue-200 dark:border-blue-700 rounded-lg p-3 sm:p-4">
+        <div class="mb-4 bg-brand-50 dark:bg-brand-900/50 border border-brand-200 dark:border-brand-700 rounded-lg p-3 sm:p-4">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <span class="text-sm text-blue-700 dark:text-blue-300">
+                <span class="text-sm text-brand-700 dark:text-brand-300">
                     <span class="font-semibold">{{ count($selectedItems) }}</span> invoice(s) selected
                 </span>
                 <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                    <select aria-label="Bulk action" wire:model="bulkAction" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                    <select aria-label="Bulk action" wire:model="bulkAction" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
                         <option value="">Select Action</option>
                         <option value="mark_sent">Mark as Sent</option>
                         <option value="mark_cancelled">Mark as Cancelled</option>
                         <option value="delete">Delete</option>
                     </select>
                     <button wire:click="applyBulkAction" wire:loading.attr="disabled" wire:confirm="Are you sure you want to perform this action on the selected invoices?"
-                        class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        class="inline-flex items-center justify-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                         Apply
                     </button>
                     <button wire:click="$set('selectedItems', [])" 
@@ -77,7 +77,7 @@
                     <tr>
                         <th scope="col" class="px-4 sm:px-6 py-3 text-left">
                             <input aria-label="Select all" type="checkbox" wire:model.live="selectAll" 
-                                class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-blue-600 shadow-sm focus:ring-blue-500">
+                                class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
                         </th>
                         <x-sort-header field="invoice_number" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Invoice #</x-sort-header>
                         <th scope="col" class="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Customer</th>
@@ -90,13 +90,13 @@
                 </thead>
                 <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     @forelse($invoices as $invoice)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 {{ in_array($invoice->id, $selectedItems) ? 'bg-blue-50 dark:bg-blue-900/20' : '' }}">
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 {{ in_array($invoice->id, $selectedItems) ? 'bg-brand-50 dark:bg-brand-900/20' : '' }}">
                             <td class="px-4 sm:px-6 py-4">
                                 <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $invoice->id }}"
-                                    class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-blue-600 shadow-sm focus:ring-blue-500">
+                                    class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
                             </td>
                             <td class="px-4 sm:px-6 py-4">
-                                <div class="text-sm font-medium text-blue-600 dark:text-blue-400">{{ $invoice->invoice_number }}</div>
+                                <div class="text-sm font-medium text-brand-600 dark:text-brand-300">{{ $invoice->invoice_number }}</div>
                                 <div class="sm:hidden text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $invoice->customer?->name ?? '-' }}</div>
                             </td>
                             <td class="hidden sm:table-cell px-4 sm:px-6 py-4">
@@ -113,7 +113,7 @@
                             <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-center">
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                                     {{ $invoice->status === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' : '' }}
-                                    {{ $invoice->status === 'sent' ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100' : '' }}
+                                    {{ $invoice->status === 'sent' ? 'bg-brand-100 text-brand-800 dark:bg-brand-800 dark:text-brand-100' : '' }}
                                     {{ $invoice->status === 'draft' ? 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300' : '' }}
                                     {{ $invoice->status === 'unpaid' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100' : '' }}
                                     {{ $invoice->status === 'overdue' ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100' : '' }}
@@ -123,7 +123,7 @@
                             </td>
                             <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex items-center justify-end space-x-1 sm:space-x-2">
-                                    <a href="{{ route('invoices.show', $invoice) }}" class="p-1 text-blue-600 hover:text-blue-900 dark:text-blue-400" title="View" aria-label="View">
+                                    <a href="{{ route('invoices.show', $invoice) }}" class="p-1 text-brand-600 hover:text-brand-900 dark:text-brand-300" title="View" aria-label="View">
                                         <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                                     </a>
                                     <a href="{{ route('invoices.print', $invoice) }}" class="p-1 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200" title="Print" aria-label="Print" target="_blank">
@@ -140,13 +140,13 @@
                                     @if($invoice->status === 'paid' && !$invoice->released_at)
                                     <form action="{{ route('invoices.release', $invoice) }}" method="POST" class="inline" data-confirm="Release this invoice and deduct inventory?">
                                         @csrf
-                                        <button type="submit" class="p-1 text-purple-600 hover:text-purple-900 dark:text-purple-400" title="Release & Deduct Inventory" aria-label="Release & Deduct Inventory">
+                                        <button type="submit" class="p-1 text-accent-700 hover:text-accent-900 dark:text-accent-300" title="Release & Deduct Inventory" aria-label="Release & Deduct Inventory">
                                             <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
                                         </button>
                                     </form>
                                     @endif
                                     @if($invoice->released_at)
-                                    <a href="{{ route('invoices.waybill', $invoice) }}" class="p-1 text-indigo-600 hover:text-indigo-900 dark:text-indigo-400" title="View Waybill" aria-label="View Waybill" target="_blank">
+                                    <a href="{{ route('invoices.waybill', $invoice) }}" class="p-1 text-brand-600 hover:text-brand-900 dark:text-brand-300" title="View Waybill" aria-label="View Waybill" target="_blank">
                                         <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                                     </a>
                                     @endif
@@ -160,7 +160,7 @@
                                 <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No invoices found</h3>
                                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new invoice.</p>
                                 <div class="mt-6">
-                                    <a href="{{ route('invoices.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                                    <a href="{{ route('invoices.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700">
                                         <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                                         Create Invoice
                                     </a>
