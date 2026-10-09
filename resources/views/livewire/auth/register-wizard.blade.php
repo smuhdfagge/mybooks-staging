@@ -1,526 +1,296 @@
-<div class="w-full">
-    <!-- Progress Steps -->
-    <div class="mb-8">
-        <div class="flex items-center justify-between">
-            @for ($i = 1; $i <= $totalSteps; $i++)
-                <div class="flex items-center {{ $i < $totalSteps ? 'flex-1' : '' }}">
-                    <!-- Step Circle -->
-                    <button 
-                        type="button"
-                        wire:click="goToStep({{ $i }})"
-                        class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300
-                            {{ $i < $currentStep ? 'bg-green-500 text-white cursor-pointer hover:bg-green-600' : '' }}
-                            {{ $i === $currentStep ? 'bg-brand-600 text-white ring-4 ring-brand-600/30' : '' }}
-                            {{ $i > $currentStep ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : '' }}"
-                        {{ $i > $currentStep ? 'disabled' : '' }}
-                    >
-                        @if ($i < $currentStep)
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                        @else
-                            {{ $i }}
-                        @endif
-                    </button>
-                    
-                    <!-- Step Label -->
-                    <span class="ml-3 text-sm font-medium hidden sm:block
-                        {{ $i <= $currentStep ? 'text-gray-100' : 'text-slate-400' }}">
-                        @if ($i === 1)
-                            Select Plan
-                        @elseif ($i === 2)
-                            Company Info
-                        @else
-                            Your Account
-                        @endif
-                    </span>
-                    
-                    <!-- Connector Line -->
-                    @if ($i < $totalSteps)
-                        <div class="flex-1 mx-4 h-1 rounded {{ $i < $currentStep ? 'bg-green-500' : 'bg-gray-700' }}"></div>
+{{--
+    Sign-up page (one short form). The left panel shows who we are and the
+    plan being chosen; the right panel is the form. Address, logo and the
+    rest of the business details are filled in later under Settings.
+--}}
+@php
+    $plan = $this->selectedPlan;
+    $price = $plan ? $plan->getPriceForCycle($billing_cycle) : 0;
+    $per = $billing_cycle === 'annual' ? 'year' : 'month';
+    $field = 'block w-full h-11 rounded-md border-gray-300 bg-white px-3 text-[15px] text-gray-900 placeholder-gray-400 shadow-sm focus:border-brand-600 focus:ring-brand-600';
+    $bad = 'border-red-600 focus:border-red-600 focus:ring-red-600';
+    $label = 'block text-sm font-medium text-gray-800 mb-1.5';
+    $errorCount = $errors->count();
+@endphp
+
+<div class="min-h-screen lg:grid lg:grid-cols-12">
+    {{-- Left: brand panel (desktop) --}}
+    <aside class="hidden lg:block lg:col-span-5 bg-brand-900 text-white">
+    <div class="sticky top-0 flex h-screen flex-col justify-between px-12 xl:px-16 py-12">
+        <a href="{{ url('/') }}" class="inline-flex items-center gap-3 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300" aria-label="MyBooks home">
+            <x-brand-mark variant="reversed" class="h-10 w-10" />
+            <span class="text-2xl font-semibold tracking-tight">MyBooks</span>
+        </a>
+
+        <div class="max-w-md">
+            <h2 class="text-3xl font-semibold leading-tight">Set up your books in a few minutes.</h2>
+            <p class="mt-4 text-brand-200 leading-relaxed">Bookkeeping and accounts made for Nigerian businesses.</p>
+
+            <ul class="mt-8 space-y-3 text-brand-100">
+                @foreach (['Invoices, bills, stock and payroll in one place', 'Naira, VAT, PAYE and withholding tax built in', 'Works on your phone as well as your computer'] as $point)
+                    <li class="flex gap-3">
+                        <svg class="mt-0.5 h-5 w-5 flex-none text-accent-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-8 8a1 1 0 01-1.4 0l-4-4a1 1 0 111.4-1.4L8 12.6l7.3-7.3a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>
+                        <span>{{ $point }}</span>
+                    </li>
+                @endforeach
+            </ul>
+
+            @if ($plan)
+                <div class="mt-10 rounded-lg border border-brand-700 bg-brand-800/60 p-5" aria-live="polite">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-brand-300">Your plan</p>
+                    <div class="mt-2 flex items-baseline justify-between gap-4">
+                        <p class="text-lg font-semibold">{{ $plan->name }}</p>
+                        <p class="text-lg font-semibold whitespace-nowrap">₦{{ number_format($price) }}<span class="text-sm font-normal text-brand-200"> / {{ $per }}</span></p>
+                    </div>
+                    @if ($plan->features)
+                        <ul class="mt-3 space-y-1.5 text-sm text-brand-100">
+                            @foreach (array_slice($plan->features, 0, 4) as $feature)
+                                <li class="flex gap-2"><span class="text-accent-400" aria-hidden="true">·</span>{{ $feature }}</li>
+                            @endforeach
+                        </ul>
                     @endif
                 </div>
-            @endfor
+            @endif
         </div>
+
+        <p class="text-sm text-brand-300">
+            Questions? <a href="{{ route('contact') }}" class="text-white underline underline-offset-2 hover:text-brand-100">Talk to us</a>
+        </p>
     </div>
+    </aside>
 
-    <form wire:submit.prevent="submit">
-        <!-- Step 1: Plan Selection -->
-        @if ($currentStep === 1)
-            <div class="space-y-6">
-                <div class="text-center mb-6">
-                    <h2 class="text-2xl font-bold text-white">Choose Your Plan</h2>
-                    <p class="text-gray-400 mt-2">Select the plan that best fits your business needs</p>
-                </div>
+    {{-- Right: the form --}}
+    <main class="lg:col-span-7 xl:col-span-7 flex flex-col min-h-screen">
+        <header class="flex items-center justify-between gap-4 px-5 sm:px-10 py-5">
+            <a href="{{ url('/') }}" class="lg:invisible inline-flex items-center gap-2" aria-label="MyBooks home">
+                <x-brand-mark class="h-8 w-8" />
+                <span class="text-lg font-semibold text-brand-900">MyBooks</span>
+            </a>
+            <p class="text-sm text-gray-600">
+                <span class="hidden sm:inline">Already have an account?</span>
+                <a href="{{ route('login') }}" class="font-semibold text-brand-700 hover:text-brand-900 underline-offset-2 hover:underline">Sign in</a>
+            </p>
+        </header>
 
-                <!-- Plans -->
-                <div class="space-y-4">
-                    @foreach($plans as $plan)
-                        <label 
-                            class="relative flex items-start p-5 cursor-pointer rounded-xl border-2 transition-all duration-300 hover:border-brand-500
-                                {{ $plan_id === $plan->id ? 'border-brand-500 bg-brand-500/10' : 'border-gray-700 bg-gray-800/50' }}"
-                            wire:click="$set('plan_id', {{ $plan->id }})"
-                        >
-                            <input 
-                                type="radio" 
-                                wire:model.live="plan_id" 
-                                value="{{ $plan->id }}" 
-                                class="sr-only"
-                            >
-                            <div class="flex-1">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all
-                                            {{ $plan_id === $plan->id ? 'border-brand-500 bg-brand-500' : 'border-gray-500' }}">
-                                            @if($plan_id === $plan->id)
-                                                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                                </svg>
-                                            @endif
-                                        </div>
-                                        <div>
-                                            <span class="font-semibold text-white text-lg">{{ $plan->name }}</span>
-                                            @if($plan->slug === 'professional')
-                                                <span class="ml-2 px-2.5 py-1 text-xs font-semibold bg-accent-400 text-gray-900 rounded-full">Popular</span>
-                                            @endif
-                                        </div>
-                                    </div>
-                                    <div class="text-right">
-                                        <span class="text-2xl font-bold text-white">₦{{ number_format($plan->monthly_price) }}</span>
-                                        <span class="text-gray-400">/mo</span>
-                                    </div>
+        <div class="flex-1 px-5 sm:px-10 pb-12">
+            <div class="mx-auto w-full max-w-lg pt-2 sm:pt-6">
+                <h1 class="text-2xl sm:text-[28px] font-semibold tracking-tight text-gray-900">Create your account</h1>
+                <p class="mt-2 text-gray-600">It takes about two minutes. You can add your address and logo later.</p>
+
+                @if ($errorCount > 0)
+                    <div class="mt-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+                        {{ $errorCount === 1 ? 'Please fix the item marked below.' : "Please fix the {$errorCount} items marked below." }}
+                    </div>
+                @endif
+
+                <form wire:submit="register" class="mt-8 space-y-8" novalidate>
+                    {{-- Bots fill this in; people never see it. --}}
+                    <div class="absolute -left-[9999px] h-px w-px overflow-hidden" aria-hidden="true">
+                        <label for="hp_check">Leave this empty</label>
+                        <input type="text" id="hp_check" wire:model="hp_check" tabindex="-1" autocomplete="off">
+                    </div>
+
+                    {{-- About you --}}
+                    <div class="space-y-5">
+                        <div>
+                            <label for="name" class="{{ $label }}">Full name</label>
+                            <input id="name" type="text" wire:model.live.blur="name" autocomplete="name" autofocus enterkeyhint="next" required
+                                class="{{ $field }} @error('name') {{ $bad }} @enderror"
+                                @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
+                            @error('name') <p id="name-error" class="mt-1.5 text-sm text-red-700">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label for="email" class="{{ $label }}">Work email</label>
+                            <input id="email" type="email" wire:model.live.blur="email" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" enterkeyhint="next" required
+                                class="{{ $field }} @error('email') {{ $bad }} @enderror"
+                                aria-describedby="email-help @error('email') email-error @enderror" @error('email') aria-invalid="true" @enderror>
+                            @error('email')
+                                <p id="email-error" class="mt-1.5 text-sm text-red-700">
+                                    {{ $message }}
+                                    @if (str_contains($message, 'already uses'))
+                                        <a href="{{ route('login') }}" class="font-semibold underline">Sign in</a> or
+                                        <a href="{{ route('password.request') }}" class="font-semibold underline">reset your password</a>.
+                                    @endif
+                                </p>
+                            @else
+                                <p id="email-help" class="mt-1.5 text-sm text-gray-600">We'll send a link to confirm it.</p>
+                            @enderror
+                        </div>
+
+                        <div x-data="{ show: false, pw: '' }">
+                            <label for="password" class="{{ $label }}">Password</label>
+                            <div class="relative">
+                                <input id="password" :type="show ? 'text' : 'password'" type="password" wire:model.live.blur="password" x-on:input="pw = $event.target.value"
+                                    autocomplete="new-password" enterkeyhint="next" required
+                                    class="{{ $field }} pr-20 @error('password') {{ $bad }} @enderror"
+                                    aria-describedby="password-rules @error('password') password-error @enderror" @error('password') aria-invalid="true" @enderror>
+                                <button type="button" x-on:click="show = !show" class="absolute inset-y-0 right-0 px-3 text-sm font-medium text-brand-700 hover:text-brand-900 focus:outline-none focus-visible:underline"
+                                    :aria-pressed="show.toString()" aria-controls="password">
+                                    <span x-text="show ? 'Hide' : 'Show'">Show</span>
+                                </button>
+                            </div>
+                            @error('password') <p id="password-error" class="mt-1.5 text-sm text-red-700">{{ $message }}</p> @enderror
+                            <ul id="password-rules" class="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm" aria-label="Password needs">
+                                @foreach ([
+                                    ['pw.length >= 8', '8 or more characters'],
+                                    ['/[a-z]/.test(pw) && /[A-Z]/.test(pw)', 'Upper and lower case'],
+                                    ['/[0-9]/.test(pw)', 'A number'],
+                                    ['/[^A-Za-z0-9]/.test(pw)', 'A symbol, like ! or #'],
+                                ] as [$test, $text])
+                                    <li class="flex items-center gap-1.5" :class="({{ $test }}) ? 'text-green-700' : 'text-gray-600'">
+                                        <svg class="h-4 w-4 flex-none" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                            <path x-show="{{ $test }}" fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-8 8a1 1 0 01-1.4 0l-4-4a1 1 0 111.4-1.4L8 12.6l7.3-7.3a1 1 0 011.4 0z" clip-rule="evenodd"/>
+                                            <circle x-show="!({{ $test }})" cx="10" cy="10" r="3"/>
+                                        </svg>
+                                        <span>{{ $text }}</span><span class="sr-only" x-text="({{ $test }}) ? ' (done)' : ''"></span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+
+                        <div>
+                            <label for="phone" class="{{ $label }}">Phone number <span class="font-normal text-gray-600">(optional)</span></label>
+                            <input id="phone" type="tel" wire:model.live.blur="phone" autocomplete="tel" inputmode="tel" placeholder="0803 123 4567" enterkeyhint="next"
+                                class="{{ $field }} @error('phone') {{ $bad }} @enderror"
+                                @error('phone') aria-invalid="true" aria-describedby="phone-error" @enderror>
+                            @error('phone') <p id="phone-error" class="mt-1.5 text-sm text-red-700">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+
+                    {{-- Your business --}}
+                    <div class="space-y-5 border-t border-gray-200 pt-8" role="group" aria-labelledby="business-heading">
+                        <h2 id="business-heading" class="text-base font-semibold text-gray-900">Your business</h2>
+
+                        <div class="grid gap-5 sm:grid-cols-5">
+                            <div class="sm:col-span-3">
+                                <label for="company_name" class="{{ $label }}">Business name</label>
+                                <input id="company_name" type="text" wire:model.live.blur="company_name" autocomplete="organization" enterkeyhint="next" required
+                                    class="{{ $field }} @error('company_name') {{ $bad }} @enderror"
+                                    @error('company_name') aria-invalid="true" aria-describedby="company_name-error" @enderror>
+                                @error('company_name') <p id="company_name-error" class="mt-1.5 text-sm text-red-700">{{ $message }}</p> @enderror
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label for="currency" class="{{ $label }}">Currency</label>
+                                <select id="currency" wire:model="currency" class="{{ $field }} pr-8">
+                                    @foreach ($currencies as $code => $text)
+                                        <option value="{{ $code }}">{{ $text }}</option>
+                                    @endforeach
+                                </select>
+                                @error('currency') <p class="mt-1.5 text-sm text-red-700">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="flex items-start gap-3 text-sm text-gray-700">
+                                <input type="checkbox" wire:model.live="separate_company_email" class="mt-0.5 h-4 w-4 rounded border-gray-400 text-brand-600 focus:ring-brand-600">
+                                <span>Use a different email on invoices <span class="text-gray-600">(for example accounts@yourbusiness.com)</span></span>
+                            </label>
+                            @if ($separate_company_email)
+                                <div class="mt-4">
+                                    <label for="company_email" class="{{ $label }}">Business email</label>
+                                    <input id="company_email" type="email" wire:model.live.blur="company_email" autocomplete="off" inputmode="email" autocapitalize="off" spellcheck="false"
+                                        class="{{ $field }} @error('company_email') {{ $bad }} @enderror"
+                                        @error('company_email') aria-invalid="true" aria-describedby="company_email-error" @enderror>
+                                    @error('company_email') <p id="company_email-error" class="mt-1.5 text-sm text-red-700">{{ $message }}</p> @enderror
                                 </div>
-                                <div class="mt-3 flex items-center justify-between">
-                                    <span class="text-gray-400">{{ $plan->description }}</span>
-                                    <span class="text-slate-400 text-sm">Up to {{ $plan->max_users }} users</span>
-                                </div>
-                                @if($plan->features && count($plan->features) > 0)
-                                    <div class="mt-3 flex flex-wrap gap-2">
-                                        @foreach(array_slice($plan->features, 0, 3) as $feature)
-                                            <span class="text-xs px-2 py-1 bg-gray-700 text-gray-300 rounded-full">{{ $feature }}</span>
+                            @elseif ($errors->has('company_email') && ! $errors->has('email'))
+                                <p class="mt-1.5 text-sm text-red-700">{{ $errors->first('company_email') }} Tick the box to use a different email on invoices.</p>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Plan --}}
+                    @if ($this->plans->isNotEmpty())
+                        <fieldset class="border-t border-gray-200 pt-8">
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <legend class="text-base font-semibold text-gray-900">Plan</legend>
+                                @if ($plan && $plan->allow_monthly_billing && $plan->allow_annual_billing)
+                                    <div class="inline-flex rounded-md border border-gray-300 p-0.5 text-sm" role="radiogroup" aria-label="Billing">
+                                        @foreach (['monthly' => 'Monthly', 'annual' => 'Yearly'] as $cycle => $text)
+                                            <label class="cursor-pointer rounded px-3 py-1.5 font-medium has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-600 {{ $billing_cycle === $cycle ? 'bg-brand-600 text-white' : 'text-gray-700 hover:bg-gray-100' }}">
+                                                <input type="radio" wire:model.live="billing_cycle" value="{{ $cycle }}" class="sr-only">
+                                                {{ $text }}
+                                                @if ($cycle === 'annual' && $plan->annual_savings_percent > 0)
+                                                    <span class="{{ $billing_cycle === 'annual' ? 'text-brand-100' : 'text-green-700' }}">· save {{ round($plan->annual_savings_percent) }}%</span>
+                                                @endif
+                                            </label>
                                         @endforeach
-                                        @if(count($plan->features) > 3)
-                                            <span class="text-xs px-2 py-1 text-brand-400">+{{ count($plan->features) - 3 }} more</span>
-                                        @endif
                                     </div>
+                                @elseif ($plan)
+                                    <p class="text-sm text-gray-600">Billed {{ $plan->allow_annual_billing ? 'yearly' : 'monthly' }}</p>
                                 @endif
                             </div>
-                        </label>
-                    @endforeach
-                </div>
-                
-                @error('plan_id')
-                    <p id="plan_id-error" class="text-red-400 text-sm mt-2">{{ $message }}</p>
-                @enderror
 
-                <!-- Billing Cycle -->
-                @if($this->selectedPlan)
-                    <div class="mt-8">
-                        <h3 class="text-lg font-semibold text-white mb-4">Billing Cycle</h3>
-                        <div class="grid grid-cols-2 gap-4">
-                            @if($this->selectedPlan->allow_monthly_billing)
-                                <label 
-                                    class="relative flex flex-col p-5 cursor-pointer rounded-xl border-2 transition-all duration-300 hover:border-brand-500
-                                        {{ $billing_cycle === 'monthly' ? 'border-brand-500 bg-brand-500/10' : 'border-gray-700 bg-gray-800/50' }}"
-                                >
-                                    <input 
-                                        type="radio" 
-                                        wire:model.live="billing_cycle" 
-                                        value="monthly" 
-                                        class="sr-only"
-                                    >
-                                    <div class="flex items-center justify-between">
-                                        <span class="font-semibold text-white">Monthly</span>
-                                        <div class="w-4 h-4 rounded-full border-2 transition-all
-                                            {{ $billing_cycle === 'monthly' ? 'border-brand-500 bg-brand-500' : 'border-gray-500' }}">
-                                        </div>
-                                    </div>
-                                    <span class="text-2xl font-bold text-white mt-3">
-                                        ₦{{ number_format($this->selectedPlan->monthly_price) }}
-                                        <span class="text-sm font-normal text-gray-400">/month</span>
-                                    </span>
-                                </label>
-                            @endif
-                            
-                            @if($this->selectedPlan->allow_annual_billing)
-                                <label 
-                                    class="relative flex flex-col p-5 cursor-pointer rounded-xl border-2 transition-all duration-300 hover:border-brand-500
-                                        {{ $billing_cycle === 'annual' ? 'border-brand-500 bg-brand-500/10' : 'border-gray-700 bg-gray-800/50' }}"
-                                >
-                                    <input 
-                                        type="radio" 
-                                        wire:model.live="billing_cycle" 
-                                        value="annual" 
-                                        class="sr-only"
-                                    >
-                                    <div class="flex items-center justify-between">
-                                        <span class="font-semibold text-white">Annual</span>
-                                        <div class="w-4 h-4 rounded-full border-2 transition-all
-                                            {{ $billing_cycle === 'annual' ? 'border-brand-500 bg-brand-500' : 'border-gray-500' }}">
-                                        </div>
-                                    </div>
-                                    <span class="text-2xl font-bold text-white mt-3">
-                                        ₦{{ number_format($this->selectedPlan->annual_price) }}
-                                        <span class="text-sm font-normal text-gray-400">/year</span>
-                                    </span>
-                                    @if($this->selectedPlan->annual_savings > 0)
-                                        <span class="text-sm text-green-400 mt-2 font-medium">
-                                            Save ₦{{ number_format($this->selectedPlan->annual_savings) }} ({{ round($this->selectedPlan->annual_savings_percent) }}%)
+                            <div class="mt-4 divide-y divide-gray-200 overflow-hidden rounded-lg border border-gray-300">
+                                @foreach ($this->plans as $p)
+                                    @php
+                                        $cycle = $p->allowsBillingCycle($billing_cycle) ? $billing_cycle : ($p->allow_monthly_billing ? 'monthly' : 'annual');
+                                        $chosen = $plan_id === $p->id;
+                                    @endphp
+                                    <label wire:key="plan-{{ $p->id }}" class="flex cursor-pointer items-start gap-3 px-4 py-4 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-inset has-[:focus-visible]:ring-brand-600 {{ $chosen ? 'bg-brand-50' : 'bg-white hover:bg-gray-50' }}">
+                                        <input type="radio" name="plan" wire:model.live="plan_id" value="{{ $p->id }}" class="mt-1 h-4 w-4 border-gray-400 text-brand-600 focus:ring-brand-600">
+                                        <span class="min-w-0 flex-1">
+                                            <span class="flex flex-wrap items-center gap-2">
+                                                <span class="font-semibold text-gray-900">{{ $p->name }}</span>
+                                                @if ($p->slug === 'professional')
+                                                    <span class="badge badge-accent">Recommended</span>
+                                                @endif
+                                            </span>
+                                            <span class="mt-0.5 block text-sm text-gray-600">{{ $p->description }}{{ $p->max_users ? ' · up to '.$p->max_users.' users' : '' }}</span>
                                         </span>
-                                    @endif
-                                </label>
-                            @endif
-                        </div>
-                        @error('billing_cycle')
-                            <p id="billing_cycle-error" class="text-red-400 text-sm mt-2">{{ $message }}</p>
-                        @enderror
-                    </div>
-                @endif
-            </div>
-        @endif
-
-        <!-- Step 2: Company Information -->
-        @if ($currentStep === 2)
-            <div class="space-y-6">
-                <div class="text-center mb-6">
-                    <h2 class="text-2xl font-bold text-white">Company Information</h2>
-                    <p class="text-gray-400 mt-2">Tell us about your business</p>
-                </div>
-
-                <!-- Company Name -->
-                <div>
-                    <label for="company_name" class="block text-sm font-medium text-gray-300 mb-2">
-                        Company Name <span class="text-red-400">*</span>
-                    </label>
-                    <input 
-                        type="text" 
-                        id="company_name" 
-                        wire:model="company_name"
-                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
-                        placeholder="Enter your company name"
-                    >
-                    @error('company_name')
-                        <p id="company_name-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Company Email -->
-                <div>
-                    <label for="company_email" class="block text-sm font-medium text-gray-300 mb-2">
-                        Company Email <span class="text-red-400">*</span>
-                    </label>
-                    <input 
-                        type="email" 
-                        id="company_email" 
-                        wire:model="company_email"
-                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
-                        placeholder="company@example.com"
-                    >
-                    @error('company_email')
-                        <p id="company_email-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Company Phone -->
-                <div>
-                    <label for="company_phone" class="block text-sm font-medium text-gray-300 mb-2">
-                        Company Phone
-                    </label>
-                    <input 
-                        type="tel" 
-                        id="company_phone" 
-                        wire:model="company_phone"
-                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
-                        placeholder="+234 XXX XXX XXXX"
-                    >
-                    @error('company_phone')
-                        <p id="company_phone-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Company Address -->
-                <div>
-                    <label for="company_address" class="block text-sm font-medium text-gray-300 mb-2">
-                        Company Address
-                    </label>
-                    <input 
-                        type="text" 
-                        id="company_address" 
-                        wire:model="company_address"
-                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
-                        placeholder="Street address"
-                    >
-                    @error('company_address')
-                        <p id="company_address-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <!-- City -->
-                    <div>
-                        <label for="company_city" class="block text-sm font-medium text-gray-300 mb-2">City</label>
-                        <input 
-                            type="text" 
-                            id="company_city" 
-                            wire:model="company_city"
-                            class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
-                            placeholder="City"
-                        >
-                        @error('company_city')
-                            <p id="company_city-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- State -->
-                    <div>
-                        <label for="company_state" class="block text-sm font-medium text-gray-300 mb-2">State</label>
-                        <input 
-                            type="text" 
-                            id="company_state" 
-                            wire:model="company_state"
-                            class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
-                            placeholder="State"
-                        >
-                        @error('company_state')
-                            <p id="company_state-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <!-- Country -->
-                    <div>
-                        <label for="company_country" class="block text-sm font-medium text-gray-300 mb-2">Country</label>
-                        <input 
-                            type="text" 
-                            id="company_country" 
-                            wire:model="company_country"
-                            class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
-                            placeholder="Country"
-                        >
-                        @error('company_country')
-                            <p id="company_country-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Postal Code -->
-                    <div>
-                        <label for="company_postal_code" class="block text-sm font-medium text-gray-300 mb-2">Postal Code</label>
-                        <input 
-                            type="text" 
-                            id="company_postal_code" 
-                            wire:model="company_postal_code"
-                            class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
-                            placeholder="Postal code"
-                        >
-                        @error('company_postal_code')
-                            <p id="company_postal_code-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-                </div>
-
-                <!-- Currency -->
-                <div>
-                    <label for="currency" class="block text-sm font-medium text-gray-300 mb-2">
-                        Currency <span class="text-red-400">*</span>
-                    </label>
-                    <select 
-                        id="currency" 
-                        wire:model="currency"
-                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
-                    >
-                        <option value="NGN">NGN - Nigerian Naira</option>
-                        <option value="USD">USD - US Dollar</option>
-                        <option value="EUR">EUR - Euro</option>
-                        <option value="GBP">GBP - British Pound</option>
-                        <option value="CAD">CAD - Canadian Dollar</option>
-                        <option value="AUD">AUD - Australian Dollar</option>
-                        <option value="GHS">GHS - Ghanaian Cedi</option>
-                        <option value="KES">KES - Kenyan Shilling</option>
-                        <option value="ZAR">ZAR - South African Rand</option>
-                    </select>
-                    @error('currency')
-                        <p id="currency-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-            </div>
-        @endif
-
-        <!-- Step 3: User Information -->
-        @if ($currentStep === 3)
-            <div class="space-y-6">
-                <div class="text-center mb-6">
-                    <h2 class="text-2xl font-bold text-white">Create Your Account</h2>
-                    <p class="text-gray-400 mt-2">Set up your admin account credentials</p>
-                </div>
-
-                <!-- Name -->
-                <div>
-                    <label for="name" class="block text-sm font-medium text-gray-300 mb-2">
-                        Your Name <span class="text-red-400">*</span>
-                    </label>
-                    <input 
-                        type="text" 
-                        id="name" 
-                        wire:model="name"
-                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
-                        placeholder="Enter your full name"
-                    >
-                    @error('name')
-                        <p id="name-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Email -->
-                <div>
-                    <label for="email" class="block text-sm font-medium text-gray-300 mb-2">
-                        Email Address <span class="text-red-400">*</span>
-                    </label>
-                    <input 
-                        type="email" 
-                        id="email" 
-                        wire:model="email"
-                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
-                        placeholder="you@example.com"
-                    >
-                    <p class="text-slate-400 text-sm mt-1">We'll send a verification email to this address</p>
-                    @error('email')
-                        <p id="email-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Phone -->
-                <div>
-                    <label for="phone" class="block text-sm font-medium text-gray-300 mb-2">Phone Number</label>
-                    <input 
-                        type="tel" 
-                        id="phone" 
-                        wire:model="phone"
-                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
-                        placeholder="+234 XXX XXX XXXX"
-                    >
-                    @error('phone')
-                        <p id="phone-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Password -->
-                <div>
-                    <label for="password" class="block text-sm font-medium text-gray-300 mb-2">
-                        Password <span class="text-red-400">*</span>
-                    </label>
-                    <input 
-                        type="password" 
-                        id="password" 
-                        wire:model="password"
-                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
-                        placeholder="Create a strong password"
-                    >
-                    @error('password')
-                        <p id="password-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Confirm Password -->
-                <div>
-                    <label for="password_confirmation" class="block text-sm font-medium text-gray-300 mb-2">
-                        Confirm Password <span class="text-red-400">*</span>
-                    </label>
-                    <input 
-                        type="password" 
-                        id="password_confirmation" 
-                        wire:model="password_confirmation"
-                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
-                        placeholder="Confirm your password"
-                    >
-                    @error('password_confirmation')
-                        <p id="password_confirmation-error" class="text-red-400 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Summary -->
-                <div class="mt-6 p-4 bg-gray-800/50 rounded-xl border border-gray-700">
-                    <h4 class="text-sm font-semibold text-gray-300 mb-3">Registration Summary</h4>
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between">
-                            <span class="text-slate-400">Plan:</span>
-                            <span class="text-white font-medium">{{ $this->selectedPlan?->name ?? 'Not selected' }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-400">Billing:</span>
-                            <span class="text-white font-medium">{{ ucfirst($billing_cycle) }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-400">Company:</span>
-                            <span class="text-white font-medium">{{ $company_name ?: 'Not entered' }}</span>
-                        </div>
-                        <div class="flex justify-between border-t border-gray-700 pt-2 mt-2">
-                            <span class="text-gray-400">Total:</span>
-                            <span class="text-xl font-bold text-brand-400">
-                                ₦{{ number_format($billing_cycle === 'annual' ? ($this->selectedPlan?->annual_price ?? 0) : ($this->selectedPlan?->monthly_price ?? 0)) }}
-                                <span class="text-sm font-normal text-slate-400">/{{ $billing_cycle === 'annual' ? 'year' : 'month' }}</span>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Terms Notice -->
-                <p class="text-sm text-slate-400 text-center">
-                    By creating an account, you agree to our 
-                    <a href="#" class="text-brand-400 hover:text-brand-300">Terms of Service</a> and 
-                    <a href="#" class="text-brand-400 hover:text-brand-300">Privacy Policy</a>
-                </p>
-            </div>
-        @endif
-
-        <!-- Navigation Buttons -->
-        <div class="flex items-center justify-between mt-8 pt-6 border-t border-gray-700">
-            @if ($currentStep > 1)
-                <button 
-                    type="button" 
-                    wire:click="previousStep"
-                    class="inline-flex items-center px-5 py-3 text-sm font-medium text-gray-300 hover:text-white transition-colors"
-                >
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                    </svg>
-                    Back
-                </button>
-            @else
-                <a 
-                    href="{{ route('login') }}"
-                    class="text-sm text-gray-400 hover:text-brand-400 transition-colors"
-                >
-                    Already have an account? Sign in
-                </a>
-            @endif
-
-            <button 
-                type="submit"
-                class="inline-flex items-center px-6 py-3 bg-brand-600 hover:bg-brand-500 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5"
-                wire:loading.attr="disabled"
-                wire:loading.class="opacity-75 cursor-not-allowed"
-            >
-                <span wire:loading.remove wire:target="submit">
-                    @if ($currentStep === $totalSteps)
-                        Create Account & Verify Email
+                                        <span class="text-right">
+                                            <span class="block font-semibold text-gray-900 whitespace-nowrap">₦{{ number_format($p->getPriceForCycle($cycle)) }}</span>
+                                            <span class="block text-xs text-gray-600">per {{ $cycle === 'annual' ? 'year' : 'month' }}{{ $cycle !== $billing_cycle ? ', yearly only' : '' }}</span>
+                                        </span>
+                                    </label>
+                                @endforeach
+                            </div>
+                            @error('plan_id') <p class="mt-1.5 text-sm text-red-700">{{ $message }}</p> @enderror
+                            @error('billing_cycle') <p class="mt-1.5 text-sm text-red-700">{{ $message }}</p> @enderror
+                            <p class="mt-3 text-sm text-gray-600">You can change plan later in Settings.</p>
+                        </fieldset>
                     @else
-                        Continue
+                        <div class="rounded-md border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-900" role="status">
+                            Sign-up is paused while we update our plans. Please <a href="{{ route('contact') }}" class="font-semibold underline">contact us</a> and we'll set up your account.
+                        </div>
                     @endif
-                </span>
-                <span wire:loading wire:target="submit" class="inline-flex items-center">
-                    <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Processing...
-                </span>
-                @if ($currentStep < $totalSteps)
-                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" wire:loading.remove wire:target="submit">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
-                @endif
-            </button>
+
+                    {{-- Submit --}}
+                    <div class="border-t border-gray-200 pt-8">
+                        @if ($plan)
+                            <div class="mb-5 flex items-baseline justify-between gap-4 rounded-md bg-gray-50 px-4 py-3">
+                                <span class="text-sm text-gray-700">{{ $plan->name }}, billed {{ $billing_cycle === 'annual' ? 'yearly' : 'monthly' }}</span>
+                                <span class="font-semibold text-gray-900 whitespace-nowrap">₦{{ number_format($price) }} / {{ $per }}</span>
+                            </div>
+                            @if ($price > 0)
+                                <p class="-mt-2 mb-5 text-sm text-gray-600">Nothing is charged now. You'll pay after you confirm your email.</p>
+                            @endif
+                        @endif
+
+                        <button type="submit" @disabled($this->plans->isEmpty())
+                            class="relative flex h-12 w-full items-center justify-center rounded-md bg-brand-600 px-6 text-base font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                            wire:loading.attr="disabled" wire:target="register">
+                            <span wire:loading.remove wire:target="register">Create account</span>
+                            <span wire:loading.flex wire:target="register" class="items-center gap-2">
+                                <svg class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z"/></svg>
+                                Creating your account…
+                            </span>
+                        </button>
+
+                        <p class="mt-4 text-center text-sm text-gray-600">
+                            By creating an account you agree to our
+                            <a href="{{ route('terms-of-service') }}" target="_blank" rel="noopener" class="text-brand-700 underline underline-offset-2 hover:text-brand-900">Terms of Service</a>
+                            and
+                            <a href="{{ route('privacy-policy') }}" target="_blank" rel="noopener" class="text-brand-700 underline underline-offset-2 hover:text-brand-900">Privacy Policy</a>.
+                        </p>
+                    </div>
+                </form>
+            </div>
         </div>
-    </form>
+
+        <footer class="px-5 sm:px-10 py-6 text-center text-sm text-gray-600 lg:text-left">
+            &copy; {{ date('Y') }} MyBooks
+        </footer>
+    </main>
 </div>

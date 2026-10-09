@@ -4,51 +4,37 @@ namespace App\Livewire\Auth;
 
 use App\Models\Plan;
 use App\Models\Role;
-use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Billing\SubscriptionBilling;
 use App\Support\SignupThrottle;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 
+/**
+ * Sign-up page: one short form instead of the old three-step wizard.
+ *
+ * Only what is needed to open the account is asked for: your name, email,
+ * password, the business name and the plan. Address, city and the rest are
+ * filled in later under Settings. The business email defaults to your own
+ * email unless you choose a different one.
+ *
+ * @property-read Collection<int, Plan> $plans
+ * @property-read Plan|null $selectedPlan
+ */
 class RegisterWizard extends Component
 {
-    // Current step (1 = Plan, 2 = Company, 3 = User)
-    public int $currentStep = 1;
-
-    public int $totalSteps = 3;
-
-    // Step 1: Plan Selection
     public ?int $plan_id = null;
 
     public string $billing_cycle = 'monthly';
 
-    // Step 2: Company Information
-    public string $company_name = '';
-
-    public string $company_email = '';
-
-    public string $company_phone = '';
-
-    public string $company_address = '';
-
-    public string $company_city = '';
-
-    public string $company_state = '';
-
-    public string $company_country = '';
-
-    public string $company_postal_code = '';
-
-    public string $currency = 'NGN';
-
-    // Step 3: User Information
     public string $name = '';
 
     public string $email = '';
@@ -57,150 +43,167 @@ class RegisterWizard extends Component
 
     public string $password = '';
 
-    public string $password_confirmation = '';
+    public string $company_name = '';
 
-    // Plans collection
-    public $plans;
+    public bool $separate_company_email = false;
 
-    public function mount()
+    public string $company_email = '';
+
+    public string $currency = 'NGN';
+
+    /** Hidden from people; bots fill it in. */
+    public string $hp_check = '';
+
+    public const CURRENCIES = [
+        'NGN' => 'NGN, Nigerian naira',
+        'USD' => 'USD, US dollar',
+        'GBP' => 'GBP, British pound',
+        'EUR' => 'EUR, Euro',
+        'GHS' => 'GHS, Ghanaian cedi',
+        'KES' => 'KES, Kenyan shilling',
+        'ZAR' => 'ZAR, South African rand',
+        'CAD' => 'CAD, Canadian dollar',
+        'AUD' => 'AUD, Australian dollar',
+    ];
+
+    public function mount(): void
     {
-        $this->plans = Plan::active()->ordered()->get();
+        $plans = $this->plans;
+        $chosen = $plans->firstWhere('slug', request('plan')) ?? $plans->first();
 
-        // Set default plan from query string or first plan
-        $selectedPlanSlug = request('plan');
-        $selectedPlan = $this->plans->firstWhere('slug', $selectedPlanSlug) ?? $this->plans->first();
-
-        if ($selectedPlan) {
-            $this->plan_id = $selectedPlan->id;
+        if ($chosen) {
+            $this->plan_id = $chosen->id;
+            $this->billing_cycle = $this->cycleFor($chosen, request('cycle') === 'annual' ? 'annual' : 'monthly');
         }
     }
 
-    // Validation rules for each step
-    protected function rulesForStep(int $step): array
+    /** @return Collection<int, Plan> */
+    #[Computed]
+    public function plans(): Collection
     {
-        return match ($step) {
-            1 => [
-                'plan_id' => ['required', 'exists:plans,id'],
-                'billing_cycle' => ['required', 'in:monthly,annual'],
-            ],
-            2 => [
-                'company_name' => ['required', 'string', 'max:255'],
-                'company_email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:tenants,email'],
-                'company_phone' => ['nullable', 'string', 'max:20'],
-                'company_address' => ['nullable', 'string', 'max:500'],
-                'company_city' => ['nullable', 'string', 'max:100'],
-                'company_state' => ['nullable', 'string', 'max:100'],
-                'company_country' => ['nullable', 'string', 'max:100'],
-                'company_postal_code' => ['nullable', 'string', 'max:20'],
-                'currency' => ['required', 'string', 'size:3'],
-            ],
-            3 => [
-                'name' => ['required', 'string', 'max:255'],
-                'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
-                'phone' => ['nullable', 'string', 'max:20'],
-                'password' => ['required', 'confirmed', Password::defaults()],
-            ],
-            default => [],
-        };
+        return Plan::active()->ordered()->get();
     }
 
-    protected function messagesForStep(): array
+    #[Computed]
+    public function selectedPlan(): ?Plan
+    {
+        return $this->plans->firstWhere('id', $this->plan_id);
+    }
+
+    protected function rules(): array
     {
         return [
-            'plan_id.required' => 'Please select a plan to continue.',
-            'company_name.required' => 'Company name is required.',
-            'company_email.required' => 'Company email is required.',
-            'company_email.unique' => 'This company email is already registered.',
-            'email.unique' => 'This email address is already registered.',
-            'password.confirmed' => 'Passwords do not match.',
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'password' => ['required', 'string', Password::defaults()],
+            'company_name' => ['required', 'string', 'max:255'],
+            // Without its own email the business uses yours, which the
+            // email rule already checks; only a clash with another business
+            // can then go wrong.
+            'company_email' => $this->separate_company_email
+                ? ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:tenants,email']
+                : ['nullable', 'string', 'unique:tenants,email'],
+            'currency' => ['required', 'string', 'in:'.implode(',', array_keys(self::CURRENCIES))],
+            'plan_id' => ['required', 'exists:plans,id'],
+            'billing_cycle' => ['required', 'in:monthly,annual'],
         ];
     }
 
-    public function updatedPlanId($value)
+    protected function messages(): array
     {
-        // Reset billing cycle when plan changes to ensure valid selection
-        $plan = $this->plans->find($value);
-        if ($plan) {
-            if (! $plan->allowsBillingCycle($this->billing_cycle)) {
-                $this->billing_cycle = $plan->allow_monthly_billing ? 'monthly' : 'annual';
-            }
+        return [
+            'name.required' => 'Enter your full name.',
+            'email.required' => 'Enter your email address.',
+            'email.email' => 'Enter a valid email address, like name@business.com.',
+            'email.unique' => 'An account already uses this email.',
+            'password.required' => 'Choose a password.',
+            'company_name.required' => 'Enter your business name.',
+            'company_email.required' => 'Enter the email for your invoices.',
+            'company_email.email' => 'Enter a valid email address, like accounts@business.com.',
+            'company_email.unique' => 'Another business already uses this email.',
+            'plan_id.required' => 'Choose a plan.',
+        ];
+    }
+
+    protected function validationAttributes(): array
+    {
+        return ['company_name' => 'business name', 'company_email' => 'business email'];
+    }
+
+    /** Check each field as soon as the person leaves it. */
+    public function updated(string $field): void
+    {
+        if ($field === 'email' || $field === 'company_email') {
+            $this->{$field} = Str::lower(trim($this->{$field}));
+        }
+
+        // A fresh password is checked in full when the form is sent.
+        if ($field === 'password') {
+            $this->resetErrorBag('password');
+        }
+
+        if ($field === 'email' && ! $this->separate_company_email) {
+            $this->company_email = $this->email;
+        }
+
+        if (in_array($field, ['name', 'email', 'company_name', 'company_email', 'phone'], true) && $this->{$field} !== '') {
+            $this->validateOnly($field);
         }
     }
 
-    public function submit()
+    public function updatedSeparateCompanyEmail(bool $on): void
     {
-        if ($this->currentStep < $this->totalSteps) {
-            $this->nextStep();
-        } else {
-            $this->register();
+        $this->company_email = $on ? '' : $this->email;
+        $this->resetErrorBag('company_email');
+    }
+
+    public function updatedPlanId(): void
+    {
+        unset($this->selectedPlan);
+        if ($plan = $this->selectedPlan) {
+            $this->billing_cycle = $this->cycleFor($plan, $this->billing_cycle);
         }
     }
 
-    public function nextStep()
+    public function updatedBillingCycle(): void
     {
-        // Validate current step
-        $this->validate(
-            $this->rulesForStep($this->currentStep),
-            $this->messagesForStep()
-        );
-
-        // Additional validation for step 1 - check billing cycle is allowed
-        if ($this->currentStep === 1) {
-            $plan = Plan::find($this->plan_id);
-            if (! $plan->allowsBillingCycle($this->billing_cycle)) {
-                $this->addError('billing_cycle', "The selected plan does not support {$this->billing_cycle} billing.");
-
-                return;
-            }
-        }
-
-        if ($this->currentStep < $this->totalSteps) {
-            $this->currentStep++;
-        }
-    }
-
-    public function previousStep()
-    {
-        if ($this->currentStep > 1) {
-            $this->currentStep--;
-        }
-    }
-
-    public function goToStep(int $step)
-    {
-        // Only allow going to previous steps or current step
-        if ($step < $this->currentStep && $step >= 1) {
-            $this->currentStep = $step;
+        if ($plan = $this->selectedPlan) {
+            $this->billing_cycle = $this->cycleFor($plan, $this->billing_cycle);
         }
     }
 
     public function register()
     {
+        // Bots fill in the hidden field: act as if it worked, create nothing.
+        if ($this->hp_check !== '') {
+            return redirect()->route('login');
+        }
+
         // Livewire calls skip route throttles, so limit sign-ups here (S8).
         SignupThrottle::check((string) request()->ip());
 
-        // Validate final step
-        $this->validate(
-            $this->rulesForStep($this->currentStep),
-            $this->messagesForStep()
-        );
+        $this->email = Str::lower(trim($this->email));
+        if (! $this->separate_company_email || trim($this->company_email) === '') {
+            $this->company_email = $this->email;
+        }
+        $this->company_email = Str::lower(trim($this->company_email));
 
-        // Get the plan
+        $this->validate();
+
         $plan = Plan::findOrFail($this->plan_id);
+        if (! $plan->allowsBillingCycle($this->billing_cycle)) {
+            $this->addError('billing_cycle', "The {$plan->name} plan is not sold {$this->billing_cycle}.");
 
-        // Create user and tenant in transaction
+            return null;
+        }
+
         $user = DB::transaction(function () use ($plan) {
-            // Create the tenant
             $tenant = Tenant::create([
                 'name' => $this->company_name,
                 'slug' => Str::slug($this->company_name).'-'.Str::random(6),
-                'email' => strtolower($this->company_email),
-                'phone' => $this->company_phone,
-                'address' => $this->company_address,
-                'city' => $this->company_city,
-                'state' => $this->company_state,
-                'country' => $this->company_country,
-                'postal_code' => $this->company_postal_code,
+                'email' => $this->company_email,
+                'phone' => $this->phone,
                 'currency' => $this->currency,
                 'is_active' => true,
             ]);
@@ -210,17 +213,15 @@ class RegisterWizard extends Component
             app(SubscriptionBilling::class)
                 ->startPendingSubscription($tenant, $plan, $this->billing_cycle);
 
-            // Create the admin user
             $user = User::create([
                 'tenant_id' => $tenant->id,
                 'name' => $this->name,
-                'email' => strtolower($this->email),
+                'email' => $this->email,
                 'phone' => $this->phone,
                 'password' => Hash::make($this->password),
                 'is_active' => true,
             ]);
 
-            // Ensure admin role exists and assign it
             $adminRole = Role::firstOrCreate(
                 ['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => null],
                 []
@@ -232,24 +233,26 @@ class RegisterWizard extends Component
 
         SignupThrottle::recordSignup((string) request()->ip());
 
-        // Fire registered event (sends verification email)
+        // Sends the verification email.
         event(new Registered($user));
 
-        // Log the user in
         Auth::login($user);
+        session()->regenerate();
 
-        // Redirect to email verification notice
         return redirect()->route('verification.notice');
     }
 
-    public function getSelectedPlanProperty()
+    private function cycleFor(Plan $plan, string $wanted): string
     {
-        return $this->plans->find($this->plan_id);
+        if ($plan->allowsBillingCycle($wanted)) {
+            return $wanted;
+        }
+
+        return $plan->allow_monthly_billing ? 'monthly' : 'annual';
     }
 
     public function render()
     {
-        return view('livewire.auth.register-wizard')
-            ->layout('layouts.guest');
+        return view('livewire.auth.register-wizard', ['currencies' => self::CURRENCIES]);
     }
 }

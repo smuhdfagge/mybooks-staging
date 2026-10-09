@@ -543,12 +543,11 @@ class PhaseDSecurityTest extends TestCase
         return Livewire::test(RegisterWizard::class)
             ->set('plan_id', $plan->id)
             ->set('company_name', "Bot Co {$n}")
+            ->set('separate_company_email', true)
             ->set('company_email', "co{$n}@bots.test")
             ->set('name', "Bot {$n}")
             ->set('email', "bot{$n}@bots.test")
             ->set('password', self::NEW_PASSWORD)
-            ->set('password_confirmation', self::NEW_PASSWORD)
-            ->set('currentStep', 3)
             ->call('register');
     }
 
