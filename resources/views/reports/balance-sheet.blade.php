@@ -72,7 +72,7 @@
                         <div class="ml-5">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Liabilities</dt>
-                                <dd class="text-lg font-semibold text-red-600 dark:text-red-400">{{ number_format($totalLiabilities, 2) }}</dd>
+                                <dd class="text-lg font-semibold text-red-600 dark:text-red-300">{{ number_format($totalLiabilities, 2) }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -90,7 +90,7 @@
                         <div class="ml-5">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Equity</dt>
-                                <dd class="text-lg font-semibold {{ $totalEquity >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                <dd class="text-lg font-semibold {{ $totalEquity >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                     {{ number_format($totalEquity, 2) }}
                                 </dd>
                             </dl>
@@ -121,7 +121,7 @@
                             <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
                                 <!-- Cash & Bank -->
                                 <div x-data="{ open: false }">
-                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
+                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                                         <span class="text-gray-600 dark:text-gray-400 flex items-center">
                                             <svg class="w-4 h-4 mr-1 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -142,7 +142,7 @@
 
                                 <!-- Accounts Receivable -->
                                 <div x-data="{ open: false }">
-                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
+                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                                         <span class="text-gray-600 dark:text-gray-400 flex items-center">
                                             <svg class="w-4 h-4 mr-1 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -163,7 +163,7 @@
 
                                 <!-- Inventory -->
                                 <div x-data="{ open: false }">
-                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
+                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                                         <span class="text-gray-600 dark:text-gray-400 flex items-center">
                                             <svg class="w-4 h-4 mr-1 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -185,7 +185,7 @@
                                 <!-- Other Current Assets -->
                                 @if($otherCurrentAssets != 0 || (isset($assetDetails['other_current']) && $assetDetails['other_current']->count() > 0))
                                 <div x-data="{ open: false }">
-                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
+                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                                         <span class="text-gray-600 dark:text-gray-400 flex items-center">
                                             <svg class="w-4 h-4 mr-1 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -218,7 +218,7 @@
                             <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 uppercase tracking-wider">Fixed Assets</h4>
                             <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
                                 <div x-data="{ open: false }">
-                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
+                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                                         <span class="text-gray-600 dark:text-gray-400 flex items-center">
                                             <svg class="w-4 h-4 mr-1 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -275,7 +275,7 @@
                             <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
                                 <!-- Accounts Payable -->
                                 <div x-data="{ open: false }">
-                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
+                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                                         <span class="text-gray-600 dark:text-gray-400 flex items-center">
                                             <svg class="w-4 h-4 mr-1 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -297,7 +297,7 @@
                                 <!-- Credit Card Payable -->
                                 @if($creditCardPayable != 0 || (isset($liabilityDetails['credit_card']) && $liabilityDetails['credit_card']->count() > 0))
                                 <div x-data="{ open: false }">
-                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
+                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                                         <span class="text-gray-600 dark:text-gray-400 flex items-center">
                                             <svg class="w-4 h-4 mr-1 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -320,7 +320,7 @@
                                 <!-- Other Current Liabilities -->
                                 @if($otherCurrentLiabilities != 0 || (isset($liabilityDetails['other_current']) && $liabilityDetails['other_current']->count() > 0))
                                 <div x-data="{ open: false }">
-                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
+                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                                         <span class="text-gray-600 dark:text-gray-400 flex items-center">
                                             <svg class="w-4 h-4 mr-1 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -354,7 +354,7 @@
                             <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 uppercase tracking-wider">Long-term Liabilities</h4>
                             <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
                                 <div x-data="{ open: false }">
-                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
+                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                                         <span class="text-gray-600 dark:text-gray-400 flex items-center">
                                             <svg class="w-4 h-4 mr-1 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -380,7 +380,7 @@
                         <div class="border-t border-red-300 dark:border-red-700 pt-3">
                             <div class="flex justify-between">
                                 <span class="text-sm font-bold text-gray-800 dark:text-gray-200">Total Liabilities</span>
-                                <span class="text-sm font-bold text-red-600 dark:text-red-400">{{ number_format($totalLiabilities, 2) }}</span>
+                                <span class="text-sm font-bold text-red-600 dark:text-red-300">{{ number_format($totalLiabilities, 2) }}</span>
                             </div>
                         </div>
 
@@ -390,7 +390,7 @@
                             <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
                                 <!-- Owner's Capital -->
                                 <div x-data="{ open: false }">
-                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
+                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                                         <span class="text-gray-600 dark:text-gray-400 flex items-center">
                                             <svg class="w-4 h-4 mr-1 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -411,7 +411,7 @@
 
                                 <!-- Retained Earnings -->
                                 <div x-data="{ open: false }">
-                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
+                                    <div class="flex justify-between text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 -mx-2 px-2 py-1 rounded" role="button" tabindex="0" :aria-expanded="open.toString()" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
                                         <span class="text-gray-600 dark:text-gray-400 flex items-center">
                                             <svg class="w-4 h-4 mr-1 transition-transform" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -434,7 +434,7 @@
                                 <!-- Profit of earlier years not yet closed (A2) -->
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600 dark:text-gray-400 pl-5" title="Run the year-end close to move this into Retained Earnings">Earlier Years' Profit (not yet closed)</span>
-                                    <span class="font-medium {{ $priorYearsProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                    <span class="font-medium {{ $priorYearsProfit >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                         {{ number_format($priorYearsProfit, 2) }}
                                     </span>
                                 </div>
@@ -443,7 +443,7 @@
                                 <!-- Net Income (Current Year) -->
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600 dark:text-gray-400 pl-5">Net Income (Year from {{ \Carbon\Carbon::parse($fiscalYearStart)->format('j M Y') }})</span>
-                                    <span class="font-medium {{ $netIncome >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                    <span class="font-medium {{ $netIncome >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                         {{ number_format($netIncome, 2) }}
                                     </span>
                                 </div>
@@ -451,7 +451,7 @@
                                 <!-- Total Equity -->
                                 <div class="flex justify-between text-sm pt-2 border-t border-gray-200 dark:border-gray-600">
                                     <span class="font-semibold text-gray-700 dark:text-gray-300">Total Equity</span>
-                                    <span class="font-semibold {{ $totalEquity >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                    <span class="font-semibold {{ $totalEquity >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                         {{ number_format($totalEquity, 2) }}
                                     </span>
                                 </div>

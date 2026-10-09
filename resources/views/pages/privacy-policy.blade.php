@@ -97,15 +97,15 @@
                         <div class="text-gray-600 dark:text-gray-300 space-y-4 pl-11">
                             <p>We use collected data strictly for legitimate business and operational purposes, including to:</p>
                             <ul class="space-y-2">
-                                <li class="flex items-start"><svg class="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Provide and operate the MyBooks platform</li>
-                                <li class="flex items-start"><svg class="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Process accounting and financial transactions</li>
-                                <li class="flex items-start"><svg class="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Secure user accounts and prevent fraud</li>
-                                <li class="flex items-start"><svg class="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Improve system performance and features</li>
-                                <li class="flex items-start"><svg class="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Communicate system updates, support responses, and service notices</li>
-                                <li class="flex items-start"><svg class="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Meet legal, regulatory, and audit obligations</li>
+                                <li class="flex items-start"><svg class="w-5 h-5 text-green-700 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Provide and operate the MyBooks platform</li>
+                                <li class="flex items-start"><svg class="w-5 h-5 text-green-700 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Process accounting and financial transactions</li>
+                                <li class="flex items-start"><svg class="w-5 h-5 text-green-700 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Secure user accounts and prevent fraud</li>
+                                <li class="flex items-start"><svg class="w-5 h-5 text-green-700 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Improve system performance and features</li>
+                                <li class="flex items-start"><svg class="w-5 h-5 text-green-700 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Communicate system updates, support responses, and service notices</li>
+                                <li class="flex items-start"><svg class="w-5 h-5 text-green-700 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Meet legal, regulatory, and audit obligations</li>
                             </ul>
                             <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mt-4">
-                                <p class="text-red-700 dark:text-red-400 font-medium">We do not sell, rent, or trade user data to third parties.</p>
+                                <p class="text-red-700 dark:text-red-300 font-medium">We do not sell, rent, or trade user data to third parties.</p>
                             </div>
                         </div>
                     </div>
@@ -121,7 +121,7 @@
                             <p>We implement appropriate technical, administrative, and organizational safeguards to protect data against:</p>
                             <div class="grid md:grid-cols-3 gap-4 mt-4">
                                 <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-center">
-                                    <svg class="w-8 h-8 text-red-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                    <svg class="w-8 h-8 text-red-600 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                                     <p class="font-medium text-gray-900 dark:text-white">Unauthorized access</p>
                                 </div>
                                 <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-center">

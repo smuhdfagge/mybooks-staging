@@ -29,12 +29,12 @@
                         </h3>
                         <div class="grid grid-cols-1 gap-6">
                             <div>
-                                <label for="name" class="form-label">Designation Name <span class="text-red-500">*</span></label>
+                                <label for="name" class="form-label">Designation Name <span class="text-red-600 dark:text-red-300">*</span></label>
                                 <input type="text" name="name" id="name" value="{{ old('name') }}" required
                                     class="form-control @error('name') border-red-500 @enderror"
                                     placeholder="e.g., Software Engineer, Manager, Accountant" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                                 @error('name')
-                                    <p id="name-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="name-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -44,7 +44,7 @@
                                     class="form-control @error('description') border-red-500 @enderror"
                                     placeholder="Brief description of this designation's responsibilities..." @error('description') aria-invalid="true" aria-describedby="description-error" @enderror>{{ old('description') }}</textarea>
                                 @error('description')
-                                    <p id="description-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="description-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>

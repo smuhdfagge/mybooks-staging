@@ -37,7 +37,7 @@
                         </div>
                         <div>
                             <div class="text-sm text-gray-500 dark:text-gray-400">Accumulated Depreciation</div>
-                            <div class="text-lg font-bold text-red-600 dark:text-red-400">{{ $currency }}{{ number_format($fixedAsset->accumulated_depreciation, 2) }}</div>
+                            <div class="text-lg font-bold text-red-600 dark:text-red-300">{{ $currency }}{{ number_format($fixedAsset->accumulated_depreciation, 2) }}</div>
                         </div>
                         <div>
                             <div class="text-sm text-gray-500 dark:text-gray-400">Book Value</div>
@@ -164,7 +164,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                                             {{ $period['period'] }}
                                             @if($period['period'] <= $depreciations->count())
-                                                <span class="ml-2 text-xs text-green-600 dark:text-green-400">(Recorded)</span>
+                                                <span class="ml-2 text-xs text-green-700 dark:text-green-400">(Recorded)</span>
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">

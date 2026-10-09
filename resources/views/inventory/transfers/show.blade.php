@@ -80,7 +80,7 @@
                                                 @if($done)
                                                     <td class="px-3 py-2 text-right font-medium">{{ $fmt($line->quantity_received) }}</td>
                                                     <td class="px-3 py-2 text-right hidden sm:table-cell">{{ $fmt($line->quantity_returned) }}</td>
-                                                    <td class="px-3 py-2 text-right hidden sm:table-cell {{ (float) $line->quantity_lost > 0 ? 'text-red-600 dark:text-red-400' : '' }}">{{ $fmt($line->quantity_lost) }}</td>
+                                                    <td class="px-3 py-2 text-right hidden sm:table-cell {{ (float) $line->quantity_lost > 0 ? 'text-red-600 dark:text-red-300' : '' }}">{{ $fmt($line->quantity_lost) }}</td>
                                                 @endif
                                                 @unless($transfer->isDraft())
                                                     <td class="px-3 py-2 text-right whitespace-nowrap hidden sm:table-cell">@money($line->shipped_cost)
@@ -97,7 +97,7 @@
                                 <dl class="mt-3 border-t border-gray-200 dark:border-gray-700 pt-3 space-y-1 text-sm font-semibold">
                                     <div class="flex justify-between gap-4 text-gray-900 dark:text-gray-100"><dt>Cost of goods sent</dt><dd class="whitespace-nowrap">@money($transfer->shippedCost())</dd></div>
                                     @if((float) $transfer->items->sum('lost_cost') > 0)
-                                        <div class="flex justify-between gap-4 text-red-700 dark:text-red-400"><dt>Lost on the way</dt><dd class="whitespace-nowrap">@money($transfer->items->sum('lost_cost'))</dd></div>
+                                        <div class="flex justify-between gap-4 text-red-700 dark:text-red-300"><dt>Lost on the way</dt><dd class="whitespace-nowrap">@money($transfer->items->sum('lost_cost'))</dd></div>
                                     @endif
                                 </dl>
                             @endunless
@@ -134,7 +134,7 @@
                                     <button type="submit" class="{{ $secondary }} w-full">Ship only (goods on the road)</button>
                                 </form>
                                 <form method="POST" action="{{ route('stock-transfers.destroy', $transfer) }}" data-confirm="Delete this draft transfer?">@csrf @method('DELETE')
-                                    <button type="submit" class="{{ $btn }} w-full bg-white dark:bg-gray-800 border-red-300 text-red-700 dark:text-red-400 hover:bg-red-50">Delete</button>
+                                    <button type="submit" class="{{ $btn }} w-full bg-white dark:bg-gray-800 border-red-300 text-red-700 dark:text-red-300 hover:bg-red-50">Delete</button>
                                 </form>
                             </div>
                         </x-card>

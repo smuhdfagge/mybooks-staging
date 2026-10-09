@@ -87,7 +87,7 @@
                         <div class="ml-5">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Low Stock Items</dt>
-                                <dd class="text-lg font-semibold text-red-600 dark:text-red-400">{{ number_format($lowStockItems) }}</dd>
+                                <dd class="text-lg font-semibold text-red-600 dark:text-red-300">{{ number_format($lowStockItems) }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -177,7 +177,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
                                             {{ number_format($item->cost_price ?? 0, 2) }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium {{ $item->is_low_stock ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white' }}">
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium {{ $item->is_low_stock ? 'text-red-600 dark:text-red-300' : 'text-gray-900 dark:text-white' }}">
                                             {{ number_format($item->stock_quantity) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">

@@ -87,7 +87,7 @@
                                     search-placeholder="Search states..."
                                     :has-error="$errors->has('state')" />
                                 @error('state')
-                                    <p id="state-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="state-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -101,7 +101,7 @@
                                     search-placeholder="Search countries..."
                                     :has-error="$errors->has('country')" />
                                 @error('country')
-                                    <p id="country-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="country-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -123,7 +123,7 @@
                                         class="w-full pl-8 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-brand-500 focus:ring-brand-500 @error('credit_limit') border-red-500 @enderror" @error('credit_limit') aria-invalid="true" aria-describedby="credit_limit-error" @enderror>
                                 </div>
                                 @error('credit_limit')
-                                    <p id="credit_limit-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="credit_limit-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -137,7 +137,7 @@
                                     search-placeholder="Search terms..."
                                     :has-error="$errors->has('payment_terms')" />
                                 @error('payment_terms')
-                                    <p id="payment_terms-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="payment_terms-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>

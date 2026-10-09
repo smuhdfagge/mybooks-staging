@@ -33,7 +33,7 @@
                         <div class="space-y-6">
                             <!-- Export Type -->
                             <div>
-                                <label for="type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Data to Export <span class="text-red-500">*</span></label>
+                                <label for="type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Data to Export <span class="text-red-600 dark:text-red-300">*</span></label>
                                 <select name="type" id="type" required
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 @error('type') border-red-500 @enderror" @error('type') aria-invalid="true" aria-describedby="type-error" @enderror>
                                     @foreach($exportTypes as $value => $label)
@@ -43,13 +43,13 @@
                                     @endforeach
                                 </select>
                                 @error('type')
-                                    <p id="type-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="type-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <!-- Format -->
                             <div>
-                                <label for="format" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Export Format <span class="text-red-500">*</span></label>
+                                <label for="format" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Export Format <span class="text-red-600 dark:text-red-300">*</span></label>
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                                     @foreach($formats as $value => $label)
                                         <label class="relative flex items-center justify-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition">
@@ -73,7 +73,7 @@
                                     @endforeach
                                 </div>
                                 @error('format')
-                                    <p id="format-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="format-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -94,10 +94,10 @@
                                     </div>
                                 </div>
                                 @error('date_from')
-                                    <p id="date_from-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="date_from-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                                 @error('date_to')
-                                    <p id="date_to-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="date_to-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>

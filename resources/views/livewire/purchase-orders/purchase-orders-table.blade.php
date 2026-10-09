@@ -121,7 +121,7 @@
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <a href="{{ route('purchase-orders.show', $order) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300 mr-3" title="View" aria-label="View {{ $order->order_number }}">View</a>
                             @if($order->status === 'draft')
-                                <a href="{{ route('purchase-orders.edit', $order) }}" class="text-yellow-600 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-300" title="Edit" aria-label="Edit {{ $order->order_number }}">Edit</a>
+                                <a href="{{ route('purchase-orders.edit', $order) }}" class="text-yellow-700 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-300" title="Edit" aria-label="Edit {{ $order->order_number }}">Edit</a>
                             @endif
                         </td>
                     </tr>

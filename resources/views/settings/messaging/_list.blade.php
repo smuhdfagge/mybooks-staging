@@ -26,7 +26,7 @@
                 @if($message->status === 'queued' && $message->send_after) · goes at {{ $message->send_after->setTimezone($tz)->format('j M, g:ia') }} @endif
                 @if($message->channel === 'sms' && $message->segments > 1) · counts as {{ $message->segments }} SMS @endif
                 @if($message->creator) · by {{ $message->creator->name }} @endif
-                @if($message->status === 'failed' && $message->error) · <span class="text-red-600 dark:text-red-400">{{ $message->error }}</span> @endif
+                @if($message->status === 'failed' && $message->error) · <span class="text-red-600 dark:text-red-300">{{ $message->error }}</span> @endif
             </p>
         </li>
     @empty

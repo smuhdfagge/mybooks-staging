@@ -21,7 +21,7 @@
                         <div class="space-y-6">
                             {{-- Name --}}
                             <div>
-                                <label for="name" class="form-label">Name <span class="text-red-500">*</span></label>
+                                <label for="name" class="form-label">Name <span class="text-red-600 dark:text-red-300">*</span></label>
                                 <input type="text" name="name" id="name" value="{{ old('name', $allowance->name) }}" required
                                     class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                                 @error('name')
@@ -31,7 +31,7 @@
 
                             {{-- Amount Type --}}
                             <div>
-                                <label for="amount_type" class="form-label">Amount Type <span class="text-red-500">*</span></label>
+                                <label for="amount_type" class="form-label">Amount Type <span class="text-red-600 dark:text-red-300">*</span></label>
                                 <select name="amount_type" id="amount_type" required
                                     class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm" @error('amount_type') aria-invalid="true" aria-describedby="amount_type-error" @enderror>
                                     <option value="fixed" {{ old('amount_type', $allowance->amount_type) === 'fixed' ? 'selected' : '' }}>Fixed Amount</option>
@@ -44,7 +44,7 @@
 
                             {{-- Amount --}}
                             <div>
-                                <label for="amount" class="form-label">Amount <span class="text-red-500">*</span></label>
+                                <label for="amount" class="form-label">Amount <span class="text-red-600 dark:text-red-300">*</span></label>
                                 <input type="number" name="amount" id="amount" value="{{ old('amount', $allowance->amount) }}" required step="0.01" min="0"
                                     class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm" @error('amount') aria-invalid="true" aria-describedby="amount-error" @enderror>
                                 @error('amount')

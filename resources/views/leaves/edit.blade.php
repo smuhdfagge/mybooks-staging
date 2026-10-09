@@ -62,7 +62,7 @@
                                 class="form-control @error('reason') border-red-500 @enderror"
                                 placeholder="Optional: Provide a reason for your leave request" @error('reason') aria-invalid="true" aria-describedby="reason-error" @enderror>{{ old('reason', $leave->reason) }}</textarea>
                             @error('reason')
-                                <p id="reason-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="reason-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>

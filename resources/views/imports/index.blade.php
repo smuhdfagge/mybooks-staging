@@ -111,9 +111,9 @@
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm">
                                                 @if($import->status === 'completed')
-                                                    <span class="text-green-600 dark:text-green-400">{{ $import->successful_rows }}/{{ $import->total_rows }}</span>
+                                                    <span class="text-green-700 dark:text-green-400">{{ $import->successful_rows }}/{{ $import->total_rows }}</span>
                                                     @if($import->failed_rows > 0)
-                                                        <span class="text-red-600 dark:text-red-400">({{ $import->failed_rows }} failed)</span>
+                                                        <span class="text-red-600 dark:text-red-300">({{ $import->failed_rows }} failed)</span>
                                                     @endif
                                                 @elseif($import->total_rows > 0)
                                                     <div class="w-24 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
@@ -141,7 +141,7 @@
                                                     @if($import->canRetry())
                                                         <form action="{{ route('imports.retry', $import) }}" method="POST" class="inline">
                                                             @csrf
-                                                            <button type="submit" class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300">
+                                                            <button type="submit" class="text-yellow-700 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300">
                                                                 Retry
                                                             </button>
                                                         </form>
@@ -149,7 +149,7 @@
                                                     <form action="{{ route('imports.destroy', $import) }}" method="POST" class="inline" data-confirm="Are you sure you want to delete this import?">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                                        <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-300 dark:hover:text-red-300">
                                                             Delete
                                                         </button>
                                                     </form>

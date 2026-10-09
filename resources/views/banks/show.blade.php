@@ -33,7 +33,7 @@
                 @endif
                 @endif
                 @can('reconcile banks')
-                <a href="{{ route('banks.reconcile', $bank) }}" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition ease-in-out duration-150">
+                <a href="{{ route('banks.reconcile', $bank) }}" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition ease-in-out duration-150">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
@@ -191,7 +191,7 @@
                                                         </span>
                                                     @endif
                                                 </td>
-                                                <td class="px-4 py-3 text-sm text-right font-medium {{ $transaction['type'] === 'deposit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                                <td class="px-4 py-3 text-sm text-right font-medium {{ $transaction['type'] === 'deposit' ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                                     {{ $transaction['type'] === 'deposit' ? '+' : '-' }}@money($transaction['amount'], $bank->currency)
                                                 </td>
                                                 <td class="px-4 py-3 text-sm text-center">

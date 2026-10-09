@@ -44,7 +44,7 @@
                                     </td>
                                     <td class="px-3 py-2 text-gray-700 dark:text-gray-300" title="{{ $row->due_rule }}">
                                         {{ $row->due_date->format('j M Y') }}
-                                        @if($row->outstanding > 0 && $row->due_date->isPast())<span class="ml-1 text-xs font-semibold text-red-600 dark:text-red-400">Overdue</span>@endif
+                                        @if($row->outstanding > 0 && $row->due_date->isPast())<span class="ml-1 text-xs font-semibold text-red-600 dark:text-red-300">Overdue</span>@endif
                                     </td>
                                     <td class="px-3 py-2 text-right">@money($row->due)</td>
                                     <td class="px-3 py-2 text-right">@money($row->paid)</td>

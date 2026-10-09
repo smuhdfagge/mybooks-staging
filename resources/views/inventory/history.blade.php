@@ -63,13 +63,13 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 bg-green-100 dark:bg-green-900 rounded-full p-3">
-                            <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 text-green-700 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
                             </svg>
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Stock In</p>
-                            <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ $history->where('type', 'in')->sum('quantity') + $history->where('type', 'purchase')->sum('quantity') }}</p>
+                            <p class="text-2xl font-bold text-green-700 dark:text-green-400">{{ $history->where('type', 'in')->sum('quantity') + $history->where('type', 'purchase')->sum('quantity') }}</p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">all time</p>
                         </div>
                     </div>
@@ -78,13 +78,13 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 bg-red-100 dark:bg-red-900 rounded-full p-3">
-                            <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 text-red-600 dark:text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
                             </svg>
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Stock Out</p>
-                            <p class="text-2xl font-bold text-red-600 dark:text-red-400">{{ $history->where('type', 'out')->sum('quantity') + $history->where('type', 'sale')->sum('quantity') }}</p>
+                            <p class="text-2xl font-bold text-red-600 dark:text-red-300">{{ $history->where('type', 'out')->sum('quantity') + $history->where('type', 'sale')->sum('quantity') }}</p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">all time</p>
                         </div>
                     </div>
@@ -143,9 +143,9 @@
                                                 // By direction: stock in green, stock out red, returns amber, moves navy.
                                                 $typeColors = [
                                                     'in' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400',
-                                                    'out' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400',
+                                                    'out' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
                                                     'adjustment' => 'bg-brand-100 text-brand-800 dark:bg-brand-900/50 dark:text-brand-300',
-                                                    'sale' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400',
+                                                    'sale' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
                                                     'purchase' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400',
                                                     'return' => 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300',
                                                     'transfer' => 'bg-brand-100 text-brand-800 dark:bg-brand-900/50 dark:text-brand-300',
@@ -167,7 +167,7 @@
                                             </span>
                                         </td>
                                         <td class="px-4 py-4 whitespace-nowrap text-right">
-                                            <span class="text-sm font-medium {{ $record->type === 'in' || $record->type === 'purchase' || $record->type === 'return' ? 'text-green-600 dark:text-green-400' : ($record->type === 'out' || $record->type === 'sale' ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100') }}">
+                                            <span class="text-sm font-medium {{ $record->type === 'in' || $record->type === 'purchase' || $record->type === 'return' ? 'text-green-700 dark:text-green-400' : ($record->type === 'out' || $record->type === 'sale' ? 'text-red-600 dark:text-red-300' : 'text-gray-900 dark:text-gray-100') }}">
                                                 @if($record->type === 'in' || $record->type === 'purchase' || $record->type === 'return')
                                                     +{{ $record->quantity }}
                                                 @elseif($record->type === 'out' || $record->type === 'sale')

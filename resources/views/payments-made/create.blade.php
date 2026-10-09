@@ -36,7 +36,7 @@
                         <div>
                             <x-field name="payment_date" label="Payment Date" type="date" :value="old('payment_date', date('Y-m-d'))" required />
                             @error('payment_date')
-                                <p id="payment_date-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="payment_date-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -46,7 +46,7 @@
                             selectedId: '{{ old('vendor_id', $bill?->vendor_id) }}',
                             onSelect: (id) => { selectedVendor = id; filterBills(); whtCategoryId = ''; deductWht = !!(vendors[id] && vendors[id].wht_category_id && !vendors[id].wht_exempt); recalculate(); }
                         })" class="relative">
-                            <label for="vendor_search" class="form-label">Vendor <span class="text-red-500">*</span></label>
+                            <label for="vendor_search" class="form-label">Vendor <span class="text-red-600 dark:text-red-300">*</span></label>
                             <input type="hidden" name="vendor_id" :value="selectedId" required @error('vendor_id') aria-invalid="true" aria-describedby="vendor_id-error" @enderror>
                             <div class="relative">
                                 <input 
@@ -93,7 +93,7 @@
                                 </div>
                             </div>
                             @error('vendor_id')
-                                <p id="vendor_id-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="vendor_id-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -114,14 +114,14 @@
 
                         <!-- Amount -->
                         <div>
-                            <label for="amount" class="form-label">Amount <span class="text-red-500">*</span></label>
+                            <label for="amount" class="form-label">Amount <span class="text-red-600 dark:text-red-300">*</span></label>
                             <div class="relative">
                                 <input type="number" name="amount" id="amount" step="0.01" min="0.01" x-model="amount" @input="amountTyped()" required placeholder="0.00"
                                     class="form-control @error('amount') border-red-500 @enderror" @error('amount') aria-invalid="true" aria-describedby="amount-error" @enderror>
                             </div>
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" x-show="deductWht">Money paid from the bank, after WHT.</p>
                             @error('amount')
-                                <p id="amount-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="amount-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -144,7 +144,7 @@
                                     </select>
                                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" x-show="whtCategoryId" x-text="'Rate ' + rate() + '% on the amount before VAT' + (vendorHasTin() ? '' : ' (doubled: vendor has no TIN)')"></p>
                                     @error('wht_category_id')
-                                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>
                                 <div>
@@ -155,7 +155,7 @@
                                         Settles <span x-text="formatMoney((parseFloat(amount) || 0) + (parseFloat(whtAmount) || 0))"></span> of the bill.
                                     </p>
                                     @error('wht_amount')
-                                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>
                             </div>
@@ -163,7 +163,7 @@
 
                         <!-- Payment Method -->
                         <div x-data="{ paymentMethod: '{{ old('payment_method', '') }}' }">
-                            <label for="payment_method" class="form-label">Payment Method <span class="text-red-500">*</span></label>
+                            <label for="payment_method" class="form-label">Payment Method <span class="text-red-600 dark:text-red-300">*</span></label>
                             <select name="payment_method" id="payment_method" required x-model="paymentMethod"
                                 class="form-control @error('payment_method') border-red-500 @enderror" @error('payment_method') aria-invalid="true" aria-describedby="payment_method-error" @enderror>
                                 <option value="">Select Method</option>
@@ -174,7 +174,7 @@
                                 <option value="other">Other</option>
                             </select>
                             @error('payment_method')
-                                <p id="payment_method-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="payment_method-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
 
                             <!-- Bank Account -->
@@ -191,7 +191,7 @@
                                 </select>
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Select which bank account to pay from</p>
                                 @error('bank_id')
-                                    <p id="bank_id-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                    <p id="bank_id-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -214,7 +214,7 @@
                         <a href="{{ route('payments-made.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             Cancel
                         </a>
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>

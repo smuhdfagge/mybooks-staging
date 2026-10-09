@@ -72,7 +72,7 @@
                     <div class="bg-white dark:bg-gray-700 overflow-hidden shadow-sm rounded-lg p-4">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-red-100 dark:bg-red-900 rounded-full p-3">
-                                <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-6 h-6 text-red-600 dark:text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                                 </svg>
                             </div>
@@ -98,7 +98,7 @@
                     <div class="bg-white dark:bg-gray-700 overflow-hidden shadow-sm rounded-lg p-4">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-green-100 dark:bg-green-900 rounded-full p-3">
-                                <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-6 h-6 text-green-700 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                                 </svg>
                             </div>
@@ -111,7 +111,7 @@
                     <div class="bg-white dark:bg-gray-700 overflow-hidden shadow-sm rounded-lg p-4">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-yellow-100 dark:bg-yellow-900 rounded-full p-3">
-                                <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-6 h-6 text-yellow-700 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/>
                                 </svg>
                             </div>
@@ -127,12 +127,14 @@
                 @if($viewMode === 'tree')
                 <div class="space-y-3">
                     @php
+                        // Full class names (Tailwind only builds classes it can read whole).
+                        // Assets navy, liabilities red, equity ochre, income green, expenses amber.
                         $typeConfig = [
-                            'asset' => ['label' => 'Assets', 'color' => 'blue', 'icon' => 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'],
-                            'liability' => ['label' => 'Liabilities', 'color' => 'red', 'icon' => 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z'],
-                            'equity' => ['label' => 'Equity', 'color' => 'purple', 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
-                            'income' => ['label' => 'Income', 'color' => 'green', 'icon' => 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6'],
-                            'expense' => ['label' => 'Expenses', 'color' => 'yellow', 'icon' => 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6'],
+                            'asset' => ['label' => 'Assets', 'head' => 'bg-brand-50 dark:bg-brand-900/20 hover:bg-brand-100 dark:hover:bg-brand-900/30', 'iconc' => 'text-brand-600 dark:text-brand-300', 'labelc' => 'text-brand-800 dark:text-brand-200', 'badge' => 'text-brand-800 dark:text-brand-200 bg-brand-100 dark:bg-brand-900/50', 'icon' => 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'],
+                            'liability' => ['label' => 'Liabilities', 'head' => 'bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30', 'iconc' => 'text-red-600 dark:text-red-300', 'labelc' => 'text-red-800 dark:text-red-200', 'badge' => 'text-red-800 dark:text-red-200 bg-red-100 dark:bg-red-900/50', 'icon' => 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z'],
+                            'equity' => ['label' => 'Equity', 'head' => 'bg-accent-50 dark:bg-accent-900/20 hover:bg-accent-100 dark:hover:bg-accent-900/30', 'iconc' => 'text-accent-600 dark:text-accent-300', 'labelc' => 'text-accent-800 dark:text-accent-200', 'badge' => 'text-accent-800 dark:text-accent-200 bg-accent-100 dark:bg-accent-900/50', 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
+                            'income' => ['label' => 'Income', 'head' => 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30', 'iconc' => 'text-green-700 dark:text-green-300', 'labelc' => 'text-green-800 dark:text-green-200', 'badge' => 'text-green-800 dark:text-green-200 bg-green-100 dark:bg-green-900/50', 'icon' => 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6'],
+                            'expense' => ['label' => 'Expenses', 'head' => 'bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30', 'iconc' => 'text-amber-600 dark:text-amber-300', 'labelc' => 'text-amber-800 dark:text-amber-200', 'badge' => 'text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-900/50', 'icon' => 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6'],
                         ];
                     @endphp
 
@@ -141,21 +143,21 @@
                         <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                             {{-- Type header --}}
                             <button wire:click="toggleType('{{ $typeKey }}')"
-                                    class="w-full flex items-center justify-between px-4 py-3 bg-{{ $config['color'] }}-50 dark:bg-{{ $config['color'] }}-900/20 hover:bg-{{ $config['color'] }}-100 dark:hover:bg-{{ $config['color'] }}-900/30 transition-colors"
+                                    class="w-full flex items-center justify-between px-4 py-3 {{ $config['head'] }} transition-colors"
                                     aria-expanded="{{ !in_array($typeKey, $collapsedTypes) ? 'true' : 'false' }}">
                                 <div class="flex items-center gap-3">
-                                    <svg class="w-5 h-5 text-{{ $config['color'] }}-600 dark:text-{{ $config['color'] }}-400 transition-transform duration-200 {{ in_array($typeKey, $collapsedTypes) ? '-rotate-90' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-5 h-5 {{ $config['iconc'] }} transition-transform duration-200 {{ in_array($typeKey, $collapsedTypes) ? '-rotate-90' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                     </svg>
-                                    <svg class="w-5 h-5 text-{{ $config['color'] }}-600 dark:text-{{ $config['color'] }}-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-5 h-5 {{ $config['iconc'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $config['icon'] }}"/>
                                     </svg>
-                                    <span class="font-semibold text-{{ $config['color'] }}-800 dark:text-{{ $config['color'] }}-300">{{ $config['label'] }}</span>
-                                    <span class="text-xs text-{{ $config['color'] }}-600 dark:text-{{ $config['color'] }}-400 bg-{{ $config['color'] }}-100 dark:bg-{{ $config['color'] }}-900/50 px-2 py-0.5 rounded-full">
+                                    <span class="font-semibold {{ $config['labelc'] }}">{{ $config['label'] }}</span>
+                                    <span class="text-xs {{ $config['badge'] }} px-2 py-0.5 rounded-full">
                                         {{ $groupedAccounts[$typeKey]->count() }} accounts
                                     </span>
                                 </div>
-                                <span class="text-sm font-bold text-{{ $config['color'] }}-800 dark:text-{{ $config['color'] }}-300">
+                                <span class="text-sm font-bold {{ $config['labelc'] }}">
                                     {{ number_format($groupedAccounts[$typeKey]->sum('current_balance'), 2) }}
                                 </span>
                             </button>
@@ -266,7 +268,7 @@
                                         @php
                                             $typeColors = [
                                                 'asset' => 'bg-brand-100 text-brand-800 dark:bg-brand-900/50 dark:text-brand-300',
-                                                'liability' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400',
+                                                'liability' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
                                                 'equity' => 'bg-accent-100 text-accent-800 dark:bg-accent-900/50 dark:text-accent-300',
                                                 'income' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400',
                                                 'expense' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400',

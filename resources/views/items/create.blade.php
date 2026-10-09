@@ -71,19 +71,19 @@
                                     @endforeach
                                 </select>
                                 @error('category_id')
-                                    <p id="category_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="category_id-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
-                                <label for="type" class="form-label">Type <span class="text-red-500">*</span></label>
+                                <label for="type" class="form-label">Type <span class="text-red-600 dark:text-red-300">*</span></label>
                                 <select name="type" id="type" required
                                     class="form-control @error('type') border-red-500 @enderror" @error('type') aria-invalid="true" aria-describedby="type-error" @enderror>
                                     <option value="product" {{ old('type', 'product') == 'product' ? 'selected' : '' }}>Product</option>
                                     <option value="service" {{ old('type') == 'service' ? 'selected' : '' }}>Service</option>
                                 </select>
                                 @error('type')
-                                    <p id="type-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="type-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -100,20 +100,20 @@
                     <!-- Pricing -->
                     <div class="mb-8">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 mr-2 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                             Pricing
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
-                                <label for="selling_price" class="form-label">Selling Price <span class="text-red-500">*</span></label>
+                                <label for="selling_price" class="form-label">Selling Price <span class="text-red-600 dark:text-red-300">*</span></label>
                                 <div class="relative">
                                     <input type="number" name="selling_price" id="selling_price" value="{{ old('selling_price', '0.00') }}" min="0" step="0.01" required
                                         class="form-control @error('selling_price') border-red-500 @enderror" @error('selling_price') aria-invalid="true" aria-describedby="selling_price-error" @enderror>
                                 </div>
                                 @error('selling_price')
-                                    <p id="selling_price-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="selling_price-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -124,7 +124,7 @@
                                         class="form-control @error('cost_price') border-red-500 @enderror" @error('cost_price') aria-invalid="true" aria-describedby="cost_price-error" @enderror>
                                 </div>
                                 @error('cost_price')
-                                    <p id="cost_price-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="cost_price-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -136,7 +136,7 @@
                                     <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 dark:text-gray-400">%</span>
                                 </div>
                                 @error('tax_rate')
-                                    <p id="tax_rate-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="tax_rate-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -167,7 +167,7 @@
                                 <x-field name="reorder_level" label="Reorder Level" type="number" :value="old('reorder_level', 0)" min="0" />
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Alert when stock falls below this level</p>
                                 @error('reorder_level')
-                                    <p id="reorder_level-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="reorder_level-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>

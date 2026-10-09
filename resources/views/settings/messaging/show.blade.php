@@ -53,7 +53,7 @@
                             <div class="mt-2 h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
                                 <div class="h-2 rounded-full {{ $out ? 'bg-red-500' : ($pct >= 80 ? 'bg-yellow-500' : 'bg-brand-600') }}" style="width: {{ $pct }}%"></div>
                             </div>
-                            <p class="mt-2 text-xs {{ $out ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-500 dark:text-gray-400' }}">
+                            <p class="mt-2 text-xs {{ $out ? 'text-red-600 dark:text-red-300 font-medium' : 'text-gray-500 dark:text-gray-400' }}">
                                 @if($u['limit'] === 0)
                                     Your plan doesn't include {{ $label }} messages.
                                 @else

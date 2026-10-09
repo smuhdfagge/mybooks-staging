@@ -7,7 +7,7 @@
             </div>
             <div class="flex flex-wrap gap-2 no-print">
                 <a href="{{ route('withholding-tax.receivable.export', array_filter($filters) + ['format' => 'pdf']) }}" class="inline-flex items-center px-3 py-2 bg-red-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700">PDF</a>
-                <a href="{{ route('withholding-tax.receivable.export', array_filter($filters) + ['format' => 'csv']) }}" class="inline-flex items-center px-3 py-2 bg-green-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">CSV</a>
+                <a href="{{ route('withholding-tax.receivable.export', array_filter($filters) + ['format' => 'csv']) }}" class="inline-flex items-center px-3 py-2 bg-green-700 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">CSV</a>
             </div>
         </div>
     </x-slot>

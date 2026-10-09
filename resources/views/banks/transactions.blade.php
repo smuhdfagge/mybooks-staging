@@ -67,7 +67,7 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                                                 {{ $transaction['party'] }}
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium {{ $transaction['type'] === 'deposit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium {{ $transaction['type'] === 'deposit' ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                                 {{ $transaction['type'] === 'deposit' ? '+' : '-' }}@money($transaction['amount'], $bank->currency)
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-center">

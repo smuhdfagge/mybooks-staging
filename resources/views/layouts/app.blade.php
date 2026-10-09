@@ -177,7 +177,7 @@
                             <div class="ml-3 flex-1">
                                 <p class="text-sm font-medium text-green-800 dark:text-green-200">{{ session('success') }}</p>
                             </div>
-                            <button @click="show = false" class="ml-3 flex-shrink-0 text-green-500 hover:text-green-600">
+                            <button @click="show = false" class="ml-3 flex-shrink-0 text-green-700 hover:text-green-600">
                                 <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
                                 </svg>
@@ -197,7 +197,7 @@
                             <div class="ml-3 flex-1">
                                 <p class="text-sm font-medium text-red-800 dark:text-red-200">{{ session('error') }}</p>
                             </div>
-                            <button @click="show = false" class="ml-3 flex-shrink-0 text-red-500 hover:text-red-600">
+                            <button @click="show = false" class="ml-3 flex-shrink-0 text-red-600 hover:text-red-600">
                                 <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
                                 </svg>

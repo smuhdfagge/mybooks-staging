@@ -128,7 +128,7 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <a href="{{ route('item-categories.show', $child) }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300 mr-3">View</a>
-                                        <a href="{{ route('item-categories.edit', $child) }}" class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400">Edit</a>
+                                        <a href="{{ route('item-categories.edit', $child) }}" class="text-yellow-700 hover:text-yellow-900 dark:text-yellow-400">Edit</a>
                                     </td>
                                 </tr>
                                 @endforeach

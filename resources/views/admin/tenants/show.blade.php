@@ -221,7 +221,7 @@
                                 @if($tenant->activeSubscription->ends_at)
                                     <div class="flex justify-between text-sm">
                                         <span class="text-gray-500 dark:text-gray-400">Days Left</span>
-                                        <span class="@if((int) now()->diffInDays($tenant->activeSubscription->ends_at) <= 7) text-yellow-600 dark:text-yellow-400 @else text-gray-900 dark:text-white @endif">
+                                        <span class="@if((int) now()->diffInDays($tenant->activeSubscription->ends_at) <= 7) text-yellow-700 dark:text-yellow-400 @else text-gray-900 dark:text-white @endif">
                                             {{ (int) now()->diffInDays($tenant->activeSubscription->ends_at) }} days
                                         </span>
                                     </div>
@@ -341,7 +341,7 @@
                                     <option value="365">365 Days (1 Year)</option>
                                 </select>
                             </div>
-                            <button type="submit" class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
+                            <button type="submit" class="w-full px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-700 transition font-medium">
                                 Extend Subscription
                             </button>
                         </div>
@@ -353,7 +353,7 @@
             @if($tenant->activeSubscription && $tenant->activeSubscription->status !== 'cancelled')
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-xl border border-red-200 dark:border-red-900/50">
                     <div class="px-6 py-4 border-b border-red-200 dark:border-red-900/50">
-                        <h3 class="text-lg font-semibold text-red-600 dark:text-red-400">Danger Zone</h3>
+                        <h3 class="text-lg font-semibold text-red-600 dark:text-red-300">Danger Zone</h3>
                     </div>
                     <div class="p-6">
                         <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">

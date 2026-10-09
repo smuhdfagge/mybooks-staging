@@ -6,7 +6,7 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <div class="flex items-center">
                     <div class="p-3 rounded-full bg-green-100 dark:bg-green-900">
-                        <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-6 h-6 text-green-700 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
@@ -145,7 +145,7 @@
                                 <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
                                     {{ $accountTypes[$bank->account_type] ?? $bank->account_type }}
                                 </td>
-                                <td class="px-4 py-3 text-sm text-right font-medium {{ $bank->current_balance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                <td class="px-4 py-3 text-sm text-right font-medium {{ $bank->current_balance >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                     {{ $bank->currency }} {{ number_format($bank->current_balance, 2) }}
                                 </td>
                                 <td class="px-4 py-3 text-center">
@@ -174,7 +174,7 @@
                                         <form action="{{ route('banks.destroy', $bank) }}" method="POST" class="inline" data-confirm="Are you sure you want to delete this bank account?">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-200" title="Delete" aria-label="Delete">
+                                            <button type="submit" class="text-red-600 dark:text-red-300 hover:text-red-900 dark:hover:text-red-200" title="Delete" aria-label="Delete">
                                                 <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                 </svg>

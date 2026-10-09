@@ -6,7 +6,7 @@
                     Apply Deposit {{ $paymentReceived->payment_number }}
                 </h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400">
-                    Available balance: <span class="font-semibold text-green-600 dark:text-green-400">{{ number_format($paymentReceived->unused_amount, 2) }}</span>
+                    Available balance: <span class="font-semibold text-green-700 dark:text-green-400">{{ number_format($paymentReceived->unused_amount, 2) }}</span>
                 </p>
             </div>
             <a href="{{ route('payments-received.show', $paymentReceived) }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
@@ -47,7 +47,7 @@
                     <div class="space-y-4">
                         <!-- Invoice Selection -->
                         <div>
-                            <label for="invoice_id" class="form-label">Invoice <span class="text-red-500">*</span></label>
+                            <label for="invoice_id" class="form-label">Invoice <span class="text-red-600 dark:text-red-300">*</span></label>
                             <select name="invoice_id" id="invoice_id" required x-model="selectedInvoice" @change="updateMaxAmount()"
                                 class="form-control @error('invoice_id') border-red-500 @enderror" @error('invoice_id') aria-invalid="true" aria-describedby="invoice_id-error" @enderror>
                                 <option value="">Select an invoice</option>
@@ -58,13 +58,13 @@
                                 @endforeach
                             </select>
                             @error('invoice_id')
-                                <p id="invoice_id-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="invoice_id-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
                         <!-- Amount -->
                         <div>
-                            <label for="amount" class="form-label">Amount to Apply <span class="text-red-500">*</span></label>
+                            <label for="amount" class="form-label">Amount to Apply <span class="text-red-600 dark:text-red-300">*</span></label>
                             <div class="relative">
                                 <input type="number" name="amount" id="amount" step="0.01" min="0.01" 
                                     :max="maxAmount" x-model="amount" required
@@ -74,7 +74,7 @@
                                 Maximum: <span x-text="formatMoney(maxAmount)"></span>
                             </p>
                             @error('amount')
-                                <p id="amount-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                <p id="amount-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -91,7 +91,7 @@
                         <a href="{{ route('payments-received.show', $paymentReceived) }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             Cancel
                         </a>
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>
@@ -127,7 +127,7 @@
                                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                         {{ $invoice->invoice_date->format('M d, Y') }}
                                     </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm {{ $invoice->due_date < now() ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400' }}">
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm {{ $invoice->due_date < now() ? 'text-red-600 dark:text-red-300' : 'text-gray-500 dark:text-gray-400' }}">
                                         {{ $invoice->due_date->format('M d, Y') }}
                                         @if($invoice->due_date < now())
                                             <span class="text-xs">(Overdue)</span>
@@ -136,7 +136,7 @@
                                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 text-right">
                                         {{ number_format($invoice->total, 2) }}
                                     </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-red-600 dark:text-red-400 text-right font-medium">
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-red-600 dark:text-red-300 text-right font-medium">
                                         {{ number_format($invoice->balance_due, 2) }}
                                     </td>
                                 </tr>

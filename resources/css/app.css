@@ -125,3 +125,11 @@
         font-size: 1rem; /* stops iOS zooming into the box */
     }
 }
+
+/* Readability (rebrand R12): in dark mode the secondary grey text sits on
+   grey-700 panels in many places (table headers, report cards), where
+   Tailwind's grey-400 measures 4.06 to 1. This lighter grey passes (4.8 to 1)
+   and stays clearly softer than the main text. */
+html.dark .dark\:text-gray-400 {
+    color: #AAB2BE;
+}

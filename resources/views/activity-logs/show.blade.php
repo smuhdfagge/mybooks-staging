@@ -161,7 +161,7 @@
                                     <div class="space-y-2 max-h-96 overflow-y-auto">
                                         @foreach($activityLog->old_values as $key => $value)
                                             <div class="flex justify-between py-1 border-b border-red-100 dark:border-red-800 last:border-0">
-                                                <span class="text-sm text-red-600 dark:text-red-400">
+                                                <span class="text-sm text-red-600 dark:text-red-300">
                                                     {{ str_replace('_', ' ', ucfirst($key)) }}:
                                                 </span>
                                                 <span class="text-sm font-medium text-red-800 dark:text-red-200 ml-2 text-right break-all max-w-xs">
@@ -193,7 +193,7 @@
                                     <div class="space-y-2 max-h-96 overflow-y-auto">
                                         @foreach($activityLog->new_values as $key => $value)
                                             <div class="flex justify-between py-1 border-b border-green-100 dark:border-green-800 last:border-0">
-                                                <span class="text-sm text-green-600 dark:text-green-400">
+                                                <span class="text-sm text-green-700 dark:text-green-400">
                                                     {{ str_replace('_', ' ', ucfirst($key)) }}:
                                                 </span>
                                                 <span class="text-sm font-medium text-green-800 dark:text-green-200 ml-2 text-right break-all max-w-xs">

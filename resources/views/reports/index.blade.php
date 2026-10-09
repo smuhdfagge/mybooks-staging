@@ -12,7 +12,7 @@
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Financial Reports</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <!-- Profit & Loss -->
-                    <a href="{{ route('reports.profit-loss') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.profit-loss') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -27,7 +27,7 @@
                     </a>
 
                     <!-- Balance Sheet -->
-                    <a href="{{ route('reports.balance-sheet') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.balance-sheet') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,7 +42,7 @@
                     </a>
 
                     <!-- Cash Flow -->
-                    <a href="{{ route('reports.cash-flow') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.cash-flow') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -57,7 +57,7 @@
                     </a>
 
                     <!-- Trial Balance -->
-                    <a href="{{ route('reports.trial-balance') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.trial-balance') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,7 +72,7 @@
                     </a>
 
                     <!-- General Ledger -->
-                    <a href="{{ route('reports.general-ledger') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.general-ledger') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -96,7 +96,7 @@
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Period-over-period comparisons to analyze trends and changes.</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <!-- Comparative Profit & Loss -->
-                    <a href="{{ route('reports.comparative.profit-loss') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.comparative.profit-loss') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -111,7 +111,7 @@
                     </a>
 
                     <!-- Comparative Balance Sheet -->
-                    <a href="{{ route('reports.comparative.balance-sheet') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.comparative.balance-sheet') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -126,7 +126,7 @@
                     </a>
 
                     <!-- Comparative Cash Flow -->
-                    <a href="{{ route('reports.comparative.cash-flow') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.comparative.cash-flow') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -150,7 +150,7 @@
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">VAT/GST returns and tax liability tracking.</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <!-- VAT/GST Return -->
-                    <a href="{{ route('reports.vat-gst-return') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.vat-gst-return') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,7 +165,7 @@
                     </a>
 
                     <!-- Monthly VAT return (NRS Form 002) -->
-                    <a href="{{ route('reports.vat-return') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.vat-return') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -180,7 +180,7 @@
                     </a>
 
                     <!-- Tax Liability -->
-                    <a href="{{ route('reports.tax-liability') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.tax-liability') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -203,7 +203,7 @@
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Receivables & Payables</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <!-- Accounts Receivable -->
-                    <a href="{{ route('reports.accounts-receivable') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.accounts-receivable') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -218,7 +218,7 @@
                     </a>
 
                     <!-- Accounts Payable -->
-                    <a href="{{ route('reports.accounts-payable') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.accounts-payable') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -234,7 +234,7 @@
 
                     @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('statements'))
                         <!-- Ledger against customer / supplier balances (session 10) -->
-                        <a href="{{ route('reports.control-reconciliation') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                        <a href="{{ route('reports.control-reconciliation') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                             <div class="flex items-center">
                                 <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                     <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -258,7 +258,7 @@
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Sales & Purchases</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <!-- Sales by Customer -->
-                    <a href="{{ route('reports.sales-by-customer') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.sales-by-customer') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -273,7 +273,7 @@
                     </a>
 
                     <!-- Sales by Item -->
-                    <a href="{{ route('reports.sales-by-item') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.sales-by-item') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -288,7 +288,7 @@
                     </a>
 
                     <!-- Purchases by Vendor -->
-                    <a href="{{ route('reports.purchase-by-vendor') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.purchase-by-vendor') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -311,7 +311,7 @@
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Statements</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <!-- Customer Statement -->
-                    <a href="{{ route('reports.customer-statement') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.customer-statement') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -326,7 +326,7 @@
                     </a>
 
                     @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('statements'))
-                        <a href="{{ route('reports.supplier-statement') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                        <a href="{{ route('reports.supplier-statement') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                             <div class="flex items-center">
                                 <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                     <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -350,7 +350,7 @@
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Inventory Reports</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <!-- Inventory Summary -->
-                    <a href="{{ route('reports.inventory-summary') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.inventory-summary') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -374,7 +374,7 @@
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Track employee compensation, deductions, and departmental payroll costs.</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <!-- Payroll Summary -->
-                    <a href="{{ route('reports.payroll-summary') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.payroll-summary') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -389,7 +389,7 @@
                     </a>
 
                     <!-- Payroll by Department -->
-                    <a href="{{ route('reports.payroll-by-department') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.payroll-by-department') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -404,7 +404,7 @@
                     </a>
 
                     <!-- Employee Earnings -->
-                    <a href="{{ route('reports.employee-earnings') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.employee-earnings') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -419,7 +419,7 @@
                     </a>
 
                     <!-- Payroll Register -->
-                    <a href="{{ route('reports.payroll-register') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.payroll-register') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -434,7 +434,7 @@
                     </a>
 
                     <!-- YTD Earnings -->
-                    <a href="{{ route('reports.ytd-earnings') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.ytd-earnings') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -449,7 +449,7 @@
                     </a>
 
                     <!-- Tax Liability -->
-                    <a href="{{ route('reports.tax-liability-payroll') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.tax-liability-payroll') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -464,7 +464,7 @@
                     </a>
 
                     <!-- Employer Contributions -->
-                    <a href="{{ route('reports.employer-contributions') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.employer-contributions') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -479,7 +479,7 @@
                     </a>
 
                     <!-- Bank Disbursement -->
-                    <a href="{{ route('reports.bank-disbursement') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.bank-disbursement') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -494,7 +494,7 @@
                     </a>
 
                     <!-- Salary Revision History -->
-                    <a href="{{ route('reports.salary-revision-history') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.salary-revision-history') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -518,7 +518,7 @@
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Create your own reports with flexible data sources, filters, grouping, and calculations.</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <!-- Custom Report Builder -->
-                    <a href="{{ route('reports.custom.index') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+                    <a href="{{ route('reports.custom.index') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-brand-50 dark:bg-brand-900/60 rounded-md p-3">
                                 <svg class="h-6 w-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

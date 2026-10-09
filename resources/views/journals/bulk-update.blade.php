@@ -43,7 +43,7 @@
                     <div class="p-6">
                         <div class="flex items-center mb-4">
                             <div class="flex-shrink-0 bg-green-100 dark:bg-green-900/50 rounded-full p-3">
-                                <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-6 h-6 text-green-700 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
                             </div>
@@ -77,7 +77,7 @@
                                 </div>
                             </div>
                             
-                            <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition"
+                            <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition"
                                 {{ $draftJournals->isEmpty() ? 'disabled' : '' }}>
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
@@ -138,7 +138,7 @@
                     <div class="p-6">
                         <div class="flex items-center mb-4">
                             <div class="flex-shrink-0 bg-yellow-100 dark:bg-yellow-900/50 rounded-full p-3">
-                                <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-6 h-6 text-yellow-700 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                                 </svg>
                             </div>
@@ -186,7 +186,7 @@
                     <div class="p-6">
                         <div class="flex items-center mb-4">
                             <div class="flex-shrink-0 bg-red-100 dark:bg-red-900/50 rounded-full p-3">
-                                <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-6 h-6 text-red-600 dark:text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                 </svg>
                             </div>
@@ -254,26 +254,26 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 bg-green-100 dark:bg-green-900 rounded-full p-3">
-                            <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 text-green-700 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Posted</p>
-                            <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ $postedJournals }}</p>
+                            <p class="text-2xl font-bold text-green-700 dark:text-green-400">{{ $postedJournals }}</p>
                         </div>
                     </div>
                 </div>
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 bg-yellow-100 dark:bg-yellow-900 rounded-full p-3">
-                            <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 text-yellow-700 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                             </svg>
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Drafts</p>
-                            <p class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{{ $draftCount }}</p>
+                            <p class="text-2xl font-bold text-yellow-700 dark:text-yellow-400">{{ $draftCount }}</p>
                         </div>
                     </div>
                 </div>

@@ -85,7 +85,7 @@
                         <td class="px-4 py-3">
                             <x-status-badge :status="$st" :label="\App\Enums\EInvoiceStatus::tryFrom($st)?->label()" />
                             @if(in_array($st, ['rejected', 'failed'], true) && $sub?->last_error)
-                                <p class="mt-1 text-xs text-red-600 dark:text-red-400 max-w-xs">{{ \Illuminate\Support\Str::limit($sub->last_error, 120) }}</p>
+                                <p class="mt-1 text-xs text-red-600 dark:text-red-300 max-w-xs">{{ \Illuminate\Support\Str::limit($sub->last_error, 120) }}</p>
                             @endif
                         </td>
                         <td class="px-4 py-3 font-mono text-xs text-gray-700 dark:text-gray-300 break-all">{{ $st === 'accepted' ? $sub->irn : '—' }}</td>

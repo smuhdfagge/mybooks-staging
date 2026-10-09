@@ -84,7 +84,7 @@
                         </td>
                         <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ $line['plan']?->name ?? 'No active plan' }}</td>
                         @foreach(['sms', 'whatsapp'] as $channel)
-                            <td class="px-4 py-3 text-right {{ $line[$channel]['used'] >= $line[$channel]['limit'] && $line[$channel]['used'] > 0 ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-900 dark:text-white' }}">
+                            <td class="px-4 py-3 text-right {{ $line[$channel]['used'] >= $line[$channel]['limit'] && $line[$channel]['used'] > 0 ? 'text-red-600 dark:text-red-300 font-medium' : 'text-gray-900 dark:text-white' }}">
                                 {{ number_format($line[$channel]['used']) }} / {{ number_format($line[$channel]['limit']) }}
                             </td>
                         @endforeach

@@ -77,7 +77,7 @@
                         <div class="ml-5">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Deductions</dt>
-                                <dd class="text-lg font-semibold text-red-600 dark:text-red-400">{{ number_format($totalDeductions, 2) }}</dd>
+                                <dd class="text-lg font-semibold text-red-600 dark:text-red-300">{{ number_format($totalDeductions, 2) }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -95,7 +95,7 @@
                         <div class="ml-5">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Net Salary</dt>
-                                <dd class="text-lg font-semibold text-green-600 dark:text-green-400">{{ number_format($totalNet, 2) }}</dd>
+                                <dd class="text-lg font-semibold text-green-700 dark:text-green-400">{{ number_format($totalNet, 2) }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -146,10 +146,10 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
                                         {{ number_format($record['gross'], 2) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-red-600 dark:text-red-400">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-red-600 dark:text-red-300">
                                         {{ number_format($record['deductions'], 2) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-green-600 dark:text-green-400">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-green-700 dark:text-green-400">
                                         {{ number_format($record['net'], 2) }}
                                     </td>
                                 </tr>
@@ -166,8 +166,8 @@
                                 <tr>
                                     <td class="px-6 py-3 text-left text-sm font-bold text-gray-900 dark:text-white" colspan="2">Totals</td>
                                     <td class="px-6 py-3 text-right text-sm font-bold text-gray-900 dark:text-white">{{ number_format($totalGross, 2) }}</td>
-                                    <td class="px-6 py-3 text-right text-sm font-bold text-red-600 dark:text-red-400">{{ number_format($totalDeductions, 2) }}</td>
-                                    <td class="px-6 py-3 text-right text-sm font-bold text-green-600 dark:text-green-400">{{ number_format($totalNet, 2) }}</td>
+                                    <td class="px-6 py-3 text-right text-sm font-bold text-red-600 dark:text-red-300">{{ number_format($totalDeductions, 2) }}</td>
+                                    <td class="px-6 py-3 text-right text-sm font-bold text-green-700 dark:text-green-400">{{ number_format($totalNet, 2) }}</td>
                                 </tr>
                             </tfoot>
                         @endif
@@ -210,10 +210,10 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
                                         {{ number_format($payroll->gross_salary, 2) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-red-600 dark:text-red-400">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-red-600 dark:text-red-300">
                                         {{ number_format($payroll->total_deductions, 2) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-green-600 dark:text-green-400">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-green-700 dark:text-green-400">
                                         {{ number_format($payroll->net_salary, 2) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">

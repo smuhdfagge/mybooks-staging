@@ -87,7 +87,7 @@
                             </td>
                             <td class="hidden md:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-center text-sm">
                                 @if($deduction->is_taxable)
-                                    <span class="text-green-600 dark:text-green-400">Yes</span>
+                                    <span class="text-green-700 dark:text-green-400">Yes</span>
                                 @else
                                     <span class="text-gray-500 dark:text-gray-400">No</span>
                                 @endif

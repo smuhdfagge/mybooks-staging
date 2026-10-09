@@ -30,7 +30,7 @@
     <x-card>
         <div class="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="sm:col-span-2">
-                <label for="finished-search" class="form-label">Item this makes <span class="text-red-500">*</span></label>
+                <label for="finished-search" class="form-label">Item this makes <span class="text-red-600 dark:text-red-300">*</span></label>
                 <div class="relative">
                     <input type="hidden" name="item_id" :value="finished.id">
                     <input type="hidden" name="item_search" :value="finished.name">
@@ -61,7 +61,7 @@
                 <x-field name="version" label="Version" :value="old('version', $bom->version)" placeholder="e.g. 2026 recipe" maxlength="50" help="Optional. Use it when an item has more than one recipe." />
             </div>
             <div>
-                <label for="output_quantity" class="form-label">One batch makes <span class="text-red-500">*</span></label>
+                <label for="output_quantity" class="form-label">One batch makes <span class="text-red-600 dark:text-red-300">*</span></label>
                 <div class="flex items-center gap-2">
                     <input type="number" id="output_quantity" name="output_quantity" x-model.number="output" min="0.0001" step="any" inputmode="decimal" required class="form-control {{ $errors->has('output_quantity') ? 'border-red-500' : '' }}">
                     <span class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap" x-text="finished.unit"></span>
@@ -136,7 +136,7 @@
                             </td>
                             <td class="py-2 text-right text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap" data-label="Est. cost" x-text="money(lineCost(line))"></td>
                             <td class="py-2 text-center" data-cell="actions">
-                                <button type="button" @click="lines.splice(index, 1)" x-show="lines.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-400 text-sm" aria-label="Remove component">Remove</button>
+                                <button type="button" @click="lines.splice(index, 1)" x-show="lines.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-300 text-sm" aria-label="Remove component">Remove</button>
                             </td>
                         </tr>
                     </template>
@@ -173,7 +173,7 @@
                             <p class="form-error" x-show="errors[`costs.${index}.account_id`]" x-text="errors[`costs.${index}.account_id`]"></p>
                         </div>
                         <div class="sm:col-span-1 text-right">
-                            <button type="button" @click="costs.splice(index, 1)" class="text-red-600 hover:text-red-800 dark:text-red-400 text-sm py-2" aria-label="Remove cost">Remove</button>
+                            <button type="button" @click="costs.splice(index, 1)" class="text-red-600 hover:text-red-800 dark:text-red-300 text-sm py-2" aria-label="Remove cost">Remove</button>
                         </div>
                     </div>
                 </template>

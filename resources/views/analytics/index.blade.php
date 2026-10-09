@@ -71,14 +71,14 @@
                 </div>
                 <div class="mt-2 flex items-center text-sm">
                     @if($kpis['revenue']['change'] >= 0)
-                        <span class="text-green-600 dark:text-green-400 flex items-center">
+                        <span class="text-green-700 dark:text-green-400 flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
                             </svg>
                             {{ $kpis['revenue']['change'] }}%
                         </span>
                     @else
-                        <span class="text-red-600 dark:text-red-400 flex items-center">
+                        <span class="text-red-600 dark:text-red-300 flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
                             </svg>
@@ -99,21 +99,21 @@
                         </p>
                     </div>
                     <div class="p-3 rounded-full bg-green-100 dark:bg-green-900">
-                        <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-6 h-6 text-green-700 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                     </div>
                 </div>
                 <div class="mt-2 flex items-center text-sm">
                     @if($kpis['invoices']['change'] >= 0)
-                        <span class="text-green-600 dark:text-green-400 flex items-center">
+                        <span class="text-green-700 dark:text-green-400 flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
                             </svg>
                             {{ $kpis['invoices']['change'] }}%
                         </span>
                     @else
-                        <span class="text-red-600 dark:text-red-400 flex items-center">
+                        <span class="text-red-600 dark:text-red-300 flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
                             </svg>
@@ -141,14 +141,14 @@
                 </div>
                 <div class="mt-2 flex items-center text-sm">
                     @if($kpis['avg_order_value']['change'] >= 0)
-                        <span class="text-green-600 dark:text-green-400 flex items-center">
+                        <span class="text-green-700 dark:text-green-400 flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
                             </svg>
                             {{ $kpis['avg_order_value']['change'] }}%
                         </span>
                     @else
-                        <span class="text-red-600 dark:text-red-400 flex items-center">
+                        <span class="text-red-600 dark:text-red-300 flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
                             </svg>
@@ -169,21 +169,21 @@
                         </p>
                     </div>
                     <div class="p-3 rounded-full bg-orange-100 dark:bg-orange-900">
-                        <svg class="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-6 h-6 text-orange-700 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
                         </svg>
                     </div>
                 </div>
                 <div class="mt-2 flex items-center text-sm">
                     @if($kpis['new_customers']['change'] >= 0)
-                        <span class="text-green-600 dark:text-green-400 flex items-center">
+                        <span class="text-green-700 dark:text-green-400 flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
                             </svg>
                             {{ $kpis['new_customers']['change'] }}%
                         </span>
                     @else
-                        <span class="text-red-600 dark:text-red-400 flex items-center">
+                        <span class="text-red-600 dark:text-red-300 flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
                             </svg>
@@ -203,15 +203,15 @@
             </div>
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
                 <p class="text-sm text-gray-500 dark:text-gray-400">Outstanding Balance</p>
-                <p class="text-lg font-semibold text-yellow-600 dark:text-yellow-400">{{ number_format($kpis['outstanding_balance'], 2) }}</p>
+                <p class="text-lg font-semibold text-yellow-700 dark:text-yellow-400">{{ number_format($kpis['outstanding_balance'], 2) }}</p>
             </div>
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
                 <p class="text-sm text-gray-500 dark:text-gray-400">Overdue Amount</p>
-                <p class="text-lg font-semibold text-red-600 dark:text-red-400">{{ number_format($kpis['overdue_amount'], 2) }}</p>
+                <p class="text-lg font-semibold text-red-600 dark:text-red-300">{{ number_format($kpis['overdue_amount'], 2) }}</p>
             </div>
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
                 <p class="text-sm text-gray-500 dark:text-gray-400">Payments Received</p>
-                <p class="text-lg font-semibold text-green-600 dark:text-green-400">{{ number_format($kpis['payments']['current'], 2) }}</p>
+                <p class="text-lg font-semibold text-green-700 dark:text-green-400">{{ number_format($kpis['payments']['current'], 2) }}</p>
             </div>
         </div>
 
@@ -248,27 +248,27 @@
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div class="text-center p-4 bg-brand-50 dark:bg-brand-900/30 rounded-lg">
                     <p class="text-2xl font-bold text-brand-600 dark:text-brand-300">{{ $customerRetention['active_customers'] }}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Active Customers</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400">Active Customers</p>
                 </div>
                 <div class="text-center p-4 bg-green-50 dark:bg-green-900/30 rounded-lg">
-                    <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ $customerRetention['repeat_customers'] }}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Repeat Customers</p>
+                    <p class="text-2xl font-bold text-green-700 dark:text-green-400">{{ $customerRetention['repeat_customers'] }}</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400">Repeat Customers</p>
                 </div>
                 <div class="text-center p-4 bg-accent-50 dark:bg-accent-900/30 rounded-lg">
                     <p class="text-2xl font-bold text-accent-700 dark:text-accent-300">{{ $customerRetention['repeat_rate'] }}%</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Repeat Rate</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400">Repeat Rate</p>
                 </div>
                 <div class="text-center p-4 bg-orange-50 dark:bg-orange-900/30 rounded-lg">
-                    <p class="text-2xl font-bold text-orange-600 dark:text-orange-400">{{ number_format($customerRetention['avg_lifetime_value'], 0) }}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Avg Lifetime Value</p>
+                    <p class="text-2xl font-bold text-orange-700 dark:text-orange-400">{{ number_format($customerRetention['avg_lifetime_value'], 0) }}</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400">Avg Lifetime Value</p>
                 </div>
                 <div class="text-center p-4 bg-red-50 dark:bg-red-900/30 rounded-lg">
-                    <p class="text-2xl font-bold text-red-600 dark:text-red-400">{{ $customerRetention['churned_customers'] }}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Churned (90+ days)</p>
+                    <p class="text-2xl font-bold text-red-600 dark:text-red-300">{{ $customerRetention['churned_customers'] }}</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400">Churned (90+ days)</p>
                 </div>
                 <div class="text-center p-4 bg-teal-50 dark:bg-teal-900/30 rounded-lg">
                     <p class="text-2xl font-bold text-teal-600 dark:text-teal-400">{{ $customerRetention['retention_rate'] }}%</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Retention Rate</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400">Retention Rate</p>
                 </div>
             </div>
         </div>
@@ -350,7 +350,7 @@
         @if(count($overdueAnalysis) > 0)
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                <svg class="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                 </svg>
                 Overdue Invoices
@@ -376,7 +376,7 @@
                                     </a>
                                 </td>
                                 <td class="px-3 py-2 text-sm text-gray-900 dark:text-gray-200">{{ $invoice['customer'] }}</td>
-                                <td class="px-3 py-2 text-sm text-right font-medium text-red-600 dark:text-red-400">{{ number_format($invoice['balance_due'], 2) }}</td>
+                                <td class="px-3 py-2 text-sm text-right font-medium text-red-600 dark:text-red-300">{{ number_format($invoice['balance_due'], 2) }}</td>
                                 <td class="px-3 py-2 text-sm text-right text-gray-900 dark:text-gray-200">{{ $invoice['due_date'] }}</td>
                                 <td class="px-3 py-2 text-sm text-right">
                                     <span class="px-2 py-1 text-xs font-medium rounded-full 

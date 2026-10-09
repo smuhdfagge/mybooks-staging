@@ -36,7 +36,7 @@
                     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 bg-red-100 dark:bg-red-900/50 rounded-full p-4">
-                                <svg class="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-8 h-8 text-red-600 dark:text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
                                 </svg>
                             </div>
@@ -52,7 +52,7 @@
                                     'draft' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
                                     'pending_approval' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400',
                                     'approved' => 'bg-brand-100 text-brand-800 dark:bg-brand-900/50 dark:text-brand-300',
-                                    'rejected' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400',
+                                    'rejected' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
                                     'paid' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400',
                                 ];
                             @endphp
@@ -88,7 +88,7 @@
                                 @if($expense->canBeApproved())
                                     <form action="{{ route('expenses.approve', $expense) }}" method="POST" class="inline">
                                         @csrf
-                                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
+                                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
                                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                             </svg>
@@ -109,7 +109,7 @@
                                 @if($expense->canBeMarkedAsPaid())
                                     <form action="{{ route('expenses.mark-paid', $expense) }}" method="POST" class="inline">
                                         @csrf
-                                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
+                                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
                                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                             </svg>
@@ -133,10 +133,10 @@
                             </svg>
                         </div>
                         <div class="ml-3">
-                            <h3 class="text-sm font-medium text-red-800 dark:text-red-400">Expense Rejected</h3>
+                            <h3 class="text-sm font-medium text-red-800 dark:text-red-300">Expense Rejected</h3>
                             <p class="mt-1 text-sm text-red-700 dark:text-red-300">{{ $expense->rejection_reason }}</p>
                             @if($expense->rejectedByUser)
-                                <p class="mt-1 text-xs text-red-600 dark:text-red-400">
+                                <p class="mt-1 text-xs text-red-600 dark:text-red-300">
                                     Rejected by {{ $expense->rejectedByUser->name }} on {{ $expense->rejected_at->format('M d, Y g:i A') }}
                                 </p>
                             @endif
@@ -324,7 +324,7 @@
             <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 overflow-hidden shadow-sm sm:rounded-lg mt-6">
                 <div class="p-6">
                     <div class="flex items-center">
-                        <svg class="w-5 h-5 text-yellow-600 dark:text-yellow-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 text-yellow-700 dark:text-yellow-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                         <span class="text-sm text-yellow-800 dark:text-yellow-300">
@@ -369,7 +369,7 @@
                     <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                         <div class="sm:flex sm:items-start">
                             <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 dark:bg-yellow-900/50 sm:mx-0 sm:h-10 sm:w-10">
-                                <svg class="h-6 w-6 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg class="h-6 w-6 text-yellow-700 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                                 </svg>
                             </div>

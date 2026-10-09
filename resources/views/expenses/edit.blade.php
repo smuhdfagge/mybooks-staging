@@ -44,7 +44,7 @@
                     <!-- Expense Information -->
                     <div class="mb-8">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
                             </svg>
                             Expense Details
@@ -74,19 +74,19 @@
                                     search-placeholder="Search accounts..."
                                     :has-error="$errors->has('expense_account_id')" />
                                 @error('expense_account_id')
-                                    <p id="expense_account_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="expense_account_id-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
-                                <label for="amount" class="form-label">Amount <span class="text-red-500">*</span></label>
+                                <label for="amount" class="form-label">Amount <span class="text-red-600 dark:text-red-300">*</span></label>
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400">@currencySymbol</span>
                                     <input type="number" name="amount" id="amount" value="{{ old('amount', $expense->amount) }}" min="0.01" step="0.01" required
                                         class="w-full pl-8 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 @error('amount') border-red-500 @enderror" @error('amount') aria-invalid="true" aria-describedby="amount-error" @enderror>
                                 </div>
                                 @error('amount')
-                                    <p id="amount-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="amount-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -120,7 +120,7 @@
                                     </div>
                                 </div>
                                 @error('vendor_id')
-                                    <p id="vendor_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="vendor_id-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -134,7 +134,7 @@
                                     search-placeholder="Search accounts..."
                                     :has-error="$errors->has('paid_through_id')" />
                                 @error('paid_through_id')
-                                    <p id="paid_through_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="paid_through_id-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -149,7 +149,7 @@
                                     :has-error="$errors->has('bank_id')" />
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Select which bank account to pay from</p>
                                 @error('bank_id')
-                                    <p id="bank_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    <p id="bank_id-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                                 @enderror
                             </div>
 

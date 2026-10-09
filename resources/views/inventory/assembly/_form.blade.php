@@ -44,7 +44,7 @@
         <div class="p-4 sm:p-6">
             <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 mb-3">
                 <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">{{ $breakdown ? 'In stock' : 'Components needed' }}</h3>
-                <p class="text-sm" :class="short() ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-600 dark:text-gray-400'">
+                <p class="text-sm" :class="short() ? 'text-red-600 dark:text-red-300 font-medium' : 'text-gray-600 dark:text-gray-400'">
                     <span x-text="maxText()"></span>
                 </p>
             </div>
@@ -61,7 +61,7 @@
                             <tr>
                                 <td class="py-2 pr-2" x-text="c.name"></td>
                                 <td class="py-2 px-2 text-right whitespace-nowrap" x-text="qty(c.per_unit * (Number(quantity) || 0)) + (c.unit ? ' ' + c.unit : '')"></td>
-                                <td class="py-2 pl-2 text-right whitespace-nowrap" :class="c.per_unit * (Number(quantity) || 0) > c.free + 0.00001 ? 'text-red-600 dark:text-red-400 font-medium' : ''">
+                                <td class="py-2 pl-2 text-right whitespace-nowrap" :class="c.per_unit * (Number(quantity) || 0) > c.free + 0.00001 ? 'text-red-600 dark:text-red-300 font-medium' : ''">
                                     <span x-text="qty(c.free) + (c.unit ? ' ' + c.unit : '')"></span>
                                     <span x-show="c.per_unit * (Number(quantity) || 0) > c.free + 0.00001" class="block text-xs">Not enough</span>
                                 </td>

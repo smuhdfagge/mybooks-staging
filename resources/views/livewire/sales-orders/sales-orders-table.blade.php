@@ -123,7 +123,7 @@
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <a href="{{ route('sales-orders.show', $order) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300 mr-3">View</a>
                             @if($order->status === 'draft')
-                                <a href="{{ route('sales-orders.edit', $order) }}" class="text-yellow-600 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-300">Edit</a>
+                                <a href="{{ route('sales-orders.edit', $order) }}" class="text-yellow-700 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-300">Edit</a>
                             @endif
                         </td>
                     </tr>

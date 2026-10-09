@@ -22,7 +22,7 @@
                     <div class="space-y-6">
                         <!-- Employee -->
                         <div>
-                            <label for="employee_id" class="form-label">Employee <span class="text-red-500">*</span></label>
+                            <label for="employee_id" class="form-label">Employee <span class="text-red-600 dark:text-red-300">*</span></label>
                             <select name="employee_id" id="employee_id" required
                                 class="form-control @error('employee_id') border-red-500 @enderror" @error('employee_id') aria-invalid="true" aria-describedby="employee_id-error" @enderror>
                                 <option value="">Select Employee</option>
@@ -33,13 +33,13 @@
                                 @endforeach
                             </select>
                             @error('employee_id')
-                                <p id="employee_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="employee_id-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
 
                         <!-- Leave Type -->
                         <div>
-                            <label for="leave_type_id" class="form-label">Leave Type <span class="text-red-500">*</span></label>
+                            <label for="leave_type_id" class="form-label">Leave Type <span class="text-red-600 dark:text-red-300">*</span></label>
                             <select name="leave_type_id" id="leave_type_id" required
                                 class="form-control @error('leave_type_id') border-red-500 @enderror" @error('leave_type_id') aria-invalid="true" aria-describedby="leave_type_id-error" @enderror>
                                 <option value="">Select Leave Type</option>
@@ -50,7 +50,7 @@
                                 @endforeach
                             </select>
                             @error('leave_type_id')
-                                <p id="leave_type_id-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="leave_type_id-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -72,7 +72,7 @@
                                 class="form-control @error('reason') border-red-500 @enderror"
                                 placeholder="Optional: Provide a reason for your leave request" @error('reason') aria-invalid="true" aria-describedby="reason-error" @enderror>{{ old('reason') }}</textarea>
                             @error('reason')
-                                <p id="reason-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="reason-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>

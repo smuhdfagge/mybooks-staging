@@ -102,7 +102,7 @@
                                                 'draft' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
                                                 'pending_approval' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400',
                                                 'approved' => 'bg-brand-100 text-brand-800 dark:bg-brand-900/50 dark:text-brand-300',
-                                                'rejected' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400',
+                                                'rejected' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
                                                 'paid' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400',
                                             ];
                                         @endphp
@@ -145,7 +145,7 @@
                                             @if($isAdmin)
                                                 <!-- Approve (only for pending_approval) -->
                                                 @if($expense->canBeApproved())
-                                                    <button wire:click="approveExpense({{ $expense->id }})" wire:loading.attr="disabled" class="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300" title="Approve" aria-label="Approve">
+                                                    <button wire:click="approveExpense({{ $expense->id }})" wire:loading.attr="disabled" class="text-green-700 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300" title="Approve" aria-label="Approve">
                                                         <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                                         </svg>
@@ -154,7 +154,7 @@
 
                                                 <!-- Reject (only for pending_approval) -->
                                                 @if($expense->canBeRejected())
-                                                    <button wire:click="openRejectModal({{ $expense->id }})" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300" title="Reject" aria-label="Reject">
+                                                    <button wire:click="openRejectModal({{ $expense->id }})" class="text-red-600 dark:text-red-300 hover:text-red-900 dark:hover:text-red-300" title="Reject" aria-label="Reject">
                                                         <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                                         </svg>
@@ -163,7 +163,7 @@
 
                                                 <!-- Mark as Paid (only for approved) -->
                                                 @if($expense->canBeMarkedAsPaid())
-                                                    <button wire:click="markAsPaid({{ $expense->id }})" class="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300" title="Mark as Paid" aria-label="Mark as Paid">
+                                                    <button wire:click="markAsPaid({{ $expense->id }})" class="text-green-700 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300" title="Mark as Paid" aria-label="Mark as Paid">
                                                         <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                                         </svg>
@@ -173,7 +173,7 @@
                                             
                                             <!-- Delete (only for draft/rejected) -->
                                             @if(in_array($expense->status, ['draft', 'rejected']))
-                                                <button wire:click="confirmDelete({{ $expense->id }})" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300" title="Delete" aria-label="Delete">
+                                                <button wire:click="confirmDelete({{ $expense->id }})" class="text-red-600 dark:text-red-300 hover:text-red-900 dark:hover:text-red-300" title="Delete" aria-label="Delete">
                                                     <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                                     </svg>
@@ -225,7 +225,7 @@
                 <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div class="sm:flex sm:items-start">
                         <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/50 sm:mx-0 sm:h-10 sm:w-10">
-                            <svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="h-6 w-6 text-red-600 dark:text-red-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                             </svg>
                         </div>
@@ -267,7 +267,7 @@
                 <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div class="sm:flex sm:items-start">
                         <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 dark:bg-yellow-900/50 sm:mx-0 sm:h-10 sm:w-10">
-                            <svg class="h-6 w-6 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="h-6 w-6 text-yellow-700 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                             </svg>
                         </div>

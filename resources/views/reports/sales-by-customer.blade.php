@@ -166,10 +166,10 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900 dark:text-white">
                                             {{ number_format($customer->invoices_sum_total ?? 0, 2) }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-green-600 dark:text-green-400">
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-green-700 dark:text-green-400">
                                             {{ number_format($customer->invoices_sum_amount_paid ?? 0, 2) }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm {{ ($customer->invoices_sum_total ?? 0) - ($customer->invoices_sum_amount_paid ?? 0) > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400' }}">
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm {{ ($customer->invoices_sum_total ?? 0) - ($customer->invoices_sum_amount_paid ?? 0) > 0 ? 'text-red-600 dark:text-red-300' : 'text-gray-500 dark:text-gray-400' }}">
                                             {{ number_format(($customer->invoices_sum_total ?? 0) - ($customer->invoices_sum_amount_paid ?? 0), 2) }}
                                         </td>
                                     </tr>
@@ -183,10 +183,10 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-gray-900 dark:text-white">
                                         {{ number_format($totalSales, 2) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-green-600 dark:text-green-400">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-green-700 dark:text-green-400">
                                         {{ number_format($totalPaid, 2) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-red-600 dark:text-red-400">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-red-600 dark:text-red-300">
                                         {{ number_format($totalSales - $totalPaid, 2) }}
                                     </td>
                                 </tr>

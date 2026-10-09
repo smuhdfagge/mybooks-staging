@@ -230,7 +230,7 @@
                         </div>
                         <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Live Chat</h3>
                         <p class="text-gray-600 dark:text-gray-400 mb-4">Chat with our team in real-time</p>
-                        <button @click="if(typeof Tawk_API !== 'undefined') Tawk_API.maximize()" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
+                        <button @click="if(typeof Tawk_API !== 'undefined') Tawk_API.maximize()" class="inline-flex items-center px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-700 transition font-medium">
                             <span class="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></span>
                             Start Chat Now
                         </button>
@@ -266,19 +266,19 @@
                     <div class="space-y-4">
                         <div class="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800">
                             <span class="text-gray-700 dark:text-gray-300">Web Application</span>
-                            <span class="text-green-600 dark:text-green-400 font-medium">Operational</span>
+                            <span class="text-green-700 dark:text-green-400 font-medium">Operational</span>
                         </div>
                         <div class="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800">
                             <span class="text-gray-700 dark:text-gray-300">API Services</span>
-                            <span class="text-green-600 dark:text-green-400 font-medium">Operational</span>
+                            <span class="text-green-700 dark:text-green-400 font-medium">Operational</span>
                         </div>
                         <div class="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800">
                             <span class="text-gray-700 dark:text-gray-300">Database</span>
-                            <span class="text-green-600 dark:text-green-400 font-medium">Operational</span>
+                            <span class="text-green-700 dark:text-green-400 font-medium">Operational</span>
                         </div>
                         <div class="flex items-center justify-between py-3">
                             <span class="text-gray-700 dark:text-gray-300">Email Services</span>
-                            <span class="text-green-600 dark:text-green-400 font-medium">Operational</span>
+                            <span class="text-green-700 dark:text-green-400 font-medium">Operational</span>
                         </div>
                     </div>
 

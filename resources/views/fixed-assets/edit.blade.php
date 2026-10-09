@@ -28,7 +28,7 @@
                                     <input type="text" name="name" id="name" value="{{ old('name', $asset->name) }}" required
                                         class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-brand-500 dark:focus:border-brand-600 focus:ring-brand-500 dark:focus:ring-brand-600" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                                     @error('name')
-                                        <p id="name-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                        <p id="name-error" class="text-red-600 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
 
@@ -37,7 +37,7 @@
                                     <input type="text" name="asset_number" id="asset_number" value="{{ old('asset_number', $asset->asset_number) }}" required
                                         class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-brand-500 dark:focus:border-brand-600 focus:ring-brand-500 dark:focus:ring-brand-600" @error('asset_number') aria-invalid="true" aria-describedby="asset_number-error" @enderror>
                                     @error('asset_number')
-                                        <p id="asset_number-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                        <p id="asset_number-error" class="text-red-600 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
 
@@ -53,7 +53,7 @@
                                         @endforeach
                                     </select>
                                     @error('category_id')
-                                        <p id="category_id-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                        <p id="category_id-error" class="text-red-600 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
 
@@ -69,7 +69,7 @@
                                         @endif
                                     </select>
                                     @error('status')
-                                        <p id="status-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                        <p id="status-error" class="text-red-600 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
 
@@ -78,7 +78,7 @@
                                     <textarea name="description" id="description" rows="3"
                                         class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-brand-500 dark:focus:border-brand-600 focus:ring-brand-500 dark:focus:ring-brand-600" @error('description') aria-invalid="true" aria-describedby="description-error" @enderror>{{ old('description', $asset->description) }}</textarea>
                                     @error('description')
-                                        <p id="description-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                        <p id="description-error" class="text-red-600 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
                             </div>
@@ -94,7 +94,7 @@
                                     <input type="text" name="location" id="location" value="{{ old('location', $asset->location) }}"
                                         class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-brand-500 dark:focus:border-brand-600 focus:ring-brand-500 dark:focus:ring-brand-600" @error('location') aria-invalid="true" aria-describedby="location-error" @enderror>
                                     @error('location')
-                                        <p id="location-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                        <p id="location-error" class="text-red-600 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
 
@@ -103,7 +103,7 @@
                                     <input type="number" name="assigned_to" id="assigned_to" value="{{ old('assigned_to', $asset->assigned_to) }}"
                                         class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-brand-500 dark:focus:border-brand-600 focus:ring-brand-500 dark:focus:ring-brand-600" @error('assigned_to') aria-invalid="true" aria-describedby="assigned_to-error" @enderror>
                                     @error('assigned_to')
-                                        <p id="assigned_to-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                        <p id="assigned_to-error" class="text-red-600 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
 
@@ -112,7 +112,7 @@
                                     <textarea name="notes" id="notes" rows="3"
                                         class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-brand-500 dark:focus:border-brand-600 focus:ring-brand-500 dark:focus:ring-brand-600" @error('notes') aria-invalid="true" aria-describedby="notes-error" @enderror>{{ old('notes', $asset->notes) }}</textarea>
                                     @error('notes')
-                                        <p id="notes-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                        <p id="notes-error" class="text-red-600 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
                             </div>

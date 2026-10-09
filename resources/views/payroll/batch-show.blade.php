@@ -27,7 +27,7 @@
                     <form action="{{ route('payroll-batches.mark-paid', $payrollBatch) }}" method="POST" class="inline"
                         data-confirm="Mark all payroll records as paid?">
                         @csrf
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>
@@ -103,7 +103,7 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 bg-green-100 dark:bg-green-900/50 rounded-full p-3">
-                            <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 text-green-700 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                         </div>
@@ -117,7 +117,7 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 bg-red-100 dark:bg-red-900/50 rounded-full p-3">
-                            <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 text-red-600 dark:text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                         </div>
@@ -274,7 +274,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100">
                                             {{ number_format($payroll->gross_salary, 2) }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600 dark:text-red-400">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600 dark:text-red-300">
                                             {{ number_format($payroll->total_deductions, 2) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-900 dark:text-gray-100">
@@ -313,7 +313,7 @@
                                     <td colspan="4" class="px-6 py-3 text-right text-sm font-bold text-gray-900 dark:text-gray-100 uppercase">Batch Totals</td>
                                     <td class="px-6 py-3 text-right text-sm font-bold text-gray-900 dark:text-gray-100">{{ number_format($payrollBatch->payrolls()->sum('basic_salary'), 2) }}</td>
                                     <td class="px-6 py-3 text-right text-sm font-bold text-gray-900 dark:text-gray-100">{{ number_format($payrollBatch->total_gross, 2) }}</td>
-                                    <td class="px-6 py-3 text-right text-sm font-bold text-red-600 dark:text-red-400">{{ number_format($payrollBatch->total_deductions, 2) }}</td>
+                                    <td class="px-6 py-3 text-right text-sm font-bold text-red-600 dark:text-red-300">{{ number_format($payrollBatch->total_deductions, 2) }}</td>
                                     <td class="px-6 py-3 text-right text-sm font-bold text-gray-900 dark:text-gray-100">{{ number_format($payrollBatch->total_net, 2) }}</td>
                                     <td colspan="2"></td>
                                 </tr>

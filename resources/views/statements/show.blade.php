@@ -91,7 +91,7 @@
                         </x-card>
                         <x-card class="p-4">
                             <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{{ $s->creditsHeading() }}</p>
-                            <p class="text-lg sm:text-2xl font-semibold text-green-600 dark:text-green-400">@money($s->totalCredits)</p>
+                            <p class="text-lg sm:text-2xl font-semibold text-green-700 dark:text-green-400">@money($s->totalCredits)</p>
                         </x-card>
                     @else
                         <x-card class="p-4">
@@ -100,11 +100,11 @@
                         </x-card>
                         <x-card class="p-4">
                             <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Credits not yet used</p>
-                            <p class="text-lg sm:text-2xl font-semibold text-green-600 dark:text-green-400">@money(array_sum(array_column($s->open['credits'], 'amount')))</p>
+                            <p class="text-lg sm:text-2xl font-semibold text-green-700 dark:text-green-400">@money(array_sum(array_column($s->open['credits'], 'amount')))</p>
                         </x-card>
                         <x-card class="p-4">
                             <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Overdue</p>
-                            <p class="text-lg sm:text-2xl font-semibold text-red-600 dark:text-red-400">@money($s->ageing['1_30'] + $s->ageing['31_60'] + $s->ageing['61_90'] + $s->ageing['over_90'])</p>
+                            <p class="text-lg sm:text-2xl font-semibold text-red-600 dark:text-red-300">@money($s->ageing['1_30'] + $s->ageing['31_60'] + $s->ageing['61_90'] + $s->ageing['over_90'])</p>
                         </x-card>
                     @endif
                     <x-card class="p-4 ring-1 ring-brand-200 dark:ring-brand-800">
@@ -143,11 +143,11 @@
                                                 {{-- Amounts under the details on phones --}}
                                                 <span class="sm:hidden block text-xs mt-0.5">
                                                     @if($row['charge'] > 0)<span class="whitespace-nowrap text-gray-700 dark:text-gray-300">+@money($row['charge'])</span>@endif
-                                                    @if($row['credit'] > 0)<span class="whitespace-nowrap text-green-600 dark:text-green-400 ml-1">-@money($row['credit'])</span>@endif
+                                                    @if($row['credit'] > 0)<span class="whitespace-nowrap text-green-700 dark:text-green-400 ml-1">-@money($row['credit'])</span>@endif
                                                 </span>
                                             </td>
                                             <td class="hidden sm:table-cell px-4 py-2 text-right whitespace-nowrap text-gray-900 dark:text-gray-100">{{ $row['charge'] > 0 ? \App\Support\Money::format($row['charge']) : '' }}</td>
-                                            <td class="hidden sm:table-cell px-4 py-2 text-right whitespace-nowrap text-green-600 dark:text-green-400">{{ $row['credit'] > 0 ? \App\Support\Money::format($row['credit']) : '' }}</td>
+                                            <td class="hidden sm:table-cell px-4 py-2 text-right whitespace-nowrap text-green-700 dark:text-green-400">{{ $row['credit'] > 0 ? \App\Support\Money::format($row['credit']) : '' }}</td>
                                             <td class="px-3 sm:px-4 py-2 text-right whitespace-nowrap font-medium text-gray-900 dark:text-gray-100">@money($row['balance'])</td>
                                         </tr>
                                     @empty
@@ -159,7 +159,7 @@
                                         <td class="px-3 sm:px-4 py-3"></td>
                                         <td class="px-3 sm:px-4 py-3 text-gray-900 dark:text-gray-100">Closing balance</td>
                                         <td class="hidden sm:table-cell px-4 py-3 text-right whitespace-nowrap">@money($s->totalCharges)</td>
-                                        <td class="hidden sm:table-cell px-4 py-3 text-right whitespace-nowrap text-green-600 dark:text-green-400">@money($s->totalCredits)</td>
+                                        <td class="hidden sm:table-cell px-4 py-3 text-right whitespace-nowrap text-green-700 dark:text-green-400">@money($s->totalCredits)</td>
                                         <td class="px-3 sm:px-4 py-3 text-right whitespace-nowrap text-brand-600 dark:text-brand-300">@money($s->closing)</td>
                                     </tr>
                                 </tfoot>
@@ -187,7 +187,7 @@
                                                 <span class="block text-xs text-gray-500 dark:text-gray-400">{{ \Carbon\Carbon::parse($item['date'])->format('j M Y') }}<span class="sm:hidden"> · due {{ \Carbon\Carbon::parse($item['due_date'])->format('j M Y') }}</span></span>
                                             </td>
                                             <td class="hidden sm:table-cell px-4 py-2 whitespace-nowrap text-gray-700 dark:text-gray-300">{{ \Carbon\Carbon::parse($item['due_date'])->format('j M Y') }}</td>
-                                            <td class="px-3 sm:px-4 py-2 text-right {{ $item['days_overdue'] > 0 ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-500 dark:text-gray-400' }}">{{ $item['days_overdue'] > 0 ? $item['days_overdue'] : 'Not yet due' }}</td>
+                                            <td class="px-3 sm:px-4 py-2 text-right {{ $item['days_overdue'] > 0 ? 'text-red-600 dark:text-red-300 font-medium' : 'text-gray-500 dark:text-gray-400' }}">{{ $item['days_overdue'] > 0 ? $item['days_overdue'] : 'Not yet due' }}</td>
                                             <td class="hidden sm:table-cell px-4 py-2 text-right whitespace-nowrap text-gray-700 dark:text-gray-300">@money($item['total'])</td>
                                             <td class="px-3 sm:px-4 py-2 text-right whitespace-nowrap font-medium text-gray-900 dark:text-gray-100">@money($item['amount'])</td>
                                         </tr>
@@ -208,7 +208,7 @@
                                             @if($credit['url'])<a href="{{ $credit['url'] }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $credit['reference'] }}</a>@else{{ $credit['reference'] }}@endif
                                             <span class="block text-xs text-gray-500 dark:text-gray-400">{{ \Carbon\Carbon::parse($credit['date'])->format('j M Y') }}</span>
                                         </span>
-                                        <span class="whitespace-nowrap text-green-600 dark:text-green-400 font-medium">-@money($credit['amount'])</span>
+                                        <span class="whitespace-nowrap text-green-700 dark:text-green-400 font-medium">-@money($credit['amount'])</span>
                                     </li>
                                 @endforeach
                             </ul>
@@ -221,7 +221,7 @@
                         @foreach(\App\Services\Statements\Subledger::AGEING_LABELS as $key => $label)
                             <div class="p-3 {{ $key === 'total' ? 'col-span-2 sm:col-span-1 bg-brand-50 dark:bg-brand-900/40' : 'bg-white dark:bg-gray-800' }}">
                                 <p class="text-xs text-gray-500 dark:text-gray-400">{{ $label }}</p>
-                                <p class="text-sm sm:text-base font-semibold {{ in_array($key, ['31_60', '61_90', 'over_90'], true) && $s->ageing[$key] > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100' }}">@money($s->ageing[$key])</p>
+                                <p class="text-sm sm:text-base font-semibold {{ in_array($key, ['31_60', '61_90', 'over_90'], true) && $s->ageing[$key] > 0 ? 'text-red-600 dark:text-red-300' : 'text-gray-900 dark:text-gray-100' }}">@money($s->ageing[$key])</p>
                             </div>
                         @endforeach
                     </div>

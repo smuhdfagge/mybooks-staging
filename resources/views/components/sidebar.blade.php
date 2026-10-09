@@ -290,7 +290,7 @@
                     <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-accent-100 text-accent-800">Pro</span>
                 </a>
                 @else
-                <span class="block px-3 py-2 text-sm rounded-lg text-gray-500 cursor-not-allowed" title="Available on Professional and Enterprise plans">
+                <span class="block px-3 py-2 text-sm rounded-lg text-slate-400 cursor-not-allowed" title="Available on Professional and Enterprise plans">
                     Budgets
                     <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-brand-800 text-gray-400">Pro</span>
                 </span>

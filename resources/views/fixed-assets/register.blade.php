@@ -49,7 +49,7 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <div class="text-sm text-gray-500 dark:text-gray-400">Net Book Value</div>
-                        <div class="text-2xl font-bold text-green-600 dark:text-green-400">
+                        <div class="text-2xl font-bold text-green-700 dark:text-green-400">
                             {{ $currency }}{{ number_format($totalBookValue, 2) }}
                         </div>
                     </div>
@@ -177,7 +177,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-amber-700 dark:text-amber-300">
                                             {{ $currency }}{{ number_format($asset->accumulated_depreciation, 2) }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-green-600 dark:text-green-400">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-green-700 dark:text-green-400">
                                             {{ $currency }}{{ number_format($asset->book_value, 2) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">

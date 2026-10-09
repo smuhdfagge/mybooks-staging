@@ -128,7 +128,7 @@
                         <div class="ml-5">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Difference</dt>
-                                <dd class="text-lg font-semibold {{ abs($difference) < 0.01 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                <dd class="text-lg font-semibold {{ abs($difference) < 0.01 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
                                     {{ number_format(abs($difference), 2) }}
                                 </dd>
                             </dl>

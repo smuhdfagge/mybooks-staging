@@ -318,4 +318,27 @@ class BrandColoursTest extends TestCase
         $csp = $this->get(route('home'))->headers->get('Content-Security-Policy');
         $this->assertStringNotContainsString('fonts.bunny.net', (string) $csp);
     }
+
+    public function test_report_pdf_footer_prints_a_real_page_number(): void
+    {
+        // R12: the footer used to print "{PAGE_NUM} of {PAGE_COUNT}" word for word.
+        $layout = File::get(resource_path('views/reports/pdf/layout.blade.php'));
+
+        $this->assertStringNotContainsString('{PAGE_NUM}', $layout);
+        $this->assertStringContainsString('counter(page)', $layout);
+    }
+
+    public function test_no_view_builds_colour_classes_on_the_fly(): void
+    {
+        // R12: classes like text-{{ $colour }}-800 are never compiled by Tailwind,
+        // so they rendered black once the old blue and purple were gone.
+        $offenders = [];
+        foreach (File::allFiles(resource_path('views')) as $file) {
+            if (preg_match('/\b(?:text|bg|border)-\{\{/', File::get($file->getPathname()))) {
+                $offenders[] = $file->getRelativePathname();
+            }
+        }
+
+        $this->assertSame([], $offenders);
+    }
 }

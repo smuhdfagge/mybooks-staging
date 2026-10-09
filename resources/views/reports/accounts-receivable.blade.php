@@ -46,28 +46,28 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
                 <div class="p-4">
                     <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">Current</dt>
-                    <dd class="mt-1 text-lg font-semibold text-green-600 dark:text-green-400">{{ number_format($current, 2) }}</dd>
+                    <dd class="mt-1 text-lg font-semibold text-green-700 dark:text-green-400">{{ number_format($current, 2) }}</dd>
                 </div>
             </div>
 
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
                 <div class="p-4">
                     <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">1-30 Days</dt>
-                    <dd class="mt-1 text-lg font-semibold text-yellow-600 dark:text-yellow-400">{{ number_format($days30, 2) }}</dd>
+                    <dd class="mt-1 text-lg font-semibold text-yellow-700 dark:text-yellow-400">{{ number_format($days30, 2) }}</dd>
                 </div>
             </div>
 
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
                 <div class="p-4">
                     <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">31-60 Days</dt>
-                    <dd class="mt-1 text-lg font-semibold text-orange-600 dark:text-orange-400">{{ number_format($days60, 2) }}</dd>
+                    <dd class="mt-1 text-lg font-semibold text-orange-700 dark:text-orange-400">{{ number_format($days60, 2) }}</dd>
                 </div>
             </div>
 
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
                 <div class="p-4">
                     <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">61-90 Days</dt>
-                    <dd class="mt-1 text-lg font-semibold text-red-500 dark:text-red-400">{{ number_format($days90, 2) }}</dd>
+                    <dd class="mt-1 text-lg font-semibold text-red-600 dark:text-red-300">{{ number_format($days90, 2) }}</dd>
                 </div>
             </div>
 
@@ -155,7 +155,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                             {{ \Carbon\Carbon::parse($invoice->invoice_date)->format('M d, Y') }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm {{ $isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-500 dark:text-gray-400' }}">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm {{ $isOverdue ? 'text-red-600 dark:text-red-300 font-medium' : 'text-gray-500 dark:text-gray-400' }}">
                                             {{ \Carbon\Carbon::parse($invoice->due_date)->format('M d, Y') }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
@@ -166,9 +166,9 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
                                             @if($isOverdue)
-                                                <span class="text-red-600 dark:text-red-400 font-medium">{{ $ageDays }} days overdue</span>
+                                                <span class="text-red-600 dark:text-red-300 font-medium">{{ $ageDays }} days overdue</span>
                                             @else
-                                                <span class="text-green-600 dark:text-green-400">Due in {{ $ageDays }} days</span>
+                                                <span class="text-green-700 dark:text-green-400">Due in {{ $ageDays }} days</span>
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">

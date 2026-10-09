@@ -98,7 +98,7 @@
                         </div>
                         <div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">{{ $taxRate->type == 'exclusive' ? 'Total with tax' : 'Net amount' }}</p>
-                            <p class="text-xl font-semibold text-green-600 dark:text-green-400">
+                            <p class="text-xl font-semibold text-green-700 dark:text-green-400">
                                 @money($taxRate->type == 'exclusive' ? $taxRate->getGrossAmount(100) : $taxRate->getNetAmount(100))
                             </p>
                         </div>

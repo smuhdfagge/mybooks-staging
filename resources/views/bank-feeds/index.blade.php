@@ -47,7 +47,7 @@
                                     </span>
                                 </p>
                                 @if($c->last_error && $c->isActive())
-                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $c->last_error }}</p>
+                                    <p class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $c->last_error }}</p>
                                 @endif
                                 @if($c->providerBalance() !== null)
                                     <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">Balance at the bank: <strong>@money($c->providerBalance())</strong></p>

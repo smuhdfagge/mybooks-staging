@@ -9,7 +9,7 @@
 
         <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
             <div class="text-sm text-gray-600 dark:text-gray-400">Categories with Assets</div>
-            <div class="text-2xl font-bold text-green-600 dark:text-green-400">
+            <div class="text-2xl font-bold text-green-700 dark:text-green-400">
                 {{ $categories->filter(fn($cat) => $cat->assets_count > 0)->count() }}
             </div>
         </div>
@@ -90,14 +90,14 @@
                                 @endcan
                                 
                                 @can('edit fixed-asset-categories')
-                                <a href="{{ route('fixed-asset-categories.edit', $category) }}" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">
+                                <a href="{{ route('fixed-asset-categories.edit', $category) }}" class="text-green-700 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">
                                     Edit
                                 </a>
                                 @endcan
                                 
                                 @can('delete fixed-asset-categories')
                                 @if($category->assets_count == 0)
-                                <button wire:click="delete({{ $category->id }})" wire:confirm="Are you sure you want to delete this category?" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                <button wire:click="delete({{ $category->id }})" wire:confirm="Are you sure you want to delete this category?" class="text-red-600 hover:text-red-900 dark:text-red-300 dark:hover:text-red-300">
                                     Delete
                                 </button>
                                 @endif

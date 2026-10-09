@@ -115,7 +115,7 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                                 {{ $bill->bill_date->format('M d, Y') }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm {{ $bill->due_date->isPast() && $bill->balance_due > 0 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-900 dark:text-gray-100' }}">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm {{ $bill->due_date->isPast() && $bill->balance_due > 0 ? 'text-red-600 dark:text-red-300 font-semibold' : 'text-gray-900 dark:text-gray-100' }}">
                                 {{ $bill->due_date->format('M d, Y') }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -133,7 +133,7 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 text-right">
                                 @money($bill->total)
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $bill->balance_due > 0 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-900 dark:text-gray-100' }}">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $bill->balance_due > 0 ? 'text-red-600 dark:text-red-300 font-semibold' : 'text-gray-900 dark:text-gray-100' }}">
                                 @money($bill->balance_due)
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

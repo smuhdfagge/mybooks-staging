@@ -106,7 +106,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @if($tenant->activeSubscription?->ends_at)
-                                    <span class="text-sm @if($tenant->activeSubscription->ends_at->isPast()) text-red-600 dark:text-red-400 @elseif((int) now()->diffInDays($tenant->activeSubscription->ends_at) <= 7) text-yellow-600 dark:text-yellow-400 @else text-gray-600 dark:text-gray-400 @endif">
+                                    <span class="text-sm @if($tenant->activeSubscription->ends_at->isPast()) text-red-600 dark:text-red-300 @elseif((int) now()->diffInDays($tenant->activeSubscription->ends_at) <= 7) text-yellow-700 dark:text-yellow-400 @else text-gray-600 dark:text-gray-400 @endif">
                                         {{ $tenant->activeSubscription->ends_at->format('M d, Y') }}
                                     </span>
                                 @else

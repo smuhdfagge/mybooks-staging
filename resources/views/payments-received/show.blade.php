@@ -25,7 +25,7 @@
             </div>
             <div class="flex flex-wrap gap-2">
                 @if($paymentReceived->is_deposit && $paymentReceived->unused_amount > 0)
-                    <a href="{{ route('payments-received.apply-deposit', $paymentReceived) }}" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                    <a href="{{ route('payments-received.apply-deposit', $paymentReceived) }}" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                         </svg>
@@ -88,7 +88,7 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 mr-2 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                             </svg>
                             Payment Details
@@ -123,7 +123,7 @@
                             @endif
                             <div class="flex justify-between py-2">
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Amount</dt>
-                                <dd class="text-lg font-bold text-green-600 dark:text-green-400">{{ number_format($paymentReceived->amount, 2) }}</dd>
+                                <dd class="text-lg font-bold text-green-700 dark:text-green-400">{{ number_format($paymentReceived->amount, 2) }}</dd>
                             </div>
                         </dl>
                     </div>
@@ -133,7 +133,7 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 mr-2 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                             </svg>
                             Customer Information
@@ -165,7 +165,7 @@
                                             {{ $paymentReceived->invoice->invoice_number }}
                                         </a>
                                     @elseif($paymentReceived->is_deposit)
-                                        <span class="text-sm text-green-600 dark:text-green-400">Customer Deposit</span>
+                                        <span class="text-sm text-green-700 dark:text-green-400">Customer Deposit</span>
                                     @else
                                         <span class="text-sm text-gray-500 dark:text-gray-400">General Payment</span>
                                     @endif
@@ -174,7 +174,7 @@
                             @if($paymentReceived->invoice)
                             <div class="flex justify-between py-2">
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Invoice Balance</dt>
-                                <dd class="text-sm {{ $paymentReceived->invoice->balance_due > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }} font-medium">
+                                <dd class="text-sm {{ $paymentReceived->invoice->balance_due > 0 ? 'text-red-600 dark:text-red-300' : 'text-green-700 dark:text-green-400' }} font-medium">
                                     {{ number_format($paymentReceived->invoice->balance_due, 2) }}
                                     @if($paymentReceived->invoice->balance_due <= 0)
                                         <span class="ml-1 text-xs">(Paid)</span>
@@ -193,7 +193,7 @@
                             </div>
                             <div class="flex justify-between py-2">
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Available Balance</dt>
-                                <dd class="text-sm font-medium {{ $paymentReceived->unused_amount > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400' }}">
+                                <dd class="text-sm font-medium {{ $paymentReceived->unused_amount > 0 ? 'text-green-700 dark:text-green-400' : 'text-gray-500 dark:text-gray-400' }}">
                                     {{ number_format($paymentReceived->unused_amount, 2) }}
                                 </dd>
                             </div>
@@ -256,7 +256,7 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
                 <div class="p-6">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 mr-2 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                         </svg>
                         Notes

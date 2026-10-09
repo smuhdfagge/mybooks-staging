@@ -30,7 +30,7 @@
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
                                 placeholder="e.g., Monthly Sales Summary" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                             @error('name')
-                                <p id="name-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="name-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -44,7 +44,7 @@
                                 @endforeach
                             </select>
                             @error('data_source')
-                                <p id="data_source-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p id="data_source-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -88,7 +88,7 @@
                     </div>
 
                     @error('columns')
-                        <p id="columns-error" class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                        <p id="columns-error" class="mt-2 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                     @enderror
                 </div>
             </div>
@@ -150,7 +150,7 @@
                                     x-show="!['is_null', 'is_not_null'].includes(filter.operator)"
                                     class="rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm flex-1 min-w-[150px]">
                                 
-                                <button type="button" @click="removeFilter(index)" class="text-red-500 hover:text-red-700 p-1">
+                                <button type="button" @click="removeFilter(index)" class="text-red-600 hover:text-red-700 p-1">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     </svg>
@@ -220,7 +220,7 @@
                                     </template>
                                 </select>
                                 
-                                <button type="button" @click="removeAggregation(index)" class="text-red-500 hover:text-red-700 p-1">
+                                <button type="button" @click="removeAggregation(index)" class="text-red-600 hover:text-red-700 p-1">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     </svg>
@@ -269,7 +269,7 @@
                                     <option value="desc">Descending</option>
                                 </select>
                                 
-                                <button type="button" @click="removeSort(index)" class="text-red-500 hover:text-red-700 p-1">
+                                <button type="button" @click="removeSort(index)" class="text-red-600 hover:text-red-700 p-1">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     </svg>

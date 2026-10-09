@@ -32,7 +32,7 @@
                                class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 shadow-sm focus:border-brand-500 focus:ring-brand-500"
                                placeholder="John Doe" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                         @error('name')
-                            <p id="name-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            <p id="name-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                         @enderror
                     </div>
 
@@ -46,7 +46,7 @@
                                class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 shadow-sm focus:border-brand-500 focus:ring-brand-500"
                                placeholder="admin@example.com" @error('email') aria-invalid="true" aria-describedby="email-error" @enderror>
                         @error('email')
-                            <p id="email-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            <p id="email-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                         @enderror
                     </div>
 
@@ -59,7 +59,7 @@
                                class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 shadow-sm focus:border-brand-500 focus:ring-brand-500"
                                placeholder="••••••••" @error('password') aria-invalid="true" aria-describedby="password-error" @enderror>
                         @error('password')
-                            <p id="password-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            <p id="password-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                         @enderror
                     </div>
 

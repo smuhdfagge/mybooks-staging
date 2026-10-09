@@ -92,11 +92,11 @@
                                 <p class="form-error" x-show="errors[`items.${index}.quantity`]" x-text="errors[`items.${index}.quantity`]"></p>
                             </td>
                             <td class="py-2 text-right text-sm" data-label="Free">
-                                <span x-show="line.item_id" :class="line.free !== null && Number(line.quantity) > line.free ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-700 dark:text-gray-300'" x-text="line.free === null ? '…' : qty(line.free)"></span>
-                                <span x-show="line.item_id && line.free !== null && Number(line.quantity) > line.free" class="block text-xs text-red-600 dark:text-red-400">Not enough free</span>
+                                <span x-show="line.item_id" :class="line.free !== null && Number(line.quantity) > line.free ? 'text-red-600 dark:text-red-300 font-medium' : 'text-gray-700 dark:text-gray-300'" x-text="line.free === null ? '…' : qty(line.free)"></span>
+                                <span x-show="line.item_id && line.free !== null && Number(line.quantity) > line.free" class="block text-xs text-red-600 dark:text-red-300">Not enough free</span>
                             </td>
                             <td class="py-2 text-center" data-cell="actions">
-                                <button type="button" @click="remove(index)" x-show="lines.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-400 text-sm" aria-label="Remove line">Remove</button>
+                                <button type="button" @click="remove(index)" x-show="lines.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-300 text-sm" aria-label="Remove line">Remove</button>
                             </td>
                         </tr>
                     </template>

@@ -12,7 +12,7 @@
                     <label for="name" class="form-label">Template Name</label>
                     <input id="name" type="text" wire:model.live="name"
                         class="form-control text-sm">
-                    @error('name') <p id="name-error" class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                    @error('name') <p id="name-error" class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
 
                 {{-- Layout --}}
