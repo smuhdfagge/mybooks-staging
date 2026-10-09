@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\NotificationSetting;
 use App\Models\Tenant;
+use App\Services\Messaging\CustomerMessenger;
 use App\Services\NotificationService;
 use Illuminate\Console\Command;
 
@@ -15,7 +16,8 @@ class SendPaymentReminders extends Command
     protected $description = 'Send payment reminders for upcoming and overdue invoices';
 
     public function __construct(
-        protected NotificationService $notificationService
+        protected NotificationService $notificationService,
+        protected CustomerMessenger $messenger,
     ) {
         parent::__construct();
     }
@@ -30,6 +32,7 @@ class SendPaymentReminders extends Command
 
         $totalUpcoming = 0;
         $totalOverdue = 0;
+        $totalMessages = 0;
 
         foreach ($tenants as $tenant) {
             $settings = NotificationSetting::getForTenant($tenant->id);
@@ -50,9 +53,17 @@ class SendPaymentReminders extends Command
                 $totalOverdue += $count;
                 $this->info("Tenant {$tenant->name}: {$count} overdue reminders sent");
             }
+
+            // SMS / WhatsApp reminders (session 16): their own on/off switches,
+            // the same timing as the emails.
+            $count = $this->messenger->runScheduledReminders($tenant);
+            $totalMessages += $count;
+            if ($count) {
+                $this->info("Tenant {$tenant->name}: {$count} SMS / WhatsApp reminders queued");
+            }
         }
 
-        $this->info("Total: {$totalUpcoming} upcoming, {$totalOverdue} overdue reminders sent");
+        $this->info("Total: {$totalUpcoming} upcoming, {$totalOverdue} overdue reminders sent, {$totalMessages} SMS / WhatsApp queued");
 
         return Command::SUCCESS;
     }

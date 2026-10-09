@@ -87,6 +87,8 @@ return [
     'sub_processors' => [
         ['name' => 'Paystack Payments Ltd', 'purpose' => 'Subscription payments (card and bank details are handled by Paystack, not stored by MyBooks)', 'location' => 'Nigeria'],
         ['name' => 'Email delivery provider (SMTP)', 'purpose' => 'Sending invoices, reminders, password resets and other emails', 'location' => 'Varies by provider'],
+        ['name' => 'Termii', 'purpose' => 'Sending SMS and WhatsApp invoice reminders and receipts to a business\'s customers (phone number and message text)', 'location' => 'Nigeria'],
+        ['name' => 'Meta Platforms (WhatsApp)', 'purpose' => 'Delivering WhatsApp messages to customers who use WhatsApp', 'location' => 'United States / Ireland'],
         ['name' => 'Tawk.to Inc.', 'purpose' => 'Live chat support on the website and app', 'location' => 'United States'],
         ['name' => 'Hosting provider', 'purpose' => 'Servers, database and file storage, and backups', 'location' => 'Varies by provider'],
     ],
@@ -147,6 +149,52 @@ return [
         // Saved card and automatic renewal of the MyBooks subscription through
         // Paystack (session 15). Off: no cards are saved and nothing is charged.
         'auto_renewal' => (bool) env('MYBOOKS_FEATURE_AUTO_RENEWAL', true),
+        // SMS and WhatsApp reminders and receipts to customers (session 16).
+        // Sends nothing real until the Termii / WhatsApp keys are set.
+        'sms_whatsapp' => (bool) env('MYBOOKS_FEATURE_SMS_WHATSAPP', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | SMS and WhatsApp messages to customers (session 16)
+    |--------------------------------------------------------------------------
+    |
+    | Drivers: 'termii', 'meta' (WhatsApp only), 'log' (writes the message to
+    | the log, sends nothing) or 'auto' (the provider whose keys are set,
+    | else 'log'). Each plan has a monthly allowance (plans table); a long SMS
+    | counts once per 160-character page.
+    |
+    | Reminders and invoice messages wait for 07:00 Lagos time if they would
+    | go out between 21:00 and 07:00; payment receipts go at once.
+    |
+    | WhatsApp messages to customers who haven't written first must use
+    | templates approved by Meta (through Termii or Meta's WhatsApp Manager).
+    | Each template gets these values, in this order (see the README for the
+    | wording to submit).
+    |
+    */
+
+    'messaging' => [
+        'sms_driver' => env('MESSAGING_SMS_DRIVER', 'auto'),
+        'whatsapp_driver' => env('MESSAGING_WHATSAPP_DRIVER', 'auto'),
+        // Secret part of the webhook URLs given to Termii / Meta.
+        'webhook_token' => env('MESSAGING_WEBHOOK_TOKEN'),
+        'timezone' => 'Africa/Lagos',
+        'quiet_from' => (int) env('MESSAGING_QUIET_FROM', 21),
+        'quiet_until' => (int) env('MESSAGING_QUIET_UNTIL', 7),
+        // A failed send is tried this many times in all (1 + 2 retries).
+        'max_attempts' => 3,
+        'retry_minutes' => [1, 5],
+        // Overdue reminders: day 1 after the due date, then every N days
+        // (the "Remind every" setting), at most this many per invoice.
+        'max_overdue_reminders' => (int) env('MESSAGING_MAX_OVERDUE_REMINDERS', 4),
+        'whatsapp_templates' => [
+            'invoice_sent' => ['name' => env('WHATSAPP_TEMPLATE_INVOICE_SENT', 'mybooks_invoice_sent'), 'params' => ['customer', 'business', 'invoice', 'amount', 'due_date']],
+            'payment_reminder' => ['name' => env('WHATSAPP_TEMPLATE_PAYMENT_REMINDER', 'mybooks_payment_reminder'), 'params' => ['customer', 'business', 'invoice', 'amount', 'due_date']],
+            'overdue' => ['name' => env('WHATSAPP_TEMPLATE_OVERDUE', 'mybooks_invoice_overdue'), 'params' => ['customer', 'business', 'invoice', 'amount', 'due_date']],
+            'payment_received' => ['name' => env('WHATSAPP_TEMPLATE_PAYMENT_RECEIVED', 'mybooks_payment_received'), 'params' => ['customer', 'business', 'amount', 'invoice', 'balance']],
+            'test' => ['name' => env('WHATSAPP_TEMPLATE_TEST', 'mybooks_test_message'), 'params' => ['business']],
+        ],
     ],
 
     /*

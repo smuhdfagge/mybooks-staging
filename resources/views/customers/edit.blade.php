@@ -57,6 +57,8 @@
                         </div>
                     </div>
 
+                    @include('customers._messaging-fields', ['party' => $customer])
+
                     @include('withholding-tax._party-fields', ['party' => $customer, 'side' => 'customer'])
 
                     <!-- Address Information -->

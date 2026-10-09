@@ -62,6 +62,7 @@ composer analyse           # PHPStan; new code must not add to phpstan-baseline.
    - `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL`, `APP_KEY` (`php artisan key:generate`)
    - database and mail settings
    - `PAYSTACK_SECRET_KEY` and `PAYSTACK_PUBLIC_KEY` for subscription payments. In the Paystack dashboard, set the webhook URL to `https://<your domain>/billing/paystack/webhook`.
+   - for SMS and WhatsApp to customers, the Termii keys and `MESSAGING_WEBHOOK_TOKEN` (see [SMS and WhatsApp](#sms-and-whatsapp) below).
 3. **Install and migrate.**
    ```bash
    composer install --no-dev --optimize-autoloader
@@ -116,9 +117,31 @@ Unfinished modules answer 404 until they are switched on in `.env`. Only switch 
 | `MYBOOKS_FEATURE_STOCK_TRANSFERS` | Stock transfers |
 | `MYBOOKS_FEATURE_ASSEMBLY` | Bills of materials and assembly orders |
 | `MYBOOKS_FEATURE_INVENTORY_VALUATION` | Stock valuation page |
+| `MYBOOKS_FEATURE_SMS_WHATSAPP` | SMS and WhatsApp reminders and receipts to customers (sends nothing until the keys below are set) |
 | `MYBOOKS_FEATURE_AUTO_RENEWAL` | Saved card and automatic renewal of subscriptions (`MYBOOKS_AUTO_RENEW_DAYS_BEFORE`, `MYBOOKS_AUTO_RENEW_RETRY_DAYS`, `MYBOOKS_CARD_EXPIRY_WARNING_DAYS`) |
 
 Other settings in `config/mybooks.php` include support email, import size limit, data retention periods, and HSTS. Leave `MYBOOKS_HSTS_INCLUDE_SUBDOMAINS` and `MYBOOKS_HSTS_PRELOAD` off unless every subdomain is permanently on HTTPS.
+
+## SMS and WhatsApp
+
+Businesses can text their customers when an invoice is sent, before it is due, when it is overdue, and when a payment comes in (Settings > SMS & WhatsApp). MyBooks holds the provider account and pays for the messages; each plan has a monthly SMS and WhatsApp allowance, set by the platform admin under SMS & WhatsApp. Messages wait until 07:00 if they would go out between 21:00 and 07:00 Lagos time (receipts go at once).
+
+To switch it on:
+
+1. **Termii account** (termii.com). Put `TERMII_API_KEY` and the base URL from the dashboard (`TERMII_BASE_URL`) in `.env`.
+2. **Sender ID.** Request one on Termii (3 to 11 letters, e.g. `MyBooks`) for transactional use, with a sample such as "Kano Traders Ltd: Hello Musa, invoice INV-000123 for NGN 125,000 is due on 20 Oct 2026." Set `TERMII_SENDER_ID` once approved. Messages go on the `dnd` route (`TERMII_SMS_CHANNEL`), which also reaches numbers on the NCC Do-Not-Disturb list; that is allowed for transactional messages about a customer's own invoice, not for marketing.
+3. **Delivery reports.** Set `MESSAGING_WEBHOOK_TOKEN` to a long random string and, in the Termii dashboard, the webhook URL to `https://<your domain>/webhooks/messaging/termii/<token>`. Put Termii's secret key in `TERMII_SECRET_KEY` so reports are also checked by signature.
+4. **WhatsApp (optional).** Either through Termii (`TERMII_WHATSAPP_DEVICE_ID`) or Meta's Cloud API (`WHATSAPP_META_TOKEN`, `WHATSAPP_META_PHONE_NUMBER_ID`, `WHATSAPP_META_APP_SECRET`, `WHATSAPP_META_VERIFY_TOKEN`; webhook `https://<your domain>/webhooks/messaging/whatsapp/<token>`). Submit these templates for approval, category **Utility**, language English, footer "Reply STOP to stop these messages.", and put each approved name (Meta) or template ID (Termii) in the matching `WHATSAPP_TEMPLATE_*` setting. On Termii, name the variables `customer`, `business`, `invoice`, `amount`, `due_date` and `balance` in the order shown.
+
+| Template | Text | Values |
+|---|---|---|
+| `mybooks_invoice_sent` | Hello {{1}}, {{2}} has sent you invoice {{3}} for {{4}}, due on {{5}}. Thank you for your business. | customer, business, invoice, amount, due date |
+| `mybooks_payment_reminder` | Hello {{1}}, this is a reminder from {{2}} that invoice {{3}} for {{4}} is due on {{5}}. Please pay on time. Thank you. | customer, business, invoice, amount, due date |
+| `mybooks_invoice_overdue` | Hello {{1}}, {{2}} reminds you that invoice {{3}} for {{4}} was due on {{5}} and is not yet paid. Please pay or contact them. Thank you. | customer, business, invoice, amount, due date |
+| `mybooks_payment_received` | Hello {{1}}, {{2}} has received your payment of {{3}} for invoice {{4}}. Balance left: {{5}}. Thank you. | customer, business, amount paid, invoice, balance |
+| `mybooks_test_message` | This is a test message from {{1}} on MyBooks. WhatsApp messages are working. | business |
+
+Without keys nothing is sent: messages are only written to the log, and the settings page says it is not set up yet. A customer who replies STOP on WhatsApp is opted out automatically; SMS replies can't reach a letters-only sender ID, so a business ticks "Does not want SMS messages" on the customer's page when asked.
 
 ## Useful commands
 
@@ -127,6 +150,7 @@ Other settings in `config/mybooks.php` include support email, import size limit,
 | `php artisan accounts:recalculate --dry-run` | Compares stored account balances with the journals; without `--dry-run` it corrects them |
 | `php artisan subscriptions:expire` | Expires ended subscriptions and sends reminders (runs daily) |
 | `php artisan subscriptions:auto-renew` | Charges saved cards for subscriptions ending tomorrow, retries failed charges, warns about expiring cards (runs daily at 06:00) |
+| `php artisan messages:send-queued` | Sends SMS / WhatsApp messages held over the night and retries failed ones (runs every 5 minutes) |
 | `php artisan subscriptions:grace --days=14` | Gives active subscriptions time to renew (one-off) |
 | `php artisan bills:receive-pending-stock --dry-run` | Once after the October 2026 update: brings in stock for posted, unpaid bills (stock used to wait for payment) |
 | `php artisan mybooks:backup` | Backs up the database and uploaded files now (`--only-db` for the database alone) |

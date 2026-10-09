@@ -18,6 +18,7 @@ use App\Notifications\LowStockNotification;
 use App\Notifications\PaymentReceivedNotification;
 use App\Notifications\PayrollApprovedNotification;
 use App\Notifications\WelcomeUserNotification;
+use App\Services\Messaging\CustomerMessenger;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Log;
 
@@ -73,6 +74,9 @@ class NotificationService
             $customer->notify(new InvoiceSentNotification($invoice, $customMessage));
 
             Log::info("Invoice {$invoice->invoice_number} sent to customer #{$customer->id}");
+
+            // SMS / WhatsApp too, where the business switched it on (session 16).
+            app(CustomerMessenger::class)->invoiceSent($invoice, auth()->id());
 
             return true;
         } catch (\Exception $e) {

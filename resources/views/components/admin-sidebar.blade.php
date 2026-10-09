@@ -122,6 +122,15 @@
             <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Administration</p>
         </div>
 
+        <!-- SMS / WhatsApp allowances and use (session 16) -->
+        <a href="{{ route('admin.messaging.index') }}"
+           class="group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors {{ request()->routeIs('admin.messaging.*') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
+            <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+            </svg>
+            SMS &amp; WhatsApp
+        </a>
+
         <!-- Data protection requests (O7) -->
         <a href="{{ route('admin.data-requests.index') }}"
            class="group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors {{ request()->routeIs('admin.data-requests.*') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">

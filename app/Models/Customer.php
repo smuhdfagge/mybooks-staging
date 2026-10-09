@@ -36,6 +36,8 @@ class Customer extends Model
         'payee_type',
         'wht_category_id',
         'wht_exempt',
+        'sms_opt_out',
+        'whatsapp_opt_out',
     ];
 
     protected $casts = [
@@ -44,6 +46,8 @@ class Customer extends Model
         'deposit_balance' => 'decimal:2',
         'tax_number' => 'encrypted',
         'wht_exempt' => 'boolean',
+        'sms_opt_out' => 'boolean',
+        'whatsapp_opt_out' => 'boolean',
     ];
 
     /** @return BelongsTo<WhtCategory, $this> */

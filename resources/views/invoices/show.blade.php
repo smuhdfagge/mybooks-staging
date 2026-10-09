@@ -247,6 +247,10 @@
             </div>
             @endif
 
+            @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('sms_whatsapp') && $invoice->status !== 'draft' && $invoice->customer)
+                @include('invoices._messages')
+            @endif
+
             <!-- Credit notes: raised against this invoice, and credit applied to it -->
             @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('credit_notes') && ! in_array($invoice->status, ['draft', 'cancelled']))
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
