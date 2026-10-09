@@ -22,7 +22,7 @@
                 <div class="p-6">
                     <div class="flex items-start">
                         <div class="flex-shrink-0">
-                            <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 text-brand-500 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                         </div>
@@ -65,7 +65,7 @@
                                     @forelse($draftJournals as $journal)
                                         <label class="flex items-center p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
                                             <input type="checkbox" name="journal_ids[]" value="{{ $journal->id }}"
-                                                class="rounded border-gray-300 dark:border-gray-600 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:text-brand-300">
                                             <span class="ml-3 text-sm text-gray-700 dark:text-gray-300">
                                                 {{ $journal->journal_number }} - {{ $journal->journal_date->format('M d, Y') }}
                                                 <span class="text-gray-500 dark:text-gray-400">({{ $journal->description ? Str::limit($journal->description, 30) : 'No description' }})</span>
@@ -92,8 +92,8 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <div class="flex items-center mb-4">
-                            <div class="flex-shrink-0 bg-blue-100 dark:bg-blue-900/50 rounded-full p-3">
-                                <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="flex-shrink-0 bg-brand-100 dark:bg-brand-900/50 rounded-full p-3">
+                                <svg class="w-6 h-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                 </svg>
                             </div>
@@ -123,7 +123,7 @@
                                 </select>
                             </div>
                             
-                            <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition">
+                            <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                 </svg>
@@ -158,9 +158,9 @@
                                         file:mr-4 file:py-2 file:px-4
                                         file:rounded-md file:border-0
                                         file:text-sm file:font-semibold
-                                        file:bg-indigo-50 file:text-indigo-700
-                                        dark:file:bg-indigo-900/50 dark:file:text-indigo-400
-                                        hover:file:bg-indigo-100 dark:hover:file:bg-indigo-900">
+                                        file:bg-brand-50 file:text-brand-700
+                                        dark:file:bg-brand-900/50 dark:file:text-brand-300
+                                        hover:file:bg-brand-100 dark:hover:file:bg-brand-900">
                             </div>
                             
                             <div class="flex gap-2">
@@ -279,14 +279,14 @@
                 </div>
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="flex items-center">
-                        <div class="flex-shrink-0 bg-blue-100 dark:bg-blue-900 rounded-full p-3">
-                            <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="flex-shrink-0 bg-brand-100 dark:bg-brand-900 rounded-full p-3">
+                            <svg class="w-6 h-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                             </svg>
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">This Month</p>
-                            <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ $thisMonthJournals }}</p>
+                            <p class="text-2xl font-bold text-brand-600 dark:text-brand-300">{{ $thisMonthJournals }}</p>
                         </div>
                     </div>
                 </div>

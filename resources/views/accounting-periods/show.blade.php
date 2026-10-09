@@ -95,35 +95,35 @@
                         <div class="p-6">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Transaction Summary</h3>
                             <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-                                    <p class="text-sm text-blue-600 dark:text-blue-400 font-medium">Invoices</p>
-                                    <p class="text-2xl font-bold text-blue-700 dark:text-blue-300">{{ $summary['invoices']->count }}</p>
-                                    <p class="text-sm text-blue-500 dark:text-blue-400">{{ number_format($summary['invoices']->total, 2) }}</p>
+                                <div class="bg-brand-50 dark:bg-brand-900/20 rounded-lg p-4">
+                                    <p class="text-sm text-brand-600 dark:text-brand-300 font-medium">Invoices</p>
+                                    <p class="text-2xl font-bold text-brand-700 dark:text-brand-300">{{ $summary['invoices']->count }}</p>
+                                    <p class="text-sm text-brand-500 dark:text-brand-300">{{ number_format($summary['invoices']->total, 2) }}</p>
                                 </div>
-                                <div class="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4">
-                                    <p class="text-sm text-orange-600 dark:text-orange-400 font-medium">Bills</p>
-                                    <p class="text-2xl font-bold text-orange-700 dark:text-orange-300">{{ $summary['bills']->count }}</p>
-                                    <p class="text-sm text-orange-500 dark:text-orange-400">{{ number_format($summary['bills']->total, 2) }}</p>
+                                <div class="bg-brand-50 dark:bg-brand-900/20 rounded-lg p-4">
+                                    <p class="text-sm text-brand-600 dark:text-brand-400 font-medium">Bills</p>
+                                    <p class="text-2xl font-bold text-brand-700 dark:text-brand-300">{{ $summary['bills']->count }}</p>
+                                    <p class="text-sm text-brand-500 dark:text-brand-400">{{ number_format($summary['bills']->total, 2) }}</p>
                                 </div>
-                                <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
-                                    <p class="text-sm text-red-600 dark:text-red-400 font-medium">Expenses</p>
-                                    <p class="text-2xl font-bold text-red-700 dark:text-red-300">{{ $summary['expenses']->count }}</p>
-                                    <p class="text-sm text-red-500 dark:text-red-400">{{ number_format($summary['expenses']->total, 2) }}</p>
+                                <div class="bg-brand-50 dark:bg-brand-900/20 rounded-lg p-4">
+                                    <p class="text-sm text-brand-600 dark:text-brand-400 font-medium">Expenses</p>
+                                    <p class="text-2xl font-bold text-brand-700 dark:text-brand-300">{{ $summary['expenses']->count }}</p>
+                                    <p class="text-sm text-brand-500 dark:text-brand-400">{{ number_format($summary['expenses']->total, 2) }}</p>
                                 </div>
                                 <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
                                     <p class="text-sm text-green-600 dark:text-green-400 font-medium">Payments Received</p>
                                     <p class="text-2xl font-bold text-green-700 dark:text-green-300">{{ $summary['payments_received']->count }}</p>
                                     <p class="text-sm text-green-500 dark:text-green-400">{{ number_format($summary['payments_received']->total, 2) }}</p>
                                 </div>
-                                <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
-                                    <p class="text-sm text-purple-600 dark:text-purple-400 font-medium">Payments Made</p>
-                                    <p class="text-2xl font-bold text-purple-700 dark:text-purple-300">{{ $summary['payments_made']->count }}</p>
-                                    <p class="text-sm text-purple-500 dark:text-purple-400">{{ number_format($summary['payments_made']->total, 2) }}</p>
+                                <div class="bg-brand-50 dark:bg-brand-900/20 rounded-lg p-4">
+                                    <p class="text-sm text-brand-700 dark:text-brand-300 font-medium">Payments Made</p>
+                                    <p class="text-2xl font-bold text-brand-800 dark:text-brand-300">{{ $summary['payments_made']->count }}</p>
+                                    <p class="text-sm text-brand-700 dark:text-brand-300">{{ number_format($summary['payments_made']->total, 2) }}</p>
                                 </div>
-                                <div class="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4">
-                                    <p class="text-sm text-indigo-600 dark:text-indigo-400 font-medium">Journal Entries</p>
-                                    <p class="text-2xl font-bold text-indigo-700 dark:text-indigo-300">{{ $summary['journals']->count }}</p>
-                                    <p class="text-sm text-indigo-500 dark:text-indigo-400">{{ number_format($summary['journals']->total_debit, 2) }}</p>
+                                <div class="bg-brand-50 dark:bg-brand-900/20 rounded-lg p-4">
+                                    <p class="text-sm text-brand-600 dark:text-brand-300 font-medium">Journal Entries</p>
+                                    <p class="text-2xl font-bold text-brand-700 dark:text-brand-300">{{ $summary['journals']->count }}</p>
+                                    <p class="text-sm text-brand-500 dark:text-brand-300">{{ number_format($summary['journals']->total_debit, 2) }}</p>
                                 </div>
                             </div>
                         </div>
@@ -143,11 +143,11 @@
                                     @csrf
                                     <div class="mb-3">
                                         <label for="closing_notes" class="form-label">Closing Notes (Optional)</label>
-                                        <textarea name="closing_notes" id="closing_notes" rows="2" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm" placeholder="Enter any notes for this period closing..."></textarea>
+                                        <textarea name="closing_notes" id="closing_notes" rows="2" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm" placeholder="Enter any notes for this period closing..."></textarea>
                                     </div>
                                     <div class="mb-3">
                                         <label class="flex items-center">
-                                            <input type="checkbox" name="confirm" value="1" class="rounded border-gray-300 dark:border-gray-600 text-indigo-600 shadow-sm focus:ring-indigo-500" required>
+                                            <input type="checkbox" name="confirm" value="1" class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300" required>
                                             <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">I understand that closing this period will prevent any transaction modifications.</span>
                                         </label>
                                     </div>
@@ -186,7 +186,7 @@
                                         @csrf
                                         <div class="mb-3">
                                             <label for="lock_notes" class="form-label">Year-End Notes (Optional)</label>
-                                            <textarea name="closing_notes" id="lock_notes" rows="2" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm" placeholder="Enter year-end closing notes..."></textarea>
+                                            <textarea name="closing_notes" id="lock_notes" rows="2" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm" placeholder="Enter year-end closing notes..."></textarea>
                                         </div>
                                         <div class="mb-3">
                                             <label class="flex items-center">

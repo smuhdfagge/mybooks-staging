@@ -27,18 +27,18 @@
                         
                         <div class="mb-4">
                             <label for="name" class="form-label">Period Name *</label>
-                            <input type="text" name="name" id="name" value="{{ old('name', $accountingPeriod->name) }}" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                            <input type="text" name="name" id="name" value="{{ old('name', $accountingPeriod->name) }}" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-brand-500 focus:ring-brand-500" required>
                         </div>
 
                         @if(!$accountingPeriod->isClosed())
                         <div class="grid grid-cols-2 gap-4 mb-4">
                             <div>
                                 <label for="start_date" class="form-label">Start Date *</label>
-                                <input type="date" name="start_date" id="start_date" value="{{ old('start_date', $accountingPeriod->start_date->format('Y-m-d')) }}" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                                <input type="date" name="start_date" id="start_date" value="{{ old('start_date', $accountingPeriod->start_date->format('Y-m-d')) }}" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-brand-500 focus:ring-brand-500" required>
                             </div>
                             <div>
                                 <label for="end_date" class="form-label">End Date *</label>
-                                <input type="date" name="end_date" id="end_date" value="{{ old('end_date', $accountingPeriod->end_date->format('Y-m-d')) }}" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                                <input type="date" name="end_date" id="end_date" value="{{ old('end_date', $accountingPeriod->end_date->format('Y-m-d')) }}" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-brand-500 focus:ring-brand-500" required>
                             </div>
                         </div>
                         @else
@@ -62,7 +62,7 @@
                             <a href="{{ route('accounting-periods.show', $accountingPeriod) }}" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500 transition">
                                 Cancel
                             </a>
-                            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition">
+                            <button type="submit" class="px-4 py-2 bg-brand-600 text-white rounded-md hover:bg-brand-700 transition">
                                 Update Period
                             </button>
                         </div>

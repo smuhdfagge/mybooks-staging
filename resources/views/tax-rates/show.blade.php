@@ -11,7 +11,7 @@
                     <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">{{ $taxRate->name }}</h2>
                     <div class="flex items-center gap-2 mt-1">
                         @if($taxRate->is_default)
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">Default</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200">Default</span>
                         @endif
                         @if($taxRate->is_active)
                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Active</span>
@@ -23,7 +23,7 @@
             </div>
             <div class="flex gap-2">
                 @can('edit tax-rates')
-                <a href="{{ route('tax-rates.edit', $taxRate) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition">
+                <a href="{{ route('tax-rates.edit', $taxRate) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                     Edit
                 </a>
@@ -94,7 +94,7 @@
                         </div>
                         <div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">Tax amount ({{ $taxRate->formatted_rate }})</p>
-                            <p class="text-xl font-semibold text-blue-600 dark:text-blue-400">@money($taxRate->calculateTax(100))</p>
+                            <p class="text-xl font-semibold text-brand-600 dark:text-brand-300">@money($taxRate->calculateTax(100))</p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">{{ $taxRate->type == 'exclusive' ? 'Total with tax' : 'Net amount' }}</p>

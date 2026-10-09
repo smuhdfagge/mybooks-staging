@@ -71,7 +71,7 @@
                                                 {{ $transaction['type'] === 'deposit' ? '+' : '-' }}@money($transaction['amount'], $bank->currency)
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
-                                                <a href="{{ $transaction['route'] }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+                                                <a href="{{ $transaction['route'] }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-300">
                                                     View
                                                 </a>
                                             </td>

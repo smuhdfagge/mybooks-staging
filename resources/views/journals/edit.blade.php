@@ -25,7 +25,7 @@
                     <!-- Journal Information -->
                     <div class="mb-8">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 mr-2 text-brand-500 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
                             Journal Details
@@ -98,7 +98,7 @@
                                         <tr class="entry-row">
                                             <td class="px-4 py-2">
                                                 <select name="entries[{{ $index }}][account_id]" required
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                                     <option value="">Select Account</option>
                                                     @foreach($accounts as $account)
                                                         <option value="{{ $account->id }}" {{ ($entry['account_id'] ?? null) == $account->id ? 'selected' : '' }}>
@@ -109,17 +109,17 @@
                                             </td>
                                             <td class="px-4 py-2">
                                                 <input aria-label="Line description" type="text" name="entries[{{ $index }}][description]" value="{{ $entry['description'] ?? '' }}"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                                                     placeholder="Line description">
                                             </td>
                                             <td class="px-4 py-2">
                                                 <input aria-label="Debit" type="number" name="entries[{{ $index }}][debit]" value="{{ $entry['debit'] ?? '' }}" min="0" step="0.01"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right debit-input"
+                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 text-right debit-input"
                                                     placeholder="0.00">
                                             </td>
                                             <td class="px-4 py-2">
                                                 <input aria-label="Credit" type="number" name="entries[{{ $index }}][credit]" value="{{ $entry['credit'] ?? '' }}" min="0" step="0.01"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right credit-input"
+                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 text-right credit-input"
                                                     placeholder="0.00">
                                             </td>
                                             <td class="px-4 py-2 text-center">
@@ -173,7 +173,7 @@
                         <a href="{{ route('journals.show', $journal) }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-600 transition">
                             Cancel
                         </a>
-                        <button type="submit" class="inline-flex items-center px-6 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <button type="submit" class="inline-flex items-center px-6 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>
@@ -198,23 +198,23 @@
             row.innerHTML = `
                 <td class="px-4 py-2">
                     <select name="entries[${rowIndex}][account_id]" required
-                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         <option value="">Select Account</option>
                     </select>
                 </td>
                 <td class="px-4 py-2">
                     <input aria-label="Line description" type="text" name="entries[${rowIndex}][description]"
-                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                         placeholder="Line description">
                 </td>
                 <td class="px-4 py-2">
                     <input aria-label="Debit" type="number" name="entries[${rowIndex}][debit]" min="0" step="0.01"
-                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right debit-input"
+                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 text-right debit-input"
                         placeholder="0.00">
                 </td>
                 <td class="px-4 py-2">
                     <input aria-label="Credit" type="number" name="entries[${rowIndex}][credit]" min="0" step="0.01"
-                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right credit-input"
+                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 text-right credit-input"
                         placeholder="0.00">
                 </td>
                 <td class="px-4 py-2 text-center">

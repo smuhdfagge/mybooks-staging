@@ -9,7 +9,7 @@
             </div>
             <div class="flex flex-wrap gap-2">
                 @if(!$chartOfAccount->is_system)
-                    <a href="{{ route('chart-of-accounts.edit', $chartOfAccount) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                    <a href="{{ route('chart-of-accounts.edit', $chartOfAccount) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                         </svg>
@@ -56,7 +56,7 @@
                                 </span>
                             @endif
                             @if($chartOfAccount->is_system)
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-400">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-brand-100 dark:bg-brand-900/50 text-brand-800 dark:text-brand-300">
                                     System Account
                                 </span>
                             @endif
@@ -93,7 +93,7 @@
                             <div>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Parent Account</dt>
                                 <dd class="mt-1 text-sm">
-                                    <a href="{{ route('chart-of-accounts.show', $chartOfAccount->parent) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900">
+                                    <a href="{{ route('chart-of-accounts.show', $chartOfAccount->parent) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900">
                                         {{ $chartOfAccount->parent->account_code }} - {{ $chartOfAccount->parent->name }}
                                     </a>
                                 </dd>
@@ -122,7 +122,7 @@
                                 @foreach($chartOfAccount->children as $child)
                                     <li>
                                         <a href="{{ route('chart-of-accounts.show', $child) }}" class="flex items-center justify-between p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700">
-                                            <span class="text-sm text-indigo-600 dark:text-indigo-400">{{ $child->account_code }} - {{ $child->name }}</span>
+                                            <span class="text-sm text-brand-600 dark:text-brand-300">{{ $child->account_code }} - {{ $child->name }}</span>
                                             <span class="text-sm text-gray-500 dark:text-gray-400">{{ number_format($child->current_balance, 2) }}</span>
                                         </a>
                                     </li>
@@ -158,7 +158,7 @@
                                                 {{ $entry->journal->journal_date->format('M d, Y') }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
-                                                <a href="{{ route('journals.show', $entry->journal) }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-900">
+                                                <a href="{{ route('journals.show', $entry->journal) }}" class="text-sm text-brand-600 dark:text-brand-300 hover:text-brand-900">
                                                     {{ $entry->journal->journal_number }}
                                                 </a>
                                             </td>
@@ -186,7 +186,7 @@
             @if(!$chartOfAccount->is_system)
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
                 <div class="p-6 flex flex-wrap gap-4">
-                    <a href="{{ route('chart-of-accounts.edit', $chartOfAccount) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                    <a href="{{ route('chart-of-accounts.edit', $chartOfAccount) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                         </svg>

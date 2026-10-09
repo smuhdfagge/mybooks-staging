@@ -14,7 +14,7 @@
         <p class="mt-1">Until then nothing is sent to NRS. @can('view e-invoices')<a href="{{ route('settings.e-invoicing') }}" class="underline">Open the settings</a>.@endcan</p>
     </div>
 @elseif($einvState === 'simulated')
-    <div class="rounded-lg border border-blue-300 bg-blue-50 dark:bg-blue-900/30 dark:border-blue-700 p-4 text-sm text-blue-800 dark:text-blue-200" data-testid="simulated">
+    <div class="rounded-lg border border-brand-300 bg-brand-50 dark:bg-brand-900/30 dark:border-brand-700 p-4 text-sm text-brand-800 dark:text-brand-200" data-testid="simulated">
         Test mode: documents are marked accepted on this server and nothing is sent to NRS.
     </div>
 @endif

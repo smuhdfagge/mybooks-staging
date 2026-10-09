@@ -73,7 +73,7 @@
                             <input type="date" name="to_date" id="to_date" value="{{ $toDate }}"
                                    class="mt-1 block form-control sm:text-sm">
                         </div>
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition ease-in-out duration-150">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition ease-in-out duration-150">
                             Filter
                         </button>
                     </form>
@@ -127,7 +127,7 @@
                                         <tr>
                                             <th scope="col" class="px-4 py-3 text-left">
                                                 <input type="checkbox" x-on:change="toggleAll($event.target.checked)"
-                                                       class="rounded border-gray-300 dark:border-gray-600 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                       class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
                                             </th>
                                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
                                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
@@ -146,7 +146,7 @@
                                                            x-on:change="updateTotals()"
                                                            data-amount="{{ $txn->amount }}"
                                                            data-inflow="{{ $txn->isInflow() ? '1' : '0' }}"
-                                                           class="txn-checkbox rounded border-gray-300 dark:border-gray-600 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                           class="txn-checkbox rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
                                                 </td>
                                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                                                     {{ $txn->date->format('M d, Y') }}

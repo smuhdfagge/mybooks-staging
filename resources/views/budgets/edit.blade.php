@@ -28,7 +28,7 @@
                         <div>
                             <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Budget Name *</label>
                             <input type="text" name="name" id="name" value="{{ old('name', $budget->name) }}" required
-                                   class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
+                                   class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                             @error('name')
                                 <p id="name-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
@@ -36,7 +36,7 @@
                         <div>
                             <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
                             <input type="text" name="description" id="description" value="{{ old('description', $budget->description) }}"
-                                   class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                   class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         </div>
                     </div>
                 </div>
@@ -55,7 +55,7 @@
                                     Import Lines
                                 </button>
                                 <button type="button" @click="showAddAccount = true" 
-                                        class="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
+                                        class="inline-flex items-center px-3 py-2 bg-brand-600 text-white text-sm rounded-md hover:bg-brand-700">
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                     </svg>
@@ -93,7 +93,7 @@
                                     </select>
                                     <div class="flex justify-end gap-2">
                                         <button type="button" @click="showAddAccount = false" class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">Cancel</button>
-                                        <button type="button" @click="addAccount()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Add</button>
+                                        <button type="button" @click="addAccount()" class="px-4 py-2 bg-brand-600 text-white rounded-md hover:bg-brand-700">Add</button>
                                     </div>
                                 </div>
                             </div>
@@ -127,7 +127,7 @@
                                                        :name="'lines['+index+'][{{ $key }}]'"
                                                        x-model.number="line.{{ $key }}"
                                                        @input="calculateRowTotal(line)"
-                                                       class="w-full text-right text-sm rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 focus:border-blue-500 focus:ring-blue-500 px-1 py-1">
+                                                       class="w-full text-right text-sm rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 focus:border-brand-500 focus:ring-brand-500 px-1 py-1">
                                             </td>
                                             @endforeach
                                             <td class="px-3 py-2 text-sm text-right font-semibold text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700">
@@ -172,7 +172,7 @@
                     <a href="{{ route('budgets.show', $budget) }}" class="inline-flex items-center px-4 py-2 bg-gray-300 dark:bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-400">
                         Cancel
                     </a>
-                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
+                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
                         Save Budget
                     </button>
                 </div>
@@ -195,15 +195,15 @@
                                               file:mr-4 file:py-2 file:px-4
                                               file:rounded-md file:border-0
                                               file:text-sm file:font-semibold
-                                              file:bg-blue-50 file:text-blue-700
-                                              dark:file:bg-blue-900 dark:file:text-blue-300
-                                              hover:file:bg-blue-100 dark:hover:file:bg-blue-800">
+                                              file:bg-brand-50 file:text-brand-700
+                                              dark:file:bg-brand-900 dark:file:text-brand-300
+                                              hover:file:bg-brand-100 dark:hover:file:bg-brand-800">
                             </div>
 
                             <div class="mb-4">
                                 <label class="flex items-center">
                                     <input type="checkbox" name="update_existing" value="1"
-                                           class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500">
+                                           class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
                                     <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Update existing lines (overwrite amounts for matching accounts)</span>
                                 </label>
                             </div>
@@ -216,7 +216,7 @@
                                     <strong>Optional columns:</strong> account_name, jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec, notes
                                 </p>
                                 <a href="{{ route('budgets.import-template') }}" 
-                                   class="inline-flex items-center text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                                   class="inline-flex items-center text-xs text-brand-600 dark:text-brand-300 hover:underline">
                                     <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                                     </svg>

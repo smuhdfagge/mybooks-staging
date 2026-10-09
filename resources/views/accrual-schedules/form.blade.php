@@ -9,7 +9,7 @@
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">{{ $editing ? 'Edit schedule '.$schedule->schedule_number : 'New prepaid or deferred schedule' }}</h2>
-            <a href="{{ $back }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">Back</a>
+            <a href="{{ $back }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">Back</a>
         </div>
     </x-slot>
 
@@ -56,12 +56,12 @@
                     <fieldset>
                         <legend class="form-label">What is it?</legend>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <label class="flex items-start gap-2 p-3 rounded-lg border cursor-pointer" :class="type === 'prepaid_expense' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-200 dark:border-gray-700'">
+                            <label class="flex items-start gap-2 p-3 rounded-lg border cursor-pointer" :class="type === 'prepaid_expense' ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20' : 'border-gray-200 dark:border-gray-700'">
                                 <input type="radio" name="type" value="prepaid_expense" x-model="type" class="mt-1">
                                 <span><span class="font-medium text-gray-900 dark:text-gray-100">Prepaid expense</span>
                                     <span class="block text-sm text-gray-500 dark:text-gray-400">You paid in advance, e.g. a year's rent or insurance. Each month goes to an expense.</span></span>
                             </label>
-                            <label class="flex items-start gap-2 p-3 rounded-lg border cursor-pointer" :class="type === 'deferred_revenue' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-200 dark:border-gray-700'">
+                            <label class="flex items-start gap-2 p-3 rounded-lg border cursor-pointer" :class="type === 'deferred_revenue' ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20' : 'border-gray-200 dark:border-gray-700'">
                                 <input type="radio" name="type" value="deferred_revenue" x-model="type" class="mt-1">
                                 <span><span class="font-medium text-gray-900 dark:text-gray-100">Deferred revenue</span>
                                     <span class="block text-sm text-gray-500 dark:text-gray-400">A customer paid you in advance, e.g. for 6 months of service. Each month becomes income.</span></span>

@@ -11,7 +11,7 @@
                 none connected yet.
             @else
                 {{ $feedLinked }} {{ \Illuminate\Support\Str::plural('account', $feedLinked) }} connected,
-                <a href="{{ route('bank-feeds.lines') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $feedToReview }} {{ \Illuminate\Support\Str::plural('line', $feedToReview) }} to review</a>.
+                <a href="{{ route('bank-feeds.lines') }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $feedToReview }} {{ \Illuminate\Support\Str::plural('line', $feedToReview) }} to review</a>.
                 @if($feedAttention > 0)
                     <span class="text-yellow-700 dark:text-yellow-300">{{ $feedAttention === 1 ? '1 account needs' : $feedAttention.' accounts need' }} you to log in to the bank again.</span>
                 @endif

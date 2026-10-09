@@ -11,7 +11,7 @@
                     </svg>
                     Generate Year
                 </button>
-                <a href="{{ route('accounting-periods.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                <a href="{{ route('accounting-periods.create') }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                     </svg>
@@ -60,7 +60,7 @@
                                 <button type="button" data-open-modal="generate-periods" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
                                     Generate Fiscal Year
                                 </button>
-                                <a href="{{ route('accounting-periods.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
+                                <a href="{{ route('accounting-periods.create') }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
                                     Create Period
                                 </a>
                             </div>
@@ -82,11 +82,11 @@
                                     @foreach($periods as $period)
                                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <a href="{{ route('accounting-periods.show', $period) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
+                                            <a href="{{ route('accounting-periods.show', $period) }}" class="text-brand-600 dark:text-brand-300 hover:underline font-medium">
                                                 {{ $period->name }}
                                             </a>
                                             @if($period->is_year_end)
-                                                <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                                                <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-accent-100 text-accent-800 dark:bg-accent-900/50 dark:text-accent-200">
                                                     Year End
                                                 </span>
                                             @endif
@@ -126,7 +126,7 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <a href="{{ route('accounting-periods.show', $period) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 mr-3">View</a>
+                                            <a href="{{ route('accounting-periods.show', $period) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 mr-3">View</a>
                                             @if(!$period->isLocked())
                                                 <a href="{{ route('accounting-periods.edit', $period) }}" class="text-gray-600 dark:text-gray-400 hover:text-gray-900">Edit</a>
                                             @endif
@@ -150,11 +150,11 @@
                     @csrf
                     <div class="mb-4">
                         <label for="fiscal_year" class="form-label">Fiscal Year</label>
-                        <input type="number" name="fiscal_year" id="fiscal_year" value="{{ date('Y') }}" min="2000" max="2100" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                        <input type="number" name="fiscal_year" id="fiscal_year" value="{{ date('Y') }}" min="2000" max="2100" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-brand-500 focus:ring-brand-500" required>
                     </div>
                     <div class="mb-4">
                         <label for="start_month" class="form-label">Fiscal Year Starts In</label>
-                        <select name="start_month" id="start_month" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <select name="start_month" id="start_month" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                             <option value="1">January</option>
                             <option value="2">February</option>
                             <option value="3">March</option>
