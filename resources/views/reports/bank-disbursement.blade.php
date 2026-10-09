@@ -27,23 +27,23 @@
                     <div>
                         <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Start Date</label>
                         <input type="date" name="start_date" id="start_date" value="{{ $startDate }}" 
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                     </div>
                     <div>
                         <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">End Date</label>
                         <input type="date" name="end_date" id="end_date" value="{{ $endDate }}" 
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                     </div>
                     <div>
                         <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
-                        <select name="status" id="status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                        <select name="status" id="status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                             <option value="">All Statuses</option>
                             <option value="approved" {{ $status === 'approved' ? 'selected' : '' }}>Approved (Ready to Pay)</option>
                             <option value="paid" {{ $status === 'paid' ? 'selected' : '' }}>Paid</option>
                         </select>
                     </div>
                     <div class="flex items-end">
-                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
                             </svg>
@@ -79,7 +79,7 @@
             </div>
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-4">
                 <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">Total Gross</dt>
-                <dd class="mt-1 text-lg font-semibold text-blue-600 dark:text-blue-400">{{ number_format($totals['total_gross'], 2) }}</dd>
+                <dd class="mt-1 text-lg font-semibold text-brand-600 dark:text-brand-300">{{ number_format($totals['total_gross'], 2) }}</dd>
             </div>
         </div>
 
@@ -144,7 +144,7 @@
                                     <td class="px-4 py-3 text-sm text-center">
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                             {{ $payroll->status === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : '' }}
-                                            {{ $payroll->status === 'approved' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : '' }}
+                                            {{ $payroll->status === 'approved' ? 'bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200' : '' }}
                                             {{ $payroll->status === 'draft' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' : '' }}
                                         ">{{ ucfirst($payroll->status) }}</span>
                                     </td>

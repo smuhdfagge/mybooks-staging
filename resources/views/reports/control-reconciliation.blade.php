@@ -45,7 +45,7 @@
                             @if($ok)
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">Agrees</span>
                             @elseif($problems->isEmpty() && abs($sec['unexplained']) < 0.005)
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">Difference explained</span>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-brand-100 text-brand-800 dark:bg-brand-900/50 dark:text-brand-300">Difference explained</span>
                             @else
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">Needs a look</span>
                             @endif
@@ -59,7 +59,7 @@
                             <div class="rounded-md bg-gray-50 dark:bg-gray-900/40 p-3">
                                 <p class="text-xs text-gray-500 dark:text-gray-400">{{ $isAr ? 'Total of all customer balances' : 'Total of all supplier balances' }}</p>
                                 <p class="text-xl font-semibold text-gray-900 dark:text-gray-100">@money($sec['statements'])</p>
-                                <a href="{{ route($isAr ? 'reports.accounts-receivable' : 'reports.accounts-payable', ['as_of' => $asOf]) }}" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">{{ $isAr ? 'Aged receivables' : 'Aged payables' }}</a>
+                                <a href="{{ route($isAr ? 'reports.accounts-receivable' : 'reports.accounts-payable', ['as_of' => $asOf]) }}" class="text-xs text-brand-600 dark:text-brand-300 hover:underline">{{ $isAr ? 'Aged receivables' : 'Aged payables' }}</a>
                             </div>
                             <div class="rounded-md p-3 {{ $ok ? 'bg-green-50 dark:bg-green-900/20' : 'bg-amber-50 dark:bg-amber-900/20' }}">
                                 <p class="text-xs text-gray-500 dark:text-gray-400">Difference</p>
@@ -77,7 +77,7 @@
                                                 <li class="p-3 flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-4 text-sm">
                                                     <div>
                                                         @if($item['url'])
-                                                            <a href="{{ $item['url'] }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">{{ $item['label'] }}</a>
+                                                            <a href="{{ $item['url'] }}" class="font-medium text-brand-600 dark:text-brand-300 hover:underline">{{ $item['label'] }}</a>
                                                         @else
                                                             <span class="font-medium text-gray-900 dark:text-gray-100">{{ $item['label'] }}</span>
                                                         @endif

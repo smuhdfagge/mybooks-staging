@@ -24,24 +24,24 @@
                         <div>
                             <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Start Date</label>
                             <input type="date" name="start_date" id="start_date" value="{{ $startDate }}"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                         </div>
                         <div>
                             <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">End Date</label>
                             <input type="date" name="end_date" id="end_date" value="{{ $endDate }}"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                         </div>
                         <div>
                             <label for="group_by" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Group By</label>
                             <select name="group_by" id="group_by"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                                 <option value="month" {{ $groupBy === 'month' ? 'selected' : '' }}>Monthly</option>
                                 <option value="quarter" {{ $groupBy === 'quarter' ? 'selected' : '' }}>Quarterly</option>
                                 <option value="year" {{ $groupBy === 'year' ? 'selected' : '' }}>Yearly</option>
                             </select>
                         </div>
                         <div class="flex items-end">
-                            <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                            <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
                                 </svg>
@@ -103,12 +103,12 @@
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
                                 Net {{ $totalNetLiability >= 0 ? 'Liability' : 'Credit' }}
                             </p>
-                            <p class="text-2xl font-bold {{ $totalNetLiability >= 0 ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400' }}">
+                            <p class="text-2xl font-bold {{ $totalNetLiability >= 0 ? 'text-orange-600 dark:text-orange-400' : 'text-brand-600 dark:text-brand-300' }}">
                                 {{ number_format(abs($totalNetLiability), 2) }}
                             </p>
                         </div>
-                        <div class="p-3 {{ $totalNetLiability >= 0 ? 'bg-orange-100 dark:bg-orange-900/30' : 'bg-blue-100 dark:bg-blue-900/30' }} rounded-full">
-                            <svg class="w-6 h-6 {{ $totalNetLiability >= 0 ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="p-3 {{ $totalNetLiability >= 0 ? 'bg-orange-100 dark:bg-orange-900/30' : 'bg-brand-100 dark:bg-brand-900/30' }} rounded-full">
+                            <svg class="w-6 h-6 {{ $totalNetLiability >= 0 ? 'text-orange-600 dark:text-orange-400' : 'text-brand-600 dark:text-brand-300' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                             </svg>
                         </div>
@@ -128,10 +128,10 @@
                             @php
                                 $effectiveRate = $totalTaxableSales > 0 ? ($totalTaxCollected / $totalTaxableSales) * 100 : 0;
                             @endphp
-                            <p class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ number_format($effectiveRate, 2) }}%</p>
+                            <p class="text-2xl font-bold text-accent-700 dark:text-accent-300">{{ number_format($effectiveRate, 2) }}%</p>
                         </div>
-                        <div class="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full">
-                            <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="p-3 bg-accent-100 dark:bg-accent-900/30 rounded-full">
+                            <svg class="w-6 h-6 text-accent-700 dark:text-accent-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
                             </svg>
                         </div>
@@ -168,10 +168,10 @@
                                 <td class="px-4 py-3 text-sm text-right text-red-600 dark:text-red-400 font-medium">{{ number_format($period['tax_collected'], 2) }}</td>
                                 <td class="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">{{ number_format($period['taxable_purchases'], 2) }}</td>
                                 <td class="px-4 py-3 text-sm text-right text-green-600 dark:text-green-400 font-medium">{{ number_format($period['tax_paid'], 2) }}</td>
-                                <td class="px-4 py-3 text-sm text-right font-semibold {{ $period['net_liability'] >= 0 ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400' }}">
+                                <td class="px-4 py-3 text-sm text-right font-semibold {{ $period['net_liability'] >= 0 ? 'text-orange-600 dark:text-orange-400' : 'text-brand-600 dark:text-brand-300' }}">
                                     {{ $period['net_liability'] >= 0 ? '' : '(' }}{{ number_format(abs($period['net_liability']), 2) }}{{ $period['net_liability'] >= 0 ? '' : ')' }}
                                 </td>
-                                <td class="px-4 py-3 text-sm text-right font-bold {{ $period['cumulative_liability'] >= 0 ? 'text-orange-700 dark:text-orange-300' : 'text-blue-700 dark:text-blue-300' }}">
+                                <td class="px-4 py-3 text-sm text-right font-bold {{ $period['cumulative_liability'] >= 0 ? 'text-orange-700 dark:text-orange-300' : 'text-brand-700 dark:text-brand-300' }}">
                                     {{ $period['cumulative_liability'] >= 0 ? '' : '(' }}{{ number_format(abs($period['cumulative_liability']), 2) }}{{ $period['cumulative_liability'] >= 0 ? '' : ')' }}
                                 </td>
                             </tr>
@@ -189,10 +189,10 @@
                                 <td class="px-4 py-3 text-sm text-right font-bold text-red-600 dark:text-red-400">{{ number_format($totalTaxCollected, 2) }}</td>
                                 <td class="px-4 py-3 text-sm text-right font-bold text-gray-900 dark:text-white">{{ number_format($totalTaxablePurchases, 2) }}</td>
                                 <td class="px-4 py-3 text-sm text-right font-bold text-green-600 dark:text-green-400">{{ number_format($totalTaxPaid, 2) }}</td>
-                                <td class="px-4 py-3 text-sm text-right font-bold {{ $totalNetLiability >= 0 ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400' }}">
+                                <td class="px-4 py-3 text-sm text-right font-bold {{ $totalNetLiability >= 0 ? 'text-orange-600 dark:text-orange-400' : 'text-brand-600 dark:text-brand-300' }}">
                                     {{ $totalNetLiability >= 0 ? '' : '(' }}{{ number_format(abs($totalNetLiability), 2) }}{{ $totalNetLiability >= 0 ? '' : ')' }}
                                 </td>
-                                <td class="px-4 py-3 text-sm text-right font-bold {{ $totalNetLiability >= 0 ? 'text-orange-700 dark:text-orange-300' : 'text-blue-700 dark:text-blue-300' }}">
+                                <td class="px-4 py-3 text-sm text-right font-bold {{ $totalNetLiability >= 0 ? 'text-orange-700 dark:text-orange-300' : 'text-brand-700 dark:text-brand-300' }}">
                                     {{ $totalNetLiability >= 0 ? '' : '(' }}{{ number_format(abs($totalNetLiability), 2) }}{{ $totalNetLiability >= 0 ? '' : ')' }}
                                 </td>
                             </tr>
@@ -331,7 +331,7 @@
                                 </div>
                             </div>
                             <div class="w-24 text-right">
-                                <span class="text-sm font-semibold {{ $period['net_liability'] >= 0 ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400' }}">
+                                <span class="text-sm font-semibold {{ $period['net_liability'] >= 0 ? 'text-orange-600 dark:text-orange-400' : 'text-brand-600 dark:text-brand-300' }}">
                                     {{ $period['net_liability'] >= 0 ? '+' : '-' }}{{ number_format(abs($period['net_liability']), 2) }}
                                 </span>
                             </div>
@@ -343,7 +343,7 @@
         </div>
 
         <!-- Tax Liability Status -->
-        <div class="{{ $totalNetLiability >= 0 ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800' : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' }} border rounded-lg p-4">
+        <div class="{{ $totalNetLiability >= 0 ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800' : 'bg-brand-50 dark:bg-brand-900/20 border-brand-200 dark:border-brand-800' }} border rounded-lg p-4">
             <div class="flex">
                 <div class="flex-shrink-0">
                     @if($totalNetLiability >= 0)
@@ -351,16 +351,16 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                         </svg>
                     @else
-                        <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="h-5 w-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     @endif
                 </div>
                 <div class="ml-3">
-                    <h3 class="text-sm font-medium {{ $totalNetLiability >= 0 ? 'text-orange-800 dark:text-orange-200' : 'text-blue-800 dark:text-blue-200' }}">
+                    <h3 class="text-sm font-medium {{ $totalNetLiability >= 0 ? 'text-orange-800 dark:text-orange-200' : 'text-brand-800 dark:text-brand-200' }}">
                         Tax {{ $totalNetLiability >= 0 ? 'Liability Outstanding' : 'Credit Available' }}
                     </h3>
-                    <p class="mt-1 text-sm {{ $totalNetLiability >= 0 ? 'text-orange-700 dark:text-orange-300' : 'text-blue-700 dark:text-blue-300' }}">
+                    <p class="mt-1 text-sm {{ $totalNetLiability >= 0 ? 'text-orange-700 dark:text-orange-300' : 'text-brand-700 dark:text-brand-300' }}">
                         @if($totalNetLiability >= 0)
                             You have a net tax liability of <strong>{{ number_format($totalNetLiability, 2) }}</strong> to remit to tax authorities for this period.
                         @else

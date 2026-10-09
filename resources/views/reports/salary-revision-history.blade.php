@@ -26,7 +26,7 @@
                 <form method="GET" action="{{ route('reports.salary-revision-history') }}" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label for="employee_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Employee (for salary progression)</label>
-                        <select name="employee_id" id="employee_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                        <select name="employee_id" id="employee_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                             <option value="">Select Employee...</option>
                             @foreach($employees as $employee)
                                 <option value="{{ $employee->id }}" {{ $employeeId == $employee->id ? 'selected' : '' }}>
@@ -36,7 +36,7 @@
                         </select>
                     </div>
                     <div class="flex items-end">
-                        <button type="submit" class="inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <button type="submit" class="inline-flex justify-center items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
                             </svg>
@@ -126,7 +126,7 @@
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                     <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $version->name ?? $version->salaryStructure?->name }}</td>
                                     <td class="px-4 py-3 text-sm text-center">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200">
                                             v{{ $version->version }}
                                         </span>
                                     </td>
@@ -141,7 +141,7 @@
                                 <tr class="bg-gray-50/50 dark:bg-gray-900/30">
                                     <td colspan="8" class="px-4 py-2">
                                         <details class="text-xs">
-                                            <summary class="cursor-pointer text-blue-600 dark:text-blue-400 hover:underline">View Items ({{ count($version->items) }})</summary>
+                                            <summary class="cursor-pointer text-brand-600 dark:text-brand-300 hover:underline">View Items ({{ count($version->items) }})</summary>
                                             <div class="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
                                                 @foreach($version->items as $item)
                                                 <div class="p-2 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
