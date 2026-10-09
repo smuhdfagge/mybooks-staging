@@ -27,10 +27,10 @@
                     <div>
                         <label for="as_of" class="block text-sm font-medium text-gray-700 dark:text-gray-300">As Of Date</label>
                         <input type="date" name="as_of" id="as_of" value="{{ $asOf }}" 
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                     </div>
                     <div class="flex items-end">
-                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
                             </svg>
@@ -46,7 +46,7 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
                 <div class="p-6">
                     <div class="flex items-center">
-                        <div class="flex-shrink-0 bg-blue-500 rounded-md p-3">
+                        <div class="flex-shrink-0 bg-brand-500 rounded-md p-3">
                             <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                             </svg>
@@ -54,7 +54,7 @@
                         <div class="ml-5">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Assets</dt>
-                                <dd class="text-lg font-semibold text-blue-600 dark:text-blue-400">{{ number_format($totalAssets, 2) }}</dd>
+                                <dd class="text-lg font-semibold text-brand-600 dark:text-brand-300">{{ number_format($totalAssets, 2) }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -107,7 +107,7 @@
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Assets</h3>
-                        <div class="flex-shrink-0 bg-blue-500 rounded-md p-2">
+                        <div class="flex-shrink-0 bg-brand-500 rounded-md p-2">
                             <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                             </svg>
@@ -246,10 +246,10 @@
                         </div>
 
                         <!-- Total Assets -->
-                        <div class="border-t-2 border-blue-500 pt-4">
+                        <div class="border-t-2 border-brand-500 pt-4">
                             <div class="flex justify-between">
                                 <span class="text-base font-bold text-gray-900 dark:text-white">TOTAL ASSETS</span>
-                                <span class="text-base font-bold text-blue-600 dark:text-blue-400">{{ number_format($totalAssets, 2) }}</span>
+                                <span class="text-base font-bold text-brand-600 dark:text-brand-300">{{ number_format($totalAssets, 2) }}</span>
                             </div>
                         </div>
                     </div>
@@ -261,7 +261,7 @@
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Liabilities & Equity</h3>
-                        <div class="flex-shrink-0 bg-purple-500 rounded-md p-2">
+                        <div class="flex-shrink-0 bg-accent-500 rounded-md p-2">
                             <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path>
                             </svg>
@@ -459,10 +459,10 @@
                         </div>
 
                         <!-- Total Liabilities & Equity -->
-                        <div class="border-t-2 border-purple-500 pt-4">
+                        <div class="border-t-2 border-brand-500 pt-4">
                             <div class="flex justify-between">
                                 <span class="text-base font-bold text-gray-900 dark:text-white">TOTAL LIABILITIES & EQUITY</span>
-                                <span class="text-base font-bold text-purple-600 dark:text-purple-400">{{ number_format($totalLiabilitiesAndEquity, 2) }}</span>
+                                <span class="text-base font-bold text-accent-700 dark:text-accent-300">{{ number_format($totalLiabilitiesAndEquity, 2) }}</span>
                             </div>
                         </div>
                     </div>

@@ -26,7 +26,7 @@
                         <div>
                             <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Report Name *</label>
                             <input type="text" name="name" id="name" required value="{{ old('name') }}"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
                                 placeholder="e.g., Monthly Sales Summary" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                             @error('name')
                                 <p id="name-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
@@ -36,7 +36,7 @@
                         <div>
                             <label for="data_source" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Data Source *</label>
                             <select name="data_source" id="data_source" required x-model="dataSource" @change="loadColumns()"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm" @error('data_source') aria-invalid="true" aria-describedby="data_source-error" @enderror>
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm" @error('data_source') aria-invalid="true" aria-describedby="data_source-error" @enderror>
                                 <option value="">Select a data source</option>
                                 @foreach($dataSources as $key => $source)
                                     <option value="{{ $key }}">{{ $source['label'] }}</option>
@@ -50,13 +50,13 @@
                         <div class="md:col-span-2">
                             <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
                             <textarea name="description" id="description" rows="2"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
                                 placeholder="Optional description of this report">{{ old('description') }}</textarea>
                         </div>
 
                         <div>
                             <label class="flex items-center">
-                                <input type="checkbox" name="is_public" value="1" class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
+                                <input type="checkbox" name="is_public" value="1" class="rounded border-gray-300 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-brand-300">
                                 <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Share with team members</span>
                             </label>
                         </div>
@@ -75,7 +75,7 @@
                             <label class="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-colors">
                                 <input type="checkbox" :name="'columns[]'" :value="column"
                                     x-model="selectedColumns"
-                                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500">
+                                    class="rounded border-gray-300 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-600 dark:border-gray-500 dark:text-brand-300">
                                 <span class="ml-2 text-sm text-gray-700 dark:text-gray-300" x-text="config.label"></span>
                             </label>
                         </template>
@@ -99,7 +99,7 @@
                     
                     <div class="max-w-xs">
                         <select aria-label="Selected date field" name="date_field" x-model="selectedDateField"
-                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                             <option value="">No date filter</option>
                             <template x-for="field in dateFields" :key="field">
                                 <option :value="field" x-text="availableColumns[field]?.label || field"></option>
@@ -130,7 +130,7 @@
                         <template x-for="(filter, index) in filters" :key="index">
                             <div class="flex flex-wrap items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                                 <select aria-label="Column" :name="'filters[' + index + '][column]'" x-model="filter.column" required
-                                    class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm">
+                                    class="rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm">
                                     <option value="">Select column</option>
                                     <template x-for="(config, column) in availableColumns" :key="column">
                                         <option :value="column" x-text="config.label"></option>
@@ -138,7 +138,7 @@
                                 </select>
                                 
                                 <select aria-label="Operator" :name="'filters[' + index + '][operator]'" x-model="filter.operator" required
-                                    class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm">
+                                    class="rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm">
                                     @foreach($operators as $key => $label)
                                         <option value="{{ $key }}">{{ $label }}</option>
                                     @endforeach
@@ -146,7 +146,7 @@
                                 
                                 <input aria-label="Value" type="text" :name="'filters[' + index + '][value]'" x-model="filter.value" placeholder="Value"
                                     x-show="!['is_null', 'is_not_null'].includes(filter.operator)"
-                                    class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm flex-1 min-w-[150px]">
+                                    class="rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm flex-1 min-w-[150px]">
                                 
                                 <button type="button" @click="removeFilter(index)" class="text-red-500 hover:text-red-700 p-1">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -171,7 +171,7 @@
                     
                     <div class="max-w-xs">
                         <select aria-label="Selected group by" name="group_by" x-model="selectedGroupBy"
-                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                             <option value="">No grouping</option>
                             <template x-for="field in groupFields" :key="field">
                                 <option :value="field" x-text="availableColumns[field]?.label || field"></option>
@@ -202,7 +202,7 @@
                         <template x-for="(agg, index) in aggregations" :key="index">
                             <div class="flex flex-wrap items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                                 <select aria-label="Function" :name="'aggregations[' + index + '][function]'" x-model="agg.function" required
-                                    class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm">
+                                    class="rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm">
                                     @foreach($aggregations as $key => $label)
                                         <option value="{{ $key }}">{{ $label }}</option>
                                     @endforeach
@@ -211,7 +211,7 @@
                                 <span class="text-gray-500 dark:text-gray-400">of</span>
                                 
                                 <select aria-label="Column" :name="'aggregations[' + index + '][column]'" x-model="agg.column" required
-                                    class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm">
+                                    class="rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm">
                                     <option value="">Select column</option>
                                     <template x-for="(config, column) in numericColumns" :key="column">
                                         <option :value="column" x-text="config.label"></option>
@@ -254,7 +254,7 @@
                         <template x-for="(sort, index) in sortBy" :key="index">
                             <div class="flex flex-wrap items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                                 <select aria-label="Column" :name="'sort_by[' + index + '][column]'" x-model="sort.column" required
-                                    class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm">
+                                    class="rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm">
                                     <option value="">Select column</option>
                                     <template x-for="column in selectedColumns" :key="column">
                                         <option :value="column" x-text="availableColumns[column]?.label || column"></option>
@@ -262,7 +262,7 @@
                                 </select>
                                 
                                 <select aria-label="Direction" :name="'sort_by[' + index + '][direction]'" x-model="sort.direction" required
-                                    class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm">
+                                    class="rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm">
                                     <option value="asc">Ascending</option>
                                     <option value="desc">Descending</option>
                                 </select>
@@ -287,7 +287,7 @@
                 <a href="{{ route('reports.custom.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 border border-transparent rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                     Cancel
                 </a>
-                <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>

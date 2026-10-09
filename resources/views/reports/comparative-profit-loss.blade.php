@@ -24,7 +24,7 @@
                         <div class="lg:col-span-1">
                             <label for="comparison_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Comparison Type</label>
                             <select name="comparison_type" id="comparison_type" data-call="toggleCustomDates" data-pass-value
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                                 <option value="month" {{ $comparisonType === 'month' ? 'selected' : '' }}>Month over Month</option>
                                 <option value="quarter" {{ $comparisonType === 'quarter' ? 'selected' : '' }}>Quarter over Quarter</option>
                                 <option value="year" {{ $comparisonType === 'year' ? 'selected' : '' }}>Year over Year</option>
@@ -38,29 +38,29 @@
                                 <div>
                                     <label for="current_start" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Current Start</label>
                                     <input type="date" name="current_start" id="current_start" value="{{ request('current_start', now()->startOfMonth()->format('Y-m-d')) }}"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                                 </div>
                                 <div>
                                     <label for="current_end" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Current End</label>
                                     <input type="date" name="current_end" id="current_end" value="{{ request('current_end', now()->format('Y-m-d')) }}"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                                 </div>
                                 <div>
                                     <label for="previous_start" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Previous Start</label>
                                     <input type="date" name="previous_start" id="previous_start" value="{{ request('previous_start', now()->subMonth()->startOfMonth()->format('Y-m-d')) }}"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                                 </div>
                                 <div>
                                     <label for="previous_end" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Previous End</label>
                                     <input type="date" name="previous_end" id="previous_end" value="{{ request('previous_end', now()->subMonth()->endOfMonth()->format('Y-m-d')) }}"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                                 </div>
                             </div>
                         </div>
                     </div>
                     
                     <div class="flex justify-end">
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                             </svg>
@@ -79,7 +79,7 @@
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $period['label'] }}</h3>
                         @if($key === 'current')
-                            <span class="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">Current</span>
+                            <span class="px-2 py-1 text-xs font-semibold bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200 rounded-full">Current</span>
                         @else
                             <span class="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 rounded-full">Previous</span>
                         @endif

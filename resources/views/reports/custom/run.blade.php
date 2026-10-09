@@ -44,14 +44,14 @@
                         <div>
                             <label for="start_date" class="form-label">Start Date</label>
                             <input type="date" name="start_date" id="start_date" value="{{ $startDate }}"
-                                class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
+                                class="rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
                         </div>
                         <div>
                             <label for="end_date" class="form-label">End Date</label>
                             <input type="date" name="end_date" id="end_date" value="{{ $endDate }}"
-                                class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
+                                class="rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
                         </div>
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                             </svg>
@@ -257,9 +257,9 @@
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Active Filters</h3>
                     <div class="flex flex-wrap gap-2">
                         @foreach($customReport->filters as $filter)
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-brand-100 dark:bg-brand-900 text-brand-800 dark:text-brand-200">
                                 {{ $columnLabels[$filter['column']] ?? $filter['column'] }}
-                                <span class="mx-1 text-blue-500">{{ $operators[$filter['operator']] ?? $filter['operator'] }}</span>
+                                <span class="mx-1 text-brand-500 dark:text-brand-300">{{ $operators[$filter['operator']] ?? $filter['operator'] }}</span>
                                 @if(!in_array($filter['operator'], ['is_null', 'is_not_null']))
                                     "{{ $filter['value'] }}"
                                 @endif

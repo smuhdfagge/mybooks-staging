@@ -26,7 +26,7 @@
                 <form method="GET" action="{{ route('reports.ytd-earnings') }}" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                         <label for="year" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Year</label>
-                        <select name="year" id="year" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                        <select name="year" id="year" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                             @for($y = now()->year; $y >= now()->year - 5; $y--)
                                 <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>{{ $y }}</option>
                             @endfor
@@ -34,7 +34,7 @@
                     </div>
                     <div>
                         <label for="employee_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Employee</label>
-                        <select name="employee_id" id="employee_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
+                        <select name="employee_id" id="employee_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                             <option value="">All Employees</option>
                             @foreach($employees as $employee)
                                 <option value="{{ $employee->id }}" {{ $employeeId == $employee->id ? 'selected' : '' }}>
@@ -44,7 +44,7 @@
                         </select>
                     </div>
                     <div class="flex items-end">
-                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
                             </svg>
@@ -59,7 +59,7 @@
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-4">
                 <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">YTD Gross</dt>
-                <dd class="mt-1 text-lg font-semibold text-blue-600 dark:text-blue-400">{{ number_format($grandTotals['gross'], 2) }}</dd>
+                <dd class="mt-1 text-lg font-semibold text-brand-600 dark:text-brand-300">{{ number_format($grandTotals['gross'], 2) }}</dd>
             </div>
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-4">
                 <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">YTD Tax</dt>
@@ -113,7 +113,7 @@
                                 <tr class="bg-gray-50/50 dark:bg-gray-900/30">
                                     <td colspan="10" class="px-4 py-2">
                                         <details class="text-xs">
-                                            <summary class="cursor-pointer text-blue-600 dark:text-blue-400 hover:underline">Monthly Breakdown ({{ $record['monthly_breakdown']->count() }} months)</summary>
+                                            <summary class="cursor-pointer text-brand-600 dark:text-brand-300 hover:underline">Monthly Breakdown ({{ $record['monthly_breakdown']->count() }} months)</summary>
                                             <div class="mt-2 overflow-x-auto">
                                                 <table class="min-w-full text-xs">
                                                     <thead>

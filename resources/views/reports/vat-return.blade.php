@@ -43,7 +43,7 @@
                     <input type="month" name="month" id="month" value="{{ $month }}"
                         class="mt-1 block rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                 </div>
-                <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">Show</button>
+                <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">Show</button>
                 <p class="text-xs text-gray-500 dark:text-gray-400 sm:ml-auto max-w-xl">
                     Laid out like the Nigeria Revenue Service VAT Form 002. Figures come from the ledger for {{ $monthLabel }}:
                     invoices and cash sales by invoice date, credit notes in the month issued. Small companies are exempt from monthly
@@ -90,7 +90,7 @@
                     @can('file vat-returns')
                         {{-- Reopen with a reason (session 11) --}}
                         <details class="mt-4" @if($errors->has('reason') || $errors->has('month')) open @endif>
-                            <summary class="cursor-pointer text-sm font-medium text-indigo-600 dark:text-indigo-400">Reopen this return</summary>
+                            <summary class="cursor-pointer text-sm font-medium text-brand-600 dark:text-brand-300">Reopen this return</summary>
                             <form method="POST" action="{{ route('reports.vat-return.reopen') }}" class="mt-3 space-y-3 max-w-xl">
                                 @csrf
                                 <input type="hidden" name="month" value="{{ $month }}">
@@ -138,7 +138,7 @@
                             <div class="max-w-sm mb-3">
                                 <x-field name="reference" label="NRS acknowledgement or receipt number (optional)" maxlength="100" />
                             </div>
-                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">Mark as filed and settle VAT</button>
+                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">Mark as filed and settle VAT</button>
                         </form>
                     @else
                         <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">You can mark this return as filed once {{ $monthLabel }} has ended.</p>
@@ -211,7 +211,7 @@
         @endif
 
         @if($exemptShare > 0 && $lines[75] > 0)
-            <x-card class="p-4 border-l-4 border-blue-500">
+            <x-card class="p-4 border-l-4 border-brand-500">
                 <p class="text-sm text-gray-700 dark:text-gray-300">
                     {{ number_format($exemptShare * 100, 1) }}% of this month's sales are exempt. Input VAT that relates to exempt supplies can't be recovered,
                     so part of line 75 may need to be apportioned (on a straight split, @money(round($lines[75] * $exemptShare, 2))). Check with your accountant.
