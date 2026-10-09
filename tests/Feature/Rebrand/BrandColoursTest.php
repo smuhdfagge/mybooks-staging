@@ -113,7 +113,7 @@ class BrandColoursTest extends TestCase
     public function test_rules_swap_purple_only_when_the_page_has_no_blue(): void
     {
         $alone = ColourRules::apply('<i class="text-purple-600"></i>');
-        $this->assertSame('<i class="text-brand-600"></i>', $alone['text']);
+        $this->assertSame('<i class="text-brand-600 dark:text-brand-300"></i>', $alone['text']);
         $this->assertSame([], $alone['flags']);
 
         $mixed = ColourRules::apply("<i class=\"text-blue-600\"></i>\n<i class=\"text-purple-600\"></i>\n");
@@ -128,6 +128,17 @@ class BrandColoursTest extends TestCase
 
         $this->assertSame($text, $result['text']);
         $this->assertSame([1, 2, 3], array_column($result['flags'], 'line'));
+    }
+
+    public function test_rules_give_navy_links_a_readable_dark_mode_colour(): void
+    {
+        $this->assertSame(
+            '<a class="text-brand-600 hover:text-brand-900 font-medium dark:text-brand-300 dark:hover:text-brand-200">',
+            ColourRules::apply('<a class="text-indigo-600 hover:text-indigo-900 font-medium">')['text']
+        );
+        // Left alone: already has a dark colour, or sits on its own light background.
+        $this->assertSame('<a class="text-brand-600 dark:text-brand-300">', ColourRules::addDarkModeText('<a class="text-brand-600 dark:text-brand-300">'));
+        $this->assertSame('<span class="bg-brand-100 text-brand-700">', ColourRules::addDarkModeText('<span class="bg-brand-100 text-brand-700">'));
     }
 
     public function test_rules_map_known_hex_codes(): void

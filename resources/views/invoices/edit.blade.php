@@ -53,8 +53,8 @@
                                         class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
                                         <template x-for="(item, index) in filteredItems" :key="item.id">
                                             <div @click="selectItem(item)"
-                                                :class="{'bg-indigo-50 dark:bg-indigo-900': index === highlightedIndex}"
-                                                class="px-3 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900 text-gray-900 dark:text-gray-100"
+                                                :class="{'bg-brand-50 dark:bg-brand-900': index === highlightedIndex}"
+                                                class="px-3 py-2 cursor-pointer hover:bg-brand-50 dark:hover:bg-brand-900 text-gray-900 dark:text-gray-100"
                                                 x-text="item.name"></div>
                                         </template>
                                         <div x-show="filteredItems.length === 0" class="px-3 py-2 text-gray-500 dark:text-gray-400">No results found</div>
@@ -149,8 +149,8 @@
                                                         class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
                                                         <template x-for="(product, pIndex) in getFilteredProducts(index)" :key="product.id">
                                                             <div @click="selectProduct(index, product)"
-                                                                :class="{'bg-indigo-50 dark:bg-indigo-900': pIndex === item.itemHighlightedIndex}"
-                                                                class="px-3 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900 text-gray-900 dark:text-gray-100 text-sm"
+                                                                :class="{'bg-brand-50 dark:bg-brand-900': pIndex === item.itemHighlightedIndex}"
+                                                                class="px-3 py-2 cursor-pointer hover:bg-brand-50 dark:hover:bg-brand-900 text-gray-900 dark:text-gray-100 text-sm"
                                                                 x-text="product.name"></div>
                                                         </template>
                                                         <div x-show="getFilteredProducts(index).length === 0" class="px-3 py-2 text-gray-500 dark:text-gray-400 text-sm">No results found</div>
@@ -249,7 +249,7 @@
 
                                 <div class="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between">
                                     <span class="text-lg font-bold text-gray-900 dark:text-gray-100">Total</span>
-                                    <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400" x-text="formatMoney(total)">@money(0)</span>
+                                    <span class="text-lg font-bold text-brand-600 dark:text-brand-300" x-text="formatMoney(total)">@money(0)</span>
                                 </div>
                             </div>
                         </div>
@@ -258,10 +258,10 @@
 
                 <!-- Submit Buttons -->
                 <div class="flex items-center justify-end gap-4">
-                    <a href="{{ route('invoices.show', $invoice) }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                    <a href="{{ route('invoices.show', $invoice) }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                         Cancel
                     </a>
-                    <button type="submit" class="inline-flex items-center px-6 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                    <button type="submit" class="inline-flex items-center px-6 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>

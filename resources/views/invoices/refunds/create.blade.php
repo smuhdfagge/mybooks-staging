@@ -33,11 +33,11 @@
                         </div>
                         <div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">Already Refunded</p>
-                            <p class="text-lg font-semibold text-orange-600 dark:text-orange-400">{{ number_format($invoice->total_refunded ?? 0, 2) }}</p>
+                            <p class="text-lg font-semibold text-amber-700 dark:text-amber-300">{{ number_format($invoice->total_refunded ?? 0, 2) }}</p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">Available to Refund</p>
-                            <p class="text-lg font-semibold text-indigo-600 dark:text-indigo-400">{{ number_format($maxRefundable, 2) }}</p>
+                            <p class="text-lg font-semibold text-brand-600 dark:text-brand-300">{{ number_format($maxRefundable, 2) }}</p>
                         </div>
                     </div>
                 </div>
@@ -169,7 +169,7 @@
                                 <div class="flex flex-wrap gap-2">
                                     <button type="button" 
                                             data-set-value="amount" data-value="{{ $maxRefundable }}"
-                                            class="px-3 py-1 text-sm bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-md hover:bg-indigo-200 dark:hover:bg-indigo-800 transition">
+                                            class="px-3 py-1 text-sm bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 rounded-md hover:bg-brand-200 dark:hover:bg-brand-800 transition">
                                         Full Refund ({{ number_format($maxRefundable, 2) }})
                                     </button>
                                     @if($maxRefundable > 0)

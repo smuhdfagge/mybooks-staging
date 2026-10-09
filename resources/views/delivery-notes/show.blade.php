@@ -27,7 +27,7 @@
                             <div><p class="text-gray-500 dark:text-gray-400">Sales order</p>
                                 @if($deliveryNote->salesOrder)
                                     @can('view sales-orders')
-                                        <a href="{{ route('sales-orders.show', $deliveryNote->salesOrder) }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">{{ $deliveryNote->salesOrder->order_number }}</a>
+                                        <a href="{{ route('sales-orders.show', $deliveryNote->salesOrder) }}" class="font-medium text-brand-600 dark:text-brand-300 hover:underline">{{ $deliveryNote->salesOrder->order_number }}</a>
                                     @else
                                         <p class="font-medium text-gray-900 dark:text-gray-100">{{ $deliveryNote->salesOrder->order_number }}</p>
                                     @endcan

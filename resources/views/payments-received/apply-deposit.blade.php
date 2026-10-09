@@ -22,7 +22,7 @@
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
 
             <!-- Deposit Info Card -->
-            <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow-lg p-6 mb-6 text-white">
+            <div class="bg-green-700 rounded-lg shadow-sm p-6 mb-6 text-white">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-green-100 text-sm font-medium">Available Deposit Balance</p>
@@ -88,7 +88,7 @@
                     </div>
 
                     <div class="mt-6 flex justify-end gap-3">
-                        <a href="{{ route('payments-received.show', $paymentReceived) }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <a href="{{ route('payments-received.show', $paymentReceived) }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             Cancel
                         </a>
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
@@ -120,7 +120,7 @@
                                 @foreach($unpaidInvoices as $invoice)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                     <td class="px-4 py-3 whitespace-nowrap">
-                                        <a href="{{ route('invoices.show', $invoice) }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+                                        <a href="{{ route('invoices.show', $invoice) }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">
                                             {{ $invoice->invoice_number }}
                                         </a>
                                     </td>

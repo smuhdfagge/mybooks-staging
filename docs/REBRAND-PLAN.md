@@ -49,6 +49,7 @@ Nothing goes live until R12 merges `rebrand/main` into `main` in one go.
 |---|---|---|
 | `indigo-N`, `blue-N` | `brand-N` | Automatic |
 | `dark:text-…-400/500/600` (old families) | `dark:text-brand-300` | Automatic (readable on dark grey) |
+| Navy text (`text-brand-500/600/700`) with no dark-mode colour and no light background of its own | adds `dark:text-brand-300` (and `dark:hover:text-brand-200`) | Automatic |
 | `purple-N`, `violet-N` | `brand-N` | Automatic if the file has no indigo or blue, else flagged |
 | `fuchsia`, `pink`, `rose`, `sky`, `cyan` | decide | Flagged |
 | Gradients (`bg-gradient-*`, `from-/via-/to-`, `linear-gradient`) | flat `brand-600`, or `brand-900` for a big dark header | Flagged, line left alone |
@@ -73,7 +74,7 @@ gradient becomes flat navy.
 | R0 | Logo choice | | Done | Option A "Ledger total". Files in MyBooks-Logo-OptionA.zip |
 | R1 | Foundations | `rebrand/r1-foundations` | Done, PR #43 | Colours, config/brand.php, shared styles, font, `rebrand:colours`, guard test with 362 files to do. Nothing on screen changes yet except buttons and form fields that already used the shared styles. |
 | R2 | Logo, icons, app frame, dashboard | `rebrand/r2-frame` | Done, PR #44 | New logo, favicon and phone icons in public/ (logo SVGs in public/images/brand). One shared icon block (partials/pwa-head). Manifest: navy, maskable icons, removed the two screenshots that never existed. Service worker cache v4. Old icon command and Breeze navigation removed. Sidebar navy with `nav-active`; admin sidebar marked "Admin". Status badge uses `badge-*`. Dashboard tiles coloured by meaning, quick actions all navy. Charts read `config('brand.chart')`. For later sessions: use `<x-brand-mark>` for the logo and `badge-*` for status pills. 337 files left on the to-do list. |
-| R3 | Sales | `rebrand/r3-sales` | To do | Split point: after invoices, quotations, sales orders |
+| R3 | Sales | `rebrand/r3-sales` | Done, PR #45 | 43 Sales screens. Payment method pills are now neutral grey (they are not statuses). Part-paid is amber, paid timeline dot green, deposit header flat green. Customer summary tiles wrap so amounts are not cut off. The command now also adds `dark:text-brand-300` to navy links and icons with no dark-mode colour (navy is unreadable on dark grey); rerun on R2 files too. Moved to R10: invoices/templates/preview and statements/document (printed documents). 294 files left. |
 | R4 | Purchases and expenses | `rebrand/r4-purchases` | To do | Split point: after bills, vendors, purchase orders |
 | R5 | Banking, accounting and tax | `rebrand/r5-banking` | To do | Largest. Split point: after banks, bank feeds, journals, chart of accounts |
 | R6 | Stock and fixed assets | `rebrand/r6-stock` | To do | Split point: after inventory and items |

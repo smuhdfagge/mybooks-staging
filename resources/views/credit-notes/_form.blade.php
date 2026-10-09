@@ -35,14 +35,14 @@
 
         @if($invoice)
             <input type="hidden" name="invoice_id" value="{{ $invoice->id }}">
-            <p class="mt-4 text-sm text-gray-700 dark:text-gray-300">Against invoice <a href="{{ route('invoices.show', $invoice) }}" class="font-semibold text-indigo-600 dark:text-indigo-400">{{ $invoice->invoice_number }}</a> ({{ $invoice->invoice_date->format('M d, Y') }}, @money($invoice->total)). The lines below are what is left to credit on it: remove or reduce the ones that are not being credited.</p>
+            <p class="mt-4 text-sm text-gray-700 dark:text-gray-300">Against invoice <a href="{{ route('invoices.show', $invoice) }}" class="font-semibold text-brand-600 dark:text-brand-300">{{ $invoice->invoice_number }}</a> ({{ $invoice->invoice_date->format('M d, Y') }}, @money($invoice->total)). The lines below are what is left to credit on it: remove or reduce the ones that are not being credited.</p>
             @error('invoice_id')<p class="form-error">{{ $message }}</p>@enderror
         @endif
 
         <div class="mt-4 flex items-start gap-3">
             <input type="hidden" name="restock" value="0">
             <input type="checkbox" id="restock" name="restock" value="1" @checked(old('restock', $cn->restock ?? false))
-                class="mt-1 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700">
+                class="mt-1 rounded border-gray-300 dark:border-gray-600 text-brand-600 focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
             <div>
                 <label for="restock" class="text-sm font-medium text-gray-900 dark:text-gray-100">The customer returned the goods</label>
                 <p class="form-help">Stock items on this credit note go back into stock, at what they cost you, when it is posted.</p>

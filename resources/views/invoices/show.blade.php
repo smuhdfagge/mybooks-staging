@@ -30,14 +30,14 @@
                     Refund
                 </a>
                 @endif
-                <a href="{{ route('invoices.print', $invoice) }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition">
+                <a href="{{ route('invoices.print', $invoice) }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                     </svg>
                     Print
                 </a>
                 @unless(\App\Models\EInvoiceSubmission::isLocked($invoice))
-                <a href="{{ route('invoices.edit', $invoice) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                <a href="{{ route('invoices.edit', $invoice) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                     </svg>
@@ -60,9 +60,9 @@
             @php
                 $statusColors = [
                     'draft' => 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200',
-                    'sent' => 'bg-blue-100 dark:bg-blue-900/50 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-200',
+                    'sent' => 'bg-brand-100 dark:bg-brand-900/50 border-brand-300 dark:border-brand-700 text-brand-800 dark:text-brand-200',
                     'viewed' => 'bg-yellow-100 dark:bg-yellow-900/50 border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200',
-                    'partial' => 'bg-orange-100 dark:bg-orange-900/50 border-orange-300 dark:border-orange-700 text-orange-800 dark:text-orange-200',
+                    'partial' => 'bg-amber-100 dark:bg-amber-900/50 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200',
                     'paid' => 'bg-green-100 dark:bg-green-900/50 border-green-300 dark:border-green-700 text-green-800 dark:text-green-200',
                     'overdue' => 'bg-red-100 dark:bg-red-900/50 border-red-300 dark:border-red-700 text-red-800 dark:text-red-200',
                     'cancelled' => 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200',
@@ -190,7 +190,7 @@
                             </div>
                             <div class="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
                                 <span class="font-bold text-gray-900 dark:text-gray-100">Balance Due</span>
-                                <span class="font-bold text-indigo-600 dark:text-indigo-400">{{ number_format($invoice->balance_due, 2) }}</span>
+                                <span class="font-bold text-brand-600 dark:text-brand-300">{{ number_format($invoice->balance_due, 2) }}</span>
                             </div>
                             @endif
                         </div>
@@ -262,13 +262,13 @@
                     <div class="flex flex-wrap items-center justify-between gap-2">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Credit notes</h3>
                         @can('create invoices')
-                            <a href="{{ route('credit-notes.create', ['invoice_id' => $invoice->id]) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">Create credit note</a>
+                            <a href="{{ route('credit-notes.create', ['invoice_id' => $invoice->id]) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">Create credit note</a>
                         @endcan
                     </div>
                     @forelse($invoice->creditNotes as $note)
                         <p class="text-sm text-gray-700 dark:text-gray-300 flex flex-wrap justify-between gap-3">
                             <span>
-                                <a href="{{ route('credit-notes.show', $note) }}" class="text-indigo-600 dark:text-indigo-400">{{ $note->credit_note_number }}</a>
+                                <a href="{{ route('credit-notes.show', $note) }}" class="text-brand-600 dark:text-brand-300">{{ $note->credit_note_number }}</a>
                                 · {{ $note->credit_note_date->format('d M Y') }}
                                 · <x-status-badge :status="$note->status" :label="$note->status === 'closed' ? 'Used up' : null" />
                                 @if($note->restock) · goods returned @endif
@@ -282,7 +282,7 @@
                         <h4 class="pt-2 text-sm font-medium text-gray-900 dark:text-gray-100">Credit applied to this invoice</h4>
                         @foreach($invoice->creditNoteApplications as $application)
                             <p class="text-sm text-gray-700 dark:text-gray-300 flex justify-between gap-3">
-                                <span>{{ $application->applied_date->format('d M Y') }} · from credit note <a href="{{ route('credit-notes.show', $application->creditNote) }}" class="text-indigo-600 dark:text-indigo-400">{{ $application->creditNote->credit_note_number }}</a></span>
+                                <span>{{ $application->applied_date->format('d M Y') }} · from credit note <a href="{{ route('credit-notes.show', $application->creditNote) }}" class="text-brand-600 dark:text-brand-300">{{ $application->creditNote->credit_note_number }}</a></span>
                                 <span class="font-medium">-@money($application->amount)</span>
                             </p>
                         @endforeach
@@ -317,7 +317,7 @@
                                 @foreach($invoice->refunds as $refund)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                     <td class="px-4 py-3 text-sm">
-                                        <a href="{{ route('invoices.refunds.show', $refund) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
+                                        <a href="{{ route('invoices.refunds.show', $refund) }}" class="text-brand-600 dark:text-brand-300 hover:underline font-medium">
                                             {{ $refund->refund_number }}
                                         </a>
                                     </td>
@@ -449,7 +449,7 @@
                                     <span class="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>
                                     <div class="relative flex space-x-3">
                                         <div>
-                                            <span class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
+                                            <span class="h-8 w-8 rounded-full bg-brand-500 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
                                                 <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                                 </svg>
@@ -478,7 +478,7 @@
                                     @endif
                                     <div class="relative flex space-x-3">
                                         <div>
-                                            <span class="h-8 w-8 rounded-full bg-emerald-500 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
+                                            <span class="h-8 w-8 rounded-full bg-green-600 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
                                                 <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                                 </svg>
@@ -510,7 +510,7 @@
                                 <div class="relative pb-8">
                                     <div class="relative flex space-x-3">
                                         <div>
-                                            <span class="h-8 w-8 rounded-full bg-purple-500 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
+                                            <span class="h-8 w-8 rounded-full bg-gray-500 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
                                                 <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                                 </svg>
@@ -548,7 +548,7 @@
                             </svg>
                             Journal Entry
                         </span>
-                        <a href="{{ route('journals.show', $invoice->journal) }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+                        <a href="{{ route('journals.show', $invoice->journal) }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">
                             {{ $invoice->journal->journal_number }}
                         </a>
                     </h3>

@@ -126,6 +126,8 @@ class ColourRules
                 return $m[0];
             }, $new) ?? $new;
 
+            $new = self::addDarkModeText($new, $changes);
+
             if (preg_match(self::oldClassPattern(), $new, $m)) {
                 $why = in_array(explode('-', $m[0])[0], self::MAYBE_FAMILIES, true)
                     ? 'purple or violet next to blue on this page: pick accent (ochre) or grey so the two stay different'
@@ -141,5 +143,34 @@ class ColourRules
         }
 
         return ['text' => implode('', $lines), 'changes' => $changes, 'flags' => $flags];
+    }
+
+    /**
+     * Navy text (brand-500 to 700) is fine on white but can't be read on
+     * dark grey. The old indigo just about could, so many links and icons
+     * never had a dark-mode colour. For a plain class list with navy text,
+     * no dark-mode text colour and no light background of its own, add
+     * dark:text-brand-300 (and a dark hover). Lists inside Blade {{ }} or
+     * with other quotes are left alone.
+     */
+    public static function addDarkModeText(string $line, int &$changes = 0): string
+    {
+        return preg_replace_callback('/(["\'])([a-z0-9\s:\/\-\.\[\]]*)\1/', function (array $m) use (&$changes) {
+            $list = $m[2];
+            $classes = preg_split('/\s+/', trim($list)) ?: [];
+            $navyText = (bool) preg_grep('/^text-brand-(500|600|700)$/', $classes);
+            $hasDarkText = (bool) preg_grep('/^dark:text-/', $classes);
+            $lightBg = (bool) preg_grep('/^bg-/', $classes) && ! preg_grep('/^dark:bg-/', $classes);
+            if (! $navyText || $hasDarkText || $lightBg) {
+                return $m[0];
+            }
+            $add = ' dark:text-brand-300';
+            if (preg_grep('/^hover:text-brand-/', $classes) && ! preg_grep('/^dark:hover:text-/', $classes)) {
+                $add .= ' dark:hover:text-brand-200';
+            }
+            $changes++;
+
+            return $m[1].rtrim($list).$add.$m[1];
+        }, $line) ?? $line;
     }
 }
