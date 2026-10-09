@@ -54,7 +54,7 @@
                     <div class="muted">
                         {{ collect([$tenant->address, $tenant->city, $tenant->state, $tenant->country])->filter()->implode(', ') }}<br>
                         {{ collect([$tenant->phone, $tenant->email])->filter()->implode(' · ') }}
-                        @if($tenant->tax_number)<br>Tax number: {{ $tenant->tax_number }}@endif
+                        @if($tenant->tax_number)<br>TIN: {{ $tenant->tax_number }}@endif
                     </div>
                 </td>
                 <td class="title">{{ $title }}</td>

@@ -79,7 +79,7 @@
 
         <!-- Sales Module -->
         @canany(['view customers', 'view invoices', 'view sales-orders', 'view sales-receipts', 'view payments-received'])
-        <div x-data="{ open: {{ request()->is('sales*') || request()->is('customers*') || request()->is('invoices*') || request()->is('quotations*') || request()->is('delivery-notes*') || request()->is('credit-notes*') ? 'true' : 'false' }} }">
+        <div x-data="{ open: {{ request()->is('sales*') || request()->is('customers*') || request()->is('invoices*') || request()->is('quotations*') || request()->is('delivery-notes*') || request()->is('credit-notes*') || request()->is('e-invoices*') ? 'true' : 'false' }} }">
             <button @click="open = !open" 
                     class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors">
                 <div class="flex items-center">
@@ -115,6 +115,11 @@
                 @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('credit_notes'))
                 @can('view invoices')
                 <a href="{{ route('credit-notes.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('credit-notes.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Credit Notes</a>
+                @endcan
+                @endif
+                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('e_invoicing'))
+                @can('view e-invoices')
+                <a href="{{ route('e-invoices.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('e-invoices.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">E-invoices</a>
                 @endcan
                 @endif
                 @can('view sales-receipts')
@@ -384,6 +389,11 @@
                 <a href="{{ route('settings.notifications') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('settings.notifications*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Notifications</a>
                 @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('sms_whatsapp'))
                 <a href="{{ route('settings.messaging') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('settings.messaging*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">SMS &amp; WhatsApp</a>
+                @endif
+                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('e_invoicing'))
+                @can('view e-invoices')
+                <a href="{{ route('settings.e-invoicing') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('settings.e-invoicing*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">E-invoicing</a>
+                @endcan
                 @endif
                 <a href="{{ route('settings.invoice-templates.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('settings.invoice-templates*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Invoice Templates</a>
                 <a href="{{ route('settings.subscription') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('settings.subscription') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">

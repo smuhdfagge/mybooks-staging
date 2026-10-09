@@ -38,6 +38,7 @@
                 'accrual-schedules' => 'Prepaid & Deferred Schedules',
                 'banks' => 'Banks',
                 'bank-feeds' => 'Bank feeds',
+                'e-invoices' => 'E-invoices',
                 'bank-transfers' => 'Bank Transfers',
                 'bank-transfer-categories' => 'Transfer Categories',
                 'budgets' => 'Budgets',
@@ -65,7 +66,7 @@
 
             // Sections whose first page isn't named "{resource}.index".
             $indexRoutes = ['withholding-tax' => 'withholding-tax.setup'];
-            $sectionActions = ['settings' => ['messaging' => 'SMS & WhatsApp'], 'withholding-tax' => ['setup' => 'Rates & settings', 'schedule' => 'WHT payable schedule', 'receivable' => 'WHT credit notes']];
+            $sectionActions = ['settings' => ['messaging' => 'SMS & WhatsApp', 'e-invoicing' => 'E-invoicing'], 'withholding-tax' => ['setup' => 'Rates & settings', 'schedule' => 'WHT payable schedule', 'receivable' => 'WHT credit notes']];
 
             $label = $labels[$resource] ?? ucwords(str_replace('-', ' ', $resource ?? ''));
 

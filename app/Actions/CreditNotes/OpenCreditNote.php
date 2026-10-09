@@ -9,6 +9,7 @@ use App\Models\Inventory;
 use App\Models\InventoryHistory;
 use App\Models\Invoice;
 use App\Models\Warehouse;
+use App\Services\EInvoicing\AutoSubmit;
 use App\Services\JournalService;
 use App\Services\StockValuationService;
 use Illuminate\Support\Collection;
@@ -63,6 +64,9 @@ class OpenCreditNote
             ])->save();
 
             $this->journals->createCreditNoteJournal($note);
+
+            // Queued for NRS only if the business chose automatic e-invoicing; never blocks posting.
+            app(AutoSubmit::class)->creditNote($note);
 
             return $note;
         });

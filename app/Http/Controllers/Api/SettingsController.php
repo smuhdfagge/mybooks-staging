@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Resources\TaxRateResource;
 use App\Models\TaxRate;
 use App\Models\Tenant;
+use App\Rules\Tin;
 use App\Services\Accounting\LockDates;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -85,7 +86,7 @@ class SettingsController extends BaseApiController
             'country' => 'nullable|string|max:100',
             'postal_code' => 'nullable|string|max:20',
             'website' => 'nullable|url|max:255',
-            'tax_number' => 'nullable|string|max:50',
+            'tax_number' => ['nullable', 'string', 'max:50', new Tin],
         ]);
 
         $tenant->update($validated);

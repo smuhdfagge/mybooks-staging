@@ -100,6 +100,7 @@ class DatabaseSeeder extends Seeder
             'view withholding-tax', 'manage withholding-tax', 'remit withholding-tax',
             'view accrual-schedules', 'create accrual-schedules', 'edit accrual-schedules', 'delete accrual-schedules',
             'manage lock-dates', 'override lock-date',
+            'view e-invoices', 'submit e-invoices', 'manage e-invoicing',
 
             // Budgets
             'view budgets', 'create budgets', 'edit budgets', 'delete budgets',
@@ -173,6 +174,7 @@ class DatabaseSeeder extends Seeder
             'view reports', 'export reports', 'file vat-returns',
             'export data', 'import data',
             'override lock-date',
+            'view e-invoices', 'submit e-invoices',
         ]);
 
         // Sales

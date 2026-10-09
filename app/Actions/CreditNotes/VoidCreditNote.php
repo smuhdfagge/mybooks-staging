@@ -4,6 +4,7 @@ namespace App\Actions\CreditNotes;
 
 use App\Enums\CreditNoteStatus;
 use App\Models\CreditNote;
+use App\Models\EInvoiceSubmission;
 use App\Models\Inventory;
 use App\Models\InventoryHistory;
 use App\Models\InventoryLayer;
@@ -53,6 +54,9 @@ class VoidCreditNote
     {
         if (! in_array($note->status, [CreditNoteStatus::Draft->value, CreditNoteStatus::Open->value], true)) {
             return "Credit note {$note->credit_note_number} is {$note->status}, so it can't be voided.";
+        }
+        if (EInvoiceSubmission::isLocked($note)) {
+            return EInvoiceSubmission::lockedMessage($note);
         }
         if ($note->applications()->exists() || $note->refunds()->exists()) {
             return "Credit note {$note->credit_note_number} has been applied to an invoice or refunded, so it can't be voided.";
