@@ -8,6 +8,7 @@ use App\Models\NotificationSetting;
 use App\Models\PaymentReceived;
 use App\Services\Accounting\WithholdingTax;
 use App\Services\BankService;
+use App\Services\Messaging\CustomerMessenger;
 use App\Services\NotificationService;
 use App\Services\PaymentValidation;
 use Illuminate\Support\Facades\DB;
@@ -102,6 +103,12 @@ class RecordPaymentReceived
 
             if (! $isDeposit && NotificationSetting::getForTenant($tenantId)->send_payment_confirmation) {
                 $this->notifications->sendPaymentConfirmation($payment);
+            }
+
+            // Thank-you SMS / WhatsApp, where switched on (session 16); sent
+            // once the transaction commits.
+            if (! $isDeposit) {
+                app(CustomerMessenger::class)->paymentReceived($payment, $userId);
             }
 
             return $payment;

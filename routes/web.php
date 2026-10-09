@@ -29,6 +29,7 @@ use App\Http\Controllers\FixedAssetController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\InvoiceMessageController;
 use App\Http\Controllers\InvoiceRefundController;
 use App\Http\Controllers\InvoiceTemplateController;
 use App\Http\Controllers\ItemCategoryController;
@@ -37,6 +38,8 @@ use App\Http\Controllers\JournalController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\LeaveTypeController;
 use App\Http\Controllers\LockDateController;
+use App\Http\Controllers\MessagingSettingsController;
+use App\Http\Controllers\MessagingWebhookController;
 use App\Http\Controllers\PaymentMadeController;
 use App\Http\Controllers\PaymentReceivedController;
 use App\Http\Controllers\PayrollController;
@@ -71,7 +74,7 @@ use App\Http\Controllers\WithholdingTax\WhtPayableController;
 use App\Http\Controllers\WithholdingTax\WhtReceivableController;
 use App\Http\Controllers\WithholdingTax\WhtSetupController;
 use App\Mail\ContactFormMail;
-use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
@@ -167,8 +170,23 @@ Route::get('/billing/callback', [BillingController::class, 'callback'])
     ->name('billing.callback');
 Route::post('/billing/paystack/webhook', [BillingController::class, 'webhook'])
     ->middleware('throttle:120,1')
-    ->withoutMiddleware([ValidateCsrfToken::class])
+    // Laravel 13's web group uses PreventRequestForgery; leaving out only
+    // its old name ValidateCsrfToken still answered Paystack with 419.
+    ->withoutMiddleware([PreventRequestForgery::class])
     ->name('billing.webhook');
+
+/*
+|--------------------------------------------------------------------------
+| SMS / WhatsApp delivery reports and replies (session 16)
+|--------------------------------------------------------------------------
+| Called by Termii / Meta. The secret token in the URL (and the provider's
+| signature, when its secret is set) is checked in the controller.
+*/
+Route::middleware(['feature:sms_whatsapp', 'throttle:600,1'])->withoutMiddleware([PreventRequestForgery::class])->group(function () {
+    Route::post('/webhooks/messaging/termii/{token}', [MessagingWebhookController::class, 'termii'])->name('messaging.webhooks.termii');
+    Route::get('/webhooks/messaging/whatsapp/{token}', [MessagingWebhookController::class, 'whatsappVerify'])->name('messaging.webhooks.whatsapp.verify');
+    Route::post('/webhooks/messaging/whatsapp/{token}', [MessagingWebhookController::class, 'whatsapp'])->name('messaging.webhooks.whatsapp');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -385,6 +403,10 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     Route::post('invoices/{invoice}/send', [InvoiceController::class, 'send'])
         ->middleware('permission:send invoices')
         ->name('invoices.send');
+    // Send an SMS / WhatsApp reminder now (session 16)
+    Route::post('invoices/{invoice}/messages', [InvoiceMessageController::class, 'store'])
+        ->middleware(['feature:sms_whatsapp', 'permission:send invoices', 'throttle:20,1'])
+        ->name('invoices.messages.store');
     Route::delete('invoices/{invoice}', [InvoiceController::class, 'destroy'])
         ->middleware('permission:delete invoices')
         ->name('invoices.destroy');
@@ -1225,6 +1247,18 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::middleware('permission:edit settings')->group(function () {
             Route::put('/notifications', [SettingsController::class, 'updateNotifications'])->name('notifications.update');
             Route::post('/notifications/test', [SettingsController::class, 'sendTestEmail'])->name('notifications.test');
+        });
+
+        // SMS & WhatsApp (session 16)
+        Route::middleware('feature:sms_whatsapp')->group(function () {
+            Route::get('/sms-whatsapp', [MessagingSettingsController::class, 'show'])
+                ->middleware('permission:view settings')->name('messaging');
+            Route::get('/sms-whatsapp/messages', [MessagingSettingsController::class, 'messages'])
+                ->middleware('permission:view settings')->name('messaging.messages');
+            Route::put('/sms-whatsapp', [MessagingSettingsController::class, 'update'])
+                ->middleware('permission:edit settings')->name('messaging.update');
+            Route::post('/sms-whatsapp/test', [MessagingSettingsController::class, 'test'])
+                ->middleware(['permission:edit settings', 'throttle:10,1'])->name('messaging.test');
         });
 
         // Invoice Templates

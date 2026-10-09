@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminDataRequestController;
+use App\Http\Controllers\Admin\AdminMessagingController;
 use App\Http\Controllers\Admin\AdminTenantController;
 use App\Http\Controllers\Admin\AdminTwoFactorController;
 use App\Http\Controllers\Admin\AdminUserController;
@@ -55,6 +56,10 @@ Route::middleware(['admin.auth', 'admin.two-factor'])->group(function () {
         Route::post('/', [AdminDataRequestController::class, 'store'])->name('store');
         Route::patch('/{dataRequest}/complete', [AdminDataRequestController::class, 'complete'])->name('complete');
     });
+
+    // SMS / WhatsApp allowances and use per business (session 16)
+    Route::get('messaging', [AdminMessagingController::class, 'index'])->middleware('admin.role:manage-tenants')->name('messaging.index');
+    Route::put('messaging/plans', [AdminMessagingController::class, 'updatePlans'])->middleware('admin.role:manage-subscriptions')->name('messaging.plans.update');
 
     // Admin Users Management — requires manage-admin-users ability (super_admin only)
     Route::prefix('users')->name('users.')->middleware('admin.role:manage-admin-users')->group(function () {

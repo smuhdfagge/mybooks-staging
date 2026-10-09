@@ -38,6 +38,13 @@ Schedule::command('notifications:send-payment-reminders')
     ->withoutOverlapping()
     ->onOneServer();
 
+// Hand waiting SMS / WhatsApp messages to the queue: ones held over quiet
+// hours (21:00-07:00 Lagos) and retries (session 16)
+Schedule::command('messages:send-queued')
+    ->everyFiveMinutes()
+    ->withoutOverlapping()
+    ->onOneServer();
+
 // Send bill reminders daily at 8:00 AM
 Schedule::command('notifications:send-bill-reminders')
     ->dailyAt('08:00')

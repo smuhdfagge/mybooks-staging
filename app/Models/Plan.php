@@ -19,6 +19,8 @@ class Plan extends Model
         'allow_monthly_billing',
         'allow_annual_billing',
         'max_users',
+        'sms_monthly_limit',
+        'whatsapp_monthly_limit',
         'features',
         'is_active',
         'sort_order',
@@ -30,6 +32,8 @@ class Plan extends Model
         'allow_monthly_billing' => 'boolean',
         'allow_annual_billing' => 'boolean',
         'max_users' => 'integer',
+        'sms_monthly_limit' => 'integer',
+        'whatsapp_monthly_limit' => 'integer',
         'features' => 'array',
         'is_active' => 'boolean',
     ];

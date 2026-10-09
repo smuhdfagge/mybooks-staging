@@ -64,7 +64,7 @@
 
             // Sections whose first page isn't named "{resource}.index".
             $indexRoutes = ['withholding-tax' => 'withholding-tax.setup'];
-            $sectionActions = ['withholding-tax' => ['setup' => 'Rates & settings', 'schedule' => 'WHT payable schedule', 'receivable' => 'WHT credit notes']];
+            $sectionActions = ['settings' => ['messaging' => 'SMS & WhatsApp'], 'withholding-tax' => ['setup' => 'Rates & settings', 'schedule' => 'WHT payable schedule', 'receivable' => 'WHT credit notes']];
 
             $label = $labels[$resource] ?? ucwords(str_replace('-', ' ', $resource ?? ''));
 

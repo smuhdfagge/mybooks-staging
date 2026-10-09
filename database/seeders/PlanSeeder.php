@@ -22,6 +22,8 @@ class PlanSeeder extends Seeder
                 'allow_monthly_billing' => true,
                 'allow_annual_billing' => true,
                 'max_users' => 5,
+                'sms_monthly_limit' => 100, // session 16
+                'whatsapp_monthly_limit' => 50,
                 'features' => [
                     'Up to 5 users',
                     'Invoicing & Billing',
@@ -46,6 +48,8 @@ class PlanSeeder extends Seeder
                 'allow_monthly_billing' => false, // Only annual billing
                 'allow_annual_billing' => true,
                 'max_users' => 15,
+                'sms_monthly_limit' => 300, // session 16
+                'whatsapp_monthly_limit' => 150,
                 'features' => [
                     'Up to 15 users',
                     'All Starter features',
@@ -71,6 +75,8 @@ class PlanSeeder extends Seeder
                 'allow_monthly_billing' => true,
                 'allow_annual_billing' => true,
                 'max_users' => 50,
+                'sms_monthly_limit' => 1000, // session 16
+                'whatsapp_monthly_limit' => 500,
                 'features' => [
                     'Up to 50 users',
                     'All Professional features',

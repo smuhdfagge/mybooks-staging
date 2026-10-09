@@ -27,7 +27,7 @@ To start a session, say: **"Do session N of docs/FEATURE-PLAN.md"**.
 | 14 | Assembly / bill of materials | `feature/assembly` | Merged (#36) |
 | — | Follow-up: journals for stock adjustments, opening stock, bulk asset disposal | `fix/stock-and-disposal-journals` | Merged (#37) |
 | 15 | Paystack auto-renewal: saved card, automatic renewal charge, retries, webhooks | `feature/paystack-auto-renewal` | Done, PR open |
-| 16 | SMS and WhatsApp reminders (Termii): overdue invoices, payment receipts, opt-out | `feature/sms-whatsapp-reminders` | To do |
+| 16 | SMS and WhatsApp reminders (Termii): overdue invoices, payment receipts, opt-out | `feature/sms-whatsapp-reminders` | Done, PR open (needs #38 first) |
 | 17 | Bank feeds with Mono: link accounts, pull transactions, match in bank reconciliation | `feature/bank-feeds` | To do |
 | 18 | NRS e-invoicing (MBS): TIN, IRN, QR code, submit invoices and credit notes | `feature/e-invoicing` | To do |
 

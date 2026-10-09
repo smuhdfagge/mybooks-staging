@@ -377,6 +377,9 @@
                 @can('view settings')
                 <a href="{{ route('settings.company') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('settings.company') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Company Profile</a>
                 <a href="{{ route('settings.notifications') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('settings.notifications*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Notifications</a>
+                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('sms_whatsapp'))
+                <a href="{{ route('settings.messaging') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('settings.messaging*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">SMS &amp; WhatsApp</a>
+                @endif
                 <a href="{{ route('settings.invoice-templates.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('settings.invoice-templates*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">Invoice Templates</a>
                 <a href="{{ route('settings.subscription') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('settings.subscription') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">
                     Subscription

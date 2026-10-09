@@ -44,4 +44,36 @@ return [
         'currency' => env('PAYSTACK_CURRENCY', 'NGN'),
     ],
 
+    // SMS and WhatsApp reminders (session 16). MyBooks holds the account.
+    // Termii docs (checked 2026-10-06): https://developers.termii.com/messaging-api
+    // The base URL is shown on each account's Termii dashboard.
+    'termii' => [
+        'api_key' => env('TERMII_API_KEY'),
+        'base_url' => env('TERMII_BASE_URL', 'https://v3.api.termii.com'),
+        // Registered sender ID, 3-11 letters/digits, approved by Termii.
+        'sender_id' => env('TERMII_SENDER_ID', 'MyBooks'),
+        // 'dnd' delivers transactional messages to numbers on the NCC
+        // Do-Not-Disturb list too; 'generic' does not (and MTN holds generic
+        // messages between 8pm and 8am).
+        'sms_channel' => env('TERMII_SMS_CHANNEL', 'dnd'),
+        // Signs webhook events (X-Termii-Signature, HMAC-SHA512 of the body).
+        'secret_key' => env('TERMII_SECRET_KEY'),
+        // WhatsApp through Termii: the device (WhatsApp number) set up on Termii.
+        'whatsapp_device_id' => env('TERMII_WHATSAPP_DEVICE_ID'),
+    ],
+
+    // WhatsApp Cloud API (Meta), the other WhatsApp option (checked 2026-10-06):
+    // https://developers.facebook.com/docs/whatsapp/cloud-api/guides/send-message-templates
+    'whatsapp_meta' => [
+        'token' => env('WHATSAPP_META_TOKEN'),
+        'phone_number_id' => env('WHATSAPP_META_PHONE_NUMBER_ID'),
+        'api_version' => env('WHATSAPP_META_API_VERSION', 'v25.0'),
+        'base_url' => env('WHATSAPP_META_BASE_URL', 'https://graph.facebook.com'),
+        // Signs webhook events (X-Hub-Signature-256).
+        'app_secret' => env('WHATSAPP_META_APP_SECRET'),
+        // Answer to Meta's webhook check (hub.verify_token).
+        'verify_token' => env('WHATSAPP_META_VERIFY_TOKEN'),
+        'language' => env('WHATSAPP_TEMPLATE_LANGUAGE', 'en'),
+    ],
+
 ];
