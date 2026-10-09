@@ -41,7 +41,7 @@
                             </div>
 
                             <div>
-                                <x-field name="tax_number" label="Tax Number / VAT ID" :value="old('tax_number', $customer->tax_number)" />
+                                <x-field name="tax_number" label="TIN (Tax Identification Number)" help="Business customers need one for e-invoicing. Leave empty for individuals." :value="old('tax_number', $customer->tax_number)" />
                             </div>
 
                             <div>

@@ -8,6 +8,7 @@ use App\Http\Requests\StoreInvoiceRequest;
 use App\Http\Requests\UpdateInvoiceRequest;
 use App\Models\ActivityLog;
 use App\Models\Customer;
+use App\Models\EInvoiceSubmission;
 use App\Models\Invoice;
 use App\Models\InvoiceTemplate;
 use App\Models\Warehouse;
@@ -84,6 +85,11 @@ class InvoiceController extends Controller
 
     public function edit(Invoice $invoice)
     {
+        // Accepted by NRS: no editing, a credit note is how it is corrected (session 18).
+        if (EInvoiceSubmission::isLocked($invoice)) {
+            return redirect()->route('invoices.show', $invoice)->with('error', EInvoiceSubmission::lockedMessage($invoice));
+        }
+
         // Only the invoice's own customer and items are loaded (P9).
         $invoice->load(['customer', 'items.item']);
         $customerOptions = $this->customerOptions(collect([$invoice->customer])->filter());

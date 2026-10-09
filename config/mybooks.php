@@ -90,6 +90,7 @@ return [
         ['name' => 'Termii', 'purpose' => 'Sending SMS and WhatsApp invoice reminders and receipts to a business\'s customers (phone number and message text)', 'location' => 'Nigeria'],
         ['name' => 'Meta Platforms (WhatsApp)', 'purpose' => 'Delivering WhatsApp messages to customers who use WhatsApp', 'location' => 'United States / Ireland'],
         ['name' => 'Mono (Connect Technologies Ltd)', 'purpose' => 'Reading a business\'s own bank account transactions and balance, only when the business links the account (MyBooks never sees or stores bank login details; only the last 4 digits of the account number are kept)', 'location' => 'Nigeria'],
+        ['name' => 'Nigeria Revenue Service (NRS)', 'purpose' => 'Receiving a business\'s invoices and credit notes (business and customer names, TINs, addresses, line items and amounts) for e-invoicing, only when the business switches e-invoicing on and submits a document', 'location' => 'Nigeria'],
         ['name' => 'Tawk.to Inc.', 'purpose' => 'Live chat support on the website and app', 'location' => 'United States'],
         ['name' => 'Hosting provider', 'purpose' => 'Servers, database and file storage, and backups', 'location' => 'Varies by provider'],
     ],
@@ -157,6 +158,67 @@ return [
         // and match them in bank reconciliation (session 17). Harmless until
         // the Mono keys are set.
         'bank_feeds' => (bool) env('MYBOOKS_FEATURE_BANK_FEEDS', true),
+        // E-invoicing with the Nigeria Revenue Service (NRS) Merchant Buyer
+        // Solution (session 18). OFF by default: small businesses are not
+        // required to join before 1 July 2027 (vendor reports, unconfirmed)
+        // and the NRS API details below still have to be checked against the
+        // NRS Postman collection. Switch on once that is done.
+        'e_invoicing' => (bool) env('MYBOOKS_FEATURE_E_INVOICING', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | E-invoicing with NRS (session 18)
+    |--------------------------------------------------------------------------
+    |
+    | Each business keeps its own NRS keys (Settings > E-invoicing). What is
+    | set here is the same for every business: where NRS lives, the header
+    | names and the endpoint paths.
+    |
+    | NONE of the addresses, header names, paths or answer fields below could
+    | be read from NRS's own documentation (it is JavaScript-rendered), so they
+    | are UNVERIFIED defaults taken from third-party descriptions. Check every
+    | one against the NRS Postman collection before going live (README,
+    | "E-invoicing (NRS)"). Nothing is sent until a base URL is set.
+    |
+    | Drivers: 'nrs' (real calls), 'log' (a local simulator that "accepts"
+    | every document; never used on production) or 'auto' (nrs once the
+    | business has entered its keys and a base URL is set, else nothing is sent).
+    |
+    */
+
+    'einvoicing' => [
+        'driver' => env('EINVOICING_DRIVER', 'auto'),
+        'base_urls' => [
+            'sandbox' => env('NRS_SANDBOX_BASE_URL'),
+            'live' => env('NRS_LIVE_BASE_URL'),
+        ],
+        // Request headers that carry the business's API key and secret.
+        'headers' => [
+            'key' => env('NRS_KEY_HEADER', 'x-api-key'),
+            'secret' => env('NRS_SECRET_HEADER', 'x-api-secret'),
+        ],
+        // {irn} is replaced by the invoice reference number.
+        'paths' => [
+            'test' => env('NRS_PATH_TEST', '/api/v1/resources/states'),
+            'submit' => env('NRS_PATH_SUBMIT', '/api/v1/invoice/sign'),
+            'confirm' => env('NRS_PATH_CONFIRM', '/api/v1/invoice/confirm/{irn}'),
+        ],
+        // invoice_type_code values (UBL: 380 invoice, 381 credit note).
+        'type_codes' => ['invoice' => '380', 'credit_note' => '381'],
+        // B2C invoices above this amount (naira) must be reported within 24 hours.
+        'b2c_threshold' => (float) env('EINVOICING_B2C_THRESHOLD', 50000),
+        'b2c_report_hours' => 24,
+        // Tries in all for one document (the first plus retries), spaced by
+        // the minutes below (the last one repeats).
+        'max_attempts' => 5,
+        'retry_minutes' => [10, 30, 60],
+        // A submission still "pending" after this long is treated as failed.
+        'pending_stale_minutes' => 15,
+        // Country for addresses, and the VAT category name for 7.5% lines.
+        'country' => 'NG',
+        'tax_categories' => ['standard' => 'STANDARD_VAT', 'zero' => 'ZERO_VAT', 'exempt' => 'EXEMPTED'],
+        'currency' => 'NGN',
     ],
 
     /*

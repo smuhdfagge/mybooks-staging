@@ -115,7 +115,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Tax Number -->
                             <div>
-                                <x-field name="tax_number" label="Tax Number / VAT ID" :value="old('tax_number', $tenant->tax_number)" />
+                                <x-field name="tax_number" label="TIN (Tax Identification Number)" help="Printed on your invoices and sent to NRS with e-invoices. Digits, hyphens allowed." :value="old('tax_number', $tenant->tax_number)" />
                                 @error('tax_number')
                                     <p id="tax_number-error" class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror

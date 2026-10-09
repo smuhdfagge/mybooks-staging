@@ -477,7 +477,7 @@
                         <p>{{ $tenant->phone }}</p>
                     @endif
                     @if($tenant->tax_number)
-                        <p>Tax ID: {{ $tenant->tax_number }}</p>
+                        <p>TIN: {{ $tenant->tax_number }}</p>
                     @endif
                 </div>
             </div>
@@ -511,6 +511,9 @@
                     @endif
                     @if($invoice->customer->phone)
                         <p>{{ $invoice->customer->phone }}</p>
+                    @endif
+                    @if($invoice->customer->tax_number)
+                        <p>TIN: {{ $invoice->customer->tax_number }}</p>
                     @endif
                 </div>
                 
@@ -614,6 +617,8 @@
                 @endif
             </div>
             @endif
+
+            @include('e-invoices._print', ['document' => $invoice])
         </div>
 
         <!-- Footer -->

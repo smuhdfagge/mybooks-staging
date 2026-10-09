@@ -210,7 +210,7 @@
                     @endif
                     @if($tenant->email)<p>{{ $tenant->email }}</p>@endif
                     @if($tenant->phone)<p>{{ $tenant->phone }}</p>@endif
-                    @if($tenant->tax_number)<p>Tax ID: {{ $tenant->tax_number }}</p>@endif
+                    @if($tenant->tax_number)<p>TIN: {{ $tenant->tax_number }}</p>@endif
                 </div>
             </div>
             <div class="invoice-title-section">
@@ -241,6 +241,7 @@
                     @endif
                     @if($invoice->customer->email)<p>{{ $invoice->customer->email }}</p>@endif
                     @if($invoice->customer->phone)<p>{{ $invoice->customer->phone }}</p>@endif
+                    @if($invoice->customer->tax_number)<p>TIN: {{ $invoice->customer->tax_number }}</p>@endif
                 </div>
                 <div class="dates-block">
                     <div class="date-row">
@@ -343,6 +344,8 @@
                 @endif
             </div>
             @endif
+
+            @include('e-invoices._print', ['document' => $invoice])
         </div>
 
         @if($s['show_footer'])

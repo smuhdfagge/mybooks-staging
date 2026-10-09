@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\Tin;
 use App\Support\PhoneNumber;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -30,7 +31,7 @@ class StoreCustomerRequest extends FormRequest
                 }
             }],
             'company_name' => ['nullable', 'string', 'max:255'],
-            'tax_number' => ['nullable', 'string', 'max:100'],
+            'tax_number' => ['nullable', 'string', 'max:100', new Tin],
             'billing_address' => ['nullable', 'string'],
             'shipping_address' => ['nullable', 'string'],
             'city' => ['nullable', 'string', 'max:100'],

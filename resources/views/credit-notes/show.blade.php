@@ -62,6 +62,8 @@
                 </x-card>
             </div>
 
+            @include('e-invoices._panel', ['document' => $cn])
+
             @if($cn->isDraft())
                 <div class="rounded-lg border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20 p-4 text-sm text-yellow-800 dark:text-yellow-200">
                     This is a draft: nothing has been posted{{ $cn->restock ? ' and no goods have gone back into stock' : '' }}. Press "Post it" when it is right.
