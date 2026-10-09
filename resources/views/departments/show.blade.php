@@ -38,7 +38,7 @@
                         <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Parent department</dt>
                         <dd class="mt-1 text-gray-900 dark:text-gray-100">
                             @if($department->parent)
-                                <a href="{{ route('departments.show', $department->parent) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $department->parent->name }}</a>
+                                <a href="{{ route('departments.show', $department->parent) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $department->parent->name }}</a>
                             @else
                                 —
                             @endif
@@ -75,7 +75,7 @@
                                         <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{{ $employee->employee_id }}</td>
                                         <td class="px-6 py-3 text-sm">
                                             @can('view employees')
-                                                <a href="{{ route('employees.show', $employee) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $employee->full_name }}</a>
+                                                <a href="{{ route('employees.show', $employee) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $employee->full_name }}</a>
                                             @else
                                                 <span class="text-gray-900 dark:text-gray-100">{{ $employee->full_name }}</span>
                                             @endcan
@@ -95,7 +95,7 @@
                     <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-3">Sub-departments</h3>
                         @forelse($department->children as $child)
-                            <a href="{{ route('departments.show', $child) }}" class="block py-1 text-sm text-indigo-600 dark:text-indigo-400 hover:underline">{{ $child->name }}</a>
+                            <a href="{{ route('departments.show', $child) }}" class="block py-1 text-sm text-brand-600 dark:text-brand-300 hover:underline">{{ $child->name }}</a>
                         @empty
                             <p class="text-sm text-gray-500 dark:text-gray-400">None</p>
                         @endforelse

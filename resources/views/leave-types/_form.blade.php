@@ -17,17 +17,17 @@
     </div>
     <div class="flex items-center gap-2">
         <input type="hidden" name="is_paid" value="0">
-        <input type="checkbox" name="is_paid" id="is_paid" value="1" @checked(old('is_paid', $leaveType->is_paid)) class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-indigo-600">
+        <input type="checkbox" name="is_paid" id="is_paid" value="1" @checked(old('is_paid', $leaveType->is_paid)) class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-brand-600 dark:text-brand-300">
         <label for="is_paid" class="text-sm text-gray-700 dark:text-gray-300">Paid leave</label>
     </div>
     <div class="flex items-center gap-2">
         <input type="hidden" name="is_active" value="0">
-        <input type="checkbox" name="is_active" id="is_active" value="1" @checked(old('is_active', $leaveType->is_active)) class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-indigo-600">
+        <input type="checkbox" name="is_active" id="is_active" value="1" @checked(old('is_active', $leaveType->is_active)) class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-brand-600 dark:text-brand-300">
         <label for="is_active" class="text-sm text-gray-700 dark:text-gray-300">Active (can be chosen on leave requests)</label>
     </div>
     <div class="flex items-center gap-2">
         <input type="hidden" name="is_carry_forward" value="0">
-        <input type="checkbox" name="is_carry_forward" id="is_carry_forward" value="1" @checked(old('is_carry_forward', $leaveType->is_carry_forward)) class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-indigo-600">
+        <input type="checkbox" name="is_carry_forward" id="is_carry_forward" value="1" @checked(old('is_carry_forward', $leaveType->is_carry_forward)) class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-brand-600 dark:text-brand-300">
         <label for="is_carry_forward" class="text-sm text-gray-700 dark:text-gray-300">Unused days carry forward</label>
     </div>
     <div>

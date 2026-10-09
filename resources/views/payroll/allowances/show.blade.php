@@ -28,7 +28,7 @@
                             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Amount Type</dt>
                             <dd class="mt-1 text-sm text-gray-900 dark:text-white sm:col-span-2 sm:mt-0">
                                 @if($allowance->amount_type === 'percentage')
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100">% of Basic Salary</span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-brand-100 text-brand-800 dark:bg-brand-800 dark:text-brand-100">% of Basic Salary</span>
                                 @else
                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">Fixed Amount</span>
                                 @endif

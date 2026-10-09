@@ -23,7 +23,7 @@
                     <!-- Pay Period -->
                     <div class="mb-8">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 mr-2 text-brand-500 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                             </svg>
                             Pay Period
@@ -50,7 +50,7 @@
                         
                         <div class="mb-4">
                             <label class="inline-flex items-center">
-                                <input type="checkbox" id="select-all" class="rounded border-gray-300 dark:border-gray-600 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:bg-gray-700">
+                                <input type="checkbox" id="select-all" class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
                                 <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Select All Active Employees</span>
                             </label>
                         </div>
@@ -64,7 +64,7 @@
                                 <label class="flex items-start p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer">
                                     <input type="checkbox" name="employee_ids[]" value="{{ $employee->id }}" 
                                         {{ in_array($employee->id, old('employee_ids', [])) ? 'checked' : '' }}
-                                        class="employee-checkbox rounded border-gray-300 dark:border-gray-600 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:bg-gray-700 mt-1">
+                                        class="employee-checkbox rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 mt-1 dark:text-brand-300">
                                     <div class="ml-3">
                                         <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $employee->first_name }} {{ $employee->last_name }}</p>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">{{ $employee->employee_id }} · {{ $employee->department?->name ?? 'No Dept' }}</p>
@@ -83,14 +83,14 @@
                     </div>
 
                     <!-- Info Note -->
-                    <div class="mb-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                    <div class="mb-8 bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800 rounded-lg p-4">
                         <div class="flex">
-                            <svg class="w-5 h-5 text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 text-brand-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                             <div class="ml-3">
-                                <h4 class="text-sm font-medium text-blue-800 dark:text-blue-300">Bulk Payroll Creation</h4>
-                                <p class="mt-1 text-sm text-blue-700 dark:text-blue-400">
+                                <h4 class="text-sm font-medium text-brand-800 dark:text-brand-300">Bulk Payroll Creation</h4>
+                                <p class="mt-1 text-sm text-brand-700 dark:text-brand-300">
                                     Payroll records are worked out the same way as a payroll run: the employee's salary structure (or base salary if none),
                                     pension, NHF and rent relief, PAYE and loan repayments. You can edit individual records to add overtime or bonuses after creation.
                                 </p>
@@ -100,7 +100,7 @@
 
                     <!-- Submit Button -->
                     <div class="flex items-center justify-end gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <a href="{{ route('payroll.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <a href="{{ route('payroll.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             Cancel
                         </a>
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">

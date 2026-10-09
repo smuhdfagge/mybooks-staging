@@ -6,11 +6,11 @@
             <div class="sm:col-span-2 lg:col-span-1">
                 <label class="form-label">Search</label>
                 <input aria-label="Search batch number" type="text" wire:model.live.debounce.300ms="search" placeholder="Search batch number..."
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
             </div>
             <div>
                 <label for="status" class="form-label">Status</label>
-                <select id="status" wire:model.live="status" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <select id="status" wire:model.live="status" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
                     <option value="">All Status</option>
                     <option value="draft">Draft</option>
                     <option value="approved">Approved</option>
@@ -20,7 +20,7 @@
             </div>
             <div>
                 <label for="perPage" class="form-label">Per Page</label>
-                <select id="perPage" wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <select id="perPage" wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
                     <option value="10">10</option>
                     <option value="25">25</option>
                     <option value="50">50</option>
@@ -49,7 +49,7 @@
                     @forelse($batches as $batch)
                         <tr wire:key="batch-{{ $batch->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700">
                             <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                <a href="{{ route('payroll-batches.show', $batch) }}" class="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">
+                                <a href="{{ route('payroll-batches.show', $batch) }}" class="text-sm font-medium text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300">
                                     {{ $batch->batch_number }}
                                 </a>
                             </td>
@@ -71,7 +71,7 @@
                             <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-center">
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                                     {{ $batch->status === 'draft' ? 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100' : '' }}
-                                    {{ $batch->status === 'approved' ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100' : '' }}
+                                    {{ $batch->status === 'approved' ? 'bg-brand-100 text-brand-800 dark:bg-brand-800 dark:text-brand-100' : '' }}
                                     {{ $batch->status === 'processing' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100' : '' }}
                                     {{ $batch->status === 'failed' ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100' : '' }}
                                     {{ $batch->status === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' : '' }}
@@ -83,7 +83,7 @@
                                 {{ $batch->created_at?->format('M d, Y') }}
                             </td>
                             <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm">
-                                <a href="{{ route('payroll-batches.show', $batch) }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+                                <a href="{{ route('payroll-batches.show', $batch) }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-300">
                                     View
                                 </a>
                             </td>
@@ -97,7 +97,7 @@
                                     </svg>
                                     <p class="text-gray-500 dark:text-gray-400 text-lg font-medium">No payroll batches found</p>
                                     <p class="text-gray-500 dark:text-gray-400 mt-1">Click "Generate Payroll" to create a new batch.</p>
-                                    <a href="{{ route('payroll.generate-form') }}" class="mt-4 inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                    <a href="{{ route('payroll.generate-form') }}" class="mt-4 inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                                         Generate Payroll
                                     </a>
                                 </div>

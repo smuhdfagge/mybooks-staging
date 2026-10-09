@@ -54,7 +54,7 @@
                     </h3>
 
                     @foreach($countryTemplates as $template)
-                        <div class="mb-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg {{ $template->is_current ? 'ring-2 ring-indigo-500' : '' }}">
+                        <div class="mb-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg {{ $template->is_current ? 'ring-2 ring-brand-500' : '' }}">
                             <div class="flex justify-between items-start mb-3">
                                 <div>
                                     <h4 class="font-medium text-gray-900 dark:text-gray-100">
@@ -68,7 +68,7 @@
                                 <form action="{{ route('payroll.apply-tax-template') }}" method="POST" data-confirm="This will replace your current tax brackets. Continue?">
                                     @csrf
                                     <input type="hidden" name="template_id" value="{{ $template->id }}">
-                                    <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                    <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                                         Apply Template
                                     </button>
                                 </form>

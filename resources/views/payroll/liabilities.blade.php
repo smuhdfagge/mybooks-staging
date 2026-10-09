@@ -50,9 +50,9 @@
                                     <td class="px-3 py-2 text-right">@money($row->paid)</td>
                                     <td class="px-3 py-2 text-right font-medium {{ $row->outstanding > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-gray-900 dark:text-gray-100' }}">@money($row->outstanding)</td>
                                     <td class="px-3 py-2 whitespace-nowrap">
-                                        <a href="{{ route('payroll.liabilities.schedule', ['body' => $row->body, 'month' => $month->format('Y-m'), 'format' => 'pdf']) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">PDF</a>
+                                        <a href="{{ route('payroll.liabilities.schedule', ['body' => $row->body, 'month' => $month->format('Y-m'), 'format' => 'pdf']) }}" class="text-brand-600 dark:text-brand-300 hover:underline">PDF</a>
                                         <span class="text-gray-500 dark:text-gray-400">|</span>
-                                        <a href="{{ route('payroll.liabilities.schedule', ['body' => $row->body, 'month' => $month->format('Y-m'), 'format' => 'csv']) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">CSV</a>
+                                        <a href="{{ route('payroll.liabilities.schedule', ['body' => $row->body, 'month' => $month->format('Y-m'), 'format' => 'csv']) }}" class="text-brand-600 dark:text-brand-300 hover:underline">CSV</a>
                                     </td>
                                 </tr>
                             @endforeach

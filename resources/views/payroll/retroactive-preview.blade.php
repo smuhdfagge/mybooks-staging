@@ -95,7 +95,7 @@
                             <input type="hidden" name="employee_id" value="{{ $employee->id }}">
                             <input type="hidden" name="effective_from" value="{{ $effectiveFrom }}">
                             <input type="hidden" name="recalculate" value="1">
-                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                                 Create Adjustment Payroll ({{ $totalAdjustment >= 0 ? '+' : '' }}{{ number_format($totalAdjustment, 2) }})
                             </button>
                         </form>
