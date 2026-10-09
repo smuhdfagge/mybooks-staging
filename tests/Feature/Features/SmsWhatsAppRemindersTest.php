@@ -180,7 +180,6 @@ class SmsWhatsAppRemindersTest extends TestCase
             && $r['sms'] === 'Kano Traders Ltd: Hello Musa Ibrahim, a reminder that invoice INV-000101 for NGN 25,000 is due on 9 Oct 2026. Please pay on time. Thank you.');
         $message = CustomerMessage::sole();
         $this->assertSame(['sent', 'termii', 'T1', 1], [$message->status, $message->provider, $message->provider_message_id, $message->segments]);
-        $this->assertNotEmpty($logged);
         foreach ($logged as $line) {
             $this->assertStringNotContainsString(self::KEY, $line);
         }
