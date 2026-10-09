@@ -5,7 +5,7 @@
                 {{ __('Fixed Assets Register') }}
             </h2>
             <div class="flex space-x-2">
-                <a href="{{ route('fixed-assets.depreciation-schedule') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                <a href="{{ route('fixed-assets.depreciation-schedule') }}" class="bg-brand-500 hover:bg-brand-700 text-white font-bold py-2 px-4 rounded">
                     Depreciation Schedule
                 </a>
                 <a href="{{ route('fixed-assets.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
@@ -31,7 +31,7 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <div class="text-sm text-gray-500 dark:text-gray-400">Total Cost</div>
-                        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                        <div class="text-2xl font-bold text-brand-600 dark:text-brand-300">
                             {{ $currency }}{{ number_format($totalCost, 2) }}
                         </div>
                     </div>
@@ -40,7 +40,7 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <div class="text-sm text-gray-500 dark:text-gray-400">Accumulated Depreciation</div>
-                        <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                        <div class="text-2xl font-bold text-amber-700 dark:text-amber-300">
                             {{ $currency }}{{ number_format($totalDepreciation, 2) }}
                         </div>
                     </div>
@@ -149,7 +149,7 @@
                                 @forelse($assets as $asset)
                                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <a href="{{ route('fixed-assets.show', $asset) }}" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                                            <a href="{{ route('fixed-assets.show', $asset) }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-300">
                                                 {{ $asset->asset_number }}
                                             </a>
                                         </td>
@@ -174,7 +174,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                                             {{ ucfirst(str_replace('_', ' ', $asset->depreciation_method)) }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-orange-600 dark:text-orange-400">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-amber-700 dark:text-amber-300">
                                             {{ $currency }}{{ number_format($asset->accumulated_depreciation, 2) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-green-600 dark:text-green-400">

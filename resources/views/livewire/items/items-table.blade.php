@@ -11,13 +11,13 @@
                 <label for="search" class="form-label">Search</label>
                 <input type="text" id="search" wire:model.live.debounce.300ms="search" 
                     placeholder="Search items..."
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
             </div>
             
             <!-- Type Filter -->
             <div>
                 <label for="type" class="form-label">Type</label>
-                <select id="type" wire:model.live="type" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <select id="type" wire:model.live="type" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
                     <option value="">All Types</option>
                     <option value="product">Product</option>
                     <option value="service">Service</option>
@@ -47,7 +47,7 @@
             }" @click.outside="open = false; search = ''" class="relative">
                 <label class="form-label">Category</label>
                 <button type="button" @click="open = !open"
-                    class="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm text-left px-3 py-2 bg-white flex items-center justify-between">
+                    class="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm text-left px-3 py-2 bg-white flex items-center justify-between">
                     <span x-text="selectedName" class="truncate"></span>
                     <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -56,15 +56,15 @@
                 <div x-show="open" x-cloak x-transition.opacity class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg">
                     <div class="p-2">
                         <input aria-label="Search categories" type="text" x-model="search" placeholder="Search categories..." 
-                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white text-sm px-2 py-1.5 focus:border-blue-500 focus:ring-blue-500"
+                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white text-sm px-2 py-1.5 focus:border-brand-500 focus:ring-brand-500"
                             @click.stop>
                     </div>
                     <ul class="max-h-48 overflow-y-auto py-1">
-                        <li @click="choose('')" class="px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 dark:text-gray-200"
-                            :class="{ 'bg-blue-50 dark:bg-gray-600 font-medium': !selected }">All Categories</li>
+                        <li @click="choose('')" class="px-3 py-2 text-sm cursor-pointer hover:bg-brand-50 dark:hover:bg-gray-600 dark:text-gray-200"
+                            :class="{ 'bg-brand-50 dark:bg-gray-600 font-medium': !selected }">All Categories</li>
                         <template x-for="cat in filtered" :key="cat.id">
-                            <li @click="choose(cat.id)" class="px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 dark:text-gray-200"
-                                :class="{ 'bg-blue-50 dark:bg-gray-600 font-medium': selected === cat.id }"
+                            <li @click="choose(cat.id)" class="px-3 py-2 text-sm cursor-pointer hover:bg-brand-50 dark:hover:bg-gray-600 dark:text-gray-200"
+                                :class="{ 'bg-brand-50 dark:bg-gray-600 font-medium': selected === cat.id }"
                                 x-text="cat.name"></li>
                         </template>
                         <li x-show="filtered.length === 0" class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">No categories found</li>
@@ -75,7 +75,7 @@
             <!-- Per Page -->
             <div>
                 <label for="perPage" class="form-label">Per Page</label>
-                <select id="perPage" wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <select id="perPage" wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
                     <option value="10">10</option>
                     <option value="25">25</option>
                     <option value="50">50</option>
@@ -96,7 +96,7 @@
                     <tr>
                         <th scope="col" class="px-4 py-3 text-left">
                             <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
-                                class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
+                                class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
                         </th>
                         <x-sort-header field="name" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Name</x-sort-header>
                         <x-sort-header field="sku" :sort-field="$sortField" :sort-direction="$sortDirection" class="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">SKU</x-sort-header>
@@ -113,7 +113,7 @@
                         <tr wire:key="item-{{ $item->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700">
                             <td class="px-4 py-4">
                                 <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $item->id }}"
-                                    class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
+                                    class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
                             </td>
                             <td class="px-4 sm:px-6 py-4">
                                 <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $item->name }}</div>
@@ -127,7 +127,7 @@
                                 {{ $item->sku ?? '-' }}
                             </td>
                             <td class="hidden md:table-cell px-4 sm:px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $item->type === 'product' ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100' : 'bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-100' }}">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $item->type === 'product' ? 'bg-brand-100 text-brand-800 dark:bg-brand-800 dark:text-brand-100' : 'bg-accent-100 text-accent-800 dark:bg-accent-900/50 dark:text-accent-100' }}">
                                     {{ ucfirst($item->type) }}
                                 </span>
                             </td>
@@ -153,7 +153,7 @@
                             </td>
                             <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex items-center justify-end space-x-1 sm:space-x-2">
-                                    <a href="{{ route('items.show', $item) }}" class="p-1 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300" title="View" aria-label="View">
+                                    <a href="{{ route('items.show', $item) }}" class="p-1 text-brand-600 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-300" title="View" aria-label="View">
                                         <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
@@ -183,7 +183,7 @@
                                 <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No items found</h3>
                                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new item.</p>
                                 <div class="mt-6">
-                                    <a href="{{ route('items.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                    <a href="{{ route('items.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500">
                                         <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                         </svg>

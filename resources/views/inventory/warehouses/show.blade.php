@@ -5,7 +5,7 @@
                 <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                     {{ $warehouse->name }}
                     @if($warehouse->is_default)
-                        <span class="ml-1 align-middle inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300">Default</span>
+                        <span class="ml-1 align-middle inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800 dark:bg-brand-900/50 dark:text-brand-300">Default</span>
                     @endif
                     @unless($warehouse->is_active)
                         <span class="ml-1 align-middle inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">Not in use</span>
@@ -67,7 +67,7 @@
                             @foreach($inTransit as $transfer)
                                 <li class="py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                                     <div>
-                                        <a href="{{ route('stock-transfers.show', $transfer) }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">{{ $transfer->transfer_number }}</a>
+                                        <a href="{{ route('stock-transfers.show', $transfer) }}" class="font-medium text-brand-600 dark:text-brand-300 hover:underline">{{ $transfer->transfer_number }}</a>
                                         <span class="text-gray-600 dark:text-gray-400">
                                             {{ $transfer->to_warehouse_id === $warehouse->id ? 'coming from '.$transfer->fromWarehouse?->name : 'going to '.$transfer->toWarehouse?->name }},
                                             sent {{ $transfer->transfer_date?->format('M d, Y') }}
@@ -104,11 +104,11 @@
                                 @foreach($inventories as $row)
                                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                         <td class="px-4 py-3 text-sm">
-                                            <a href="{{ route('inventory.show', $row->item_id) }}" class="text-indigo-600 dark:text-indigo-400 font-medium">{{ $row->item->name ?? '—' }}</a>
+                                            <a href="{{ route('inventory.show', $row->item_id) }}" class="text-brand-600 dark:text-brand-300 font-medium">{{ $row->item->name ?? '—' }}</a>
                                             @if($row->item?->sku)<span class="block text-xs text-gray-500 dark:text-gray-400 font-mono">{{ $row->item->sku }}</span>@endif
                                         </td>
                                         <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ rtrim(rtrim(number_format((float) $row->quantity, 4), '0'), '.') }}</td>
-                                        <td class="px-4 py-3 text-sm text-right text-orange-600 dark:text-orange-400 hidden sm:table-cell">{{ rtrim(rtrim(number_format((float) $row->reserved_quantity, 4), '0'), '.') }}</td>
+                                        <td class="px-4 py-3 text-sm text-right text-amber-700 dark:text-amber-300 hidden sm:table-cell">{{ rtrim(rtrim(number_format((float) $row->reserved_quantity, 4), '0'), '.') }}</td>
                                         <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100 hidden sm:table-cell">{{ rtrim(rtrim(number_format((float) $row->quantity - (float) $row->reserved_quantity, 4), '0'), '.') }}</td>
                                         <td class="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-300 hidden md:table-cell">@money($row->unit_cost)</td>
                                         <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100 whitespace-nowrap">@money((float) $row->quantity * (float) $row->unit_cost)</td>

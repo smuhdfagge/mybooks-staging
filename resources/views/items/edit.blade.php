@@ -106,7 +106,7 @@
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400">@currencySymbol</span>
                                     <input type="number" name="selling_price" id="selling_price" value="{{ old('selling_price', $item->selling_price) }}" min="0" step="0.01" required
-                                        class="w-full pl-8 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('selling_price') border-red-500 @enderror" @error('selling_price') aria-invalid="true" aria-describedby="selling_price-error" @enderror>
+                                        class="w-full pl-8 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 @error('selling_price') border-red-500 @enderror" @error('selling_price') aria-invalid="true" aria-describedby="selling_price-error" @enderror>
                                 </div>
                                 @error('selling_price')
                                     <p id="selling_price-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
@@ -118,7 +118,7 @@
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400">@currencySymbol</span>
                                     <input type="number" name="cost_price" id="cost_price" value="{{ old('cost_price', $item->cost_price) }}" min="0" step="0.01"
-                                        class="w-full pl-8 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('cost_price') border-red-500 @enderror" @error('cost_price') aria-invalid="true" aria-describedby="cost_price-error" @enderror>
+                                        class="w-full pl-8 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 @error('cost_price') border-red-500 @enderror" @error('cost_price') aria-invalid="true" aria-describedby="cost_price-error" @enderror>
                                 </div>
                                 @error('cost_price')
                                     <p id="cost_price-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
@@ -129,7 +129,7 @@
                                 <label for="tax_rate" class="form-label">Tax Rate (%)</label>
                                 <div class="relative">
                                     <input type="number" name="tax_rate" id="tax_rate" value="{{ old('tax_rate', $item->tax_rate) }}" min="0" max="100" step="0.01"
-                                        class="w-full pr-8 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('tax_rate') border-red-500 @enderror" @error('tax_rate') aria-invalid="true" aria-describedby="tax_rate-error" @enderror>
+                                        class="w-full pr-8 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 @error('tax_rate') border-red-500 @enderror" @error('tax_rate') aria-invalid="true" aria-describedby="tax_rate-error" @enderror>
                                     <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 dark:text-gray-400">%</span>
                                 </div>
                                 @error('tax_rate')
@@ -145,13 +145,13 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="flex items-center">
                                 <input type="checkbox" name="track_inventory" id="track_inventory" value="1" {{ old('track_inventory', $item->track_inventory) ? 'checked' : '' }}
-                                    class="rounded border-gray-300 dark:border-gray-600 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:bg-gray-700 dark:checked:bg-indigo-600">
+                                    class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:checked:bg-brand-600 dark:text-brand-300">
                                 <label for="track_inventory" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Track inventory for this item</label>
                             </div>
 
                             <div class="flex items-center">
                                 <input type="checkbox" name="is_taxable" id="is_taxable" value="1" {{ old('is_taxable', $item->is_taxable) ? 'checked' : '' }}
-                                    class="rounded border-gray-300 dark:border-gray-600 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:bg-gray-700 dark:checked:bg-indigo-600">
+                                    class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:checked:bg-brand-600 dark:text-brand-300">
                                 <label for="is_taxable" class="ml-2 text-sm text-gray-700 dark:text-gray-300">This item is taxable</label>
                             </div>
 
@@ -197,7 +197,7 @@
 
                     <!-- Submit Buttons -->
                     <div class="flex items-center justify-end gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <a href="{{ route('items.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <a href="{{ route('items.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             Cancel
                         </a>
                         <x-primary-button class="px-4">

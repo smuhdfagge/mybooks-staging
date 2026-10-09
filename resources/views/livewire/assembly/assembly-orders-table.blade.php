@@ -52,7 +52,7 @@
                     @php $qty = $order->isCompleted() ? (float) $order->quantity_made : $order->plannedQuantity(); @endphp
                     <tr wire:key="asm-{{ $order->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                         <td class="px-4 py-3 whitespace-nowrap">
-                            <a href="{{ route('assembly-orders.show', $order) }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">{{ $order->order_number }}</a>
+                            <a href="{{ route('assembly-orders.show', $order) }}" class="font-medium text-brand-600 dark:text-brand-300 hover:underline">{{ $order->order_number }}</a>
                             @if($order->isBreakdown())<span class="block text-xs text-gray-500 dark:text-gray-400">Break-down</span>@endif
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-100">{{ $order->assembly_date?->format('M d, Y') }}</td>

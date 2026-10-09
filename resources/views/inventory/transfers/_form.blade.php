@@ -75,7 +75,7 @@
                                         class="absolute z-[100] mt-1 w-full bg-white dark:bg-gray-700 shadow-lg max-h-60 rounded-md py-1 ring-1 ring-black ring-opacity-5 overflow-auto text-sm">
                                         <template x-for="(product, pIndex) in line.results" :key="product.id">
                                             <div role="option" @mousedown.prevent @click="pick(index, product)" @mouseenter="line.highlighted = pIndex"
-                                                :class="line.highlighted === pIndex ? 'bg-indigo-600 text-white' : 'text-gray-900 dark:text-gray-100'"
+                                                :class="line.highlighted === pIndex ? 'bg-brand-600 text-white' : 'text-gray-900 dark:text-gray-100'"
                                                 class="cursor-pointer select-none py-2 px-3 flex justify-between gap-2">
                                                 <span x-text="product.name"></span>
                                                 <span class="text-xs opacity-75 whitespace-nowrap" x-text="qty(product.free) + ' free'"></span>
@@ -117,7 +117,7 @@
     {{-- Transfer now comes first, so pressing Enter does the default. --}}
     <div class="flex flex-col sm:flex-row-reverse sm:justify-start gap-2">
         <button type="submit" name="action" value="transfer_now" class="btn-primary">Transfer now</button>
-        <button type="submit" name="action" value="ship" class="inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-gray-800 border border-indigo-300 dark:border-indigo-500 rounded-md font-semibold text-xs text-indigo-700 dark:text-indigo-300 uppercase tracking-widest shadow-sm hover:bg-indigo-50 dark:hover:bg-gray-700">Ship only (goods on the road)</button>
+        <button type="submit" name="action" value="ship" class="inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-gray-800 border border-brand-300 dark:border-brand-500 rounded-md font-semibold text-xs text-brand-700 dark:text-brand-300 uppercase tracking-widest shadow-sm hover:bg-brand-50 dark:hover:bg-gray-700">Ship only (goods on the road)</button>
         <button type="submit" name="action" value="draft" class="inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-500 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700">Save as draft</button>
     </div>
     <p class="form-help sm:text-right">"Transfer now" moves the goods straight away. Use "Ship only" when they will take time to arrive, and receive them when they get there.</p>

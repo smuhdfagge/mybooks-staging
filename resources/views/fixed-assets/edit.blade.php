@@ -26,7 +26,7 @@
                                 <div>
                                     <label for="name" class="block text-sm font-medium mb-2">Asset Name *</label>
                                     <input type="text" name="name" id="name" value="{{ old('name', $asset->name) }}" required
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
+                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-brand-500 dark:focus:border-brand-600 focus:ring-brand-500 dark:focus:ring-brand-600" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                                     @error('name')
                                         <p id="name-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                     @enderror
@@ -35,7 +35,7 @@
                                 <div>
                                     <label for="asset_number" class="block text-sm font-medium mb-2">Asset Number *</label>
                                     <input type="text" name="asset_number" id="asset_number" value="{{ old('asset_number', $asset->asset_number) }}" required
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600" @error('asset_number') aria-invalid="true" aria-describedby="asset_number-error" @enderror>
+                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-brand-500 dark:focus:border-brand-600 focus:ring-brand-500 dark:focus:ring-brand-600" @error('asset_number') aria-invalid="true" aria-describedby="asset_number-error" @enderror>
                                     @error('asset_number')
                                         <p id="asset_number-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                     @enderror
@@ -44,7 +44,7 @@
                                 <div>
                                     <label for="category_id" class="block text-sm font-medium mb-2">Category *</label>
                                     <select name="category_id" id="category_id" required
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600" @error('category_id') aria-invalid="true" aria-describedby="category_id-error" @enderror>
+                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-brand-500 dark:focus:border-brand-600 focus:ring-brand-500 dark:focus:ring-brand-600" @error('category_id') aria-invalid="true" aria-describedby="category_id-error" @enderror>
                                         <option value="">Select Category</option>
                                         @foreach($categories as $category)
                                             <option value="{{ $category->id }}" {{ old('category_id', $asset->category_id) == $category->id ? 'selected' : '' }}>
@@ -60,7 +60,7 @@
                                 <div>
                                     <label for="status" class="block text-sm font-medium mb-2">Status *</label>
                                     <select name="status" id="status" required
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600" @error('status') aria-invalid="true" aria-describedby="status-error" @enderror>
+                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-brand-500 dark:focus:border-brand-600 focus:ring-brand-500 dark:focus:ring-brand-600" @error('status') aria-invalid="true" aria-describedby="status-error" @enderror>
                                         <option value="active" {{ old('status', $asset->status) == 'active' ? 'selected' : '' }}>Active</option>
                                         <option value="under_maintenance" {{ old('status', $asset->status) == 'under_maintenance' ? 'selected' : '' }}>Under Maintenance</option>
                                         <option value="idle" {{ old('status', $asset->status) == 'idle' ? 'selected' : '' }}>Idle</option>
@@ -76,7 +76,7 @@
                                 <div class="md:col-span-2">
                                     <label for="description" class="block text-sm font-medium mb-2">Description</label>
                                     <textarea name="description" id="description" rows="3"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600" @error('description') aria-invalid="true" aria-describedby="description-error" @enderror>{{ old('description', $asset->description) }}</textarea>
+                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-brand-500 dark:focus:border-brand-600 focus:ring-brand-500 dark:focus:ring-brand-600" @error('description') aria-invalid="true" aria-describedby="description-error" @enderror>{{ old('description', $asset->description) }}</textarea>
                                     @error('description')
                                         <p id="description-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                     @enderror
@@ -92,7 +92,7 @@
                                 <div>
                                     <label for="location" class="block text-sm font-medium mb-2">Location</label>
                                     <input type="text" name="location" id="location" value="{{ old('location', $asset->location) }}"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600" @error('location') aria-invalid="true" aria-describedby="location-error" @enderror>
+                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-brand-500 dark:focus:border-brand-600 focus:ring-brand-500 dark:focus:ring-brand-600" @error('location') aria-invalid="true" aria-describedby="location-error" @enderror>
                                     @error('location')
                                         <p id="location-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                     @enderror
@@ -101,7 +101,7 @@
                                 <div>
                                     <label for="assigned_to" class="block text-sm font-medium mb-2">Assigned To (User ID)</label>
                                     <input type="number" name="assigned_to" id="assigned_to" value="{{ old('assigned_to', $asset->assigned_to) }}"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600" @error('assigned_to') aria-invalid="true" aria-describedby="assigned_to-error" @enderror>
+                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-brand-500 dark:focus:border-brand-600 focus:ring-brand-500 dark:focus:ring-brand-600" @error('assigned_to') aria-invalid="true" aria-describedby="assigned_to-error" @enderror>
                                     @error('assigned_to')
                                         <p id="assigned_to-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                     @enderror
@@ -110,7 +110,7 @@
                                 <div class="md:col-span-2">
                                     <label for="notes" class="block text-sm font-medium mb-2">Notes</label>
                                     <textarea name="notes" id="notes" rows="3"
-                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600" @error('notes') aria-invalid="true" aria-describedby="notes-error" @enderror>{{ old('notes', $asset->notes) }}</textarea>
+                                        class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-brand-500 dark:focus:border-brand-600 focus:ring-brand-500 dark:focus:ring-brand-600" @error('notes') aria-invalid="true" aria-describedby="notes-error" @enderror>{{ old('notes', $asset->notes) }}</textarea>
                                     @error('notes')
                                         <p id="notes-error" class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                     @enderror
@@ -122,7 +122,7 @@
                             <a href="{{ route('fixed-assets.show', $asset) }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
                                 Cancel
                             </a>
-                            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                            <button type="submit" class="bg-brand-500 hover:bg-brand-700 text-white font-bold py-2 px-4 rounded">
                                 Update Asset
                             </button>
                         </div>

@@ -45,7 +45,7 @@
                         class="absolute z-[100] mt-1 w-full bg-white dark:bg-gray-700 shadow-lg max-h-60 rounded-md py-1 ring-1 ring-black ring-opacity-5 overflow-auto text-sm">
                         <template x-for="(product, pIndex) in finished.results" :key="product.id">
                             <div role="option" @mousedown.prevent @click="pickFinished(product)" @mouseenter="finished.highlighted = pIndex"
-                                :class="finished.highlighted === pIndex ? 'bg-indigo-600 text-white' : 'text-gray-900 dark:text-gray-100'"
+                                :class="finished.highlighted === pIndex ? 'bg-brand-600 text-white' : 'text-gray-900 dark:text-gray-100'"
                                 class="cursor-pointer select-none py-2 px-3" x-text="product.name"></div>
                         </template>
                         <div x-show="finished.results.length === 0" class="py-2 px-3 text-gray-500 dark:text-gray-400">No stock items found</div>
@@ -72,7 +72,7 @@
             <div class="flex items-end pb-2">
                 <input type="hidden" name="is_active" value="0">
                 <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                    <input type="checkbox" name="is_active" value="1" @checked($active) class="rounded border-gray-300 dark:border-gray-600 text-indigo-600">
+                    <input type="checkbox" name="is_active" value="1" @checked($active) class="rounded border-gray-300 dark:border-gray-600 text-brand-600 dark:text-brand-300">
                     In use (can be built from)
                 </label>
             </div>
@@ -115,7 +115,7 @@
                                         class="absolute z-[100] mt-1 w-full bg-white dark:bg-gray-700 shadow-lg max-h-60 rounded-md py-1 ring-1 ring-black ring-opacity-5 overflow-auto text-sm">
                                         <template x-for="(product, pIndex) in line.results" :key="product.id">
                                             <div role="option" @mousedown.prevent @click="pick(line, product)" @mouseenter="line.highlighted = pIndex"
-                                                :class="line.highlighted === pIndex ? 'bg-indigo-600 text-white' : 'text-gray-900 dark:text-gray-100'"
+                                                :class="line.highlighted === pIndex ? 'bg-brand-600 text-white' : 'text-gray-900 dark:text-gray-100'"
                                                 class="cursor-pointer select-none py-2 px-3" x-text="product.name"></div>
                                         </template>
                                         <div x-show="line.results.length === 0" class="py-2 px-3 text-gray-500 dark:text-gray-400">No stock items found</div>

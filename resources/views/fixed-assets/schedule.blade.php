@@ -53,7 +53,7 @@
                         </div>
 
                         <div class="flex items-end">
-                            <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                            <button type="submit" class="w-full bg-brand-500 hover:bg-brand-700 text-white font-bold py-2 px-4 rounded">
                                 Apply Filters
                             </button>
                         </div>
@@ -71,7 +71,7 @@
                         </div>
                         <div>
                             <div class="text-sm text-gray-500 dark:text-gray-400">Total {{ $year }} Depreciation</div>
-                            <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ $currency }}{{ number_format($totalYearDepreciation, 2) }}</div>
+                            <div class="text-2xl font-bold text-brand-600 dark:text-brand-300">{{ $currency }}{{ number_format($totalYearDepreciation, 2) }}</div>
                         </div>
                     </div>
                 </div>
@@ -147,7 +147,7 @@
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                            <a href="{{ route('fixed-assets.schedule', $asset) }}" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                                            <a href="{{ route('fixed-assets.schedule', $asset) }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-300">
                                                 View Schedule
                                             </a>
                                         </td>
