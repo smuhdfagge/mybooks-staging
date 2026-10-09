@@ -239,6 +239,44 @@
                 </div>
             </div>
 
+            {{-- Automatic renewal (session 15) --}}
+            @if(config('mybooks.features.auto_renewal'))
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-xl border border-gray-200 dark:border-gray-700" id="admin-auto-renewal">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Automatic Renewal</h3>
+                </div>
+                <div class="p-6 space-y-3 text-sm">
+                    <div class="flex justify-between gap-4">
+                        <span class="text-gray-500 dark:text-gray-400">Status</span>
+                        <span class="text-gray-900 dark:text-white">
+                            @if(! $billingCard) No card saved
+                            @elseif($billingCard->auto_renew) On
+                            @else Off
+                            @endif
+                        </span>
+                    </div>
+                    @if($billingCard)
+                        <div class="flex justify-between gap-4">
+                            <span class="text-gray-500 dark:text-gray-400">Card</span>
+                            <span class="text-gray-900 dark:text-white">{{ $billingCard->label() }}, expires {{ $billingCard->expiryLabel() }}</span>
+                        </div>
+                    @endif
+                    <div class="flex justify-between gap-4">
+                        <span class="text-gray-500 dark:text-gray-400">Last attempt</span>
+                        <span class="text-right text-gray-900 dark:text-white">
+                            @if($lastRenewalAttempt)
+                                {{ $lastRenewalAttempt->created_at->format('M d, Y') }}:
+                                <x-status-badge :status="$lastRenewalAttempt->status" />
+                                <span class="block text-xs text-gray-500 dark:text-gray-400">{{ $lastRenewalAttempt->message }}</span>
+                            @else
+                                None
+                            @endif
+                        </span>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <!-- Update Subscription -->
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-xl border border-gray-200 dark:border-gray-700">
                 <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">

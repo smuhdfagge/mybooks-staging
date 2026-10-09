@@ -144,6 +144,29 @@ return [
         // Staff and all-users lock dates on the accounting periods page, with
         // their history (session 11). Off stops the lock dates being checked.
         'lock_dates' => (bool) env('MYBOOKS_FEATURE_LOCK_DATES', true),
+        // Saved card and automatic renewal of the MyBooks subscription through
+        // Paystack (session 15). Off: no cards are saved and nothing is charged.
+        'auto_renewal' => (bool) env('MYBOOKS_FEATURE_AUTO_RENEWAL', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Subscription billing: automatic renewal (session 15)
+    |--------------------------------------------------------------------------
+    |
+    | "php artisan subscriptions:auto-renew" runs daily at 06:00. It charges
+    | the saved card of each business with auto-renewal on whose subscription
+    | ends within charge_days_before days (1 = the day before the end date).
+    | A failed charge is retried retry_days after the first attempt; after
+    | the last retry the normal expiry flow takes over.
+    |
+    */
+
+    'billing' => [
+        'charge_days_before' => max(0, (int) env('MYBOOKS_AUTO_RENEW_DAYS_BEFORE', 1)),
+        'retry_days' => array_values(array_filter(array_map('intval', explode(',', (string) env('MYBOOKS_AUTO_RENEW_RETRY_DAYS', '1,3'))), fn ($d) => $d > 0)),
+        // Email a warning this many days before the saved card's expiry month ends.
+        'card_expiry_warning_days' => max(1, (int) env('MYBOOKS_CARD_EXPIRY_WARNING_DAYS', 7)),
     ],
 
     /*

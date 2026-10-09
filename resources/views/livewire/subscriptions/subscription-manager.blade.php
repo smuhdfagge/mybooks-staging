@@ -167,6 +167,85 @@
             </div>
         </div>
 
+        {{-- Saved card and automatic renewal (session 15) --}}
+        @if($showAutoRenewal)
+        <x-card class="mb-8 overflow-hidden" id="auto-renewal">
+            <div class="px-4 sm:px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white">Card and automatic renewal</h3>
+            </div>
+            <div class="p-4 sm:p-6 space-y-6">
+                @if($savedCard)
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="flex-shrink-0 w-12 h-8 rounded bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center" aria-hidden="true">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="font-semibold text-gray-900 dark:text-white" data-testid="saved-card">{{ $savedCard->label() }}</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">
+                                    Expires {{ $savedCard->expiryLabel() }}@if($savedCard->bank) · {{ $savedCard->bank }}@endif
+                                </p>
+                            </div>
+                        </div>
+                        <button type="button" wire:click="removeCard" wire:confirm="Remove this card? Automatic renewal will be switched off."
+                                class="self-start sm:self-auto inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
+                            Remove card
+                        </button>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                        <button type="button" role="switch" aria-checked="{{ $savedCard->auto_renew ? 'true' : 'false' }}" aria-labelledby="auto-renew-label"
+                                wire:click="toggleAutoRenew" wire:loading.attr="disabled"
+                                class="relative inline-flex flex-shrink-0 h-6 w-11 mt-0.5 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 {{ $savedCard->auto_renew ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600' }}">
+                            <span class="inline-block h-5 w-5 rounded-full bg-white shadow transform transition {{ $savedCard->auto_renew ? 'translate-x-5' : 'translate-x-0' }}"></span>
+                        </button>
+                        <div>
+                            <p id="auto-renew-label" class="text-sm font-medium text-gray-900 dark:text-white">
+                                Renew automatically with {{ $savedCard->label() }}, expires {{ $savedCard->expiryLabel() }}
+                            </p>
+                            @if($savedCard->auto_renew && $nextRenewal)
+                                <p class="text-sm text-gray-600 dark:text-gray-400" data-testid="next-renewal">
+                                    Next charge: @money($nextRenewal['amount'], $nextRenewal['currency']) on {{ $nextRenewal['charge_on']->format('M d, Y') }}
+                                    (your subscription ends {{ $nextRenewal['subscription']->ends_at->format('M d, Y') }}).
+                                </p>
+                                @if($savedCard->hasExpiredBy($nextRenewal['charge_on']))
+                                    <p class="mt-1 text-sm text-yellow-700 dark:text-yellow-400">This card expires before then. Pay once with your new card to replace it.</p>
+                                @endif
+                            @elseif($savedCard->auto_renew)
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Nothing to charge right now.</p>
+                            @else
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Off. You'll need to pay before your subscription ends.</p>
+                            @endif
+                        </div>
+                    </div>
+                @else
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        No card saved. When you pay by card, Paystack keeps it safely so your subscription can renew automatically. We never see or store your full card number.
+                    </p>
+                @endif
+
+                @if($renewalAttempts->isNotEmpty())
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Automatic renewal history</h4>
+                        <ul class="divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg" data-testid="renewal-history">
+                            @foreach($renewalAttempts as $attempt)
+                                <li class="p-3 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm">
+                                    <span class="sm:w-32 text-gray-500 dark:text-gray-400">{{ $attempt->created_at->format('M d, Y') }}</span>
+                                    <span class="sm:w-32 font-medium text-gray-900 dark:text-white">@money($attempt->amount, $attempt->currency)</span>
+                                    <span class="sm:w-24"><x-status-badge :status="$attempt->status" :label="['success' => 'Paid', 'failed' => 'Failed', 'pending' => 'Checking'][$attempt->status] ?? ucfirst($attempt->status)" /></span>
+                                    <span class="flex-1 text-gray-600 dark:text-gray-400 break-words">
+                                        {{ $attempt->message }}
+                                        @if($attempt->next_retry_at) <span class="block text-xs">We'll try again on {{ $attempt->next_retry_at->format('M d, Y') }}.</span> @endif
+                                    </span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+            </div>
+        </x-card>
+        @endif
+
         <!-- Available Plans -->
         <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
             <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">

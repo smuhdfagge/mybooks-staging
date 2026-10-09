@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ExtendSubscriptionRequest;
 use App\Http\Requests\Admin\UpdateSubscriptionRequest;
 use App\Models\ActivityLog;
+use App\Models\BillingCard;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Models\SubscriptionRenewalAttempt;
 use App\Models\Tenant;
 use App\Services\AdminAuditService;
 use Carbon\Carbon;
@@ -126,7 +128,12 @@ class AdminTenantController extends Controller
         $tenant->load(['users', 'subscriptions.plan', 'activeSubscription.plan']);
         $plans = Plan::active()->ordered()->get();
 
-        return view('admin.tenants.show', compact('tenant', 'plans'));
+        // Auto-renewal status and the last automatic charge (session 15)
+        $billingCard = BillingCard::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
+        $lastRenewalAttempt = SubscriptionRenewalAttempt::withoutGlobalScopes()
+            ->where('tenant_id', $tenant->id)->latest('id')->first();
+
+        return view('admin.tenants.show', compact('tenant', 'plans', 'billingCard', 'lastRenewalAttempt'));
     }
 
     /**
