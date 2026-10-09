@@ -57,7 +57,7 @@
 
                 <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-3">
                     @if($export->isDownloadable() && ! $export->isExpired())
-                        <a href="{{ route('exports.download', $export) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition ease-in-out duration-150">Download</a>
+                        <a href="{{ route('exports.download', $export) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition ease-in-out duration-150">Download</a>
                     @endif
                     <form action="{{ route('exports.destroy', $export) }}" method="POST" data-confirm="Delete this export?">
                         @csrf

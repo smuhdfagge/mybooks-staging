@@ -56,7 +56,7 @@
                     </tbody>
                 </table>
             </div>
-            <button type="submit" class="mt-3 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium">Save allowances</button>
+            <button type="submit" class="mt-3 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 text-sm font-medium">Save allowances</button>
         </form>
     </div>
 
@@ -77,7 +77,7 @@
                     <tr>
                         <td class="px-4 py-3 text-gray-900 dark:text-white">
                             @if($line['tenant'])
-                                <a href="{{ route('admin.tenants.show', $line['tenant']) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $line['tenant']->name }}</a>
+                                <a href="{{ route('admin.tenants.show', $line['tenant']) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $line['tenant']->name }}</a>
                             @else
                                 (deleted)
                             @endif

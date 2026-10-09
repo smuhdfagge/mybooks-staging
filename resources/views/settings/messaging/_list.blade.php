@@ -15,7 +15,7 @@
                         <span class="text-gray-500 dark:text-gray-400">· {{ $message->customer->name }}</span>
                     @endif
                     @if($showCustomer && $message->invoice)
-                        <a href="{{ route('invoices.show', $message->invoice) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $message->invoice->invoice_number }}</a>
+                        <a href="{{ route('invoices.show', $message->invoice) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $message->invoice->invoice_number }}</a>
                     @endif
                 </div>
                 <x-status-badge :status="$message->status" />

@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex flex-wrap items-center justify-between gap-2">
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">SMS &amp; WhatsApp</h2>
-            <a href="{{ route('settings.messaging.messages') }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">All messages sent</a>
+            <a href="{{ route('settings.messaging.messages') }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">All messages sent</a>
         </div>
     </x-slot>
 
@@ -51,7 +51,7 @@
                                 <span class="text-sm text-gray-900 dark:text-gray-100"><span class="text-lg font-semibold">{{ number_format($u['used']) }}</span> of {{ number_format($u['limit']) }}</span>
                             </div>
                             <div class="mt-2 h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                                <div class="h-2 rounded-full {{ $out ? 'bg-red-500' : ($pct >= 80 ? 'bg-yellow-500' : 'bg-indigo-600') }}" style="width: {{ $pct }}%"></div>
+                                <div class="h-2 rounded-full {{ $out ? 'bg-red-500' : ($pct >= 80 ? 'bg-yellow-500' : 'bg-brand-600') }}" style="width: {{ $pct }}%"></div>
                             </div>
                             <p class="mt-2 text-xs {{ $out ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-500 dark:text-gray-400' }}">
                                 @if($u['limit'] === 0)
@@ -82,7 +82,7 @@
                                     @foreach(['sms' => 'SMS', 'whatsapp' => 'WhatsApp'] as $channel => $label)
                                         <input type="hidden" name="{{ $type }}_{{ $channel }}" value="0">
                                         <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                                            <input type="checkbox" name="{{ $type }}_{{ $channel }}" value="1" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
+                                            <input type="checkbox" name="{{ $type }}_{{ $channel }}" value="1" class="rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-brand-300"
                                                 @checked(old($type.'_'.$channel, $settings->channelOn($type, $channel))) @disabled(! $canEdit || ! $canSetUp)>
                                             {{ $label }}
                                         </label>
@@ -95,7 +95,7 @@
                                     <x-field :name="$type.'_text'" :id="$type.'_text'" label="SMS wording" type="textarea" rows="4" :value="$initial"
                                         x-model="text" maxlength="459" :disabled="! $canEdit" />
                                     <p class="form-help">Start with {business}: the SMS comes from "{{ config('services.termii.sender_id') }}", so this tells your customer who it is from.
-                                        <button type="button" class="text-indigo-600 dark:text-indigo-400 hover:underline" @click="text = @js($defaults[$type])">Use the standard wording</button></p>
+                                        <button type="button" class="text-brand-600 dark:text-brand-300 hover:underline" @click="text = @js($defaults[$type])">Use the standard wording</button></p>
                                 </div>
                                 <div>
                                     <p class="form-label">Preview</p>
@@ -115,7 +115,7 @@
                     <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">You can use</h3>
                     <dl class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm">
                         @foreach($placeholders as $code => $meaning)
-                            <div class="flex gap-2"><dt class="font-mono text-indigo-700 dark:text-indigo-300">{{ $code }}</dt><dd class="text-gray-600 dark:text-gray-400">{{ $meaning }}</dd></div>
+                            <div class="flex gap-2"><dt class="font-mono text-brand-700 dark:text-brand-300">{{ $code }}</dt><dd class="text-gray-600 dark:text-gray-400">{{ $meaning }}</dd></div>
                         @endforeach
                     </dl>
                     <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">Messages only go to customers with a mobile number who haven't opted out (on the customer's page). No reminders are sent between 9pm and 7am; they wait until 7am. Emails are not affected by these settings.</p>
@@ -151,7 +151,7 @@
             <x-card class="p-6">
                 <div class="flex items-center justify-between gap-2">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Latest messages</h3>
-                    <a href="{{ route('settings.messaging.messages') }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">See all</a>
+                    <a href="{{ route('settings.messaging.messages') }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">See all</a>
                 </div>
                 @include('settings.messaging._list', ['messages' => $recent, 'showCustomer' => true])
             </x-card>

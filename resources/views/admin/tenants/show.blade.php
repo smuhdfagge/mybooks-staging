@@ -5,7 +5,7 @@
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <div class="flex items-center gap-3">
-                <div class="h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+                <div class="h-12 w-12 rounded-xl bg-brand-600 flex items-center justify-center">
                     <span class="text-white font-bold text-lg">{{ strtoupper(substr($tenant->name, 0, 2)) }}</span>
                 </div>
                 <div>
@@ -99,7 +99,7 @@
                             @foreach($tenant->users->take(5) as $user)
                                 <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                                     <div class="flex items-center">
-                                        <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                                        <div class="h-10 w-10 rounded-full bg-brand-600 flex items-center justify-center">
                                             <span class="text-white font-semibold text-sm">{{ strtoupper(substr($user->name, 0, 2)) }}</span>
                                         </div>
                                         <div class="ml-3">
@@ -109,7 +109,7 @@
                                     </div>
                                     <div class="text-right">
                                         @if($user->roles->isNotEmpty())
-                                            <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700">
+                                            <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-700">
                                                 {{ $user->roles->first()->name }}
                                             </span>
                                         @endif
@@ -157,7 +157,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span class="px-2.5 py-1 text-xs font-semibold rounded-full 
                                             @if($subscription->status === 'active') bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-700
-                                            @elseif($subscription->status === 'trialing') bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700
+                                            @elseif($subscription->status === 'trialing') bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-700
                                             @elseif($subscription->status === 'cancelled') bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-700
                                             @else bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-700
                                             @endif">
@@ -194,9 +194,9 @@
                 <div class="p-6">
                     @if($tenant->activeSubscription)
                         <div class="space-y-4">
-                            <div class="text-center p-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl">
+                            <div class="text-center p-4 bg-brand-600 rounded-xl">
                                 <p class="text-2xl font-bold text-white">{{ $tenant->activeSubscription->plan->name ?? 'Unknown' }}</p>
-                                <p class="text-sm text-indigo-100 mt-1">{{ ucfirst($tenant->activeSubscription->billing_cycle) }} billing</p>
+                                <p class="text-sm text-brand-100 mt-1">{{ ucfirst($tenant->activeSubscription->billing_cycle) }} billing</p>
                             </div>
                             
                             <div class="space-y-3">
@@ -204,7 +204,7 @@
                                     <span class="text-gray-500 dark:text-gray-400">Status</span>
                                     <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full 
                                         @if($tenant->activeSubscription->status === 'active') bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300
-                                        @elseif($tenant->activeSubscription->status === 'trialing') bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300
+                                        @elseif($tenant->activeSubscription->status === 'trialing') bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-300
                                         @else bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300
                                         @endif">
                                         {{ ucfirst($tenant->activeSubscription->status) }}
@@ -221,8 +221,8 @@
                                 @if($tenant->activeSubscription->ends_at)
                                     <div class="flex justify-between text-sm">
                                         <span class="text-gray-500 dark:text-gray-400">Days Left</span>
-                                        <span class="@if($tenant->activeSubscription->ends_at->diffInDays(now()) <= 7) text-yellow-600 dark:text-yellow-400 @else text-gray-900 dark:text-white @endif">
-                                            {{ $tenant->activeSubscription->ends_at->diffInDays(now()) }} days
+                                        <span class="@if((int) now()->diffInDays($tenant->activeSubscription->ends_at) <= 7) text-yellow-600 dark:text-yellow-400 @else text-gray-900 dark:text-white @endif">
+                                            {{ (int) now()->diffInDays($tenant->activeSubscription->ends_at) }} days
                                         </span>
                                     </div>
                                 @endif
@@ -289,7 +289,7 @@
                         <div class="space-y-4">
                             <div>
                                 <label for="plan_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Plan</label>
-                                <select id="plan_id" name="plan_id" class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <select id="plan_id" name="plan_id" class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                     @foreach($plans as $plan)
                                         <option value="{{ $plan->id }}" {{ $tenant->activeSubscription?->plan_id == $plan->id ? 'selected' : '' }}>
                                             {{ $plan->name }} - ₦{{ number_format($plan->monthly_price) }}/mo
@@ -299,20 +299,20 @@
                             </div>
                             <div>
                                 <label for="billing_cycle" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Billing Cycle</label>
-                                <select id="billing_cycle" name="billing_cycle" class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <select id="billing_cycle" name="billing_cycle" class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                     <option value="monthly" {{ $tenant->activeSubscription?->billing_cycle === 'monthly' ? 'selected' : '' }}>Monthly</option>
                                     <option value="annual" {{ $tenant->activeSubscription?->billing_cycle === 'annual' ? 'selected' : '' }}>Annual (Save 17%)</option>
                                 </select>
                             </div>
                             <div>
                                 <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
-                                <select id="status" name="status" class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <select id="status" name="status" class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                     <option value="active" {{ $tenant->activeSubscription?->status === 'active' ? 'selected' : '' }}>Active</option>
                                     <option value="trialing" {{ $tenant->activeSubscription?->status === 'trialing' ? 'selected' : '' }}>Trial</option>
                                     <option value="past_due" {{ $tenant->activeSubscription?->status === 'past_due' ? 'selected' : '' }}>Past Due</option>
                                 </select>
                             </div>
-                            <button type="submit" class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium">
+                            <button type="submit" class="w-full px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition font-medium">
                                 Update Subscription
                             </button>
                         </div>
@@ -332,7 +332,7 @@
                         <div class="space-y-4">
                             <div>
                                 <label for="extension_days" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Extend By</label>
-                                <select id="extension_days" name="extension_days" class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <select id="extension_days" name="extension_days" class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                     <option value="7">7 Days</option>
                                     <option value="14">14 Days</option>
                                     <option value="30" selected>30 Days (1 Month)</option>
