@@ -17,7 +17,7 @@
             padding: 20px;
         }
         .payslip-container {
-            border: 2px solid #3b82f6;
+            border: 2px solid #1F4E79;
             border-radius: 6px;
             overflow: hidden;
             page-break-after: always;
@@ -27,7 +27,7 @@
         }
         /* Header */
         .payslip-header {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            background: #1F4E79;
             color: white;
             padding: 16px 20px;
         }
@@ -97,7 +97,7 @@
         .info-block-title {
             font-size: 8px;
             font-weight: bold;
-            color: #3b82f6;
+            color: #1F4E79;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 6px;
@@ -122,7 +122,7 @@
             color: #1f2937;
             padding: 6px 10px;
             background-color: #f1f5f9;
-            border-left: 3px solid #3b82f6;
+            border-left: 3px solid #1F4E79;
             border-radius: 0 4px 4px 0;
             margin-bottom: 8px;
         }
@@ -161,15 +161,15 @@
             font-size: 9px;
         }
         .amount-positive {
-            color: #059669;
+            color: #2E7D32;
             font-weight: 600;
         }
         .amount-negative {
-            color: #dc2626;
+            color: #C62828;
             font-weight: 600;
         }
         .net-pay-box {
-            background: linear-gradient(135deg, #059669, #047857);
+            background: #2E7D32;
             color: white;
             border-radius: 6px;
             padding: 14px 20px;
@@ -332,7 +332,7 @@
                                 @endif
                                 <tr class="subtotal">
                                     <td>Gross Salary</td>
-                                    <td class="text-right" style="color: #059669;">{{ number_format($payroll->gross_salary, 2) }}</td>
+                                    <td class="text-right" style="color: #2E7D32;">{{ number_format($payroll->gross_salary, 2) }}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -381,7 +381,7 @@
                                 @endif
                                 <tr class="subtotal">
                                     <td>Total Deductions</td>
-                                    <td class="text-right" style="color: #dc2626;">{{ number_format($payroll->total_deductions, 2) }}</td>
+                                    <td class="text-right" style="color: #C62828;">{{ number_format($payroll->total_deductions, 2) }}</td>
                                 </tr>
                             </tbody>
                         </table>

@@ -2,8 +2,6 @@
 # Each rebrand session takes its files off this list when they are done.
 # The guard test (BrandColoursTest) fails if a file not listed here uses an
 # old colour, or if a listed file no longer does.
-app/Livewire/Settings/InvoiceTemplateEditor.php
-app/Models/InvoiceTemplate.php
 public/offline.html
 resources/views/admin/auth/login.blade.php
 resources/views/admin/auth/two-factor-challenge.blade.php
@@ -14,10 +12,6 @@ resources/views/auth/two-factor/challenge.blade.php
 resources/views/auth/two-factor/setup.blade.php
 resources/views/auth/verify-email.blade.php
 resources/views/docs/api.blade.php
-resources/views/invoices/print.blade.php
-resources/views/invoices/templates/preview.blade.php
-resources/views/invoices/templates/print-templated.blade.php
-resources/views/invoices/waybill.blade.php
 resources/views/layouts/guest.blade.php
 resources/views/livewire/auth/register-wizard.blade.php
 resources/views/pages/about.blade.php
@@ -26,17 +20,4 @@ resources/views/pages/privacy-policy.blade.php
 resources/views/pages/support.blade.php
 resources/views/pages/terms-of-service.blade.php
 resources/views/partials/public-nav.blade.php
-resources/views/payroll/pdf/payslip-batch.blade.php
-resources/views/payroll/pdf/payslip.blade.php
-resources/views/reports/pdf/bank-disbursement.blade.php
-resources/views/reports/pdf/employer-contributions.blade.php
-resources/views/reports/pdf/general-ledger.blade.php
-resources/views/reports/pdf/layout.blade.php
-resources/views/reports/pdf/payroll-register.blade.php
-resources/views/reports/pdf/profit-loss.blade.php
-resources/views/reports/pdf/tax-liability-payroll.blade.php
-resources/views/reports/pdf/ytd-earnings.blade.php
-resources/views/sales-receipts/print.blade.php
-resources/views/settings/invoice-templates/index.blade.php
-resources/views/statements/document.blade.php
 resources/views/welcome.blade.php

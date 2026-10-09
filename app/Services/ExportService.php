@@ -724,11 +724,11 @@ class ExportService
         $html = '<!DOCTYPE html><html><head><meta charset="UTF-8">';
         $html .= '<title>'.$title.' Export</title>';
         $html .= '<style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            h1 { color: #333; }
+            body { font-family: "DejaVu Sans", Arial, sans-serif; margin: 20px; }
+            h1 { color: '.config('brand.print.heading').'; }
             table { border-collapse: collapse; width: 100%; margin-top: 20px; }
             th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #4a5568; color: white; }
+            th { background-color: '.config('brand.brand.600').'; color: white; }
             tr:nth-child(even) { background-color: #f2f2f2; }
             .meta { color: #666; font-size: 12px; margin-bottom: 20px; }
         </style></head><body>';

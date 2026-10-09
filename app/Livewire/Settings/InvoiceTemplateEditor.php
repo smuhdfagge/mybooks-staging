@@ -20,11 +20,11 @@ class InvoiceTemplateEditor extends Component
     public bool $isNew = false;
 
     // Settings properties bound to form
-    public string $primary_color = '#3B82F6';
+    public string $primary_color = '#1F4E79';
 
     public string $secondary_color = '#1F2937';
 
-    public string $accent_color = '#059669';
+    public string $accent_color = '#2E7D32';
 
     public string $font_family = 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif';
 

@@ -43,9 +43,9 @@ class InvoiceTemplate extends Model
     public static function getDefaultSettings(): array
     {
         return [
-            'primary_color' => '#3B82F6',
+            'primary_color' => '#1F4E79',
             'secondary_color' => '#1F2937',
-            'accent_color' => '#059669',
+            'accent_color' => '#2E7D32',
             'font_family' => 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
             'font_size' => '13',
             'header_bg_color' => '#FFFFFF',
@@ -116,11 +116,11 @@ class InvoiceTemplate extends Model
                 'is_default' => false,
                 'settings' => array_merge(self::getDefaultSettings(), [
                     'layout' => 'modern',
-                    'primary_color' => '#6366F1',
-                    'accent_color' => '#10B981',
+                    'primary_color' => '#102A43',
+                    'accent_color' => '#2E7D32',
                     'border_style' => 'none',
                     'border_width' => '0',
-                    'header_bg_color' => '#6366F1',
+                    'header_bg_color' => '#102A43',
                     'header_text_color' => '#FFFFFF',
                 ]),
             ]
