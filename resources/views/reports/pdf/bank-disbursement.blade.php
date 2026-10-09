@@ -15,11 +15,11 @@
         </div>
         <div style="float: left; width: 31%; margin-left: 3%; padding: 8px; background-color: #ecfdf5; border-radius: 4px; text-align: center; border: 1px solid #a7f3d0;">
             <p style="font-size: 8px; color: #6b7280; margin-bottom: 2px;">Total Net Amount</p>
-            <p style="font-size: 12px; font-weight: bold; color: #059669;">{{ number_format($totals['total_net'], 2) }}</p>
+            <p style="font-size: 12px; font-weight: bold; color: #2E7D32;">{{ number_format($totals['total_net'], 2) }}</p>
         </div>
-        <div style="float: right; width: 31%; padding: 8px; background-color: #eff6ff; border-radius: 4px; text-align: center; border: 1px solid #bfdbfe;">
+        <div style="float: right; width: 31%; padding: 8px; background-color: #EEF3F8; border-radius: 4px; text-align: center; border: 1px solid #B4C8DD;">
             <p style="font-size: 8px; color: #6b7280; margin-bottom: 2px;">Total Gross Amount</p>
-            <p style="font-size: 12px; font-weight: bold; color: #2563eb;">{{ number_format($totals['total_gross'] ?? 0, 2) }}</p>
+            <p style="font-size: 12px; font-weight: bold; color: #1F4E79;">{{ number_format($totals['total_gross'] ?? 0, 2) }}</p>
         </div>
     </div>
 

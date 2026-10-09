@@ -8,7 +8,7 @@
     <!-- Summary -->
     <div style="text-align: center; margin-bottom: 12px; padding: 10px; background-color: {{ $netCashFlow >= 0 ? '#ecfdf5' : '#fef2f2' }}; border-radius: 4px; border: 1px solid {{ $netCashFlow >= 0 ? '#a7f3d0' : '#fecaca' }};">
         <p style="font-size: 9px; color: #6b7280; margin-bottom: 3px;">Net Cash Flow</p>
-        <p style="font-size: 18px; font-weight: bold; color: {{ $netCashFlow >= 0 ? '#059669' : '#dc2626' }};">
+        <p style="font-size: 18px; font-weight: bold; color: {{ $netCashFlow >= 0 ? '#2E7D32' : '#C62828' }};">
             {{ $netCashFlow >= 0 ? '+' : '-' }}{{ number_format(abs($netCashFlow), 2) }}
         </p>
         <p style="font-size: 8px; color: #6b7280;">{{ $netCashFlow >= 0 ? 'Positive cash flow' : 'Negative cash flow' }}</p>

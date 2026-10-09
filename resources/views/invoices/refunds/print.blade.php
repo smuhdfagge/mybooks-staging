@@ -31,7 +31,7 @@
             align-items: flex-start;
             margin-bottom: 40px;
             padding-bottom: 20px;
-            border-bottom: 2px solid #dc2626;
+            border-bottom: 2px solid #C62828;
         }
         
         .company-info {
@@ -63,7 +63,7 @@
         .refund-title h1 {
             font-size: 32px;
             font-weight: bold;
-            color: #dc2626;
+            color: #C62828;
             margin-bottom: 5px;
         }
         
@@ -140,7 +140,7 @@
         .amount-value {
             font-size: 36px;
             font-weight: bold;
-            color: #dc2626;
+            color: #C62828;
         }
         
         .details-table {
@@ -228,7 +228,7 @@
             top: 20px;
             right: 20px;
             padding: 10px 20px;
-            background: #dc2626;
+            background: #C62828;
             color: white;
             border: none;
             border-radius: 6px;
@@ -324,7 +324,7 @@
                             </span>
                         @endif
                     </td>
-                    <td style="text-align: right; font-weight: bold; color: #dc2626;">
+                    <td style="text-align: right; font-weight: bold; color: #C62828;">
                         {{ number_format($refund->amount, 2) }}
                     </td>
                 </tr>

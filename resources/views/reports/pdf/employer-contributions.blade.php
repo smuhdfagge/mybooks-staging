@@ -15,11 +15,11 @@
         </div>
         <div style="float: left; width: 31%; margin-left: 3%; padding: 8px; background-color: #fef2f2; border-radius: 4px; text-align: center; border: 1px solid #fecaca;">
             <p style="font-size: 8px; color: #6b7280; margin-bottom: 2px;">Employer Contributions</p>
-            <p style="font-size: 12px; font-weight: bold; color: #dc2626;">{{ number_format($totals['total_employer_contributions'], 2) }}</p>
+            <p style="font-size: 12px; font-weight: bold; color: #C62828;">{{ number_format($totals['total_employer_contributions'], 2) }}</p>
         </div>
-        <div style="float: right; width: 31%; padding: 8px; background-color: #eff6ff; border-radius: 4px; text-align: center; border: 1px solid #bfdbfe;">
+        <div style="float: right; width: 31%; padding: 8px; background-color: #EEF3F8; border-radius: 4px; text-align: center; border: 1px solid #B4C8DD;">
             <p style="font-size: 8px; color: #6b7280; margin-bottom: 2px;">Total Cost to Company</p>
-            <p style="font-size: 12px; font-weight: bold; color: #2563eb;">{{ number_format($totals['total_cost'] ?? ($totals['total_gross'] + $totals['total_employer_contributions']), 2) }}</p>
+            <p style="font-size: 12px; font-weight: bold; color: #1F4E79;">{{ number_format($totals['total_cost'] ?? ($totals['total_gross'] + $totals['total_employer_contributions']), 2) }}</p>
         </div>
     </div>
 

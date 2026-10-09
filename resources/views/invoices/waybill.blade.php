@@ -28,7 +28,7 @@
         
         .waybill-header {
             padding: 30px 40px;
-            border-bottom: 3px solid #6366F1;
+            border-bottom: 3px solid #3A6798;
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
@@ -49,7 +49,7 @@
         .company-logo-placeholder {
             width: 70px;
             height: 70px;
-            background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+            background: #1F4E79;
             border-radius: 10px;
             display: flex;
             align-items: center;
@@ -79,7 +79,7 @@
         .waybill-title {
             font-size: 32px;
             font-weight: 700;
-            color: #6366F1;
+            color: #3A6798;
             letter-spacing: 2px;
             margin-bottom: 5px;
         }
@@ -99,7 +99,7 @@
             text-transform: uppercase;
             margin-top: 8px;
             background: #D1FAE5;
-            color: #059669;
+            color: #2E7D32;
         }
         
         .waybill-body {
@@ -118,12 +118,12 @@
             background: #F9FAFB;
             padding: 20px;
             border-radius: 8px;
-            border-left: 4px solid #6366F1;
+            border-left: 4px solid #3A6798;
         }
         
         .info-block h3 {
             font-size: 10px;
-            color: #6366F1;
+            color: #3A6798;
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-bottom: 10px;
@@ -146,7 +146,7 @@
         .details-strip {
             display: flex;
             justify-content: space-between;
-            background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+            background: #EEF3F8;
             padding: 15px 20px;
             border-radius: 8px;
             margin-bottom: 25px;
@@ -158,13 +158,13 @@
         }
         
         .detail-item:not(:last-child) {
-            border-right: 1px solid #C7D2FE;
+            border-right: 1px solid #B4C8DD;
         }
         
         .detail-item .label {
             display: block;
             font-size: 10px;
-            color: #6366F1;
+            color: #3A6798;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 4px;
@@ -184,7 +184,7 @@
         }
         
         .items-table thead {
-            background: #6366F1;
+            background: #3A6798;
         }
         
         .items-table th {
@@ -234,7 +234,7 @@
         
         .item-sku {
             font-size: 11px;
-            color: #6366F1;
+            color: #3A6798;
         }
         
         .summary-section {
@@ -267,7 +267,7 @@
         }
         
         .summary-row.total {
-            border-top: 2px solid #6366F1;
+            border-top: 2px solid #3A6798;
             margin-top: 15px;
             padding-top: 15px;
             margin-bottom: 0;
@@ -282,7 +282,7 @@
         .summary-row.total .value {
             font-size: 16px;
             font-weight: 700;
-            color: #6366F1;
+            color: #3A6798;
         }
         
         .notes-section {
@@ -354,7 +354,7 @@
         }
         
         .footer-contact a {
-            color: #6366F1;
+            color: #3A6798;
             text-decoration: none;
         }
         
@@ -382,12 +382,12 @@
         }
         
         .btn-primary {
-            background: #6366F1;
+            background: #3A6798;
             color: white;
         }
         
         .btn-primary:hover {
-            background: #4F46E5;
+            background: #1F4E79;
         }
         
         .btn-secondary {
@@ -430,7 +430,7 @@
             }
             
             .items-table thead {
-                background: #6366F1 !important;
+                background: #3A6798 !important;
             }
             
             .items-table th {

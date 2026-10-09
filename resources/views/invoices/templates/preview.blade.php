@@ -10,7 +10,7 @@
     <div style="padding: 30px 40px; background: {{ $s['header_bg_color'] }}; color: {{ $s['header_text_color'] }}; display: flex; justify-content: space-between; align-items: flex-start;">
         <div style="display: flex; align-items: center; gap: 15px;">
             @if($s['show_logo'])
-            <div style="width: 60px; height: 60px; background: linear-gradient(135deg, {{ $s['primary_color'] }} 0%, {{ $s['accent_color'] }} 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold;">
+            <div style="width: 60px; height: 60px; background: {{ $s['primary_color'] }}; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold;">
                 {{ strtoupper(substr($companyName, 0, 2)) }}
             </div>
             @endif
@@ -24,7 +24,7 @@
             <div style="font-size: 28px; font-weight: 700; color: {{ $s['primary_color'] }}; letter-spacing: 1px; margin-bottom: 5px;">INVOICE</div>
             <div style="font-size: 14px; color: {{ $s['secondary_color'] }}; font-weight: 600;"># INV-000123</div>
             @if($s['show_status_badge'])
-            <div style="display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-top: 8px; background: #DBEAFE; color: #1D4ED8;">Sent</div>
+            <div style="display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-top: 8px; background: #D9E4EF; color: #183E61;">Sent</div>
             @endif
         </div>
     </div>
@@ -69,7 +69,7 @@
     <div style="padding: 30px 40px; border-bottom: {{ $s['border_width'] }}px {{ $s['border_style'] }} {{ $s['primary_color'] }}; background: {{ $s['header_bg_color'] }}; display: flex; justify-content: space-between; align-items: flex-start;">
         <div style="display: flex; align-items: center; gap: 15px;">
             @if($s['show_logo'])
-            <div style="width: 70px; height: 70px; background: linear-gradient(135deg, {{ $s['primary_color'] }} 0%, {{ $s['accent_color'] }} 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 28px; font-weight: bold;">
+            <div style="width: 70px; height: 70px; background: {{ $s['primary_color'] }}; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 28px; font-weight: bold;">
                 {{ strtoupper(substr($companyName, 0, 2)) }}
             </div>
             @endif
@@ -84,7 +84,7 @@
             <div style="font-size: 32px; font-weight: 700; color: {{ $s['primary_color'] }}; letter-spacing: 1px; margin-bottom: 5px;">INVOICE</div>
             <div style="font-size: 14px; color: #4B5563; font-weight: 600;"># INV-000123</div>
             @if($s['show_status_badge'])
-            <div style="display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-top: 8px; background: #DBEAFE; color: #1D4ED8;">Sent</div>
+            <div style="display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-top: 8px; background: #D9E4EF; color: #183E61;">Sent</div>
             @endif
         </div>
     </div>

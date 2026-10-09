@@ -53,11 +53,11 @@
         </table>
 
         <!-- Summary -->
-        <div style="margin-top: 12px; padding: 8px; background-color: #f3f4f6; border-radius: 4px; border-left: 3px solid #3b82f6;">
+        <div style="margin-top: 12px; padding: 8px; background-color: #f3f4f6; border-radius: 4px; border-left: 3px solid #1F4E79;">
             <p style="font-size: 9px; color: #6b7280;">
                 <strong>Net Balance:</strong> 
                 @php $netBalance = $runningDebit - $runningCredit; @endphp
-                <span style="color: {{ $netBalance >= 0 ? '#059669' : '#dc2626' }};">
+                <span style="color: {{ $netBalance >= 0 ? '#2E7D32' : '#C62828' }};">
                     {{ number_format(abs($netBalance), 2) }} {{ $netBalance >= 0 ? 'DR' : 'CR' }}
                 </span>
             </p>

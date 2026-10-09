@@ -54,7 +54,7 @@
                     <td class="text-right">{{ number_format($bill->total, 2) }}</td>
                     <td class="text-right font-bold">{{ number_format($bill->balance_due, 2) }}</td>
                     <td>
-                        <span style="color: {{ $bill->status === 'overdue' ? '#dc2626' : '#6b7280' }};">
+                        <span style="color: {{ $bill->status === 'overdue' ? '#C62828' : '#6b7280' }};">
                             {{ ucfirst($bill->status) }}
                         </span>
                     </td>

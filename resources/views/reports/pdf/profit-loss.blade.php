@@ -8,7 +8,7 @@
     <!-- Summary -->
     <div style="text-align: center; margin-bottom: 12px; padding: 10px; background-color: {{ $netProfit >= 0 ? '#ecfdf5' : '#fef2f2' }}; border-radius: 4px; border: 1px solid {{ $netProfit >= 0 ? '#a7f3d0' : '#fecaca' }};">
         <p style="font-size: 9px; color: #6b7280; margin-bottom: 3px;">Net {{ $netProfit >= 0 ? 'Profit' : 'Loss' }}</p>
-        <p style="font-size: 18px; font-weight: bold; color: {{ $netProfit >= 0 ? '#059669' : '#dc2626' }};">
+        <p style="font-size: 18px; font-weight: bold; color: {{ $netProfit >= 0 ? '#2E7D32' : '#C62828' }};">
             {{ $netProfit >= 0 ? '' : '-' }}{{ number_format(abs($netProfit), 2) }}
         </p>
         @if($revenue > 0)
@@ -61,7 +61,7 @@
     <!-- Gross Profit -->
     <table style="margin-bottom: 10px;">
         <tbody>
-            <tr style="background-color: #dbeafe;">
+            <tr style="background-color: #D9E4EF;">
                 <td><strong>Gross Profit</strong></td>
                 <td class="text-right {{ $grossProfit >= 0 ? 'positive' : 'negative' }}">
                     <strong>{{ $grossProfit >= 0 ? '' : '-' }}{{ number_format(abs($grossProfit), 2) }}</strong>
@@ -110,7 +110,7 @@
                 <td>Less: Cost of Goods Sold</td>
                 <td class="text-right negative">({{ number_format($costOfGoodsSold, 2) }})</td>
             </tr>
-            <tr style="background-color: #dbeafe;">
+            <tr style="background-color: #D9E4EF;">
                 <td><strong>Gross Profit</strong></td>
                 <td class="text-right {{ $grossProfit >= 0 ? 'positive' : 'negative' }}"><strong>{{ $grossProfit >= 0 ? '' : '-' }}{{ number_format(abs($grossProfit), 2) }}</strong></td>
             </tr>

@@ -30,6 +30,8 @@ class ColourRules
         '#4338ca' => '#183E61', // indigo-700
         '#dbeafe' => '#D9E4EF', // blue-100
         '#e0e7ff' => '#D9E4EF', // indigo-100
+        '#bfdbfe' => '#B4C8DD', // blue-200
+        '#c7d2fe' => '#B4C8DD', // indigo-200
         '#eef2ff' => '#EEF3F8', // indigo-50
         '#eff6ff' => '#EEF3F8', // blue-50
     ];
@@ -37,7 +39,7 @@ class ColourRules
     /** Old hex colours that need a person to decide (gradients, purples). */
     public const HEX_FLAG = [
         '#667eea', '#764ba2', '#7c3aed', '#8b5cf6', '#a855f7', '#9333ea', '#6d28d9',
-        '#4c1d95', '#312e81', '#1e1b4b', '#818cf8', '#a5b4fc', '#c7d2fe', '#60a5fa',
+        '#4c1d95', '#312e81', '#1e1b4b', '#818cf8', '#a5b4fc', '#60a5fa',
         '#93c5fd', '#1e40af', '#1e3a8a', '#3730a3', '#ec4899', '#db2777', '#06b6d4',
     ];
 

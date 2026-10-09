@@ -19,7 +19,7 @@
         .header {
             margin-bottom: 15px;
             padding-bottom: 12px;
-            border-bottom: 2px solid #3b82f6;
+            border-bottom: 2px solid {{ config('brand.brand.600') }};
         }
         .header-content {
             width: 100%;
@@ -60,7 +60,7 @@
         .report-title {
             font-size: 14px;
             font-weight: bold;
-            color: #3b82f6;
+            color: {{ config('brand.brand.600') }};
             margin-bottom: 2px;
         }
         .report-date {
@@ -72,7 +72,7 @@
             padding: 8px 10px;
             margin-bottom: 12px;
             border-radius: 4px;
-            border-left: 3px solid #3b82f6;
+            border-left: 3px solid {{ config('brand.brand.600') }};
         }
         .filters p {
             font-size: 8px;
@@ -94,7 +94,7 @@
             font-size: 8px;
         }
         th {
-            background-color: #3b82f6;
+            background-color: {{ config('brand.brand.600') }};
             color: white;
             font-weight: 600;
             font-size: 8px;
@@ -114,7 +114,7 @@
             font-weight: bold;
         }
         .summary-row {
-            background-color: #dbeafe !important;
+            background-color: {{ config('brand.brand.100') }} !important;
             font-weight: 600;
         }
         .total-row {
@@ -123,10 +123,10 @@
             font-weight: bold;
         }
         .positive {
-            color: #059669;
+            color: {{ config('brand.status.success') }};
         }
         .negative {
-            color: #dc2626;
+            color: {{ config('brand.status.danger') }};
         }
         .footer {
             margin-top: 20px;
@@ -143,7 +143,7 @@
             margin: 12px 0 8px 0;
             padding: 6px 10px;
             background-color: #f3f4f6;
-            border-left: 3px solid #3b82f6;
+            border-left: 3px solid {{ config('brand.brand.600') }};
             border-radius: 0 4px 4px 0;
         }
         .summary-card {

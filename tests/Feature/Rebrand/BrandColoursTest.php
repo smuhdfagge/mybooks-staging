@@ -2,7 +2,10 @@
 
 namespace Tests\Feature\Rebrand;
 
+use App\Models\InvoiceTemplate;
+use App\Notifications\TestEmailNotification;
 use App\Support\Rebrand\ColourRules;
+use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
@@ -241,5 +244,48 @@ class BrandColoursTest extends TestCase
         $this->assertStringContainsString('badge badge-warning', $html);
         $this->assertStringContainsString('badge badge-muted', $html);   // unknown status falls back to draft
         $this->assertStringContainsString('badge badge-info', $html);
+    }
+
+    // ---- R10: documents and emails --------------------------------------------
+
+    public function test_emails_show_the_logo_and_navy_buttons(): void
+    {
+        $html = (string) (new TestEmailNotification('Kano Traders'))
+            ->toMail(new AnonymousNotifiable)
+            ->action('Open MyBooks', 'https://example.com')
+            ->render();
+
+        $this->assertStringContainsString('images/brand/mybooks-logo-email-300.png', $html);
+        $this->assertStringContainsString('#1F4E79', $html);
+        $this->assertStringNotContainsString('laravel.com/img', $html);
+    }
+
+    public function test_saved_invoice_template_colours_are_kept_and_shown_flat(): void
+    {
+        $settings = array_merge(InvoiceTemplate::getDefaultSettings(), ['primary_color' => '#AA0000', 'accent_color' => '#00AA00']);
+
+        $html = view('invoices.templates.preview', ['settings' => $settings])->render();
+
+        $this->assertStringContainsString('#AA0000', $html);
+        $this->assertStringNotContainsString('linear-gradient', $html);
+    }
+
+    public function test_new_invoice_templates_start_in_brand_colours(): void
+    {
+        $defaults = InvoiceTemplate::getDefaultSettings();
+
+        $this->assertSame('#1F4E79', $defaults['primary_color']);
+        $this->assertSame(config('brand.status.success'), $defaults['accent_color']);
+    }
+
+    public function test_report_pdfs_take_their_colours_from_brand_config(): void
+    {
+        $layout = File::get(resource_path('views/reports/pdf/layout.blade.php'));
+
+        $this->assertStringContainsString("config('brand.brand.600')", $layout);
+        $this->assertStringContainsString("config('brand.status.success')", $layout);
+        foreach (glob(resource_path('views/{reports/pdf,payroll/pdf}/*.blade.php'), GLOB_BRACE) as $file) {
+            $this->assertStringNotContainsString('linear-gradient', File::get($file), basename($file));
+        }
     }
 }
