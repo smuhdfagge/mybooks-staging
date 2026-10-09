@@ -22,16 +22,16 @@
 
     {{-- Restore banner --}}
     <div x-show="hasRestored" 
-         class="mb-4 rounded-lg bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 p-3"
+         class="mb-4 rounded-lg bg-brand-50 dark:bg-brand-900/30 border border-brand-200 dark:border-brand-800 p-3"
          x-cloak>
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-                <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
-                <span class="text-sm text-blue-700 dark:text-blue-300">Unsaved draft restored from your last session.</span>
+                <span class="text-sm text-brand-700 dark:text-brand-300">Unsaved draft restored from your last session.</span>
             </div>
-            <button type="button" @click="clearDraft(); hasRestored = false" class="text-xs text-blue-600 dark:text-blue-400 hover:underline">
+            <button type="button" @click="clearDraft(); hasRestored = false" class="text-xs text-brand-600 dark:text-brand-300 hover:underline">
                 Discard draft
             </button>
         </div>

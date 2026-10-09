@@ -2,12 +2,9 @@
 # Each rebrand session takes its files off this list when they are done.
 # The guard test (BrandColoursTest) fails if a file not listed here uses an
 # old colour, or if a listed file no longer does.
-app/Console/Commands/GeneratePwaIcons.php
 app/Livewire/Settings/InvoiceTemplateEditor.php
 app/Models/Export.php
 app/Models/InvoiceTemplate.php
-public/favicon.svg
-public/manifest.json
 public/offline.html
 resources/views/accounting-periods/create.blade.php
 resources/views/accounting-periods/edit.blade.php
@@ -29,7 +26,6 @@ resources/views/admin/tenants/show.blade.php
 resources/views/admin/users/create.blade.php
 resources/views/admin/users/edit.blade.php
 resources/views/admin/users/index.blade.php
-resources/views/analytics/index.blade.php
 resources/views/auth/login.blade.php
 resources/views/auth/two-factor/challenge.blade.php
 resources/views/auth/two-factor/setup.blade.php
@@ -59,25 +55,6 @@ resources/views/chart-of-accounts/create.blade.php
 resources/views/chart-of-accounts/edit.blade.php
 resources/views/chart-of-accounts/index.blade.php
 resources/views/chart-of-accounts/show.blade.php
-resources/views/components/admin-sidebar.blade.php
-resources/views/components/breadcrumbs.blade.php
-resources/views/components/bulk-actions.blade.php
-resources/views/components/customer-picker.blade.php
-resources/views/components/form-auto-save.blade.php
-resources/views/components/header.blade.php
-resources/views/components/layouts/admin.blade.php
-resources/views/components/nav-link.blade.php
-resources/views/components/pwa-install-prompt.blade.php
-resources/views/components/responsive-nav-link.blade.php
-resources/views/components/sales-lines.blade.php
-resources/views/components/searchable-select.blade.php
-resources/views/components/secondary-button.blade.php
-resources/views/components/sidebar.blade.php
-resources/views/components/sort-header.blade.php
-resources/views/components/status-badge.blade.php
-resources/views/components/table-loading.blade.php
-resources/views/components/text-input.blade.php
-resources/views/components/toast.blade.php
 resources/views/credit-notes/_form.blade.php
 resources/views/credit-notes/create.blade.php
 resources/views/credit-notes/edit.blade.php
@@ -87,7 +64,6 @@ resources/views/customers/create.blade.php
 resources/views/customers/edit.blade.php
 resources/views/customers/index.blade.php
 resources/views/customers/show.blade.php
-resources/views/dashboard.blade.php
 resources/views/delivery-notes/choose-order.blade.php
 resources/views/delivery-notes/create.blade.php
 resources/views/delivery-notes/show.blade.php
@@ -172,7 +148,6 @@ resources/views/journals/create.blade.php
 resources/views/journals/edit.blade.php
 resources/views/journals/index.blade.php
 resources/views/journals/show.blade.php
-resources/views/layouts/app.blade.php
 resources/views/layouts/guest.blade.php
 resources/views/leave-types/_form.blade.php
 resources/views/leave-types/create.blade.php

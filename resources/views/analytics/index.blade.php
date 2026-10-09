@@ -5,7 +5,7 @@
                 {{ __('Sales Analytics Dashboard') }}
             </h2>
             <div class="mt-2 sm:mt-0">
-                <a href="{{ route('dashboard') }}" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                <a href="{{ route('dashboard') }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">
                     ← Back to Dashboard
                 </a>
             </div>
@@ -18,7 +18,7 @@
             <form method="GET" action="{{ route('analytics.index') }}" class="flex flex-wrap items-center gap-4">
                 <div class="flex items-center space-x-2">
                     <label for="period" class="text-sm font-medium text-gray-700 dark:text-gray-300">Period:</label>
-                    <select name="period" id="period" @change="$el.form.submit()" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                    <select name="period" id="period" @change="$el.form.submit()" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
                         <option value="today" {{ $period === 'today' ? 'selected' : '' }}>Today</option>
                         <option value="yesterday" {{ $period === 'yesterday' ? 'selected' : '' }}>Yesterday</option>
                         <option value="this_week" {{ $period === 'this_week' ? 'selected' : '' }}>This Week</option>
@@ -37,7 +37,7 @@
                     <input type="date" name="start_date" value="{{ $startDate }}" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm text-sm">
                     <span class="text-gray-500">to</span>
                     <input type="date" name="end_date" value="{{ $endDate }}" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm text-sm">
-                    <button type="submit" class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">Apply</button>
+                    <button type="submit" class="px-3 py-1.5 bg-brand-600 text-white text-sm rounded-md hover:bg-brand-700">Apply</button>
                 </div>
 
                 <div class="text-sm text-gray-500 dark:text-gray-400">
@@ -63,8 +63,8 @@
                             {{ number_format($kpis['revenue']['current'], 2) }}
                         </p>
                     </div>
-                    <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900">
-                        <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="p-3 rounded-full bg-brand-100 dark:bg-brand-900">
+                        <svg class="w-6 h-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
@@ -133,8 +133,8 @@
                             {{ number_format($kpis['avg_order_value']['current'], 2) }}
                         </p>
                     </div>
-                    <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900">
-                        <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="p-3 rounded-full bg-accent-100 dark:bg-accent-900/50">
+                        <svg class="w-6 h-6 text-accent-700 dark:text-accent-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                         </svg>
                     </div>
@@ -246,16 +246,16 @@
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Customer Metrics</h3>
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                <div class="text-center p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
-                    <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ $customerRetention['active_customers'] }}</p>
+                <div class="text-center p-4 bg-brand-50 dark:bg-brand-900/30 rounded-lg">
+                    <p class="text-2xl font-bold text-brand-600 dark:text-brand-300">{{ $customerRetention['active_customers'] }}</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">Active Customers</p>
                 </div>
                 <div class="text-center p-4 bg-green-50 dark:bg-green-900/30 rounded-lg">
                     <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ $customerRetention['repeat_customers'] }}</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">Repeat Customers</p>
                 </div>
-                <div class="text-center p-4 bg-purple-50 dark:bg-purple-900/30 rounded-lg">
-                    <p class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ $customerRetention['repeat_rate'] }}%</p>
+                <div class="text-center p-4 bg-accent-50 dark:bg-accent-900/30 rounded-lg">
+                    <p class="text-2xl font-bold text-accent-700 dark:text-accent-300">{{ $customerRetention['repeat_rate'] }}%</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">Repeat Rate</p>
                 </div>
                 <div class="text-center p-4 bg-orange-50 dark:bg-orange-900/30 rounded-lg">
@@ -325,7 +325,7 @@
                             @forelse($salesByCustomer as $customer)
                                 <tr>
                                     <td class="px-3 py-2 text-sm text-gray-900 dark:text-gray-200">
-                                        <a href="{{ route('customers.show', $customer['id']) }}" class="hover:text-blue-600 dark:hover:text-blue-400">
+                                        <a href="{{ route('customers.show', $customer['id']) }}" class="hover:text-brand-600 dark:hover:text-brand-300">
                                             {{ $customer['name'] }}
                                         </a>
                                         @if($customer['company'])
@@ -371,7 +371,7 @@
                         @foreach($overdueAnalysis as $invoice)
                             <tr>
                                 <td class="px-3 py-2 text-sm">
-                                    <a href="{{ route('invoices.show', $invoice['id']) }}" class="text-blue-600 dark:text-blue-400 hover:underline">
+                                    <a href="{{ route('invoices.show', $invoice['id']) }}" class="text-brand-600 dark:text-brand-300 hover:underline">
                                         {{ $invoice['invoice_number'] }}
                                     </a>
                                 </td>
@@ -387,7 +387,7 @@
                                     </span>
                                 </td>
                                 <td class="px-3 py-2 text-center">
-                                    <a href="{{ route('payments-received.create', ['invoice_id' => $invoice['id']]) }}" class="text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                                    <a href="{{ route('payments-received.create', ['invoice_id' => $invoice['id']]) }}" class="text-xs text-brand-600 dark:text-brand-300 hover:underline">
                                         Record Payment
                                     </a>
                                 </td>
@@ -413,6 +413,9 @@
                     });
                 },
 
+                // Chart colours from config/brand.php (rebrand R2).
+                brandChart: @js(config('brand.chart')),
+
                 initRevenueTrendChart() {
                     const ctx = document.getElementById('revenueTrendChart').getContext('2d');
                     const data = @json($revenueTrends);
@@ -425,16 +428,16 @@
                                 {
                                     label: 'Revenue',
                                     data: data.revenue,
-                                    borderColor: 'rgb(59, 130, 246)',
-                                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                    borderColor: this.brandChart.series[0],
+                                    backgroundColor: this.brandChart.series[0] + '1A',
                                     fill: true,
                                     tension: 0.4,
                                 },
                                 {
                                     label: 'Payments',
                                     data: data.payments,
-                                    borderColor: 'rgb(34, 197, 94)',
-                                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                                    borderColor: this.brandChart.income,
+                                    backgroundColor: this.brandChart.income + '1A',
                                     fill: true,
                                     tension: 0.4,
                                 }
@@ -466,15 +469,7 @@
                     const ctx = document.getElementById('invoiceStatusChart').getContext('2d');
                     const data = @json($invoiceStatusDistribution);
                     
-                    const colors = {
-                        'draft': '#9CA3AF',
-                        'sent': '#60A5FA',
-                        'unpaid': '#FBBF24',
-                        'partial': '#F97316',
-                        'paid': '#34D399',
-                        'overdue': '#EF4444',
-                        'cancelled': '#6B7280'
-                    };
+                    const colors = this.brandChart.invoice_status;
 
                     new Chart(ctx, {
                         type: 'doughnut',
@@ -501,10 +496,7 @@
                     const ctx = document.getElementById('paymentMethodChart').getContext('2d');
                     const data = @json($paymentMethodDistribution);
                     
-                    const colors = [
-                        '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', 
-                        '#EC4899', '#06B6D4', '#84CC16'
-                    ];
+                    const colors = this.brandChart.series;
 
                     new Chart(ctx, {
                         type: 'pie',
@@ -512,7 +504,7 @@
                             labels: data.map(d => d.method),
                             datasets: [{
                                 data: data.map(d => d.total),
-                                backgroundColor: colors.slice(0, data.length),
+                                backgroundColor: data.map((d, i) => colors[i % colors.length]),
                             }]
                         },
                         options: {

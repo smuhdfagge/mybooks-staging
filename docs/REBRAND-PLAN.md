@@ -72,7 +72,7 @@ gradient becomes flat navy.
 |---|---|---|---|---|
 | R0 | Logo choice | | Done | Option A "Ledger total". Files in MyBooks-Logo-OptionA.zip |
 | R1 | Foundations | `rebrand/r1-foundations` | Done, PR #43 | Colours, config/brand.php, shared styles, font, `rebrand:colours`, guard test with 362 files to do. Nothing on screen changes yet except buttons and form fields that already used the shared styles. |
-| R2 | Logo, icons, app frame, dashboard | `rebrand/r2-frame` | To do | Logo files go in public/. Fix manifest (5 icon sizes and 2 screenshots it lists don't exist). Service worker cache v3 to v4. Status badge: yellow to amber. Split point: dashboard and analytics can move to R8. |
+| R2 | Logo, icons, app frame, dashboard | `rebrand/r2-frame` | Done, PR #44 | New logo, favicon and phone icons in public/ (logo SVGs in public/images/brand). One shared icon block (partials/pwa-head). Manifest: navy, maskable icons, removed the two screenshots that never existed. Service worker cache v4. Old icon command and Breeze navigation removed. Sidebar navy with `nav-active`; admin sidebar marked "Admin". Status badge uses `badge-*`. Dashboard tiles coloured by meaning, quick actions all navy. Charts read `config('brand.chart')`. For later sessions: use `<x-brand-mark>` for the logo and `badge-*` for status pills. 337 files left on the to-do list. |
 | R3 | Sales | `rebrand/r3-sales` | To do | Split point: after invoices, quotations, sales orders |
 | R4 | Purchases and expenses | `rebrand/r4-purchases` | To do | Split point: after bills, vendors, purchase orders |
 | R5 | Banking, accounting and tax | `rebrand/r5-banking` | To do | Largest. Split point: after banks, bank feeds, journals, chart of accounts |
@@ -81,5 +81,5 @@ gradient becomes flat navy.
 | R8 | Report screens | `rebrand/r8-reports` | To do | Screens only; PDFs are R10. Split point: after index and main statements |
 | R9 | Settings, admin, system pages | `rebrand/r9-settings` | To do | Split point: after settings |
 | R10 | PDFs, print views, emails | `rebrand/r10-documents` | To do | Invoice template presets: new defaults only. Split point: after report PDFs |
-| R11 | Public and sign-in pages | `rebrand/r11-public` | To do | Also offline page, API docs. Remove the Bunny font links and its CSP entries once no page uses them. Split point: after sign-in pages |
+| R11 | Public and sign-in pages | `rebrand/r11-public` | To do | Also offline page, API docs. Remove the Bunny font links and its CSP entries once no page uses them. Public pages can use `<x-brand-mark>`. Split point: after sign-in pages |
 | R12 | Final check and go-live | | To do | To-do list must be empty |

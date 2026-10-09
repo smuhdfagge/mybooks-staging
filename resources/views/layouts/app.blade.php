@@ -7,29 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="currency-symbol" content="@currencySymbol">
     
-    <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="{{ config('brand.theme_color') }}">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="MyBooks">
-    <link rel="manifest" href="/manifest.json">
-    
-    <!-- iOS Touch Icons (multiple sizes for different devices) -->
-    <link rel="apple-touch-icon" href="/icons/icon-180x180.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png">
-    <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144x144.png">
-    <link rel="apple-touch-icon" sizes="120x120" href="/icons/icon-120x120.png">
-    <link rel="apple-touch-icon" sizes="114x114" href="/icons/icon-114x114.png">
-    <link rel="apple-touch-icon" sizes="76x76" href="/icons/icon-76x76.png">
-    <link rel="apple-touch-icon" sizes="72x72" href="/icons/icon-72x72.png">
-    <link rel="apple-touch-icon" sizes="60x60" href="/icons/icon-60x60.png">
-    <link rel="apple-touch-icon" sizes="57x57" href="/icons/icon-57x57.png">
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    @include('partials.pwa-head')
 
     <title>{{ $title ?? config('app.name', 'MyBooks') }}</title>
 
@@ -145,7 +123,7 @@
 </head>
 <body class="h-full font-sans antialiased bg-gray-50 dark:bg-gray-900" x-data="{ sidebarOpen: false }">
     {{-- Skip to main content (accessibility) --}}
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:rounded-md focus:shadow-lg focus:outline-none">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-brand-600 focus:text-white focus:rounded-md focus:shadow-lg focus:outline-none">
         Skip to main content
     </a>
 
