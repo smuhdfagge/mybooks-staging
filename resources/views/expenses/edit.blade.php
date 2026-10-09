@@ -83,7 +83,7 @@
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400">@currencySymbol</span>
                                     <input type="number" name="amount" id="amount" value="{{ old('amount', $expense->amount) }}" min="0.01" step="0.01" required
-                                        class="w-full pl-8 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('amount') border-red-500 @enderror" @error('amount') aria-invalid="true" aria-describedby="amount-error" @enderror>
+                                        class="w-full pl-8 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 @error('amount') border-red-500 @enderror" @error('amount') aria-invalid="true" aria-describedby="amount-error" @enderror>
                                 </div>
                                 @error('amount')
                                     <p id="amount-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
@@ -112,8 +112,8 @@
                                         class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
                                         <template x-for="(item, index) in filteredItems" :key="item.id">
                                             <div @click="selectItem(item)"
-                                                :class="{'bg-indigo-50 dark:bg-indigo-900': index === highlightedIndex}"
-                                                class="px-3 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900 text-gray-900 dark:text-gray-100"
+                                                :class="{'bg-brand-50 dark:bg-brand-900': index === highlightedIndex}"
+                                                class="px-3 py-2 cursor-pointer hover:bg-brand-50 dark:hover:bg-brand-900 text-gray-900 dark:text-gray-100"
                                                 x-text="item.name"></div>
                                         </template>
                                         <div x-show="filteredItems.length === 0" class="px-3 py-2 text-gray-500 dark:text-gray-400">No results found</div>
@@ -161,7 +161,7 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Options</label>
                                 <label class="inline-flex items-center">
                                     <input type="checkbox" name="is_billable" value="1" {{ old('is_billable', $expense->is_billable) ? 'checked' : '' }}
-                                        class="rounded border-gray-300 dark:border-gray-600 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                        class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:text-brand-300">
                                     <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Billable to Customer</span>
                                 </label>
                             </div>
@@ -186,7 +186,7 @@
                         <a href="{{ route('expenses.show', $expense) }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-600 transition">
                             Cancel
                         </a>
-                        <button type="submit" class="inline-flex items-center px-6 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <button type="submit" class="inline-flex items-center px-6 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>

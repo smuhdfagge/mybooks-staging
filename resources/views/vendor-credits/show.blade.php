@@ -7,9 +7,9 @@
                     @include('vendor-credits._status', ['status' => $credit->status])
                 </h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400">
-                    <a href="{{ route('vendors.show', $credit->vendor) }}" class="text-indigo-600 dark:text-indigo-400">{{ $credit->vendor->name }}</a>
+                    <a href="{{ route('vendors.show', $credit->vendor) }}" class="text-brand-600 dark:text-brand-300">{{ $credit->vendor->name }}</a>
                     · {{ $credit->credit_date->format('d M Y') }}
-                    @if($credit->bill) · for bill <a href="{{ route('bills.show', $credit->bill) }}" class="text-indigo-600 dark:text-indigo-400">{{ $credit->bill->bill_number }}</a>@endif
+                    @if($credit->bill) · for bill <a href="{{ route('bills.show', $credit->bill) }}" class="text-brand-600 dark:text-brand-300">{{ $credit->bill->bill_number }}</a>@endif
                     @if($credit->vendor_reference) · supplier's ref {{ $credit->vendor_reference }}@endif
                 </p>
             </div>
@@ -54,7 +54,7 @@
                 </x-card>
                 <x-card class="p-4">
                     <p class="text-sm text-gray-500 dark:text-gray-400">Left to use</p>
-                    <p class="text-2xl font-semibold text-indigo-600 dark:text-indigo-400">@money($credit->balance)</p>
+                    <p class="text-2xl font-semibold text-brand-600 dark:text-brand-300">@money($credit->balance)</p>
                 </x-card>
             </div>
 
@@ -157,7 +157,7 @@
                     <ul class="divide-y divide-gray-200 dark:divide-gray-700 p-6 pt-3 text-sm text-gray-900 dark:text-gray-100">
                         @foreach($credit->applications as $application)
                             <li class="py-2 flex justify-between gap-3">
-                                <span>{{ $application->applied_date->format('d M Y') }} · used against bill <a href="{{ route('bills.show', $application->bill) }}" class="text-indigo-600 dark:text-indigo-400">{{ $application->bill->bill_number }}</a></span>
+                                <span>{{ $application->applied_date->format('d M Y') }} · used against bill <a href="{{ route('bills.show', $application->bill) }}" class="text-brand-600 dark:text-brand-300">{{ $application->bill->bill_number }}</a></span>
                                 <span class="font-medium">@money($application->amount)</span>
                             </li>
                         @endforeach

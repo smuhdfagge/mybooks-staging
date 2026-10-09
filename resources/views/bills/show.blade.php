@@ -34,7 +34,7 @@
                             @elseif($bill->status === 'partial') bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
                             @elseif($bill->status === 'overdue') bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
                             @elseif($bill->status === 'draft') bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200
-                            @else bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200
+                            @else bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200
                             @endif">
                             {{ ucfirst($bill->status) }}
                         </span>
@@ -43,13 +43,13 @@
                         @if($bill->status === 'paid') bg-green-100 dark:bg-green-900
                         @elseif($bill->status === 'partial') bg-yellow-100 dark:bg-yellow-900
                         @elseif($bill->status === 'overdue') bg-red-100 dark:bg-red-900
-                        @else bg-blue-100 dark:bg-blue-900
+                        @else bg-brand-100 dark:bg-brand-900
                         @endif">
                         <svg class="w-6 h-6 
                             @if($bill->status === 'paid') text-green-600 dark:text-green-400
                             @elseif($bill->status === 'partial') text-yellow-600 dark:text-yellow-400
                             @elseif($bill->status === 'overdue') text-red-600 dark:text-red-400
-                            @else text-blue-600 dark:text-blue-400
+                            @else text-brand-600 dark:text-brand-300
                             @endif" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
@@ -62,8 +62,8 @@
                         <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Amount</p>
                         <p class="text-xl font-bold text-gray-900 dark:text-white">{{ number_format($bill->total, 2) }}</p>
                     </div>
-                    <div class="p-3 rounded-full bg-indigo-100 dark:bg-indigo-900">
-                        <svg class="w-6 h-6 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="p-3 rounded-full bg-brand-100 dark:bg-brand-900">
+                        <svg class="w-6 h-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                     </div>
@@ -102,7 +102,7 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 mr-2 text-brand-500 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
                             Bill Information
@@ -145,7 +145,7 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 mr-2 text-brand-500 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                             </svg>
                             Vendor Information
@@ -154,7 +154,7 @@
                             <div class="flex justify-between">
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Name</dt>
                                 <dd class="text-sm text-gray-900 dark:text-gray-100">
-                                    <a href="{{ route('vendors.show', $bill->vendor) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">
+                                    <a href="{{ route('vendors.show', $bill->vendor) }}" class="text-brand-600 dark:text-brand-300 hover:underline">
                                         {{ $bill->vendor->name }}
                                     </a>
                                 </dd>
@@ -238,7 +238,7 @@
                                 @endif
                                 <tr class="border-t-2 border-gray-300 dark:border-gray-600">
                                     <td colspan="4" class="px-4 py-3 text-right text-lg font-bold text-gray-900 dark:text-gray-100">Total</td>
-                                    <td class="px-4 py-3 text-right text-lg font-bold text-indigo-600 dark:text-indigo-400">{{ number_format($bill->total, 2) }}</td>
+                                    <td class="px-4 py-3 text-right text-lg font-bold text-brand-600 dark:text-brand-300">{{ number_format($bill->total, 2) }}</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -251,7 +251,7 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 mr-2 text-brand-500 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
                         </svg>
                         Payments Made
@@ -327,12 +327,12 @@
                     <div class="flex flex-wrap items-center justify-between gap-2">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Supplier credits</h3>
                         @can('create bills')
-                            <a href="{{ route('vendor-credits.create', ['bill_id' => $bill->id]) }}" class="text-sm text-indigo-600 dark:text-indigo-400">Return goods or record a credit note</a>
+                            <a href="{{ route('vendor-credits.create', ['bill_id' => $bill->id]) }}" class="text-sm text-brand-600 dark:text-brand-300">Return goods or record a credit note</a>
                         @endcan
                     </div>
                     @forelse($bill->vendorCreditApplications as $application)
                         <p class="text-sm text-gray-700 dark:text-gray-300 flex justify-between gap-3">
-                            <span>{{ $application->applied_date->format('d M Y') }} · credit <a href="{{ route('vendor-credits.show', $application->vendorCredit) }}" class="text-indigo-600 dark:text-indigo-400">{{ $application->vendorCredit->vendor_credit_number }}</a> used</span>
+                            <span>{{ $application->applied_date->format('d M Y') }} · credit <a href="{{ route('vendor-credits.show', $application->vendorCredit) }}" class="text-brand-600 dark:text-brand-300">{{ $application->vendorCredit->vendor_credit_number }}</a> used</span>
                             <span class="font-medium">@money($application->amount)</span>
                         </p>
                     @empty
@@ -386,7 +386,7 @@
                                     <span class="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>
                                     <div class="relative flex space-x-3">
                                         <div>
-                                            <span class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
+                                            <span class="h-8 w-8 rounded-full bg-brand-500 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
                                                 <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                                 </svg>
@@ -415,7 +415,7 @@
                                     @endif
                                     <div class="relative flex space-x-3">
                                         <div>
-                                            <span class="h-8 w-8 rounded-full bg-emerald-500 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
+                                            <span class="h-8 w-8 rounded-full bg-green-600 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
                                                 <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                                 </svg>
@@ -450,7 +450,7 @@
                                 <div class="relative pb-8">
                                     <div class="relative flex space-x-3">
                                         <div>
-                                            <span class="h-8 w-8 rounded-full bg-purple-500 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
+                                            <span class="h-8 w-8 rounded-full bg-gray-500 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
                                                 <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                                                 </svg>
@@ -486,7 +486,7 @@
                             </svg>
                             Journal Entry
                         </span>
-                        <a href="{{ route('journals.show', $bill->journal) }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+                        <a href="{{ route('journals.show', $bill->journal) }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">
                             {{ $bill->journal->journal_number }}
                         </a>
                     </h3>

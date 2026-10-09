@@ -5,7 +5,7 @@
                 <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">New Supplier Credit</h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400">For goods you sent back, or a credit note from the supplier.</p>
             </div>
-            <a href="{{ $bill ? route('bills.show', $bill) : route('vendor-credits.index') }}" class="text-sm text-indigo-600 dark:text-indigo-400">Back</a>
+            <a href="{{ $bill ? route('bills.show', $bill) : route('vendor-credits.index') }}" class="text-sm text-brand-600 dark:text-brand-300">Back</a>
         </div>
     </x-slot>
 
@@ -23,7 +23,7 @@
                 @if($bill)
                     <input type="hidden" name="bill_id" value="{{ $bill->id }}">
                     <input type="hidden" name="vendor_id" value="{{ $bill->vendor_id }}">
-                    <div class="rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 p-4 text-sm text-indigo-800 dark:text-indigo-200">
+                    <div class="rounded-lg border border-brand-200 dark:border-brand-800 bg-brand-50 dark:bg-brand-900/20 p-4 text-sm text-brand-800 dark:text-brand-200">
                         Returning goods from bill <a href="{{ route('bills.show', $bill) }}" class="font-semibold underline">{{ $bill->bill_number }}</a> ({{ $bill->vendor->name }}).
                         Put the quantity you are sending back on each line, and leave the rest at 0.
                     </div>
@@ -115,7 +115,7 @@
                         </tbody>
                     </table>
                     <div class="flex flex-col sm:flex-row sm:justify-between gap-3 mt-4">
-                        <button type="button" @click="lines.push({item_id: '', account_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0})" class="text-sm text-indigo-600 dark:text-indigo-400 text-left">+ Add a line</button>
+                        <button type="button" @click="lines.push({item_id: '', account_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0})" class="text-sm text-brand-600 dark:text-brand-300 text-left">+ Add a line</button>
                         <dl class="text-sm text-gray-700 dark:text-gray-300 sm:text-right space-y-1">
                             <div>Before VAT: <span class="font-medium" x-text="money(subtotal())"></span></div>
                             <div>VAT: <span class="font-medium" x-text="money(vat())"></span></div>

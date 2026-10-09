@@ -78,8 +78,8 @@
                                     <div 
                                         @click="selectItem(item)"
                                         @mouseenter="highlightedIndex = index"
-                                        :class="{ 'bg-indigo-600 text-white': highlightedIndex === index, 'text-gray-900 dark:text-gray-100': highlightedIndex !== index }"
-                                        class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-600 hover:text-white">
+                                        :class="{ 'bg-brand-600 text-white': highlightedIndex === index, 'text-gray-900 dark:text-gray-100': highlightedIndex !== index }"
+                                        class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-brand-600 hover:text-white">
                                         <span x-text="item.name" class="block truncate"></span>
                                         <span x-show="selectedId == item.id" class="absolute inset-y-0 right-0 flex items-center pr-4">
                                             <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -211,7 +211,7 @@
                     </div>
 
                     <div class="mt-6 flex justify-end gap-3">
-                        <a href="{{ route('payments-made.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <a href="{{ route('payments-made.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             Cancel
                         </a>
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">

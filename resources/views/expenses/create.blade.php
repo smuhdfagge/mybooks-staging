@@ -104,8 +104,8 @@
                                         <div 
                                             @click="selectItem(item)"
                                             @mouseenter="highlightedIndex = index"
-                                            :class="{ 'bg-indigo-600 text-white': highlightedIndex === index, 'text-gray-900 dark:text-gray-100': highlightedIndex !== index }"
-                                            class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-600 hover:text-white">
+                                            :class="{ 'bg-brand-600 text-white': highlightedIndex === index, 'text-gray-900 dark:text-gray-100': highlightedIndex !== index }"
+                                            class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-brand-600 hover:text-white">
                                             <span x-text="item.name" class="block truncate"></span>
                                             <span x-show="selectedId == item.id" class="absolute inset-y-0 right-0 flex items-center pr-4">
                                                 <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -160,7 +160,7 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Options</label>
                                 <label class="inline-flex items-center">
                                     <input type="checkbox" name="is_billable" value="1" {{ old('is_billable') ? 'checked' : '' }}
-                                        class="rounded border-gray-300 dark:border-gray-600 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                        class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:text-brand-300">
                                     <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Billable to Customer</span>
                                 </label>
                             </div>
@@ -185,7 +185,7 @@
                         <a href="{{ route('expenses.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-600 transition">
                             Cancel
                         </a>
-                        <button type="submit" class="inline-flex items-center px-6 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <button type="submit" class="inline-flex items-center px-6 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>

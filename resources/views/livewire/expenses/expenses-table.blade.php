@@ -11,7 +11,7 @@
                     <div class="flex flex-col sm:flex-row gap-4">
                         <div class="relative">
                             <input aria-label="Search expenses" type="text" wire:model.live.debounce.300ms="search" placeholder="Search expenses..."
-                                class="w-full sm:w-80 pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                                class="w-full sm:w-80 pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 focus:border-brand-500 focus:ring-brand-500">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -19,7 +19,7 @@
                             </div>
                         </div>
                         <!-- Status Filter -->
-                        <select aria-label="Status filter" wire:model.live="statusFilter" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <select aria-label="Status filter" wire:model.live="statusFilter" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-brand-500 focus:ring-brand-500">
                             <option value="">All Statuses</option>
                             @foreach($statuses as $value => $label)
                                 <option value="{{ $value }}">{{ $label }}</option>
@@ -29,7 +29,7 @@
                     <div class="flex items-center gap-4">
                         <!-- Bulk Actions -->
                         <div class="flex items-center gap-2">
-                            <select aria-label="Bulk action" wire:model="bulkAction" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <select aria-label="Bulk action" wire:model="bulkAction" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-brand-500 focus:ring-brand-500">
                                 <option value="">Bulk Actions</option>
                                 @foreach($bulkActions as $value => $label)
                                     <option value="{{ $value }}">{{ $label }}</option>
@@ -43,7 +43,7 @@
                             @endif
                         </div>
                         <label for="perPage" class="text-sm text-gray-600 dark:text-gray-400">Show:</label>
-                        <select id="perPage" wire:model.live="perPage" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <select id="perPage" wire:model.live="perPage" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-brand-500 focus:ring-brand-500">
                             <option value="10">10</option>
                             <option value="25">25</option>
                             <option value="50">50</option>
@@ -58,7 +58,7 @@
                             <tr>
                                 <th scope="col" class="px-4 py-3 text-left">
                                     <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
-                                        class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
+                                        class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
                                 </th>
                                 <x-sort-header field="expense_date" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Date</x-sort-header>
                                 <x-sort-header field="expense_number" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Number</x-sort-header>
@@ -74,13 +74,13 @@
                                 <tr wire:key="expense-{{ $expense->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                     <td class="px-4 py-4">
                                         <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $expense->id }}"
-                                            class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
+                                            class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                         {{ $expense->expense_date->format('M d, Y') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <a href="{{ route('expenses.show', $expense) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 font-medium">
+                                        <a href="{{ route('expenses.show', $expense) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300 font-medium">
                                             {{ $expense->expense_number }}
                                         </a>
                                     </td>
@@ -89,7 +89,7 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                                         @if($expense->vendor)
-                                            <a href="{{ route('vendors.show', $expense->vendor) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900">
+                                            <a href="{{ route('vendors.show', $expense->vendor) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900">
                                                 {{ $expense->vendor->name }}
                                             </a>
                                         @else
@@ -101,7 +101,7 @@
                                             $statusColors = [
                                                 'draft' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
                                                 'pending_approval' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400',
-                                                'approved' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400',
+                                                'approved' => 'bg-brand-100 text-brand-800 dark:bg-brand-900/50 dark:text-brand-300',
                                                 'rejected' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400',
                                                 'paid' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400',
                                             ];
@@ -125,7 +125,7 @@
                                             
                                             <!-- Edit (only for draft/rejected) -->
                                             @if($expense->canBeEdited())
-                                                <a href="{{ route('expenses.edit', $expense) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300" title="Edit" aria-label="Edit">
+                                                <a href="{{ route('expenses.edit', $expense) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300" title="Edit" aria-label="Edit">
                                                     <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                                     </svg>
@@ -134,7 +134,7 @@
 
                                             <!-- Submit for Approval (only for draft/rejected) -->
                                             @if($expense->canBeSubmitted())
-                                                <button wire:click="submitForApproval({{ $expense->id }})" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300" title="Submit for Approval" aria-label="Submit for Approval">
+                                                <button wire:click="submitForApproval({{ $expense->id }})" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300" title="Submit for Approval" aria-label="Submit for Approval">
                                                     <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                                     </svg>
@@ -191,7 +191,7 @@
                                             </svg>
                                             <p class="text-gray-500 dark:text-gray-400 text-lg font-medium">No expenses found</p>
                                             <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Get started by recording your first expense.</p>
-                                            <a href="{{ route('expenses.create') }}" class="mt-4 inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                            <a href="{{ route('expenses.create') }}" class="mt-4 inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                                                 Record Expense
                                             </a>
                                         </div>
@@ -245,7 +245,7 @@
                     <button wire:click="deleteExpense" wire:loading.attr="disabled" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:w-auto sm:text-sm">
                         Delete
                     </button>
-                    <button wire:click="cancelDelete" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm">
+                    <button wire:click="cancelDelete" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 sm:mt-0 sm:w-auto sm:text-sm">
                         Cancel
                     </button>
                 </div>
@@ -294,7 +294,7 @@
                     <button wire:click="rejectExpense" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:w-auto sm:text-sm">
                         Reject Expense
                     </button>
-                    <button wire:click="closeRejectModal" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm">
+                    <button wire:click="closeRejectModal" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 sm:mt-0 sm:w-auto sm:text-sm">
                         Cancel
                     </button>
                 </div>
