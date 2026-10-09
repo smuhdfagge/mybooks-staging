@@ -53,6 +53,13 @@ Schedule::command('bankfeeds:sync')
     ->withoutOverlapping()
     ->onOneServer();
 
+// NRS e-invoicing: ask about documents left pending, send failed ones again
+// and warn about B2C invoices near the 24-hour limit (session 18)
+Schedule::command('einvoice:retry')
+    ->hourly()
+    ->withoutOverlapping()
+    ->onOneServer();
+
 // Send bill reminders daily at 8:00 AM
 Schedule::command('notifications:send-bill-reminders')
     ->dailyAt('08:00')

@@ -6,6 +6,7 @@ use App\Enums\InvoiceStatus;
 use App\Events\InvoiceDeleting;
 use App\Events\InvoiceSaved;
 use App\Exceptions\BusinessRuleException;
+use App\Services\EInvoicing\AutoSubmit;
 use App\Services\JournalService;
 use App\Support\DocumentNumber;
 use App\Traits\BelongsToTenant;
@@ -19,8 +20,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Validation\ValidationException;
 
 class Invoice extends Model
 {
@@ -119,6 +122,12 @@ class Invoice extends Model
         return $this->hasMany(DeliveryNote::class);
     }
 
+    /** @return HasOne<EInvoiceSubmission, $this> */
+    public function eInvoice(): HasOne
+    {
+        return $this->hasOne(EInvoiceSubmission::class);
+    }
+
     /** @return BelongsTo<User, $this> */
     public function createdBy(): BelongsTo
     {
@@ -146,11 +155,27 @@ class Invoice extends Model
         static::saved(function ($invoice) {
             if ($invoice->total > 0 && $invoice->status !== 'draft') {
                 InvoiceSaved::dispatch($invoice);
+                // Queued for NRS only if the business chose automatic e-invoicing,
+                // after the journal is posted; never blocks posting (session 18).
+                app(AutoSubmit::class)->invoice($invoice);
             }
         });
 
         static::deleting(function ($invoice) {
             InvoiceDeleting::dispatch($invoice);
+        });
+
+        // NRS has accepted this invoice: its customer, date and money are fixed, and it
+        // can't be cancelled. A credit note is how it is corrected (session 18).
+        static::saving(function ($invoice) {
+            if (! $invoice->exists) {
+                return;
+            }
+            $changesMoney = $invoice->isDirty(['customer_id', 'invoice_date', 'subtotal', 'tax_amount', 'discount_amount', 'total'])
+                || ($invoice->isDirty('status') && $invoice->status === 'cancelled');
+            if ($changesMoney && EInvoiceSubmission::isLocked($invoice)) {
+                throw ValidationException::withMessages(['invoice' => EInvoiceSubmission::lockedMessage($invoice)]);
+            }
         });
     }
 

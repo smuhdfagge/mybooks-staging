@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Validation\ValidationException;
@@ -109,6 +110,12 @@ class CreditNote extends Model
     public function journals(): MorphMany
     {
         return $this->morphMany(Journal::class, 'reference');
+    }
+
+    /** @return HasOne<EInvoiceSubmission, $this> */
+    public function eInvoice(): HasOne
+    {
+        return $this->hasOne(EInvoiceSubmission::class);
     }
 
     /** @return BelongsTo<User, $this> */

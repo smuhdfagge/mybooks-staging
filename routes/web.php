@@ -24,6 +24,8 @@ use App\Http\Controllers\DeductionController;
 use App\Http\Controllers\DeliveryNoteController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DesignationController;
+use App\Http\Controllers\EInvoiceController;
+use App\Http\Controllers\EInvoicingSettingsController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ExportController;
@@ -1041,6 +1043,21 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
 
     /*
     |--------------------------------------------------------------------------
+    | E-invoicing with NRS (session 18)
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('feature:e_invoicing')->group(function () {
+        Route::get('e-invoices', [EInvoiceController::class, 'index'])
+            ->middleware('permission:view e-invoices')->name('e-invoices.index');
+        Route::middleware(['permission:submit e-invoices', 'throttle:30,1'])->group(function () {
+            Route::post('invoices/{invoice}/e-invoice', [EInvoiceController::class, 'submitInvoice'])->name('e-invoices.invoice.submit');
+            Route::post('credit-notes/{creditNote}/e-invoice', [EInvoiceController::class, 'submitCreditNote'])->name('e-invoices.credit-note.submit');
+            Route::post('e-invoices/{submission}/check', [EInvoiceController::class, 'check'])->name('e-invoices.check');
+        });
+    });
+
+    /*
+    |--------------------------------------------------------------------------
     | Bank feeds (session 17)
     |--------------------------------------------------------------------------
     */
@@ -1304,6 +1321,16 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
                 ->middleware('permission:edit settings')->name('messaging.update');
             Route::post('/sms-whatsapp/test', [MessagingSettingsController::class, 'test'])
                 ->middleware(['permission:edit settings', 'throttle:10,1'])->name('messaging.test');
+        });
+
+        // E-invoicing (session 18)
+        Route::middleware('feature:e_invoicing')->group(function () {
+            Route::get('/e-invoicing', [EInvoicingSettingsController::class, 'show'])
+                ->middleware('permission:view e-invoices')->name('e-invoicing');
+            Route::put('/e-invoicing', [EInvoicingSettingsController::class, 'update'])
+                ->middleware('permission:manage e-invoicing')->name('e-invoicing.update');
+            Route::post('/e-invoicing/test', [EInvoicingSettingsController::class, 'test'])
+                ->middleware(['permission:manage e-invoicing', 'throttle:10,1'])->name('e-invoicing.test');
         });
 
         // Invoice Templates

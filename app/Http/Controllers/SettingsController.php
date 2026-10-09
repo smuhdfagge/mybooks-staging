@@ -11,6 +11,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\EmailAddressChangedNotification;
 use App\Notifications\TestEmailNotification;
+use App\Rules\Tin;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Hash;
@@ -67,7 +68,7 @@ class SettingsController extends Controller
             'country' => 'nullable|string|max:100',
             'postal_code' => 'nullable|string|max:20',
             'website' => 'nullable|url|max:255',
-            'tax_number' => 'nullable|string|max:100',
+            'tax_number' => ['nullable', 'string', 'max:100', new Tin],
             'currency' => 'nullable|string|size:3',
             'fiscal_year_start' => 'nullable|date',
             'logo' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:2048',

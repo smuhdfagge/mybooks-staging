@@ -3,6 +3,7 @@
 namespace App\Actions\Invoices;
 
 use App\Enums\InvoiceStatus;
+use App\Models\EInvoiceSubmission;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Warehouse;
@@ -92,6 +93,10 @@ class SaveInvoice
     {
         if ($invoice->status === 'paid' || $invoice->status === 'cancelled') {
             throw ValidationException::withMessages(['invoice' => "A {$invoice->status} invoice can't be changed."]);
+        }
+        // Accepted by NRS: fixed. Issue a credit note instead (session 18).
+        if (EInvoiceSubmission::isLocked($invoice)) {
+            throw ValidationException::withMessages(['invoice' => EInvoiceSubmission::lockedMessage($invoice)]);
         }
 
         $warehouseId = array_key_exists('warehouse_id', $data)

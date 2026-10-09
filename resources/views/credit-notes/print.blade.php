@@ -9,7 +9,8 @@
                 <strong>{{ $creditNote->customer->name }}</strong><br>
                 @if($creditNote->customer->company_name){{ $creditNote->customer->company_name }}<br>@endif
                 @if($creditNote->customer->address){{ $creditNote->customer->address }}<br>@endif
-                @if($creditNote->customer->email){{ $creditNote->customer->email }}@endif
+                @if($creditNote->customer->email){{ $creditNote->customer->email }}<br>@endif
+                @if($creditNote->customer->tax_number)TIN: {{ $creditNote->customer->tax_number }}@endif
             </td>
             <td class="num">
                 <div class="label">Credit note number</div>
@@ -39,4 +40,5 @@
     @if($creditNote->restock)
         <div class="box">The goods listed were returned by the customer.</div>
     @endif
+    @include('e-invoices._print', ['document' => $creditNote])
 @endsection

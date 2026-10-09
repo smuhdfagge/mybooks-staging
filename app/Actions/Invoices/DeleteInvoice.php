@@ -2,6 +2,7 @@
 
 namespace App\Actions\Invoices;
 
+use App\Models\EInvoiceSubmission;
 use App\Models\Invoice;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -33,6 +34,9 @@ class DeleteInvoice
     /** Why this invoice can't be deleted, or null if it can. */
     public function blockedBecause(Invoice $invoice): ?string
     {
+        if (EInvoiceSubmission::isLocked($invoice)) {
+            return EInvoiceSubmission::lockedMessage($invoice);
+        }
         if ((float) $invoice->amount_paid > 0 || $invoice->payments()->exists()) {
             return "Invoice {$invoice->invoice_number} has payments. Remove them first.";
         }
