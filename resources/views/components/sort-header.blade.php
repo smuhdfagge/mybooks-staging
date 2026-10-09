@@ -16,7 +16,7 @@
 
 <th scope="col" aria-sort="{{ $ariaSort }}" {{ $attributes }}>
     <button type="button" wire:click="{{ $action }}('{{ $field }}')"
-        class="inline-flex items-center gap-1 uppercase tracking-wider font-medium hover:text-gray-900 dark:hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded">
+        class="inline-flex items-center gap-1 uppercase tracking-wider font-medium hover:text-gray-900 dark:hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded">
         <span>{{ $slot }}</span>
         <svg aria-hidden="true" class="w-4 h-4 {{ $active ? '' : 'invisible' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $active && $sortDirection === 'desc' ? 'M19 9l-7 7-7-7' : 'M5 15l7-7 7 7' }}"/>

@@ -51,6 +51,16 @@ return [
         'income' => '#2E7D32',
         'expense' => '#C62828',
         'series' => ['#1F4E79', '#C0841A', '#4E8A5B', '#8E3B46', '#5B6B7A', '#3E8E9E'],
+        // Invoice status chart: same meanings as the status badges.
+        'invoice_status' => [
+            'draft' => '#9CA3AF',
+            'sent' => '#3A6798',
+            'unpaid' => '#B26A00',
+            'partial' => '#D79E36',
+            'paid' => '#2E7D32',
+            'overdue' => '#C62828',
+            'cancelled' => '#5B6B7A',
+        ],
     ],
 
     // Browser bar colour on phones (meta theme-color and the app manifest).

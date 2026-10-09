@@ -1,5 +1,5 @@
 // MyBooks Service Worker
-const CACHE_NAME = 'mybooks-cache-v3';
+const CACHE_NAME = 'mybooks-cache-v4'; // v4: rebrand, new icons
 const OFFLINE_URL = '/offline.html';
 
 // Assets to cache immediately on install

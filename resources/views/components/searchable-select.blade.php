@@ -97,7 +97,7 @@
             @keydown.enter="open && ($event.preventDefault(), pickActive())"
             @keydown.escape="open && ($event.stopPropagation(), close())"
             @keydown.tab="close()"
-            class="w-full rounded-md border shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm pl-3 pr-8 py-2 bg-white dark:bg-gray-700 dark:text-gray-300 placeholder-gray-500 dark:placeholder-gray-400 {{ $hasError ? 'border-red-500' : 'border-gray-300 dark:border-gray-600' }}">
+            class="w-full rounded-md border shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm pl-3 pr-8 py-2 bg-white dark:bg-gray-700 dark:text-gray-300 placeholder-gray-500 dark:placeholder-gray-400 {{ $hasError ? 'border-red-500' : 'border-gray-300 dark:border-gray-600' }}">
         <svg aria-hidden="true" class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
         </svg>
@@ -109,7 +109,7 @@
             <li :id="optionId(i)" role="option" :aria-selected="(selected === opt.v).toString()"
                 @mousedown.prevent @click="choose(opt.v)" @mousemove="active = i"
                 class="px-3 py-2 text-sm cursor-pointer dark:text-gray-200"
-                :class="{ 'bg-indigo-100 dark:bg-gray-600': active === i, 'font-medium': selected === opt.v }"
+                :class="{ 'bg-brand-100 dark:bg-gray-600': active === i, 'font-medium': selected === opt.v }"
                 x-text="opt.l"></li>
         </template>
         <li x-show="filtered.length === 0" role="presentation" class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">No results found</li>

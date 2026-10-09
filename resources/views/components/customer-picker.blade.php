@@ -30,7 +30,7 @@
             <template x-for="(item, index) in items" :key="item.id">
                 <li role="option" :aria-selected="(selectedId == item.id).toString()"
                     @mousedown.prevent @click="selectItem(item)" @mouseenter="highlightedIndex = index"
-                    :class="highlightedIndex === index ? 'bg-indigo-600 text-white' : 'text-gray-900 dark:text-gray-100'"
+                    :class="highlightedIndex === index ? 'bg-brand-600 text-white' : 'text-gray-900 dark:text-gray-100'"
                     class="cursor-pointer select-none py-2 px-3" x-text="item.name"></li>
             </template>
             <li x-show="items.length === 0" role="presentation" class="py-2 px-3 text-gray-500 dark:text-gray-400">No customers found</li>

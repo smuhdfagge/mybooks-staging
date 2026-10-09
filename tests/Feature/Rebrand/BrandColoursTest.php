@@ -177,10 +177,58 @@ class BrandColoursTest extends TestCase
     {
         foreach (['layouts/app.blade.php', 'layouts/guest.blade.php', 'components/layouts/admin.blade.php'] as $view) {
             $src = File::get(resource_path('views/'.$view));
-            $this->assertStringContainsString("config('brand.theme_color')", $src, $view);
+            $this->assertStringContainsString("@include('partials.pwa-head')", $src, $view);
             $this->assertStringNotContainsString('family=inter', $src, $view);
         }
+        $this->assertStringContainsString("config('brand.theme_color')", File::get(resource_path('views/partials/pwa-head.blade.php')));
         $this->assertStringContainsString('@fontsource/ibm-plex-sans/latin-ext-400.css', File::get(resource_path('css/app.css')));
         $this->assertStringContainsString('"IBM Plex Sans"', File::get(base_path('tailwind.config.js')));
+    }
+
+    // ---- R2: logo, icons, app frame ----------------------------------------
+
+    public function test_manifest_uses_the_brand_colour_and_only_lists_files_that_exist(): void
+    {
+        $manifest = json_decode(File::get(public_path('manifest.json')), true);
+
+        $this->assertSame(config('brand.theme_color'), $manifest['theme_color']);
+        $this->assertArrayNotHasKey('screenshots', $manifest);
+        $icons = array_merge($manifest['icons'], ...array_column($manifest['shortcuts'], 'icons'));
+        foreach ($icons as $icon) {
+            $this->assertFileExists(public_path(ltrim($icon['src'], '/')), $icon['src']);
+        }
+        $this->assertContains('maskable', array_column($manifest['icons'], 'purpose'));
+    }
+
+    public function test_icons_are_the_new_logo_and_phones_refresh_their_cache(): void
+    {
+        foreach (['favicon.svg', 'icons/icon.svg', 'images/brand/mybooks-logo.svg'] as $f) {
+            $this->assertStringContainsString('#1F4E79', File::get(public_path($f)), $f);
+        }
+        $this->assertStringContainsString('#D79E36', File::get(public_path('images/brand/mybooks-logo-white.svg')));
+        $this->assertFileExists(public_path('icons/apple-touch-icon.png'));
+        $this->assertFileExists(public_path('images/brand/mybooks-logo-email-300.png'));
+        $this->assertStringContainsString("'mybooks-cache-v4'", File::get(public_path('sw.js')));
+        $this->assertFileDoesNotExist(resource_path('views/components/application-logo.blade.php'));
+    }
+
+    public function test_sidebar_shows_the_new_logo_on_navy(): void
+    {
+        $this->createAuthenticatedUser(['view dashboard']);
+
+        $this->get(route('dashboard'))->assertOk()
+            ->assertSee('bg-brand-900', false)
+            ->assertSee('M10 47H54M10 54H54', false)   // the double underline of the mark
+            ->assertSee('nav-active', false)
+            ->assertDontSee('M12 6.253v13', false);    // the old stock book icon
+    }
+
+    public function test_status_badges_use_the_shared_colours(): void
+    {
+        $html = (string) $this->blade('<x-status-badge status="pending" /><x-status-badge status="paid_x" /><x-status-badge status="sent" />');
+
+        $this->assertStringContainsString('badge badge-warning', $html);
+        $this->assertStringContainsString('badge badge-muted', $html);   // unknown status falls back to draft
+        $this->assertStringContainsString('badge badge-info', $html);
     }
 }
