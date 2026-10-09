@@ -9,7 +9,7 @@
             </div>
             <div class="flex gap-2">
                 @if($budget->isActive() || $budget->isLocked())
-                <a href="{{ route('budgets.vs-actual', $budget) }}" class="inline-flex items-center px-4 py-2 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700">
+                <a href="{{ route('budgets.vs-actual', $budget) }}" class="btn-secondary">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                     </svg>
@@ -216,7 +216,7 @@
                         No budget line items yet.
                         @can('edit budgets')
                         @if(!$budget->isLocked())
-                        <a href="{{ route('budgets.edit', $budget) }}" class="text-blue-600 dark:text-blue-400 hover:underline">Add budget lines</a>
+                        <a href="{{ route('budgets.edit', $budget) }}" class="text-brand-600 dark:text-brand-300 hover:underline">Add budget lines</a>
                         @endif
                         @endcan
                     </div>

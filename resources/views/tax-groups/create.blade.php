@@ -36,7 +36,7 @@
                 <!-- Description -->
                 <div class="mt-6">
                     <x-input-label for="description" :value="__('Description')" />
-                    <textarea name="description" id="description" rows="3" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm" placeholder="Optional description" @error('description') aria-invalid="true" aria-describedby="description-error" @enderror>{{ old('description') }}</textarea>
+                    <textarea name="description" id="description" rows="3" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-brand-500 dark:focus:border-brand-600 focus:ring-brand-500 dark:focus:ring-brand-600 rounded-md shadow-sm" placeholder="Optional description" @error('description') aria-invalid="true" aria-describedby="description-error" @enderror>{{ old('description') }}</textarea>
                     <x-input-error id="description-error" :messages="$errors->get('description')" class="mt-2" />
                 </div>
 
@@ -51,15 +51,15 @@
                                 <label class="flex items-center p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                                     <input type="checkbox" name="tax_rates[]" value="{{ $taxRate->id }}" 
                                         {{ in_array($taxRate->id, old('tax_rates', [])) ? 'checked' : '' }}
-                                        class="rounded dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                        class="rounded dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
                                     <div class="ml-3 flex-1">
                                         <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $taxRate->name }}</span>
                                         @if($taxRate->code)
                                             <span class="text-gray-500 dark:text-gray-400 text-sm">({{ $taxRate->code }})</span>
                                         @endif
-                                        <span class="ml-2 font-semibold text-blue-600 dark:text-blue-400">{{ $taxRate->formatted_rate }}</span>
+                                        <span class="ml-2 font-semibold text-brand-600 dark:text-brand-300">{{ $taxRate->formatted_rate }}</span>
                                         @if($taxRate->is_compound)
-                                            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">Compound</span>
+                                            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-accent-100 text-accent-800 dark:bg-accent-900/50 dark:text-accent-200">Compound</span>
                                         @endif
                                     </div>
                                     <span class="text-xs text-gray-500 dark:text-gray-400 capitalize">{{ $taxRate->applies_to }}</span>
@@ -69,7 +69,7 @@
                     @else
                         <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center text-gray-500 dark:text-gray-400">
                             <p>No tax rates available.</p>
-                            <a href="{{ route('tax-rates.create') }}" class="text-blue-600 dark:text-blue-400 hover:underline">Create a tax rate first</a>
+                            <a href="{{ route('tax-rates.create') }}" class="text-brand-600 dark:text-brand-300 hover:underline">Create a tax rate first</a>
                         </div>
                     @endif
                     <x-input-error id="tax_rates-error" :messages="$errors->get('tax_rates')" class="mt-2" />
@@ -79,13 +79,13 @@
                 <div class="mt-6 space-y-4">
                     <label class="flex items-center">
                         <input type="hidden" name="is_default" value="0">
-                        <input type="checkbox" name="is_default" value="1" {{ old('is_default') ? 'checked' : '' }} class="rounded dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <input type="checkbox" name="is_default" value="1" {{ old('is_default') ? 'checked' : '' }} class="rounded dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
                         <span class="ms-2 text-sm text-gray-600 dark:text-gray-400">Set as Default Tax Group</span>
                     </label>
 
                     <label class="flex items-center">
                         <input type="hidden" name="is_active" value="0">
-                        <input type="checkbox" name="is_active" value="1" {{ old('is_active', '1') ? 'checked' : '' }} class="rounded dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <input type="checkbox" name="is_active" value="1" {{ old('is_active', '1') ? 'checked' : '' }} class="rounded dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
                         <span class="ms-2 text-sm text-gray-600 dark:text-gray-400">Active</span>
                     </label>
                 </div>

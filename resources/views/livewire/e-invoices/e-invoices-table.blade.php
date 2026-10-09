@@ -6,12 +6,12 @@
 
     {{-- Invoices or credit notes, and a count per status --}}
     <div class="mb-4 flex flex-wrap items-center gap-2" role="tablist" aria-label="Document type">
-        <button type="button" role="tab" wire:click="$set('type', 'invoices')" aria-selected="{{ $credit ? 'false' : 'true' }}" class="px-3 py-1.5 rounded-md text-sm font-medium {{ $credit ? 'text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700' : 'bg-indigo-600 text-white' }}">Invoices</button>
-        <button type="button" role="tab" wire:click="$set('type', 'credit_notes')" aria-selected="{{ $credit ? 'true' : 'false' }}" class="px-3 py-1.5 rounded-md text-sm font-medium {{ $credit ? 'bg-indigo-600 text-white' : 'text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700' }}">Credit notes</button>
+        <button type="button" role="tab" wire:click="$set('type', 'invoices')" aria-selected="{{ $credit ? 'false' : 'true' }}" class="px-3 py-1.5 rounded-md text-sm font-medium {{ $credit ? 'text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700' : 'bg-brand-600 text-white' }}">Invoices</button>
+        <button type="button" role="tab" wire:click="$set('type', 'credit_notes')" aria-selected="{{ $credit ? 'true' : 'false' }}" class="px-3 py-1.5 rounded-md text-sm font-medium {{ $credit ? 'bg-brand-600 text-white' : 'text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700' }}">Credit notes</button>
     </div>
     <div class="mb-4 grid grid-cols-2 sm:grid-cols-5 gap-2 text-sm" data-testid="counts">
         @foreach(['not_submitted' => 'Not submitted', 'pending' => 'Pending', 'accepted' => 'Accepted', 'rejected' => 'Rejected', 'failed' => 'Failed'] as $key => $label)
-            <button type="button" wire:click="$set('status', '{{ $status === $key ? '' : $key }}')" class="rounded-lg border px-3 py-2 text-left {{ $status === $key ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30' : 'border-gray-200 dark:border-gray-700' }}">
+            <button type="button" wire:click="$set('status', '{{ $status === $key ? '' : $key }}')" class="rounded-lg border px-3 py-2 text-left {{ $status === $key ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30' : 'border-gray-200 dark:border-gray-700' }}">
                 <span class="block text-xs text-gray-500 dark:text-gray-400">{{ $label }}</span>
                 <span class="block text-lg font-semibold text-gray-900 dark:text-gray-100">{{ number_format($counts[$key]) }}</span>
             </button>
@@ -76,7 +76,7 @@
                             </td>
                         @endif
                         <td class="px-4 py-3 whitespace-nowrap">
-                            <a href="{{ $credit ? route('credit-notes.show', $doc) : route('invoices.show', $doc) }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">{{ $credit ? $doc->credit_note_number : $doc->invoice_number }}</a>
+                            <a href="{{ $credit ? route('credit-notes.show', $doc) : route('invoices.show', $doc) }}" class="font-medium text-brand-600 dark:text-brand-300 hover:underline">{{ $credit ? $doc->credit_note_number : $doc->invoice_number }}</a>
                         </td>
                         <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $doc->customer?->name }}</td>
                         <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-100">{{ ($credit ? $doc->credit_note_date : $doc->invoice_date)->format('M d, Y') }}</td>

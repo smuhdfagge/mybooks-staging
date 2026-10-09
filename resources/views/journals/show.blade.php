@@ -9,7 +9,7 @@
             </div>
             <div class="flex flex-wrap gap-2">
                 @if(!$journal->is_posted)
-                    <a href="{{ route('journals.edit', $journal) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                    <a href="{{ route('journals.edit', $journal) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                         </svg>
@@ -33,8 +33,8 @@
                 <div class="p-6">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div class="flex items-center">
-                            <div class="flex-shrink-0 bg-indigo-100 dark:bg-indigo-900/50 rounded-full p-4">
-                                <svg class="w-8 h-8 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="flex-shrink-0 bg-brand-100 dark:bg-brand-900/50 rounded-full p-4">
+                                <svg class="w-8 h-8 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                 </svg>
                             </div>
@@ -92,7 +92,7 @@
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Released from schedule</dt>
                                 <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">
                                     @if($releasedFrom && \App\Http\Middleware\EnsureFeatureEnabled::enabled('prepaid_schedules'))
-                                        <a href="{{ route('accrual-schedules.show', $releasedFrom) }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">{{ $releasedFrom->schedule_number }}</a>
+                                        <a href="{{ route('accrual-schedules.show', $releasedFrom) }}" class="font-medium text-brand-600 dark:text-brand-300 hover:underline">{{ $releasedFrom->schedule_number }}</a>
                                         <span class="text-gray-500 dark:text-gray-400">{{ $releasedFrom->description }}</span>
                                     @else
                                         {{ $releasedFrom?->schedule_number ?? '—' }}
@@ -106,7 +106,7 @@
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Automatic reversal of</dt>
                                 <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">
                                     @if($journal->reversalOf)
-                                        <a href="{{ route('journals.show', $journal->reversalOf) }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">{{ $journal->reversalOf->journal_number }}</a>
+                                        <a href="{{ route('journals.show', $journal->reversalOf) }}" class="font-medium text-brand-600 dark:text-brand-300 hover:underline">{{ $journal->reversalOf->journal_number }}</a>
                                         <span class="text-gray-500 dark:text-gray-400">dated {{ $journal->reversalOf->journal_date->format('j M Y') }}</span>
                                     @else
                                         —
@@ -118,7 +118,7 @@
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Automatic reversal</dt>
                                 <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">
                                     @if($journal->autoReversal)
-                                        Reversed by <a href="{{ route('journals.show', $journal->autoReversal) }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">{{ $journal->autoReversal->journal_number }}</a>
+                                        Reversed by <a href="{{ route('journals.show', $journal->autoReversal) }}" class="font-medium text-brand-600 dark:text-brand-300 hover:underline">{{ $journal->autoReversal->journal_number }}</a>
                                         on {{ $journal->autoReversal->journal_date->format('j M Y') }}
                                     @elseif($journal->status === 'reversed')
                                         Cancelled: this journal was reversed by hand before {{ $journal->reverse_on->format('j M Y') }}.
@@ -240,7 +240,7 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
                 <div class="p-6 flex flex-wrap gap-4">
                     @if(!$journal->is_posted)
-                        <a href="{{ route('journals.edit', $journal) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                        <a href="{{ route('journals.edit', $journal) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                             </svg>

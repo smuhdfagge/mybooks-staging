@@ -11,7 +11,7 @@
         @if(\Illuminate\Support\Facades\Route::has($tab['route']))
             <a href="{{ route($tab['route']) }}"
                @if(request()->routeIs($tab['route'])) aria-current="page" @endif
-               class="px-3 py-2 text-sm rounded-md {{ request()->routeIs($tab['route']) ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
+               class="px-3 py-2 text-sm rounded-md {{ request()->routeIs($tab['route']) ? 'bg-brand-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
                 {{ $tab['label'] }}
             </a>
         @endif

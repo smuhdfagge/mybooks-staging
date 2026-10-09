@@ -9,17 +9,17 @@
             <div>
                 <label class="form-label">Search</label>
                 <input aria-label="Search by name or code" type="text" wire:model.live.debounce.300ms="search" placeholder="Search by name or code..."
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
             </div>
             <div class="flex items-end">
                 <label class="flex items-center">
                     <input type="checkbox" wire:model.live="showInactive"
-                        class="h-4 w-4 text-blue-600 border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded focus:ring-blue-500">
+                        class="h-4 w-4 text-brand-600 border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded focus:ring-brand-500 dark:text-brand-300">
                     <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Show Inactive</span>
                 </label>
             </div>
             <div class="flex items-end">
-                <button wire:click="clearFilters" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm">
+                <button wire:click="clearFilters" class="text-brand-600 hover:text-brand-800 dark:text-brand-300 dark:hover:text-brand-300 text-sm">
                     Clear Filters
                 </button>
             </div>
@@ -36,7 +36,7 @@
                     <tr>
                         <th scope="col" class="px-4 py-3 text-left">
                             <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
-                                class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
+                                class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
                         </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Code</th>
@@ -51,16 +51,16 @@
                         <tr wire:key="taxGroup-{{ $taxGroup->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700">
                             <td class="px-4 py-4">
                                 <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $taxGroup->id }}"
-                                    class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
+                                    class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     <div>
-                                        <a href="{{ route('tax-groups.show', $taxGroup) }}" class="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400">
+                                        <a href="{{ route('tax-groups.show', $taxGroup) }}" class="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-brand-600 dark:hover:text-brand-300">
                                             {{ $taxGroup->name }}
                                         </a>
                                         @if($taxGroup->is_default)
-                                            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200">
                                                 Default
                                             </span>
                                         @endif
@@ -82,7 +82,7 @@
                                     @endif
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-600 dark:text-blue-400">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-brand-600 dark:text-brand-300">
                                 {{ $taxGroup->formatted_rate }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -109,7 +109,7 @@
                                             </svg>
                                         @endif
                                     </button>
-                                    <a href="{{ route('tax-groups.edit', $taxGroup) }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+                                    <a href="{{ route('tax-groups.edit', $taxGroup) }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-300">
                                         <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                         </svg>
@@ -125,7 +125,7 @@
                                 </svg>
                                 <p class="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">No tax groups found</p>
                                 <p class="mt-2">Combine multiple tax rates into a group.</p>
-                                <a href="{{ route('tax-groups.create') }}" class="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                <a href="{{ route('tax-groups.create') }}" class="mt-4 inline-flex items-center px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700">
                                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                     </svg>

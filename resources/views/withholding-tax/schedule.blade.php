@@ -87,7 +87,7 @@
 
                         @if($group['rows']->isNotEmpty())
                         <details class="mt-4">
-                            <summary class="cursor-pointer text-sm text-indigo-600 dark:text-indigo-400">Show each payment ({{ $group['rows']->count() }})</summary>
+                            <summary class="cursor-pointer text-sm text-brand-600 dark:text-brand-300">Show each payment ({{ $group['rows']->count() }})</summary>
                             <table class="mt-3 min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
                                 <thead>
                                     <tr class="text-left text-gray-600 dark:text-gray-300">
@@ -105,7 +105,7 @@
                                     @foreach($group['rows'] as $payment)
                                         <tr>
                                             <td class="px-3 py-2 whitespace-nowrap">{{ $payment->payment_date->format('d M Y') }}</td>
-                                            <td class="px-3 py-2"><a href="{{ route('payments-made.show', $payment) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $payment->payment_number }}</a></td>
+                                            <td class="px-3 py-2"><a href="{{ route('payments-made.show', $payment) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $payment->payment_number }}</a></td>
                                             <td class="px-3 py-2">{{ $payment->vendor?->name }}</td>
                                             <td class="px-3 py-2">{{ $payment->bill?->bill_number ?? ($payment->is_advance ? 'Advance' : '-') }}</td>
                                             <td class="px-3 py-2">{{ $payment->whtCategory?->name ?? '-' }}</td>

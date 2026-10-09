@@ -71,7 +71,7 @@
                 </x-card>
                 <x-card class="p-4">
                     <p class="text-sm text-gray-500 dark:text-gray-400">Left in {{ $schedule->balanceAccount->name }}</p>
-                    <p class="text-2xl font-semibold text-indigo-600 dark:text-indigo-400">@money($schedule->remaining())</p>
+                    <p class="text-2xl font-semibold text-brand-600 dark:text-brand-300">@money($schedule->remaining())</p>
                 </x-card>
             </div>
 
@@ -100,7 +100,7 @@
                                                 @case('released')
                                                     <span class="text-green-700 dark:text-green-400 font-medium">Released</span>
                                                     @if($row['release']->journal)
-                                                        in <a href="{{ route('journals.show', $row['release']->journal) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $row['release']->journal->journal_number }}</a>
+                                                        in <a href="{{ route('journals.show', $row['release']->journal) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $row['release']->journal->journal_number }}</a>
                                                     @endif
                                                     @if($row['release']->note)
                                                         <span class="block text-xs text-amber-700 dark:text-amber-300">{{ $row['release']->note }}</span>
@@ -131,7 +131,7 @@
                     @if($source)
                         @php([$sourceModel, $numberColumn, $sourceRoute] = \App\Models\AccrualSchedule::SOURCES[$schedule->source_type])
                         <div><dt class="text-gray-500 dark:text-gray-400">{{ ucfirst($schedule->source_type) }}</dt>
-                            <dd><a href="{{ route($sourceRoute, $source) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $source->{$numberColumn} }}</a> <span class="text-gray-500 dark:text-gray-400">@money($source->total)</span></dd></div>
+                            <dd><a href="{{ route($sourceRoute, $source) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $source->{$numberColumn} }}</a> <span class="text-gray-500 dark:text-gray-400">@money($source->total)</span></dd></div>
                     @endif
                     @if($schedule->reference)
                         <div><dt class="text-gray-500 dark:text-gray-400">Reference</dt><dd class="text-gray-900 dark:text-gray-100">{{ $schedule->reference }}</dd></div>
