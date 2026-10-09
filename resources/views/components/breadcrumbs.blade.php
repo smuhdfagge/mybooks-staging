@@ -37,6 +37,7 @@
                 'journals' => 'Journals',
                 'accrual-schedules' => 'Prepaid & Deferred Schedules',
                 'banks' => 'Banks',
+                'bank-feeds' => 'Bank feeds',
                 'bank-transfers' => 'Bank Transfers',
                 'bank-transfer-categories' => 'Transfer Categories',
                 'budgets' => 'Budgets',

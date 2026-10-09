@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Contracts\JournalServiceInterface;
 use App\Events\ExpensePaid;
+use App\Services\BankFeeds\LineActions;
 use App\Services\BankService;
 
 class HandleExpensePaid
@@ -28,5 +29,9 @@ class HandleExpensePaid
                 "Expense #{$expense->expense_number} paid"
             );
         }
+
+        // An expense made from a bank line counts as cleared once paid (session 17)
+        $actions = app(LineActions::class);
+        $actions->linesFor($expense)->each(fn ($line) => $actions->markReconciled($line));
     }
 }

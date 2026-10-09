@@ -89,6 +89,7 @@ return [
         ['name' => 'Email delivery provider (SMTP)', 'purpose' => 'Sending invoices, reminders, password resets and other emails', 'location' => 'Varies by provider'],
         ['name' => 'Termii', 'purpose' => 'Sending SMS and WhatsApp invoice reminders and receipts to a business\'s customers (phone number and message text)', 'location' => 'Nigeria'],
         ['name' => 'Meta Platforms (WhatsApp)', 'purpose' => 'Delivering WhatsApp messages to customers who use WhatsApp', 'location' => 'United States / Ireland'],
+        ['name' => 'Mono (Connect Technologies Ltd)', 'purpose' => 'Reading a business\'s own bank account transactions and balance, only when the business links the account (MyBooks never sees or stores bank login details; only the last 4 digits of the account number are kept)', 'location' => 'Nigeria'],
         ['name' => 'Tawk.to Inc.', 'purpose' => 'Live chat support on the website and app', 'location' => 'United States'],
         ['name' => 'Hosting provider', 'purpose' => 'Servers, database and file storage, and backups', 'location' => 'Varies by provider'],
     ],
@@ -152,6 +153,40 @@ return [
         // SMS and WhatsApp reminders and receipts to customers (session 16).
         // Sends nothing real until the Termii / WhatsApp keys are set.
         'sms_whatsapp' => (bool) env('MYBOOKS_FEATURE_SMS_WHATSAPP', true),
+        // Bank feeds through Mono: link a bank account, pull its transactions
+        // and match them in bank reconciliation (session 17). Harmless until
+        // the Mono keys are set.
+        'bank_feeds' => (bool) env('MYBOOKS_FEATURE_BANK_FEEDS', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Bank feeds (session 17)
+    |--------------------------------------------------------------------------
+    |
+    | Drivers: 'mono', 'log' (nothing is called) or 'auto' (mono once
+    | MONO_SECRET_KEY is set, else log). Another provider can be added behind
+    | App\Services\BankFeeds\BankFeedProvider.
+    |
+    */
+
+    'bank_feeds' => [
+        'driver' => env('BANK_FEEDS_DRIVER', 'auto'),
+        // How far back the first pull goes when an account is linked.
+        'first_pull_days' => (int) env('BANK_FEEDS_FIRST_PULL_DAYS', 90),
+        // Each pull re-reads this many days before the last one, so a late
+        // posting is not missed (lines are de-duplicated by the bank's id).
+        'overlap_days' => 5,
+        // A record is a candidate for a bank line when its date is within
+        // this many days of the line's date.
+        'match_window_days' => 5,
+        // Score (out of 100) from which a suggestion is called High; "Accept
+        // all suggested" only takes these.
+        'high_confidence' => 80,
+        // Safety stop on one pull (pages of transactions).
+        'max_pages' => 100,
+        // Mono allows one live refresh per account every 5 minutes.
+        'sync_now_minutes' => 5,
     ],
 
     /*

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Expenses\CreateExpense;
 use App\Http\Requests\StoreExpenseRequest;
 use App\Http\Requests\UpdateExpenseRequest;
 use App\Models\Bank;
@@ -34,37 +35,13 @@ class ExpenseController extends Controller
         return view('expenses.create', compact('vendors', 'expenseAccounts', 'paymentAccounts', 'expenseNumber', 'banks'));
     }
 
-    public function store(StoreExpenseRequest $request)
+    public function store(StoreExpenseRequest $request, CreateExpense $createExpense)
     {
         $tenantId = auth()->user()->tenant_id;
 
         $validated = $request->validated();
 
-        $amount = $validated['amount'];
-        $taxAmount = $validated['tax_amount'] ?? 0;
-        $total = $amount + $taxAmount;
-
-        $expense = Expense::create([
-            'tenant_id' => $tenantId,
-            'expense_number' => Expense::generateNumber($tenantId),
-            'name' => $validated['name'],
-            'expense_date' => $validated['expense_date'],
-            'expense_account_id' => $validated['expense_account_id'],
-            'amount' => $amount,
-            'tax_amount' => $taxAmount,
-            'total' => $total,
-            'vendor_id' => $validated['vendor_id'] ?? null,
-            'paid_through_id' => $validated['paid_through_id'] ?? null,
-            'bank_id' => $validated['bank_id'] ?? null,
-            'reference' => $validated['reference'] ?? null,
-            'description' => $validated['description'] ?? null,
-            'is_billable' => $validated['is_billable'] ?? false,
-            'customer_id' => $validated['customer_id'] ?? null,
-            'payment_method' => $validated['payment_method'] ?? null,
-            'notes' => $validated['notes'] ?? null,
-            'created_by' => auth()->id(),
-            'status' => Expense::STATUS_DRAFT, // Always start as draft
-        ]);
+        $expense = $createExpense->handle($tenantId, $validated, auth()->id());
 
         // Note: Bank balance is NOT updated here - only when expense is marked as paid
 

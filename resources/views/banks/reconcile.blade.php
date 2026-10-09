@@ -55,6 +55,10 @@
                 </div>
             </div>
 
+            @if(! empty($feed))
+                @include('banks._feed-panel')
+            @endif
+
             {{-- Date Filter --}}
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-4">

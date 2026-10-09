@@ -15,5 +15,9 @@
         </div>
     </x-slot>
 
+    @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('bank_feeds'))
+        @include('bank-feeds._banks-summary')
+    @endif
+
     <livewire:banks.banks-table />
 </x-app-layout>
