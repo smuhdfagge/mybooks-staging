@@ -71,7 +71,7 @@ gradient becomes flat navy.
 | # | Session | Branch | Status | Notes / hand-over |
 |---|---|---|---|---|
 | R0 | Logo choice | | Done | Option A "Ledger total". Files in MyBooks-Logo-OptionA.zip |
-| R1 | Foundations | `rebrand/r1-foundations` | Done, PR open | Colours, config/brand.php, shared styles, font, `rebrand:colours`, guard test with 362 files to do. Nothing on screen changes yet except buttons and form fields that already used the shared styles. |
+| R1 | Foundations | `rebrand/r1-foundations` | Done, PR #43 | Colours, config/brand.php, shared styles, font, `rebrand:colours`, guard test with 362 files to do. Nothing on screen changes yet except buttons and form fields that already used the shared styles. |
 | R2 | Logo, icons, app frame, dashboard | `rebrand/r2-frame` | To do | Logo files go in public/. Fix manifest (5 icon sizes and 2 screenshots it lists don't exist). Service worker cache v3 to v4. Status badge: yellow to amber. Split point: dashboard and analytics can move to R8. |
 | R3 | Sales | `rebrand/r3-sales` | To do | Split point: after invoices, quotations, sales orders |
 | R4 | Purchases and expenses | `rebrand/r4-purchases` | To do | Split point: after bills, vendors, purchase orders |
