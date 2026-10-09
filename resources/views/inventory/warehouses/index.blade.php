@@ -29,10 +29,10 @@
                                 @php($row = $totals->get($warehouse->id))
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                     <td class="px-4 py-3">
-                                        <a href="{{ route('warehouses.show', $warehouse) }}" class="text-indigo-600 dark:text-indigo-400 font-medium">{{ $warehouse->name }}</a>
+                                        <a href="{{ route('warehouses.show', $warehouse) }}" class="text-brand-600 dark:text-brand-300 font-medium">{{ $warehouse->name }}</a>
                                         <span class="ml-1 text-xs text-gray-500 dark:text-gray-400 font-mono">{{ $warehouse->code }}</span>
                                         @if($warehouse->is_default)
-                                            <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300">Default</span>
+                                            <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800 dark:bg-brand-900/50 dark:text-brand-300">Default</span>
                                         @endif
                                         @unless($warehouse->is_active)
                                             <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">Not in use</span>
@@ -57,7 +57,7 @@
                 <div class="p-4">{{ $warehouses->links() }}</div>
             </x-card>
             @if(($inTransitValue ?? 0) > 0)
-                <p class="text-sm text-gray-700 dark:text-gray-300">Also on the road between warehouses: <a href="{{ route('stock-transfers.index', ['status' => 'in_transit']) }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">@money($inTransitValue) in transit</a>.</p>
+                <p class="text-sm text-gray-700 dark:text-gray-300">Also on the road between warehouses: <a href="{{ route('stock-transfers.index', ['status' => 'in_transit']) }}" class="font-medium text-brand-600 dark:text-brand-300 hover:underline">@money($inTransitValue) in transit</a>.</p>
             @endif
             <p class="text-xs text-gray-500 dark:text-gray-400">Stock value is the quantity on hand at each warehouse's average cost.</p>
         </div>

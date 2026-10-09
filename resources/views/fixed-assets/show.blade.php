@@ -21,11 +21,11 @@
                     </button>
                     @endif
                     @if($fixedAsset->canDepreciate())
-                    <button type="button" data-open-modal="record-depreciation" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
+                    <button type="button" data-open-modal="record-depreciation" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
                         Record Depreciation
                     </button>
                     @endif
-                    <a href="{{ route('fixed-assets.edit', $fixedAsset) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
+                    <a href="{{ route('fixed-assets.edit', $fixedAsset) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
                         Edit
                     </a>
                 @endcan
@@ -47,7 +47,7 @@
                             @if($fixedAsset->status === 'active') bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100
                             @elseif($fixedAsset->status === 'fully_depreciated') bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100
                             @elseif($fixedAsset->status === 'disposed') bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100
-                            @else bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100
+                            @else bg-brand-100 text-brand-800 dark:bg-brand-800 dark:text-brand-100
                             @endif">
                             {{ ucfirst(str_replace('_', ' ', $fixedAsset->status)) }}
                         </span>
@@ -76,7 +76,7 @@
                 </div>
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-6">
                     <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Remaining Life</div>
-                    <div class="mt-1 text-2xl font-semibold text-blue-600 dark:text-blue-400">{{ $fixedAsset->remaining_useful_life_months }}</div>
+                    <div class="mt-1 text-2xl font-semibold text-brand-600 dark:text-brand-300">{{ $fixedAsset->remaining_useful_life_months }}</div>
                     <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">months</div>
                 </div>
             </div>
@@ -140,7 +140,7 @@
                         <div class="p-6">
                             <div class="flex justify-between items-center mb-4">
                                 <h4 class="text-lg font-semibold text-gray-900 dark:text-white">Depreciation Schedule</h4>
-                                <a href="{{ route('fixed-assets.schedule', $fixedAsset) }}" class="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400">
+                                <a href="{{ route('fixed-assets.schedule', $fixedAsset) }}" class="text-sm text-brand-600 hover:text-brand-700 dark:text-brand-300">
                                     View Full Schedule →
                                 </a>
                             </div>
@@ -242,7 +242,7 @@
                                 @if($fixedAsset->next_depreciation_date)
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Next Depreciation</dt>
-                                    <dd class="mt-1 text-sm text-blue-600 dark:text-blue-400">{{ $fixedAsset->next_depreciation_date->format('M d, Y') }}</dd>
+                                    <dd class="mt-1 text-sm text-brand-600 dark:text-brand-300">{{ $fixedAsset->next_depreciation_date->format('M d, Y') }}</dd>
                                 </div>
                                 @endif
                             </dl>
@@ -311,18 +311,18 @@
                     <div class="mb-4">
                         <label for="depreciation_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Depreciation Date</label>
                         <input type="date" name="depreciation_date" id="depreciation_date" value="{{ $fixedAsset->next_depreciation_date?->format('Y-m-d') ?? date('Y-m-d') }}" required
-                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                     </div>
                     <div class="mb-4">
                         <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes (Optional)</label>
                         <textarea name="notes" id="notes" rows="3"
-                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500"></textarea>
                     </div>
                     <div class="flex justify-end gap-3">
                         <button type="button" data-close-modal="record-depreciation" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-400">
                             Cancel
                         </button>
-                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        <button type="submit" class="px-4 py-2 bg-brand-600 text-white rounded-md hover:bg-brand-700">
                             Record Depreciation
                         </button>
                     </div>
@@ -340,7 +340,7 @@
                     <div class="mb-4">
                         <label for="disposal_method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Disposal Method *</label>
                         <select name="disposal_method" id="disposal_method" required
-                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                             <option value="">Select Method</option>
                             <option value="sale">Sale</option>
                             <option value="scrapped">Scrapped</option>
@@ -352,17 +352,17 @@
                     <div class="mb-4">
                         <label for="disposal_amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Disposal Amount</label>
                         <input type="number" name="disposal_amount" id="disposal_amount" step="0.01" min="0" value="0"
-                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                     </div>
                     <div class="mb-4">
                         <label for="disposal_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Disposal Date *</label>
                         <input type="date" name="disposal_date" id="disposal_date" value="{{ date('Y-m-d') }}" required
-                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                     </div>
                     <div class="mb-4">
                         <label for="disposal_notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</label>
                         <textarea name="disposal_notes" id="disposal_notes" rows="3"
-                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500"></textarea>
                     </div>
                     <div class="flex justify-end gap-3">
                         <button type="button" data-close-modal="dispose-asset" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-400">

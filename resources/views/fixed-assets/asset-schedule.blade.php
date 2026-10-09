@@ -5,7 +5,7 @@
                 {{ __('Depreciation Schedule') }} - {{ $fixedAsset->name }}
             </h2>
             <div class="flex space-x-2">
-                <a href="{{ route('fixed-assets.show', $fixedAsset) }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                <a href="{{ route('fixed-assets.show', $fixedAsset) }}" class="bg-brand-500 hover:bg-brand-700 text-white font-bold py-2 px-4 rounded">
                     View Asset
                 </a>
                 <a href="{{ route('fixed-assets.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
@@ -41,7 +41,7 @@
                         </div>
                         <div>
                             <div class="text-sm text-gray-500 dark:text-gray-400">Book Value</div>
-                            <div class="text-lg font-bold text-blue-600 dark:text-blue-400">{{ $currency }}{{ number_format($fixedAsset->book_value, 2) }}</div>
+                            <div class="text-lg font-bold text-brand-600 dark:text-brand-300">{{ $currency }}{{ number_format($fixedAsset->book_value, 2) }}</div>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -114,7 +114,7 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
                                             @if($depreciation->journal_id)
-                                                <a href="{{ route('journals.show', $depreciation->journal_id) }}" class="text-blue-600 hover:text-blue-900 dark:text-blue-400">
+                                                <a href="{{ route('journals.show', $depreciation->journal_id) }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300">
                                                     View
                                                 </a>
                                             @else

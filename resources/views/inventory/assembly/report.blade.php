@@ -41,7 +41,7 @@
                                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700 text-gray-900 dark:text-gray-100">
                                     @foreach($groups[$kind] as $row)
                                         <tr>
-                                            <td class="px-3 py-2"><a href="{{ route('inventory.show', $row->item_id) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $row->item_name }}</a></td>
+                                            <td class="px-3 py-2"><a href="{{ route('inventory.show', $row->item_id) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $row->item_name }}</a></td>
                                             <td class="px-3 py-2 text-right hidden sm:table-cell">{{ $row->orders }}</td>
                                             <td class="px-3 py-2 text-right whitespace-nowrap">{{ $fmt($row->quantity) }} {{ $row->unit }}</td>
                                             @if($kind === 'build')

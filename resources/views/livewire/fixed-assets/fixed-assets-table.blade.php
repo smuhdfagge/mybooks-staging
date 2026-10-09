@@ -19,7 +19,7 @@
         </div>
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-4">
             <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Current Book Value</div>
-            <div class="mt-1 text-2xl font-semibold text-blue-600 dark:text-blue-400">{{ number_format($totalValue, 2) }}</div>
+            <div class="mt-1 text-2xl font-semibold text-brand-600 dark:text-brand-300">{{ number_format($totalValue, 2) }}</div>
         </div>
     </div>
 
@@ -30,11 +30,11 @@
                 <div>
                     <label class="form-label">Search</label>
                     <input aria-label="Search assets" type="text" wire:model.live.debounce.300ms="search" placeholder="Search assets..." 
-                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                 </div>
                 <div>
                     <label for="categoryFilter" class="form-label">Category</label>
-                    <select id="categoryFilter" wire:model.live="categoryFilter" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <select id="categoryFilter" wire:model.live="categoryFilter" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         <option value="">All Categories</option>
                         @foreach($categories as $category)
                             <option value="{{ $category->id }}">{{ $category->name }}</option>
@@ -43,7 +43,7 @@
                 </div>
                 <div>
                     <label for="statusFilter" class="form-label">Status</label>
-                    <select id="statusFilter" wire:model.live="statusFilter" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <select id="statusFilter" wire:model.live="statusFilter" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         <option value="">All Statuses</option>
                         @foreach($statuses as $key => $label)
                             <option value="{{ $key }}">{{ $label }}</option>
@@ -52,7 +52,7 @@
                 </div>
                 <div>
                     <label for="perPage" class="form-label">Per Page</label>
-                    <select id="perPage" wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <select id="perPage" wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         <option value="10">10</option>
                         <option value="25">25</option>
                         <option value="50">50</option>
@@ -73,7 +73,7 @@
                     <tr>
                         <th scope="col" class="px-4 py-3 text-left">
                             <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
-                                class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
+                                class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
                         </th>
                         <x-sort-header field="asset_number" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Asset #</x-sort-header>
                         <x-sort-header field="name" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Name</x-sort-header>
@@ -90,9 +90,9 @@
                         <tr wire:key="asset-{{ $asset->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700">
                             <td class="px-4 py-4">
                                 <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $asset->id }}"
-                                    class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:ring-blue-500 dark:bg-gray-700">
+                                    class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 dark:text-blue-400">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-brand-600 dark:text-brand-300">
                                 <a href="{{ route('fixed-assets.show', $asset) }}">{{ $asset->asset_number }}</a>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -115,7 +115,7 @@
                                     {{ number_format($asset->book_value, 2) }}
                                 </span>
                                 <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5 mt-1">
-                                    <div class="bg-blue-600 h-1.5 rounded-full" style="width: {{ 100 - $asset->depreciation_percentage }}%"></div>
+                                    <div class="bg-brand-600 h-1.5 rounded-full" style="width: {{ 100 - $asset->depreciation_percentage }}%"></div>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-center">
@@ -124,7 +124,7 @@
                                         'active' => 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100',
                                         'fully_depreciated' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100',
                                         'disposed' => 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100',
-                                        'sold' => 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100',
+                                        'sold' => 'bg-brand-100 text-brand-800 dark:bg-brand-800 dark:text-brand-100',
                                     ];
                                 @endphp
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $statusColors[$asset->status] ?? 'bg-gray-100 text-gray-800' }}">
@@ -132,9 +132,9 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <a href="{{ route('fixed-assets.show', $asset) }}" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">View</a>
+                                <a href="{{ route('fixed-assets.show', $asset) }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-300 mr-3">View</a>
                                 @can('edit fixed-assets')
-                                <a href="{{ route('fixed-assets.edit', $asset) }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">Edit</a>
+                                <a href="{{ route('fixed-assets.edit', $asset) }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-300">Edit</a>
                                 @endcan
                             </td>
                         </tr>
@@ -149,7 +149,7 @@
                                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new fixed asset.</p>
                                     @can('create fixed-assets')
                                     <div class="mt-4">
-                                        <a href="{{ route('fixed-assets.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
+                                        <a href="{{ route('fixed-assets.create') }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
                                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                                             </svg>

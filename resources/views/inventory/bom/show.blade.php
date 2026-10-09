@@ -34,7 +34,7 @@
                         <div class="p-4 sm:p-6">
                             <p class="text-sm text-gray-600 dark:text-gray-400">One batch makes</p>
                             <p class="text-lg font-medium text-gray-900 dark:text-gray-100">{{ $fmt($bom->output_quantity) }}{{ $unit }}
-                                @if($bom->item)<a href="{{ route('inventory.show', $bom->item_id) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $bom->item->name }}</a>@endif
+                                @if($bom->item)<a href="{{ route('inventory.show', $bom->item_id) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $bom->item->name }}</a>@endif
                             </p>
 
                             <h3 class="text-base font-medium text-gray-900 dark:text-gray-100 mt-6 mb-2">Components per batch</h3>
@@ -51,7 +51,7 @@
                                         @foreach($estimate['lines'] as $row)
                                             @php $line = $row['line']; $lineUnit = $line->item?->unit ? ' '.$line->item->unit : ''; @endphp
                                             <tr>
-                                                <td class="px-3 py-2"><a href="{{ route('inventory.show', $line->item_id) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $line->item?->name }}</a>
+                                                <td class="px-3 py-2"><a href="{{ route('inventory.show', $line->item_id) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $line->item?->name }}</a>
                                                     @if((float) $line->waste_percentage > 0)<span class="sm:hidden block text-xs text-gray-500 dark:text-gray-400">+{{ $fmt($line->waste_percentage) }}% wastage</span>@endif
                                                 </td>
                                                 <td class="px-3 py-2 text-right whitespace-nowrap">{{ $fmt($line->quantity) }}{{ $lineUnit }}</td>
@@ -112,7 +112,7 @@
                             @forelse($orders as $order)
                                 <div class="flex justify-between gap-2 py-1">
                                     @can('adjust inventory')
-                                        <a href="{{ route('assembly-orders.show', $order) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $order->order_number }}</a>
+                                        <a href="{{ route('assembly-orders.show', $order) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $order->order_number }}</a>
                                     @else
                                         <span>{{ $order->order_number }}</span>
                                     @endcan
