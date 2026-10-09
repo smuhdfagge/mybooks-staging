@@ -8,7 +8,7 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         
         <!-- PWA Meta Tags -->
-        <meta name="theme-color" content="#4f46e5">
+        <meta name="theme-color" content="{{ config('brand.theme_color') }}">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -33,16 +33,12 @@
 
         <title>{{ config('app.name', 'MyBooks') }}</title>
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=inter:300,400,500,600,700&display=swap" rel="stylesheet" />
-
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
         <style>
             body {
-                font-family: 'Inter', sans-serif;
+                font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
             }
             .gradient-bg {
                 background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);

@@ -1,3 +1,15 @@
+/* IBM Plex Sans, served from our own build (rebrand R1). Latin covers
+   English; latin-ext adds the naira sign. Its digits are all the same width,
+   so amounts line up in columns. */
+@import '@fontsource/ibm-plex-sans/latin-400.css';
+@import '@fontsource/ibm-plex-sans/latin-ext-400.css';
+@import '@fontsource/ibm-plex-sans/latin-500.css';
+@import '@fontsource/ibm-plex-sans/latin-ext-500.css';
+@import '@fontsource/ibm-plex-sans/latin-600.css';
+@import '@fontsource/ibm-plex-sans/latin-ext-600.css';
+@import '@fontsource/ibm-plex-sans/latin-700.css';
+@import '@fontsource/ibm-plex-sans/latin-ext-700.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -10,13 +22,14 @@
 }
 
 /* Shared form and button styles (U4): one input style, one label style and
-   one brand colour (indigo-600). Used by x-field, x-card and the buttons. */
+   one brand colour (brand-600, MyBooks navy). Used by x-field, x-card and the
+   buttons. Pages should use these names rather than raw colours (rebrand R1). */
 @layer components {
     .form-label {
         @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1;
     }
     .form-control {
-        @apply w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500;
+        @apply w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500;
     }
     .form-help {
         @apply mt-1 text-xs text-gray-500 dark:text-gray-400;
@@ -25,13 +38,41 @@
         @apply mt-1 text-sm text-red-600 dark:text-red-400;
     }
     .btn-primary {
-        @apply inline-flex items-center justify-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition ease-in-out duration-150;
+        @apply inline-flex items-center justify-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition ease-in-out duration-150;
     }
     .btn-secondary {
-        @apply inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-500 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150;
+        @apply inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-500 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150;
+    }
+    .btn-danger {
+        @apply inline-flex items-center justify-center px-4 py-2 bg-red-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-800 focus:bg-red-800 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition ease-in-out duration-150;
     }
     .card {
         @apply bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg;
+    }
+    /* A text link: navy on light, lighter navy on dark so it stays readable. */
+    .link {
+        @apply text-brand-600 hover:text-brand-800 underline-offset-2 hover:underline dark:text-brand-300 dark:hover:text-brand-200;
+    }
+    /* The same focus ring everywhere, for anything focusable that isn't a
+       button or form field above. */
+    .focus-ring {
+        @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-800;
+    }
+    /* Status pills. Colour always means the same thing: green done or money
+       in, red problem, amber waiting, navy open or information, grey draft. */
+    .badge {
+        @apply inline-flex items-center px-2 text-xs leading-5 font-semibold rounded-full;
+    }
+    .badge-success { @apply bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300; }
+    .badge-danger { @apply bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300; }
+    .badge-warning { @apply bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300; }
+    .badge-info { @apply bg-brand-100 text-brand-800 dark:bg-brand-900/60 dark:text-brand-200; }
+    .badge-muted { @apply bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300; }
+    /* A small ochre highlight, e.g. "New" or the current plan. Dark text only. */
+    .badge-accent { @apply bg-accent-100 text-accent-800 dark:bg-accent-900/50 dark:text-accent-200; }
+    /* The current item in the sidebar menu. */
+    .nav-active {
+        @apply bg-brand-950 text-white;
     }
 }
 
