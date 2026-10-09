@@ -10,7 +10,7 @@
                         wire:click="goToStep({{ $i }})"
                         class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300
                             {{ $i < $currentStep ? 'bg-green-500 text-white cursor-pointer hover:bg-green-600' : '' }}
-                            {{ $i === $currentStep ? 'bg-indigo-600 text-white ring-4 ring-indigo-600/30' : '' }}
+                            {{ $i === $currentStep ? 'bg-brand-600 text-white ring-4 ring-brand-600/30' : '' }}
                             {{ $i > $currentStep ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : '' }}"
                         {{ $i > $currentStep ? 'disabled' : '' }}
                     >
@@ -57,8 +57,8 @@
                 <div class="space-y-4">
                     @foreach($plans as $plan)
                         <label 
-                            class="relative flex items-start p-5 cursor-pointer rounded-xl border-2 transition-all duration-300 hover:border-indigo-500
-                                {{ $plan_id === $plan->id ? 'border-indigo-500 bg-indigo-500/10' : 'border-gray-700 bg-gray-800/50' }}"
+                            class="relative flex items-start p-5 cursor-pointer rounded-xl border-2 transition-all duration-300 hover:border-brand-500
+                                {{ $plan_id === $plan->id ? 'border-brand-500 bg-brand-500/10' : 'border-gray-700 bg-gray-800/50' }}"
                             wire:click="$set('plan_id', {{ $plan->id }})"
                         >
                             <input 
@@ -71,7 +71,7 @@
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center gap-3">
                                         <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all
-                                            {{ $plan_id === $plan->id ? 'border-indigo-500 bg-indigo-500' : 'border-gray-500' }}">
+                                            {{ $plan_id === $plan->id ? 'border-brand-500 bg-brand-500' : 'border-gray-500' }}">
                                             @if($plan_id === $plan->id)
                                                 <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
@@ -81,7 +81,7 @@
                                         <div>
                                             <span class="font-semibold text-white text-lg">{{ $plan->name }}</span>
                                             @if($plan->slug === 'professional')
-                                                <span class="ml-2 px-2.5 py-1 text-xs font-semibold bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 rounded-full">Popular</span>
+                                                <span class="ml-2 px-2.5 py-1 text-xs font-semibold bg-accent-400 text-gray-900 rounded-full">Popular</span>
                                             @endif
                                         </div>
                                     </div>
@@ -100,7 +100,7 @@
                                             <span class="text-xs px-2 py-1 bg-gray-700 text-gray-300 rounded-full">{{ $feature }}</span>
                                         @endforeach
                                         @if(count($plan->features) > 3)
-                                            <span class="text-xs px-2 py-1 text-indigo-400">+{{ count($plan->features) - 3 }} more</span>
+                                            <span class="text-xs px-2 py-1 text-brand-400">+{{ count($plan->features) - 3 }} more</span>
                                         @endif
                                     </div>
                                 @endif
@@ -120,8 +120,8 @@
                         <div class="grid grid-cols-2 gap-4">
                             @if($this->selectedPlan->allow_monthly_billing)
                                 <label 
-                                    class="relative flex flex-col p-5 cursor-pointer rounded-xl border-2 transition-all duration-300 hover:border-indigo-500
-                                        {{ $billing_cycle === 'monthly' ? 'border-indigo-500 bg-indigo-500/10' : 'border-gray-700 bg-gray-800/50' }}"
+                                    class="relative flex flex-col p-5 cursor-pointer rounded-xl border-2 transition-all duration-300 hover:border-brand-500
+                                        {{ $billing_cycle === 'monthly' ? 'border-brand-500 bg-brand-500/10' : 'border-gray-700 bg-gray-800/50' }}"
                                 >
                                     <input 
                                         type="radio" 
@@ -132,7 +132,7 @@
                                     <div class="flex items-center justify-between">
                                         <span class="font-semibold text-white">Monthly</span>
                                         <div class="w-4 h-4 rounded-full border-2 transition-all
-                                            {{ $billing_cycle === 'monthly' ? 'border-indigo-500 bg-indigo-500' : 'border-gray-500' }}">
+                                            {{ $billing_cycle === 'monthly' ? 'border-brand-500 bg-brand-500' : 'border-gray-500' }}">
                                         </div>
                                     </div>
                                     <span class="text-2xl font-bold text-white mt-3">
@@ -144,8 +144,8 @@
                             
                             @if($this->selectedPlan->allow_annual_billing)
                                 <label 
-                                    class="relative flex flex-col p-5 cursor-pointer rounded-xl border-2 transition-all duration-300 hover:border-indigo-500
-                                        {{ $billing_cycle === 'annual' ? 'border-indigo-500 bg-indigo-500/10' : 'border-gray-700 bg-gray-800/50' }}"
+                                    class="relative flex flex-col p-5 cursor-pointer rounded-xl border-2 transition-all duration-300 hover:border-brand-500
+                                        {{ $billing_cycle === 'annual' ? 'border-brand-500 bg-brand-500/10' : 'border-gray-700 bg-gray-800/50' }}"
                                 >
                                     <input 
                                         type="radio" 
@@ -156,7 +156,7 @@
                                     <div class="flex items-center justify-between">
                                         <span class="font-semibold text-white">Annual</span>
                                         <div class="w-4 h-4 rounded-full border-2 transition-all
-                                            {{ $billing_cycle === 'annual' ? 'border-indigo-500 bg-indigo-500' : 'border-gray-500' }}">
+                                            {{ $billing_cycle === 'annual' ? 'border-brand-500 bg-brand-500' : 'border-gray-500' }}">
                                         </div>
                                     </div>
                                     <span class="text-2xl font-bold text-white mt-3">
@@ -196,7 +196,7 @@
                         type="text" 
                         id="company_name" 
                         wire:model="company_name"
-                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
                         placeholder="Enter your company name"
                     >
                     @error('company_name')
@@ -213,7 +213,7 @@
                         type="email" 
                         id="company_email" 
                         wire:model="company_email"
-                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
                         placeholder="company@example.com"
                     >
                     @error('company_email')
@@ -230,7 +230,7 @@
                         type="tel" 
                         id="company_phone" 
                         wire:model="company_phone"
-                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
                         placeholder="+234 XXX XXX XXXX"
                     >
                     @error('company_phone')
@@ -247,7 +247,7 @@
                         type="text" 
                         id="company_address" 
                         wire:model="company_address"
-                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
                         placeholder="Street address"
                     >
                     @error('company_address')
@@ -263,7 +263,7 @@
                             type="text" 
                             id="company_city" 
                             wire:model="company_city"
-                            class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                            class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
                             placeholder="City"
                         >
                         @error('company_city')
@@ -278,7 +278,7 @@
                             type="text" 
                             id="company_state" 
                             wire:model="company_state"
-                            class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                            class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
                             placeholder="State"
                         >
                         @error('company_state')
@@ -295,7 +295,7 @@
                             type="text" 
                             id="company_country" 
                             wire:model="company_country"
-                            class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                            class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
                             placeholder="Country"
                         >
                         @error('company_country')
@@ -310,7 +310,7 @@
                             type="text" 
                             id="company_postal_code" 
                             wire:model="company_postal_code"
-                            class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                            class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
                             placeholder="Postal code"
                         >
                         @error('company_postal_code')
@@ -327,7 +327,7 @@
                     <select 
                         id="currency" 
                         wire:model="currency"
-                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
                     >
                         <option value="NGN">NGN - Nigerian Naira</option>
                         <option value="USD">USD - US Dollar</option>
@@ -363,7 +363,7 @@
                         type="text" 
                         id="name" 
                         wire:model="name"
-                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
                         placeholder="Enter your full name"
                     >
                     @error('name')
@@ -380,7 +380,7 @@
                         type="email" 
                         id="email" 
                         wire:model="email"
-                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
                         placeholder="you@example.com"
                     >
                     <p class="text-gray-500 text-sm mt-1">We'll send a verification email to this address</p>
@@ -396,7 +396,7 @@
                         type="tel" 
                         id="phone" 
                         wire:model="phone"
-                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
                         placeholder="+234 XXX XXX XXXX"
                     >
                     @error('phone')
@@ -413,7 +413,7 @@
                         type="password" 
                         id="password" 
                         wire:model="password"
-                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
                         placeholder="Create a strong password"
                     >
                     @error('password')
@@ -430,7 +430,7 @@
                         type="password" 
                         id="password_confirmation" 
                         wire:model="password_confirmation"
-                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
                         placeholder="Confirm your password"
                     >
                     @error('password_confirmation')
@@ -456,7 +456,7 @@
                         </div>
                         <div class="flex justify-between border-t border-gray-700 pt-2 mt-2">
                             <span class="text-gray-400">Total:</span>
-                            <span class="text-xl font-bold text-indigo-400">
+                            <span class="text-xl font-bold text-brand-400">
                                 ₦{{ number_format($billing_cycle === 'annual' ? ($this->selectedPlan?->annual_price ?? 0) : ($this->selectedPlan?->monthly_price ?? 0)) }}
                                 <span class="text-sm font-normal text-gray-500">/{{ $billing_cycle === 'annual' ? 'year' : 'month' }}</span>
                             </span>
@@ -467,8 +467,8 @@
                 <!-- Terms Notice -->
                 <p class="text-sm text-gray-500 text-center">
                     By creating an account, you agree to our 
-                    <a href="#" class="text-indigo-400 hover:text-indigo-300">Terms of Service</a> and 
-                    <a href="#" class="text-indigo-400 hover:text-indigo-300">Privacy Policy</a>
+                    <a href="#" class="text-brand-400 hover:text-brand-300">Terms of Service</a> and 
+                    <a href="#" class="text-brand-400 hover:text-brand-300">Privacy Policy</a>
                 </p>
             </div>
         @endif
@@ -489,7 +489,7 @@
             @else
                 <a 
                     href="{{ route('login') }}"
-                    class="text-sm text-gray-400 hover:text-indigo-400 transition-colors"
+                    class="text-sm text-gray-400 hover:text-brand-400 transition-colors"
                 >
                     Already have an account? Sign in
                 </a>
@@ -497,7 +497,7 @@
 
             <button 
                 type="submit"
-                class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5"
+                class="inline-flex items-center px-6 py-3 bg-brand-600 hover:bg-brand-500 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5"
                 wire:loading.attr="disabled"
                 wire:loading.class="opacity-75 cursor-not-allowed"
             >

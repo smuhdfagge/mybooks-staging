@@ -1,15 +1,15 @@
 {{-- Shared public site navigation. Pass $active = 'about'|'contact'|'support'|'privacy-policy'|'terms-of-service' to highlight the current page. --}}
 @php($active = $active ?? null)
-@php($anchorClass = 'text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition')
+@php($anchorClass = 'text-gray-700 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-300 transition')
 @php($linkClass = fn (string $page) => $active === $page
-    ? 'text-indigo-600 dark:text-indigo-400 font-medium'
+    ? 'text-brand-600 dark:text-brand-300 font-medium'
     : $anchorClass)
 
-<nav class="fixed w-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 z-50">
+<nav class="fixed w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
             <div class="flex items-center">
-                <a href="{{ route('home') }}" class="text-2xl font-bold gradient-text">MyBooks</a>
+                <a href="{{ route('home') }}" class="flex items-center gap-2 text-2xl font-semibold text-brand-600 dark:text-white rounded focus-ring"><x-brand-mark class="h-8 w-8" /><span>MyBooks</span></a>
             </div>
 
             <!-- Desktop Menu -->
@@ -21,11 +21,11 @@
                 <a href="{{ route('about') }}" class="{{ $linkClass('about') }}">About Us</a>
                 @if (Route::has('login'))
                     @auth
-                        <a href="{{ url('/dashboard') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">Dashboard</a>
+                        <a href="{{ url('/dashboard') }}" class="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition">Dashboard</a>
                     @else
-                        <a href="{{ route('login') }}" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">Log in</a>
+                        <a href="{{ route('login') }}" class="text-gray-700 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-300 transition">Log in</a>
                         @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">Get Started</a>
+                            <a href="{{ route('register') }}" class="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition">Get Started</a>
                         @endif
                     @endauth
                 @endif
@@ -35,7 +35,7 @@
             <div class="md:hidden">
                 <button
                     @click="mobileMenuOpen = !mobileMenuOpen"
-                    class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none"
+                    class="text-gray-700 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-300 focus:outline-none"
                     aria-label="Toggle navigation menu"
                     :aria-expanded="mobileMenuOpen"
                     aria-controls="mobile-menu"
@@ -60,11 +60,11 @@
                 <a href="{{ route('about') }}" @click="mobileMenuOpen = false" class="{{ $linkClass('about') }}">About Us</a>
                 @if (Route::has('login'))
                     @auth
-                        <a href="{{ url('/dashboard') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-center">Dashboard</a>
+                        <a href="{{ url('/dashboard') }}" class="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition text-center">Dashboard</a>
                     @else
-                        <a href="{{ route('login') }}" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">Log in</a>
+                        <a href="{{ route('login') }}" class="text-gray-700 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-300 transition">Log in</a>
                         @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-center">Get Started</a>
+                            <a href="{{ route('register') }}" class="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition text-center">Get Started</a>
                         @endif
                     @endauth
                 @endif

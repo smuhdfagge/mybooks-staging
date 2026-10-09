@@ -10,6 +10,12 @@
         * {
             box-sizing: border-box;
         }
+        /* Wide tables scroll inside their own box on a phone (R11). */
+        .markdown-body table {
+            display: block;
+            max-width: 100%;
+            overflow-x: auto;
+        }
         
         body {
             margin: 0;
@@ -19,7 +25,7 @@
         }
         
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #102A43;
             color: white;
             padding: 20px 40px;
             position: sticky;
@@ -73,7 +79,7 @@
         }
         
         .markdown-body h1:first-child {
-            border-bottom: 2px solid #667eea;
+            border-bottom: 2px solid #1F4E79;
             padding-bottom: 15px;
         }
         
@@ -123,7 +129,7 @@
             position: fixed;
             bottom: 30px;
             right: 30px;
-            background: #667eea;
+            background: #1F4E79;
             color: white;
             border: none;
             border-radius: 50%;
@@ -138,7 +144,7 @@
         
         .back-to-top:hover {
             transform: scale(1.1);
-            background: #764ba2;
+            background: #183E61;
         }
         
         .back-to-top.visible {

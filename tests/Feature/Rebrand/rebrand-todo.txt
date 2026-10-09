@@ -2,22 +2,3 @@
 # Each rebrand session takes its files off this list when they are done.
 # The guard test (BrandColoursTest) fails if a file not listed here uses an
 # old colour, or if a listed file no longer does.
-public/offline.html
-resources/views/admin/auth/login.blade.php
-resources/views/admin/auth/two-factor-challenge.blade.php
-resources/views/admin/auth/two-factor-recovery-codes.blade.php
-resources/views/admin/auth/two-factor-setup.blade.php
-resources/views/auth/login.blade.php
-resources/views/auth/two-factor/challenge.blade.php
-resources/views/auth/two-factor/setup.blade.php
-resources/views/auth/verify-email.blade.php
-resources/views/docs/api.blade.php
-resources/views/layouts/guest.blade.php
-resources/views/livewire/auth/register-wizard.blade.php
-resources/views/pages/about.blade.php
-resources/views/pages/contact.blade.php
-resources/views/pages/privacy-policy.blade.php
-resources/views/pages/support.blade.php
-resources/views/pages/terms-of-service.blade.php
-resources/views/partials/public-nav.blade.php
-resources/views/welcome.blade.php

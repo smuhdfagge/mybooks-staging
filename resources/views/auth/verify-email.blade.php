@@ -1,7 +1,7 @@
 <x-guest-layout>
     <div class="text-center">
         <!-- Email Icon -->
-        <div class="mx-auto w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mb-6">
+        <div class="mx-auto w-20 h-20 bg-brand-600 rounded-full flex items-center justify-center mb-6">
             <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
             </svg>
@@ -50,7 +50,7 @@
 
             <form method="POST" action="{{ route('verification.send') }}">
                 @csrf
-                <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300">
+                <button type="submit" class="w-full px-6 py-3 bg-brand-600 hover:bg-brand-500 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300">
                     Resend Verification Email
                 </button>
             </form>
@@ -58,7 +58,7 @@
 
         <form method="POST" action="{{ route('logout') }}">
             @csrf
-            <button type="submit" class="text-sm text-gray-400 hover:text-indigo-400 transition-colors">
+            <button type="submit" class="text-sm text-gray-400 hover:text-brand-400 transition-colors">
                 Sign out and use a different account
             </button>
         </form>

@@ -288,4 +288,34 @@ class BrandColoursTest extends TestCase
             $this->assertStringNotContainsString('linear-gradient', File::get($file), basename($file));
         }
     }
+
+    // ---- R11: public and sign-in pages ------------------------------------------
+
+    public function test_every_file_is_rebranded(): void
+    {
+        $left = array_values(array_filter(array_map('trim', file(self::TODO) ?: []), fn ($l) => $l !== '' && ! str_starts_with($l, '#')));
+
+        $this->assertSame([], $left, 'The rebrand to-do list should be empty after R11.');
+    }
+
+    public function test_sign_in_page_is_flat_navy_with_the_new_logo(): void
+    {
+        $html = $this->get(route('login'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('M10 47H54M10 54H54', $html);   // the Option A mark
+        $this->assertStringNotContainsString('floating-shapes', $html);
+        $this->assertStringNotContainsString('linear-gradient', $html);
+        $this->assertStringNotContainsString('100%</div>', $html);         // the old made-up stats
+    }
+
+    public function test_public_pages_use_the_new_logo_and_no_outside_fonts(): void
+    {
+        foreach (['home', 'about'] as $route) {
+            $html = $this->get(route($route))->assertOk()->getContent();
+            $this->assertStringContainsString('M17 45H47M17 51H47', $html, $route);   // the mark in the nav
+            $this->assertStringNotContainsString('fonts.bunny.net', $html, $route);
+        }
+        $csp = $this->get(route('home'))->headers->get('Content-Security-Policy');
+        $this->assertStringNotContainsString('fonts.bunny.net', (string) $csp);
+    }
 }
