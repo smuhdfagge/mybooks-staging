@@ -5,11 +5,10 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>About Us - {{ config('app.name', 'MyBooks') }}</title>
         <meta name="description" content="Learn more about MyBooks - our mission, values, and the team behind the complete accounting and bookkeeping solution.">
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         <style>
-            .gradient-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+            .gradient-text { color: #1F4E79; }
+        .dark .gradient-text { color: #8AA9CB; }
         </style>
     </head>
     <body class="bg-white dark:bg-gray-900 antialiased" x-data="{ mobileMenuOpen: false }">
@@ -17,7 +16,7 @@
         @include('partials.public-nav', ['active' => 'about'])
 
         <!-- Hero Section -->
-        <section class="pt-32 pb-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+        <section class="pt-32 pb-16 px-4 sm:px-6 lg:px-8 bg-brand-50 dark:bg-gray-900">
             <div class="max-w-7xl mx-auto text-center">
                 <h1 class="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-6">
                     About <span class="gradient-text">MyBooks</span>
@@ -46,22 +45,22 @@
                             </p>
                         </div>
                     </div>
-                    <div class="bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-2xl p-8">
+                    <div class="bg-brand-100 dark:bg-brand-900/30 rounded-2xl p-8">
                         <div class="grid grid-cols-2 gap-6">
                             <div class="text-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-                                <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">10K+</div>
+                                <div class="text-3xl font-bold text-brand-600 dark:text-brand-300">10K+</div>
                                 <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Active Users</div>
                             </div>
                             <div class="text-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-                                <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">2</div>
+                                <div class="text-3xl font-bold text-brand-600 dark:text-brand-300">2</div>
                                 <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Countries</div>
                             </div>
                             <div class="text-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-                                <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">Over 10k</div>
+                                <div class="text-3xl font-bold text-brand-600 dark:text-brand-300">Over 10k</div>
                                 <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Invoices Created</div>
                             </div>
                             <div class="text-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-                                <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">99.9%</div>
+                                <div class="text-3xl font-bold text-brand-600 dark:text-brand-300">99.9%</div>
                                 <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Uptime</div>
                             </div>
                         </div>
@@ -81,8 +80,8 @@
                 </div>
                 <div class="grid md:grid-cols-3 gap-8">
                     <div class="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-sm">
-                        <div class="w-14 h-14 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center mb-6">
-                            <svg class="w-7 h-7 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="w-14 h-14 bg-brand-100 dark:bg-brand-900/40 rounded-xl flex items-center justify-center mb-6">
+                            <svg class="w-7 h-7 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                             </svg>
                         </div>
@@ -92,8 +91,8 @@
                         </p>
                     </div>
                     <div class="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-sm">
-                        <div class="w-14 h-14 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center mb-6">
-                            <svg class="w-7 h-7 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="w-14 h-14 bg-brand-100 dark:bg-brand-900/40 rounded-xl flex items-center justify-center mb-6">
+                            <svg class="w-7 h-7 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                             </svg>
                         </div>
@@ -103,8 +102,8 @@
                         </p>
                     </div>
                     <div class="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-sm">
-                        <div class="w-14 h-14 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center mb-6">
-                            <svg class="w-7 h-7 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="w-14 h-14 bg-brand-100 dark:bg-brand-900/40 rounded-xl flex items-center justify-center mb-6">
+                            <svg class="w-7 h-7 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                             </svg>
                         </div>
@@ -125,8 +124,8 @@
                 </div>
                 <div class="grid md:grid-cols-2 gap-8">
                     <div class="flex items-start space-x-4">
-                        <div class="flex-shrink-0 w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="flex-shrink-0 w-10 h-10 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>
                         </div>
@@ -136,8 +135,8 @@
                         </div>
                     </div>
                     <div class="flex items-start space-x-4">
-                        <div class="flex-shrink-0 w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="flex-shrink-0 w-10 h-10 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>
                         </div>
@@ -147,8 +146,8 @@
                         </div>
                     </div>
                     <div class="flex items-start space-x-4">
-                        <div class="flex-shrink-0 w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="flex-shrink-0 w-10 h-10 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>
                         </div>
@@ -158,8 +157,8 @@
                         </div>
                     </div>
                     <div class="flex items-start space-x-4">
-                        <div class="flex-shrink-0 w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="flex-shrink-0 w-10 h-10 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>
                         </div>
@@ -173,17 +172,17 @@
         </section>
 
         <!-- CTA Section -->
-        <section class="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-indigo-600 to-purple-600">
+        <section class="py-20 px-4 sm:px-6 lg:px-8 bg-brand-900">
             <div class="max-w-4xl mx-auto text-center">
                 <h2 class="text-3xl lg:text-4xl font-bold text-white mb-6">
                     Ready to Transform Your Business?
                 </h2>
-                <p class="text-indigo-100 text-lg mb-8">
+                <p class="text-brand-100 text-lg mb-8">
                     Join thousands of businesses that trust MyBooks for their accounting needs.
                 </p>
                 <div class="flex flex-col sm:flex-row justify-center gap-4">
                     @if (Route::has('register'))
-                        <a href="{{ route('register') }}" class="px-8 py-4 bg-white text-indigo-600 rounded-lg hover:bg-gray-100 transition font-semibold shadow-lg">
+                        <a href="{{ route('register') }}" class="px-8 py-4 bg-white text-brand-600 rounded-lg hover:bg-gray-100 transition font-semibold shadow-lg">
                             Get Started Free
                         </a>
                     @endif

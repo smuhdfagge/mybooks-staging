@@ -5,11 +5,10 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Privacy Policy - {{ config('app.name', 'MyBooks') }}</title>
         <meta name="description" content="Privacy Policy for MyBooks - Learn how we collect, use, store, and protect your personal and business data.">
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         <style>
-            .gradient-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+            .gradient-text { color: #1F4E79; }
+        .dark .gradient-text { color: #8AA9CB; }
         </style>
     </head>
     <body class="bg-white dark:bg-gray-900 antialiased" x-data="{ mobileMenuOpen: false }">
@@ -17,7 +16,7 @@
         @include('partials.public-nav', ['active' => 'privacy-policy'])
 
         <!-- Hero Section -->
-        <section class="pt-32 pb-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+        <section class="pt-32 pb-12 px-4 sm:px-6 lg:px-8 bg-brand-50 dark:bg-gray-900">
             <div class="max-w-4xl mx-auto text-center">
                 <h1 class="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
                     Privacy <span class="gradient-text">Policy</span>
@@ -37,7 +36,7 @@
                     <!-- Section 1 -->
                     <div class="mb-12">
                         <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                            <span class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center mr-3 text-indigo-600 dark:text-indigo-400 text-sm font-bold">1</span>
+                            <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">1</span>
                             Introduction
                         </h2>
                         <div class="text-gray-600 dark:text-gray-300 space-y-4 pl-11">
@@ -50,7 +49,7 @@
                     <!-- Section 2 -->
                     <div class="mb-12">
                         <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                            <span class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center mr-3 text-indigo-600 dark:text-indigo-400 text-sm font-bold">2</span>
+                            <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">2</span>
                             Information We Collect
                         </h2>
                         <div class="text-gray-600 dark:text-gray-300 space-y-6 pl-11">
@@ -59,31 +58,31 @@
                             <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
                                 <h3 class="font-semibold text-gray-900 dark:text-white mb-3">a. User Information</h3>
                                 <ul class="space-y-2">
-                                    <li class="flex items-center"><svg class="w-5 h-5 text-indigo-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Name</li>
-                                    <li class="flex items-center"><svg class="w-5 h-5 text-indigo-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Email address</li>
-                                    <li class="flex items-center"><svg class="w-5 h-5 text-indigo-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Phone number</li>
-                                    <li class="flex items-center"><svg class="w-5 h-5 text-indigo-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Login credentials</li>
-                                    <li class="flex items-center"><svg class="w-5 h-5 text-indigo-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Organization or business details</li>
+                                    <li class="flex items-center"><svg class="w-5 h-5 text-brand-500 mr-2 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Name</li>
+                                    <li class="flex items-center"><svg class="w-5 h-5 text-brand-500 mr-2 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Email address</li>
+                                    <li class="flex items-center"><svg class="w-5 h-5 text-brand-500 mr-2 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Phone number</li>
+                                    <li class="flex items-center"><svg class="w-5 h-5 text-brand-500 mr-2 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Login credentials</li>
+                                    <li class="flex items-center"><svg class="w-5 h-5 text-brand-500 mr-2 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Organization or business details</li>
                                 </ul>
                             </div>
 
                             <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
                                 <h3 class="font-semibold text-gray-900 dark:text-white mb-3">b. Accounting and Business Data</h3>
                                 <ul class="space-y-2">
-                                    <li class="flex items-center"><svg class="w-5 h-5 text-indigo-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Financial records (e.g., invoices, expenses, payments)</li>
-                                    <li class="flex items-center"><svg class="w-5 h-5 text-indigo-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Customer and vendor information</li>
-                                    <li class="flex items-center"><svg class="w-5 h-5 text-indigo-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Employee payroll or accounting-related data</li>
-                                    <li class="flex items-center"><svg class="w-5 h-5 text-indigo-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Reports generated within the system</li>
+                                    <li class="flex items-center"><svg class="w-5 h-5 text-brand-500 mr-2 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Financial records (e.g., invoices, expenses, payments)</li>
+                                    <li class="flex items-center"><svg class="w-5 h-5 text-brand-500 mr-2 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Customer and vendor information</li>
+                                    <li class="flex items-center"><svg class="w-5 h-5 text-brand-500 mr-2 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Employee payroll or accounting-related data</li>
+                                    <li class="flex items-center"><svg class="w-5 h-5 text-brand-500 mr-2 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Reports generated within the system</li>
                                 </ul>
                             </div>
 
                             <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
                                 <h3 class="font-semibold text-gray-900 dark:text-white mb-3">c. Technical Information</h3>
                                 <ul class="space-y-2">
-                                    <li class="flex items-center"><svg class="w-5 h-5 text-indigo-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>IP address</li>
-                                    <li class="flex items-center"><svg class="w-5 h-5 text-indigo-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Device and browser type</li>
-                                    <li class="flex items-center"><svg class="w-5 h-5 text-indigo-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Log files and usage activity</li>
-                                    <li class="flex items-center"><svg class="w-5 h-5 text-indigo-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Date and time of access</li>
+                                    <li class="flex items-center"><svg class="w-5 h-5 text-brand-500 mr-2 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>IP address</li>
+                                    <li class="flex items-center"><svg class="w-5 h-5 text-brand-500 mr-2 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Device and browser type</li>
+                                    <li class="flex items-center"><svg class="w-5 h-5 text-brand-500 mr-2 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Log files and usage activity</li>
+                                    <li class="flex items-center"><svg class="w-5 h-5 text-brand-500 mr-2 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Date and time of access</li>
                                 </ul>
                             </div>
                         </div>
@@ -92,7 +91,7 @@
                     <!-- Section 3 -->
                     <div class="mb-12">
                         <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                            <span class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center mr-3 text-indigo-600 dark:text-indigo-400 text-sm font-bold">3</span>
+                            <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">3</span>
                             How We Use Information
                         </h2>
                         <div class="text-gray-600 dark:text-gray-300 space-y-4 pl-11">
@@ -114,7 +113,7 @@
                     <!-- Section 4 -->
                     <div class="mb-12">
                         <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                            <span class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center mr-3 text-indigo-600 dark:text-indigo-400 text-sm font-bold">4</span>
+                            <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">4</span>
                             Data Privacy and Confidentiality
                         </h2>
                         <div class="text-gray-600 dark:text-gray-300 space-y-4 pl-11">
@@ -141,17 +140,17 @@
                     <!-- Section 5 -->
                     <div class="mb-12">
                         <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                            <span class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center mr-3 text-indigo-600 dark:text-indigo-400 text-sm font-bold">5</span>
+                            <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">5</span>
                             Employee Conduct and Data Handling
                         </h2>
                         <div class="text-gray-600 dark:text-gray-300 space-y-4 pl-11">
                             <p>MyBooks employees, contractors, and service providers are bound by strict confidentiality and data protection obligations.</p>
                             <p>Employee responsibilities include:</p>
                             <ul class="space-y-2">
-                                <li class="flex items-start"><svg class="w-5 h-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Using data only for approved business purposes</li>
-                                <li class="flex items-start"><svg class="w-5 h-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Maintaining confidentiality at all times</li>
-                                <li class="flex items-start"><svg class="w-5 h-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Complying with internal security policies</li>
-                                <li class="flex items-start"><svg class="w-5 h-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Reporting any suspected data breach immediately</li>
+                                <li class="flex items-start"><svg class="w-5 h-5 text-brand-500 mr-2 mt-0.5 flex-shrink-0 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Using data only for approved business purposes</li>
+                                <li class="flex items-start"><svg class="w-5 h-5 text-brand-500 mr-2 mt-0.5 flex-shrink-0 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Maintaining confidentiality at all times</li>
+                                <li class="flex items-start"><svg class="w-5 h-5 text-brand-500 mr-2 mt-0.5 flex-shrink-0 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Complying with internal security policies</li>
+                                <li class="flex items-start"><svg class="w-5 h-5 text-brand-500 mr-2 mt-0.5 flex-shrink-0 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Reporting any suspected data breach immediately</li>
                             </ul>
                             <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mt-4">
                                 <p class="text-amber-700 dark:text-amber-400">Any breach of these obligations may result in disciplinary action, including termination and legal consequences.</p>
@@ -162,14 +161,14 @@
                     <!-- Section 6 -->
                     <div class="mb-12">
                         <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                            <span class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center mr-3 text-indigo-600 dark:text-indigo-400 text-sm font-bold">6</span>
+                            <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">6</span>
                             Data Sharing and Third Parties
                         </h2>
                         <div class="text-gray-600 dark:text-gray-300 space-y-4 pl-11">
                             <p>We may share limited data only when necessary:</p>
                             <ul class="space-y-2">
-                                <li class="flex items-start"><svg class="w-5 h-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>With trusted service providers supporting hosting, security, or system maintenance</li>
-                                <li class="flex items-start"><svg class="w-5 h-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>To comply with legal requirements, court orders, or regulatory authorities</li>
+                                <li class="flex items-start"><svg class="w-5 h-5 text-brand-500 mr-2 mt-0.5 flex-shrink-0 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>With trusted service providers supporting hosting, security, or system maintenance</li>
+                                <li class="flex items-start"><svg class="w-5 h-5 text-brand-500 mr-2 mt-0.5 flex-shrink-0 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>To comply with legal requirements, court orders, or regulatory authorities</li>
                             </ul>
                             <p class="mt-4">All third parties are required to follow data protection standards consistent with this Policy.</p>
 
@@ -201,14 +200,14 @@
                     <!-- Section 7 -->
                     <div class="mb-12">
                         <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                            <span class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center mr-3 text-indigo-600 dark:text-indigo-400 text-sm font-bold">7</span>
+                            <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">7</span>
                             Data Retention
                         </h2>
                         <div class="text-gray-600 dark:text-gray-300 space-y-4 pl-11">
                             <p>We retain user data only for as long as:</p>
                             <ul class="space-y-2">
-                                <li class="flex items-start"><svg class="w-5 h-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>The account remains active, or</li>
-                                <li class="flex items-start"><svg class="w-5 h-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Required to meet legal, regulatory, or accounting obligations</li>
+                                <li class="flex items-start"><svg class="w-5 h-5 text-brand-500 mr-2 mt-0.5 flex-shrink-0 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>The account remains active, or</li>
+                                <li class="flex items-start"><svg class="w-5 h-5 text-brand-500 mr-2 mt-0.5 flex-shrink-0 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Required to meet legal, regulatory, or accounting obligations</li>
                             </ul>
                             <p class="mt-4">Data may be securely deleted or anonymized once it is no longer required.</p>
                             <p id="closing-a-business">The owner of a business can close it from Settings &rarr; Company Profile &rarr; Close organisation. Its data is erased {{ \App\Models\Tenant::CLOSURE_GRACE_DAYS }} days later unless the owner cancels, and copies in backups are removed as those backups expire ({{ config('mybooks.backup.keep_days') }} days). We keep a record that the request was made and carried out.</p>
@@ -218,35 +217,35 @@
                     <!-- Section 8 -->
                     <div class="mb-12">
                         <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                            <span class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center mr-3 text-indigo-600 dark:text-indigo-400 text-sm font-bold">8</span>
+                            <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">8</span>
                             User Rights
                         </h2>
                         <div class="text-gray-600 dark:text-gray-300 space-y-4 pl-11">
                             <p>Users have the right to:</p>
                             <div class="grid md:grid-cols-2 gap-4">
                                 <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 flex items-start">
-                                    <svg class="w-6 h-6 text-indigo-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    <svg class="w-6 h-6 text-brand-500 mr-3 flex-shrink-0 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     <div>
                                         <p class="font-medium text-gray-900 dark:text-white">Access</p>
                                         <p class="text-sm">Access their personal data</p>
                                     </div>
                                 </div>
                                 <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 flex items-start">
-                                    <svg class="w-6 h-6 text-indigo-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                    <svg class="w-6 h-6 text-brand-500 mr-3 flex-shrink-0 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                     <div>
                                         <p class="font-medium text-gray-900 dark:text-white">Correction</p>
                                         <p class="text-sm">Request correction of inaccurate information</p>
                                     </div>
                                 </div>
                                 <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 flex items-start">
-                                    <svg class="w-6 h-6 text-indigo-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    <svg class="w-6 h-6 text-brand-500 mr-3 flex-shrink-0 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     <div>
                                         <p class="font-medium text-gray-900 dark:text-white">Deletion</p>
                                         <p class="text-sm">Request deletion of data, subject to legal requirements</p>
                                     </div>
                                 </div>
                                 <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 flex items-start">
-                                    <svg class="w-6 h-6 text-indigo-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                    <svg class="w-6 h-6 text-brand-500 mr-3 flex-shrink-0 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
                                     <div>
                                         <p class="font-medium text-gray-900 dark:text-white">Withdraw Consent</p>
                                         <p class="text-sm">Withdraw consent where applicable</p>
@@ -260,15 +259,15 @@
                     <!-- Section 9 -->
                     <div class="mb-12">
                         <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                            <span class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center mr-3 text-indigo-600 dark:text-indigo-400 text-sm font-bold">9</span>
+                            <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">9</span>
                             Cookies and System Monitoring
                         </h2>
                         <div class="text-gray-600 dark:text-gray-300 space-y-4 pl-11">
                             <p>MyBooks uses cookies and similar technologies to:</p>
                             <ul class="space-y-2">
-                                <li class="flex items-start"><svg class="w-5 h-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Maintain secure sessions</li>
-                                <li class="flex items-start"><svg class="w-5 h-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Improve user experience</li>
-                                <li class="flex items-start"><svg class="w-5 h-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Monitor system performance</li>
+                                <li class="flex items-start"><svg class="w-5 h-5 text-brand-500 mr-2 mt-0.5 flex-shrink-0 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Maintain secure sessions</li>
+                                <li class="flex items-start"><svg class="w-5 h-5 text-brand-500 mr-2 mt-0.5 flex-shrink-0 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Improve user experience</li>
+                                <li class="flex items-start"><svg class="w-5 h-5 text-brand-500 mr-2 mt-0.5 flex-shrink-0 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Monitor system performance</li>
                             </ul>
                             <p class="mt-4">Users may control cookies through their browser settings.</p>
                         </div>
@@ -277,14 +276,14 @@
                     <!-- Section 10 -->
                     <div class="mb-12">
                         <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                            <span class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center mr-3 text-indigo-600 dark:text-indigo-400 text-sm font-bold">10</span>
+                            <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">10</span>
                             Complaints and Concerns
                         </h2>
                         <div class="text-gray-600 dark:text-gray-300 space-y-4 pl-11">
                             <p>We take privacy concerns seriously.</p>
                             <p>If you have a complaint, concern, or question about data protection or this Privacy Policy, please contact us at:</p>
-                            <div class="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-6 mt-4">
-                                <p class="mb-2"><strong class="text-gray-900 dark:text-white">Email:</strong> <a href="mailto:support@my-books.cloud" class="text-indigo-600 dark:text-indigo-400 hover:underline">support@my-books.cloud</a></p>
+                            <div class="bg-brand-50 dark:bg-brand-900/20 rounded-xl p-6 mt-4">
+                                <p class="mb-2"><strong class="text-gray-900 dark:text-white">Email:</strong> <a href="mailto:support@my-books.cloud" class="text-brand-600 dark:text-brand-300 hover:underline">support@my-books.cloud</a></p>
                                 <p><strong class="text-gray-900 dark:text-white">Subject Line:</strong> Privacy Complaint or Data Protection Request</p>
                             </div>
                             <p class="mt-4">All complaints will be reviewed promptly and handled professionally.</p>
@@ -294,7 +293,7 @@
                     <!-- Section 11 -->
                     <div class="mb-12">
                         <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                            <span class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center mr-3 text-indigo-600 dark:text-indigo-400 text-sm font-bold">11</span>
+                            <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">11</span>
                             Changes to This Policy
                         </h2>
                         <div class="text-gray-600 dark:text-gray-300 space-y-4 pl-11">
@@ -306,21 +305,21 @@
                     <!-- Section 12 -->
                     <div class="mb-12">
                         <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                            <span class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center mr-3 text-indigo-600 dark:text-indigo-400 text-sm font-bold">12</span>
+                            <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">12</span>
                             Contact Information
                         </h2>
                         <div class="text-gray-600 dark:text-gray-300 space-y-4 pl-11">
                             <p>For general inquiries about privacy or data protection:</p>
                             <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
                                 <h3 class="font-bold text-gray-900 dark:text-white text-lg mb-3">MyBooks</h3>
-                                <p class="mb-2"><strong>Website:</strong> <a href="https://my-books.cloud" class="text-indigo-600 dark:text-indigo-400 hover:underline">https://my-books.cloud</a></p>
-                                <p><strong>Email:</strong> <a href="mailto:support@my-books.cloud" class="text-indigo-600 dark:text-indigo-400 hover:underline">support@my-books.cloud</a></p>
+                                <p class="mb-2"><strong>Website:</strong> <a href="https://my-books.cloud" class="text-brand-600 dark:text-brand-300 hover:underline">https://my-books.cloud</a></p>
+                                <p><strong>Email:</strong> <a href="mailto:support@my-books.cloud" class="text-brand-600 dark:text-brand-300 hover:underline">support@my-books.cloud</a></p>
                             </div>
                         </div>
                     </div>
 
                     <!-- Closing Statement -->
-                    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-8 text-center">
+                    <div class="bg-brand-50 dark:bg-brand-900/20 rounded-2xl p-8 text-center">
                         <p class="text-gray-700 dark:text-gray-300 italic">
                             This Privacy Policy is designed to promote trust, accountability, and compliance while enabling MyBooks to deliver a secure and reliable accounting solution.
                         </p>

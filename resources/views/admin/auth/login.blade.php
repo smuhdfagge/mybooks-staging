@@ -22,7 +22,7 @@
         });
     </script>
 </head>
-<body class="font-sans antialiased bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-900 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 min-h-screen flex items-center justify-center">
+<body class="font-sans antialiased bg-brand-950 min-h-screen flex items-center justify-center">
     
     <!-- Dark Mode Toggle -->
     <button @click="dark = !dark; localStorage.setItem('adminDark', dark)" 
@@ -38,13 +38,9 @@
     <div class="w-full max-w-md px-6">
         <!-- Logo -->
         <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-xl mb-4">
-                <svg class="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                </svg>
-            </div>
+            <x-brand-mark class="inline-block w-16 h-16 mb-4" />
             <h1 class="text-3xl font-bold text-white">MyBooks Admin</h1>
-            <p class="text-indigo-200 dark:text-gray-400 mt-2">Tenant Management Portal</p>
+            <p class="text-brand-200 dark:text-gray-400 mt-2">Tenant Management Portal</p>
         </div>
 
         <!-- Login Card -->
@@ -69,7 +65,7 @@
                                value="{{ old('email') }}"
                                required 
                                autofocus
-                               class="mt-1 w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                               class="mt-1 w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                                placeholder="admin@example.com" @error('email') aria-invalid="true" aria-describedby="email-error" @enderror>
                         @error('email')
                             <p id="email-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
@@ -82,21 +78,21 @@
                                name="password" 
                                id="password" 
                                required
-                               class="mt-1 w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                               class="mt-1 w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                                placeholder="••••••••" @error('password') aria-invalid="true" aria-describedby="password-error" @enderror>
                         @error('password')
                             <p id="password-error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
                     </div>
 
-                    <button type="submit" class="w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition duration-200">
+                    <button type="submit" class="w-full py-3 px-4 bg-brand-600 hover:bg-brand-500 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition duration-200">
                         Sign in
                     </button>
                 </div>
             </form>
         </div>
 
-        <p class="text-center text-indigo-200 dark:text-gray-400 text-sm mt-6">
+        <p class="text-center text-brand-200 dark:text-gray-400 text-sm mt-6">
             &copy; {{ date('Y') }} MyBooks. Admin Portal.
         </p>
     </div>

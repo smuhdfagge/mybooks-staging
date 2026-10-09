@@ -100,7 +100,7 @@
                                     name="code"
                                     inputmode="numeric"
                                     autocomplete="one-time-code"
-                                    class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 text-center font-mono text-xl tracking-widest focus:ring-indigo-500 focus:border-indigo-500"
+                                    class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 text-center font-mono text-xl tracking-widest focus:ring-brand-500 focus:border-brand-500"
                                     placeholder="000000"
                                     maxlength="6"
                                     required
@@ -111,7 +111,7 @@
                             </div>
 
                             <button type="submit"
-                                class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition shadow-sm">
+                                class="w-full py-3 px-4 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-lg transition shadow-sm">
                                 Enable Two-Factor Authentication
                             </button>
                         </form>
