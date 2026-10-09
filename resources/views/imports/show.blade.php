@@ -31,8 +31,8 @@
                         @php
                             $statusColors = [
                                 'pending' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-                                'validating' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-                                'mapping' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+                                'validating' => 'bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-300',
+                                'mapping' => 'bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-300',
                                 'processing' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
                                 'completed' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
                                 'failed' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
@@ -91,7 +91,7 @@
                                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $import->getProgressPercentage() }}%</span>
                             </div>
                             <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3">
-                                <div class="bg-indigo-600 h-3 rounded-full transition-all duration-300" style="width: {{ $import->getProgressPercentage() }}%"></div>
+                                <div class="bg-brand-600 h-3 rounded-full transition-all duration-300" style="width: {{ $import->getProgressPercentage() }}%"></div>
                             </div>
                         </div>
                     @endif
@@ -208,7 +208,7 @@
                             </button>
                         </form>
                     @endif
-                    <a href="{{ route('imports.create', ['type' => $import->type]) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                    <a href="{{ route('imports.create', ['type' => $import->type]) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>

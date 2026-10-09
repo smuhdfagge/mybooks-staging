@@ -7,7 +7,7 @@
                 </h2>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Import data from CSV, Excel, or JSON files</p>
             </div>
-            <a href="{{ route('imports.create') }}" class="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+            <a href="{{ route('imports.create') }}" class="inline-flex items-center justify-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
                 </svg>
@@ -24,7 +24,7 @@
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     @foreach(['customers' => ['Customers', 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z'], 'vendors' => ['Vendors', 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'], 'items' => ['Items', 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'], 'chart_of_accounts' => ['Chart of Accounts', 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z'], 'employees' => ['Employees', 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z']] as $type => $info)
                     <a href="{{ route('imports.create', ['type' => $type]) }}" class="flex flex-col items-center justify-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                        <svg class="w-8 h-8 text-indigo-500 dark:text-indigo-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-8 h-8 text-brand-500 dark:text-brand-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $info[1] }}"></path>
                         </svg>
                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $info[0] }}</span>
@@ -62,7 +62,7 @@
                             </svg>
                             <p class="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">No imports yet</p>
                             <p class="mt-2 text-gray-500 dark:text-gray-400">Import your first data to see it here.</p>
-                            <a href="{{ route('imports.create') }}" class="mt-4 inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                            <a href="{{ route('imports.create') }}" class="mt-4 inline-flex items-center px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
                                 </svg>
@@ -98,8 +98,8 @@
                                                 @php
                                                     $statusColors = [
                                                         'pending' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-                                                        'validating' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-                                                        'mapping' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+                                                        'validating' => 'bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-300',
+                                                        'mapping' => 'bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-300',
                                                         'processing' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
                                                         'completed' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
                                                         'failed' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
@@ -117,7 +117,7 @@
                                                     @endif
                                                 @elseif($import->total_rows > 0)
                                                     <div class="w-24 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
-                                                        <div class="bg-indigo-600 h-2 rounded-full" style="width: {{ $import->getProgressPercentage() }}%"></div>
+                                                        <div class="bg-brand-600 h-2 rounded-full" style="width: {{ $import->getProgressPercentage() }}%"></div>
                                                     </div>
                                                     <span class="text-xs text-gray-500">{{ $import->processed_rows }}/{{ $import->total_rows }}</span>
                                                 @else
@@ -130,11 +130,11 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <div class="flex items-center justify-end gap-2">
                                                     @if($import->status === 'mapping')
-                                                        <a href="{{ route('imports.mapping', $import) }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+                                                        <a href="{{ route('imports.mapping', $import) }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-300">
                                                             Continue
                                                         </a>
                                                     @else
-                                                        <a href="{{ route('imports.show', $import) }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+                                                        <a href="{{ route('imports.show', $import) }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-300">
                                                             View
                                                         </a>
                                                     @endif

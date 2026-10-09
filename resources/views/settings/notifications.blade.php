@@ -18,7 +18,7 @@
                     <div class="bg-white dark:bg-gray-800 shadow sm:rounded-lg">
                         <div class="px-4 py-5 sm:p-6">
                             <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100 flex items-center">
-                                <svg class="h-5 w-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="h-5 w-5 mr-2 text-brand-500 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
                                 Invoice & Payment Notifications
@@ -31,7 +31,7 @@
                                     <div class="flex items-center h-5">
                                         <input type="checkbox" name="send_invoice_on_create" id="send_invoice_on_create" value="1"
                                             {{ $settings->send_invoice_on_create ? 'checked' : '' }}
-                                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700">
+                                            class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-brand-300">
                                     </div>
                                     <div class="ml-3 text-sm">
                                         <label for="send_invoice_on_create" class="font-medium text-gray-700 dark:text-gray-300">Auto-send invoice on creation</label>
@@ -44,7 +44,7 @@
                                     <div class="flex items-center h-5">
                                         <input type="checkbox" name="send_payment_confirmation" id="send_payment_confirmation" value="1"
                                             {{ $settings->send_payment_confirmation ? 'checked' : '' }}
-                                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700">
+                                            class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-brand-300">
                                     </div>
                                     <div class="ml-3 text-sm">
                                         <label for="send_payment_confirmation" class="font-medium text-gray-700 dark:text-gray-300">Send payment confirmations</label>
@@ -57,7 +57,7 @@
                                     <div class="flex items-center h-5">
                                         <input type="checkbox" name="send_overdue_reminders" id="send_overdue_reminders" value="1"
                                             {{ $settings->send_overdue_reminders ? 'checked' : '' }}
-                                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700">
+                                            class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-brand-300">
                                     </div>
                                     <div class="ml-3 text-sm">
                                         <label for="send_overdue_reminders" class="font-medium text-gray-700 dark:text-gray-300">Send overdue reminders</label>
@@ -70,7 +70,7 @@
                                     <div class="mt-1 flex items-center">
                                         <input type="number" name="overdue_reminder_days" id="overdue_reminder_days" min="1" max="30"
                                             value="{{ old('overdue_reminder_days', $settings->overdue_reminder_days) }}"
-                                            class="w-20 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                            class="w-20 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm">
                                         <span class="ml-2 text-sm text-gray-500 dark:text-gray-400">days</span>
                                     </div>
                                 </div>
@@ -80,7 +80,7 @@
                                     <div class="flex items-center h-5">
                                         <input type="checkbox" name="send_payment_reminders" id="send_payment_reminders" value="1"
                                             {{ $settings->send_payment_reminders ? 'checked' : '' }}
-                                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700">
+                                            class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-brand-300">
                                     </div>
                                     <div class="ml-3 text-sm">
                                         <label for="send_payment_reminders" class="font-medium text-gray-700 dark:text-gray-300">Send upcoming payment reminders</label>
@@ -93,7 +93,7 @@
                                     <div class="mt-1 flex items-center">
                                         <input type="number" name="payment_reminder_days_before" id="payment_reminder_days_before" min="1" max="14"
                                             value="{{ old('payment_reminder_days_before', $settings->payment_reminder_days_before) }}"
-                                            class="w-20 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                            class="w-20 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm">
                                         <span class="ml-2 text-sm text-gray-500 dark:text-gray-400">days before due date</span>
                                     </div>
                                 </div>
@@ -105,7 +105,7 @@
                     <div class="bg-white dark:bg-gray-800 shadow sm:rounded-lg">
                         <div class="px-4 py-5 sm:p-6">
                             <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100 flex items-center">
-                                <svg class="h-5 w-5 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="h-5 w-5 mr-2 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
                                 </svg>
                                 Bill & Expense Notifications
@@ -118,7 +118,7 @@
                                     <div class="flex items-center h-5">
                                         <input type="checkbox" name="send_bill_due_reminders" id="send_bill_due_reminders" value="1"
                                             {{ $settings->send_bill_due_reminders ? 'checked' : '' }}
-                                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700">
+                                            class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-brand-300">
                                     </div>
                                     <div class="ml-3 text-sm">
                                         <label for="send_bill_due_reminders" class="font-medium text-gray-700 dark:text-gray-300">Send bill payment reminders</label>
@@ -131,7 +131,7 @@
                                     <div class="mt-1 flex items-center">
                                         <input type="number" name="bill_reminder_days_before" id="bill_reminder_days_before" min="1" max="14"
                                             value="{{ old('bill_reminder_days_before', $settings->bill_reminder_days_before) }}"
-                                            class="w-20 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                            class="w-20 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm">
                                         <span class="ml-2 text-sm text-gray-500 dark:text-gray-400">days before due date</span>
                                     </div>
                                 </div>
@@ -156,7 +156,7 @@
                                     <div class="flex items-center h-5">
                                         <input type="checkbox" name="send_low_stock_alerts" id="send_low_stock_alerts" value="1"
                                             {{ $settings->send_low_stock_alerts ? 'checked' : '' }}
-                                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700">
+                                            class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-brand-300">
                                     </div>
                                     <div class="ml-3 text-sm">
                                         <label for="send_low_stock_alerts" class="font-medium text-gray-700 dark:text-gray-300">Send low stock alerts</label>
@@ -167,7 +167,7 @@
                                 <div class="ml-7">
                                     <label for="low_stock_alert_frequency" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Alert frequency</label>
                                     <select name="low_stock_alert_frequency" id="low_stock_alert_frequency"
-                                        class="mt-1 block w-40 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        class="mt-1 block w-40 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm">
                                         <option value="daily" {{ $settings->low_stock_alert_frequency === 'daily' ? 'selected' : '' }}>Daily</option>
                                         <option value="weekly" {{ $settings->low_stock_alert_frequency === 'weekly' ? 'selected' : '' }}>Weekly</option>
                                     </select>
@@ -180,7 +180,7 @@
                     <div class="bg-white dark:bg-gray-800 shadow sm:rounded-lg">
                         <div class="px-4 py-5 sm:p-6">
                             <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100 flex items-center">
-                                <svg class="h-5 w-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="h-5 w-5 mr-2 text-accent-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                                 </svg>
                                 HR & Payroll Notifications
@@ -193,7 +193,7 @@
                                     <div class="flex items-center h-5">
                                         <input type="checkbox" name="send_payroll_notifications" id="send_payroll_notifications" value="1"
                                             {{ $settings->send_payroll_notifications ? 'checked' : '' }}
-                                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700">
+                                            class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-brand-300">
                                     </div>
                                     <div class="ml-3 text-sm">
                                         <label for="send_payroll_notifications" class="font-medium text-gray-700 dark:text-gray-300">Send payroll notifications</label>
@@ -206,7 +206,7 @@
                                     <div class="flex items-center h-5">
                                         <input type="checkbox" name="send_leave_notifications" id="send_leave_notifications" value="1"
                                             {{ $settings->send_leave_notifications ? 'checked' : '' }}
-                                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700">
+                                            class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-brand-300">
                                     </div>
                                     <div class="ml-3 text-sm">
                                         <label for="send_leave_notifications" class="font-medium text-gray-700 dark:text-gray-300">Send leave request notifications</label>
@@ -262,7 +262,7 @@
                     <!-- Submit Button -->
                     <div class="flex justify-end">
                         <button type="submit"
-                            class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+                            class="inline-flex justify-center rounded-md border border-transparent bg-brand-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
                             Save Settings
                         </button>
                     </div>
@@ -286,7 +286,7 @@
                                     required>
                             </div>
                             <button type="submit"
-                                class="inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                                class="inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2">
                                 Send Test Email
                             </button>
                         </div>

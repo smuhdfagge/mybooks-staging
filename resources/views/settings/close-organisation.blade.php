@@ -20,7 +20,7 @@
                     <form method="POST" action="{{ route('settings.close-organisation.cancel') }}" class="mt-4">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
                             Cancel closing
                         </button>
                     </form>

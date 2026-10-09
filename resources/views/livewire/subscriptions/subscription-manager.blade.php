@@ -33,7 +33,7 @@
                     <div class="flex flex-col md:flex-row md:items-center md:justify-between">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
-                                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                                <div class="w-16 h-16 rounded-full bg-brand-600 flex items-center justify-center">
                                     <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                     </svg>
@@ -92,18 +92,18 @@
                     @if($canManage)
                     <div class="mt-6 flex flex-wrap gap-3">
                         @if($currentSubscription->ends_at && (float) $currentSubscription->amount > 0)
-                        <button wire:click="renew" wire:loading.attr="disabled" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition">
+                        <button wire:click="renew" wire:loading.attr="disabled" class="inline-flex items-center px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition">
                             Pay for another {{ $currentSubscription->billing_cycle === 'annual' ? 'year' : 'month' }}
                         </button>
                         @endif
-                        <button wire:click="openUpgradeModal" class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition">
+                        <button wire:click="openUpgradeModal" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-700 text-sm font-medium rounded-lg transition">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                             </svg>
                             Change Plan
                         </button>
                         @if($currentSubscription->isCancelled())
-                            <button wire:click="reactivateSubscription" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition">
+                            <button wire:click="reactivateSubscription" class="inline-flex items-center px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                                 </svg>
@@ -143,16 +143,16 @@
                         @endif
                         <div class="mt-6 flex flex-wrap justify-center gap-3">
                             @if($canManage && $pendingSubscription)
-                            <button wire:click="payPending" wire:loading.attr="disabled" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition">
+                            <button wire:click="payPending" wire:loading.attr="disabled" class="inline-flex items-center px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition">
                                 Pay now
                             </button>
                             @elseif($canManage && $lapsedSubscription?->plan?->is_active)
-                            <button wire:click="renew" wire:loading.attr="disabled" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition">
+                            <button wire:click="renew" wire:loading.attr="disabled" class="inline-flex items-center px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition">
                                 Renew {{ $lapsedSubscription->plan->name }}
                             </button>
                             @endif
                             @if($canManage)
-                            <button wire:click="openUpgradeModal" class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition">
+                            <button wire:click="openUpgradeModal" class="inline-flex items-center px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                                 </svg>
@@ -177,7 +177,7 @@
                 @if($savedCard)
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div class="flex items-center gap-3 min-w-0">
-                            <div class="flex-shrink-0 w-12 h-8 rounded bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center" aria-hidden="true">
+                            <div class="flex-shrink-0 w-12 h-8 rounded bg-gray-800 flex items-center justify-center" aria-hidden="true">
                                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                             </div>
                             <div class="min-w-0">
@@ -196,7 +196,7 @@
                     <div class="flex items-start gap-3">
                         <button type="button" role="switch" aria-checked="{{ $savedCard->auto_renew ? 'true' : 'false' }}" aria-labelledby="auto-renew-label"
                                 wire:click="toggleAutoRenew" wire:loading.attr="disabled"
-                                class="relative inline-flex flex-shrink-0 h-6 w-11 mt-0.5 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 {{ $savedCard->auto_renew ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600' }}">
+                                class="relative inline-flex flex-shrink-0 h-6 w-11 mt-0.5 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 {{ $savedCard->auto_renew ? 'bg-brand-600' : 'bg-gray-300 dark:bg-gray-600' }}">
                             <span class="inline-block h-5 w-5 rounded-full bg-white shadow transform transition {{ $savedCard->auto_renew ? 'translate-x-5' : 'translate-x-0' }}"></span>
                         </button>
                         <div>
@@ -256,13 +256,13 @@
                     @foreach($plans as $plan)
                         <div class="relative rounded-lg border-2 p-6 transition-all
                             {{ $currentPlan && $currentPlan->id === $plan->id 
-                                ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20' 
-                                : 'border-gray-200 dark:border-gray-700 hover:border-indigo-400' }}">
+                                ? 'border-brand-600 bg-brand-50 dark:bg-brand-900/20' 
+                                : 'border-gray-200 dark:border-gray-700 hover:border-brand-400' }}">
                             @if($plan->slug === 'professional')
                                 <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-gray-900 px-3 py-0.5 rounded-full text-xs font-semibold">Popular</div>
                             @endif
                             @if($currentPlan && $currentPlan->id === $plan->id)
-                                <div class="absolute top-3 right-3 bg-indigo-600 text-white px-2 py-0.5 rounded text-xs font-semibold">Current</div>
+                                <div class="absolute top-3 right-3 bg-brand-600 text-white px-2 py-0.5 rounded text-xs font-semibold">Current</div>
                             @endif
                             
                             <div class="text-center mb-4">
@@ -299,7 +299,7 @@
                             </ul>
 
                             @if($canManage && (!$currentPlan || $currentPlan->id !== $plan->id))
-                                <button wire:click="openUpgradeModal({{ $plan->id }})" class="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition">
+                                <button wire:click="openUpgradeModal({{ $plan->id }})" class="w-full px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition">
                                     @if($currentPlan && $currentPlan->monthly_price > $plan->monthly_price)
                                         Downgrade
                                     @else
@@ -329,7 +329,7 @@
                         <!-- Plan Selection -->
                         <div class="mb-4">
                             <label for="selectedPlanId" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Plan</label>
-                            <select id="selectedPlanId" wire:model.live="selectedPlanId" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <select id="selectedPlanId" wire:model.live="selectedPlanId" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                 @foreach($plans as $plan)
                                     <option value="{{ $plan->id }}">{{ $plan->name }} - ₦{{ number_format($plan->monthly_price) }}/mo ({{ $plan->max_users }} users)</option>
                                 @endforeach
@@ -343,7 +343,7 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Billing Cycle</label>
                                 <div class="grid grid-cols-2 gap-3">
                                     @if($selectedPlanObj->allow_monthly_billing)
-                                        <label class="relative flex items-center justify-center p-3 cursor-pointer rounded-lg border-2 transition-all {{ $selectedBillingCycle === 'monthly' ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-200 dark:border-gray-700' }}">
+                                        <label class="relative flex items-center justify-center p-3 cursor-pointer rounded-lg border-2 transition-all {{ $selectedBillingCycle === 'monthly' ? 'border-brand-600 bg-brand-50 dark:bg-brand-900/20' : 'border-gray-200 dark:border-gray-700' }}">
                                             <input type="radio" wire:model.live="selectedBillingCycle" value="monthly" class="sr-only">
                                             <div class="text-center">
                                                 <div class="font-semibold text-gray-900 dark:text-white">Monthly</div>
@@ -352,7 +352,7 @@
                                         </label>
                                     @endif
                                     @if($selectedPlanObj->allow_annual_billing)
-                                        <label class="relative flex items-center justify-center p-3 cursor-pointer rounded-lg border-2 transition-all {{ $selectedBillingCycle === 'annual' ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-200 dark:border-gray-700' }}">
+                                        <label class="relative flex items-center justify-center p-3 cursor-pointer rounded-lg border-2 transition-all {{ $selectedBillingCycle === 'annual' ? 'border-brand-600 bg-brand-50 dark:bg-brand-900/20' : 'border-gray-200 dark:border-gray-700' }}">
                                             <input type="radio" wire:model.live="selectedBillingCycle" value="annual" class="sr-only">
                                             <div class="text-center">
                                                 <div class="font-semibold text-gray-900 dark:text-white">Annual</div>
@@ -368,10 +368,10 @@
                         @endif
                     </div>
                     <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button wire:click="changePlan" wire:loading.attr="disabled" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        <button wire:click="changePlan" wire:loading.attr="disabled" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-brand-600 text-base font-medium text-white hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 sm:ml-3 sm:w-auto sm:text-sm">
                             Continue to payment
                         </button>
-                        <button wire:click="closeUpgradeModal" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-600 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        <button wire:click="closeUpgradeModal" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-600 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                             Cancel
                         </button>
                     </div>
@@ -406,7 +406,7 @@
                                 </div>
                                 <div class="mt-4">
                                     <label for="cancellationReason" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Reason for cancellation (optional)</label>
-                                    <textarea id="cancellationReason" wire:model="cancellationReason" rows="3" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="Tell us why you're leaving..."></textarea>
+                                    <textarea id="cancellationReason" wire:model="cancellationReason" rows="3" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500" placeholder="Tell us why you're leaving..."></textarea>
                                 </div>
                             </div>
                         </div>
@@ -415,7 +415,7 @@
                         <button wire:click="cancelSubscription" wire:loading.attr="disabled" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
                             Yes, Cancel Subscription
                         </button>
-                        <button wire:click="closeCancelModal" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-600 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        <button wire:click="closeCancelModal" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-600 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                             Keep Subscription
                         </button>
                     </div>

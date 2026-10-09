@@ -7,7 +7,7 @@
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Admin Users</h1>
             <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Manage administrator accounts</p>
         </div>
-        <a href="{{ route('admin.users.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium">
+        <a href="{{ route('admin.users.create') }}" class="inline-flex items-center px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition font-medium">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
             </svg>
@@ -32,7 +32,7 @@
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
-                                    <div class="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                                    <div class="h-10 w-10 rounded-full bg-brand-600 flex items-center justify-center flex-shrink-0">
                                         <span class="text-white font-bold text-sm">{{ strtoupper(substr($adminUser->name, 0, 2)) }}</span>
                                     </div>
                                     <div class="ml-3">
@@ -51,7 +51,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right">
                                 <div class="flex items-center justify-end gap-2">
-                                    <a href="{{ route('admin.users.edit', $adminUser) }}" class="p-2 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Edit">
+                                    <a href="{{ route('admin.users.edit', $adminUser) }}" class="p-2 text-gray-500 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition" title="Edit">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                         </svg>

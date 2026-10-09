@@ -63,7 +63,7 @@
                                 
                                 <div class="space-y-2">
                                     <label class="flex items-center mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
-                                        <input type="checkbox" id="select_all" class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-blue-600 shadow-sm focus:ring-blue-500">
+                                        <input type="checkbox" id="select_all" class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
                                         <span class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">Select All</span>
                                     </label>
 
@@ -71,7 +71,7 @@
                                         @foreach($dataTypes as $value => $label)
                                             <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer">
                                                 <input type="checkbox" name="included_data[]" value="{{ $value }}" 
-                                                    class="data-checkbox rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-blue-600 shadow-sm focus:ring-blue-500"
+                                                    class="data-checkbox rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300"
                                                     {{ in_array($value, old('included_data', array_keys($dataTypes))) ? 'checked' : '' }}>
                                                 <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">{{ $label }}</span>
                                             </label>
@@ -105,7 +105,7 @@
 
                 <!-- Submit Buttons -->
                 <div class="flex items-center justify-end gap-4">
-                    <a href="{{ route('exports.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                    <a href="{{ route('exports.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                         Cancel
                     </a>
                     <button type="submit" class="inline-flex items-center px-6 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">

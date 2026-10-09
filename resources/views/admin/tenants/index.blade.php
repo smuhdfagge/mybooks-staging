@@ -12,8 +12,8 @@
         <!-- Total Tenants -->
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
             <div class="flex items-center">
-                <div class="flex-shrink-0 p-3 rounded-lg bg-indigo-100 dark:bg-indigo-900/50">
-                    <svg class="w-6 h-6 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex-shrink-0 p-3 rounded-lg bg-brand-100 dark:bg-brand-900/50">
+                    <svg class="w-6 h-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                     </svg>
                 </div>
@@ -42,8 +42,8 @@
         <!-- Active Subscriptions -->
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
             <div class="flex items-center">
-                <div class="flex-shrink-0 p-3 rounded-lg bg-blue-100 dark:bg-blue-900/50">
-                    <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex-shrink-0 p-3 rounded-lg bg-brand-100 dark:bg-brand-900/50">
+                    <svg class="w-6 h-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
                     </svg>
                 </div>
@@ -72,8 +72,8 @@
         <!-- Monthly Revenue -->
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
             <div class="flex items-center">
-                <div class="flex-shrink-0 p-3 rounded-lg bg-emerald-100 dark:bg-emerald-900/50">
-                    <svg class="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex-shrink-0 p-3 rounded-lg bg-green-100 dark:bg-green-900/50">
+                    <svg class="w-6 h-6 text-green-700 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                 </div>
@@ -90,13 +90,13 @@
         <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
             <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Recent Tenants</h3>
-                <a href="{{ route('admin.tenants.list') }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition">View all →</a>
+                <a href="{{ route('admin.tenants.list') }}" class="text-sm text-brand-600 dark:text-brand-300 hover:text-brand-500 dark:hover:text-brand-300 transition">View all →</a>
             </div>
             <div class="divide-y divide-gray-200 dark:divide-gray-700">
                 @forelse($recentTenants as $tenant)
                     <a href="{{ route('admin.tenants.show', $tenant) }}" class="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
                         <div class="flex items-center">
-                            <div class="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+                            <div class="h-10 w-10 rounded-lg bg-brand-600 flex items-center justify-center">
                                 <span class="text-white font-bold text-sm">{{ strtoupper(substr($tenant->name, 0, 2)) }}</span>
                             </div>
                             <div class="ml-3">
@@ -108,7 +108,7 @@
                             @if($tenant->activeSubscription)
                                 <span class="px-2.5 py-1 text-xs font-semibold rounded-full 
                                     @if($tenant->activeSubscription->status === 'active') bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-700
-                                    @elseif($tenant->activeSubscription->status === 'trialing') bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700
+                                    @elseif($tenant->activeSubscription->status === 'trialing') bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-700
                                     @else bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-700
                                     @endif">
                                     {{ $tenant->activeSubscription->plan->name ?? 'Unknown' }}
@@ -141,7 +141,7 @@
                         <div class="flex items-center justify-between mb-2">
                             <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $subscription->tenant->name }}</p>
                             <span class="px-2 py-0.5 text-xs font-semibold rounded bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300">
-                                {{ $subscription->ends_at->diffInDays(now()) }} days
+                                {{ (int) now()->diffInDays($subscription->ends_at) }} days
                             </span>
                         </div>
                         <p class="text-xs text-gray-500 dark:text-gray-400">{{ $subscription->plan->name ?? 'Unknown' }} - Expires {{ $subscription->ends_at->format('M d, Y') }}</p>
@@ -162,14 +162,14 @@
         </div>
         <div class="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             @foreach($plans as $plan)
-                <div class="p-4 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-750 border border-gray-200 dark:border-gray-600">
+                <div class="p-4 rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
                     <div class="flex items-center justify-between mb-3">
                         <h4 class="font-semibold text-gray-900 dark:text-white">{{ $plan->name }}</h4>
-                        <span class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{{ $plan->subscriptions_count }}</span>
+                        <span class="text-2xl font-bold text-brand-600 dark:text-brand-300">{{ $plan->subscriptions_count }}</span>
                     </div>
                     <p class="text-sm text-gray-600 dark:text-gray-400">₦{{ number_format($plan->monthly_price) }}/mo</p>
                     <div class="mt-3 flex items-center gap-2">
-                        <a href="{{ route('admin.tenants.list', ['plan' => $plan->id]) }}" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">View tenants →</a>
+                        <a href="{{ route('admin.tenants.list', ['plan' => $plan->id]) }}" class="text-xs text-brand-600 dark:text-brand-300 hover:underline">View tenants →</a>
                     </div>
                 </div>
             @endforeach

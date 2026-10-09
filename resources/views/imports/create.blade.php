@@ -27,7 +27,7 @@
                     <div class="mb-8">
                         <div class="flex items-center justify-center">
                             <div class="flex items-center">
-                                <div class="flex items-center justify-center w-10 h-10 bg-indigo-600 rounded-full">
+                                <div class="flex items-center justify-center w-10 h-10 bg-brand-600 rounded-full">
                                     <span class="text-white font-semibold">1</span>
                                 </div>
                                 <span class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">Upload File</span>
@@ -70,18 +70,18 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Upload File <span class="text-red-500">*</span>
                         </label>
-                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg hover:border-indigo-500 dark:hover:border-indigo-500 transition" 
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg hover:border-brand-500 dark:hover:border-brand-500 transition" 
                              x-data="{ dragging: false, fileName: '' }"
                              @dragover.prevent="dragging = true"
                              @dragleave.prevent="dragging = false"
                              @drop.prevent="dragging = false; fileName = $event.dataTransfer.files[0]?.name || ''; $refs.fileInput.files = $event.dataTransfer.files"
-                             :class="{ 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20': dragging }">
+                             :class="{ 'border-brand-500 bg-brand-50 dark:bg-brand-900/20': dragging }">
                             <div class="space-y-1 text-center">
                                 <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                                     <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
                                 <div class="flex text-sm text-gray-600 dark:text-gray-400">
-                                    <label for="file" class="relative cursor-pointer rounded-md font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 focus-within:outline-none">
+                                    <label for="file" class="relative cursor-pointer rounded-md font-medium text-brand-600 dark:text-brand-300 hover:text-brand-500 focus-within:outline-none">
                                         <span>Upload a file</span>
                                         <input id="file" name="file" type="file" class="sr-only" required
                                                accept="{{ collect(\App\Models\Import::acceptedExtensions())->map(fn ($e) => '.'.$e)->implode(',') }}"
@@ -93,20 +93,20 @@
                                 <p class="text-xs text-gray-500 dark:text-gray-400">
                                     {{ \App\Models\Import::excelSupported() ? 'CSV, Excel (.xlsx), or JSON' : 'CSV or JSON' }} up to 10MB
                                 </p>
-                                <p x-show="fileName" x-text="'Selected: ' + fileName" class="text-sm font-medium text-indigo-600 dark:text-indigo-400 mt-2"></p>
+                                <p x-show="fileName" x-text="'Selected: ' + fileName" class="text-sm font-medium text-brand-600 dark:text-brand-300 mt-2"></p>
                             </div>
                         </div>
                     </div>
 
                     <!-- File Format Tips -->
-                    <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                        <h4 class="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
+                    <div class="mb-6 p-4 bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800 rounded-lg">
+                        <h4 class="text-sm font-medium text-brand-800 dark:text-brand-300 mb-2">
                             <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                             File Format Tips
                         </h4>
-                        <ul class="text-sm text-blue-700 dark:text-blue-400 space-y-1">
+                        <ul class="text-sm text-brand-700 dark:text-brand-300 space-y-1">
                             <li>• The first row should contain column headers</li>
                             <li>• You'll be able to map columns to fields in the next step</li>
                             <li>• Download a sample template to see the expected format</li>
@@ -122,7 +122,7 @@
                         </select>
                         <template x-if="selectedType">
                             <a :href="'{{ route('imports.template') }}?type=' + selectedType + '&format=csv'" 
-                               class="inline-flex items-center text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
+                               class="inline-flex items-center text-sm text-brand-600 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-300">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
@@ -136,7 +136,7 @@
                         <a href="{{ route('imports.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-600 transition">
                             Cancel
                         </a>
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                             </svg>
