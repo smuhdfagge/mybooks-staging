@@ -3,7 +3,7 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">{{ __('Leave Types') }}</h2>
             @can('create leave-types')
-                <a href="{{ route('leave-types.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition ease-in-out duration-150">Add Leave Type</a>
+                <a href="{{ route('leave-types.create') }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition ease-in-out duration-150">Add Leave Type</a>
             @endcan
         </div>
     </x-slot>
@@ -40,7 +40,7 @@
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                 @foreach($leaveTypes as $type)
                                     <tr>
-                                        <td class="px-6 py-3 text-sm"><a href="{{ route('leave-types.show', $type) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $type->name }}</a></td>
+                                        <td class="px-6 py-3 text-sm"><a href="{{ route('leave-types.show', $type) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $type->name }}</a></td>
                                         <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{{ $type->code ?: '—' }}</td>
                                         <td class="px-6 py-3 text-sm text-right text-gray-700 dark:text-gray-300">{{ $type->days_per_year }}</td>
                                         <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{{ $type->is_paid ? 'Yes' : 'No' }}</td>
