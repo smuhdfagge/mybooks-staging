@@ -59,6 +59,7 @@
                                         $oldPermissions = old('permissions', []);
                                     @endphp
                                     @foreach($permissions as $resource => $resourcePermissions)
+                                        @continue($resource === 'dashboard-widgets')
                                         @php
                                             $permissionMap = [];
                                             $otherPermissions = [];
@@ -116,6 +117,7 @@
                                 </tbody>
                             </table>
                         </div>
+                        @include('settings.roles._dashboard-widgets', ['selected' => $oldPermissions])
                     </div>
 
                     <div class="flex justify-end gap-3">

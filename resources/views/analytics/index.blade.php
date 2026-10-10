@@ -237,7 +237,7 @@
         <!-- Payment Methods -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payment Methods</h3>
-            <div class="h-72 max-w-md mx-auto">
+            <div class="h-72">
                 <canvas id="paymentMethodChart"></canvas>
             </div>
         </div>
@@ -413,8 +413,14 @@
                     });
                 },
 
-                // Chart colours from config/brand.php (rebrand R2).
+                // Chart colours from config/brand.php: the same checked colours as
+                // the dashboard (income blue, profit/ink grey; status colours only
+                // for invoice statuses). Bars rather than pies (dashboard upgrade).
                 brandChart: @js(config('brand.chart')),
+                dark() { return document.documentElement.classList.contains('dark'); },
+                c() { return this.dark() ? this.brandChart.dark : this.brandChart; },
+                ink() { return this.dark() ? '#D1D5DB' : '#4B5563'; },
+                money(v) { return window.formatMoney(v); },
 
                 initRevenueTrendChart() {
                     const ctx = document.getElementById('revenueTrendChart').getContext('2d');
@@ -426,35 +432,40 @@
                             labels: data.labels,
                             datasets: [
                                 {
-                                    label: 'Revenue',
+                                    label: 'Invoiced',
                                     data: data.revenue,
-                                    borderColor: this.brandChart.series[0],
-                                    backgroundColor: this.brandChart.series[0] + '1A',
-                                    fill: true,
-                                    tension: 0.4,
+                                    borderColor: this.c().income,
+                                    backgroundColor: this.c().income,
+                                    borderWidth: 2,
+                                    pointRadius: 3,
+                                    tension: 0,
                                 },
                                 {
-                                    label: 'Payments',
+                                    label: 'Payments received',
                                     data: data.payments,
-                                    borderColor: this.brandChart.income,
-                                    backgroundColor: this.brandChart.income + '1A',
-                                    fill: true,
-                                    tension: 0.4,
+                                    borderColor: this.c().profit,
+                                    backgroundColor: this.c().profit,
+                                    borderWidth: 2,
+                                    borderDash: [5, 4],
+                                    pointRadius: 3,
+                                    tension: 0,
                                 }
                             ]
                         },
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
+                            interaction: { mode: 'index', intersect: false },
                             plugins: {
-                                legend: {
-                                    position: 'top',
-                                }
+                                legend: { position: 'top', labels: { color: this.ink(), usePointStyle: true } },
+                                tooltip: { callbacks: { label: (item) => ' ' + item.dataset.label + ': ' + this.money(item.raw) } },
                             },
                             scales: {
+                                x: { ticks: { color: this.ink() }, grid: { display: false } },
                                 y: {
                                     beginAtZero: true,
                                     ticks: {
+                                        color: this.ink(),
                                         callback: function(value) {
                                             return value.toLocaleString();
                                         }
@@ -471,22 +482,28 @@
                     
                     const colors = this.brandChart.invoice_status;
 
+                    // Bars, coloured by status meaning, labelled on the axis.
                     new Chart(ctx, {
-                        type: 'doughnut',
+                        type: 'bar',
                         data: {
                             labels: data.map(d => d.label),
                             datasets: [{
+                                label: 'Invoices',
                                 data: data.map(d => d.count),
                                 backgroundColor: data.map(d => colors[d.status] || '#9CA3AF'),
+                                borderRadius: 4,
+                                barPercentage: 0.7,
+                                maxBarThickness: 28,
                             }]
                         },
                         options: {
+                            indexAxis: 'y',
                             responsive: true,
                             maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    position: 'right',
-                                }
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                x: { beginAtZero: true, ticks: { color: this.ink(), precision: 0 } },
+                                y: { ticks: { color: this.ink() }, grid: { display: false } },
                             }
                         }
                     });
@@ -496,24 +513,31 @@
                     const ctx = document.getElementById('paymentMethodChart').getContext('2d');
                     const data = @json($paymentMethodDistribution);
                     
-                    const colors = this.brandChart.series;
-
+                    // One colour: the bars are compared by length, not by hue.
                     new Chart(ctx, {
-                        type: 'pie',
+                        type: 'bar',
                         data: {
                             labels: data.map(d => d.method),
                             datasets: [{
+                                label: 'Received',
                                 data: data.map(d => d.total),
-                                backgroundColor: data.map((d, i) => colors[i % colors.length]),
+                                backgroundColor: this.c().income,
+                                borderRadius: 4,
+                                barPercentage: 0.7,
+                                maxBarThickness: 28,
                             }]
                         },
                         options: {
+                            indexAxis: 'y',
                             responsive: true,
                             maintainAspectRatio: false,
                             plugins: {
-                                legend: {
-                                    position: 'right',
-                                }
+                                legend: { display: false },
+                                tooltip: { callbacks: { label: (item) => ' ' + this.money(item.raw) } },
+                            },
+                            scales: {
+                                x: { beginAtZero: true, ticks: { color: this.ink(), callback: (v) => v.toLocaleString() } },
+                                y: { ticks: { color: this.ink() }, grid: { display: false } },
                             }
                         }
                     });

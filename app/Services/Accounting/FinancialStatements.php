@@ -309,8 +309,18 @@ class FinancialStatements
             ->whereNotIn('je.account_id', $cashIds ?: [0])
             // Journals that touch a cash account, as a join rather than a
             // correlated EXISTS run for every line (P8).
+            // Only journals in the date range (dashboard upgrade: without the
+            // dates this listed every cash journal ever, which took seconds
+            // on a business with a few years of books).
             ->joinSub(
-                DB::table('journal_entries')->select('journal_id')->whereIn('account_id', $cashIds ?: [0])->distinct(),
+                DB::table('journal_entries as cje')
+                    ->join('journals as cj', 'cj.id', '=', 'cje.journal_id')
+                    ->where('cj.tenant_id', $tenantId)
+                    ->where('cj.journal_date', '>=', $from)
+                    ->where('cj.journal_date', '<', $end)
+                    ->whereIn('cje.account_id', $cashIds ?: [0])
+                    ->select('cje.journal_id')
+                    ->distinct(),
                 'cash',
                 'cash.journal_id',
                 '=',

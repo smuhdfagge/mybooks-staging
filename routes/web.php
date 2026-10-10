@@ -226,6 +226,9 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->middleware('permission:view dashboard')
         ->name('dashboard');
+    Route::post('/dashboard/getting-started/hide', [DashboardController::class, 'hideGettingStarted'])
+        ->middleware('permission:view dashboard')
+        ->name('dashboard.getting-started.hide');
 
     // Profile (accessible by all authenticated users - subscription middleware allows these)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

@@ -47,9 +47,18 @@ return [
 
     // Charts: income is always green and expenses always red. Other series
     // take these colours in order.
+    // Chart colours (dashboard upgrade). Checked with a colour-blindness and
+    // clarity test in both modes: navy itself is too dark and grey for bars,
+    // so charts use a brighter "chart blue". Green and red are kept for
+    // status only (done, problem), never for a data series.
     'chart' => [
-        'income' => '#2E7D32',
-        'expense' => '#C62828',
+        'income' => '#2F6AAE',
+        'expense' => '#C0841A',
+        'profit' => '#374151',
+        'dark' => ['income' => '#5B8FD3', 'expense' => '#BF8020', 'profit' => '#D1D5DB'],
+        // Customers owe you, by how late: current, then 1-30 / 31-60 / 61-90 / over 90 days (deeper = later).
+        'ageing' => ['#2F6AAE', '#D79E36', '#B5781A', '#8A5A12', '#5C3D0D'],
+        'ageing_dark' => ['#5B8FD3', '#E0AC50', '#C9902E', '#A8701A', '#8A5A12'],
         'series' => ['#1F4E79', '#C0841A', '#4E8A5B', '#8E3B46', '#5B6B7A', '#3E8E9E'],
         // Invoice status chart: same meanings as the status badges.
         'invoice_status' => [

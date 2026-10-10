@@ -44,7 +44,7 @@ class LivewirePermissionTest extends TestCase
     private const UI_ONLY_METHODS = [
         'cancelDelete', 'clearFilters', 'close', 'closeCancelModal', 'closeDisposeModal', 'closeRejectModal',
         'closeUpgradeModal', 'getSettingsArray', 'goToStep', 'nextStep', 'openCancelModal',
-        'openUpgradeModal', 'previousStep', 'register', 'resetToDefaults', 'selectResult',
+        'openUpgradeModal', 'placeholder', 'previousStep', 'register', 'resetToDefaults', 'selectResult',
         'submit', 'toggleType',
     ];
 

@@ -55,15 +55,20 @@ class DatabaseSeeder extends Seeder
             'view dashboard',
 
             // Dashboard Widgets
+            // Dashboard cards; names and descriptions in config/dashboard.php.
+            'attention-list dashboard-widgets',
+            'cash-position dashboard-widgets',
             'total-revenue dashboard-widgets',
-            'outstanding-receivables dashboard-widgets',
             'monthly-expenses dashboard-widgets',
-            'employees-count dashboard-widgets',
-            'quick-actions dashboard-widgets',
+            'profit dashboard-widgets',
             'revenue-chart dashboard-widgets',
-            'recent-invoices dashboard-widgets',
+            'outstanding-receivables dashboard-widgets',
             'pending-bills dashboard-widgets',
+            'top-customers dashboard-widgets',
+            'expense-breakdown dashboard-widgets',
+            'recent-invoices dashboard-widgets',
             'low-stock dashboard-widgets',
+            'quick-actions dashboard-widgets',
 
             // Items
             'view items', 'create items', 'edit items', 'delete items',
@@ -153,10 +158,12 @@ class DatabaseSeeder extends Seeder
         $accountant = Role::firstOrCreate(['name' => 'accountant', 'guard_name' => 'web', 'tenant_id' => null]);
         $accountant->syncPermissions([
             'view dashboard',
-            'total-revenue dashboard-widgets', 'outstanding-receivables dashboard-widgets',
-            'monthly-expenses dashboard-widgets', 'revenue-chart dashboard-widgets',
-            'recent-invoices dashboard-widgets', 'pending-bills dashboard-widgets',
-            'low-stock dashboard-widgets',
+            'attention-list dashboard-widgets', 'cash-position dashboard-widgets',
+            'total-revenue dashboard-widgets', 'monthly-expenses dashboard-widgets',
+            'profit dashboard-widgets', 'revenue-chart dashboard-widgets',
+            'outstanding-receivables dashboard-widgets', 'pending-bills dashboard-widgets',
+            'top-customers dashboard-widgets', 'expense-breakdown dashboard-widgets',
+            'recent-invoices dashboard-widgets', 'low-stock dashboard-widgets',
             'view items', 'view inventory',
             'view customers', 'view invoices', 'create invoices', 'edit invoices', 'send invoices',
             'view sales-orders', 'view sales-receipts', 'create sales-receipts',
@@ -181,7 +188,8 @@ class DatabaseSeeder extends Seeder
         $sales = Role::firstOrCreate(['name' => 'sales', 'guard_name' => 'web', 'tenant_id' => null]);
         $sales->syncPermissions([
             'view dashboard',
-            'total-revenue dashboard-widgets', 'outstanding-receivables dashboard-widgets',
+            'attention-list dashboard-widgets', 'total-revenue dashboard-widgets',
+            'outstanding-receivables dashboard-widgets', 'top-customers dashboard-widgets',
             'quick-actions dashboard-widgets', 'recent-invoices dashboard-widgets',
             'view items',
             'view customers', 'create customers', 'edit customers',
@@ -196,7 +204,7 @@ class DatabaseSeeder extends Seeder
         $hr = Role::firstOrCreate(['name' => 'hr-manager', 'guard_name' => 'web', 'tenant_id' => null]);
         $hr->syncPermissions([
             'view dashboard',
-            'employees-count dashboard-widgets', 'quick-actions dashboard-widgets',
+            'attention-list dashboard-widgets', 'quick-actions dashboard-widgets',
             'view departments', 'create departments', 'edit departments',
             'view designations', 'create designations', 'edit designations',
             'view employees', 'create employees', 'edit employees',
@@ -210,9 +218,11 @@ class DatabaseSeeder extends Seeder
         $viewer = Role::firstOrCreate(['name' => 'viewer', 'guard_name' => 'web', 'tenant_id' => null]);
         $viewer->syncPermissions([
             'view dashboard',
+            'attention-list dashboard-widgets',
             'total-revenue dashboard-widgets', 'outstanding-receivables dashboard-widgets',
-            'monthly-expenses dashboard-widgets', 'employees-count dashboard-widgets',
-            'revenue-chart dashboard-widgets', 'recent-invoices dashboard-widgets',
+            'monthly-expenses dashboard-widgets', 'revenue-chart dashboard-widgets',
+            'top-customers dashboard-widgets', 'expense-breakdown dashboard-widgets',
+            'recent-invoices dashboard-widgets',
             'pending-bills dashboard-widgets', 'low-stock dashboard-widgets',
             'view items', 'view inventory',
             'view customers', 'view invoices', 'view sales-orders', 'view sales-receipts', 'view payments-received',

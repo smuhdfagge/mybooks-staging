@@ -7,88 +7,38 @@ use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
+/**
+ * Dashboard card permissions for the built-in roles. The cards, their
+ * names and descriptions are listed in config/dashboard.php.
+ */
 class DashboardWidgetPermissionsSeeder extends Seeder
 {
     public function run(): void
     {
-        $widgetPermissions = [
-            'total-revenue dashboard-widgets',
-            'outstanding-receivables dashboard-widgets',
-            'monthly-expenses dashboard-widgets',
-            'employees-count dashboard-widgets',
-            'quick-actions dashboard-widgets',
-            'revenue-chart dashboard-widgets',
-            'recent-invoices dashboard-widgets',
-            'pending-bills dashboard-widgets',
-            'low-stock dashboard-widgets',
-        ];
+        $all = array_map(fn ($key) => "{$key} dashboard-widgets", array_keys(config('dashboard.widgets')));
 
-        foreach ($widgetPermissions as $permission) {
+        foreach ($all as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
 
-        // Super Admin - all widgets
-        $superAdmin = Role::whereNull('tenant_id')->where('name', 'super-admin')->first();
-        if ($superAdmin) {
-            $superAdmin->givePermissionTo($widgetPermissions);
+        $w = fn (array $keys) => array_map(fn ($key) => "{$key} dashboard-widgets", $keys);
+
+        $byRole = [
+            'super-admin' => $all,
+            'admin' => $all,
+            // Profit and the bank balance: Admin and Accountant only.
+            'accountant' => $w(['attention-list', 'cash-position', 'total-revenue', 'monthly-expenses', 'profit', 'revenue-chart',
+                'outstanding-receivables', 'pending-bills', 'top-customers', 'expense-breakdown', 'recent-invoices', 'low-stock']),
+            'sales' => $w(['attention-list', 'total-revenue', 'outstanding-receivables', 'top-customers', 'quick-actions', 'recent-invoices']),
+            'hr-manager' => $w(['attention-list', 'quick-actions']),
+            'viewer' => $w(['attention-list', 'total-revenue', 'outstanding-receivables', 'monthly-expenses', 'revenue-chart',
+                'top-customers', 'expense-breakdown', 'recent-invoices', 'pending-bills', 'low-stock']),
+        ];
+
+        foreach ($byRole as $name => $permissions) {
+            Role::whereNull('tenant_id')->where('name', $name)->first()?->givePermissionTo($permissions);
         }
 
-        // Admin - all widgets
-        $admin = Role::whereNull('tenant_id')->where('name', 'admin')->first();
-        if ($admin) {
-            $admin->givePermissionTo($widgetPermissions);
-        }
-
-        // Accountant - financial widgets
-        $accountant = Role::whereNull('tenant_id')->where('name', 'accountant')->first();
-        if ($accountant) {
-            $accountant->givePermissionTo([
-                'total-revenue dashboard-widgets',
-                'outstanding-receivables dashboard-widgets',
-                'monthly-expenses dashboard-widgets',
-                'revenue-chart dashboard-widgets',
-                'recent-invoices dashboard-widgets',
-                'pending-bills dashboard-widgets',
-                'low-stock dashboard-widgets',
-            ]);
-        }
-
-        // Sales - sales-related widgets
-        $sales = Role::whereNull('tenant_id')->where('name', 'sales')->first();
-        if ($sales) {
-            $sales->givePermissionTo([
-                'total-revenue dashboard-widgets',
-                'outstanding-receivables dashboard-widgets',
-                'quick-actions dashboard-widgets',
-                'recent-invoices dashboard-widgets',
-            ]);
-        }
-
-        // HR Manager - employee widget
-        $hr = Role::whereNull('tenant_id')->where('name', 'hr-manager')->first();
-        if ($hr) {
-            $hr->givePermissionTo([
-                'employees-count dashboard-widgets',
-                'quick-actions dashboard-widgets',
-            ]);
-        }
-
-        // Viewer - read-only overview widgets
-        $viewer = Role::whereNull('tenant_id')->where('name', 'viewer')->first();
-        if ($viewer) {
-            $viewer->givePermissionTo([
-                'total-revenue dashboard-widgets',
-                'outstanding-receivables dashboard-widgets',
-                'monthly-expenses dashboard-widgets',
-                'employees-count dashboard-widgets',
-                'revenue-chart dashboard-widgets',
-                'recent-invoices dashboard-widgets',
-                'pending-bills dashboard-widgets',
-                'low-stock dashboard-widgets',
-            ]);
-        }
-
-        // Clear permission cache
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
 }

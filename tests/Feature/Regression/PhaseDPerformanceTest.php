@@ -386,9 +386,10 @@ class PhaseDPerformanceTest extends TestCase
     // ── P5: dashboard ──────────────────────────────────────────
 
     private const DASHBOARD_PERMISSIONS = [
-        'view dashboard', 'total-revenue dashboard-widgets', 'outstanding-receivables dashboard-widgets',
-        'monthly-expenses dashboard-widgets', 'employees-count dashboard-widgets', 'revenue-chart dashboard-widgets',
-        'recent-invoices dashboard-widgets', 'pending-bills dashboard-widgets', 'low-stock dashboard-widgets',
+        'view dashboard', 'attention-list dashboard-widgets', 'cash-position dashboard-widgets', 'total-revenue dashboard-widgets',
+        'monthly-expenses dashboard-widgets', 'profit dashboard-widgets', 'revenue-chart dashboard-widgets',
+        'outstanding-receivables dashboard-widgets', 'pending-bills dashboard-widgets', 'top-customers dashboard-widgets',
+        'expense-breakdown dashboard-widgets', 'recent-invoices dashboard-widgets', 'low-stock dashboard-widgets',
     ];
 
     public function test_p5_dashboard_uses_grouped_queries_and_a_short_cache(): void
@@ -424,19 +425,14 @@ class PhaseDPerformanceTest extends TestCase
             $fresh = $this->get(route('dashboard'))->assertOk();
         });
 
-        $this->assertEquals(16000, $fresh->viewData('totalRevenue'));
-        $this->assertEquals(6000, $fresh->viewData('monthlyRevenue'));
-        $this->assertEquals(700, $fresh->viewData('monthlyExpenses'));
-        $trends = collect($fresh->viewData('monthlyTrends'))->keyBy('month');
-        $this->assertCount(12, $trends);
-        $this->assertEquals(['month' => 'Jun', 'revenue' => 6000.0, 'expenses' => 700.0], $trends['Jun']);
-        $this->assertEquals(['month' => 'Feb', 'revenue' => 5000.0, 'expenses' => 500.0], $trends['Feb']);
-        $this->assertEquals(0, $trends['Jan']['revenue']);
-
-        // Old code: about 50 queries on every visit.
-        $this->assertLessThan(30, $first, "first={$first}");
+        // Dashboard upgrade: figures come from the ledger (DashboardTest checks
+        // them against the reports); here, the number of queries. Totals are
+        // limited to the dates shown, so this doesn't grow with history.
+        $this->assertNotNull($fresh->viewData('summary'));
+        $this->assertCount(12, $fresh->viewData('months'));
+        $this->assertLessThan(45, $first, "first={$first}");
         $again = $this->countQueries(fn () => $this->get(route('dashboard'))->assertOk());
-        $this->assertLessThanOrEqual($first - 7, $again, "first={$first} again={$again}");
+        $this->assertLessThanOrEqual($first - 10, $again, "first={$first} again={$again}");
     }
 
     // ── P6: page sizes ─────────────────────────────────────────
