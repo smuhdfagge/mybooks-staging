@@ -115,8 +115,9 @@ class PhaseDUiTest extends TestCase
 
     public function test_u13_livewire_bulk_actions_are_disabled_while_running(): void
     {
-        $view = file_get_contents(resource_path('views/livewire/invoices/invoices-table.blade.php'));
-        $this->assertMatchesRegularExpression('/wire:click="applyBulkAction" wire:loading\.attr="disabled"/', $view);
+        // Tables plan T1: bulk actions are the shared bulk-bar buttons.
+        $view = file_get_contents(resource_path('views/components/table/bulk-button.blade.php'));
+        $this->assertMatchesRegularExpression('/wire:click="runBulk\(.*wire:loading\.attr="disabled"/s', $view);
 
         // The primary button's disabled look (moved into .btn-primary by U4).
         $button = file_get_contents(resource_path('views/components/primary-button.blade.php'))
@@ -157,6 +158,9 @@ class PhaseDUiTest extends TestCase
 
     public function test_u11_sort_headers_are_buttons_with_aria_sort(): void
     {
+        // Tables plan T1: an empty list shows a message instead of the table, so add an invoice.
+        $this->createAuthenticatedUser(['view invoices']);
+        Invoice::withoutEvents(fn () => Invoice::factory()->create(['tenant_id' => $this->tenant->id]));
         $html = $this->page('invoices.index', ['view invoices']);
 
         // Default sort is newest invoice date first.

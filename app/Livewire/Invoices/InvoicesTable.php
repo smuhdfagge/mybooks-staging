@@ -4,99 +4,156 @@ namespace App\Livewire\Invoices;
 
 use App\Actions\Invoices\DeleteInvoice;
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ListTable;
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Services\Dashboard\DashboardService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/**
+ * Invoices list (tables plan T1, the pilot for every list): status tabs with
+ * counts, search, date and customer filters, sortable columns, totals for
+ * everything the filter matches, one "⋯" menu per row, bulk actions on
+ * ticked rows, and cards on a phone.
+ */
 class InvoicesTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
+    use ChecksPermissions, ListTable;
 
-    public $search = '';
+    public string $period = '';
 
-    public $status = '';
-
-    public $customer = '';
-
-    public $dateFrom = '';
-
-    public $dateTo = '';
-
-    public $sortField = 'invoice_date';
-
-    public $sortDirection = 'desc';
-
-    public $perPage = 10;
-
-    // Bulk operation properties
-    public $selectedItems = [];
-
-    public $selectAll = false;
-
-    public $bulkAction = '';
-
-    // Flash message properties
-    public $successMessage = '';
-
-    public $errorMessage = '';
+    public string $customer = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'status' => ['except' => ''],
+        'tab' => ['except' => '', 'as' => 'status'],
+        'period' => ['except' => ''],
         'customer' => ['except' => ''],
     ];
 
-    public function updatingSearch()
+    /** Tabs: key => statuses (overdue is worked out from the due date). */
+    private const TABS = [
+        '' => 'All',
+        'draft' => 'Draft',
+        'unpaid' => 'Unpaid',
+        'overdue' => 'Overdue',
+        'paid' => 'Paid',
+        'cancelled' => 'Cancelled',
+    ];
+
+    public const PERIODS = [
+        '' => 'All time',
+        'this_month' => 'This month',
+        'last_month' => 'Last month',
+        'this_quarter' => 'This quarter',
+        'this_year' => 'This financial year',
+        'last_12_months' => 'Last 12 months',
+    ];
+
+    /** The first column is the default sort, newest first. */
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['invoice_date', 'invoice_number', 'due_date', 'total', 'balance_due'];
     }
 
-    public function updatingStatus()
+    protected function rowRelations(): array
     {
-        $this->resetPage();
+        return ['customer:id,name'];
     }
 
-    public function updatingCustomer()
+    protected function filterProperties(): array
     {
-        $this->resetPage();
+        return ['period', 'customer'];
     }
 
-    public function updatingPerPage()
+    /** Search, date and customer, without the status tab (the tabs count within these). */
+    private function baseQuery(): Builder
     {
-        $this->resetPage();
-    }
+        $query = Invoice::query();
 
-    public function updatedSelectAll($value)
-    {
-        if ($value) {
-            $this->selectedItems = $this->getFilteredInvoiceIds();
-        } else {
-            $this->selectedItems = [];
+        if (($term = trim($this->search)) !== '') {
+            $number = preg_replace('/[^0-9.]/', '', $term);
+            $query->where(function ($q) use ($term, $number) {
+                $q->where('invoice_number', 'like', "%{$term}%")
+                    ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$term}%"));
+                if ($number !== '' && is_numeric($number)) {
+                    $q->orWhere('total', (float) $number);
+                }
+            });
         }
+
+        if ($this->customer !== '' && ctype_digit($this->customer)) {
+            $query->where('customer_id', (int) $this->customer);
+        }
+
+        if (array_key_exists($this->period, self::PERIODS) && $this->period !== '') {
+            $p = app(DashboardService::class)->period((int) auth()->user()->tenant_id, $this->period, 'none');
+            $query->where('invoice_date', '>=', $p->from->toDateString())
+                ->where('invoice_date', '<', $p->to->copy()->addDay()->toDateString());
+        }
+
+        return $query;
     }
 
-    public function updatedSelectedItems()
+    protected function filteredQuery(): Builder
     {
-        $this->selectAll = count($this->selectedItems) === count($this->getFilteredInvoiceIds());
+        $query = $this->baseQuery();
+        $today = now()->toDateString();
+
+        return match ($this->tab) {
+            'draft' => $query->where('status', 'draft'),
+            'unpaid' => $query->whereIn('status', ['sent', 'unpaid', 'partial', 'overdue'])->where('balance_due', '>', 0),
+            'overdue' => $query->whereIn('status', ['sent', 'unpaid', 'partial', 'overdue'])->where('balance_due', '>', 0)->where('due_date', '<', $today),
+            'paid' => $query->where('status', 'paid'),
+            'cancelled' => $query->whereIn('status', ['cancelled', 'void']),
+            default => $query,
+        };
     }
 
-    private function getFilteredInvoiceIds()
+    /** @return array<string, array{label: string, count: int, alert?: bool}> one grouped query */
+    private function tabs(): array
     {
-        return Invoice::query()
-            ->when($this->search, fn ($q) => $q->where(function ($query) {
-                $query->where('invoice_number', 'like', "%{$this->search}%")
-                    ->orWhereHas('customer', fn ($q2) => $q2->where('name', 'like', "%{$this->search}%"));
-            }))
-            ->when($this->status, fn ($q) => $q->where('status', $this->status))
-            ->when($this->customer, fn ($q) => $q->where('customer_id', $this->customer))
-            ->when($this->dateFrom, fn ($q) => $q->whereDate('invoice_date', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn ($q) => $q->whereDate('invoice_date', '<=', $this->dateTo))
-            ->pluck('id')
-            ->map(fn ($id) => (string) $id)
-            ->toArray();
+        $today = now()->toDateString();
+        $open = "status IN ('sent','unpaid','partial','overdue') AND balance_due > 0";
+        $row = $this->baseQuery()->toBase()->selectRaw(
+            "COUNT(*) as all_rows,
+             SUM(CASE WHEN status = 'draft' THEN 1 ELSE 0 END) as draft,
+             SUM(CASE WHEN {$open} THEN 1 ELSE 0 END) as unpaid,
+             SUM(CASE WHEN {$open} AND due_date < ? THEN 1 ELSE 0 END) as overdue,
+             SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) as paid,
+             SUM(CASE WHEN status IN ('cancelled','void') THEN 1 ELSE 0 END) as cancelled",
+            [$today]
+        )->first();
+
+        $counts = ['' => $row->all_rows, 'draft' => $row->draft, 'unpaid' => $row->unpaid, 'overdue' => $row->overdue, 'paid' => $row->paid, 'cancelled' => $row->cancelled];
+        $tabs = [];
+        foreach (self::TABS as $key => $label) {
+            if ($key === 'cancelled' && (int) $counts[$key] === 0 && $this->tab !== 'cancelled') {
+                continue;
+            }
+            $tabs[$key] = ['label' => $label, 'count' => (int) $counts[$key], 'alert' => $key === 'overdue'];
+        }
+
+        return $tabs;
+    }
+
+    /** Delete one invoice from its row menu, by the same rules as deleting it from its page. */
+    public function deleteOne(int $id, DeleteInvoice $deleteInvoice): void
+    {
+        $this->requirePermission('delete invoices');
+        $invoice = Invoice::findOrFail($id);
+
+        if ($reason = $deleteInvoice->blockedBecause($invoice)) {
+            $this->errorMessage = "{$invoice->invoice_number} can't be deleted: {$reason}";
+
+            return;
+        }
+
+        DB::transaction(fn () => $deleteInvoice->handle($invoice));
+        $this->successMessage = "Deleted {$invoice->invoice_number}.";
+        $this->selectedItems = array_values(array_diff($this->selectedItems, [(string) $id]));
     }
 
     /**
@@ -213,40 +270,25 @@ class InvoicesTable extends Component
         }
 
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
-    }
-
-    public function sortBy($field)
-    {
-        if ($this->sortField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            $this->sortDirection = 'desc';
-        }
-        $this->sortField = $field;
     }
 
     public function render()
     {
-        $invoices = Invoice::query()
-            ->with('customer')
-            ->when($this->search, fn ($q) => $q->where(function ($query) {
-                $query->where('invoice_number', 'like', "%{$this->search}%")
-                    ->orWhereHas('customer', fn ($q2) => $q2->where('name', 'like', "%{$this->search}%"));
-            }))
-            ->when($this->status, fn ($q) => $q->where('status', $this->status))
-            ->when($this->customer, fn ($q) => $q->where('customer_id', $this->customer))
-            ->when($this->dateFrom, fn ($q) => $q->whereDate('invoice_date', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn ($q) => $q->whereDate('invoice_date', '<=', $this->dateTo))
-            ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->pageSize());
+        $rows = $this->rows();
 
-        $customers = Customer::where('is_active', true)->get();
+        $totals = $this->filteredQuery()->toBase()
+            ->selectRaw('COUNT(*) as n, COALESCE(SUM(total), 0) as total, COALESCE(SUM(balance_due), 0) as balance')
+            ->first();
 
         return view('livewire.invoices.invoices-table', [
-            'invoices' => $invoices,
-            'customers' => $customers,
+            'invoices' => $rows,
+            'tabs' => $this->tabs(),
+            'totals' => $totals,
+            'customers' => Customer::where('is_active', true)->orderBy('name')->pluck('name', 'id'),
+            'periods' => self::PERIODS,
+            'filtered' => trim($this->search) !== '' || $this->period !== '' || $this->customer !== '',
+            'today' => now()->startOfDay(),
         ]);
     }
 }

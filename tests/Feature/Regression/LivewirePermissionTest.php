@@ -45,6 +45,7 @@ class LivewirePermissionTest extends TestCase
         'cancelDelete', 'clearFilters', 'close', 'closeCancelModal', 'closeDisposeModal', 'closeRejectModal',
         'closeUpgradeModal', 'getSettingsArray', 'goToStep', 'nextStep', 'openCancelModal',
         'openUpgradeModal', 'placeholder', 'previousStep', 'register', 'resetToDefaults', 'selectResult',
+        'selectPage', 'selectAllMatching', 'clearSelection',
         'submit', 'toggleType',
     ];
 
