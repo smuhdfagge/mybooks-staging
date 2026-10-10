@@ -25,7 +25,8 @@ class PayrollReportController extends ReportController
         $endDate = $request->get('end_date', now()->format('Y-m-d'));
 
         $payrolls = Payroll::where('tenant_id', $tenantId)
-            ->whereBetween('pay_date', [$startDate, $endDate])
+            ->whereIn('status', [Payroll::STATUS_APPROVED, Payroll::STATUS_PAID]) // not drafts or cancelled runs (T6)
+            ->whereBetween('pay_date', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()])
             ->with('employee')
             ->get();
 
@@ -57,7 +58,8 @@ class PayrollReportController extends ReportController
         $endDate = $request->get('end_date', now()->format('Y-m-d'));
 
         $payrolls = Payroll::where('tenant_id', $tenantId)
-            ->whereBetween('pay_date', [$startDate, $endDate])
+            ->whereIn('status', [Payroll::STATUS_APPROVED, Payroll::STATUS_PAID]) // not drafts or cancelled runs (T6)
+            ->whereBetween('pay_date', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()])
             ->with('employee.department')
             ->get();
 
@@ -102,7 +104,8 @@ class PayrollReportController extends ReportController
             ->get();
 
         $query = Payroll::where('tenant_id', $tenantId)
-            ->whereBetween('pay_date', [$startDate, $endDate])
+            ->whereIn('status', [Payroll::STATUS_APPROVED, Payroll::STATUS_PAID]) // not drafts or cancelled runs (T6)
+            ->whereBetween('pay_date', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()])
             ->with('employee.department');
 
         if ($employeeId) {
@@ -222,7 +225,8 @@ class PayrollReportController extends ReportController
         $format = $request->get('format', 'pdf');
 
         $payrolls = Payroll::where('tenant_id', $tenantId)
-            ->whereBetween('pay_date', [$startDate, $endDate])
+            ->whereIn('status', [Payroll::STATUS_APPROVED, Payroll::STATUS_PAID]) // not drafts or cancelled runs (T6)
+            ->whereBetween('pay_date', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()])
             ->with('employee')
             ->get();
 
@@ -268,7 +272,8 @@ class PayrollReportController extends ReportController
         $format = $request->get('format', 'pdf');
 
         $payrolls = Payroll::where('tenant_id', $tenantId)
-            ->whereBetween('pay_date', [$startDate, $endDate])
+            ->whereIn('status', [Payroll::STATUS_APPROVED, Payroll::STATUS_PAID]) // not drafts or cancelled runs (T6)
+            ->whereBetween('pay_date', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()])
             ->with('employee.department')
             ->get();
 
@@ -324,7 +329,8 @@ class PayrollReportController extends ReportController
         $format = $request->get('format', 'pdf');
 
         $query = Payroll::where('tenant_id', $tenantId)
-            ->whereBetween('pay_date', [$startDate, $endDate])
+            ->whereIn('status', [Payroll::STATUS_APPROVED, Payroll::STATUS_PAID]) // not drafts or cancelled runs (T6)
+            ->whereBetween('pay_date', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()])
             ->with('employee.department');
 
         if ($employeeId) {
@@ -429,7 +435,7 @@ class PayrollReportController extends ReportController
 
         $query = Payroll::where('tenant_id', $tenantId)
             ->whereIn('status', [Payroll::STATUS_APPROVED, Payroll::STATUS_PAID])
-            ->whereBetween('pay_date', [$startDate, $endDate])
+            ->whereBetween('pay_date', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()])
             ->with('employee.department');
 
         if ($employeeId) {
@@ -496,7 +502,7 @@ class PayrollReportController extends ReportController
 
         $payrolls = Payroll::where('tenant_id', $tenantId)
             ->whereIn('status', [Payroll::STATUS_APPROVED, Payroll::STATUS_PAID])
-            ->whereBetween('pay_date', [$startDate, $endDate])
+            ->whereBetween('pay_date', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()])
             ->with('employee.department')
             ->orderBy('pay_date')
             ->get();
@@ -549,7 +555,7 @@ class PayrollReportController extends ReportController
 
         $payrolls = Payroll::where('tenant_id', $tenantId)
             ->whereIn('status', [Payroll::STATUS_APPROVED, Payroll::STATUS_PAID])
-            ->whereBetween('pay_date', [$startDate, $endDate])
+            ->whereBetween('pay_date', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()])
             ->with('employee.department')
             ->get();
 
@@ -612,7 +618,7 @@ class PayrollReportController extends ReportController
         $format = $request->get('format', 'csv');
 
         $query = Payroll::where('tenant_id', $tenantId)
-            ->whereBetween('pay_date', [$startDate, $endDate])
+            ->whereBetween('pay_date', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()])
             ->with('employee')
             ->orderBy('payroll_number');
 

@@ -84,6 +84,8 @@ class AppServiceProvider extends ServiceProvider
 
         // One way to show money in views (U8): @money($amount[, 'USD']) and @currencySymbol.
         Blade::directive('money', fn (string $expression) => "<?php echo e(\\App\\Support\\Money::format({$expression})); ?>");
+        // Reports (tables plan T6): 1,234.00, (1,234.00) for negatives, a dash for zero.
+        Blade::directive('fig', fn (string $expression) => "<?php echo e(\\App\\Support\\Figure::show({$expression})); ?>");
         Blade::directive('moneyWhole', fn (string $expression) => "<?php echo e(\\App\\Support\\Money::whole({$expression})); ?>");
         Blade::directive('currencySymbol', fn () => '<?php echo e(\\App\\Support\\Money::symbol()); ?>');
 

@@ -80,7 +80,7 @@ class ReportTest extends TestCase
         $this->createAuthenticatedUser(['view reports']);
         $response = $this->get(route('reports.balance-sheet'));
         $response->assertOk();
-        $response->assertSee('Balance Sheet');
+        $response->assertSee('Balance sheet');
     }
 
     // ─────────────────────────────────────────────────────
@@ -92,7 +92,7 @@ class ReportTest extends TestCase
         $this->createAuthenticatedUser(['view reports']);
         $response = $this->get(route('reports.cash-flow'));
         $response->assertOk();
-        $response->assertSee('Cash Flow Statement');
+        $response->assertSee('Cash flow statement');
     }
 
     // ─────────────────────────────────────────────────────
@@ -104,7 +104,7 @@ class ReportTest extends TestCase
         $this->createAuthenticatedUser(['view reports']);
         $response = $this->get(route('reports.trial-balance'));
         $response->assertOk();
-        $response->assertSee('Trial Balance');
+        $response->assertSee('Trial balance');
     }
 
     // ─────────────────────────────────────────────────────
@@ -116,7 +116,7 @@ class ReportTest extends TestCase
         $this->createAuthenticatedUser(['view reports']);
         $response = $this->get(route('reports.general-ledger'));
         $response->assertOk();
-        $response->assertSee('General Ledger');
+        $response->assertSee('General ledger');
     }
 
     public function test_general_ledger_loads_with_account(): void
@@ -148,7 +148,7 @@ class ReportTest extends TestCase
 
         $response = $this->get(route('reports.accounts-receivable'));
         $response->assertOk();
-        $response->assertSee('Accounts Receivable');
+        $response->assertSee('Aged receivables');
     }
 
     // ─────────────────────────────────────────────────────
@@ -168,7 +168,7 @@ class ReportTest extends TestCase
 
         $response = $this->get(route('reports.accounts-payable'));
         $response->assertOk();
-        $response->assertSee('Accounts Payable');
+        $response->assertSee('Aged payables');
     }
 
     // ─────────────────────────────────────────────────────

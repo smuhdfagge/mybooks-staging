@@ -195,8 +195,8 @@ class ReportExportService
                 $account->account_code,
                 $account->name,
                 $account->type,
-                $account->total_debit > 0 ? number_format($account->total_debit, 2) : '',
-                $account->total_credit > 0 ? number_format($account->total_credit, 2) : '',
+                $account->balance_debit > 0 ? number_format($account->balance_debit, 2) : '',
+                $account->balance_credit > 0 ? number_format($account->balance_credit, 2) : '',
             ];
         }
 
