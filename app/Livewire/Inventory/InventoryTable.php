@@ -4,149 +4,117 @@ namespace App\Livewire\Inventory;
 
 use App\Actions\Inventory\AdjustStock;
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ListTable;
 use App\Models\Inventory;
 use App\Models\Item;
 use App\Models\ItemCategory;
 use App\Models\Warehouse;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/**
+ * Stock list (tables plan T4): what is on hand, item by item, for all
+ * warehouses or one, with what it is worth.
+ */
 class InventoryTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
+    use ChecksPermissions, ListTable;
 
-    public $search = '';
+    public string $category = '';
 
-    public $categoryFilter = '';
-
-    public $stockFilter = '';
-
-    /** Show one warehouse's stock (session 12); empty = all warehouses. */
-    public $warehouseFilter = '';
-
-    public $sortField = 'name';
-
-    public $sortDirection = 'asc';
-
-    public $perPage = 15;
-
-    // Bulk operation properties
-    public $selectedItems = [];
-
-    public $selectAll = false;
-
-    public $bulkAction = '';
-
-    public $successMessage = '';
-
-    public $errorMessage = '';
+    public string $warehouse = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'categoryFilter' => ['except' => ''],
-        'stockFilter' => ['except' => ''],
-        'warehouseFilter' => ['except' => ''],
+        'tab' => ['except' => '', 'as' => 'stock'],
+        'category' => ['except' => ''],
+        'warehouse' => ['except' => ''],
     ];
 
-    public function updatingSearch()
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['name', 'on_hand', 'stock_value', 'reorder_level'];
     }
 
-    public function updatingCategoryFilter()
+    public function mountListTable(): void
     {
-        $this->resetPage();
-    }
-
-    public function updatingStockFilter()
-    {
-        $this->resetPage();
-    }
-
-    public function updatingWarehouseFilter()
-    {
-        $this->resetPage();
-    }
-
-    /** The chosen warehouse, if it is one of this business's. */
-    private function warehouseId(): ?int
-    {
-        if ($this->warehouseFilter === '' || $this->warehouseFilter === null) {
-            return null;
-        }
-
-        return Warehouse::whereKey((int) $this->warehouseFilter)->exists() ? (int) $this->warehouseFilter : null;
-    }
-
-    /** In stock / low / out, on the item's total or one warehouse's stock. */
-    private function applyStockFilter($query): void
-    {
-        $onHand = Item::onHandSql($this->warehouseId());
-
-        switch ($this->stockFilter) {
-            case 'in_stock':
-                $query->whereRaw("{$onHand} > 0");
-                break;
-            case 'low_stock':
-                $query->where('reorder_level', '>', 0)->whereRaw("{$onHand} <= items.reorder_level");
-                break;
-            case 'out_of_stock':
-                $query->whereRaw("{$onHand} <= 0");
-                break;
-        }
-    }
-
-    public function updatingPerPage()
-    {
-        $this->resetPage();
-    }
-
-    public function sortBy($field)
-    {
-        if ($this->sortField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            $this->sortField = $field;
+        if (! in_array($this->sortField, $this->sortable(), true)) {
+            $this->sortField = 'name';
             $this->sortDirection = 'asc';
         }
     }
 
-    public function updatedSelectAll($value)
+    protected function filterProperties(): array
     {
-        if ($value) {
-            $this->selectedItems = $this->getFilteredItemIds();
-        } else {
-            $this->selectedItems = [];
+        return ['category', 'warehouse'];
+    }
+
+    private function warehouseId(): ?int
+    {
+        if ($this->warehouse === '' || ! ctype_digit($this->warehouse)) {
+            return null;
         }
+
+        return Warehouse::whereKey((int) $this->warehouse)->exists() ? (int) $this->warehouse : null;
     }
 
-    public function updatedSelectedItems()
+    private function onHand(): string
     {
-        $this->selectAll = count($this->selectedItems) === count($this->getFilteredItemIds());
+        return Item::onHandSql($this->warehouseId());
     }
 
-    private function getFilteredItemIds()
+    /** Stock value: quantity at each warehouse's average cost. */
+    private function valueSql(): string
+    {
+        $where = ($w = $this->warehouseId()) ? ' AND inventories.warehouse_id = '.$w : '';
+
+        return "(SELECT COALESCE(SUM(inventories.quantity * inventories.unit_cost), 0) FROM inventories WHERE inventories.item_id = items.id{$where})";
+    }
+
+    protected function baseQuery(): Builder
     {
         $query = Item::query()->where('track_inventory', true);
-
-        if ($this->search) {
-            $query->where(function ($q) {
-                $q->where('name', 'like', '%'.$this->search.'%')
-                    ->orWhere('sku', 'like', '%'.$this->search.'%');
-            });
+        if (($term = trim($this->search)) !== '') {
+            $query->where(fn ($q) => $q->where('name', 'like', "%{$term}%")->orWhere('sku', 'like', "%{$term}%"));
+        }
+        if ($this->category !== '' && ctype_digit($this->category)) {
+            $query->where('category_id', (int) $this->category);
         }
 
-        if ($this->categoryFilter) {
-            $query->where('category_id', $this->categoryFilter);
-        }
+        return $query;
+    }
 
-        $this->applyStockFilter($query);
+    protected function applyTab(Builder $query, string $tab): Builder
+    {
+        $onHand = $this->onHand();
 
-        return $query->pluck('id')
-            ->map(fn ($id) => (string) $id)
-            ->toArray();
+        return match ($tab) {
+            'in' => $query->whereRaw("{$onHand} > 0"),
+            // Same rule as the dashboard: at or below the reorder level (out of stock included).
+            'low' => $query->where('reorder_level', '>', 0)->whereRaw("{$onHand} <= items.reorder_level"),
+            'out' => $query->whereRaw("{$onHand} <= 0"),
+            default => $query,
+        };
+    }
+
+    /** @return array<string, array{label: string, count: int, alert: bool}> one query */
+    private function tabs(): array
+    {
+        $onHand = $this->onHand();
+        $row = $this->baseQuery()->toBase()->selectRaw(
+            "COUNT(*) as all_rows,
+             SUM(CASE WHEN {$onHand} > 0 THEN 1 ELSE 0 END) as in_stock,
+             SUM(CASE WHEN reorder_level > 0 AND {$onHand} <= reorder_level THEN 1 ELSE 0 END) as low,
+             SUM(CASE WHEN {$onHand} <= 0 THEN 1 ELSE 0 END) as out_of_stock"
+        )->first();
+
+        return [
+            '' => ['label' => 'All', 'count' => (int) $row->all_rows, 'alert' => false],
+            'in' => ['label' => 'In stock', 'count' => (int) $row->in_stock, 'alert' => false],
+            'low' => ['label' => 'Running low', 'count' => (int) $row->low, 'alert' => true],
+            'out' => ['label' => 'Out of stock', 'count' => (int) $row->out_of_stock, 'alert' => true],
+        ];
     }
 
     /**
@@ -166,13 +134,7 @@ class InventoryTable extends Component
         $this->errorMessage = '';
 
         if (empty($this->selectedItems)) {
-            $this->errorMessage = 'Please select at least one item.';
-
-            return;
-        }
-
-        if (empty($this->bulkAction)) {
-            $this->errorMessage = 'Please select an action.';
+            $this->errorMessage = 'Tick at least one item first.';
 
             return;
         }
@@ -183,10 +145,7 @@ class InventoryTable extends Component
 
         switch ($this->bulkAction) {
             case 'reset_quantity':
-                // A count to zero for each record, through the adjustment
-                // action so the stock leaves its cost layers and posts
-                // Dr Stock Losses, Cr Inventory (F1). It used to set the
-                // quantity straight in the table.
+                // Through AdjustStock, so the Inventory account moves with the stock.
                 $reset = 0;
                 $problems = [];
                 $records = Inventory::with('item')->whereIn('item_id', $this->selectedItems)
@@ -201,15 +160,15 @@ class InventoryTable extends Component
                         $problems[] = $record->item->name.': '.collect($e->errors())->flatten()->first();
                     }
                 }
-                $this->successMessage = "Reset the quantity to zero for {$reset} stock record(s).";
+                $this->successMessage = "Set {$reset} stock record(s) to zero.";
                 if ($problems) {
-                    $this->errorMessage = count($problems).' could not be reset: '.implode(' ', $problems);
+                    $this->errorMessage = count($problems).' could not be set to zero: '.implode(' ', $problems);
                 }
                 break;
 
             case 'disable_tracking':
                 Item::whereIn('id', $this->selectedItems)->update(['track_inventory' => false]);
-                $this->successMessage = "Successfully disabled inventory tracking for {$count} item(s).";
+                $this->successMessage = "Stopped counting stock for {$count} item(s).";
                 break;
 
             default:
@@ -219,35 +178,34 @@ class InventoryTable extends Component
         }
 
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
     }
 
     public function render()
     {
-        $query = Item::query()
-            ->where('track_inventory', true)
-            ->with(['category', 'inventory' => fn ($q) => $q->when($this->warehouseId(), fn ($w, $id) => $w->where('inventories.warehouse_id', $id))]);
+        $reserved = Item::onHandSql($this->warehouseId(), 'reserved_quantity');
+        $items = $this->filteredQuery()
+            ->select('items.*')
+            ->selectRaw($this->onHand().' as on_hand')
+            ->selectRaw($reserved.' as reserved')
+            ->selectRaw($this->valueSql().' as stock_value')
+            ->with('category:id,name')
+            ->orderBy($this->sortColumn(), $this->sortDirection === 'asc' ? 'asc' : 'desc')
+            ->orderBy('items.id')
+            ->paginate($this->pageSize());
 
-        if ($this->search) {
-            $query->where(function ($q) {
-                $q->where('name', 'like', '%'.$this->search.'%')
-                    ->orWhere('sku', 'like', '%'.$this->search.'%');
-            });
-        }
-
-        if ($this->categoryFilter) {
-            $query->where('category_id', $this->categoryFilter);
-        }
-
-        $this->applyStockFilter($query);
-
-        $query->orderBy($this->sortField, $this->sortDirection);
+        $warehouses = Warehouse::moduleOn() ? Warehouse::orderByDesc('is_default')->orderBy('name')->pluck('name', 'id') : collect();
 
         return view('livewire.inventory.inventory-table', [
-            'items' => $query->paginate($this->pageSize()),
-            'categories' => ItemCategory::where('is_active', true)->get(),
-            'warehouses' => Warehouse::moduleOn() ? Warehouse::orderByDesc('is_default')->orderBy('name')->get() : collect(),
+            'items' => $items,
+            'tabs' => $this->tabs(),
+            'totals' => (object) [
+                'n' => $items->total(),
+                'value' => (float) $this->filteredQuery()->toBase()->selectRaw('COALESCE(SUM('.$this->valueSql().'), 0) as v')->value('v'),
+            ],
+            'categories' => ItemCategory::where('is_active', true)->orderBy('name')->pluck('name', 'id'),
+            'warehouses' => $warehouses->count() > 1 ? $warehouses : collect(),
+            'filtered' => $this->isFiltered(),
         ]);
     }
 }

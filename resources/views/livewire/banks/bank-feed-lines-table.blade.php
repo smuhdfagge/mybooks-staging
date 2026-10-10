@@ -1,138 +1,135 @@
-<div class="relative">
-    <x-table-loading />
+{{-- Bank lines to review (tables plan T4). Accept stays on the row: it is the job of this page. --}}
+@php
+    $money = fn ($v) => number_format((float) $v, 2);
+    $review = $tab === '';
+    $ticks = $canReconcile && $review;
+    $ids = $lines->pluck('id')->map(fn ($id) => (string) $id)->all();
+    $btn = 'inline-flex h-8 items-center rounded-md px-2.5 text-[13px] font-semibold';
+@endphp
+<div class="relative space-y-3">
+    <x-flash-messages :successMessage="$successMessage" :errorMessage="$errorMessage" />
 
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-        @foreach(['new' => 'To review', 'matched' => 'Matched', 'created' => 'Recorded', 'ignored' => 'Ignored'] as $key => $label)
-            <button type="button" wire:click="$set('statusFilter', '{{ $key }}')" data-testid="count-{{ $key }}"
-                    class="card p-3 text-left {{ $statusFilter === $key ? 'ring-2 ring-brand-500' : '' }}">
-                <span class="block text-xs text-gray-500 dark:text-gray-400">{{ $label }}</span>
-                <span class="block text-xl font-semibold text-gray-900 dark:text-gray-100">{{ $counts[$key] }}</span>
-            </button>
-        @endforeach
-    </div>
+    <x-table.tabs :tabs="$tabs" :active="$tab" />
 
-    <x-flash-messages :success-message="$successMessage" :error-message="$errorMessage" />
+    <x-table.toolbar placeholder="Search words or amount" :selected="$ticks ? count($selectedItems) : 0" :filtered="$filtered">
+        <x-slot name="filters">
+            <x-table.select model="period" label="Date" :options="$periods" />
+            @if (count($connections) > 1)<x-table.pick model="connection" label="Account" :options="$connections" />@endif
+            <x-table.pick model="direction" label="Money" :options="$directions" all="In and out" />
+        </x-slot>
+        @if ($ticks)
+            <x-slot name="end">
+                <button type="button" data-testid="accept-all" wire:click="acceptAllSuggested"
+                    wire:confirm="Accept every suggestion marked High? Each line will be matched to the record suggested. Nothing new is posted, and a match can be undone."
+                    class="tbl-chip h-9">Accept all High suggestions</button>
+            </x-slot>
+            <x-slot name="bulk">
+                <button type="button" wire:click="ignoreSelected" wire:loading.attr="disabled"
+                    wire:confirm="Ignore the {{ count($selectedItems) }} ticked lines? You can bring them back from the Ignored tab."
+                    class="tbl-chip h-9">Ignore</button>
+                <x-table.tick-all-matching :rows="$lines" :selected="$selectedItems" />
+            </x-slot>
+        @endif
+    </x-table.toolbar>
 
-    <div class="card">
-        <div class="p-4 sm:p-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-3 mb-4">
-                <input aria-label="Search narration or amount" wire:model.live.debounce.300ms="search" type="text" placeholder="Search words or amount..." class="form-control lg:col-span-2">
-                <select aria-label="Account" wire:model.live="connectionFilter" class="form-control">
-                    <option value="">All accounts</option>
-                    @foreach($connections as $c)
-                        <option value="{{ $c->id }}">{{ $c->title() }}</option>
-                    @endforeach
-                </select>
-                <select aria-label="Status" wire:model.live="statusFilter" class="form-control">
-                    <option value="">Any status</option>
-                    <option value="new">To review</option>
-                    <option value="matched">Matched</option>
-                    <option value="created">Recorded</option>
-                    <option value="ignored">Ignored</option>
-                </select>
-                <select aria-label="Money in or out" wire:model.live="directionFilter" class="form-control">
-                    <option value="">In and out</option>
-                    <option value="credit">Money in</option>
-                    <option value="debit">Money out</option>
-                </select>
-                <div class="flex gap-2 sm:col-span-2 2xl:col-span-1">
-                    <input aria-label="From date" wire:model.live="dateFrom" type="date" class="form-control min-w-0 flex-1">
-                    <input aria-label="To date" wire:model.live="dateTo" type="date" class="form-control min-w-0 flex-1">
-                </div>
+    <div class="relative">
+        <x-table.veil />
+        @if ($lines->isEmpty())
+            <div class="tbl-wrap">
+                @if ($filtered)
+                    <x-table.empty filtered title="No lines match these filters" />
+                @elseif ($review)
+                    <x-table.empty title="Nothing to review" text="New lines appear here when the bank sends them." />
+                @else
+                    <x-table.empty title="No lines here yet" />
+                @endif
             </div>
-
-            @if($canReconcile && $statusFilter === 'new')
-                <div class="mb-4 flex flex-wrap items-center gap-2">
-                    <button type="button" class="btn-primary" data-testid="accept-all"
-                            wire:click="acceptAllSuggested"
-                            wire:confirm="Accept every suggestion marked High? Each line will be matched to the record suggested. Nothing new is posted, and a match can be undone.">
-                        Accept all High suggestions
-                    </button>
-                    @if(count($selectedItems) > 0)
-                        <button type="button" class="btn-secondary" wire:click="ignoreSelected"
-                                wire:confirm="Ignore the {{ count($selectedItems) }} ticked lines? You can bring them back from the Ignored list.">
-                            Ignore {{ count($selectedItems) }} ticked
-                        </button>
-                    @endif
-                </div>
-            @endif
-
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 line-items">
-                    <thead class="bg-gray-50 dark:bg-gray-700">
-                        <tr>
-                            @if($canReconcile && $statusFilter === 'new')<th class="px-3 py-3 w-8"></th>@endif
-                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
-                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">What the bank says</th>
-                            <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Amount</th>
-                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">In MyBooks</th>
-                            <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                        @forelse($lines as $line)
-                            @php($s = $suggestions[$line->id] ?? null)
-                            <tr wire:key="line-{{ $line->id }}" data-testid="line-{{ $line->id }}">
-                                @if($canReconcile && $statusFilter === 'new')
-                                    <td class="px-3 py-3" data-cell="main"><input aria-label="Select line" type="checkbox" wire:model.live="selectedItems" value="{{ $line->id }}" class="rounded border-gray-300 text-brand-600 dark:text-brand-300"></td>
+        @else
+            <x-table caption="Bank lines" class="hidden md:block">
+                <x-slot name="head">
+                    @if ($ticks)<x-table.check-all :ids="$ids" :selected="$selectedItems" label="Tick every line on this page" />@endif
+                    <x-table.th field="date" :sort="[$sortField, $sortDirection]">Date</x-table.th>
+                    <x-table.th>What the bank says</x-table.th>
+                    <x-table.th num>Money in</x-table.th>
+                    <x-table.th num>Money out</x-table.th>
+                    <x-table.th>In MyBooks</x-table.th>
+                    <th scope="col" class="tbl-menu"><span class="sr-only">Actions</span></th>
+                </x-slot>
+                @foreach ($lines as $line)
+                    @php $s = $suggestions[$line->id] ?? null; $ticked = in_array((string) $line->id, $selectedItems, true); @endphp
+                    <tr wire:key="line-{{ $line->id }}" data-testid="line-{{ $line->id }}" @if ($ticked) data-picked @endif>
+                        @if ($ticks)<x-table.check :id="$line->id" :label="$line->narration ?: 'line'" />@endif
+                        <td class="tbl-muted">{{ $line->date->format('j M Y') }}</td>
+                        <td class="max-w-[22rem]">
+                            <span class="block truncate">{{ $line->narration ?: '—' }}</span>
+                            @if (count($connections) > 1)<span class="block truncate text-xs tbl-muted">{{ $line->connection?->title() }}</span>@endif
+                        </td>
+                        <td class="num {{ $line->isCredit() ? '' : 'tbl-zero' }}">{{ $line->isCredit() ? $money($line->amount) : '—' }}</td>
+                        <td class="num {{ $line->isCredit() ? 'tbl-zero' : '' }}">{{ $line->isCredit() ? '—' : $money($line->amount) }}</td>
+                        <td class="max-w-[18rem]">
+                            @if ($line->status === 'new')
+                                @if ($s)
+                                    <a class="block truncate text-brand-700 hover:underline dark:text-brand-300" href="{{ $s->candidate->url ?? '#' }}" target="_blank" rel="noopener">{{ $s->candidate->describe() }} · {{ $s->candidate->date->format('j M') }}</a>
+                                    <span class="text-xs tbl-muted" data-testid="confidence-{{ $line->id }}">{{ $s->label() }} confidence</span>
+                                @else
+                                    <span class="tbl-muted">Nothing matches yet</span>
                                 @endif
-                                <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100" data-label="Date">{{ $line->date->format('j M Y') }}</td>
-                                <td class="px-3 py-3 text-sm text-gray-900 dark:text-gray-100" data-cell="main">
-                                    <div class="break-words">{{ $line->narration ?: '—' }}</div>
-                                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ $line->connection?->title() }}</div>
-                                </td>
-                                <td class="px-3 py-3 whitespace-nowrap text-sm text-right font-medium {{ $line->isCredit() ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}" data-label="Amount">
-                                    {{ $line->isCredit() ? '+' : '−' }}@money($line->amount)
-                                </td>
-                                <td class="px-3 py-3 text-sm" data-cell="main">
-                                    @if($line->status === 'new')
-                                        @if($s)
-                                            <div class="text-gray-900 dark:text-gray-100">
-                                                <a class="text-brand-600 dark:text-brand-300 hover:underline" href="{{ $s->candidate->url ?? '#' }}" target="_blank" rel="noopener">{{ $s->candidate->describe() }}</a>
-                                                <span class="text-xs text-gray-500 dark:text-gray-400">· {{ $s->candidate->date->format('j M') }}</span>
-                                            </div>
-                                            <span class="mt-1 px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ ['High' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300', 'Medium' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300', 'Low' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'][$s->label()] }}" data-testid="confidence-{{ $line->id }}">{{ $s->label() }} confidence</span>
-                                        @else
-                                            <span class="text-gray-500 dark:text-gray-400">Nothing matches yet</span>
-                                        @endif
-                                    @elseif($line->status === 'ignored')
-                                        <x-status-badge status="cancelled" label="Ignored" />
-                                    @else
-                                        <x-status-badge :status="$line->status === 'matched' ? 'accepted' : 'completed'" :label="$line->status === 'matched' ? 'Matched' : 'Recorded'" />
-                                        @if($line->matched)
-                                            <span class="text-gray-700 dark:text-gray-300">{{ $line->matched->payment_number ?? $line->matched->expense_number ?? $line->matched->journal_number ?? '' }}</span>
-                                        @endif
+                            @elseif ($line->status === 'ignored')
+                                <x-status-badge status="cancelled" label="Ignored" />
+                            @else
+                                <x-status-badge :status="$line->status === 'matched' ? 'accepted' : 'completed'" :label="$line->status === 'matched' ? 'Matched' : 'Recorded'" />
+                                @if ($line->matched)<span class="ml-1 text-xs tbl-muted">{{ $line->matched->payment_number ?? $line->matched->expense_number ?? $line->matched->journal_number ?? '' }}</span>@endif
+                            @endif
+                        </td>
+                        <td class="tbl-menu whitespace-nowrap">
+                            @if ($canReconcile)
+                                <div class="flex items-center justify-end gap-1">
+                                    @if ($line->status === 'new' && $s)
+                                        <button type="button" class="{{ $btn }} bg-brand-700 text-white hover:bg-brand-800" data-testid="accept-{{ $line->id }}"
+                                            wire:click="accept({{ $line->id }}, @js($s->candidate->record::class), {{ $s->candidate->record->getKey() }})">Accept</button>
                                     @endif
-                                </td>
-                                <td class="px-3 py-3 text-sm text-right" data-cell="actions">
-                                    @if($canReconcile)
-                                        <div class="flex flex-wrap justify-end gap-2">
-                                            @if($line->status === 'new')
-                                                @if($s)
-                                                    <button type="button" class="btn-primary" wire:click="accept({{ $line->id }}, @js($s->candidate->record::class), {{ $s->candidate->record->getKey() }})" data-testid="accept-{{ $line->id }}">Accept</button>
-                                                    <button type="button" class="btn-secondary" wire:click="reject({{ $line->id }}, @js($s->candidate->record::class), {{ $s->candidate->record->getKey() }})" data-testid="reject-{{ $line->id }}">Not this one</button>
-                                                @endif
-                                                <a href="{{ route('bank-feeds.lines.show', $line) }}" class="btn-secondary" data-testid="record-{{ $line->id }}">Record it</a>
-                                                <button type="button" class="btn-secondary" wire:click="ignore({{ $line->id }})" data-testid="ignore-{{ $line->id }}">Ignore</button>
-                                            @elseif($line->status === 'ignored')
-                                                <button type="button" class="btn-secondary" wire:click="unignore({{ $line->id }})">Bring back</button>
-                                            @elseif($line->status === 'matched')
-                                                <button type="button" class="btn-secondary" wire:click="undo({{ $line->id }})" wire:confirm="Take this match back?">Undo</button>
+                                    <x-table.dropdown :sr-label="'More for '.($line->narration ?: 'this line')">
+                                        @if ($line->status === 'new')
+                                            @if ($s)
+                                                <x-table.menu-item wire="reject({{ $line->id }}, '{{ addslashes($s->candidate->record::class) }}', {{ $s->candidate->record->getKey() }})">Not this one</x-table.menu-item>
                                             @endif
-                                        </div>
-                                    @endif
-                                </td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                                {{ $statusFilter === 'new' ? 'Nothing to review. New lines appear here when the bank sends them.' : 'No lines found.' }}
-                            </td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="mt-4">{{ $lines->links() }}</div>
-        </div>
+                                            <x-table.menu-item :href="route('bank-feeds.lines.show', $line)">Record it</x-table.menu-item>
+                                            <x-table.menu-item wire="ignore({{ $line->id }})">Ignore</x-table.menu-item>
+                                        @elseif ($line->status === 'ignored')
+                                            <x-table.menu-item wire="unignore({{ $line->id }})">Bring back</x-table.menu-item>
+                                        @elseif ($line->status === 'matched')
+                                            <x-table.menu-item wire="undo({{ $line->id }})" confirm="Take this match back?">Undo the match</x-table.menu-item>
+                                        @else
+                                            <x-table.menu-item :href="route('bank-feeds.lines.show', $line)">View</x-table.menu-item>
+                                        @endif
+                                    </x-table.dropdown>
+                                </div>
+                            @endif
+                        </td>
+                    </tr>
+                @endforeach
+                <x-slot name="foot">
+                    <tr>
+                        @if ($ticks)<td></td>@endif
+                        <td colspan="2">Total of {{ number_format($totals->n) }} {{ $totals->n == 1 ? 'line' : 'lines' }}@if ($filtered) <span class="font-normal tbl-muted">(this filter)</span>@endif</td>
+                        <td class="num">{{ $money($totals->money_in) }}</td>
+                        <td class="num">{{ $money($totals->money_out) }}</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </x-slot>
+            </x-table>
+            <ul class="space-y-2 md:hidden" aria-label="Bank lines">
+                @foreach ($lines as $line)
+                    @php $s = $suggestions[$line->id] ?? null; @endphp
+                    <li wire:key="line-card-{{ $line->id }}">
+                        <x-table.card :href="route('bank-feeds.lines.show', $line)" :title="$line->narration ?: '—'"
+                            :amount="($line->isCredit() ? '+' : '−').\App\Support\Money::format($line->amount)"
+                            :meta="$line->date->format('j M Y').($s ? ' · '.$s->label().' match' : '')" />
+                    </li>
+                @endforeach
+            </ul>
+        @endif
     </div>
+
+    <x-table.footer :rows="$lines" />
 </div>

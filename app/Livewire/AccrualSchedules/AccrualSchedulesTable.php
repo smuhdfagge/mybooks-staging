@@ -2,82 +2,65 @@
 
 namespace App\Livewire\AccrualSchedules;
 
-use App\Enums\AccrualScheduleStatus;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\ListTable;
 use App\Models\AccrualSchedule;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
-use Livewire\WithPagination;
 
-/** List of prepaid expense and deferred revenue schedules (S9). */
+/** Prepaid and deferred schedules (tables plan T4: the shared list design). */
 class AccrualSchedulesTable extends Component
 {
-    use LimitsPageSize, WithPagination;
+    use ChecksPermissions, ListTable;
 
-    public $search = '';
-
-    public $type = '';
-
-    public $status = '';
-
-    public $perPage = 15;
-
-    public $sortField = 'start_date';
-
-    public $sortDirection = 'desc';
+    public string $type = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
+        'tab' => ['except' => '', 'as' => 'status'],
         'type' => ['except' => ''],
-        'status' => ['except' => ''],
     ];
 
-    private const SORTABLE = ['schedule_number', 'description', 'start_date', 'total_amount', 'released_amount', 'status'];
+    public const LABELS = ['active' => 'Running', 'completed' => 'Finished', 'cancelled' => 'Cancelled'];
 
-    public function updatingSearch()
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['start_date', 'schedule_number', 'total_amount', 'released_amount'];
     }
 
-    public function updatingType()
+    protected function rowRelations(): array
     {
-        $this->resetPage();
+        return ['plAccount:id,name'];
     }
 
-    public function updatingStatus()
+    protected function filterProperties(): array
     {
-        $this->resetPage();
+        return ['type'];
     }
 
-    public function sortBy(string $field): void
+    protected function baseQuery(): Builder
     {
-        if (! in_array($field, self::SORTABLE, true)) {
-            return;
+        $query = AccrualSchedule::query();
+        if (($term = trim($this->search)) !== '') {
+            $query->where(fn ($q) => $q->where('schedule_number', 'like', "%{$term}%")
+                ->orWhere('description', 'like', "%{$term}%")
+                ->orWhere('reference', 'like', "%{$term}%"));
         }
-        $this->sortDirection = $this->sortField === $field && $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        $this->sortField = $field;
+        if (array_key_exists($this->type, AccrualSchedule::TYPES)) {
+            $query->where('type', $this->type);
+        }
+
+        return $query;
     }
 
     public function render()
     {
-        $sort = in_array($this->sortField, self::SORTABLE, true) ? $this->sortField : 'start_date';
-
-        $schedules = AccrualSchedule::with(['plAccount', 'balanceAccount'])
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('schedule_number', 'like', '%'.$this->search.'%')
-                        ->orWhere('description', 'like', '%'.$this->search.'%')
-                        ->orWhere('reference', 'like', '%'.$this->search.'%');
-                });
-            })
-            ->when(array_key_exists($this->type, AccrualSchedule::TYPES), fn ($q) => $q->where('type', $this->type))
-            ->when(in_array($this->status, AccrualScheduleStatus::values(), true), fn ($q) => $q->where('status', $this->status))
-            ->orderBy($sort, $this->sortDirection === 'asc' ? 'asc' : 'desc')
-            ->orderByDesc('id')
-            ->paginate($this->pageSize());
-
         return view('livewire.accrual-schedules.accrual-schedules-table', [
-            'schedules' => $schedules,
-            'statuses' => AccrualScheduleStatus::cases(),
+            'schedules' => $this->rows(),
+            'tabs' => $this->statusTabs(self::LABELS, [], 'status', hideEmpty: true),
+            'totals' => $this->filteredQuery()->toBase()->selectRaw('COUNT(*) as n, COALESCE(SUM(total_amount), 0) as total, COALESCE(SUM(released_amount), 0) as released')->first(),
+            'types' => AccrualSchedule::TYPES,
+            'filtered' => $this->isFiltered(),
         ]);
     }
 }

@@ -1,145 +1,85 @@
+{{-- Accounting periods (tables plan T4): a short list, so a plain page with the shared table. --}}
+@php
+    $tone = ['open' => 'active', 'closed' => 'pending', 'locked' => 'rejected'];
+    $canEdit = auth()->user()->can('edit chart-of-accounts');
+@endphp
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                Accounting Periods
-            </h2>
-            <div class="flex gap-2">
-                <button type="button" data-open-modal="generate-periods" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
-                    Generate Year
-                </button>
-                <a href="{{ route('accounting-periods.create') }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    Add Period
-                </a>
-            </div>
-        </div>
+        <x-table.page-header title="Accounting periods" description="Open periods take entries. Closed ones take none but can be opened again. Locked ones are closed for good.">
+            @if ($canEdit)
+                <x-slot name="more">
+                    <x-table.menu-item :href="route('accounting-periods.create')">Add one period</x-table.menu-item>
+                </x-slot>
+                <x-slot name="actions">
+                    <button type="button" data-open-modal="generate-periods" class="btn-new">
+                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 4a1 1 0 011 1v4h4a1 1 0 110 2h-4v4a1 1 0 11-2 0v-4H5a1 1 0 110-2h4V5a1 1 0 011-1z"/></svg>
+                        Set up a year
+                    </button>
+                </x-slot>
+            @endif
+        </x-table.page-header>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            @if($lockDates !== null)
-                @include('accounting-periods._lock-dates')
-            @endif
+    <div class="space-y-4">
+        @if ($lockDates !== null)
+            @include('accounting-periods._lock-dates')
+        @endif
 
-            <!-- Period Status Legend -->
-            <div class="mb-6 bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-4 flex flex-wrap gap-4 items-center text-sm">
-                    <span class="font-medium text-gray-700 dark:text-gray-300">Status Legend:</span>
-                    <span class="inline-flex items-center">
-                        <span class="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
-                        <span class="text-gray-600 dark:text-gray-400">Open - Transactions allowed</span>
-                    </span>
-                    <span class="inline-flex items-center">
-                        <span class="w-3 h-3 rounded-full bg-yellow-500 mr-2"></span>
-                        <span class="text-gray-600 dark:text-gray-400">Closed - No changes (can reopen)</span>
-                    </span>
-                    <span class="inline-flex items-center">
-                        <span class="w-3 h-3 rounded-full bg-red-500 mr-2"></span>
-                        <span class="text-gray-600 dark:text-gray-400">Locked - Permanently closed</span>
-                    </span>
-                </div>
+        @if ($periods->isEmpty())
+            <div class="tbl-wrap">
+                <x-table.empty title="No accounting periods yet" text="Set up the twelve months of a financial year in one go, then close each month when its books are done.">
+                    @if ($canEdit)<button type="button" data-open-modal="generate-periods" class="btn-new">Set up a year</button>@endif
+                </x-table.empty>
             </div>
-
-            <!-- Periods List -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    @if($periods->isEmpty())
-                        <div class="text-center py-12">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
-                            <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No accounting periods</h3>
-                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new accounting period or generating periods for a fiscal year.</p>
-                            <div class="mt-6 flex justify-center gap-3">
-                                <button type="button" data-open-modal="generate-periods" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
-                                    Generate Fiscal Year
-                                </button>
-                                <a href="{{ route('accounting-periods.create') }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
-                                    Create Period
-                                </a>
-                            </div>
-                        </div>
-                    @else
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead class="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Period</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date Range</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Fiscal Year</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Closed</th>
-                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                    @foreach($periods as $period)
-                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <a href="{{ route('accounting-periods.show', $period) }}" class="text-brand-600 dark:text-brand-300 hover:underline font-medium">
-                                                {{ $period->name }}
-                                            </a>
-                                            @if($period->is_year_end)
-                                                <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-accent-100 text-accent-800 dark:bg-accent-900/50 dark:text-accent-200">
-                                                    Year End
-                                                </span>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                            {{ $period->start_date->format('M d, Y') }} - {{ $period->end_date->format('M d, Y') }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                            {{ $period->fiscal_year ?? '-' }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            @if($period->status === 'open')
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                                    <span class="w-2 h-2 rounded-full bg-green-500 mr-1.5"></span>
-                                                    Open
-                                                </span>
-                                            @elseif($period->status === 'closed')
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                                                    <span class="w-2 h-2 rounded-full bg-yellow-500 mr-1.5"></span>
-                                                    Closed
-                                                </span>
-                                            @else
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                                                    <span class="w-2 h-2 rounded-full bg-red-500 mr-1.5"></span>
-                                                    Locked
-                                                </span>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                            @if($period->closed_at)
-                                                {{ $period->closed_at->format('M d, Y') }}
-                                                @if($period->closedBy)
-                                                    <br><span class="text-xs">by {{ $period->closedBy->name }}</span>
-                                                @endif
-                                            @else
-                                                -
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <a href="{{ route('accounting-periods.show', $period) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 mr-3">View</a>
-                                            @if(!$period->isLocked())
-                                                <a href="{{ route('accounting-periods.edit', $period) }}" class="text-gray-600 dark:text-gray-400 hover:text-gray-900">Edit</a>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
+        @else
+            <x-table caption="Accounting periods" class="hidden md:block">
+                <x-slot name="head">
+                    <x-table.th>Period</x-table.th>
+                    <x-table.th>From</x-table.th>
+                    <x-table.th>To</x-table.th>
+                    <x-table.th>Year</x-table.th>
+                    <x-table.th>Status</x-table.th>
+                    <x-table.th>Closed</x-table.th>
+                    <th scope="col" class="tbl-menu"><span class="sr-only">Actions</span></th>
+                </x-slot>
+                @foreach ($periods as $period)
+                    <tr>
+                        <td>
+                            <a href="{{ route('accounting-periods.show', $period) }}" class="tbl-link">{{ $period->name }}</a>
+                            @if ($period->is_year_end)<div class="text-xs tbl-muted">Year end</div>@endif
+                        </td>
+                        <td class="tbl-muted">{{ $period->start_date->format('j M Y') }}</td>
+                        <td class="tbl-muted">{{ $period->end_date->format('j M Y') }}</td>
+                        <td class="tabular-nums">{{ $period->fiscal_year ?? '—' }}</td>
+                        <td><x-status-badge :status="$tone[$period->status] ?? 'draft'" :label="ucfirst($period->status)" /></td>
+                        <td class="{{ $period->closed_at ? 'tbl-muted' : 'tbl-zero' }}">
+                            @if ($period->closed_at)
+                                {{ $period->closed_at->format('j M Y') }}@if ($period->closedBy) <span class="text-xs">by {{ $period->closedBy->name }}</span>@endif
+                            @else
+                                —
+                            @endif
+                        </td>
+                        <td class="tbl-menu">
+                            <x-table.dropdown :sr-label="'Actions for '.$period->name">
+                                <x-table.menu-item :href="route('accounting-periods.show', $period)">{{ $canEdit && ! $period->isLocked() ? 'View, close or lock' : 'View' }}</x-table.menu-item>
+                                @if ($canEdit && ! $period->isLocked())
+                                    <x-table.menu-item :href="route('accounting-periods.edit', $period)">Edit</x-table.menu-item>
+                                @endif
+                            </x-table.dropdown>
+                        </td>
+                    </tr>
+                @endforeach
+            </x-table>
+            <ul class="space-y-2 md:hidden" aria-label="Accounting periods">
+                @foreach ($periods as $period)
+                    <li>
+                        <x-table.card :href="route('accounting-periods.show', $period)" :title="$period->name" :meta="$period->start_date->format('j M').' to '.$period->end_date->format('j M Y')">
+                            <x-slot name="badge"><x-status-badge :status="$tone[$period->status] ?? 'draft'" :label="ucfirst($period->status)" /></x-slot>
+                        </x-table.card>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
     </div>
 
     <!-- Generate Periods Modal -->

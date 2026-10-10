@@ -3,90 +3,48 @@
 namespace App\Livewire\FixedAssets;
 
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ListTable;
 use App\Models\FixedAssetCategory;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/** Fixed asset categories (tables plan T4: the shared list design). */
 class CategoriesTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
-
-    public $search = '';
-
-    public $sortField = 'name';
-
-    public $sortDirection = 'asc';
-
-    public $perPage = 10;
-
-    // Bulk operation properties
-    public $selectedItems = [];
-
-    public $selectAll = false;
-
-    public $bulkAction = '';
-
-    public $successMessage = '';
-
-    public $errorMessage = '';
+    use ChecksPermissions, ListTable;
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'sortField' => ['except' => 'name'],
-        'sortDirection' => ['except' => 'asc'],
     ];
 
-    public function updatingSearch()
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['name', 'default_useful_life', 'assets_count'];
     }
 
-    public function updatingPerPage()
+    public function mountListTable(): void
     {
-        $this->resetPage();
-    }
-
-    public function sortBy($field)
-    {
-        if ($this->sortField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            $this->sortField = $field;
+        if (! in_array($this->sortField, $this->sortable(), true)) {
+            $this->sortField = 'name';
             $this->sortDirection = 'asc';
         }
     }
 
-    public function updatedSelectAll($value)
+    protected function decorateRows(Builder $query): Builder
     {
-        if ($value) {
-            $this->selectedItems = $this->getFilteredCategoryIds();
-        } else {
-            $this->selectedItems = [];
-        }
+        return $query->withCount('assets');
     }
 
-    public function updatedSelectedItems()
+    protected function baseQuery(): Builder
     {
-        $this->selectAll = count($this->selectedItems) === count($this->getFilteredCategoryIds());
-    }
-
-    private function getFilteredCategoryIds()
-    {
-        $tenantId = auth()->user()->tenant_id;
-
-        $query = FixedAssetCategory::where('tenant_id', $tenantId);
-
-        if ($this->search) {
-            $query->where(function ($q) {
-                $q->where('name', 'like', '%'.$this->search.'%')
-                    ->orWhere('description', 'like', '%'.$this->search.'%');
-            });
+        $query = FixedAssetCategory::query();
+        if (($term = trim($this->search)) !== '') {
+            $query->where(fn ($q) => $q->where('name', 'like', "%{$term}%")
+                ->orWhere('code', 'like', "%{$term}%")
+                ->orWhere('description', 'like', "%{$term}%"));
         }
 
-        return $query->pluck('id')
-            ->map(fn ($id) => (string) $id)
-            ->toArray();
+        return $query;
     }
 
     /**
@@ -105,85 +63,60 @@ class CategoriesTable extends Component
         $this->errorMessage = '';
 
         if (empty($this->selectedItems)) {
-            $this->errorMessage = 'Please select at least one category.';
+            $this->errorMessage = 'Tick at least one category first.';
 
             return;
         }
-
-        if (empty($this->bulkAction)) {
-            $this->errorMessage = 'Please select an action.';
-
-            return;
-        }
-
-        $count = count($this->selectedItems);
 
         $this->authorizeBulkAction();
 
-        switch ($this->bulkAction) {
-            case 'delete':
-                $deletedCount = 0;
-                $skippedCount = 0;
+        if ($this->bulkAction !== 'delete') {
+            $this->errorMessage = 'Invalid action selected.';
 
-                foreach ($this->selectedItems as $categoryId) {
-                    $category = FixedAssetCategory::find($categoryId);
-                    if (! $category) {
-                        continue;
-                    }
+            return;
+        }
 
-                    // Check if category has assets
-                    if ($category->assets()->exists()) {
-                        $skippedCount++;
+        $deleted = 0;
+        $skipped = 0;
+        foreach (FixedAssetCategory::whereIn('id', $this->selectedItems)->get() as $category) {
+            if ($category->assets()->exists()) {
+                $skipped++;
 
-                        continue;
-                    }
-
-                    $category->delete();
-                    $deletedCount++;
-                }
-
-                if ($deletedCount > 0 && $skippedCount > 0) {
-                    $this->successMessage = "Deleted {$deletedCount} category(ies). Skipped {$skippedCount} category(ies) with existing assets.";
-                } elseif ($deletedCount > 0) {
-                    $this->successMessage = "Successfully deleted {$deletedCount} category(ies).";
-                } else {
-                    $this->errorMessage = 'Could not delete any categories. All selected categories have existing assets.';
-                }
-                break;
-
-            default:
-                $this->errorMessage = 'Invalid action selected.';
-
-                return;
+                continue;
+            }
+            $category->delete();
+            $deleted++;
+        }
+        if ($deleted > 0) {
+            $this->successMessage = "Deleted {$deleted} categor".($deleted === 1 ? 'y' : 'ies').'.'.($skipped ? " Skipped {$skipped} with assets." : '');
+        } else {
+            $this->errorMessage = 'None deleted: every ticked category has assets.';
         }
 
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
+    }
+
+    public function deleteOne(int $id): void
+    {
+        $this->requirePermission('delete fixed-assets');
+        $category = FixedAssetCategory::findOrFail($id);
+        if ($category->assets()->exists()) {
+            $this->errorMessage = "{$category->name} has assets, so it can't be deleted.";
+
+            return;
+        }
+        $category->delete();
+        $this->successMessage = "Deleted {$category->name}.";
+        $this->selectedItems = array_values(array_diff($this->selectedItems, [(string) $id]));
     }
 
     public function render()
     {
-        $tenantId = auth()->user()->tenant_id;
-
-        $query = FixedAssetCategory::where('tenant_id', $tenantId)
-            ->withCount('assets');
-
-        if ($this->search) {
-            $query->where(function ($q) {
-                $q->where('name', 'like', '%'.$this->search.'%')
-                    ->orWhere('description', 'like', '%'.$this->search.'%');
-            });
-        }
-
-        $categories = $query->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->pageSize());
-
-        $depreciationMethods = FixedAssetCategory::getDepreciationMethods();
-
         return view('livewire.fixed-assets.categories-table', [
-            'categories' => $categories,
-            'depreciationMethods' => $depreciationMethods,
+            'categories' => $this->rows(),
+            'methods' => FixedAssetCategory::getDepreciationMethods(),
+            'filtered' => $this->isFiltered(),
         ]);
     }
 }

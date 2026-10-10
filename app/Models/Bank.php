@@ -81,6 +81,20 @@ class Bank extends Model
         return $this->hasMany(BankTransaction::class);
     }
 
+    /**
+     * Why this account can't be deleted, or null if it can: anything recorded
+     * through it (bank lines, payments in or out, expenses) keeps it.
+     */
+    public function deleteBlockedReason(): ?string
+    {
+        $used = $this->transactions()->exists()
+            || PaymentReceived::where('bank_id', $this->id)->exists()
+            || PaymentMade::where('bank_id', $this->id)->exists()
+            || Expense::where('bank_id', $this->id)->exists();
+
+        return $used ? "{$this->name} has money recorded through it, so it can't be deleted. Make it inactive instead." : null;
+    }
+
     public function getMaskedAccountNumberAttribute(): string
     {
         if (empty($this->account_number)) {

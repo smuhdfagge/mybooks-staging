@@ -76,28 +76,22 @@
                         </li>
                     @endforeach
                 </ul>
-                <div class="hidden sm:block overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                        <thead class="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">When</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">What</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Reason</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">By</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            @foreach($lockHistory as $change)
-                                <tr>
-                                    <td class="px-4 py-2 whitespace-nowrap text-gray-500 dark:text-gray-400">{{ $change->created_at->format('j M Y, g:i a') }}</td>
-                                    <td class="px-4 py-2 text-gray-900 dark:text-gray-100">{{ $change->description }}</td>
-                                    <td class="px-4 py-2 text-gray-700 dark:text-gray-300">{{ $change->reason ?? '-' }}</td>
-                                    <td class="px-4 py-2 whitespace-nowrap text-gray-500 dark:text-gray-400">{{ $change->user?->name ?? 'System' }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                <x-table caption="Lock date changes" class="hidden sm:block">
+                    <x-slot name="head">
+                        <x-table.th>When</x-table.th>
+                        <x-table.th>What changed</x-table.th>
+                        <x-table.th>Reason</x-table.th>
+                        <x-table.th>By</x-table.th>
+                    </x-slot>
+                    @foreach ($lockHistory as $change)
+                        <tr>
+                            <td class="tbl-muted">{{ $change->created_at->format('j M Y, g:i a') }}</td>
+                            <td class="whitespace-normal">{{ $change->description }}</td>
+                            <td class="whitespace-normal {{ $change->reason ? '' : 'tbl-zero' }}">{{ $change->reason ?: '—' }}</td>
+                            <td class="tbl-muted">{{ $change->user?->name ?? 'MyBooks' }}</td>
+                        </tr>
+                    @endforeach
+                </x-table>
             @endif
         </div>
     </div>

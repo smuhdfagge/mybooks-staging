@@ -2,21 +2,33 @@
 
 namespace Tests\Feature\Tables;
 
+use App\Livewire\Banks\BanksTable;
 use App\Livewire\Bills\BillsTable;
+use App\Livewire\Budgets\BudgetsTable;
+use App\Livewire\ChartOfAccounts\ChartOfAccountsTable;
 use App\Livewire\Customers\CustomersTable;
 use App\Livewire\Invoices\InvoicesTable;
+use App\Livewire\Items\ItemsTable;
 use App\Livewire\PaymentsMade\PaymentsMadeTable;
 use App\Livewire\PaymentsReceived\PaymentsReceivedTable;
 use App\Livewire\RecurrentBills\RecurrentBillsTable;
+use App\Livewire\TaxGroups\TaxGroupsTable;
 use App\Livewire\Vendors\VendorsTable;
+use App\Models\Bank;
 use App\Models\Bill;
+use App\Models\Budget;
+use App\Models\ChartOfAccount;
 use App\Models\Customer;
+use App\Models\Inventory;
 use App\Models\Invoice;
+use App\Models\Item;
 use App\Models\PaymentMade;
 use App\Models\PaymentReceived;
 use App\Models\RecurrentBill;
+use App\Models\TaxGroup;
 use App\Models\Vendor;
 use App\Models\VendorAdvanceApplication;
+use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Livewire\Livewire;
@@ -347,6 +359,110 @@ class TableDesignTest extends TestCase
         foreach (['vendors', 'purchase-orders', 'bills', 'payments-made', 'expenses', 'vendor-credits', 'supplier-advances', 'recurrent-bills', 'recurrent-expenses'] as $list) {
             $html = $this->get(route($list.'.index'))->assertOk()->getContent();
             $this->assertStringContainsString('tbl-wrap', $html, $list);
+            $this->assertStringNotContainsString('uppercase tracking-wider', $html, $list);
+        }
+    }
+
+    // ── T4: stock, banking and accounting ───────────────────────
+
+    public function test_items_count_stock_across_warehouses_and_keep_items_in_use(): void
+    {
+        $this->createAuthenticatedUser(['view items', 'delete items']);
+        $tid = $this->tenant->id;
+        $main = Warehouse::firstOrCreate(['tenant_id' => $tid, 'code' => 'MAIN'], ['name' => 'Main', 'is_default' => true, 'is_active' => true]);
+        $shop = Warehouse::create(['tenant_id' => $tid, 'name' => 'Shop', 'code' => 'SHOP', 'is_default' => false, 'is_active' => true]);
+        $rice = Item::factory()->create(['tenant_id' => $tid, 'name' => 'Rice', 'type' => 'product', 'track_inventory' => true, 'reorder_level' => 10]);
+        $oil = Item::factory()->create(['tenant_id' => $tid, 'name' => 'Oil', 'type' => 'product', 'track_inventory' => true, 'reorder_level' => 10]);
+        Item::factory()->create(['tenant_id' => $tid, 'name' => 'Delivery', 'type' => 'service']);
+        Inventory::withoutEvents(function () use ($tid, $main, $shop, $rice, $oil) {
+            Inventory::create(['tenant_id' => $tid, 'item_id' => $rice->id, 'warehouse_id' => $main->id, 'quantity' => 6, 'unit_cost' => 100]);
+            Inventory::create(['tenant_id' => $tid, 'item_id' => $rice->id, 'warehouse_id' => $shop->id, 'quantity' => 9, 'unit_cost' => 100]);
+            Inventory::create(['tenant_id' => $tid, 'item_id' => $oil->id, 'warehouse_id' => $main->id, 'quantity' => 4, 'unit_cost' => 100]);
+        });
+
+        $t = Livewire::test(ItemsTable::class);
+        $tabs = $t->viewData('tabs');
+        $this->assertSame([3, 2, 1, 1], [$tabs['']['count'], $tabs['products']['count'], $tabs['services']['count'], $tabs['low']['count']]);
+        $this->assertEquals(15, $t->viewData('items')->firstWhere('id', $rice->id)->on_hand, 'Both warehouses count');
+        $t->set('tab', 'low');
+        $this->assertSame(['Oil'], $t->viewData('items')->pluck('name')->all());
+        $t->call('sortBy', 'on_hand');
+        $this->assertSame('on_hand', $t->get('sortField'));
+    }
+
+    public function test_bank_accounts_with_money_recorded_through_them_are_kept(): void
+    {
+        $this->createAuthenticatedUser(['view banks', 'delete banks']);
+        $this->bills();
+        $tid = $this->tenant->id;
+        $used = Bank::factory()->create(['tenant_id' => $tid, 'name' => 'Used account']);
+        $empty = Bank::factory()->create(['tenant_id' => $tid, 'name' => 'Empty account']);
+        PaymentMade::withoutEvents(fn () => PaymentMade::create(['tenant_id' => $tid, 'vendor_id' => Vendor::value('id'), 'payment_number' => 'PM-1',
+            'payment_date' => '2026-10-01', 'amount' => 100, 'payment_method' => 'bank_transfer', 'bank_id' => $used->id]));
+
+        Livewire::test(BanksTable::class)->call('deleteOne', $used->id)->assertSee('has money recorded through it');
+        $this->assertNotNull($used->fresh());
+        Livewire::test(BanksTable::class)->call('deleteOne', $empty->id)->assertSee('Deleted Empty account.');
+        $this->assertNull(Bank::find($empty->id));
+
+        $this->delete(route('banks.destroy', $used))->assertSessionHas('error');
+        $this->assertNotNull($used->fresh(), 'The bank page follows the same rule');
+    }
+
+    public function test_chart_of_accounts_has_a_tab_per_type_and_keeps_built_in_accounts(): void
+    {
+        $this->createAuthenticatedUser(['view chart-of-accounts', 'delete chart-of-accounts']);
+        $tid = $this->tenant->id;
+        ChartOfAccount::query()->forceDelete();
+        $cash = ChartOfAccount::factory()->system()->create(['tenant_id' => $tid, 'account_code' => '1000', 'name' => 'Cash', 'type' => 'asset', 'current_balance' => 500]);
+        ChartOfAccount::factory()->create(['tenant_id' => $tid, 'account_code' => '1100', 'name' => 'Bank', 'type' => 'asset', 'current_balance' => 250]);
+        $spare = ChartOfAccount::factory()->create(['tenant_id' => $tid, 'account_code' => '6100', 'name' => 'Rent', 'type' => 'expense']);
+
+        $t = Livewire::test(ChartOfAccountsTable::class)->assertSet('sortField', 'account_code');
+        $this->assertSame([3, 2, 1], [$t->viewData('tabs')['']['count'], $t->viewData('tabs')['asset']['count'], $t->viewData('tabs')['expense']['count']]);
+        $this->assertNull($t->viewData('total'), 'No total across different types');
+        $t->set('tab', 'asset');
+        $this->assertEquals(750, $t->viewData('total'));
+
+        $t->call('deleteOne', $cash->id)->assertSee('MyBooks needs');
+        $this->assertNotNull($cash->fresh());
+        $t->call('deleteOne', $spare->id);
+        $this->assertNull(ChartOfAccount::find($spare->id));
+    }
+
+    public function test_tax_groups_used_on_items_are_kept(): void
+    {
+        $this->createAuthenticatedUser(['view tax-rates', 'delete tax-rates']);
+        $tid = $this->tenant->id;
+        $used = TaxGroup::create(['tenant_id' => $tid, 'name' => 'VAT and WHT', 'code' => 'VW', 'is_active' => true]);
+        $free = TaxGroup::create(['tenant_id' => $tid, 'name' => 'Unused', 'code' => 'UN', 'is_active' => true]);
+        Item::factory()->create(['tenant_id' => $tid, 'tax_group_id' => $used->id]);
+
+        Livewire::test(TaxGroupsTable::class)->set('selectedItems', [(string) $used->id, (string) $free->id])->call('runBulk', 'delete')
+            ->assertSee('Skipped 1 used on items');
+        $this->assertNotNull($used->fresh());
+        $this->assertNull(TaxGroup::find($free->id));
+    }
+
+    public function test_budgets_list_shows_the_years_total(): void
+    {
+        $this->createAuthenticatedUser(['view budgets']);
+        $tid = $this->tenant->id;
+        $account = ChartOfAccount::factory()->create(['tenant_id' => $tid, 'type' => 'expense']);
+        $budget = Budget::create(['tenant_id' => $tid, 'name' => 'Budget 2026', 'fiscal_year' => 2026, 'status' => 'active', 'created_by' => $this->user->id]);
+        $budget->lines()->create(['account_id' => $account->id, 'annual_total' => 1200000] + array_fill_keys(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'], 100000));
+
+        $t = Livewire::test(BudgetsTable::class)->assertSee('Budget 2026')->assertSee('1,200,000.00')->assertSee('In use');
+        $this->assertSame(1, $t->viewData('tabs')['active']['count']);
+    }
+
+    public function test_every_stock_banking_and_accounting_page_uses_the_shared_design(): void
+    {
+        $this->createSuperAdmin();
+        foreach (['items', 'item-categories', 'inventory', 'warehouses', 'stock-transfers', 'assembly-orders', 'bill-of-materials', 'banks',
+            'chart-of-accounts', 'journals', 'tax-rates', 'tax-groups', 'accrual-schedules', 'fixed-assets', 'fixed-asset-categories', 'accounting-periods'] as $list) {
+            $html = $this->get(route($list.'.index'))->assertOk()->getContent();
+            $this->assertStringContainsString('tbl-', $html, $list);
             $this->assertStringNotContainsString('uppercase tracking-wider', $html, $list);
         }
     }

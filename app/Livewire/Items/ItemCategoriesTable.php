@@ -3,98 +3,74 @@
 namespace App\Livewire\Items;
 
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ListTable;
 use App\Models\ItemCategory;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/**
+ * Item categories list (tables plan T4: the shared list design).
+ */
 class ItemCategoriesTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
-
-    public $search = '';
-
-    public $showInactive = false;
-
-    public $perPage = 15;
-
-    public $successMessage = '';
-
-    public $errorMessage = '';
-
-    // Bulk operation properties
-    public $selectedItems = [];
-
-    public $selectAll = false;
-
-    public $bulkAction = '';
+    use ChecksPermissions, ListTable;
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'showInactive' => ['except' => false],
+        'tab' => ['except' => '', 'as' => 'show'],
     ];
 
-    public function updatingSearch()
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['name', 'items_count'];
     }
 
-    public function updatingShowInactive()
+    public function mountListTable(): void
     {
-        $this->resetPage();
-    }
-
-    public function updatingPerPage()
-    {
-        $this->resetPage();
-    }
-
-    public function clearFilters()
-    {
-        $this->reset(['search', 'showInactive']);
-        $this->resetPage();
-    }
-
-    public function toggleActive(ItemCategory $category)
-    {
-        $this->requirePermission('edit items');
-
-        $category->update(['is_active' => ! $category->is_active]);
-        $this->successMessage = 'Category status updated.';
-    }
-
-    public function updatedSelectAll($value)
-    {
-        if ($value) {
-            $this->selectedItems = $this->getFilteredCategoryIds();
-        } else {
-            $this->selectedItems = [];
+        if (! in_array($this->sortField, $this->sortable(), true)) {
+            $this->sortField = 'name';
+            $this->sortDirection = 'asc';
         }
     }
 
-    public function updatedSelectedItems()
-    {
-        $this->selectAll = count($this->selectedItems) === count($this->getFilteredCategoryIds());
-    }
-
-    private function getFilteredCategoryIds()
+    protected function baseQuery(): Builder
     {
         $query = ItemCategory::query();
-
-        if ($this->search) {
-            $query->where(function ($q) {
-                $q->where('name', 'like', "%{$this->search}%")
-                    ->orWhere('description', 'like', "%{$this->search}%");
-            });
+        if (($term = trim($this->search)) !== '') {
+            $query->where(fn ($q) => $q->where('name', 'like', "%{$term}%")->orWhere('description', 'like', "%{$term}%"));
         }
 
-        if (! $this->showInactive) {
-            $query->where('is_active', true);
-        }
+        return $query;
+    }
 
-        return $query->pluck('id')
-            ->map(fn ($id) => (string) $id)
-            ->toArray();
+    protected function applyTab(Builder $query, string $tab): Builder
+    {
+        return match ($tab) {
+            'active' => $query->where('is_active', true),
+            'inactive' => $query->where('is_active', false),
+            default => $query,
+        };
+    }
+
+    /** @return array<string, array{label: string, count: int, alert: bool}> */
+    private function tabs(): array
+    {
+        $row = $this->baseQuery()->toBase()->selectRaw('COUNT(*) as all_rows, SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active')->first();
+
+        return [
+            '' => ['label' => 'All', 'count' => (int) $row->all_rows, 'alert' => false],
+            'active' => ['label' => 'Active', 'count' => (int) $row->active, 'alert' => false],
+            'inactive' => ['label' => 'Inactive', 'count' => (int) $row->all_rows - (int) $row->active, 'alert' => false],
+        ];
+    }
+
+    /** Make a category active or inactive from its row menu. */
+    public function toggleActive(int $id): void
+    {
+        $this->requirePermission('edit items');
+        $category = ItemCategory::findOrFail($id);
+        $category->update(['is_active' => ! $category->is_active]);
+        $this->successMessage = $category->is_active ? "{$category->name} is active again." : "{$category->name} made inactive.";
     }
 
     /**
@@ -115,13 +91,7 @@ class ItemCategoriesTable extends Component
         $this->errorMessage = '';
 
         if (empty($this->selectedItems)) {
-            $this->errorMessage = 'Please select at least one category.';
-
-            return;
-        }
-
-        if (empty($this->bulkAction)) {
-            $this->errorMessage = 'Please select an action.';
+            $this->errorMessage = 'Tick at least one category first.';
 
             return;
         }
@@ -133,41 +103,30 @@ class ItemCategoriesTable extends Component
         switch ($this->bulkAction) {
             case 'activate':
                 ItemCategory::whereIn('id', $this->selectedItems)->update(['is_active' => true]);
-                $this->successMessage = "Successfully activated {$count} category(ies).";
+                $this->successMessage = "{$count} categor".($count === 1 ? 'y' : 'ies').' made active.';
                 break;
 
             case 'deactivate':
                 ItemCategory::whereIn('id', $this->selectedItems)->update(['is_active' => false]);
-                $this->successMessage = "Successfully deactivated {$count} category(ies).";
+                $this->successMessage = "{$count} categor".($count === 1 ? 'y' : 'ies').' made inactive.';
                 break;
 
             case 'delete':
-                $deletedCount = 0;
-                $skippedCount = 0;
-
-                foreach ($this->selectedItems as $categoryId) {
-                    $category = ItemCategory::find($categoryId);
-                    if (! $category) {
-                        continue;
-                    }
-
-                    // Check if category has related records
-                    if ($category->items()->exists() || $category->children()->exists()) {
-                        $skippedCount++;
+                $deleted = 0;
+                $skipped = 0;
+                foreach (ItemCategory::whereIn('id', $this->selectedItems)->get() as $category) {
+                    if ($this->inUse($category)) {
+                        $skipped++;
 
                         continue;
                     }
-
                     $category->delete();
-                    $deletedCount++;
+                    $deleted++;
                 }
-
-                if ($deletedCount > 0 && $skippedCount > 0) {
-                    $this->successMessage = "Deleted {$deletedCount} category(ies). Skipped {$skippedCount} category(ies) with existing items or subcategories.";
-                } elseif ($deletedCount > 0) {
-                    $this->successMessage = "Successfully deleted {$deletedCount} category(ies).";
+                if ($deleted > 0) {
+                    $this->successMessage = "Deleted {$deleted} categor".($deleted === 1 ? 'y' : 'ies').'.'.($skipped ? " Skipped {$skipped} with items or sub-categories." : '');
                 } else {
-                    $this->errorMessage = 'Could not delete any categories. All selected categories have existing items or subcategories.';
+                    $this->errorMessage = 'None deleted: every ticked category has items or sub-categories.';
                 }
                 break;
 
@@ -178,56 +137,42 @@ class ItemCategoriesTable extends Component
         }
 
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
     }
 
-    public function deleteCategory($categoryId)
+    /** Delete one empty category from its row menu. */
+    public function deleteOne(int $id): void
     {
         $this->requirePermission('delete items');
-
-        $this->successMessage = '';
-        $this->errorMessage = '';
-
-        $category = ItemCategory::findOrFail($categoryId);
-
-        if ($category->items()->exists()) {
-            $this->errorMessage = 'Cannot delete category with existing items.';
+        $category = ItemCategory::findOrFail($id);
+        if ($this->inUse($category)) {
+            $this->errorMessage = "{$category->name} can't be deleted: it has items or sub-categories.";
 
             return;
         }
-
-        if ($category->children()->exists()) {
-            $this->errorMessage = 'Cannot delete category with subcategories.';
-
-            return;
-        }
-
         $category->delete();
-        $this->successMessage = 'Category deleted successfully.';
+        $this->successMessage = "Deleted {$category->name}.";
+        $this->selectedItems = array_values(array_diff($this->selectedItems, [(string) $id]));
+    }
+
+    private function inUse(ItemCategory $category): bool
+    {
+        return $category->items()->exists() || $category->children()->exists();
     }
 
     public function render()
     {
-        $query = ItemCategory::query()
-            ->with(['parent', 'children', 'items'])
-            ->orderBy('name');
-
-        if ($this->search) {
-            $query->where(function ($q) {
-                $q->where('name', 'like', "%{$this->search}%")
-                    ->orWhere('description', 'like', "%{$this->search}%");
-            });
-        }
-
-        if (! $this->showInactive) {
-            $query->where('is_active', true);
-        }
-
-        $categories = $query->paginate($this->pageSize());
+        // Counts in the same query instead of loading every item (no query per row).
+        $categories = $this->filteredQuery()
+            ->with('parent:id,name')->withCount(['items', 'children'])
+            ->orderBy($this->sortColumn(), $this->sortDirection === 'asc' ? 'asc' : 'desc')
+            ->orderBy('item_categories.id')
+            ->paginate($this->pageSize());
 
         return view('livewire.items.item-categories-table', [
             'categories' => $categories,
+            'tabs' => $this->tabs(),
+            'filtered' => $this->isFiltered(),
         ]);
     }
 }

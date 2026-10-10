@@ -14,7 +14,7 @@ class AccountingPeriodController extends Controller
 {
     public function index()
     {
-        $periods = AccountingPeriod::orderBy('start_date', 'desc')->get();
+        $periods = AccountingPeriod::with('closedBy:id,name')->orderBy('start_date', 'desc')->get();
         $fiscalYears = AccountingPeriod::distinct()->pluck('fiscal_year')->filter()->sort()->reverse();
 
         // Lock dates card and history (session 11).

@@ -140,8 +140,8 @@ class BankController extends Controller
 
     public function destroy(Bank $bank)
     {
-        if ($bank->transactions()->count() > 0) {
-            return redirect()->back()->with('error', 'Cannot delete bank account with transactions.');
+        if ($reason = $bank->deleteBlockedReason()) {
+            return redirect()->back()->with('error', $reason);
         }
 
         $bank->delete();

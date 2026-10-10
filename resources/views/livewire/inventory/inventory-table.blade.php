@@ -1,164 +1,107 @@
-<div class="relative">
-    <x-table-loading />
-    <!-- Flash Messages -->
+{{-- Stock list (tables plan T4): on hand, item by item, and what it is worth at cost. --}}
+@php
+    $user = auth()->user();
+    $money = fn ($v) => number_format((float) $v, 2);
+    $qty = fn ($v) => rtrim(rtrim(number_format((float) $v, 2), '0'), '.');
+    $canBulk = $user->can('adjust inventory');
+    $ids = $items->pluck('id')->map(fn ($id) => (string) $id)->all();
+    $state = fn ($i) => (float) $i->on_hand <= 0 ? 'out' : ($i->reorder_level > 0 && (float) $i->on_hand <= (float) $i->reorder_level ? 'low' : 'ok');
+    $badge = ['out' => ['overdue', 'Out of stock'], 'low' => ['partial', 'Running low'], 'ok' => ['paid', 'In stock']];
+@endphp
+<div class="relative space-y-3">
     <x-flash-messages :successMessage="$successMessage" :errorMessage="$errorMessage" />
 
-    <!-- Filters -->
-    <div class="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div>
-            <label for="search" class="form-label">Search</label>
-            <input wire:model.live.debounce.300ms="search" type="text" id="search" placeholder="Search items..."
-                class="form-control">
-        </div>
-        
-        <div>
-            <label for="categoryFilter" class="form-label">Category</label>
-            <select wire:model.live="categoryFilter" id="categoryFilter"
-                class="form-control">
-                <option value="">All Categories</option>
-                @foreach($categories as $category)
-                    <option value="{{ $category->id }}">{{ $category->name }}</option>
-                @endforeach
-            </select>
-        </div>
-        
-        <div>
-            <label for="stockFilter" class="form-label">Stock Status</label>
-            <select wire:model.live="stockFilter" id="stockFilter"
-                class="form-control">
-                <option value="">All Items</option>
-                <option value="in_stock">In Stock</option>
-                <option value="low_stock">Low Stock</option>
-                <option value="out_of_stock">Out of Stock</option>
-            </select>
-        </div>
+    <x-table.tabs :tabs="$tabs" :active="$tab" />
 
-        @if($warehouses->count() > 1)
-        <div>
-            <label for="warehouseFilter" class="form-label">Warehouse</label>
-            <select wire:model.live="warehouseFilter" id="warehouseFilter" class="form-control">
-                <option value="">All warehouses</option>
-                @foreach($warehouses as $warehouse)
-                    <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
-                @endforeach
-            </select>
-        </div>
+    <x-table.toolbar placeholder="Search name or SKU" :selected="count($selectedItems)" :filtered="$filtered">
+        <x-slot name="filters">
+            @if ($warehouses->isNotEmpty())<x-table.pick model="warehouse" label="Warehouse" :options="$warehouses" />@endif
+            <x-table.pick model="category" label="Category" :options="$categories" />
+        </x-slot>
+        @if ($canBulk)
+            <x-slot name="bulk">
+                <x-table.bulk-button action="reset_quantity" danger confirm="Set the ticked items' stock to zero{{ $warehouse !== '' ? ' in this warehouse' : '' }}? This posts a stock adjustment to the books.">Set stock to zero</x-table.bulk-button>
+                <x-table.bulk-button action="disable_tracking" confirm="Stop counting stock for the ticked items? They will drop off this list.">Stop counting stock</x-table.bulk-button>
+                <x-table.tick-all-matching :rows="$items" :selected="$selectedItems" />
+            </x-slot>
         @endif
+    </x-table.toolbar>
 
-        <div>
-            <label for="perPage" class="form-label">Per Page</label>
-            <select wire:model.live="perPage" id="perPage"
-                class="form-control">
-                <option value="15">15</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-            </select>
-        </div>
-
-        <!-- Bulk Actions -->
-        <x-bulk-actions :actions="['reset_quantity' => 'Reset Quantity', 'disable_tracking' => 'Disable Tracking']" :selectedCount="count($selectedItems)" />
-    </div>
-
-    <!-- Table -->
-    <div class="overflow-x-auto -mx-6">
-        <div class="inline-block min-w-full align-middle px-6">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead class="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                        <th scope="col" class="px-4 py-3 text-left">
-                            <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
-                                class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
-                        </th>
-                        <x-sort-header field="name" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">Item</x-sort-header>
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">SKU</th>
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Category</th>
-                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">On Hand</th>
-                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Reserved</th>
-                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Available</th>
-                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Reorder</th>
-                        <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+    <div class="relative">
+        <x-table.veil />
+        @if ($items->isEmpty())
+            <div class="tbl-wrap">
+                @if ($filtered || $tab !== '')
+                    <x-table.empty filtered title="No items match these filters" />
+                @else
+                    <x-table.empty title="No stock counted yet" text="Turn on stock counting for an item and its quantity shows here as you buy and sell.">
+                        @can('create items')<a href="{{ route('items.create') }}" class="btn-new">New item</a>@endcan
+                    </x-table.empty>
+                @endif
+            </div>
+        @else
+            <x-table caption="Stock" class="hidden md:block">
+                <x-slot name="head">
+                    @if ($canBulk)<x-table.check-all :ids="$ids" :selected="$selectedItems" label="Tick every item on this page" />@endif
+                    <x-table.th field="name" :sort="[$sortField, $sortDirection]">Item</x-table.th>
+                    <x-table.th>Category</x-table.th>
+                    <x-table.th field="on_hand" :sort="[$sortField, $sortDirection]" num>On hand</x-table.th>
+                    <x-table.th num>Set aside</x-table.th>
+                    <x-table.th num>Free to sell</x-table.th>
+                    <x-table.th field="reorder_level" :sort="[$sortField, $sortDirection]" num>Reorder at</x-table.th>
+                    <x-table.th field="stock_value" :sort="[$sortField, $sortDirection]" num>Value</x-table.th>
+                    <x-table.th>Status</x-table.th>
+                    <th scope="col" class="tbl-menu"><span class="sr-only">Actions</span></th>
+                </x-slot>
+                @foreach ($items as $item)
+                    @php $ticked = in_array((string) $item->id, $selectedItems, true); $s = $state($item); $free = (float) $item->on_hand - (float) $item->reserved; @endphp
+                    <tr wire:key="inv-{{ $item->id }}" @if ($ticked) data-picked @endif>
+                        @if ($canBulk)<x-table.check :id="$item->id" :label="$item->name" />@endif
+                        <td class="max-w-[20rem]">
+                            <a href="{{ route('inventory.show', $item) }}" class="tbl-link block truncate">{{ $item->name }}</a>
+                            @if ($item->sku)<div class="text-xs tbl-muted">{{ $item->sku }}</div>@endif
+                        </td>
+                        <td class="max-w-[12rem] truncate {{ $item->category ? 'tbl-muted' : 'tbl-zero' }}">{{ $item->category?->name ?? '—' }}</td>
+                        <td class="num {{ $s === 'ok' ? '' : 'tbl-late' }}">{{ $qty($item->on_hand) }}</td>
+                        <td class="num {{ (float) $item->reserved > 0 ? '' : 'tbl-zero' }}">{{ (float) $item->reserved > 0 ? $qty($item->reserved) : '—' }}</td>
+                        <td class="num">{{ $qty($free) }}</td>
+                        <td class="num {{ $item->reorder_level > 0 ? 'tbl-muted' : 'tbl-zero' }}">{{ $item->reorder_level > 0 ? $qty($item->reorder_level) : '—' }}</td>
+                        <td class="num {{ (float) $item->stock_value != 0 ? '' : 'tbl-zero' }}">{{ (float) $item->stock_value != 0 ? $money($item->stock_value) : '—' }}</td>
+                        <td><x-status-badge :status="$badge[$s][0]" :label="$badge[$s][1]" /></td>
+                        <td class="tbl-menu">
+                            <x-table.dropdown :sr-label="'Actions for '.$item->name">
+                                <x-table.menu-item :href="route('inventory.show', $item)">{{ $user->can('adjust inventory') ? 'View or adjust' : 'View' }}</x-table.menu-item>
+                                <x-table.menu-item :href="route('inventory.history', $item)">Stock history</x-table.menu-item>
+                                @can('view items')<x-table.menu-item :href="route('items.show', $item)">Item details</x-table.menu-item>@endcan
+                            </x-table.dropdown>
+                        </td>
                     </tr>
-                </thead>
-                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    @forelse($items as $item)
-                        @php
-                            $onHand = $item->inventory->quantity ?? 0;
-                            $reserved = $item->inventory->reserved_quantity ?? 0;
-                            $available = $onHand - $reserved;
-                            $reorderLevel = $item->reorder_level ?? 0;
-                            
-                            $isLowStock = $reorderLevel > 0 && $onHand <= $reorderLevel;
-                            $isOutOfStock = $onHand <= 0;
-                        @endphp
-                        <tr wire:key="item-{{ $item->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors {{ $isOutOfStock ? 'bg-red-50 dark:bg-red-900/20' : ($isLowStock ? 'bg-yellow-50 dark:bg-yellow-900/20' : '') }}">
-                            <td class="px-4 py-4">
-                                <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $item->id }}"
-                                    class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
-                            </td>
-                            <td class="px-4 py-4">
-                                <div class="font-medium text-gray-900 dark:text-gray-100">{{ $item->name }}</div>
-                                @if($item->unit)
-                                    <div class="text-sm text-gray-500 dark:text-gray-400">Unit: {{ $item->unit }}</div>
-                                @endif
-                            </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono">
-                                {{ $item->sku ?? '-' }}
-                            </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                {{ $item->category->name ?? 'Uncategorized' }}
-                            </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900 dark:text-gray-100">
-                                {{ number_format($onHand, 2) }}
-                            </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-sm text-right text-amber-700 dark:text-amber-300">
-                                {{ number_format($reserved, 2) }}
-                            </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-sm text-right font-medium {{ $available > 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
-                                {{ number_format($available, 2) }}
-                            </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
-                                {{ $reorderLevel > 0 ? number_format($reorderLevel) : '-' }}
-                            </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-center">
-                                @if($isOutOfStock)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300">
-                                        Out of Stock
-                                    </span>
-                                @elseif($isLowStock)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400">
-                                        Low Stock
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400">
-                                        In Stock
-                                    </span>
-                                @endif
-                            </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <a href="{{ route('inventory.show', $item) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300 mr-3">Adjust</a>
-                                <a href="{{ route('inventory.history', $item) }}" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200">History</a>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="10" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                                </svg>
-                                <p class="mt-2">No inventory items found.</p>
-                                <p class="text-sm">Make sure items have "Track Inventory" enabled.</p>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                @endforeach
+                <x-slot name="foot">
+                    <tr>
+                        @if ($canBulk)<td></td>@endif
+                        <td colspan="6">Total of {{ number_format($totals->n) }} {{ $totals->n == 1 ? 'item' : 'items' }}@if ($filtered || $tab !== '') <span class="font-normal tbl-muted">(this filter)</span>@endif</td>
+                        <td class="num">{{ $money($totals->value) }}</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </x-slot>
+            </x-table>
+            <ul class="space-y-2 md:hidden" aria-label="Stock">
+                @foreach ($items as $item)
+                    @php $s = $state($item); @endphp
+                    <li wire:key="inv-card-{{ $item->id }}">
+                        <x-table.card :href="route('inventory.show', $item)" :title="$item->name" :amount="$qty($item->on_hand).($item->unit && $item->unit !== 'each' ? ' '.$item->unit : '')"
+                            :meta="collect([$item->sku, (float) $item->stock_value != 0 ? \App\Support\Money::format($item->stock_value) : null])->filter()->implode(' · ')" :tone="$s === 'ok' ? 'muted' : 'bad'">
+                            @if ($s !== 'ok')
+                                <x-slot name="badge"><x-status-badge :status="$badge[$s][0]" :label="$badge[$s][1]" /></x-slot>
+                            @endif
+                        </x-table.card>
+                    </li>
+                @endforeach
+            </ul>
+            <p class="text-sm font-medium text-gray-700 md:hidden dark:text-gray-300">Stock value {{ \App\Support\Money::format($totals->value) }}</p>
+        @endif
     </div>
 
-    <!-- Pagination -->
-    <div class="mt-4">
-        {{ $items->links() }}
-    </div>
+    <x-table.footer :rows="$items" />
 </div>

@@ -936,7 +936,7 @@ class BankFeedsTest extends TestCase
             ->set('selectedItems', [(string) $b->id, (string) $c->id])
             ->call('ignoreSelected')
             ->assertSee('2 lines ignored')
-            ->set('statusFilter', 'ignored')
+            ->set('tab', 'ignored')
             ->assertSee('ALPHA')->assertSee('BETA')->assertSee('GAMMA')
             ->call('unignore', $a->id)
             ->assertDontSee('ALPHA');
@@ -953,13 +953,14 @@ class BankFeedsTest extends TestCase
         $this->line(['narration' => 'RENT OCTOBER', 'direction' => 'debit', 'date' => '2026-09-01', 'amount' => 70000]);
         $this->line(['narration' => 'SALES DEPOSIT', 'direction' => 'credit', 'date' => '2026-10-05', 'amount' => 123456.78]);
 
+        $this->travelTo('2026-10-10 09:00');
         Livewire::test(BankFeedLinesTable::class)
             ->set('search', 'rent')->assertSee('RENT OCTOBER')->assertDontSee('SALES DEPOSIT')
             ->set('search', '123456.78')->assertSee('SALES DEPOSIT')->assertDontSee('RENT OCTOBER')
-            ->set('search', '')->set('directionFilter', 'credit')->assertSee('SALES DEPOSIT')->assertDontSee('RENT OCTOBER')
-            ->set('directionFilter', '')->set('dateFrom', '2026-10-01')->assertSee('SALES DEPOSIT')->assertDontSee('RENT OCTOBER')
-            ->set('dateFrom', '')->set('dateTo', '2026-09-30')->assertSee('RENT OCTOBER')->assertDontSee('SALES DEPOSIT')
-            ->set('dateTo', '')->set('connectionFilter', '999')->assertDontSee('RENT OCTOBER');
+            ->set('search', '')->set('direction', 'credit')->assertSee('SALES DEPOSIT')->assertDontSee('RENT OCTOBER')
+            ->set('direction', '')->set('period', 'this_month')->assertSee('SALES DEPOSIT')->assertDontSee('RENT OCTOBER')
+            ->set('period', 'last_month')->assertSee('RENT OCTOBER')->assertDontSee('SALES DEPOSIT')
+            ->set('period', '')->set('connection', '999')->assertDontSee('RENT OCTOBER');
     }
 
     public function test_accept_all_only_takes_high_suggestions_after_the_click(): void

@@ -169,9 +169,15 @@ trait ListTable
         return [];
     }
 
+    /** Extra columns for the rows only (counts, sums, sub-selects); not used for tabs or totals. */
+    protected function decorateRows(Builder $query): Builder
+    {
+        return $query;
+    }
+
     protected function rows(): LengthAwarePaginator
     {
-        return $this->filteredQuery()
+        return $this->decorateRows($this->filteredQuery())
             ->with($this->rowRelations())
             ->orderBy($this->sortColumn(), $this->sortDirection === 'asc' ? 'asc' : 'desc')
             ->orderBy($this->filteredQuery()->getModel()->getQualifiedKeyName(), 'desc')
