@@ -2,12 +2,21 @@
 
 namespace Tests\Feature\Tables;
 
+use App\Livewire\Bills\BillsTable;
 use App\Livewire\Customers\CustomersTable;
 use App\Livewire\Invoices\InvoicesTable;
+use App\Livewire\PaymentsMade\PaymentsMadeTable;
 use App\Livewire\PaymentsReceived\PaymentsReceivedTable;
+use App\Livewire\RecurrentBills\RecurrentBillsTable;
+use App\Livewire\Vendors\VendorsTable;
+use App\Models\Bill;
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\PaymentMade;
 use App\Models\PaymentReceived;
+use App\Models\RecurrentBill;
+use App\Models\Vendor;
+use App\Models\VendorAdvanceApplication;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Livewire\Livewire;
@@ -24,7 +33,7 @@ class TableDesignTest extends TestCase
     use RefreshDatabase;
 
     /** Printed documents, PDFs and emails have their own layout. */
-    private const NOT_SCREENS = '#(pdf|print|mail|vendor|statement|waybill|payslip|components/table/)#';
+    private const NOT_SCREENS = '#(^vendor/|pdf|print|mail|statements/document|waybill|payslip|components/table/)#';
 
     /** @return list<string> */
     private function todo(): array
@@ -232,6 +241,110 @@ class TableDesignTest extends TestCase
         $this->createSuperAdmin();
         $this->invoices();
         foreach (['customers', 'quotations', 'sales-orders', 'sales-receipts', 'delivery-notes', 'credit-notes', 'payments-received'] as $list) {
+            $html = $this->get(route($list.'.index'))->assertOk()->getContent();
+            $this->assertStringContainsString('tbl-wrap', $html, $list);
+            $this->assertStringNotContainsString('uppercase tracking-wider', $html, $list);
+        }
+    }
+
+    // ── T3: purchases and expenses ──────────────────────────────
+
+    private function bills(): void
+    {
+        $tid = $this->tenant->id;
+        $olam = Vendor::factory()->create(['tenant_id' => $tid, 'name' => 'Olam Nigeria', 'phone' => '08031234567']);
+        $pz = Vendor::factory()->create(['tenant_id' => $tid, 'name' => 'PZ Cussons', 'email' => 'accounts@pz.example']);
+        Bill::withoutEvents(function () use ($tid, $olam, $pz) {
+            $make = fn ($n, $v, $status, $total, $balance, $date, $due) => Bill::factory()->create([
+                'tenant_id' => $tid, 'vendor_id' => $v->id, 'bill_number' => $n, 'status' => $status,
+                'total' => $total, 'amount_paid' => $total - $balance, 'balance_due' => $balance, 'bill_date' => $date, 'due_date' => $due,
+            ]);
+            $make('BILL-1', $olam, 'paid', 1000, 0, '2026-10-01', '2026-10-31');
+            $make('BILL-2', $olam, 'unpaid', 2000, 2000, '2026-08-01', '2026-08-31'); // overdue
+            $make('BILL-3', $pz, 'partial', 3000, 1000, '2026-10-05', '2026-11-04');
+            $make('BILL-4', $pz, 'draft', 400, 400, '2026-10-06', '2026-11-05');
+        });
+    }
+
+    public function test_bills_list_tabs_and_to_pay_total_leave_out_drafts(): void
+    {
+        $this->travelTo('2026-10-10 09:00');
+        $this->createAuthenticatedUser(['view bills']);
+        $this->bills();
+
+        $t = Livewire::test(BillsTable::class)->assertSet('sortField', 'bill_date')->assertSet('perPage', 25);
+        $tabs = $t->viewData('tabs');
+        $this->assertSame([4, 1, 2, 1, 1], [$tabs['']['count'], $tabs['draft']['count'], $tabs['unpaid']['count'], $tabs['overdue']['count'], $tabs['paid']['count']]);
+        $this->assertEquals(6400, $t->viewData('totals')->total);
+        $this->assertEquals(3000, $t->viewData('totals')->balance, 'The draft is not owed yet');
+
+        $t->set('tab', 'overdue');
+        $this->assertSame(['BILL-2'], $t->viewData('bills')->pluck('bill_number')->all());
+        $t->call('sortBy', 'vendor_id; drop table bills')->assertSet('sortField', 'bill_date');
+    }
+
+    public function test_vendor_search_finds_phone_and_email_and_tabs_count_what_you_owe(): void
+    {
+        $this->createAuthenticatedUser(['view vendors']);
+        $this->bills();
+
+        $t = Livewire::test(VendorsTable::class)->assertSet('sortField', 'name');
+        $this->assertSame(2, $t->viewData('tabs')['owed']['count']);
+        $this->assertEquals(3000, $t->viewData('totals')->owed);
+        $t->set('search', '0803123');
+        $this->assertSame(['Olam Nigeria'], $t->viewData('vendors')->pluck('name')->all());
+        $t->set('search', 'accounts@pz');
+        $this->assertSame(['PZ Cussons'], $t->viewData('vendors')->pluck('name')->all());
+    }
+
+    public function test_bulk_delete_of_payments_made_keeps_an_advance_that_has_been_used(): void
+    {
+        $this->createAuthenticatedUser(['view payments-made', 'delete payments-made']);
+        $this->bills();
+        $tid = $this->tenant->id;
+        $bill = Bill::where('bill_number', 'BILL-3')->first();
+        [$used, $fresh] = PaymentMade::withoutEvents(fn () => [
+            PaymentMade::create(['tenant_id' => $tid, 'vendor_id' => $bill->vendor_id, 'payment_number' => 'ADV-1', 'payment_date' => '2026-10-01',
+                'amount' => 500, 'payment_method' => 'cash', 'is_advance' => true, 'unused_amount' => 0]),
+            PaymentMade::create(['tenant_id' => $tid, 'vendor_id' => $bill->vendor_id, 'payment_number' => 'ADV-2', 'payment_date' => '2026-10-02',
+                'amount' => 300, 'payment_method' => 'cash', 'is_advance' => true, 'unused_amount' => 300]),
+        ]);
+        VendorAdvanceApplication::create(['tenant_id' => $tid, 'vendor_id' => $bill->vendor_id, 'advance_payment_id' => $used->id,
+            'bill_id' => $bill->id, 'amount' => 500, 'application_date' => '2026-10-03']);
+
+        $t = Livewire::test(PaymentsMadeTable::class);
+        $this->assertSame([2, 2, 1], [$t->viewData('tabs')['advances']['count'], $t->viewData('tabs')['']['count'], $t->viewData('tabs')['unused']['count']]);
+        $t->set('selectedItems', [(string) $used->id, (string) $fresh->id])->call('runBulk', 'delete');
+        $this->assertNotNull(PaymentMade::find($used->id), 'A used advance stays');
+        $this->assertNull(PaymentMade::find($fresh->id));
+    }
+
+    public function test_recurrent_bills_show_a_monthly_figure_and_pause_needs_permission(): void
+    {
+        $this->createAuthenticatedUser(['view recurrent-bills']);
+        $tid = $this->tenant->id;
+        $vendor = Vendor::factory()->create(['tenant_id' => $tid]);
+        $make = fn ($name, $freq, $total, $status = 'active') => RecurrentBill::create(['tenant_id' => $tid, 'vendor_id' => $vendor->id,
+            'profile_name' => $name, 'frequency' => $freq, 'start_date' => '2026-01-01', 'next_bill_date' => '2026-11-01',
+            'subtotal' => $total, 'tax_amount' => 0, 'total' => $total, 'status' => $status]);
+        $rent = $make('Rent', 'monthly', 100000);
+        $make('Licence', 'yearly', 120000);
+        $make('Guards', 'quarterly', 30000, 'paused');
+
+        $t = Livewire::test(RecurrentBillsTable::class);
+        $this->assertEquals(110000, $t->viewData('totals')->per_month, 'Paused profiles are left out');
+
+        $t->call('toggleOne', $rent->id)->assertForbidden();
+        $this->user->givePermissionTo(Permission::findOrCreate('edit recurrent-bills', 'web'));
+        Livewire::test(RecurrentBillsTable::class)->call('toggleOne', $rent->id);
+        $this->assertSame('paused', $rent->fresh()->status);
+    }
+
+    public function test_every_purchase_list_page_uses_the_shared_design(): void
+    {
+        $this->createSuperAdmin();
+        $this->bills();
+        foreach (['vendors', 'purchase-orders', 'bills', 'payments-made', 'expenses', 'vendor-credits', 'supplier-advances', 'recurrent-bills', 'recurrent-expenses'] as $list) {
             $html = $this->get(route($list.'.index'))->assertOk()->getContent();
             $this->assertStringContainsString('tbl-wrap', $html, $list);
             $this->assertStringNotContainsString('uppercase tracking-wider', $html, $list);

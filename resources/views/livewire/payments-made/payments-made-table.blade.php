@@ -1,214 +1,121 @@
-<div class="relative">
-    <x-table-loading />
-    {{-- Flash Messages --}}
-    @if($successMessage)
-        <div class="mb-4 rounded-md bg-green-50 dark:bg-green-900/50 p-4">
-            <div class="flex">
-                <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                    </svg>
-                </div>
-                <div class="ml-3">
-                    <p class="text-sm font-medium text-green-800 dark:text-green-300">{{ $successMessage }}</p>
-                </div>
+{{-- Payments made list (tables plan T3): money paid to vendors, against bills or in advance. --}}
+@php
+    $user = auth()->user();
+    $money = fn ($v) => number_format((float) $v, 2);
+    $date = fn ($d) => $d ? $d->format('j M Y') : '—';
+    $method = fn ($m) => match (true) { $m === 'advance' => 'From an advance', $m === 'pos' => 'POS', (bool) $m => ucfirst(str_replace('_', ' ', $m)), default => '—' };
+    $methodOptions = collect($methods)->mapWithKeys(fn ($m) => [$m => $method($m)])->all();
+    $canBulk = $user->can('delete payments-made');
+    $ids = $payments->pluck('id')->map(fn ($id) => (string) $id)->all();
+    $unused = fn ($p) => $p->is_advance && $p->unused_amount > 0;
+@endphp
+<div class="relative space-y-3">
+    <x-flash-messages :successMessage="$successMessage" :errorMessage="$errorMessage" />
+
+    <x-table.tabs :tabs="$tabs" :active="$tab" />
+
+    <x-table.toolbar placeholder="Search number, reference, vendor or amount" :selected="count($selectedItems)" :filtered="$filtered">
+        <x-slot name="filters">
+            <x-table.select model="period" label="Date" :options="$periods" />
+            <x-table.pick model="vendor" label="Vendor" :options="$vendors" />
+            <x-table.pick model="method" label="Paid by" :options="$methodOptions" />
+        </x-slot>
+        @if ($canBulk)
+            <x-slot name="bulk">
+                <x-table.bulk-button action="delete" danger confirm="Delete the ticked payments? The bills they paid will show as owing again. Advances already used are skipped.">Delete</x-table.bulk-button>
+                <x-table.tick-all-matching :rows="$payments" :selected="$selectedItems" />
+            </x-slot>
+        @endif
+    </x-table.toolbar>
+
+    <div class="relative">
+        <x-table.veil />
+        @if ($payments->isEmpty())
+            <div class="tbl-wrap">
+                @if ($filtered || $tab !== '')
+                    <x-table.empty filtered title="No payments match these filters" />
+                @else
+                    <x-table.empty title="No payments made yet" text="Record money you pay a vendor against a bill, or as an advance.">
+                        @can('create payments-made')<a href="{{ route('payments-made.create') }}" class="btn-new">Record payment</a>@endcan
+                    </x-table.empty>
+                @endif
             </div>
-        </div>
-    @endif
-
-    @if($errorMessage)
-        <div class="mb-4 rounded-md bg-red-50 dark:bg-red-900/50 p-4">
-            <div class="flex">
-                <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                    </svg>
-                </div>
-                <div class="ml-3">
-                    <p class="text-sm font-medium text-red-800 dark:text-red-300">{{ $errorMessage }}</p>
-                </div>
-            </div>
-        </div>
-    @endif
-
-    {{-- Filters --}}
-    <div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <div>
-            <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
-            <input wire:model.live.debounce.300ms="search" type="text" id="search" placeholder="Search payments..."
-                class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:focus:border-brand-400 dark:focus:ring-brand-400 sm:text-sm">
-        </div>
-
-        <div>
-            <label for="vendor" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Vendor</label>
-            <select wire:model.live="vendor" id="vendor"
-                class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:focus:border-brand-400 dark:focus:ring-brand-400 sm:text-sm">
-                <option value="">All Vendors</option>
-                @foreach($vendors as $v)
-                    <option value="{{ $v->id }}">{{ $v->company_name ?: $v->contact_name }}</option>
-                @endforeach
-            </select>
-        </div>
-
-        <div>
-            <label for="paymentMethod" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Payment Method</label>
-            <select wire:model.live="paymentMethod" id="paymentMethod"
-                class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:focus:border-brand-400 dark:focus:ring-brand-400 sm:text-sm">
-                <option value="">All Methods</option>
-                @foreach($paymentMethods as $method)
-                    <option value="{{ $method }}">{{ ucfirst($method) }}</option>
-                @endforeach
-            </select>
-        </div>
-
-        <div>
-            <label for="dateFrom" class="block text-sm font-medium text-gray-700 dark:text-gray-300">From Date</label>
-            <input wire:model.live="dateFrom" type="date" id="dateFrom"
-                class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:focus:border-brand-400 dark:focus:ring-brand-400 sm:text-sm">
-        </div>
-
-        <div>
-            <label for="dateTo" class="block text-sm font-medium text-gray-700 dark:text-gray-300">To Date</label>
-            <input wire:model.live="dateTo" type="date" id="dateTo"
-                class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:focus:border-brand-400 dark:focus:ring-brand-400 sm:text-sm">
-        </div>
-    </div>
-
-    <div class="mb-4 flex items-center justify-between">
-        <div class="flex items-center gap-4">
-            <button wire:click="clearFilters" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200">
-                Clear Filters
-            </button>
-        </div>
-
-        {{-- Bulk Actions --}}
-        <div class="flex items-center gap-2">
-            @if(count($selectedItems) > 0)
-                <span class="text-sm text-gray-600 dark:text-gray-400">{{ count($selectedItems) }} selected</span>
-            @endif
-            <select aria-label="Bulk action" wire:model="bulkAction" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:focus:border-brand-400 dark:focus:ring-brand-400">
-                <option value="">Bulk Actions</option>
-                <option value="delete">Delete Selected</option>
-            </select>
-            <button wire:click="applyBulkAction" wire:loading.attr="disabled" 
-                wire:confirm="Are you sure you want to perform this action on the selected payments?"
-                class="inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
-                @if(empty($selectedItems)) disabled @endif>
-                Apply
-            </button>
-        </div>
-    </div>
-
-    {{-- Table --}}
-    <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead class="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                    <th scope="col" class="w-12 px-6 py-3">
-                        <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
-                            class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-brand-600 focus:ring-brand-500 dark:bg-gray-700 dark:checked:bg-brand-500 dark:text-brand-300">
-                    </th>
-                    <x-sort-header field="payment_number" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Payment #</x-sort-header>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                        Vendor
-                    </th>
-                    <x-sort-header field="payment_date" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Date</x-sort-header>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                        Bill #
-                    </th>
-                    <x-sort-header field="amount" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Amount</x-sort-header>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                        Method
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                        Reference
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                        Actions
-                    </th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
-                @forelse($payments as $payment)
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td class="px-6 py-4">
-                            <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $payment->id }}"
-                                class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-brand-600 focus:ring-brand-500 dark:bg-gray-700 dark:checked:bg-brand-500 dark:text-brand-300">
+        @else
+            <x-table caption="Payments made" class="hidden md:block">
+                <x-slot name="head">
+                    @if ($canBulk)<x-table.check-all :ids="$ids" :selected="$selectedItems" label="Tick every payment on this page" />@endif
+                    <x-table.th field="payment_number" :sort="[$sortField, $sortDirection]">Number</x-table.th>
+                    <x-table.th>Vendor</x-table.th>
+                    <x-table.th field="payment_date" :sort="[$sortField, $sortDirection]">Date</x-table.th>
+                    <x-table.th>For</x-table.th>
+                    <x-table.th>Paid by</x-table.th>
+                    <x-table.th field="amount" :sort="[$sortField, $sortDirection]" num>Amount</x-table.th>
+                    <x-table.th num>Not yet used</x-table.th>
+                    <th scope="col" class="tbl-menu"><span class="sr-only">Actions</span></th>
+                </x-slot>
+                @foreach ($payments as $payment)
+                    @php $ticked = in_array((string) $payment->id, $selectedItems, true); @endphp
+                    <tr wire:key="pm-{{ $payment->id }}" @if ($ticked) data-picked @endif>
+                        @if ($canBulk)<x-table.check :id="$payment->id" :label="$payment->payment_number" />@endif
+                        <td>
+                            <a href="{{ route('payments-made.show', $payment) }}" class="tbl-link">{{ $payment->payment_number }}</a>
+                            @if ($payment->reference)<div class="text-xs tbl-muted">{{ $payment->reference }}</div>@endif
                         </td>
-                        <td class="whitespace-nowrap px-6 py-4">
-                            <a href="{{ route('payments-made.show', $payment) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300">
-                                {{ $payment->payment_number }}
-                            </a>
-                        </td>
-                        <td class="whitespace-nowrap px-6 py-4">
-                            @if($payment->vendor)
-                                <a href="{{ route('vendors.show', $payment->vendor) }}" class="text-gray-900 dark:text-gray-100 hover:text-brand-600 dark:hover:text-brand-300">
-                                    {{ $payment->vendor->company_name ?: $payment->vendor->contact_name }}
-                                </a>
+                        <td class="max-w-[16rem] truncate">{{ $payment->vendor?->name ?? '—' }}</td>
+                        <td class="tbl-muted">{{ $date($payment->payment_date) }}</td>
+                        <td>
+                            @if ($payment->bill)
+                                <a href="{{ route('bills.show', $payment->bill) }}" class="text-brand-700 hover:underline dark:text-brand-300">{{ $payment->bill->bill_number }}</a>
+                            @elseif ($payment->is_advance)
+                                <x-status-badge status="open" label="Advance" />
                             @else
-                                <span class="text-gray-500 dark:text-gray-400">-</span>
+                                <span class="tbl-zero">—</span>
                             @endif
                         </td>
-                        <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                            {{ \Carbon\Carbon::parse($payment->payment_date)->format('M d, Y') }}
-                        </td>
-                        <td class="whitespace-nowrap px-6 py-4">
-                            @if($payment->bill)
-                                <a href="{{ route('bills.show', $payment->bill) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300">
-                                    {{ $payment->bill->bill_number }}
-                                </a>
-                            @else
-                                <span class="text-gray-500 dark:text-gray-400">-</span>
-                            @endif
-                        </td>
-                        <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium text-gray-900 dark:text-gray-100">
-                            @money($payment->amount)
-                        </td>
-                        <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                            {{ ucfirst($payment->payment_method ?? '-') }}
-                        </td>
-                        <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                            {{ $payment->reference ?? '-' }}
-                        </td>
-                        <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                            <div class="flex items-center justify-end space-x-2">
-                                <a href="{{ route('payments-made.show', $payment) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300">View</a>
-                                <a href="{{ route('payments-made.edit', $payment) }}" class="text-yellow-700 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-300">Edit</a>
-                                <form action="{{ route('payments-made.destroy', $payment) }}" method="POST" class="inline"
-                                    data-confirm="Are you sure you want to delete this payment?">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-600 dark:text-red-300 hover:text-red-900 dark:hover:text-red-300">Delete</button>
-                                </form>
-                            </div>
+                        <td>{{ $method($payment->payment_method) }}</td>
+                        <td class="num">{{ $money($payment->amount) }}</td>
+                        <td class="num {{ $unused($payment) ? '' : 'tbl-zero' }}">{{ $unused($payment) ? $money($payment->unused_amount) : '—' }}</td>
+                        <td class="tbl-menu">
+                            <x-table.dropdown :sr-label="'Actions for '.$payment->payment_number">
+                                <x-table.menu-item :href="route('payments-made.show', $payment)">View</x-table.menu-item>
+                                @if ($payment->is_advance)
+                                    <x-table.menu-item :href="route('supplier-advances.show', $payment)">{{ $unused($payment) ? 'Use against a bill' : 'Where it was used' }}</x-table.menu-item>
+                                @endif
+                                @can('edit payments-made')
+                                    <x-table.menu-item :href="route('payments-made.edit', $payment)">Edit</x-table.menu-item>
+                                @endcan
+                                @can('delete payments-made')
+                                    <x-table.menu-item wire="deleteOne({{ $payment->id }})" :confirm="'Delete '.$payment->payment_number.'? The bill it paid will show as owing again.'" danger>Delete</x-table.menu-item>
+                                @endcan
+                            </x-table.dropdown>
                         </td>
                     </tr>
-                @empty
+                @endforeach
+                <x-slot name="foot">
                     <tr>
-                        <td colspan="9" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                            No payments found.
-                        </td>
+                        @if ($canBulk)<td></td>@endif
+                        <td colspan="5">Total of {{ number_format($totals->n) }} {{ $totals->n == 1 ? 'payment' : 'payments' }}@if ($filtered || $tab !== '') <span class="font-normal tbl-muted">(this filter)</span>@endif</td>
+                        <td class="num">{{ $money($totals->amount) }}</td>
+                        <td class="num">{{ $totals->unused > 0 ? $money($totals->unused) : '—' }}</td>
+                        <td></td>
                     </tr>
-                @endforelse
-            </tbody>
-        </table>
+                </x-slot>
+            </x-table>
+            <ul class="space-y-2 md:hidden" aria-label="Payments made">
+                @foreach ($payments as $payment)
+                    <li wire:key="pm-card-{{ $payment->id }}">
+                        <x-table.card :href="route('payments-made.show', $payment)" :title="$payment->vendor?->name ?? '—'" :amount="\App\Support\Money::format($payment->amount)"
+                            :meta="$payment->payment_number.' · '.$date($payment->payment_date).' · '.($payment->bill?->bill_number ?? ($payment->is_advance ? 'Advance' : $method($payment->payment_method)))">
+                            @if ($unused($payment))
+                                <x-slot name="alert">{{ \App\Support\Money::format($payment->unused_amount) }} not yet used</x-slot>
+                            @endif
+                        </x-table.card>
+                    </li>
+                @endforeach
+            </ul>
+            <p class="text-sm font-medium text-gray-700 md:hidden dark:text-gray-300">Total {{ \App\Support\Money::format($totals->amount) }}</p>
+        @endif
     </div>
 
-    {{-- Pagination --}}
-    <div class="mt-4 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-            <label for="perPage" class="text-sm text-gray-600 dark:text-gray-400">Show</label>
-            <select wire:model.live="perPage" id="perPage"
-                class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:focus:border-brand-400 dark:focus:ring-brand-400">
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-            </select>
-            <span class="text-sm text-gray-600 dark:text-gray-400">entries</span>
-        </div>
-        <div>
-            {{ $payments->links() }}
-        </div>
-    </div>
+    <x-table.footer :rows="$payments" />
 </div>

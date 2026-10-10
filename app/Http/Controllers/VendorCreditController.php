@@ -26,23 +26,10 @@ use Illuminate\Validation\Rule;
  */
 class VendorCreditController extends Controller
 {
-    public function index(Request $request)
+    /** The list itself is a Livewire table (tables plan T3). */
+    public function index()
     {
-        $status = $request->get('status');
-        $search = trim((string) $request->get('search'));
-
-        $credits = VendorCredit::with('vendor', 'bill')
-            ->when($status, fn ($q) => $q->where('status', $status))
-            ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w
-                ->where('vendor_credit_number', 'like', "%{$search}%")
-                ->orWhere('vendor_reference', 'like', "%{$search}%")
-                ->orWhereHas('vendor', fn ($v) => $v->where('name', 'like', "%{$search}%"))))
-            ->latest('credit_date')->latest('id')
-            ->paginate(25)->withQueryString();
-
-        $statuses = VendorCreditStatus::cases();
-
-        return view('vendor-credits.index', compact('credits', 'statuses', 'status', 'search'));
+        return view('vendor-credits.index');
     }
 
     public function create(Request $request)

@@ -4,122 +4,117 @@ namespace App\Livewire\Bills;
 
 use App\Actions\Bills\DeleteBill;
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ListTable;
 use App\Models\Bill;
 use App\Models\Vendor;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/**
+ * Bills list (tables plan T3): the Invoices list's design, for what you owe.
+ */
 class BillsTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
+    use ChecksPermissions, ListTable;
 
-    public $search = '';
+    public string $period = '';
 
-    public $status = '';
-
-    public $vendor_id = '';
-
-    public $sortField = 'created_at';
-
-    public $sortDirection = 'desc';
-
-    public $perPage = 10;
-
-    public $dateFrom = '';
-
-    public $dateTo = '';
-
-    // Bulk operation properties
-    public $selectedItems = [];
-
-    public $selectAll = false;
-
-    public $bulkAction = '';
-
-    public $successMessage = '';
-
-    public $errorMessage = '';
+    public string $vendor = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'status' => ['except' => ''],
-        'vendor_id' => ['except' => ''],
-        'sortField' => ['except' => 'created_at'],
-        'sortDirection' => ['except' => 'desc'],
+        'tab' => ['except' => '', 'as' => 'status'],
+        'period' => ['except' => ''],
+        'vendor' => ['except' => ''],
     ];
 
-    public function updatingSearch()
+    /** Bills you still have to pay. */
+    private const OPEN = ['unpaid', 'partial', 'overdue'];
+
+    private const TABS = [
+        '' => 'All',
+        'draft' => 'Draft',
+        'unpaid' => 'To pay',
+        'overdue' => 'Overdue',
+        'paid' => 'Paid',
+        'cancelled' => 'Cancelled',
+    ];
+
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['bill_date', 'bill_number', 'due_date', 'total', 'balance_due'];
     }
 
-    public function updatingStatus()
+    protected function rowRelations(): array
     {
-        $this->resetPage();
+        return ['vendor:id,name'];
     }
 
-    public function updatingVendorId()
+    protected function filterProperties(): array
     {
-        $this->resetPage();
+        return ['period', 'vendor'];
     }
 
-    public function updatingPerPage()
+    protected function baseQuery(): Builder
     {
-        $this->resetPage();
-    }
-
-    public function sortBy($field)
-    {
-        if ($this->sortField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            $this->sortField = $field;
-            $this->sortDirection = 'asc';
+        $query = Bill::query();
+        if (($term = trim($this->search)) !== '') {
+            $number = preg_replace('/[^0-9.]/', '', $term);
+            $query->where(function ($q) use ($term, $number) {
+                $q->where('bill_number', 'like', "%{$term}%")
+                    ->orWhere('vendor_bill_number', 'like', "%{$term}%")
+                    ->orWhereHas('vendor', fn ($v) => $v->where('name', 'like', "%{$term}%")->orWhere('company_name', 'like', "%{$term}%"));
+                if ($number !== '' && is_numeric($number)) {
+                    $q->orWhere('total', (float) $number);
+                }
+            });
         }
-    }
-
-    public function clearFilters()
-    {
-        $this->reset(['search', 'status', 'vendor_id', 'dateFrom', 'dateTo']);
-        $this->resetPage();
-    }
-
-    public function updatedSelectAll($value)
-    {
-        if ($value) {
-            $this->selectedItems = $this->getFilteredBillIds();
-        } else {
-            $this->selectedItems = [];
+        if ($this->vendor !== '' && ctype_digit($this->vendor)) {
+            $query->where('vendor_id', (int) $this->vendor);
         }
+
+        return $this->applyPeriod($query, 'bill_date', $this->period);
     }
 
-    public function updatedSelectedItems()
+    protected function applyTab(Builder $query, string $tab): Builder
     {
-        $this->selectAll = count($this->selectedItems) === count($this->getFilteredBillIds());
+        $today = now()->toDateString();
+
+        return match ($tab) {
+            'draft' => $query->where('status', 'draft'),
+            'unpaid' => $query->whereIn('status', self::OPEN)->where('balance_due', '>', 0),
+            'overdue' => $query->whereIn('status', self::OPEN)->where('balance_due', '>', 0)->where('due_date', '<', $today),
+            'paid' => $query->where('status', 'paid'),
+            'cancelled' => $query->where('status', 'cancelled'),
+            default => $query,
+        };
     }
 
-    private function getFilteredBillIds()
+    /** @return array<string, array{label: string, count: int, alert: bool}> one grouped query */
+    private function tabs(): array
     {
-        return Bill::query()
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('bill_number', 'like', '%'.$this->search.'%')
-                        ->orWhere('vendor_bill_number', 'like', '%'.$this->search.'%')
-                        ->orWhereHas('vendor', function ($vq) {
-                            $vq->where('name', 'like', '%'.$this->search.'%')
-                                ->orWhere('company_name', 'like', '%'.$this->search.'%');
-                        });
-                });
-            })
-            ->when($this->status, fn ($q) => $q->where('status', $this->status))
-            ->when($this->vendor_id, fn ($q) => $q->where('vendor_id', $this->vendor_id))
-            ->when($this->dateFrom, fn ($q) => $q->whereDate('bill_date', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn ($q) => $q->whereDate('bill_date', '<=', $this->dateTo))
-            ->pluck('id')
-            ->map(fn ($id) => (string) $id)
-            ->toArray();
+        $open = "status IN ('unpaid','partial','overdue') AND balance_due > 0";
+        $row = $this->baseQuery()->toBase()->selectRaw(
+            "COUNT(*) as all_rows,
+             SUM(CASE WHEN status = 'draft' THEN 1 ELSE 0 END) as draft,
+             SUM(CASE WHEN {$open} THEN 1 ELSE 0 END) as unpaid,
+             SUM(CASE WHEN {$open} AND due_date < ? THEN 1 ELSE 0 END) as overdue,
+             SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) as paid,
+             SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled",
+            [now()->toDateString()]
+        )->first();
+
+        $tabs = [];
+        foreach (self::TABS as $key => $label) {
+            $n = (int) ($key === '' ? $row->all_rows : $row->{$key});
+            if ($key === 'cancelled' && $n === 0 && $this->tab !== 'cancelled') {
+                continue;
+            }
+            $tabs[$key] = ['label' => $label, 'count' => $n, 'alert' => $key === 'overdue'];
+        }
+
+        return $tabs;
     }
 
     /**
@@ -139,18 +134,10 @@ class BillsTable extends Component
         $this->errorMessage = '';
 
         if (empty($this->selectedItems)) {
-            $this->errorMessage = 'Please select at least one bill.';
+            $this->errorMessage = 'Tick at least one bill first.';
 
             return;
         }
-
-        if (empty($this->bulkAction)) {
-            $this->errorMessage = 'Please select an action.';
-
-            return;
-        }
-
-        $count = count($this->selectedItems);
 
         $this->authorizeBulkAction();
 
@@ -162,7 +149,7 @@ class BillsTable extends Component
                 $skipped = 0;
                 $failed = [];
                 $bills = Bill::whereIn('id', $this->selectedItems)
-                    ->whereIn('status', ['draft', 'pending', 'unpaid', 'overdue'])
+                    ->whereIn('status', ['draft', 'unpaid', 'overdue'])
                     ->get();
                 foreach ($bills as $bill) {
                     if ((float) $bill->amount_paid > 0) {
@@ -185,35 +172,25 @@ class BillsTable extends Component
                 break;
 
             case 'delete':
-                $deletedCount = 0;
-                $skippedCount = 0;
-
-                DB::transaction(function () use (&$deletedCount, &$skippedCount) {
-                    foreach ($this->selectedItems as $billId) {
-                        $bill = Bill::find($billId);
-                        if (! $bill) {
-                            continue;
-                        }
-
+                $deleted = 0;
+                $skipped = 0;
+                $delete = app(DeleteBill::class);
+                DB::transaction(function () use (&$deleted, &$skipped, $delete) {
+                    foreach (Bill::whereIn('id', $this->selectedItems)->get() as $bill) {
                         // Same rules as the web and API delete (R3).
-                        $delete = app(DeleteBill::class);
                         if ($delete->blockedBecause($bill)) {
-                            $skippedCount++;
+                            $skipped++;
 
                             continue;
                         }
-
                         $delete->handle($bill);
-                        $deletedCount++;
+                        $deleted++;
                     }
                 });
-
-                if ($deletedCount > 0 && $skippedCount > 0) {
-                    $this->successMessage = "Deleted {$deletedCount} bill(s). Skipped {$skippedCount} bill(s) with payments or stock already used. Journal entries and chart of account balances have been updated.";
-                } elseif ($deletedCount > 0) {
-                    $this->successMessage = "Successfully deleted {$deletedCount} bill(s). Journal entries and chart of account balances have been updated.";
+                if ($deleted > 0) {
+                    $this->successMessage = "Deleted {$deleted} bill(s).".($skipped ? " Skipped {$skipped} with payments or stock already used." : '');
                 } else {
-                    $this->errorMessage = 'Could not delete any bills. All selected bills have payments or stock already used.';
+                    $this->errorMessage = 'None deleted: every ticked bill has payments or stock already used.';
                 }
                 break;
 
@@ -224,69 +201,37 @@ class BillsTable extends Component
         }
 
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
     }
 
-    public function delete($id)
+    /**
+     * Delete one bill from its row menu, by the same rules as deleting it
+     * from its page (journal reversed, stock taken back out).
+     */
+    public function deleteOne(int $id, DeleteBill $deleteBill): void
     {
         $this->requirePermission('delete bills');
-
         $bill = Bill::findOrFail($id);
-
-        // Check if bill has payments
-        if ($bill->amount_paid > 0) {
-            session()->flash('error', 'Cannot delete a bill with recorded payments.');
+        if ($reason = $deleteBill->blockedBecause($bill)) {
+            $this->errorMessage = $reason;
 
             return;
         }
-
-        $bill->items()->delete();
-        $bill->delete();
-
-        session()->flash('success', 'Bill deleted successfully.');
+        DB::transaction(fn () => $deleteBill->handle($bill));
+        $this->successMessage = "Deleted {$bill->bill_number}.";
+        $this->selectedItems = array_values(array_diff($this->selectedItems, [(string) $id]));
     }
 
     public function render()
     {
-        $bills = Bill::query()
-            ->with(['vendor'])
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('bill_number', 'like', '%'.$this->search.'%')
-                        ->orWhere('vendor_bill_number', 'like', '%'.$this->search.'%')
-                        ->orWhereHas('vendor', function ($vq) {
-                            $vq->where('name', 'like', '%'.$this->search.'%')
-                                ->orWhere('company_name', 'like', '%'.$this->search.'%');
-                        });
-                });
-            })
-            ->when($this->status, function ($query) {
-                $query->where('status', $this->status);
-            })
-            ->when($this->vendor_id, function ($query) {
-                $query->where('vendor_id', $this->vendor_id);
-            })
-            ->when($this->dateFrom, function ($query) {
-                $query->whereDate('bill_date', '>=', $this->dateFrom);
-            })
-            ->when($this->dateTo, function ($query) {
-                $query->whereDate('bill_date', '<=', $this->dateTo);
-            })
-            ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->pageSize());
-
-        $vendors = Vendor::orderBy('name')->get();
-
-        $statuses = [
-            'draft' => 'Draft',
-            'pending' => 'Pending',
-            'partial' => 'Partial',
-            'paid' => 'Paid',
-            'overdue' => 'Overdue',
-            'cancelled' => 'Cancelled',
-        ];
-
-        return view('livewire.bills.bills-table', compact('bills', 'vendors', 'statuses'));
+        return view('livewire.bills.bills-table', [
+            'bills' => $this->rows(),
+            'tabs' => $this->tabs(),
+            'totals' => $this->filteredQuery()->toBase()->selectRaw("COUNT(*) as n, COALESCE(SUM(total), 0) as total, COALESCE(SUM(CASE WHEN status IN ('unpaid','partial','overdue') THEN balance_due ELSE 0 END), 0) as balance")->first(),
+            'vendors' => Vendor::where('is_active', true)->orderBy('name')->pluck('name', 'id'),
+            'periods' => self::periodOptions(),
+            'filtered' => $this->isFiltered(),
+            'today' => today(),
+        ]);
     }
 }

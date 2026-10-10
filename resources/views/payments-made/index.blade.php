@@ -1,25 +1,20 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Payments Made') }}
-            </h2>
-            <a href="{{ route('payments-made.create') }}" class="inline-flex items-center justify-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-                Record Payment
-            </a>
-        </div>
+        <x-table.page-header title="Payments made" :description="'Money you have paid suppliers, against bills or in advance. Amounts in '.\App\Support\Money::symbol().'.'">
+            <x-slot name="more">
+                <x-table.menu-item :href="route('supplier-advances.index')">Supplier advances</x-table.menu-item>
+                @can('create payments-made')<x-table.menu-item :href="route('supplier-advances.create')">Pay an advance</x-table.menu-item>@endcan
+            </x-slot>
+            <x-slot name="actions">
+                @can('create payments-made')
+                    <a href="{{ route('payments-made.create') }}" class="btn-new">
+                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 4a1 1 0 011 1v4h4a1 1 0 110 2h-4v4a1 1 0 11-2 0v-4H5a1 1 0 110-2h4V5a1 1 0 011-1z"/></svg>
+                        Record payment
+                    </a>
+                @endcan
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    @livewire('payments-made.payments-made-table')
-                </div>
-            </div>
-        </div>
-    </div>
+    <livewire:payments-made.payments-made-table />
 </x-app-layout>
