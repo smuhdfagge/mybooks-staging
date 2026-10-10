@@ -68,7 +68,7 @@ Nothing goes live until T8 merges `tables/main` into `main`.
 
 | # | Session | Branch | Status | Notes |
 |---|---|---|---|---|
-| T1 | Shared pieces and the pilot (Invoices) | `tables/t1-foundations` | In review | Shared pieces, ListTable trait, guard test (157 screens to do); Invoices list. Fixed on the way: the Date Range filter did not work (it pointed at a setting that did not exist); status filter had no "Part paid"; sorting accepted any column name. |
+| T1 | Shared pieces and the pilot (Invoices) | `tables/t1-foundations` | Done, PR #58 | Shared pieces, ListTable trait, guard test (157 screens to do); Invoices list. Fixed on the way: the Date Range filter did not work (it pointed at a setting that did not exist); status filter had no "Part paid"; sorting accepted any column name. |
 | T2 | Sales lists | | To do | |
 | T3 | Purchases and expenses | | To do | |
 | T4 | Stock, banking and accounting | | To do | |
