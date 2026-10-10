@@ -1,110 +1,128 @@
-<div class="relative">
-    <x-table-loading />
-    <!-- Flash Messages -->
+{{-- Vendors list (tables plan T3). --}}
+@php
+    $user = auth()->user();
+    $money = fn ($v) => number_format((float) $v, 2);
+    $canBulk = $user->canAny(['edit vendors', 'delete vendors']);
+    $ids = $vendors->pluck('id')->map(fn ($id) => (string) $id)->all();
+    $statements = \App\Http\Middleware\EnsureFeatureEnabled::enabled('statements');
+    $canSend = $statements && $user->can('send invoices');
+    $ticks = $canBulk || $canSend;
+    $sendButton = 'inline-flex h-9 items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 text-[13px] font-medium text-gray-800 shadow-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700';
+@endphp
+<div class="relative space-y-3">
     <x-flash-messages :successMessage="$successMessage" :errorMessage="$errorMessage" />
 
-    @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('statements'))
-        @can('send invoices')
-            @include('statements.partials.bulk-send', ['side' => 'suppliers', 'selected' => $selectedItems])
-        @endcan
+    @if ($canSend)
+        @include('statements.partials.bulk-send', ['side' => 'suppliers', 'selected' => $selectedItems, 'noButton' => true])
     @endif
 
-    <!-- Filters -->
-    <div class="mb-4 sm:mb-6 bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <div class="sm:col-span-2 lg:col-span-1">
-                <label class="form-label">Search</label>
-                <input aria-label="Search vendors" type="text" wire:model.live.debounce.300ms="search" placeholder="Search vendors..."
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-            </div>
-            <div>
-                <label for="status" class="form-label">Status</label>
-                <select id="status" wire:model.live="status" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-                    <option value="">All Status</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                </select>
-            </div>
-            <div>
-                <label for="perPage" class="form-label">Per Page</label>
-                <select id="perPage" wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-                    <option value="10">10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                </select>
-            </div>
-            <!-- Bulk Actions -->
-            <x-bulk-actions :actions="['activate' => 'Activate', 'deactivate' => 'Deactivate', 'delete' => 'Delete']" :selectedCount="count($selectedItems)" />
-        </div>
-    </div>
+    <x-table.tabs :tabs="$tabs" :active="$tab" />
 
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead class="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                        <th scope="col" class="px-4 py-3 text-left">
-                            <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
-                                class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
-                        </th>
-                        <x-sort-header field="company_name" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Company</x-sort-header>
-                        <th scope="col" class="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Contact</th>
-                        <th scope="col" class="hidden md:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Email</th>
-                        <th scope="col" class="hidden lg:table-cell px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Balance</th>
-                        <th scope="col" class="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                        <th scope="col" class="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+    <x-table.toolbar placeholder="Search name, company, email or phone" :selected="count($selectedItems)" :filtered="$filtered">
+        @if ($canSend)
+            <x-slot name="end">
+                <button type="button" data-open-modal="bulk-statements" class="{{ $sendButton }}">Email statements</button>
+            </x-slot>
+        @endif
+        @if ($ticks)
+            <x-slot name="bulk">
+                @if ($canSend)<button type="button" data-open-modal="bulk-statements" class="{{ $sendButton }}">Email statements</button>@endif
+                @can('edit vendors')
+                    <x-table.bulk-button action="activate">Make active</x-table.bulk-button>
+                    <x-table.bulk-button action="deactivate" confirm="Make the ticked vendors inactive? They stay in your records but drop out of pick lists.">Make inactive</x-table.bulk-button>
+                @endcan
+                @can('delete vendors')<x-table.bulk-button action="delete" danger confirm="Delete the ticked vendors? Vendors with bills or expenses are skipped.">Delete</x-table.bulk-button>@endcan
+                <x-table.tick-all-matching :rows="$vendors" :selected="$selectedItems" />
+            </x-slot>
+        @endif
+    </x-table.toolbar>
+
+    <div class="relative">
+        <x-table.veil />
+        @if ($vendors->isEmpty())
+            <div class="tbl-wrap">
+                @if ($filtered || $tab !== '')
+                    <x-table.empty filtered title="No vendors match these filters" />
+                @else
+                    <x-table.empty title="No vendors yet" text="Add the businesses you buy from. You'll see what you owe each one here.">
+                        @can('create vendors')<a href="{{ route('vendors.create') }}" class="btn-new">New vendor</a>@endcan
+                    </x-table.empty>
+                @endif
+            </div>
+        @else
+            <x-table caption="Vendors" class="hidden md:block">
+                <x-slot name="head">
+                    @if ($ticks)<x-table.check-all :ids="$ids" :selected="$selectedItems" label="Tick every vendor on this page" />@endif
+                    <x-table.th field="name" :sort="[$sortField, $sortDirection]">Name</x-table.th>
+                    <x-table.th>Email</x-table.th>
+                    <x-table.th>Phone</x-table.th>
+                    <x-table.th field="total_purchases" :sort="[$sortField, $sortDirection]" num>Bought</x-table.th>
+                    <x-table.th field="outstanding_balance" :sort="[$sortField, $sortDirection]" num>You owe</x-table.th>
+                    <x-table.th>Status</x-table.th>
+                    <th scope="col" class="tbl-menu"><span class="sr-only">Actions</span></th>
+                </x-slot>
+                @foreach ($vendors as $vendor)
+                    @php
+                        $ticked = in_array((string) $vendor->id, $selectedItems, true);
+                        $owe = (float) $vendor->outstanding_balance;
+                        $bought = (float) $vendor->total_purchases;
+                    @endphp
+                    <tr wire:key="ve-{{ $vendor->id }}" @if ($ticked) data-picked @endif>
+                        @if ($ticks)<x-table.check :id="$vendor->id" :label="$vendor->name" />@endif
+                        <td class="max-w-[18rem]">
+                            <a href="{{ route('vendors.show', $vendor) }}" class="tbl-link block truncate">{{ $vendor->name }}</a>
+                            @if ($vendor->company_name && $vendor->company_name !== $vendor->name)<div class="truncate text-xs tbl-muted">{{ $vendor->company_name }}</div>@endif
+                        </td>
+                        <td class="max-w-[16rem] truncate {{ $vendor->email ? 'tbl-muted' : 'tbl-zero' }}">{{ $vendor->email ?: '—' }}</td>
+                        <td class="{{ $vendor->phone ? 'tbl-muted' : 'tbl-zero' }}">{{ $vendor->phone ?: '—' }}</td>
+                        <td class="num {{ $bought > 0 ? '' : 'tbl-zero' }}">{{ $bought > 0 ? $money($bought) : '—' }}</td>
+                        <td class="num {{ $owe > 0 ? '' : 'tbl-zero' }}">{{ $owe > 0 ? $money($owe) : '—' }}</td>
+                        <td><x-status-badge :status="$vendor->is_active ? 'active' : 'inactive'" /></td>
+                        <td class="tbl-menu">
+                            <x-table.dropdown :sr-label="'Actions for '.$vendor->name">
+                                <x-table.menu-item :href="route('vendors.show', $vendor)">View</x-table.menu-item>
+                                @if ($statements)
+                                    <x-table.menu-item :href="route('vendors.statement', $vendor)">Statement</x-table.menu-item>
+                                @endif
+                                @can('create bills')
+                                    <x-table.menu-item :href="route('bills.create', ['vendor_id' => $vendor->id])">New bill</x-table.menu-item>
+                                @endcan
+                                @can('edit vendors')
+                                    <x-table.menu-item :href="route('vendors.edit', $vendor)">Edit</x-table.menu-item>
+                                @endcan
+                                @can('delete vendors')
+                                    <x-table.menu-item wire="deleteOne({{ $vendor->id }})" :confirm="'Delete '.$vendor->name.'? This can\'t be undone.'" danger>Delete</x-table.menu-item>
+                                @endcan
+                            </x-table.dropdown>
+                        </td>
                     </tr>
-                </thead>
-                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    @forelse($vendors as $vendor)
-                        <tr wire:key="vendor-{{ $vendor->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                            <td class="px-4 py-4">
-                                <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $vendor->id }}"
-                                    class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
-                            </td>
-                            <td class="px-4 sm:px-6 py-4">
-                                <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $vendor->company_name }}</div>
-                                <div class="sm:hidden text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $vendor->contact_name ?? '' }}</div>
-                            </td>
-                            <td class="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $vendor->contact_name ?? '-' }}</td>
-                            <td class="hidden md:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $vendor->email ?? '-' }}</td>
-                            <td class="hidden lg:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white">@money($vendor->outstanding_balance ?? 0)</td>
-                            <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-center">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $vendor->is_active ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' : 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300' }}">
-                                    {{ $vendor->is_active ? 'Active' : 'Inactive' }}
-                                </span>
-                            </td>
-                            <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <div class="flex items-center justify-end space-x-1 sm:space-x-2">
-                                    <a href="{{ route('vendors.show', $vendor) }}" class="p-1 text-brand-600 hover:text-brand-900 dark:text-brand-300" title="View" aria-label="View">
-                                        <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                    </a>
-                                    <a href="{{ route('vendors.edit', $vendor) }}" class="p-1 text-yellow-700 hover:text-yellow-900 dark:text-yellow-400" title="Edit" aria-label="Edit">
-                                        <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7" class="px-4 sm:px-6 py-12 text-center">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                                <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No vendors found</h3>
-                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by adding a new vendor.</p>
-                                <div class="mt-6">
-                                    <a href="{{ route('vendors.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700">
-                                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                        Add Vendor
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        @if($vendors->hasPages())
-            <div class="bg-white dark:bg-gray-800 px-4 py-3 border-t border-gray-200 dark:border-gray-700 sm:px-6">{{ $vendors->links() }}</div>
+                @endforeach
+                <x-slot name="foot">
+                    <tr>
+                        @if ($ticks)<td></td>@endif
+                        <td colspan="4">Total of {{ number_format($totals->n) }} {{ $totals->n == 1 ? 'vendor' : 'vendors' }}@if ($filtered || $tab !== '') <span class="font-normal tbl-muted">(this filter)</span>@endif</td>
+                        <td class="num">{{ $money($totals->owed) }}</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </x-slot>
+            </x-table>
+            <ul class="space-y-2 md:hidden" aria-label="Vendors">
+                @foreach ($vendors as $vendor)
+                    @php $owe = (float) $vendor->outstanding_balance; @endphp
+                    <li wire:key="ve-card-{{ $vendor->id }}">
+                        <x-table.card :href="route('vendors.show', $vendor)" :title="$vendor->name"
+                            :amount="$owe > 0 ? \App\Support\Money::format($owe) : null"
+                            :meta="$vendor->email ?: ($vendor->phone ?: ($vendor->company_name ?: ''))">
+                            @if (! $vendor->is_active)
+                                <x-slot name="badge"><x-status-badge status="inactive" /></x-slot>
+                            @endif
+                        </x-table.card>
+                    </li>
+                @endforeach
+            </ul>
+            <p class="text-sm font-medium text-gray-700 md:hidden dark:text-gray-300">You owe {{ \App\Support\Money::format($totals->owed) }}</p>
         @endif
     </div>
+
+    <x-table.footer :rows="$vendors" />
 </div>

@@ -207,11 +207,11 @@ class LivewirePermissionTest extends TestCase
             [TaxRatesTable::class, 'toggleActive', [$taxRate->id]],
             [TaxRatesTable::class, 'toggleDefault', [$taxRate->id]],
             [TaxGroupsTable::class, 'toggleActive', [$taxGroup->id]],
-            [ExpensesTable::class, 'confirmDelete', [$expense->id]],
+            [ExpensesTable::class, 'deleteOne', [$expense->id]],
             [ExpensesTable::class, 'submitForApproval', [$expense->id]],
             [ExpensesTable::class, 'approveExpense', [$expense->id]],
             [ExpensesTable::class, 'markAsPaid', [$expense->id]],
-            [BillsTable::class, 'delete', [999999]],
+            [BillsTable::class, 'deleteOne', [999999]],
             [ActivityLogsTable::class, 'export', ['csv']],
         ];
 

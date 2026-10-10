@@ -38,8 +38,14 @@
         'confirmed' => 'badge-info',
         'processing' => 'badge-warning',
         'invoiced' => 'badge-info',
+        'pending_approval' => 'badge-warning',
+        'approved' => 'badge-info',
+        'partially_received' => 'badge-warning',
+        'billed' => 'badge-info',
+        'paused' => 'badge-warning',
+        'stopped' => 'badge-muted',
     ];
-    $labels = ['partial' => 'Part paid'];
+    $labels = ['partial' => 'Part paid', 'pending_approval' => 'Waiting for approval', 'partially_received' => 'Part received'];
 @endphp
 
 <span {{ $attributes->merge(['class' => 'badge '.($colours[$status] ?? $colours['draft'])]) }}>

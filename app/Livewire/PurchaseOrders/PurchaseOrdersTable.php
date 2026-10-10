@@ -3,104 +3,69 @@
 namespace App\Livewire\PurchaseOrders;
 
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ListTable;
 use App\Models\PurchaseOrder;
 use App\Models\Vendor;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/**
+ * Purchase orders list (tables plan T3: the shared list design, see InvoicesTable).
+ */
 class PurchaseOrdersTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
+    use ChecksPermissions, ListTable;
 
-    public $search = '';
+    public string $period = '';
 
-    public $status = '';
-
-    public $vendor = '';
-
-    public $dateFrom = '';
-
-    public $dateTo = '';
-
-    public $perPage = 10;
-
-    public $selectedItems = [];
-
-    public $selectAll = false;
-
-    public $bulkAction = '';
-
-    public $successMessage = '';
-
-    public $errorMessage = '';
+    public string $vendor = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'status' => ['except' => ''],
+        'tab' => ['except' => '', 'as' => 'status'],
+        'period' => ['except' => ''],
         'vendor' => ['except' => ''],
     ];
 
-    public function updatingSearch()
+    /** Status => tab label, in tab order. */
+    public const LABELS = [
+        'draft' => 'Draft',
+        'confirmed' => 'Confirmed',
+        'partially_received' => 'Part received',
+        'received' => 'Received',
+        'billed' => 'Billed',
+        'cancelled' => 'Cancelled',
+    ];
+
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['order_date', 'order_number', 'expected_date', 'total'];
     }
 
-    public function updatingStatus()
+    protected function rowRelations(): array
     {
-        $this->resetPage();
+        return ['vendor:id,name'];
     }
 
-    public function updatingVendor()
+    protected function filterProperties(): array
     {
-        $this->resetPage();
+        return ['period', 'vendor'];
     }
 
-    public function updatingPerPage()
+    protected function baseQuery(): Builder
     {
-        $this->resetPage();
-    }
-
-    public function clearFilters()
-    {
-        $this->reset(['search', 'status', 'vendor', 'dateFrom', 'dateTo']);
-        $this->resetPage();
-    }
-
-    public function updatedSelectAll($value)
-    {
-        if ($value) {
-            $this->selectedItems = $this->getFilteredOrderIds();
-        } else {
-            $this->selectedItems = [];
+        $query = PurchaseOrder::query();
+        if (($term = trim($this->search)) !== '') {
+            $query->where(fn ($q) => $q->where('order_number', 'like', "%{$term}%")
+                ->orWhere('reference', 'like', "%{$term}%")
+                ->orWhereHas('vendor', fn ($v) => $v->where('name', 'like', "%{$term}%")->orWhere('company_name', 'like', "%{$term}%")));
         }
-    }
+        if ($this->vendor !== '' && ctype_digit($this->vendor)) {
+            $query->where('vendor_id', (int) $this->vendor);
+        }
 
-    public function updatedSelectedItems()
-    {
-        $this->selectAll = count($this->selectedItems) === count($this->getFilteredOrderIds());
-    }
-
-    private function getFilteredOrderIds()
-    {
-        return PurchaseOrder::query()
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('order_number', 'like', '%'.$this->search.'%')
-                        ->orWhere('reference', 'like', '%'.$this->search.'%')
-                        ->orWhereHas('vendor', function ($q) {
-                            $q->where('name', 'like', '%'.$this->search.'%')
-                                ->orWhere('company_name', 'like', '%'.$this->search.'%');
-                        });
-                });
-            })
-            ->when($this->status, fn ($q) => $q->where('status', $this->status))
-            ->when($this->vendor, fn ($q) => $q->where('vendor_id', $this->vendor))
-            ->when($this->dateFrom, fn ($q) => $q->whereDate('order_date', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn ($q) => $q->whereDate('order_date', '<=', $this->dateTo))
-            ->pluck('id')
-            ->map(fn ($id) => (string) $id)
-            ->toArray();
+        return $this->applyPeriod($query, 'order_date', $this->period);
     }
 
     /**
@@ -121,13 +86,7 @@ class PurchaseOrdersTable extends Component
         $this->errorMessage = '';
 
         if (empty($this->selectedItems)) {
-            $this->errorMessage = 'Please select at least one order.';
-
-            return;
-        }
-
-        if (empty($this->bulkAction)) {
-            $this->errorMessage = 'Please select an action.';
+            $this->errorMessage = 'Tick at least one order first.';
 
             return;
         }
@@ -136,46 +95,31 @@ class PurchaseOrdersTable extends Component
 
         switch ($this->bulkAction) {
             case 'confirm':
-                PurchaseOrder::whereIn('id', $this->selectedItems)
-                    ->where('status', 'draft')
-                    ->update(['status' => 'confirmed']);
-                $this->successMessage = 'Successfully confirmed selected order(s).';
+                $n = PurchaseOrder::whereIn('id', $this->selectedItems)->where('status', 'draft')->update(['status' => 'confirmed']);
+                $this->successMessage = "Confirmed {$n} order(s). Only drafts change.";
                 break;
 
             case 'cancel':
-                PurchaseOrder::whereIn('id', $this->selectedItems)
-                    ->whereIn('status', ['draft', 'confirmed'])
-                    ->update(['status' => 'cancelled']);
-                $this->successMessage = 'Successfully cancelled selected order(s).';
+                $n = PurchaseOrder::whereIn('id', $this->selectedItems)->whereIn('status', ['draft', 'confirmed'])->update(['status' => 'cancelled']);
+                $this->successMessage = "Cancelled {$n} order(s). Only draft and confirmed orders change.";
                 break;
 
             case 'delete':
-                $deletedCount = 0;
-                $skippedCount = 0;
-
-                foreach ($this->selectedItems as $orderId) {
-                    $order = PurchaseOrder::find($orderId);
-                    if (! $order) {
-                        continue;
-                    }
-
+                $deleted = 0;
+                $skipped = 0;
+                foreach (PurchaseOrder::whereIn('id', $this->selectedItems)->get() as $order) {
                     if ($order->bills()->exists()) {
-                        $skippedCount++;
+                        $skipped++;
 
                         continue;
                     }
-
-                    $order->items()->delete();
-                    $order->delete();
-                    $deletedCount++;
+                    $this->deleteOrder($order);
+                    $deleted++;
                 }
-
-                if ($deletedCount > 0 && $skippedCount > 0) {
-                    $this->successMessage = "Deleted {$deletedCount} order(s). Skipped {$skippedCount} order(s) with associated bills.";
-                } elseif ($deletedCount > 0) {
-                    $this->successMessage = "Successfully deleted {$deletedCount} order(s).";
+                if ($deleted > 0) {
+                    $this->successMessage = "Deleted {$deleted} order(s).".($skipped ? " Skipped {$skipped} with bills." : '');
                 } else {
-                    $this->errorMessage = 'Could not delete any orders. All selected orders have associated bills.';
+                    $this->errorMessage = 'None deleted: every ticked order has bills.';
                 }
                 break;
 
@@ -186,43 +130,41 @@ class PurchaseOrdersTable extends Component
         }
 
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
+    }
+
+    /** Delete one order from its row menu (orders with bills are kept). */
+    public function deleteOne(int $id): void
+    {
+        $this->requirePermission('delete purchase-orders');
+        $order = PurchaseOrder::findOrFail($id);
+        if ($order->bills()->exists()) {
+            $this->errorMessage = "{$order->order_number} can't be deleted: it has bills.";
+
+            return;
+        }
+        $this->deleteOrder($order);
+        $this->successMessage = "Deleted {$order->order_number}.";
+        $this->selectedItems = array_values(array_diff($this->selectedItems, [(string) $id]));
+    }
+
+    private function deleteOrder(PurchaseOrder $order): void
+    {
+        DB::transaction(function () use ($order) {
+            $order->items()->delete();
+            $order->delete();
+        });
     }
 
     public function render()
     {
-        $orders = PurchaseOrder::with(['vendor'])
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('order_number', 'like', '%'.$this->search.'%')
-                        ->orWhere('reference', 'like', '%'.$this->search.'%')
-                        ->orWhereHas('vendor', function ($q) {
-                            $q->where('name', 'like', '%'.$this->search.'%')
-                                ->orWhere('company_name', 'like', '%'.$this->search.'%');
-                        });
-                });
-            })
-            ->when($this->status, function ($query) {
-                $query->where('status', $this->status);
-            })
-            ->when($this->vendor, function ($query) {
-                $query->where('vendor_id', $this->vendor);
-            })
-            ->when($this->dateFrom, function ($query) {
-                $query->whereDate('order_date', '>=', $this->dateFrom);
-            })
-            ->when($this->dateTo, function ($query) {
-                $query->whereDate('order_date', '<=', $this->dateTo);
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate($this->pageSize());
-
-        $vendors = Vendor::where('is_active', true)->orderBy('name')->get();
-
         return view('livewire.purchase-orders.purchase-orders-table', [
-            'orders' => $orders,
-            'vendors' => $vendors,
+            'orders' => $this->rows(),
+            'tabs' => $this->statusTabs(self::LABELS, [], 'status', hideEmpty: true),
+            'totals' => $this->filteredQuery()->toBase()->selectRaw('COUNT(*) as n, COALESCE(SUM(total), 0) as total')->first(),
+            'vendors' => Vendor::where('is_active', true)->orderBy('name')->pluck('name', 'id'),
+            'periods' => self::periodOptions(),
+            'filtered' => $this->isFiltered(),
         ]);
     }
 }
