@@ -108,6 +108,17 @@ final class Money
         return ($minor < 0 ? '-' : '').self::symbol($currency).number_format(abs($minor) / 100, 2);
     }
 
+    /**
+     * Rounded to the whole naira (or dollar...), for summaries where kobo
+     * only add noise, e.g. the dashboard. In Blade: @moneyWhole($amount).
+     */
+    public static function whole(float|int|string|null $amount, ?string $currency = null): string
+    {
+        $value = round(self::toMinor($amount) / 100);
+
+        return ($value < 0 ? '-' : '').self::symbol($currency).number_format(abs($value), 0);
+    }
+
     /** Symbol for a currency code (the business's by default). In Blade: @currencySymbol. */
     public static function symbol(?string $currency = null): string
     {

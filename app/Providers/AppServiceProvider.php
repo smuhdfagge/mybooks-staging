@@ -7,16 +7,29 @@ use App\Events;
 use App\Http\Middleware\CheckSubscription;
 use App\Http\Middleware\EnsureAccountActive;
 use App\Listeners;
+use App\Models\Bank;
+use App\Models\BankFeedLine;
+use App\Models\Bill;
+use App\Models\ChartOfAccount;
 use App\Models\CreditNoteRefund;
+use App\Models\Customer;
 use App\Models\Expense;
+use App\Models\Inventory;
+use App\Models\Invoice;
+use App\Models\Item;
+use App\Models\Journal;
 use App\Models\PaymentMade;
 use App\Models\PaymentReceived;
 use App\Models\StatutoryRemittance;
+use App\Models\Subscription;
+use App\Models\Tenant;
 use App\Models\User;
+use App\Models\VatReturnFiling;
 use App\Models\VendorCreditRefund;
 use App\Services\Accounting\LockDates;
 use App\Services\ActivityLogService;
 use App\Services\BankFeeds\LineActions;
+use App\Services\Dashboard\DashboardCache;
 use App\Services\JournalService;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
@@ -26,6 +39,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
@@ -58,6 +72,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->bumpDashboardOnChange();
+
         // In local development, log a warning whenever a relation is
         // lazy-loaded, so N+1 queries are noticed early (P4). It only
         // logs; nothing is blocked.
@@ -68,6 +84,7 @@ class AppServiceProvider extends ServiceProvider
 
         // One way to show money in views (U8): @money($amount[, 'USD']) and @currencySymbol.
         Blade::directive('money', fn (string $expression) => "<?php echo e(\\App\\Support\\Money::format({$expression})); ?>");
+        Blade::directive('moneyWhole', fn (string $expression) => "<?php echo e(\\App\\Support\\Money::whole({$expression})); ?>");
         Blade::directive('currencySymbol', fn () => '<?php echo e(\\App\\Support\\Money::symbol()); ?>');
 
         // Configure password strength defaults (NIST 800-63B compliant)
@@ -215,5 +232,31 @@ class AppServiceProvider extends ServiceProvider
         foreach ([PaymentReceived::class, PaymentMade::class, Expense::class, StatutoryRemittance::class, VendorCreditRefund::class, CreditNoteRefund::class] as $class) {
             $class::deleting(fn (Model $record) => app(LineActions::class)->releaseFor($record));
         }
+    }
+
+    /**
+     * Anything that changes a dashboard figure moves the business's
+     * dashboard version on, so the next visit shows fresh numbers
+     * (dashboard upgrade; see DashboardCache).
+     */
+    private function bumpDashboardOnChange(): void
+    {
+        $models = [
+            Journal::class, Invoice::class, Bill::class,
+            PaymentReceived::class, PaymentMade::class, Expense::class,
+            Inventory::class, Item::class, Bank::class,
+            Customer::class, BankFeedLine::class, VatReturnFiling::class,
+            Subscription::class, ChartOfAccount::class, User::class,
+        ];
+        foreach ($models as $model) {
+            // After the transaction commits, so a visit in between can't save
+            // figures from before the change under the new version.
+            $bump = fn (Model $m) => DB::afterCommit(
+                fn () => DashboardCache::bump($m->getAttribute('tenant_id'))
+            );
+            $model::saved($bump);
+            $model::deleted($bump);
+        }
+        Tenant::saved(fn (Model $t) => DashboardCache::bump($t->getKey()));
     }
 }

@@ -191,6 +191,27 @@ There is no webhook: NRS's answer is read from the reply to the submission, and 
 - whether NRS treats a repeated IRN as an error (so a lost reply is checked with Confirm before it is sent again), and whether B2C reports use the same call as B2B;
 - the timeline and the N50,000 B2C limit, and whether the 24-hour clock starts at issue.
 
+## Dashboard
+
+The dashboard answers four questions: cash in the bank, income against
+expenses (and profit), who owes whom, and what needs doing today.
+
+- Every figure comes from `App\Services\Dashboard\DashboardService`, which
+  uses the same ledger code as the profit and loss, balance sheet and cash
+  flow reports. `tests/Feature/Dashboard/DashboardTest.php` checks they agree.
+- Periods: this month, last month, this quarter, this financial year, last 12
+  months; compared like for like (1–10 Oct against 1–10 Sep).
+- One permission per card, `<card> dashboard-widgets`. The cards, their names
+  and descriptions are in `config/dashboard.php`; the roles screen lists them
+  under "Dashboard cards". Profit and the bank balance are for Admin and
+  Accountant by default.
+- Figures are saved per business for up to 10 minutes and refreshed as soon
+  as anything is posted (`DashboardCache`). The lower cards load just after
+  the page (`App\Livewire\Dashboard\LowerCards`).
+- Chart colours are in `config/brand.php` (`chart`), checked for colour
+  blindness in light and dark mode. Income is blue, expenses ochre; green
+  and red are for status only.
+
 ## Look and brand
 
 MyBooks uses one main colour, navy `#1F4E79`, with a muted ochre accent for
