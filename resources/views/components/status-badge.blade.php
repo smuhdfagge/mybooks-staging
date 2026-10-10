@@ -29,9 +29,16 @@
         'queued' => 'badge-warning',
         'sending' => 'badge-warning',
         'pending' => 'badge-warning',
+        'paid' => 'badge-success',
+        'unpaid' => 'badge-warning',
+        'partial' => 'badge-warning',
+        'overdue' => 'badge-danger',
+        'posted' => 'badge-success',
+        'inactive' => 'badge-muted',
     ];
+    $labels = ['partial' => 'Part paid'];
 @endphp
 
 <span {{ $attributes->merge(['class' => 'badge '.($colours[$status] ?? $colours['draft'])]) }}>
-    {{ $label ?? ucwords(str_replace('_', ' ', $status)) }}
+    {{ $label ?? $labels[$status] ?? ucfirst(str_replace('_', ' ', $status)) }}
 </span>

@@ -1,178 +1,162 @@
-<div class="relative">
-    <x-table-loading />
+{{-- Invoices list (tables plan T1): the pilot for every list in MyBooks. --}}
+@php
+    $user = auth()->user();
+    $pageIds = $invoices->pluck('id')->map(fn ($id) => (string) $id)->all();
+    $pageTicked = $pageIds && ! array_diff($pageIds, $selectedItems);
+    $someTicked = (bool) array_intersect($pageIds, $selectedItems);
+    $money = fn ($v) => number_format((float) $v, 2);
+    $date = fn ($d) => $d ? $d->format('j M Y') : '—';
+    $open = fn ($inv) => in_array($inv->status, ['sent', 'unpaid', 'partial', 'overdue'], true) && $inv->balance_due > 0;
+    $late = fn ($inv) => $open($inv) && $inv->due_date && $inv->due_date->lt($today);
+    $badge = fn ($inv) => $late($inv) ? 'overdue' : $inv->status;
+    $canBulk = $user->canAny(['send invoices', 'edit invoices', 'delete invoices']);
+@endphp
+<div class="relative space-y-3">
     <x-flash-messages :successMessage="$successMessage" :errorMessage="$errorMessage" />
 
-    <!-- Filters -->
-    <div class="mb-4 sm:mb-6 bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <div class="sm:col-span-2 lg:col-span-1">
-                <label class="form-label">Search</label>
-                <input aria-label="Search invoices" type="text" wire:model.live.debounce.300ms="search" placeholder="Search invoices..."
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-            </div>
-            <div>
-                <label for="status" class="form-label">Status</label>
-                <select id="status" wire:model.live="status" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-                    <option value="">All Status</option>
-                    <option value="draft">Draft</option>
-                    <option value="sent">Sent</option>
-                    <option value="unpaid">Unpaid</option>
-                    <option value="paid">Paid</option>
-                    <option value="overdue">Overdue</option>
-                    <option value="cancelled">Cancelled</option>
-                </select>
-            </div>
-            <div>
-                <label for="dateRange" class="form-label">Date Range</label>
-                <select id="dateRange" wire:model.live="dateRange" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-                    <option value="">All Time</option>
-                    <option value="today">Today</option>
-                    <option value="week">This Week</option>
-                    <option value="month">This Month</option>
-                    <option value="year">This Year</option>
-                </select>
-            </div>
-            <div>
-                <label for="perPage" class="form-label">Per Page</label>
-                <select id="perPage" wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-                    <option value="10">10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                </select>
-            </div>
-        </div>
-    </div>
+    <x-table.tabs :tabs="$tabs" :active="$tab" model="tab" />
 
-    <!-- Bulk Actions -->
-    @if(count($selectedItems) > 0)
-        <div class="mb-4 bg-brand-50 dark:bg-brand-900/50 border border-brand-200 dark:border-brand-700 rounded-lg p-3 sm:p-4">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <span class="text-sm text-brand-700 dark:text-brand-300">
-                    <span class="font-semibold">{{ count($selectedItems) }}</span> invoice(s) selected
-                </span>
-                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                    <select aria-label="Bulk action" wire:model="bulkAction" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-                        <option value="">Select Action</option>
-                        <option value="mark_sent">Mark as Sent</option>
-                        <option value="mark_cancelled">Mark as Cancelled</option>
-                        <option value="delete">Delete</option>
-                    </select>
-                    <button wire:click="applyBulkAction" wire:loading.attr="disabled" wire:confirm="Are you sure you want to perform this action on the selected invoices?"
-                        class="inline-flex items-center justify-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                        Apply
+    <x-table.toolbar placeholder="Search number, customer or amount" :selected="count($selectedItems)" :filtered="$filtered">
+        <x-slot name="filters">
+            <x-table.select model="period" label="Date" :options="$periods" />
+            <label class="inline-flex items-center">
+                <span class="sr-only">Customer</span>
+                <select wire:model.live="customer" class="h-9 max-w-[14rem] rounded-md border-gray-300 py-0 pl-2.5 pr-8 text-[13px] font-medium text-gray-800 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200">
+                    <option value="">Customer: All</option>
+                    @foreach ($customers as $id => $name)
+                        <option value="{{ $id }}">{{ $name }}</option>
+                    @endforeach
+                </select>
+            </label>
+        </x-slot>
+        @if ($canBulk)
+            <x-slot name="bulk">
+                @can('send invoices')<x-table.bulk-button action="mark_sent" confirm="Mark the ticked draft invoices as sent? This posts them to the books.">Mark as sent</x-table.bulk-button>@endcan
+                @can('edit invoices')<x-table.bulk-button action="mark_cancelled" confirm="Cancel the ticked invoices? Invoices with payments are skipped.">Cancel</x-table.bulk-button>@endcan
+                @can('delete invoices')<x-table.bulk-button action="delete" danger confirm="Delete the ticked invoices? This can't be undone.">Delete</x-table.bulk-button>@endcan
+                @if ($pageTicked && $invoices->total() > count($selectedItems))
+                    <button type="button" wire:click="selectAllMatching" class="text-sm font-medium text-brand-700 hover:underline dark:text-brand-300">
+                        Tick all {{ number_format(min($invoices->total(), 1000)) }}{{ $invoices->total() > 1000 ? ' (the first 1,000)' : '' }}
                     </button>
-                    <button wire:click="$set('selectedItems', [])" 
-                        class="inline-flex items-center justify-center px-4 py-2 bg-gray-200 dark:bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-gray-700 dark:text-gray-200 uppercase tracking-widest hover:bg-gray-300 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                        Clear Selection
-                    </button>
-                </div>
-            </div>
-        </div>
-    @endif
+                @endif
+            </x-slot>
+        @endif
+    </x-table.toolbar>
 
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead class="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                        <th scope="col" class="px-4 sm:px-6 py-3 text-left">
-                            <input aria-label="Select all" type="checkbox" wire:model.live="selectAll" 
-                                class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
+    <div class="relative">
+        {{-- Loading: a light veil over the rows while Livewire fetches. --}}
+        <div wire:loading.delay.class.remove="hidden" class="hidden absolute inset-0 z-10 rounded-lg bg-white/50 dark:bg-gray-900/40" aria-hidden="true"></div>
+
+        @if ($invoices->isEmpty())
+            <div class="tbl-wrap">
+                @if ($filtered || $tab !== '')
+                    <x-table.empty filtered title="No invoices match these filters" />
+                @else
+                    <x-table.empty title="No invoices yet" text="Invoices you create appear here, with what each customer still owes.">
+                        @can('create invoices')<a href="{{ route('invoices.create') }}" class="btn-new">New invoice</a>@endcan
+                    </x-table.empty>
+                @endif
+            </div>
+        @else
+            {{-- Computer: the table --}}
+            <x-table caption="Invoices" class="hidden md:block">
+                <x-slot name="head">
+                    @if ($canBulk)
+                        <th scope="col" class="tbl-check">
+                            <input type="checkbox" class="tbl-checkbox" aria-label="Tick every invoice on this page"
+                                @checked($pageTicked) x-init="$el.indeterminate = {{ $someTicked && ! $pageTicked ? 'true' : 'false' }}"
+                                wire:click="selectPage({{ json_encode($pageIds) }}, $event.target.checked)">
                         </th>
-                        <x-sort-header field="invoice_number" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Invoice #</x-sort-header>
-                        <th scope="col" class="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Customer</th>
-                        <x-sort-header field="invoice_date" :sort-field="$sortField" :sort-direction="$sortDirection" class="hidden md:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Date</x-sort-header>
-                        <th scope="col" class="hidden lg:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Due Date</th>
-                        <x-sort-header field="total" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Amount</x-sort-header>
-                        <th scope="col" class="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                        <th scope="col" class="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    @forelse($invoices as $invoice)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 {{ in_array($invoice->id, $selectedItems) ? 'bg-brand-50 dark:bg-brand-900/20' : '' }}">
-                            <td class="px-4 sm:px-6 py-4">
-                                <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $invoice->id }}"
-                                    class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
+                    @endif
+                    <x-table.th field="invoice_number" :sort="[$sortField, $sortDirection]">Number</x-table.th>
+                    <x-table.th>Customer</x-table.th>
+                    <x-table.th field="invoice_date" :sort="[$sortField, $sortDirection]">Date</x-table.th>
+                    <x-table.th field="due_date" :sort="[$sortField, $sortDirection]">Due</x-table.th>
+                    <x-table.th field="total" :sort="[$sortField, $sortDirection]" num>Amount</x-table.th>
+                    <x-table.th field="balance_due" :sort="[$sortField, $sortDirection]" num>Balance due</x-table.th>
+                    <x-table.th>Status</x-table.th>
+                    <th scope="col" class="tbl-menu"><span class="sr-only">Actions</span></th>
+                </x-slot>
+
+                @foreach ($invoices as $invoice)
+                    @php $ticked = in_array((string) $invoice->id, $selectedItems, true); @endphp
+                    <tr wire:key="inv-{{ $invoice->id }}" @if ($ticked) data-picked @endif>
+                        @if ($canBulk)
+                            <td class="tbl-check">
+                                <input type="checkbox" class="tbl-checkbox" wire:model.live="selectedItems" value="{{ $invoice->id }}" aria-label="Tick {{ $invoice->invoice_number }}">
                             </td>
-                            <td class="px-4 sm:px-6 py-4">
-                                <div class="text-sm font-medium text-brand-600 dark:text-brand-300">{{ $invoice->invoice_number }}</div>
-                                <div class="sm:hidden text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $invoice->customer?->name ?? '-' }}</div>
-                            </td>
-                            <td class="hidden sm:table-cell px-4 sm:px-6 py-4">
-                                <div class="text-sm text-gray-900 dark:text-white truncate max-w-[150px]">{{ $invoice->customer?->name ?? '-' }}</div>
-                            </td>
-                            <td class="hidden md:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $invoice->invoice_date?->format('M d, Y') }}</td>
-                            <td class="hidden lg:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $invoice->due_date?->format('M d, Y') }}</td>
-                            <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-right">
-                                <div class="font-medium text-gray-900 dark:text-white">@money($invoice->total)</div>
-                                @if($invoice->balance_due > 0)
-                                    <div class="text-xs text-red-600 dark:text-red-300">Due: @money($invoice->balance_due)</div>
+                        @endif
+                        <td><a href="{{ route('invoices.show', $invoice) }}" class="tbl-link">{{ $invoice->invoice_number }}</a></td>
+                        <td class="max-w-[16rem] truncate">{{ $invoice->customer?->name ?? '—' }}</td>
+                        <td class="tbl-muted">{{ $date($invoice->invoice_date) }}</td>
+                        <td class="{{ $late($invoice) ? 'tbl-late' : 'tbl-muted' }}">{{ $date($invoice->due_date) }}</td>
+                        <td class="num">{{ $money($invoice->total) }}</td>
+                        <td class="num {{ $invoice->balance_due > 0 ? '' : 'tbl-zero' }}">{{ $invoice->balance_due > 0 ? $money($invoice->balance_due) : '—' }}</td>
+                        <td><x-status-badge :status="$badge($invoice)" /></td>
+                        <td class="tbl-menu">
+                            <x-table.dropdown :sr-label="'Actions for '.$invoice->invoice_number">
+                                <x-table.menu-item :href="route('invoices.show', $invoice)">View</x-table.menu-item>
+                                <x-table.menu-item :href="route('invoices.print', $invoice)" new-tab>Print</x-table.menu-item>
+                                @if ($invoice->status === 'draft' && $user->can('send invoices'))
+                                    <x-table.menu-item :post="route('invoices.send', $invoice)">Send</x-table.menu-item>
                                 @endif
-                            </td>
-                            <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-center">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                    {{ $invoice->status === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' : '' }}
-                                    {{ $invoice->status === 'sent' ? 'bg-brand-100 text-brand-800 dark:bg-brand-800 dark:text-brand-100' : '' }}
-                                    {{ $invoice->status === 'draft' ? 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300' : '' }}
-                                    {{ $invoice->status === 'unpaid' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100' : '' }}
-                                    {{ $invoice->status === 'overdue' ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100' : '' }}
-                                    {{ $invoice->status === 'cancelled' ? 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400' : '' }}">
-                                    {{ ucfirst($invoice->status) }}
-                                </span>
-                            </td>
-                            <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <div class="flex items-center justify-end space-x-1 sm:space-x-2">
-                                    <a href="{{ route('invoices.show', $invoice) }}" class="p-1 text-brand-600 hover:text-brand-900 dark:text-brand-300" title="View" aria-label="View">
-                                        <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                    </a>
-                                    <a href="{{ route('invoices.print', $invoice) }}" class="p-1 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200" title="Print" aria-label="Print" target="_blank">
-                                        <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                                    </a>
-                                    <a href="{{ route('invoices.edit', $invoice) }}" class="p-1 text-yellow-700 hover:text-yellow-900 dark:text-yellow-400" title="Edit" aria-label="Edit">
-                                        <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                    </a>
-                                    @if($invoice->status === 'draft')
-                                    <button wire:click="sendInvoice({{ $invoice->id }})" class="p-1 text-green-700 hover:text-green-900 dark:text-green-400" title="Send" aria-label="Send">
-                                        <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-                                    </button>
-                                    @endif
-                                    @if($invoice->status === 'paid' && !$invoice->released_at)
-                                    <form action="{{ route('invoices.release', $invoice) }}" method="POST" class="inline" data-confirm="Release this invoice and deduct inventory?">
-                                        @csrf
-                                        <button type="submit" class="p-1 text-accent-700 hover:text-accent-900 dark:text-accent-300" title="Release & Deduct Inventory" aria-label="Release & Deduct Inventory">
-                                            <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
-                                        </button>
-                                    </form>
-                                    @endif
-                                    @if($invoice->released_at)
-                                    <a href="{{ route('invoices.waybill', $invoice) }}" class="p-1 text-brand-600 hover:text-brand-900 dark:text-brand-300" title="View Waybill" aria-label="View Waybill" target="_blank">
-                                        <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                    </a>
-                                    @endif
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="8" class="px-4 sm:px-6 py-12 text-center">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No invoices found</h3>
-                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new invoice.</p>
-                                <div class="mt-6">
-                                    <a href="{{ route('invoices.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700">
-                                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                        Create Invoice
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        @if($invoices->hasPages())
-            <div class="bg-white dark:bg-gray-800 px-4 py-3 border-t border-gray-200 dark:border-gray-700 sm:px-6">{{ $invoices->links() }}</div>
+                                @if ($open($invoice) && $user->can('create payments-received'))
+                                    <x-table.menu-item :href="route('payments-received.create', ['invoice_id' => $invoice->id])">Record payment</x-table.menu-item>
+                                @endif
+                                @if ($invoice->status !== 'paid' && $user->can('edit invoices'))
+                                    <x-table.menu-item :href="route('invoices.edit', $invoice)">Edit</x-table.menu-item>
+                                @endif
+                                @if ($invoice->status === 'paid' && ! $invoice->released_at && $user->can('edit invoices'))
+                                    <x-table.menu-item :post="route('invoices.release', $invoice)" confirm="Release this invoice and take the items out of stock?">Release and deduct stock</x-table.menu-item>
+                                @endif
+                                @if ($invoice->released_at)
+                                    <x-table.menu-item :href="route('invoices.waybill', $invoice)" new-tab>Waybill</x-table.menu-item>
+                                @endif
+                                @can('delete invoices')
+                                    <x-table.menu-item wire="deleteOne({{ $invoice->id }})" :confirm="'Delete '.$invoice->invoice_number.'? This can\'t be undone.'" danger>Delete</x-table.menu-item>
+                                @endcan
+                            </x-table.dropdown>
+                        </td>
+                    </tr>
+                @endforeach
+
+                <x-slot name="foot">
+                    <tr>
+                        @if ($canBulk)<td></td>@endif
+                        <td colspan="4">Total of {{ number_format($totals->n) }} {{ $totals->n == 1 ? 'invoice' : 'invoices' }}@if ($filtered || $tab !== '') <span class="font-normal text-gray-600 dark:text-gray-400">(this filter)</span>@endif</td>
+                        <td class="num">{{ $money($totals->total) }}</td>
+                        <td class="num">{{ $money($totals->balance) }}</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </x-slot>
+            </x-table>
+
+            {{-- Phone: one card per invoice --}}
+            <ul class="space-y-2 md:hidden" aria-label="Invoices">
+                @foreach ($invoices as $invoice)
+                    @php
+                        $part = $invoice->status === 'partial' || ($open($invoice) && $invoice->amount_paid > 0);
+                    @endphp
+                    <li wire:key="inv-card-{{ $invoice->id }}">
+                        <x-table.card :href="route('invoices.show', $invoice)" :title="$invoice->customer?->name ?? '—'"
+                            :amount="\App\Support\Money::format($invoice->total)"
+                            :meta="$invoice->invoice_number.' · '.($invoice->status === 'draft' ? 'Not sent' : $date($invoice->invoice_date))"
+                            :tone="$late($invoice) ? 'bad' : 'muted'">
+                            <x-slot name="badge"><x-status-badge :status="$badge($invoice)" /></x-slot>
+                            @if ($late($invoice))
+                                <x-slot name="alert">Due {{ $date($invoice->due_date) }} · {{ \App\Support\Money::format($invoice->balance_due) }} to pay</x-slot>
+                            @elseif ($part)
+                                <x-slot name="alert">{{ \App\Support\Money::format($invoice->balance_due) }} still to pay</x-slot>
+                            @endif
+                        </x-table.card>
+                    </li>
+                @endforeach
+            </ul>
+            <p class="text-sm font-medium text-gray-700 md:hidden dark:text-gray-300">
+                Total {{ \App\Support\Money::format($totals->total) }} · {{ \App\Support\Money::format($totals->balance) }} to collect
+            </p>
         @endif
     </div>
+
+    <x-table.footer :rows="$invoices" />
 </div>

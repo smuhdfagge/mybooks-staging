@@ -133,3 +133,55 @@
 html.dark .dark\:text-gray-400 {
     color: #AAB2BE;
 }
+
+/* ── Tables (tables plan, session T1) ─────────────────────────────────────
+   One look for every table. Use the <x-table.*> components; these classes
+   are what they render. Rules: sentence-case headers on a light band, one
+   text size and row height, numbers right-aligned with even-width digits,
+   zero as a muted dash, one "⋯" menu per row. */
+@layer components {
+    .tbl-wrap {
+        @apply rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800;
+    }
+    .tbl-scroll {
+        @apply overflow-x-auto rounded-lg;
+    }
+    .tbl {
+        @apply min-w-full border-separate border-spacing-0 text-sm text-gray-900 dark:text-gray-100;
+    }
+    .tbl thead th {
+        @apply sticky top-0 z-[1] whitespace-nowrap border-b border-gray-200 bg-gray-50 px-3 py-2.5 align-middle text-left text-[13px] font-semibold text-gray-600 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-300;
+    }
+    .tbl thead th:first-child { @apply rounded-tl-lg; }
+    .tbl thead th:last-child { @apply rounded-tr-lg; }
+    .tbl tbody td {
+        @apply whitespace-nowrap border-b border-gray-100 px-3 py-2.5 align-middle dark:border-gray-700/70;
+    }
+    .tbl tbody tr:last-child td { @apply border-b-0; }
+    .tbl tbody tr:hover td { @apply bg-gray-50 dark:bg-gray-700/40; }
+    .tbl tbody tr[data-picked] td { @apply bg-brand-50 dark:bg-brand-900/30; }
+    .tbl tfoot td {
+        @apply border-t border-gray-200 bg-gray-50 px-3 py-2.5 font-semibold dark:border-gray-700 dark:bg-gray-900/40;
+    }
+    .tbl tfoot tr:last-child td:first-child { @apply rounded-bl-lg; }
+    .tbl tfoot tr:last-child td:last-child { @apply rounded-br-lg; }
+    .tbl .num { @apply text-right tabular-nums; }
+    .tbl .tbl-check { @apply w-10 pr-0; }
+    .tbl .tbl-menu { @apply w-12 text-right; }
+    .tbl-link {
+        @apply font-semibold text-brand-700 hover:text-brand-900 hover:underline focus:outline-none focus-visible:underline dark:text-brand-300 dark:hover:text-brand-200;
+    }
+    .tbl-muted { @apply text-gray-600 dark:text-gray-400; }
+    .tbl-zero { @apply text-gray-500 dark:text-gray-400; }
+    .tbl-late { @apply font-medium text-red-700 dark:text-red-300; }
+    .tbl-checkbox {
+        @apply h-4 w-4 rounded border-gray-400 text-brand-600 focus:ring-brand-500 dark:border-gray-500 dark:bg-gray-700;
+    }
+    /* The main button on a list page ("+ New invoice"): sentence case. */
+    .btn-new {
+        @apply inline-flex h-9 items-center gap-1.5 rounded-md bg-brand-600 px-3.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900;
+    }
+    .tbl-chip {
+        @apply inline-flex h-8 items-center gap-1.5 rounded-md border border-gray-300 bg-white px-2.5 text-[13px] font-medium text-gray-800 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200;
+    }
+}
