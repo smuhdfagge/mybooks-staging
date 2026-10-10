@@ -4,68 +4,112 @@ namespace App\Livewire\ActivityLogs;
 
 use App\Jobs\ProcessExport;
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ListTable;
 use App\Models\ActivityLog;
 use App\Models\Export;
 use App\Models\User;
+use App\Services\Dashboard\DashboardService;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/**
+ * Activity log (tables plan T5): who did what, newest first. Tabs group the
+ * actions into changes to records, sign-ins and security.
+ */
 class ActivityLogsTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
+    use ChecksPermissions, ListTable;
 
-    public $search = '';
+    public string $period = '';
 
-    public $userId = '';
+    public string $user = '';
 
-    public $action = '';
-
-    public $modelType = '';
-
-    public $startDate = '';
-
-    public $endDate = '';
-
-    public $perPage = 25;
+    public string $module = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'userId' => ['except' => ''],
-        'action' => ['except' => ''],
-        'modelType' => ['except' => ''],
-        'startDate' => ['except' => ''],
-        'endDate' => ['except' => ''],
+        'tab' => ['except' => '', 'as' => 'show'],
+        'period' => ['except' => ''],
+        'user' => ['except' => ''],
+        'module' => ['except' => ''],
     ];
 
-    public function updatingSearch()
+    public const LABELS = ['changes' => 'Changes', 'signins' => 'Sign-ins', 'security' => 'Security'];
+
+    /** Tab => the actions it holds. Anything else (sent, paid, exported…) shows under All. */
+    public const GROUPS = [
+        'changes' => [ActivityLog::ACTION_CREATED, ActivityLog::ACTION_UPDATED, ActivityLog::ACTION_DELETED, ActivityLog::ACTION_RESTORED],
+        'signins' => [ActivityLog::ACTION_LOGIN, ActivityLog::ACTION_LOGOUT, ActivityLog::ACTION_LOGIN_FAILED],
+        'security' => [
+            ActivityLog::ACTION_PASSWORD_RESET, ActivityLog::ACTION_PASSWORD_CHANGED, ActivityLog::ACTION_2FA_ENABLED, ActivityLog::ACTION_2FA_DISABLED,
+            ActivityLog::ACTION_ROLE_CHANGED, ActivityLog::ACTION_PERMISSION_CHANGED, ActivityLog::ACTION_ACCOUNT_LOCKED, ActivityLog::ACTION_ACCOUNT_UNLOCKED,
+            ActivityLog::ACTION_API_TOKEN_CREATED, ActivityLog::ACTION_API_TOKEN_REVOKED, ActivityLog::ACTION_SUSPICIOUS_ACTIVITY,
+        ],
+    ];
+
+    /** Actions worth a second look; their count turns the tab red. */
+    private const WARN = [ActivityLog::ACTION_LOGIN_FAILED, ActivityLog::ACTION_SUSPICIOUS_ACTIVITY, ActivityLog::ACTION_ACCOUNT_LOCKED];
+
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['created_at'];
     }
 
-    public function updatingUserId()
+    protected function filterProperties(): array
     {
-        $this->resetPage();
+        return ['period', 'user', 'module'];
     }
 
-    public function updatingAction()
+    protected function baseQuery(): Builder
     {
-        $this->resetPage();
+        $query = ActivityLog::query()->where('tenant_id', auth()->user()->tenant_id);
+        if (($term = trim($this->search)) !== '') {
+            $query->where(fn ($q) => $q->where('description', 'like', "%{$term}%")
+                ->orWhere('model_name', 'like', "%{$term}%")
+                ->orWhere('user_name', 'like', "%{$term}%"));
+        }
+        if ($this->user !== '' && ctype_digit($this->user)) {
+            $query->where('user_id', (int) $this->user);
+        }
+        if ($this->module !== '') {
+            $query->whereIn('model_type', $this->modelTypes()->filter(fn ($t) => class_basename($t) === $this->module)->values()->all());
+        }
+
+        return $this->applyPeriod($query, 'created_at', $this->period);
     }
 
-    public function updatingModelType()
+    protected function applyTab(Builder $query, string $tab): Builder
     {
-        $this->resetPage();
+        return array_key_exists($tab, self::GROUPS) ? $query->whereIn('action', self::GROUPS[$tab]) : $query;
     }
 
-    public function updatingPerPage()
+    /** @return array<string, array{label: string, count: int, alert: bool}> one grouped query */
+    private function tabs(): array
     {
-        $this->resetPage();
+        $counts = $this->baseQuery()->toBase()->selectRaw('action, COUNT(*) as n')->groupBy('action')->pluck('n', 'action')->map(fn ($n) => (int) $n);
+
+        $tabs = ['' => ['label' => 'All', 'count' => (int) $counts->sum(), 'alert' => false]];
+        foreach (self::LABELS as $key => $label) {
+            $actions = self::GROUPS[$key];
+            $warn = (int) $counts->only(array_intersect($actions, self::WARN))->sum();
+            $tabs[$key] = ['label' => $label, 'count' => (int) $counts->only($actions)->sum(), 'alert' => $warn > 0];
+        }
+
+        return $tabs;
     }
 
-    public function clearFilters()
+    /** @return Collection<int, string> full class names seen in this business's log */
+    private function modelTypes(): Collection
     {
-        $this->reset(['search', 'userId', 'action', 'modelType', 'startDate', 'endDate']);
+        return once(fn () => ActivityLog::where('tenant_id', auth()->user()->tenant_id)->whereNotNull('model_type')->distinct()->pluck('model_type'));
+    }
+
+    /** Row menu: show only what this person did. */
+    public function onlyUser(int $id): void
+    {
+        $this->user = (string) $id;
         $this->resetPage();
     }
 
@@ -73,16 +117,19 @@ class ActivityLogsTable extends Component
     {
         $this->requirePermission('view settings');
 
+        $from = $to = null;
+        if ($this->period !== '' && array_key_exists($this->period, self::periodOptions())) {
+            $p = app(DashboardService::class)->period((int) auth()->user()->tenant_id, $this->period, 'none');
+            [$from, $to] = [$p->from->toDateString(), $p->to->toDateString()];
+        }
+
         $export = Export::create([
             'tenant_id' => auth()->user()->tenant_id,
             'user_id' => auth()->id(),
             'type' => Export::TYPE_ACTIVITY_LOGS,
-            'format' => $format,
+            'format' => in_array($format, ['csv', 'json'], true) ? $format : 'csv',
             'status' => Export::STATUS_PENDING,
-            'options' => [
-                'date_from' => $this->startDate ?: null,
-                'date_to' => $this->endDate ?: null,
-            ],
+            'options' => ['date_from' => $from, 'date_to' => $to],
         ]);
 
         // Built on the queue (P3).
@@ -97,58 +144,14 @@ class ActivityLogsTable extends Component
     {
         $tenantId = auth()->user()->tenant_id;
 
-        $query = ActivityLog::where('tenant_id', $tenantId)
-            ->with('user')
-            ->orderBy('created_at', 'desc');
-
-        if ($this->search) {
-            $query->where(function ($q) {
-                $q->where('description', 'like', "%{$this->search}%")
-                    ->orWhere('model_name', 'like', "%{$this->search}%")
-                    ->orWhere('user_name', 'like', "%{$this->search}%");
-            });
-        }
-
-        if ($this->userId) {
-            $query->where('user_id', $this->userId);
-        }
-
-        if ($this->action) {
-            $query->where('action', $this->action);
-        }
-
-        if ($this->modelType) {
-            $query->where('model_type', 'like', '%'.$this->modelType);
-        }
-
-        if ($this->startDate) {
-            $query->whereDate('created_at', '>=', $this->startDate);
-        }
-
-        if ($this->endDate) {
-            $query->whereDate('created_at', '<=', $this->endDate);
-        }
-
-        $logs = $query->paginate($this->pageSize());
-
-        // Get filter options
-        $users = User::where('tenant_id', $tenantId)->orderBy('name')->get();
-
-        $actions = ActivityLog::where('tenant_id', $tenantId)
-            ->distinct()
-            ->pluck('action')
-            ->sort()
-            ->values();
-
-        $modelTypes = ActivityLog::where('tenant_id', $tenantId)
-            ->whereNotNull('model_type')
-            ->distinct()
-            ->pluck('model_type')
-            ->map(fn ($type) => class_basename($type))
-            ->unique()
-            ->sort()
-            ->values();
-
-        return view('livewire.activity-logs.activity-logs-table', compact('logs', 'users', 'actions', 'modelTypes'));
+        return view('livewire.activity-logs.activity-logs-table', [
+            'logs' => $this->rows(),
+            'tabs' => $this->tabs(),
+            'users' => User::where('tenant_id', $tenantId)->orderBy('name')->pluck('name', 'id'),
+            'modules' => $this->modelTypes()->map(fn ($type) => class_basename($type))->unique()->sort()->values()
+                ->mapWithKeys(fn ($m) => [$m => Str::headline($m)]),
+            'periods' => self::periodOptions(),
+            'filtered' => $this->isFiltered(),
+        ]);
     }
 }

@@ -2,11 +2,13 @@
 
 namespace Tests\Feature\Tables;
 
+use App\Livewire\ActivityLogs\ActivityLogsTable;
 use App\Livewire\Banks\BanksTable;
 use App\Livewire\Bills\BillsTable;
 use App\Livewire\Budgets\BudgetsTable;
 use App\Livewire\ChartOfAccounts\ChartOfAccountsTable;
 use App\Livewire\Customers\CustomersTable;
+use App\Livewire\Employees\EmployeesTable;
 use App\Livewire\Invoices\InvoicesTable;
 use App\Livewire\Items\ItemsTable;
 use App\Livewire\PaymentsMade\PaymentsMadeTable;
@@ -14,18 +16,24 @@ use App\Livewire\PaymentsReceived\PaymentsReceivedTable;
 use App\Livewire\RecurrentBills\RecurrentBillsTable;
 use App\Livewire\TaxGroups\TaxGroupsTable;
 use App\Livewire\Vendors\VendorsTable;
+use App\Models\ActivityLog;
+use App\Models\AdminUser;
 use App\Models\Bank;
 use App\Models\Bill;
 use App\Models\Budget;
 use App\Models\ChartOfAccount;
 use App\Models\Customer;
+use App\Models\Employee;
 use App\Models\Inventory;
 use App\Models\Invoice;
 use App\Models\Item;
 use App\Models\PaymentMade;
 use App\Models\PaymentReceived;
+use App\Models\Payroll;
+use App\Models\PayrollBatch;
 use App\Models\RecurrentBill;
 use App\Models\TaxGroup;
+use App\Models\Tenant;
 use App\Models\Vendor;
 use App\Models\VendorAdvanceApplication;
 use App\Models\Warehouse;
@@ -464,6 +472,97 @@ class TableDesignTest extends TestCase
             $html = $this->get(route($list.'.index'))->assertOk()->getContent();
             $this->assertStringContainsString('tbl-', $html, $list);
             $this->assertStringNotContainsString('uppercase tracking-wider', $html, $list);
+        }
+    }
+
+    // ---- T5: payroll, HR, settings and admin lists ----
+
+    private function employee(string $first, string $status): Employee
+    {
+        return Employee::withoutEvents(fn () => Employee::create([
+            'tenant_id' => $this->tenant->id, 'employee_id' => 'EMP-'.$first, 'first_name' => $first, 'last_name' => 'Bello',
+            'email' => strtolower($first).'@example.com', 'hire_date' => now()->subYear(), 'status' => $status,
+        ]));
+    }
+
+    public function test_employees_tabs_put_people_who_left_together_and_keep_paid_staff(): void
+    {
+        $this->createSuperAdmin();
+        $amina = $this->employee('Amina', 'active');
+        $this->employee('Bayo', 'on-leave');
+        $this->employee('Chidi', 'terminated');
+        $this->employee('Dauda', 'resigned');
+        $batch = PayrollBatch::create(['tenant_id' => $this->tenant->id, 'batch_number' => 'PBN-T5', 'pay_period_start' => now()->startOfMonth(),
+            'pay_period_end' => now()->endOfMonth(), 'status' => PayrollBatch::STATUS_PAID, 'created_by' => $this->user->id]);
+        Payroll::withoutEvents(fn () => Payroll::create([
+            'tenant_id' => $this->tenant->id, 'employee_id' => $amina->id, 'payroll_batch_id' => $batch->id, 'payroll_number' => 'PAY-T5',
+            'pay_period_start' => now()->startOfMonth(), 'pay_period_end' => now()->endOfMonth(), 'pay_date' => now(),
+            'basic_salary' => 1000, 'gross_salary' => 1000, 'total_deductions' => 0, 'net_salary' => 1000, 'status' => 'paid', 'created_by' => $this->user->id,
+        ]));
+
+        $list = Livewire::test(EmployeesTable::class)
+            ->assertViewHas('tabs', fn ($t) => $t['']['count'] === 4 && $t['active']['count'] === 1 && $t['on-leave']['count'] === 1 && $t['left']['count'] === 2)
+            ->set('tab', 'left')->assertSee('Chidi')->assertSee('Dauda')->assertDontSee('Amina');
+
+        // Searching a full name matches first and last name together.
+        $list->set('tab', '')->set('search', 'Bayo Bello')->assertSee('Bayo')->assertDontSee('Chidi');
+
+        // Someone paid through payroll is kept; "back at work" only moves people on leave.
+        $list->call('deleteOne', $amina->id)->assertSet('errorMessage', fn ($m) => str_contains($m, 'paid through payroll'));
+        $this->assertNotNull($amina->fresh());
+        $ids = Employee::pluck('id')->map(fn ($id) => (string) $id)->all();
+        $list->set('selectedItems', $ids)->set('bulkAction', 'activate')->call('applyBulkAction');
+        $this->assertSame(['active', 'active', 'terminated', 'resigned'], Employee::orderBy('first_name')->pluck('status')->all());
+    }
+
+    public function test_activity_log_tabs_group_actions_and_filter_by_record(): void
+    {
+        $this->createSuperAdmin();
+        $log = fn (string $action, ?string $type, string $text) => ActivityLog::create([
+            'tenant_id' => $this->tenant->id, 'user_id' => $this->user->id, 'user_name' => $this->user->name,
+            'action' => $action, 'model_type' => $type, 'model_name' => null, 'description' => 'T5LOG '.$text,
+        ]);
+        $log(ActivityLog::ACTION_CREATED, Invoice::class, 'made an invoice');
+        $log(ActivityLog::ACTION_UPDATED, Customer::class, 'changed a customer');
+        $log(ActivityLog::ACTION_LOGIN, null, 'signed in');
+        $log(ActivityLog::ACTION_LOGIN_FAILED, null, 'wrong password');
+        $log(ActivityLog::ACTION_PASSWORD_CHANGED, null, 'new password');
+
+        Livewire::test(ActivityLogsTable::class)->set('search', 'T5LOG')
+            ->assertViewHas('tabs', fn ($t) => $t['']['count'] === 5 && $t['changes']['count'] === 2 && $t['signins']['count'] === 2
+                && $t['signins']['alert'] && $t['security']['count'] === 1 && ! $t['security']['alert'])
+            ->assertSee('Failed sign-in')
+            ->set('module', 'Invoice')->assertSee('made an invoice')->assertDontSee('changed a customer')
+            ->set('module', '')->set('tab', 'signins')->assertSee('wrong password')->assertDontSee('new password');
+    }
+
+    public function test_admin_businesses_list_has_status_tabs_with_counts(): void
+    {
+        $this->createSuperAdmin();
+        Tenant::withoutEvents(fn () => Tenant::factory()->create(['name' => 'Zaria Mills']));
+        $admin = AdminUser::create(['name' => 'Ops', 'email' => 'ops-t5@example.com', 'password' => 'Secret-123!', 'is_active' => true, 'role' => 'super_admin']);
+
+        $html = $this->actingAsPlatformAdmin($admin)->get(route('admin.tenants.list', ['status' => 'no_subscription']))->assertOk()
+            ->assertSee('Zaria Mills')->assertDontSee($this->tenant->name)->getContent();
+        $this->assertStringContainsString('tbl-', $html);
+        $this->assertMatchesRegularExpression('/No plan\s*<span[^>]*>1</', $html);
+
+        foreach (['admin.users.index', 'admin.data-requests.index', 'admin.messaging.index'] as $page) {
+            $html = $this->actingAsPlatformAdmin($admin)->get(route($page))->assertOk()->getContent();
+            $this->assertStringContainsString('tbl-', $html, $page);
+            $this->assertStringNotContainsString('bg-gray-750', $html, $page);
+        }
+    }
+
+    public function test_every_payroll_hr_and_settings_page_uses_the_shared_design(): void
+    {
+        $this->createSuperAdmin();
+        foreach (['employees.index', 'departments.index', 'designations.index', 'leaves.index', 'leave-types.index', 'payroll.index',
+            'salary-structures.index', 'allowances.index', 'deductions.index', 'payroll.liabilities', 'payroll.tax-templates',
+            'settings.users', 'settings.roles', 'activity-logs.index', 'imports.index', 'exports.index'] as $page) {
+            $html = $this->get(route($page))->assertOk()->getContent();
+            $this->assertStringContainsString('tbl-', $html, $page);
+            $this->assertStringNotContainsString('uppercase tracking-wider', $html, $page);
         }
     }
 }

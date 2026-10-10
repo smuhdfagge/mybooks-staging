@@ -3,14 +3,19 @@
 namespace Tests\Feature\Regression;
 
 use App\Livewire\ActivityLogs\ActivityLogsTable;
+use App\Livewire\Allowances\AllowancesTable;
 use App\Livewire\Auth\RegisterWizard;
 use App\Livewire\Bills\BillsTable;
 use App\Livewire\Concerns\ChecksPermissions;
 use App\Livewire\Customers\CustomersTable;
+use App\Livewire\Deductions\DeductionsTable;
+use App\Livewire\Employees\EmployeesTable;
 use App\Livewire\Expenses\ExpensesTable;
 use App\Livewire\Invoices\InvoicesTable;
 use App\Livewire\Items\ItemCategoriesTable;
 use App\Livewire\Items\ItemsTable;
+use App\Livewire\Leaves\LeavesTable;
+use App\Livewire\SalaryStructures\SalaryStructuresTable;
 use App\Livewire\TaxGroups\TaxGroupsTable;
 use App\Livewire\TaxRates\TaxRatesTable;
 use App\Models\Customer;
@@ -46,7 +51,7 @@ class LivewirePermissionTest extends TestCase
         'closeUpgradeModal', 'getSettingsArray', 'goToStep', 'nextStep', 'openCancelModal',
         'openUpgradeModal', 'placeholder', 'previousStep', 'register', 'resetToDefaults', 'selectResult',
         'selectPage', 'selectAllMatching', 'clearSelection',
-        'submit', 'toggleType',
+        'submit', 'toggleType', 'onlyUser',
     ];
 
     private const UI_ONLY_PREFIXES = [
@@ -170,7 +175,8 @@ class LivewirePermissionTest extends TestCase
             }
         }
 
-        $this->assertGreaterThanOrEqual(69, $checked, 'Expected to check every bulk action');
+        // 68 since T5: the employees list lost "deactivate", which set a status employees can't have.
+        $this->assertGreaterThanOrEqual(68, $checked, 'Expected to check every bulk action');
     }
 
     public function test_unknown_bulk_action_is_refused(): void
@@ -213,6 +219,13 @@ class LivewirePermissionTest extends TestCase
             [ExpensesTable::class, 'markAsPaid', [$expense->id]],
             [BillsTable::class, 'deleteOne', [999999]],
             [ActivityLogsTable::class, 'export', ['csv']],
+            [EmployeesTable::class, 'deleteOne', [999999]],
+            [LeavesTable::class, 'approveOne', [999999]],
+            [LeavesTable::class, 'deleteOne', [999999]],
+            [SalaryStructuresTable::class, 'toggleActive', [999999]],
+            [SalaryStructuresTable::class, 'deleteOne', [999999]],
+            [AllowancesTable::class, 'toggleActive', [999999]],
+            [DeductionsTable::class, 'deleteOne', [999999]],
         ];
 
         foreach ($cases as [$class, $method, $args]) {
