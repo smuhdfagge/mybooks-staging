@@ -1,82 +1,90 @@
-<div class="relative">
-    <x-table-loading />
-    <div class="mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        <div>
-            <label for="asm-search" class="form-label">Search</label>
-            <input type="text" id="asm-search" wire:model.live.debounce.300ms="search" placeholder="Number, item, bill..." class="form-control text-sm">
-        </div>
-        <div>
-            <label for="asm-status" class="form-label">Status</label>
-            <select id="asm-status" wire:model.live="status" class="form-control text-sm">
-                <option value="">All statuses</option>
-                @foreach($statuses as $s)
-                    <option value="{{ $s->value }}">{{ $s->label() }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div>
-            <label for="asm-kind" class="form-label">Type</label>
-            <select id="asm-kind" wire:model.live="kind" class="form-control text-sm">
-                <option value="">Builds and break-downs</option>
-                <option value="build">Builds</option>
-                <option value="breakdown">Break-downs</option>
-            </select>
-        </div>
-        @if($warehouses->isNotEmpty())
-            <div>
-                <label for="asm-warehouse" class="form-label">Warehouse</label>
-                <select id="asm-warehouse" wire:model.live="warehouse" class="form-control text-sm">
-                    <option value="">All warehouses</option>
-                    @foreach($warehouses as $w)
-                        <option value="{{ $w->id }}">{{ $w->name }}</option>
-                    @endforeach
-                </select>
+{{-- Assembly orders list (tables plan T4). --}}
+@php
+    $money = fn ($v) => number_format((float) $v, 2);
+    $date = fn ($d) => $d ? $d->format('j M Y') : '—';
+    $qty = fn ($v) => rtrim(rtrim(number_format((float) $v, 4), '0'), '.');
+    $st = fn ($o) => $o->status instanceof \BackedEnum ? $o->status->value : $o->status;
+    $label = fn ($o) => $st($o) === 'completed' ? 'Done' : null;
+@endphp
+<div class="relative space-y-3">
+    <x-table.tabs :tabs="$tabs" :active="$tab" />
+
+    <x-table.toolbar placeholder="Search number, item or bill of materials" :filtered="$filtered">
+        <x-slot name="filters">
+            <x-table.select model="period" label="Date" :options="$periods" />
+            <x-table.pick model="kind" label="Type" :options="$kinds" />
+            @if ($warehouses->isNotEmpty())<x-table.pick model="warehouse" label="Warehouse" :options="$warehouses" />@endif
+        </x-slot>
+    </x-table.toolbar>
+
+    <div class="relative">
+        <x-table.veil />
+        @if ($orders->isEmpty())
+            <div class="tbl-wrap">
+                @if ($filtered || $tab !== '')
+                    <x-table.empty filtered title="No assembly orders match these filters" />
+                @else
+                    <x-table.empty title="No assembly orders yet" text="Make finished goods from their parts using a bill of materials.">
+                        @can('adjust inventory')<a href="{{ route('assembly-orders.create') }}" class="btn-new">New build</a>@endcan
+                    </x-table.empty>
+                @endif
             </div>
+        @else
+            <x-table caption="Assembly orders" class="hidden md:block">
+                <x-slot name="head">
+                    <x-table.th field="order_number" :sort="[$sortField, $sortDirection]">Number</x-table.th>
+                    <x-table.th field="assembly_date" :sort="[$sortField, $sortDirection]">Date</x-table.th>
+                    <x-table.th>Item</x-table.th>
+                    <x-table.th num>Quantity</x-table.th>
+                    <x-table.th field="total_cost" :sort="[$sortField, $sortDirection]" num>Cost</x-table.th>
+                    <x-table.th>Status</x-table.th>
+                    <th scope="col" class="tbl-menu"><span class="sr-only">Actions</span></th>
+                </x-slot>
+                @foreach ($orders as $order)
+                    @php $done = $st($order) === 'completed'; $q = $done ? (float) $order->quantity_made : $order->plannedQuantity(); @endphp
+                    <tr wire:key="asm-{{ $order->id }}">
+                        <td>
+                            <a href="{{ route('assembly-orders.show', $order) }}" class="tbl-link">{{ $order->order_number }}</a>
+                            @if ($order->isBreakdown())<div class="text-xs tbl-muted">Break-down</div>@endif
+                        </td>
+                        <td class="tbl-muted">{{ $date($order->assembly_date) }}</td>
+                        <td class="max-w-[18rem]">
+                            <span class="block truncate">{{ $order->billOfMaterial?->item?->name ?? '—' }}</span>
+                            @if ($order->billOfMaterial)<span class="block truncate text-xs tbl-muted">{{ $order->billOfMaterial->label() }}</span>@endif
+                        </td>
+                        <td class="num">{{ $qty($q) }} {{ $order->billOfMaterial?->item?->unit !== 'each' ? $order->billOfMaterial?->item?->unit : '' }}</td>
+                        <td class="num {{ $done ? '' : 'tbl-zero' }}">{{ $done ? $money($order->total_cost) : '—' }}</td>
+                        <td><x-status-badge :status="$st($order)" :label="$label($order)" /></td>
+                        <td class="tbl-menu">
+                            <x-table.dropdown :sr-label="'Actions for '.$order->order_number">
+                                <x-table.menu-item :href="route('assembly-orders.show', $order)">{{ $st($order) === 'draft' ? 'View or complete' : 'View' }}</x-table.menu-item>
+                                <x-table.menu-item :href="route('assembly-orders.print', $order)" new-tab>Print</x-table.menu-item>
+                                @if ($st($order) === 'draft')<x-table.menu-item :href="route('assembly-orders.edit', $order)">Edit</x-table.menu-item>@endif
+                            </x-table.dropdown>
+                        </td>
+                    </tr>
+                @endforeach
+                <x-slot name="foot">
+                    <tr>
+                        <td colspan="4">Total of {{ number_format($totals->n) }} {{ $totals->n == 1 ? 'order' : 'orders' }}@if ($filtered || $tab !== '') <span class="font-normal tbl-muted">(this filter)</span>@endif. Cost of those done:</td>
+                        <td class="num">{{ $money($totals->cost) }}</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </x-slot>
+            </x-table>
+            <ul class="space-y-2 md:hidden" aria-label="Assembly orders">
+                @foreach ($orders as $order)
+                    <li wire:key="asm-card-{{ $order->id }}">
+                        <x-table.card :href="route('assembly-orders.show', $order)" :title="$order->billOfMaterial?->item?->name ?? $order->order_number"
+                            :amount="$st($order) === 'completed' ? \App\Support\Money::format($order->total_cost) : null"
+                            :meta="$order->order_number.' · '.$date($order->assembly_date)">
+                            <x-slot name="badge"><x-status-badge :status="$st($order)" :label="$label($order)" /></x-slot>
+                        </x-table.card>
+                    </li>
+                @endforeach
+            </ul>
         @endif
     </div>
 
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead class="bg-gray-50 dark:bg-gray-700 text-xs text-gray-500 dark:text-gray-300">
-                <tr>
-                    <x-sort-header field="order_number" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-left">Number</x-sort-header>
-                    <x-sort-header field="assembly_date" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-left">Date</x-sort-header>
-                    <th scope="col" class="px-4 py-3 text-left uppercase tracking-wider font-medium">Item</th>
-                    <th scope="col" class="px-4 py-3 text-right uppercase tracking-wider font-medium">Quantity</th>
-                    <x-sort-header field="total_cost" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-right hidden md:table-cell">Cost</x-sort-header>
-                    <x-sort-header field="status" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-left">Status</x-sort-header>
-                </tr>
-            </thead>
-            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                @forelse($orders as $order)
-                    @php $qty = $order->isCompleted() ? (float) $order->quantity_made : $order->plannedQuantity(); @endphp
-                    <tr wire:key="asm-{{ $order->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                        <td class="px-4 py-3 whitespace-nowrap">
-                            <a href="{{ route('assembly-orders.show', $order) }}" class="font-medium text-brand-600 dark:text-brand-300 hover:underline">{{ $order->order_number }}</a>
-                            @if($order->isBreakdown())<span class="block text-xs text-gray-500 dark:text-gray-400">Break-down</span>@endif
-                        </td>
-                        <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-100">{{ $order->assembly_date?->format('M d, Y') }}</td>
-                        <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $order->billOfMaterial?->item?->name }}
-                            <span class="block text-xs text-gray-500 dark:text-gray-400">{{ $order->billOfMaterial?->label() }}</span>
-                        </td>
-                        <td class="px-4 py-3 text-right whitespace-nowrap text-gray-900 dark:text-gray-100">{{ rtrim(rtrim(number_format($qty, 4), '0'), '.') }} {{ $order->billOfMaterial?->item?->unit }}</td>
-                        <td class="px-4 py-3 text-right whitespace-nowrap text-gray-900 dark:text-gray-100 hidden md:table-cell">@if($order->isCompleted()) @money($order->total_cost) @else — @endif</td>
-                        <td class="px-4 py-3 whitespace-nowrap"><x-status-badge :status="$order->status" /></td>
-                    </tr>
-                @empty
-                    <tr><td colspan="6" class="px-4 py-10 text-center text-gray-500 dark:text-gray-400">No assembly orders yet.</td></tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-
-    <div class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div>
-            <label for="asm-per-page" class="sr-only">Rows per page</label>
-            <select id="asm-per-page" wire:model.live="perPage" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm">
-                @foreach([10, 15, 25, 50, 100] as $size)<option value="{{ $size }}">{{ $size }} per page</option>@endforeach
-            </select>
-        </div>
-        @if($orders->hasPages())<div>{{ $orders->links() }}</div>@endif
-    </div>
+    <x-table.footer :rows="$orders" />
 </div>

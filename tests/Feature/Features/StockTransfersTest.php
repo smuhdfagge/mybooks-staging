@@ -550,8 +550,8 @@ class StockTransfersTest extends TestCase
         $this->get(route('stock-transfers.index'))->assertOk()->assertSee('Stock transfers');
 
         Livewire::test(StockTransfersTable::class)->assertSee($transfer->transfer_number)
-            ->set('status', 'draft')->assertDontSee($transfer->transfer_number)
-            ->set('status', '')->set('warehouse', (string) $this->kano->id)->assertSee($transfer->transfer_number);
+            ->set('tab', 'draft')->assertDontSee($transfer->transfer_number)
+            ->set('tab', '')->set('warehouse', (string) $this->kano->id)->assertSee($transfer->transfer_number);
     }
 
     public function test_the_create_page_says_to_add_a_second_warehouse_when_there_is_one(): void

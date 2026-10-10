@@ -659,8 +659,8 @@ class AssemblyTest extends TestCase
             ->assertSee('Feed 25kg bag')->assertSee('₦463,000.00');
 
         Livewire::test(AssemblyOrdersTable::class)->assertSee($order->order_number)
-            ->set('status', 'draft')->assertDontSee($order->order_number)
-            ->set('status', '')->set('kind', 'breakdown')->assertDontSee($order->order_number)
+            ->set('tab', 'draft')->assertDontSee($order->order_number)
+            ->set('tab', '')->set('kind', 'breakdown')->assertDontSee($order->order_number)
             ->set('kind', '')->set('search', 'Feed')->assertSee($order->order_number);
     }
 

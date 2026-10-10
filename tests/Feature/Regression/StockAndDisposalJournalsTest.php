@@ -297,7 +297,7 @@ class StockAndDisposalJournalsTest extends TestCase
             ->set('selectedItems', [(string) $this->maize->id])
             ->set('bulkAction', 'reset_quantity')
             ->call('applyBulkAction')
-            ->assertSee('could not be reset');
+            ->assertSee('could not be set to zero');
 
         $this->assertSame(1000.0, $this->onHand($this->maize));
         $this->assertSame($this->stockValue(), $this->balance($this->code('inventory')));
@@ -387,7 +387,7 @@ class StockAndDisposalJournalsTest extends TestCase
         $this->adjust(['type' => 'adjustment', 'quantity' => 197.5, 'warehouse_id' => $this->main->id], $this->soya)->assertSessionHasNoErrors();
         $this->adjust(['type' => 'in', 'quantity' => 3, 'unit_cost' => 41000], $feed)->assertSessionHasNoErrors();
         $this->sell($feed, 4);
-        Livewire::test(InventoryTable::class)->set('warehouseFilter', (string) $kano->id)
+        Livewire::test(InventoryTable::class)->set('warehouse', (string) $kano->id)
             ->set('selectedItems', [(string) $this->soya->id])->set('bulkAction', 'reset_quantity')->call('applyBulkAction');
 
         $this->assertGreaterThan(0, $this->stockValue());

@@ -1,110 +1,78 @@
-<div class="relative">
-    <x-table-loading />
-    <!-- Flash Messages -->
+{{-- Fixed asset categories (tables plan T4). --}}
+@php
+    $user = auth()->user();
+    $canBulk = $user->can('delete fixed-assets');
+    $ids = $categories->pluck('id')->map(fn ($id) => (string) $id)->all();
+@endphp
+<div class="relative space-y-3">
     <x-flash-messages :successMessage="$successMessage" :errorMessage="$errorMessage" />
 
-    <!-- Filters -->
-    <div class="mb-4 flex flex-col sm:flex-row gap-4">
-        <div class="flex-1">
-            <input aria-label="Search categories" wire:model.live.debounce.300ms="search" type="text" 
-                placeholder="Search categories..." 
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-        </div>
-        <div class="flex items-center gap-4">
-            <!-- Bulk Actions -->
-            <x-bulk-actions :actions="['delete' => 'Delete']" :selectedCount="count($selectedItems)" />
-            <label for="perPage" class="text-sm text-gray-600 dark:text-gray-400">Show:</label>
-            <select id="perPage" wire:model.live="perPage" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-            </select>
-        </div>
-    </div>
+    <x-table.toolbar placeholder="Search name, code or description" :selected="count($selectedItems)" :filtered="$filtered">
+        @if ($canBulk)
+            <x-slot name="bulk">
+                <x-table.bulk-button action="delete" danger confirm="Delete the ticked categories? Categories with assets are skipped.">Delete</x-table.bulk-button>
+            </x-slot>
+        @endif
+    </x-table.toolbar>
 
-    <!-- Table -->
-    <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead class="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                    <th scope="col" class="px-4 py-3 text-left">
-                        <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
-                            class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
-                    </th>
-                    <x-sort-header field="code" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Code</x-sort-header>
-                    <x-sort-header field="name" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Name</x-sort-header>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Depreciation Method
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Useful Life
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Assets
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Actions
-                    </th>
-                </tr>
-            </thead>
-            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                @forelse($categories as $category)
-                    <tr wire:key="category-{{ $category->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td class="px-4 py-4">
-                            <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $category->id }}"
-                                class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
+    <div class="relative">
+        <x-table.veil />
+        @if ($categories->isEmpty())
+            <div class="tbl-wrap">
+                @if ($filtered)
+                    <x-table.empty filtered title="No categories match this search" />
+                @else
+                    <x-table.empty title="No asset categories yet" text="A category sets how long its assets last, how they are depreciated and which accounts they post to.">
+                        @can('create fixed-assets')<a href="{{ route('fixed-asset-categories.create') }}" class="btn-new">New category</a>@endcan
+                    </x-table.empty>
+                @endif
+            </div>
+        @else
+            <x-table caption="Asset categories" class="hidden md:block">
+                <x-slot name="head">
+                    @if ($canBulk)<x-table.check-all :ids="$ids" :selected="$selectedItems" label="Tick every category on this page" />@endif
+                    <x-table.th field="name" :sort="[$sortField, $sortDirection]">Name</x-table.th>
+                    <x-table.th>Code</x-table.th>
+                    <x-table.th field="default_useful_life" :sort="[$sortField, $sortDirection]" num>Lasts (years)</x-table.th>
+                    <x-table.th>Depreciation</x-table.th>
+                    <x-table.th field="assets_count" :sort="[$sortField, $sortDirection]" num>Assets</x-table.th>
+                    <th scope="col" class="tbl-menu"><span class="sr-only">Actions</span></th>
+                </x-slot>
+                @foreach ($categories as $category)
+                    @php $ticked = in_array((string) $category->id, $selectedItems, true); @endphp
+                    <tr wire:key="fac-{{ $category->id }}" @if ($ticked) data-picked @endif>
+                        @if ($canBulk)<x-table.check :id="$category->id" :label="$category->name" />@endif
+                        <td class="max-w-[20rem]">
+                            <a href="{{ route('fixed-asset-categories.show', $category) }}" class="tbl-link block truncate">{{ $category->name }}</a>
+                            @if ($category->description)<div class="truncate text-xs tbl-muted">{{ $category->description }}</div>@endif
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                            {{ $category->code ?? '-' }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {{ $category->name }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                            {{ $category->default_depreciation_method ? ucwords(str_replace('_', ' ', $category->default_depreciation_method)) : '-' }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                            {{ $category->default_useful_life ? $category->default_useful_life . ' years' : '-' }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-600 dark:text-gray-400">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200">
-                                {{ $category->assets_count }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div class="flex justify-end gap-3">
-                                @can('view fixed-asset-categories')
-                                    <a href="{{ route('fixed-asset-categories.show', $category) }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300">View</a>
-                                @endcan
-                                @can('edit fixed-asset-categories')
-                                    <a href="{{ route('fixed-asset-categories.edit', $category) }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300">Edit</a>
-                                @endcan
-                                @can('delete fixed-asset-categories')
-                                    @if($category->assets_count == 0)
-                                        <button wire:click="delete({{ $category->id }})" wire:confirm="Are you sure you want to delete this category?" class="text-red-600 hover:text-red-900 dark:text-red-300">Delete</button>
-                                    @endif
-                                @endcan
-                            </div>
+                        <td class="tbl-muted">{{ $category->code ?: '—' }}</td>
+                        <td class="num">{{ (float) $category->default_useful_life ? rtrim(rtrim(number_format((float) $category->default_useful_life, 2), '0'), '.') : '—' }}</td>
+                        <td class="tbl-muted">{{ $methods[$category->default_depreciation_method] ?? '—' }}</td>
+                        <td class="num {{ $category->assets_count ? '' : 'tbl-zero' }}">{{ $category->assets_count ?: '—' }}</td>
+                        <td class="tbl-menu">
+                            <x-table.dropdown :sr-label="'Actions for '.$category->name">
+                                <x-table.menu-item :href="route('fixed-asset-categories.show', $category)">View</x-table.menu-item>
+                                @can('edit fixed-assets')<x-table.menu-item :href="route('fixed-asset-categories.edit', $category)">Edit</x-table.menu-item>@endcan
+                                <x-table.menu-item :href="route('fixed-assets.index', ['category' => $category->id])">Its assets</x-table.menu-item>
+                                @if (! $category->assets_count && $user->can('delete fixed-assets'))
+                                    <x-table.menu-item wire="deleteOne({{ $category->id }})" :confirm="'Delete '.$category->name.'?'" danger>Delete</x-table.menu-item>
+                                @endif
+                            </x-table.dropdown>
                         </td>
                     </tr>
-                @empty
-                    <tr>
-                        <td colspan="7" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                            <p>No categories found.</p>
-                            @can('create fixed-asset-categories')
-                                <a href="{{ route('fixed-asset-categories.create') }}" class="mt-2 inline-flex items-center text-brand-600 hover:text-brand-500 dark:text-brand-300 dark:hover:text-brand-200">
-                                    Create your first category
-                                </a>
-                            @endcan
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                @endforeach
+            </x-table>
+            <ul class="space-y-2 md:hidden" aria-label="Asset categories">
+                @foreach ($categories as $category)
+                    <li wire:key="fac-card-{{ $category->id }}">
+                        <x-table.card :href="route('fixed-asset-categories.show', $category)" :title="$category->name"
+                            :meta="((float) $category->default_useful_life ? rtrim(rtrim(number_format((float) $category->default_useful_life, 2), '0'), '.').' years · ' : '').$category->assets_count.' assets'" />
+                    </li>
+                @endforeach
+            </ul>
+        @endif
     </div>
 
-    <!-- Pagination -->
-    <div class="mt-4">
-        {{ $categories->links() }}
-    </div>
+    <x-table.footer :rows="$categories" />
 </div>

@@ -3,100 +3,74 @@
 namespace App\Livewire\Banks;
 
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ListTable;
 use App\Models\Bank;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/** Bank and cash accounts list (tables plan T4: the shared list design). */
 class BanksTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
+    use ChecksPermissions, ListTable;
 
-    public $search = '';
+    public string $type = '';
 
-    public $sortField = 'name';
+    protected $queryString = [
+        'search' => ['except' => ''],
+        'tab' => ['except' => '', 'as' => 'show'],
+        'type' => ['except' => ''],
+    ];
 
-    public $sortDirection = 'asc';
-
-    public $perPage = 15;
-
-    public $typeFilter = '';
-
-    public $statusFilter = '';
-
-    // Bulk operation properties
-    public $selectedItems = [];
-
-    public $selectAll = false;
-
-    public $bulkAction = '';
-
-    public $successMessage = '';
-
-    public $errorMessage = '';
-
-    protected $queryString = ['search', 'sortField', 'sortDirection', 'typeFilter', 'statusFilter'];
-
-    public function updatingSearch()
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['name', 'current_balance'];
     }
 
-    public function updatingTypeFilter()
+    public function mountListTable(): void
     {
-        $this->resetPage();
-    }
-
-    public function updatingStatusFilter()
-    {
-        $this->resetPage();
-    }
-
-    public function updatingPerPage()
-    {
-        $this->resetPage();
-    }
-
-    public function sortBy($field)
-    {
-        if ($this->sortField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            $this->sortField = $field;
+        if (! in_array($this->sortField, $this->sortable(), true)) {
+            $this->sortField = 'name';
             $this->sortDirection = 'asc';
         }
     }
 
-    public function updatedSelectAll($value)
+    protected function filterProperties(): array
     {
-        if ($value) {
-            $this->selectedItems = $this->getFilteredBankIds();
-        } else {
-            $this->selectedItems = [];
+        return ['type'];
+    }
+
+    protected function baseQuery(): Builder
+    {
+        $query = Bank::query();
+        if (($term = trim($this->search)) !== '') {
+            $query->where(fn ($q) => $q->where('name', 'like', "%{$term}%")->orWhere('bank_name', 'like', "%{$term}%"));
         }
+        if (array_key_exists($this->type, Bank::getAccountTypes())) {
+            $query->where('account_type', $this->type);
+        }
+
+        return $query;
     }
 
-    public function updatedSelectedItems()
+    protected function applyTab(Builder $query, string $tab): Builder
     {
-        $this->selectAll = count($this->selectedItems) === count($this->getFilteredBankIds());
+        return match ($tab) {
+            'active' => $query->where('is_active', true),
+            'inactive' => $query->where('is_active', false),
+            default => $query,
+        };
     }
 
-    private function getFilteredBankIds()
+    /** @return array<string, array{label: string, count: int, alert: bool}> */
+    private function tabs(): array
     {
-        return Bank::query()
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('name', 'like', '%'.$this->search.'%')
-                        ->orWhere('bank_name', 'like', '%'.$this->search.'%');
-                });
-            })
-            ->when($this->typeFilter, fn ($q) => $q->where('account_type', $this->typeFilter))
-            ->when($this->statusFilter !== '', function ($q) {
-                $q->where('is_active', $this->statusFilter === 'active');
-            })
-            ->pluck('id')
-            ->map(fn ($id) => (string) $id)
-            ->toArray();
+        $row = $this->baseQuery()->toBase()->selectRaw('COUNT(*) as all_rows, SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active')->first();
+
+        return [
+            '' => ['label' => 'All', 'count' => (int) $row->all_rows, 'alert' => false],
+            'active' => ['label' => 'In use', 'count' => (int) $row->active, 'alert' => false],
+            'inactive' => ['label' => 'Not in use', 'count' => (int) $row->all_rows - (int) $row->active, 'alert' => false],
+        ];
     }
 
     /**
@@ -117,13 +91,7 @@ class BanksTable extends Component
         $this->errorMessage = '';
 
         if (empty($this->selectedItems)) {
-            $this->errorMessage = 'Please select at least one bank account.';
-
-            return;
-        }
-
-        if (empty($this->bulkAction)) {
-            $this->errorMessage = 'Please select an action.';
+            $this->errorMessage = 'Tick at least one account first.';
 
             return;
         }
@@ -135,27 +103,30 @@ class BanksTable extends Component
         switch ($this->bulkAction) {
             case 'activate':
                 Bank::whereIn('id', $this->selectedItems)->update(['is_active' => true]);
-                $this->successMessage = "Successfully activated {$count} bank account(s).";
+                $this->successMessage = "{$count} account(s) back in use.";
                 break;
 
             case 'deactivate':
                 Bank::whereIn('id', $this->selectedItems)->update(['is_active' => false]);
-                $this->successMessage = "Successfully deactivated {$count} bank account(s).";
+                $this->successMessage = "{$count} account(s) taken out of use.";
                 break;
 
             case 'delete':
                 $deleted = 0;
-                foreach ($this->selectedItems as $id) {
-                    $bank = Bank::find($id);
-                    if ($bank && $bank->transactions()->count() === 0) {
-                        $bank->delete();
-                        $deleted++;
+                $skipped = 0;
+                foreach (Bank::whereIn('id', $this->selectedItems)->get() as $bank) {
+                    if ($bank->deleteBlockedReason()) {
+                        $skipped++;
+
+                        continue;
                     }
+                    $bank->delete();
+                    $deleted++;
                 }
-                if ($deleted < $count) {
-                    $this->errorMessage = "Deleted {$deleted} of {$count} bank accounts. Some accounts have transactions and cannot be deleted.";
+                if ($deleted > 0) {
+                    $this->successMessage = "Deleted {$deleted} account(s).".($skipped ? " Skipped {$skipped} with money recorded through them." : '');
                 } else {
-                    $this->successMessage = "Successfully deleted {$deleted} bank account(s).";
+                    $this->errorMessage = 'None deleted: every ticked account has money recorded through it. Take them out of use instead.';
                 }
                 break;
 
@@ -166,42 +137,32 @@ class BanksTable extends Component
         }
 
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
+    }
+
+    /** Delete one unused account from its row menu. */
+    public function deleteOne(int $id): void
+    {
+        $this->requirePermission('delete banks');
+        $bank = Bank::findOrFail($id);
+        if ($reason = $bank->deleteBlockedReason()) {
+            $this->errorMessage = $reason;
+
+            return;
+        }
+        $bank->delete();
+        $this->successMessage = "Deleted {$bank->name}.";
+        $this->selectedItems = array_values(array_diff($this->selectedItems, [(string) $id]));
     }
 
     public function render()
     {
-        $query = Bank::query()
-            ->with('chartOfAccount');
-
-        if ($this->search) {
-            $query->where(function ($q) {
-                $q->where('name', 'like', '%'.$this->search.'%')
-                    ->orWhere('bank_name', 'like', '%'.$this->search.'%');
-            });
-        }
-
-        if ($this->typeFilter) {
-            $query->where('account_type', $this->typeFilter);
-        }
-
-        if ($this->statusFilter !== '') {
-            $query->where('is_active', $this->statusFilter === 'active');
-        }
-
-        $query->orderBy($this->sortField, $this->sortDirection);
-
-        // Calculate totals
-        $totals = [
-            'total_balance' => Bank::where('is_active', true)->sum('current_balance'),
-            'active_accounts' => Bank::where('is_active', true)->count(),
-        ];
-
         return view('livewire.banks.banks-table', [
-            'banks' => $query->paginate($this->pageSize()),
-            'accountTypes' => Bank::getAccountTypes(),
-            'totals' => $totals,
+            'banks' => $this->rows(),
+            'tabs' => $this->tabs(),
+            'totals' => $this->filteredQuery()->toBase()->selectRaw('COUNT(*) as n, COALESCE(SUM(CASE WHEN is_active = 1 THEN current_balance ELSE 0 END), 0) as balance')->first(),
+            'types' => Bank::getAccountTypes(),
+            'filtered' => $this->isFiltered(),
         ]);
     }
 }

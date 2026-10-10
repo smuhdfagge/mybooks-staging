@@ -192,7 +192,7 @@ class PhaseDUiTest extends TestCase
 
     public function test_u7_generate_periods_uses_the_shared_modal(): void
     {
-        $html = $this->page('accounting-periods.index', ['view chart-of-accounts']);
+        $html = $this->page('accounting-periods.index', ['view chart-of-accounts', 'edit chart-of-accounts']);
 
         $this->assertStringContainsString('data-modal="generate-periods"', $html);
         $this->assertMatchesRegularExpression('/data-modal="generate-periods"\s+role="dialog"\s+aria-modal="true"\s+aria-labelledby="modal-generate-periods-title"/', $html);

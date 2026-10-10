@@ -1,29 +1,19 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Asset Categories') }}
-            </h2>
-            <div class="flex space-x-2">
-                @can('create fixed-asset-categories')
-                <a href="{{ route('fixed-asset-categories.create') }}" class="bg-brand-500 hover:bg-brand-700 text-white font-bold py-2 px-4 rounded">
-                    Add New Category
-                </a>
+        <x-table.page-header title="Asset categories" description="How long each kind of asset lasts and how it is depreciated.">
+            <x-slot name="more">
+                <x-table.menu-item :href="route('fixed-assets.index')">Fixed assets</x-table.menu-item>
+            </x-slot>
+            <x-slot name="actions">
+                @can('create fixed-assets')
+                    <a href="{{ route('fixed-asset-categories.create') }}" class="btn-new">
+                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 4a1 1 0 011 1v4h4a1 1 0 110 2h-4v4a1 1 0 11-2 0v-4H5a1 1 0 110-2h4V5a1 1 0 011-1z"/></svg>
+                        New category
+                    </a>
                 @endcan
-                <a href="{{ route('fixed-assets.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                    Back to Assets
-                </a>
-            </div>
-        </div>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900 dark:text-gray-100">
-                    @livewire('fixed-assets.categories-table')
-                </div>
-            </div>
-        </div>
-    </div>
+    <livewire:fixed-assets.categories-table />
 </x-app-layout>

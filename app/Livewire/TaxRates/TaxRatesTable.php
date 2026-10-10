@@ -3,120 +3,94 @@
 namespace App\Livewire\TaxRates;
 
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ListTable;
+use App\Models\Item;
 use App\Models\TaxRate;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/** Tax rates list (tables plan T4: the shared list design). */
 class TaxRatesTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
-
-    public $search = '';
-
-    public $appliesTo = '';
-
-    public $showInactive = false;
-
-    public $perPage = 15;
-
-    // Bulk operation properties
-    public $selectedItems = [];
-
-    public $selectAll = false;
-
-    public $bulkAction = '';
-
-    public $successMessage = '';
-
-    public $errorMessage = '';
+    use ChecksPermissions, ListTable;
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'appliesTo' => ['except' => ''],
-        'showInactive' => ['except' => false],
+        'tab' => ['except' => '', 'as' => 'show'],
     ];
 
-    public function updatingSearch()
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['sort_order', 'name', 'rate'];
     }
 
-    public function updatingAppliesTo()
+    public function mountListTable(): void
     {
-        $this->resetPage();
-    }
-
-    public function updatingShowInactive()
-    {
-        $this->resetPage();
-    }
-
-    public function updatingPerPage()
-    {
-        $this->resetPage();
-    }
-
-    public function clearFilters()
-    {
-        $this->reset(['search', 'appliesTo', 'showInactive']);
-        $this->resetPage();
-    }
-
-    public function toggleDefault(TaxRate $taxRate)
-    {
-        $this->requirePermission('edit tax-rates');
-
-        if (! $taxRate->is_default) {
-            $taxRate->setAsDefault();
-            session()->flash('message', 'Default tax rate updated.');
+        if (! in_array($this->sortField, $this->sortable(), true)) {
+            $this->sortField = 'sort_order';
+            $this->sortDirection = 'asc';
         }
     }
 
-    public function toggleActive(TaxRate $taxRate)
-    {
-        $this->requirePermission('edit tax-rates');
-
-        $taxRate->update(['is_active' => ! $taxRate->is_active]);
-        session()->flash('message', 'Tax rate status updated.');
-    }
-
-    public function updatedSelectAll($value)
-    {
-        if ($value) {
-            $this->selectedItems = $this->getFilteredTaxRateIds();
-        } else {
-            $this->selectedItems = [];
-        }
-    }
-
-    public function updatedSelectedItems()
-    {
-        $this->selectAll = count($this->selectedItems) === count($this->getFilteredTaxRateIds());
-    }
-
-    private function getFilteredTaxRateIds()
+    protected function baseQuery(): Builder
     {
         $query = TaxRate::query();
-
-        if ($this->search) {
-            $query->where(function ($q) {
-                $q->where('name', 'like', "%{$this->search}%")
-                    ->orWhere('code', 'like', "%{$this->search}%");
-            });
+        if (($term = trim($this->search)) !== '') {
+            $query->where(fn ($q) => $q->where('name', 'like', "%{$term}%")->orWhere('code', 'like', "%{$term}%"));
         }
 
-        if ($this->appliesTo) {
-            $query->where('applies_to', $this->appliesTo);
+        return $query;
+    }
+
+    protected function applyTab(Builder $query, string $tab): Builder
+    {
+        return match ($tab) {
+            'sales' => $query->where('is_active', true)->whereIn('applies_to', [TaxRate::APPLIES_TO_SALES, TaxRate::APPLIES_TO_BOTH]),
+            'purchases' => $query->where('is_active', true)->whereIn('applies_to', [TaxRate::APPLIES_TO_PURCHASES, TaxRate::APPLIES_TO_BOTH]),
+            'inactive' => $query->where('is_active', false),
+            default => $query,
+        };
+    }
+
+    /** @return array<string, array{label: string, count: int, alert: bool}> */
+    private function tabs(): array
+    {
+        $row = $this->baseQuery()->toBase()->selectRaw(
+            "COUNT(*) as all_rows,
+             SUM(CASE WHEN is_active = 1 AND applies_to IN ('sales','both') THEN 1 ELSE 0 END) as sales,
+             SUM(CASE WHEN is_active = 1 AND applies_to IN ('purchases','both') THEN 1 ELSE 0 END) as purchases,
+             SUM(CASE WHEN is_active = 0 THEN 1 ELSE 0 END) as inactive"
+        )->first();
+
+        $tabs = [
+            '' => ['label' => 'All', 'count' => (int) $row->all_rows, 'alert' => false],
+            'sales' => ['label' => 'On sales', 'count' => (int) $row->sales, 'alert' => false],
+            'purchases' => ['label' => 'On purchases', 'count' => (int) $row->purchases, 'alert' => false],
+        ];
+        if ((int) $row->inactive > 0 || $this->tab === 'inactive') {
+            $tabs['inactive'] = ['label' => 'Inactive', 'count' => (int) $row->inactive, 'alert' => false];
         }
 
-        if (! $this->showInactive) {
-            $query->where('is_active', true);
-        }
+        return $tabs;
+    }
 
-        return $query->pluck('id')
-            ->map(fn ($id) => (string) $id)
-            ->toArray();
+    /** Make this the rate new lines start with. */
+    public function toggleDefault(int $id): void
+    {
+        $this->requirePermission('edit tax-rates');
+        $taxRate = TaxRate::findOrFail($id);
+        if (! $taxRate->is_default) {
+            $taxRate->setAsDefault();
+        }
+        $this->successMessage = "{$taxRate->name} is now the default rate.";
+    }
+
+    public function toggleActive(int $id): void
+    {
+        $this->requirePermission('edit tax-rates');
+        $taxRate = TaxRate::findOrFail($id);
+        $taxRate->update(['is_active' => ! $taxRate->is_active]);
+        $this->successMessage = $taxRate->is_active ? "{$taxRate->name} is active again." : "{$taxRate->name} made inactive.";
     }
 
     /**
@@ -137,13 +111,7 @@ class TaxRatesTable extends Component
         $this->errorMessage = '';
 
         if (empty($this->selectedItems)) {
-            $this->errorMessage = 'Please select at least one tax rate.';
-
-            return;
-        }
-
-        if (empty($this->bulkAction)) {
-            $this->errorMessage = 'Please select an action.';
+            $this->errorMessage = 'Tick at least one tax rate first.';
 
             return;
         }
@@ -155,41 +123,30 @@ class TaxRatesTable extends Component
         switch ($this->bulkAction) {
             case 'activate':
                 TaxRate::whereIn('id', $this->selectedItems)->update(['is_active' => true]);
-                $this->successMessage = "Successfully activated {$count} tax rate(s).";
+                $this->successMessage = "{$count} tax rate(s) made active.";
                 break;
 
             case 'deactivate':
                 TaxRate::whereIn('id', $this->selectedItems)->update(['is_active' => false]);
-                $this->successMessage = "Successfully deactivated {$count} tax rate(s).";
+                $this->successMessage = "{$count} tax rate(s) made inactive.";
                 break;
 
             case 'delete':
-                $deletedCount = 0;
-                $skippedCount = 0;
-
-                foreach ($this->selectedItems as $taxRateId) {
-                    $taxRate = TaxRate::find($taxRateId);
-                    if (! $taxRate) {
-                        continue;
-                    }
-
-                    // Check if tax rate is used in tax groups or transactions
-                    if ($taxRate->taxGroups()->exists()) {
-                        $skippedCount++;
+                $deleted = 0;
+                $skipped = 0;
+                foreach (TaxRate::whereIn('id', $this->selectedItems)->get() as $taxRate) {
+                    if ($this->inUse($taxRate)) {
+                        $skipped++;
 
                         continue;
                     }
-
                     $taxRate->delete();
-                    $deletedCount++;
+                    $deleted++;
                 }
-
-                if ($deletedCount > 0 && $skippedCount > 0) {
-                    $this->successMessage = "Deleted {$deletedCount} tax rate(s). Skipped {$skippedCount} tax rate(s) used in tax groups.";
-                } elseif ($deletedCount > 0) {
-                    $this->successMessage = "Successfully deleted {$deletedCount} tax rate(s).";
+                if ($deleted > 0) {
+                    $this->successMessage = "Deleted {$deleted} tax rate(s).".($skipped ? " Skipped {$skipped} used in tax groups or on items." : '');
                 } else {
-                    $this->errorMessage = 'Could not delete any tax rates. All selected tax rates are used in tax groups.';
+                    $this->errorMessage = 'None deleted: every ticked rate is used in a tax group or on items. Make them inactive instead.';
                 }
                 break;
 
@@ -200,33 +157,34 @@ class TaxRatesTable extends Component
         }
 
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
+    }
+
+    public function deleteOne(int $id): void
+    {
+        $this->requirePermission('delete tax-rates');
+        $taxRate = TaxRate::findOrFail($id);
+        if ($this->inUse($taxRate)) {
+            $this->errorMessage = "{$taxRate->name} is used in a tax group or on items, so it can't be deleted. Make it inactive instead.";
+
+            return;
+        }
+        $taxRate->delete();
+        $this->successMessage = "Deleted {$taxRate->name}.";
+        $this->selectedItems = array_values(array_diff($this->selectedItems, [(string) $id]));
+    }
+
+    private function inUse(TaxRate $taxRate): bool
+    {
+        return $taxRate->taxGroups()->exists() || Item::where('tax_rate_id', $taxRate->id)->exists();
     }
 
     public function render()
     {
-        $query = TaxRate::query()
-            ->orderBy('sort_order')
-            ->orderBy('name');
-
-        if ($this->search) {
-            $query->where(function ($q) {
-                $q->where('name', 'like', "%{$this->search}%")
-                    ->orWhere('code', 'like', "%{$this->search}%");
-            });
-        }
-
-        if ($this->appliesTo) {
-            $query->where('applies_to', $this->appliesTo);
-        }
-
-        if (! $this->showInactive) {
-            $query->where('is_active', true);
-        }
-
-        $taxRates = $query->paginate($this->pageSize());
-
-        return view('livewire.tax-rates.tax-rates-table', compact('taxRates'));
+        return view('livewire.tax-rates.tax-rates-table', [
+            'taxRates' => $this->rows(),
+            'tabs' => $this->tabs(),
+            'filtered' => $this->isFiltered(),
+        ]);
     }
 }

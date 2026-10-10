@@ -1,8 +1,6 @@
 # Table screens not yet on the shared table design (tables plan).
 # Each session takes its screens off this list; TableDesignTest fails if a
 # finished screen is still listed or a new table skips the shared design.
-accounting-periods/_lock-dates.blade.php
-accounting-periods/index.blade.php
 accrual-schedules/form.blade.php
 accrual-schedules/show.blade.php
 admin/data-requests/index.blade.php
@@ -48,13 +46,11 @@ inventory/assembly/_form.blade.php
 inventory/assembly/report.blade.php
 inventory/assembly/show.blade.php
 inventory/bom/_form.blade.php
-inventory/bom/index.blade.php
 inventory/bom/show.blade.php
 inventory/history.blade.php
 inventory/show.blade.php
 inventory/transfers/_form.blade.php
 inventory/transfers/show.blade.php
-inventory/warehouses/index.blade.php
 inventory/warehouses/show.blade.php
 invoices/create.blade.php
 invoices/edit.blade.php
@@ -66,30 +62,13 @@ journals/create.blade.php
 journals/edit.blade.php
 journals/show.blade.php
 leave-types/index.blade.php
-livewire/accrual-schedules/accrual-schedules-table.blade.php
 livewire/activity-logs/activity-logs-table.blade.php
 livewire/allowances/allowances-table.blade.php
-livewire/assembly/assembly-orders-table.blade.php
-livewire/banks/bank-feed-lines-table.blade.php
-livewire/banks/banks-table.blade.php
-livewire/budgets/budgets-table.blade.php
-livewire/categories-table.blade.php
-livewire/chart-of-accounts/chart-of-accounts-table.blade.php
 livewire/deductions/deductions-table.blade.php
-livewire/e-invoices/e-invoices-table.blade.php
 livewire/employees/employees-table.blade.php
-livewire/fixed-assets/categories-table.blade.php
-livewire/fixed-assets/fixed-assets-table.blade.php
-livewire/inventory/inventory-table.blade.php
-livewire/items/item-categories-table.blade.php
-livewire/items/items-table.blade.php
-livewire/journals/journals-table.blade.php
 livewire/leaves/leaves-table.blade.php
 livewire/payroll/payroll-batch-table.blade.php
 livewire/salary-structures/salary-structures-table.blade.php
-livewire/stock-transfers/stock-transfers-table.blade.php
-livewire/tax-groups/tax-groups-table.blade.php
-livewire/tax-rates/tax-rates-table.blade.php
 pages/privacy-policy.blade.php
 payments-made/show.blade.php
 payments-received/apply-deposit.blade.php

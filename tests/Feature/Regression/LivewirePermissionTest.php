@@ -201,8 +201,8 @@ class LivewirePermissionTest extends TestCase
 
         $cases = [
             [CustomersTable::class, 'deleteCustomer', [$customer->id]],
-            [ItemsTable::class, 'deleteItem', [$item->id]],
-            [ItemCategoriesTable::class, 'deleteCategory', [$category->id]],
+            [ItemsTable::class, 'deleteOne', [$item->id]],
+            [ItemCategoriesTable::class, 'deleteOne', [$category->id]],
             [ItemCategoriesTable::class, 'toggleActive', [$category->id]],
             [TaxRatesTable::class, 'toggleActive', [$taxRate->id]],
             [TaxRatesTable::class, 'toggleDefault', [$taxRate->id]],
