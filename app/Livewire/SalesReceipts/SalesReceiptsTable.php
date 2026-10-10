@@ -3,105 +3,63 @@
 namespace App\Livewire\SalesReceipts;
 
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ListTable;
 use App\Models\Customer;
 use App\Models\SalesReceipt;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/**
+ * Sales receipts list (tables plan T2: the shared list design, see InvoicesTable).
+ */
 class SalesReceiptsTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
+    use ChecksPermissions, ListTable;
 
-    public $search = '';
+    public string $period = '';
 
-    public $paymentMethod = '';
+    public string $customer = '';
 
-    public $customer = '';
-
-    public $dateFrom = '';
-
-    public $dateTo = '';
-
-    public $perPage = 10;
-
-    // Bulk operation properties
-    public $selectedItems = [];
-
-    public $selectAll = false;
-
-    public $bulkAction = '';
-
-    public $successMessage = '';
-
-    public $errorMessage = '';
+    public string $method = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'paymentMethod' => ['except' => ''],
+        'period' => ['except' => ''],
         'customer' => ['except' => ''],
+        'method' => ['except' => ''],
     ];
 
-    public function updatingSearch()
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['receipt_date', 'receipt_number', 'total'];
     }
 
-    public function updatingPaymentMethod()
+    protected function filterProperties(): array
     {
-        $this->resetPage();
+        return ['period', 'customer', 'method'];
     }
 
-    public function updatingCustomer()
+    protected function rowRelations(): array
     {
-        $this->resetPage();
+        return ['customer:id,name'];
     }
 
-    public function updatingPerPage()
+    protected function baseQuery(): Builder
     {
-        $this->resetPage();
-    }
-
-    public function clearFilters()
-    {
-        $this->reset(['search', 'paymentMethod', 'customer', 'dateFrom', 'dateTo']);
-        $this->resetPage();
-    }
-
-    public function updatedSelectAll($value)
-    {
-        if ($value) {
-            $this->selectedItems = $this->getFilteredReceiptIds();
-        } else {
-            $this->selectedItems = [];
+        $query = SalesReceipt::query();
+        if (($term = trim($this->search)) !== '') {
+            $query->where(fn ($q) => $q->where('receipt_number', 'like', "%{$term}%")
+                ->orWhere('reference', 'like', "%{$term}%")
+                ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$term}%")->orWhere('company_name', 'like', "%{$term}%")));
         }
-    }
+        if ($this->customer !== '' && ctype_digit($this->customer)) {
+            $query->where('customer_id', (int) $this->customer);
+        }
+        if ($this->method !== '') {
+            $query->where('payment_method', $this->method);
+        }
 
-    public function updatedSelectedItems()
-    {
-        $this->selectAll = count($this->selectedItems) === count($this->getFilteredReceiptIds());
-    }
-
-    private function getFilteredReceiptIds()
-    {
-        return SalesReceipt::query()
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('receipt_number', 'like', '%'.$this->search.'%')
-                        ->orWhere('reference', 'like', '%'.$this->search.'%')
-                        ->orWhereHas('customer', function ($q) {
-                            $q->where('name', 'like', '%'.$this->search.'%')
-                                ->orWhere('company_name', 'like', '%'.$this->search.'%');
-                        });
-                });
-            })
-            ->when($this->paymentMethod, fn ($q) => $q->where('payment_method', $this->paymentMethod))
-            ->when($this->customer, fn ($q) => $q->where('customer_id', $this->customer))
-            ->when($this->dateFrom, fn ($q) => $q->whereDate('receipt_date', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn ($q) => $q->whereDate('receipt_date', '<=', $this->dateTo))
-            ->pluck('id')
-            ->map(fn ($id) => (string) $id)
-            ->toArray();
+        return $this->applyPeriod($query, 'receipt_date', $this->period);
     }
 
     /**
@@ -151,43 +109,18 @@ class SalesReceiptsTable extends Component
         }
 
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
     }
 
     public function render()
     {
-        $receipts = SalesReceipt::with(['customer'])
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('receipt_number', 'like', '%'.$this->search.'%')
-                        ->orWhere('reference', 'like', '%'.$this->search.'%')
-                        ->orWhereHas('customer', function ($q) {
-                            $q->where('name', 'like', '%'.$this->search.'%')
-                                ->orWhere('company_name', 'like', '%'.$this->search.'%');
-                        });
-                });
-            })
-            ->when($this->paymentMethod, function ($query) {
-                $query->where('payment_method', $this->paymentMethod);
-            })
-            ->when($this->customer, function ($query) {
-                $query->where('customer_id', $this->customer);
-            })
-            ->when($this->dateFrom, function ($query) {
-                $query->whereDate('receipt_date', '>=', $this->dateFrom);
-            })
-            ->when($this->dateTo, function ($query) {
-                $query->whereDate('receipt_date', '<=', $this->dateTo);
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate($this->pageSize());
-
-        $customers = Customer::where('is_active', true)->orderBy('name')->get();
-
         return view('livewire.sales-receipts.sales-receipts-table', [
-            'receipts' => $receipts,
-            'customers' => $customers,
+            'receipts' => $this->rows(),
+            'totals' => $this->filteredQuery()->toBase()->selectRaw('COUNT(*) as n, COALESCE(SUM(total), 0) as total')->first(),
+            'customers' => Customer::where('is_active', true)->orderBy('name')->pluck('name', 'id'),
+            'methods' => SalesReceipt::query()->whereNotNull('payment_method')->distinct()->orderBy('payment_method')->pluck('payment_method'),
+            'periods' => self::periodOptions(),
+            'filtered' => $this->isFiltered(),
         ]);
     }
 }

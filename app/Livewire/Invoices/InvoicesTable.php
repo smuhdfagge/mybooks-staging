@@ -7,7 +7,6 @@ use App\Livewire\Concerns\ChecksPermissions;
 use App\Livewire\Concerns\ListTable;
 use App\Models\Customer;
 use App\Models\Invoice;
-use App\Services\Dashboard\DashboardService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -43,15 +42,6 @@ class InvoicesTable extends Component
         'cancelled' => 'Cancelled',
     ];
 
-    public const PERIODS = [
-        '' => 'All time',
-        'this_month' => 'This month',
-        'last_month' => 'Last month',
-        'this_quarter' => 'This quarter',
-        'this_year' => 'This financial year',
-        'last_12_months' => 'Last 12 months',
-    ];
-
     /** The first column is the default sort, newest first. */
     protected function sortable(): array
     {
@@ -69,7 +59,7 @@ class InvoicesTable extends Component
     }
 
     /** Search, date and customer, without the status tab (the tabs count within these). */
-    private function baseQuery(): Builder
+    protected function baseQuery(): Builder
     {
         $query = Invoice::query();
 
@@ -88,13 +78,7 @@ class InvoicesTable extends Component
             $query->where('customer_id', (int) $this->customer);
         }
 
-        if (array_key_exists($this->period, self::PERIODS) && $this->period !== '') {
-            $p = app(DashboardService::class)->period((int) auth()->user()->tenant_id, $this->period, 'none');
-            $query->where('invoice_date', '>=', $p->from->toDateString())
-                ->where('invoice_date', '<', $p->to->copy()->addDay()->toDateString());
-        }
-
-        return $query;
+        return $this->applyPeriod($query, 'invoice_date', $this->period);
     }
 
     protected function filteredQuery(): Builder
@@ -286,8 +270,8 @@ class InvoicesTable extends Component
             'tabs' => $this->tabs(),
             'totals' => $totals,
             'customers' => Customer::where('is_active', true)->orderBy('name')->pluck('name', 'id'),
-            'periods' => self::PERIODS,
-            'filtered' => trim($this->search) !== '' || $this->period !== '' || $this->customer !== '',
+            'periods' => self::periodOptions(),
+            'filtered' => $this->isFiltered(),
             'today' => now()->startOfDay(),
         ]);
     }

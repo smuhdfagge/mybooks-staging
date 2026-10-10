@@ -76,10 +76,7 @@ livewire/bills/bills-table.blade.php
 livewire/budgets/budgets-table.blade.php
 livewire/categories-table.blade.php
 livewire/chart-of-accounts/chart-of-accounts-table.blade.php
-livewire/credit-notes/credit-notes-table.blade.php
-livewire/customers/customers-table.blade.php
 livewire/deductions/deductions-table.blade.php
-livewire/delivery-notes/delivery-notes-table.blade.php
 livewire/e-invoices/e-invoices-table.blade.php
 livewire/employees/employees-table.blade.php
 livewire/expenses/expenses-table.blade.php
@@ -91,13 +88,9 @@ livewire/items/items-table.blade.php
 livewire/journals/journals-table.blade.php
 livewire/leaves/leaves-table.blade.php
 livewire/payments-made/payments-made-table.blade.php
-livewire/payments-received/payments-received-table.blade.php
 livewire/payroll/payroll-batch-table.blade.php
 livewire/purchase-orders/purchase-orders-table.blade.php
-livewire/quotations/quotations-table.blade.php
 livewire/salary-structures/salary-structures-table.blade.php
-livewire/sales-orders/sales-orders-table.blade.php
-livewire/sales-receipts/sales-receipts-table.blade.php
 livewire/stock-transfers/stock-transfers-table.blade.php
 livewire/tax-groups/tax-groups-table.blade.php
 livewire/tax-rates/tax-rates-table.blade.php

@@ -2,9 +2,12 @@
 
 namespace Tests\Feature\Tables;
 
+use App\Livewire\Customers\CustomersTable;
 use App\Livewire\Invoices\InvoicesTable;
+use App\Livewire\PaymentsReceived\PaymentsReceivedTable;
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\PaymentReceived;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Livewire\Livewire;
@@ -173,5 +176,65 @@ class TableDesignTest extends TestCase
         $this->user->givePermissionTo(Permission::findOrCreate('delete invoices', 'web'));
         Livewire::test(InvoicesTable::class)->call('deleteOne', $draft->id)->assertSee('Deleted INV-4.');
         $this->assertNull(Invoice::find($draft->id));
+    }
+
+    // ── T2: sales lists ─────────────────────────────────────────
+
+    public function test_customers_list_tabs_and_amount_owed(): void
+    {
+        $this->createAuthenticatedUser(['view customers', 'edit customers']);
+        $this->invoices();
+        Customer::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Old Client', 'is_active' => false]);
+
+        $t = Livewire::test(CustomersTable::class)->assertSet('sortField', 'name')->assertSet('perPage', 25);
+        $tabs = $t->viewData('tabs');
+        $this->assertSame([3, 2, 2, 1], [$tabs['']['count'], $tabs['active']['count'], $tabs['owing']['count'], $tabs['inactive']['count']]);
+        $this->assertEquals(3000, $t->viewData('totals')->owed, 'Draft and paid invoices are not owed');
+
+        $t->set('tab', 'inactive');
+        $this->assertSame(['Old Client'], $t->viewData('customers')->pluck('name')->all());
+        $t->set('tab', 'owing')->set('search', 'Hauwa');
+        $this->assertSame(['Hauwa Traders'], $t->viewData('customers')->pluck('name')->all());
+        $this->assertEquals(1000, $t->viewData('totals')->owed);
+    }
+
+    public function test_payments_received_tabs_split_invoice_payments_and_deposits(): void
+    {
+        $this->createAuthenticatedUser(['view payments-received']);
+        $this->invoices();
+        $tid = $this->tenant->id;
+        $inv = Invoice::where('invoice_number', 'INV-3')->first();
+        PaymentReceived::withoutEvents(function () use ($tid, $inv) {
+            $make = fn ($n, $amount, $deposit, $unused, $invoice = null) => PaymentReceived::create([
+                'tenant_id' => $tid, 'customer_id' => $inv->customer_id, 'invoice_id' => $invoice?->id, 'payment_number' => $n,
+                'payment_date' => '2026-10-07', 'amount' => $amount, 'payment_method' => 'bank_transfer',
+                'is_deposit' => $deposit, 'unused_amount' => $unused,
+            ]);
+            $make('PAY-1', 2000, false, 0, $inv);
+            $make('PAY-2', 500, true, 500);
+            $make('PAY-3', 300, true, 0);
+        });
+
+        $t = Livewire::test(PaymentsReceivedTable::class);
+        $tabs = $t->viewData('tabs');
+        $this->assertSame([3, 1, 2, 1], [$tabs['']['count'], $tabs['payments']['count'], $tabs['deposits']['count'], $tabs['unused']['count']]);
+        $this->assertEquals(2800, $t->viewData('totals')->amount);
+        $t->set('tab', 'unused');
+        $this->assertSame(['PAY-2'], $t->viewData('payments')->pluck('payment_number')->all());
+
+        $html = $this->get(route('payments-received.index'))->assertOk()->getContent();
+        $this->assertStringContainsString('Total of 3 payments', $html);
+        $this->assertStringContainsString('Bank transfer', $html);
+    }
+
+    public function test_every_sales_list_page_uses_the_shared_design(): void
+    {
+        $this->createSuperAdmin();
+        $this->invoices();
+        foreach (['customers', 'quotations', 'sales-orders', 'sales-receipts', 'delivery-notes', 'credit-notes', 'payments-received'] as $list) {
+            $html = $this->get(route($list.'.index'))->assertOk()->getContent();
+            $this->assertStringContainsString('tbl-wrap', $html, $list);
+            $this->assertStringNotContainsString('uppercase tracking-wider', $html, $list);
+        }
     }
 }

@@ -1,210 +1,118 @@
-<div class="relative">
-    <x-table-loading />
-    <!-- Flash Messages -->
-    @if ($successMessage)
-        <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg dark:bg-green-800 dark:border-green-600 dark:text-green-100">
-            <div class="flex items-center">
-                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                </svg>
-                {{ $successMessage }}
-            </div>
-        </div>
-    @endif
+{{-- Payments received list (tables plan T2): money in against invoices, and deposits. --}}
+@php
+    $user = auth()->user();
+    $money = fn ($v) => number_format((float) $v, 2);
+    $date = fn ($d) => $d ? $d->format('j M Y') : '—';
+    $method = fn ($m) => match (true) { $m === 'deposit' => 'From a deposit', $m === 'pos' => 'POS', (bool) $m => ucfirst(str_replace('_', ' ', $m)), default => '—' };
+    $methodOptions = collect($methods)->mapWithKeys(fn ($m) => [$m => $method($m)])->all();
+    $canBulk = $user->can('delete payments-received');
+    $ids = $payments->pluck('id')->map(fn ($id) => (string) $id)->all();
+    $unused = fn ($p) => $p->is_deposit && $p->unused_amount > 0;
+@endphp
+<div class="relative space-y-3">
+    <x-flash-messages :successMessage="$successMessage" :errorMessage="$errorMessage" />
 
-    @if ($errorMessage)
-        <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg dark:bg-red-800 dark:border-red-600 dark:text-red-100">
-            <div class="flex items-center">
-                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                </svg>
-                {{ $errorMessage }}
-            </div>
-        </div>
-    @endif
+    <x-table.tabs :tabs="$tabs" :active="$tab" />
 
-    <!-- Filters -->
-    <div class="mb-4 sm:mb-6 bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-3">
-            <div>
-                <label class="form-label">Search</label>
-                <input aria-label="Search payments" type="text" wire:model.live.debounce.300ms="search" placeholder="Search payments..."
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-            </div>
-            <div>
-                <label for="customer" class="form-label">Customer</label>
-                <select id="customer" wire:model.live="customer" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-                    <option value="">All Customers</option>
-                    @foreach($customers as $cust)
-                        <option value="{{ $cust->id }}">{{ $cust->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label for="paymentType" class="form-label">Type</label>
-                <select id="paymentType" wire:model.live="paymentType" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-                    <option value="">All Types</option>
-                    <option value="regular">Regular Payments</option>
-                    <option value="deposit">Customer Deposits</option>
-                </select>
-            </div>
-            <div>
-                <label for="paymentMethod" class="form-label">Payment Method</label>
-                <select id="paymentMethod" wire:model.live="paymentMethod" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-                    <option value="">All Methods</option>
-                    @foreach($paymentMethods as $method)
-                        <option value="{{ $method }}">{{ ucfirst($method) }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <div>
-                <label for="dateFrom" class="form-label">From Date</label>
-                <input id="dateFrom" type="date" wire:model.live="dateFrom"
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-            </div>
-            <div>
-                <label for="dateTo" class="form-label">To Date</label>
-                <input id="dateTo" type="date" wire:model.live="dateTo"
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-            </div>
-            <div>
-                <label for="perPage" class="form-label">Per Page</label>
-                <select id="perPage" wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-                    <option value="10">10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                </select>
-            </div>
-            <div>
-                <label for="bulkAction" class="form-label">Bulk Actions</label>
-                <div class="flex space-x-2">
-                    <select id="bulkAction" wire:model="bulkAction" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-                        <option value="">Select Action</option>
-                        <option value="delete">Delete</option>
-                    </select>
-                    <button type="button" wire:click="applyBulkAction" wire:loading.attr="disabled" wire:confirm="Are you sure you want to delete the selected payments? This will also reverse invoice payment amounts."
-                        class="px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50"
-                        {{ count($selectedItems) === 0 ? 'disabled' : '' }}>
-                        Apply
-                    </button>
-                </div>
-                @if(count($selectedItems) > 0)
-                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ count($selectedItems) }} selected</p>
+    <x-table.toolbar placeholder="Search number, reference, customer or amount" :selected="count($selectedItems)" :filtered="$filtered">
+        <x-slot name="filters">
+            <x-table.select model="period" label="Date" :options="$periods" />
+            <x-table.pick model="customer" label="Customer" :options="$customers" />
+            <x-table.pick model="method" label="Paid by" :options="$methodOptions" />
+        </x-slot>
+        @if ($canBulk)
+            <x-slot name="bulk">
+                <x-table.bulk-button action="delete" danger confirm="Delete the ticked payments? The invoices they paid will show as owing again.">Delete</x-table.bulk-button>
+                <x-table.tick-all-matching :rows="$payments" :selected="$selectedItems" />
+            </x-slot>
+        @endif
+    </x-table.toolbar>
+
+    <div class="relative">
+        <x-table.veil />
+        @if ($payments->isEmpty())
+            <div class="tbl-wrap">
+                @if ($filtered || $tab !== '')
+                    <x-table.empty filtered title="No payments match these filters" />
+                @else
+                    <x-table.empty title="No payments received yet" text="Record money a customer pays against an invoice, or a deposit paid in advance.">
+                        @can('create payments-received')<a href="{{ route('payments-received.create') }}" class="btn-new">Record payment</a>@endcan
+                    </x-table.empty>
                 @endif
             </div>
-        </div>
-    </div>
-
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead class="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                        <th scope="col" class="px-4 py-3 text-left">
-                            <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
-                                class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
-                        </th>
-                        <x-sort-header field="payment_number" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Payment #</x-sort-header>
-                        <th scope="col" class="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Customer</th>
-                        <x-sort-header field="payment_date" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Date</x-sort-header>
-                        <th scope="col" class="hidden md:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
-                        <th scope="col" class="hidden lg:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Method</th>
-                        <x-sort-header field="amount" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Amount</x-sort-header>
-                        <th scope="col" class="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    @forelse($payments as $payment)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                            <td class="px-4 py-4">
-                                <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $payment->id }}"
-                                    class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
-                            </td>
-                            <td class="px-4 sm:px-6 py-4">
-                                <div class="text-sm font-medium text-green-700 dark:text-green-400">{{ $payment->payment_number }}</div>
-                                <div class="sm:hidden text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $payment->customer?->name ?? '-' }}</div>
-                            </td>
-                            <td class="hidden sm:table-cell px-4 sm:px-6 py-4">
-                                <div class="text-sm text-gray-900 dark:text-white truncate max-w-[150px]">{{ $payment->customer?->name ?? '-' }}</div>
-                            </td>
-                            <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                {{ $payment->payment_date?->format('M d, Y') }}
-                            </td>
-                            <td class="hidden md:table-cell px-4 sm:px-6 py-4 whitespace-nowrap">
-                                @if($payment->is_deposit)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400">
-                                        Deposit
-                                        @if($payment->unused_amount > 0)
-                                            <span class="ml-1 text-green-700 dark:text-green-300">(@money($payment->unused_amount) avail)</span>
-                                        @endif
-                                    </span>
-                                @elseif($payment->invoice)
-                                    <a href="{{ route('invoices.show', $payment->invoice) }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">
-                                        {{ $payment->invoice->invoice_number }}
-                                    </a>
-                                @elseif($payment->payment_method === 'deposit')
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800 dark:bg-brand-900/50 dark:text-brand-300">
-                                        From Deposit
-                                    </span>
-                                @else
-                                    <span class="text-sm text-gray-500 dark:text-gray-400">General</span>
+        @else
+            <x-table caption="Payments received" class="hidden md:block">
+                <x-slot name="head">
+                    @if ($canBulk)<x-table.check-all :ids="$ids" :selected="$selectedItems" label="Tick every payment on this page" />@endif
+                    <x-table.th field="payment_number" :sort="[$sortField, $sortDirection]">Number</x-table.th>
+                    <x-table.th>Customer</x-table.th>
+                    <x-table.th field="payment_date" :sort="[$sortField, $sortDirection]">Date</x-table.th>
+                    <x-table.th>For</x-table.th>
+                    <x-table.th>Paid by</x-table.th>
+                    <x-table.th field="amount" :sort="[$sortField, $sortDirection]" num>Amount</x-table.th>
+                    <x-table.th num>Not yet used</x-table.th>
+                    <th scope="col" class="tbl-menu"><span class="sr-only">Actions</span></th>
+                </x-slot>
+                @foreach ($payments as $payment)
+                    @php $ticked = in_array((string) $payment->id, $selectedItems, true); @endphp
+                    <tr wire:key="pr-{{ $payment->id }}" @if ($ticked) data-picked @endif>
+                        @if ($canBulk)<x-table.check :id="$payment->id" :label="$payment->payment_number" />@endif
+                        <td>
+                            <a href="{{ route('payments-received.show', $payment) }}" class="tbl-link">{{ $payment->payment_number }}</a>
+                            @if ($payment->reference)<div class="text-xs tbl-muted">{{ $payment->reference }}</div>@endif
+                        </td>
+                        <td class="max-w-[16rem] truncate">{{ $payment->customer?->name ?? '—' }}</td>
+                        <td class="tbl-muted">{{ $date($payment->payment_date) }}</td>
+                        <td>
+                            @if ($payment->invoice)
+                                <a href="{{ route('invoices.show', $payment->invoice) }}" class="text-brand-700 hover:underline dark:text-brand-300">{{ $payment->invoice->invoice_number }}</a>
+                            @elseif ($payment->is_deposit)
+                                <x-status-badge status="open" label="Deposit" />
+                            @else
+                                <span class="tbl-zero">—</span>
+                            @endif
+                        </td>
+                        <td>{{ $method($payment->payment_method) }}</td>
+                        <td class="num">{{ $money($payment->amount) }}</td>
+                        <td class="num {{ $unused($payment) ? '' : 'tbl-zero' }}">{{ $unused($payment) ? $money($payment->unused_amount) : '—' }}</td>
+                        <td class="tbl-menu">
+                            <x-table.dropdown :sr-label="'Actions for '.$payment->payment_number">
+                                <x-table.menu-item :href="route('payments-received.show', $payment)">View</x-table.menu-item>
+                                @if ($unused($payment) && $user->can('edit payments-received'))
+                                    <x-table.menu-item :href="route('payments-received.apply-deposit', $payment)">Apply to an invoice</x-table.menu-item>
                                 @endif
-                            </td>
-                            <td class="hidden lg:table-cell px-4 sm:px-6 py-4 whitespace-nowrap">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                    {{ $payment->payment_method === 'cash' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' : '' }}
-                                    {{ $payment->payment_method === 'bank_transfer' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' : '' }}
-                                    {{ $payment->payment_method === 'check' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' : '' }}
-                                    {{ $payment->payment_method === 'credit_card' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' : '' }}
-                                    {{ $payment->payment_method === 'deposit' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' : '' }}
-                                    {{ !in_array($payment->payment_method, ['cash', 'bank_transfer', 'check', 'credit_card', 'deposit']) ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' : '' }}">
-                                    {{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}
-                                </span>
-                            </td>
-                            <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-right">
-                                <div class="font-medium text-green-700 dark:text-green-400">@money($payment->amount)</div>
-                            </td>
-                            <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <div class="flex items-center justify-end space-x-1 sm:space-x-2">
-                                    <a href="{{ route('payments-received.show', $payment) }}" class="p-1 text-brand-600 hover:text-brand-900 dark:text-brand-300" title="View" aria-label="View">
-                                        <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                    </a>
-                                    @if($payment->is_deposit && $payment->unused_amount > 0)
-                                        <a href="{{ route('payments-received.apply-deposit', $payment) }}" class="p-1 text-green-700 hover:text-green-900 dark:text-green-400" title="Apply Deposit" aria-label="Apply Deposit">
-                                            <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                                        </a>
-                                    @endif
-                                    <a href="{{ route('payments-received.edit', $payment) }}" class="p-1 text-yellow-700 hover:text-yellow-900 dark:text-yellow-400" title="Edit" aria-label="Edit">
-                                        <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="8" class="px-4 sm:px-6 py-12 text-center">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-                                </svg>
-                                <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No payments found</h3>
-                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by recording a new payment.</p>
-                                <div class="mt-6">
-                                    <a href="{{ route('payments-received.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-700 hover:bg-green-800">
-                                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                        Record Payment
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        @if($payments->hasPages())
-            <div class="bg-white dark:bg-gray-800 px-4 py-3 border-t border-gray-200 dark:border-gray-700 sm:px-6">{{ $payments->links() }}</div>
+                                @can('edit payments-received')
+                                    <x-table.menu-item :href="route('payments-received.edit', $payment)">Edit</x-table.menu-item>
+                                @endcan
+                            </x-table.dropdown>
+                        </td>
+                    </tr>
+                @endforeach
+                <x-slot name="foot">
+                    <tr>
+                        @if ($canBulk)<td></td>@endif
+                        <td colspan="5">Total of {{ number_format($totals->n) }} {{ $totals->n == 1 ? 'payment' : 'payments' }}@if ($filtered || $tab !== '') <span class="font-normal tbl-muted">(this filter)</span>@endif</td>
+                        <td class="num">{{ $money($totals->amount) }}</td>
+                        <td class="num">{{ $totals->unused > 0 ? $money($totals->unused) : '—' }}</td>
+                        <td></td>
+                    </tr>
+                </x-slot>
+            </x-table>
+            <ul class="space-y-2 md:hidden" aria-label="Payments received">
+                @foreach ($payments as $payment)
+                    <li wire:key="pr-card-{{ $payment->id }}">
+                        <x-table.card :href="route('payments-received.show', $payment)" :title="$payment->customer?->name ?? '—'" :amount="\App\Support\Money::format($payment->amount)"
+                            :meta="$payment->payment_number.' · '.$date($payment->payment_date).' · '.($payment->invoice?->invoice_number ?? ($payment->is_deposit ? 'Deposit' : $method($payment->payment_method)))">
+                            @if ($unused($payment))
+                                <x-slot name="alert">{{ \App\Support\Money::format($payment->unused_amount) }} not yet used</x-slot>
+                            @endif
+                        </x-table.card>
+                    </li>
+                @endforeach
+            </ul>
+            <p class="text-sm font-medium text-gray-700 md:hidden dark:text-gray-300">Total {{ \App\Support\Money::format($totals->amount) }}</p>
         @endif
     </div>
+
+    <x-table.footer :rows="$payments" />
 </div>

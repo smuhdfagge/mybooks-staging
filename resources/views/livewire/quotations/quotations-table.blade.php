@@ -1,69 +1,90 @@
-<div class="relative">
-    <x-table-loading />
-    <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-            <label for="q-search" class="form-label">Search</label>
-            <input type="text" id="q-search" wire:model.live.debounce.300ms="search" placeholder="Number, reference, customer..." class="form-control text-sm">
-        </div>
-        <div>
-            <label for="q-status" class="form-label">Status</label>
-            <select id="q-status" wire:model.live="status" class="form-control text-sm">
-                <option value="">All statuses</option>
-                @foreach($statuses as $s)
-                    <option value="{{ $s->value }}">{{ $s->label() }}</option>
-                @endforeach
-            </select>
-        </div>
-    </div>
+{{-- Quotations list (tables plan T2). --}}
+@php
+    $user = auth()->user();
+    $money = fn ($v) => number_format((float) $v, 2);
+    $date = fn ($d) => $d ? $d->format('j M Y') : '—';
+    $today = now()->startOfDay();
+    $lapsed = fn ($q) => in_array($q->status, ['draft', 'sent'], true) && $q->expiry_date && $q->expiry_date->lt($today);
+@endphp
+<div class="relative space-y-3">
+    <x-table.tabs :tabs="$tabs" :active="$tab" />
 
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead class="bg-gray-50 dark:bg-gray-700 text-xs text-gray-500 dark:text-gray-300">
-                <tr>
-                    <x-sort-header field="quotation_number" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-left">Number</x-sort-header>
-                    <th scope="col" class="px-4 py-3 text-left uppercase tracking-wider font-medium">Customer</th>
-                    <x-sort-header field="quotation_date" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-left">Date</x-sort-header>
-                    <x-sort-header field="expiry_date" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-left">Valid until</x-sort-header>
-                    <x-sort-header field="total" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-right">Total</x-sort-header>
-                    <x-sort-header field="status" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-left">Status</x-sort-header>
-                </tr>
-            </thead>
-            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                @forelse($quotations as $quotation)
-                    <tr wire:key="quotation-{{ $quotation->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                        <td class="px-4 py-3 whitespace-nowrap">
-                            <a href="{{ route('quotations.show', $quotation) }}" class="font-medium text-brand-600 dark:text-brand-300 hover:underline">{{ $quotation->quotation_number }}</a>
-                            @if($quotation->reference)<p class="text-xs text-gray-500 dark:text-gray-400">{{ $quotation->reference }}</p>@endif
+    <x-table.toolbar placeholder="Search number, reference or customer" :filtered="$filtered">
+        <x-slot name="filters">
+            <x-table.select model="period" label="Date" :options="$periods" />
+            <x-table.pick model="customer" label="Customer" :options="$customers" />
+        </x-slot>
+    </x-table.toolbar>
+
+    <div class="relative">
+        <x-table.veil />
+        @if ($quotations->isEmpty())
+            <div class="tbl-wrap">
+                @if ($filtered || $tab !== '')
+                    <x-table.empty filtered title="No quotations match these filters" />
+                @else
+                    <x-table.empty title="No quotations yet" text="A quotation tells a customer what you would charge, before they agree.">
+                        @can('create invoices')<a href="{{ route('quotations.create') }}" class="btn-new">New quotation</a>@endcan
+                    </x-table.empty>
+                @endif
+            </div>
+        @else
+            <x-table caption="Quotations" class="hidden md:block">
+                <x-slot name="head">
+                    <x-table.th field="quotation_number" :sort="[$sortField, $sortDirection]">Number</x-table.th>
+                    <x-table.th>Customer</x-table.th>
+                    <x-table.th field="quotation_date" :sort="[$sortField, $sortDirection]">Date</x-table.th>
+                    <x-table.th field="expiry_date" :sort="[$sortField, $sortDirection]">Valid until</x-table.th>
+                    <x-table.th field="total" :sort="[$sortField, $sortDirection]" num>Amount</x-table.th>
+                    <x-table.th>Status</x-table.th>
+                    <th scope="col" class="tbl-menu"><span class="sr-only">Actions</span></th>
+                </x-slot>
+                @foreach ($quotations as $q)
+                    <tr wire:key="qt-{{ $q->id }}">
+                        <td>
+                            <a href="{{ route('quotations.show', $q) }}" class="tbl-link">{{ $q->quotation_number }}</a>
+                            @if ($q->reference)<span class="ml-1.5 text-xs tbl-muted">{{ $q->reference }}</span>@endif
                         </td>
-                        <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $quotation->customer?->name }}</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-100">{{ $quotation->quotation_date->format('M d, Y') }}</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-100">{{ $quotation->expiry_date?->format('M d, Y') ?? '—' }}</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-right font-medium text-gray-900 dark:text-gray-100">@money($quotation->total)</td>
-                        <td class="px-4 py-3 whitespace-nowrap"><x-status-badge :status="$quotation->status" /></td>
+                        <td class="max-w-[16rem] truncate">{{ $q->customer?->name ?? '—' }}</td>
+                        <td class="tbl-muted">{{ $date($q->quotation_date) }}</td>
+                        <td class="{{ $lapsed($q) ? 'tbl-late' : 'tbl-muted' }}">{{ $date($q->expiry_date) }}</td>
+                        <td class="num">{{ $money($q->total) }}</td>
+                        <td><x-status-badge :status="$q->status" /></td>
+                        <td class="tbl-menu">
+                            <x-table.dropdown :sr-label="'Actions for '.$q->quotation_number">
+                                <x-table.menu-item :href="route('quotations.show', $q)">View</x-table.menu-item>
+                                <x-table.menu-item :href="route('quotations.print', $q)" new-tab>Print</x-table.menu-item>
+                                <x-table.menu-item :href="route('quotations.pdf', $q)">Download PDF</x-table.menu-item>
+                                @if (in_array($q->status, ['draft', 'sent'], true) && $user->can('edit invoices'))
+                                    <x-table.menu-item :href="route('quotations.edit', $q)">Edit</x-table.menu-item>
+                                @endif
+                            </x-table.dropdown>
+                        </td>
                     </tr>
-                @empty
+                @endforeach
+                <x-slot name="foot">
                     <tr>
-                        <td colspan="6" class="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
-                            No quotations yet.
-                            @can('create invoices')
-                                <a href="{{ route('quotations.create') }}" class="text-brand-600 dark:text-brand-300 hover:underline">Create your first quotation</a>.
-                            @endcan
-                        </td>
+                        <td colspan="4">Total of {{ number_format($totals->n) }} {{ $totals->n == 1 ? 'quotation' : 'quotations' }}@if ($filtered || $tab !== '') <span class="font-normal tbl-muted">(this filter)</span>@endif</td>
+                        <td class="num">{{ $money($totals->total) }}</td>
+                        <td colspan="2"></td>
                     </tr>
-                @endforelse
-            </tbody>
-        </table>
+                </x-slot>
+            </x-table>
+            <ul class="space-y-2 md:hidden" aria-label="Quotations">
+                @foreach ($quotations as $q)
+                    <li wire:key="qt-card-{{ $q->id }}">
+                        <x-table.card :href="route('quotations.show', $q)" :title="$q->customer?->name ?? '—'" :amount="\App\Support\Money::format($q->total)"
+                            :meta="$q->quotation_number.' · '.$date($q->quotation_date)" :tone="$lapsed($q) ? 'bad' : 'muted'">
+                            <x-slot name="badge"><x-status-badge :status="$q->status" /></x-slot>
+                            @if ($lapsed($q))
+                                <x-slot name="alert">Ran out on {{ $date($q->expiry_date) }}</x-slot>
+                            @endif
+                        </x-table.card>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
     </div>
 
-    <div class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div>
-            <label for="q-per-page" class="sr-only">Rows per page</label>
-            <select id="q-per-page" wire:model.live="perPage" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm">
-                @foreach([10, 15, 25, 50, 100] as $size)
-                    <option value="{{ $size }}">{{ $size }} per page</option>
-                @endforeach
-            </select>
-        </div>
-        @if($quotations->hasPages())<div>{{ $quotations->links() }}</div>@endif
-    </div>
+    <x-table.footer :rows="$quotations" />
 </div>

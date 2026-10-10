@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Concerns;
 
+use App\Services\Dashboard\DashboardService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\WithPagination;
@@ -44,7 +45,82 @@ trait ListTable
     /** Ticking every row of a large filter is capped here. */
     protected int $maxSelection = 1000;
 
-    abstract protected function filteredQuery(): Builder;
+    /** The list's query with search and filters applied, but not the status tab. */
+    abstract protected function baseQuery(): Builder;
+
+    /** The list's query with the status tab too: rows, ticked rows and totals use it. */
+    protected function filteredQuery(): Builder
+    {
+        return $this->applyTab($this->baseQuery(), $this->tab);
+    }
+
+    /** By default a tab is a value of the status column. */
+    protected function applyTab(Builder $query, string $tab): Builder
+    {
+        return $tab === '' ? $query : $query->where($query->getModel()->qualifyColumn('status'), $tab);
+    }
+
+    /**
+     * Status tabs with counts from one grouped query on the status column.
+     *
+     * @param  array<string, string>  $labels  status => label, in tab order
+     * @param  list<string>  $alert  statuses whose count shows in red
+     * @return array<string, array{label: string, count: int, alert: bool}>
+     */
+    protected function statusTabs(array $labels, array $alert = [], string $column = 'status', bool $hideEmpty = false): array
+    {
+        $counts = $this->baseQuery()->toBase()->reorder()
+            ->selectRaw("{$column} as tab_key, COUNT(*) as n")->groupBy($column)
+            ->pluck('n', 'tab_key')->map(fn ($n) => (int) $n);
+
+        $tabs = ['' => ['label' => 'All', 'count' => (int) $counts->sum(), 'alert' => false]];
+        foreach ($labels as $key => $label) {
+            $n = (int) ($counts[$key] ?? 0);
+            if ($hideEmpty && $n === 0 && $this->tab !== $key) {
+                continue;
+            }
+            $tabs[$key] = ['label' => $label, 'count' => $n, 'alert' => in_array($key, $alert, true)];
+        }
+
+        return $tabs;
+    }
+
+    /** Whether any search or filter (not the tab) is on. */
+    protected function isFiltered(): bool
+    {
+        foreach (array_merge(['search'], $this->filterProperties()) as $p) {
+            if (trim((string) $this->{$p}) !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** "Date: This month…" filter on $column, using the business's financial year. */
+    protected function applyPeriod(Builder $query, string $column, string $period): Builder
+    {
+        if ($period === '' || ! array_key_exists($period, self::periodOptions())) {
+            return $query;
+        }
+        $p = app(DashboardService::class)->period((int) auth()->user()->tenant_id, $period, 'none');
+
+        return $query->where($column, '>=', $p->from->toDateString())
+            ->where($column, '<', $p->to->copy()->addDay()->toDateString());
+    }
+
+    /** @return array<string, string> */
+    public static function periodOptions(): array
+    {
+        return [
+            '' => 'All time',
+            'this_month' => 'This month',
+            'last_month' => 'Last month',
+            'this_quarter' => 'This quarter',
+            'this_year' => 'This financial year',
+            'last_12_months' => 'Last 12 months',
+        ];
+    }
 
     /** @return array<int, string> */
     abstract protected function sortable(): array;
@@ -134,8 +210,10 @@ trait ListTable
     /** Run a bulk action from the bulk bar on the ticked rows. */
     public function runBulk(string $action): void
     {
+        // Only lists with a bulk bar have applyBulkAction(); elsewhere refuse.
+        abort_unless(method_exists($this, 'applyBulkAction'), 403);
         $this->bulkAction = $action;
         $this->authorizeBulkAction();
-        $this->applyBulkAction();
+        call_user_func([$this, 'applyBulkAction']);
     }
 }
