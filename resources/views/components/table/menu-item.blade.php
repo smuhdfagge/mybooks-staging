@@ -1,11 +1,12 @@
 {{--
-    One line in a menu. A link (href), a POST form (post="url"), or a
-    Livewire call (wire="method(1)"). danger: red, after a line.
+    One line in a menu. A link (href), a form (post="url", with method="DELETE"
+    or PUT to spoof it), or a Livewire call (wire="method(1)"). danger: red,
+    after a line.
     <x-table.menu-item href="…">View</x-table.menu-item>
     <x-table.menu-item post="…" confirm="Release this invoice?">Release</x-table.menu-item>
     <x-table.menu-item wire="deleteOne(5)" confirm="Delete INV-5?" danger>Delete</x-table.menu-item>
 --}}
-@props(['href' => null, 'post' => null, 'wire' => null, 'confirm' => null, 'danger' => false, 'newTab' => false])
+@props(['href' => null, 'post' => null, 'method' => null, 'wire' => null, 'confirm' => null, 'danger' => false, 'newTab' => false])
 @php
     $cls = 'flex w-full items-center rounded-md px-2.5 py-1.5 text-left text-sm focus:outline-none '.($danger
         ? 'text-red-700 hover:bg-red-50 focus:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/30 dark:focus:bg-red-900/30'
@@ -15,6 +16,7 @@
 @if ($post)
     <form method="POST" action="{{ $post }}" @if ($confirm) data-confirm="{{ $confirm }}" @endif>
         @csrf
+        @if ($method)@method($method)@endif
         <button type="submit" role="menuitem" class="{{ $cls }}">{{ $slot }}</button>
     </form>
 @elseif ($wire)

@@ -1,90 +1,100 @@
+{{-- Tax and pension to pay (tables plan T5). Amounts in ₦. --}}
+@php $money = fn ($v) => number_format((float) $v, 2); @endphp
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">{{ __('Payroll Liabilities') }}</h2>
-            <a href="{{ route('payroll.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">&larr; Back to Payroll</a>
-        </div>
+        <x-table.page-header title="Tax and pension to pay" description="What payroll owes the tax office and the funds, and what you have paid. Amounts in ₦.">
+            <x-slot name="more">
+                <x-table.menu-item :href="route('payroll.index')">Payroll runs</x-table.menu-item>
+                @can('create payroll')<x-table.menu-item :href="route('payroll.tax-templates')">Tax templates</x-table.menu-item>@endcan
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+    <div class="space-y-6">
+        {{-- Tax pack 1: each statutory body for the month --}}
+        <section class="space-y-3" aria-labelledby="remit-title">
+            <div class="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                    <h3 id="remit-title" class="text-base font-semibold text-gray-900 dark:text-white">Remittances for {{ $month->format('F Y') }}</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">From approved and paid payroll for the month. Download a schedule to send with each payment.</p>
+                </div>
+                <form method="GET" action="{{ route('payroll.liabilities') }}" class="flex items-end gap-2">
+                    <div><x-field name="month" label="Month" type="month" :value="$month->format('Y-m')" /></div>
+                    <button type="submit" class="tbl-chip h-9">Show</button>
+                </form>
+            </div>
+            <x-table caption="Remittances for the month" class="hidden md:block">
+                <x-slot name="head">
+                    <x-table.th>Pay to</x-table.th>
+                    <x-table.th>Due by</x-table.th>
+                    <x-table.th num>From payroll</x-table.th>
+                    <x-table.th num>Paid</x-table.th>
+                    <x-table.th num>Still to pay</x-table.th>
+                    <x-table.th>Schedule</x-table.th>
+                </x-slot>
+                @foreach ($summary as $row)
+                    @php $late = $row->outstanding > 0 && $row->due_date->isPast(); @endphp
+                    <tr>
+                        <td>
+                            {{ $row->label }}
+                            @if ($row->body === 'itf')<div class="text-xs tbl-muted">Paid yearly: {{ $row->from->format('M') }} to {{ $row->to->format('M Y') }}</div>@endif
+                        </td>
+                        <td class="{{ $late ? 'tbl-late' : 'tbl-muted' }}" title="{{ $row->due_rule }}">{{ $row->due_date->format('j M Y') }}@if ($late) · Overdue @endif</td>
+                        <td class="num {{ $row->due > 0 ? '' : 'tbl-zero' }}">{{ $money($row->due) }}</td>
+                        <td class="num {{ $row->paid > 0 ? '' : 'tbl-zero' }}">{{ $money($row->paid) }}</td>
+                        <td class="num {{ $row->outstanding > 0 ? 'font-medium' : 'tbl-zero' }}">{{ $money($row->outstanding) }}</td>
+                        <td class="whitespace-nowrap">
+                            <a href="{{ route('payroll.liabilities.schedule', ['body' => $row->body, 'month' => $month->format('Y-m'), 'format' => 'pdf']) }}" class="tbl-link">PDF</a>
+                            <span class="tbl-zero" aria-hidden="true">·</span>
+                            <a href="{{ route('payroll.liabilities.schedule', ['body' => $row->body, 'month' => $month->format('Y-m'), 'format' => 'csv']) }}" class="tbl-link">CSV</a>
+                        </td>
+                    </tr>
+                @endforeach
+                <x-slot name="foot">
+                    <tr>
+                        <td colspan="2">Total</td>
+                        <td class="num">{{ $money($summary->sum('due')) }}</td>
+                        <td class="num">{{ $money($summary->sum('paid')) }}</td>
+                        <td class="num">{{ $money($summary->sum('outstanding')) }}</td>
+                        <td></td>
+                    </tr>
+                </x-slot>
+            </x-table>
+            <ul class="space-y-2 md:hidden" aria-label="Remittances for the month">
+                @foreach ($summary as $row)
+                    @php $late = $row->outstanding > 0 && $row->due_date->isPast(); @endphp
+                    <li>
+                        <x-table.card :href="route('payroll.liabilities.schedule', ['body' => $row->body, 'month' => $month->format('Y-m'), 'format' => 'pdf'])"
+                            :title="$row->label" :amount="$money($row->outstanding)" :meta="'Due '.$row->due_date->format('j M Y').' · '.$money($row->paid).' paid'" :tone="$late ? 'bad' : 'muted'">
+                            @if ($late)
+                                <x-slot name="alert">Overdue</x-slot>
+                            @endif
+                        </x-table.card>
+                    </li>
+                @endforeach
+            </ul>
+            <p class="text-xs text-gray-600 dark:text-gray-400">PAYE is grouped by each employee's state of residence and pension by PFA. Set these on each employee's record. Due dates are a guide: check with your tax adviser.</p>
+        </section>
 
-            {{-- Tax pack 1: each statutory body for the month --}}
-            <x-card class="p-6">
-                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Remittances for {{ $month->format('F Y') }}</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">From approved and paid payroll for the month. Download a schedule to send with each payment.</p>
-                    </div>
-                    <form method="GET" action="{{ route('payroll.liabilities') }}" class="flex items-end gap-2">
-                        <div>
-                            <x-field name="month" label="Month" type="month" :value="$month->format('Y-m')" />
-                        </div>
-                        <button type="submit" class="btn-primary">Show</button>
-                    </form>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                        <thead>
-                            <tr>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Pay to</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Due by</th>
-                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">From payroll</th>
-                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Paid</th>
-                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Still to pay</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Schedule</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            @foreach($summary as $row)
-                                <tr>
-                                    <td class="px-3 py-2 text-gray-900 dark:text-gray-100">
-                                        {{ $row->label }}
-                                        @if($row->body === 'itf')<span class="block text-xs text-gray-500 dark:text-gray-400">Paid yearly: {{ $row->from->format('M') }} to {{ $row->to->format('M Y') }}</span>@endif
-                                    </td>
-                                    <td class="px-3 py-2 text-gray-700 dark:text-gray-300" title="{{ $row->due_rule }}">
-                                        {{ $row->due_date->format('j M Y') }}
-                                        @if($row->outstanding > 0 && $row->due_date->isPast())<span class="ml-1 text-xs font-semibold text-red-600 dark:text-red-300">Overdue</span>@endif
-                                    </td>
-                                    <td class="px-3 py-2 text-right">@money($row->due)</td>
-                                    <td class="px-3 py-2 text-right">@money($row->paid)</td>
-                                    <td class="px-3 py-2 text-right font-medium {{ $row->outstanding > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-gray-900 dark:text-gray-100' }}">@money($row->outstanding)</td>
-                                    <td class="px-3 py-2 whitespace-nowrap">
-                                        <a href="{{ route('payroll.liabilities.schedule', ['body' => $row->body, 'month' => $month->format('Y-m'), 'format' => 'pdf']) }}" class="text-brand-600 dark:text-brand-300 hover:underline">PDF</a>
-                                        <span class="text-gray-500 dark:text-gray-400">|</span>
-                                        <a href="{{ route('payroll.liabilities.schedule', ['body' => $row->body, 'month' => $month->format('Y-m'), 'format' => 'csv']) }}" class="text-brand-600 dark:text-brand-300 hover:underline">CSV</a>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-3">PAYE is grouped by each employee's state of residence and pension by PFA. Set these on each employee's record. Due dates are a guide: check with your tax adviser.</p>
-            </x-card>
-
-            <x-card class="p-6">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">What payroll owes</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Balances today. Approving a payroll adds to these; recording a payment below takes it off.</p>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead>
-                            <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Account</th>
-                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Owed</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            @foreach($accounts as $account)
-                                <tr>
-                                    <td class="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">{{ $account->account_code }} - {{ $account->name }}</td>
-                                    <td class="px-4 py-2 text-sm text-right font-medium text-gray-900 dark:text-gray-100">{{ number_format($account->current_balance, 2) }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-3">Accrued Salaries is net pay owed to staff; it clears when you mark payroll as paid.</p>
-            </x-card>
+        <section class="space-y-3" aria-labelledby="owed-title">
+            <div>
+                <h3 id="owed-title" class="text-base font-semibold text-gray-900 dark:text-white">What payroll owes</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Balances today. Approving a payroll adds to these; recording a payment below takes it off.</p>
+            </div>
+            <x-table caption="What payroll owes">
+                <x-slot name="head">
+                    <x-table.th>Account</x-table.th>
+                    <x-table.th num>Owed</x-table.th>
+                </x-slot>
+                @foreach ($accounts as $account)
+                    <tr>
+                        <td><span class="tbl-muted">{{ $account->account_code }}</span> {{ $account->name }}</td>
+                        <td class="num {{ (float) $account->current_balance != 0 ? '' : 'tbl-zero' }}">{{ $money($account->current_balance) }}</td>
+                    </tr>
+                @endforeach
+            </x-table>
+            <p class="text-xs text-gray-600 dark:text-gray-400">Accrued Salaries is net pay owed to staff; it clears when you mark payroll as paid.</p>
+        </section>
 
             @can('edit payroll')
             <x-card class="p-6">
@@ -131,36 +141,41 @@
             </x-card>
             @endcan
 
-            @if($remittances->isNotEmpty())
-            <x-card class="p-6">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent payments</h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                        <thead>
-                            <tr>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">For</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Period</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Paid to</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Reference</th>
-                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            @foreach($remittances as $r)
-                                <tr>
-                                    <td class="px-3 py-2">{{ $r->paid_on->format('j M Y') }}</td>
-                                    <td class="px-3 py-2">{{ \App\Support\PayrollStatutory::LABELS[$r->body] ?? 'Account '.$r->account_code }}</td>
-                                    <td class="px-3 py-2">{{ $r->period_start->format('M Y') }}@if(! $r->period_start->isSameMonth($r->period_end)) to {{ $r->period_end->format('M Y') }}@endif</td>
-                                    <td class="px-3 py-2">{{ $r->paid_to }}</td>
-                                    <td class="px-3 py-2">{{ $r->reference }}</td>
-                                    <td class="px-3 py-2 text-right">@money($r->amount)</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </x-card>
+            @if ($remittances->isNotEmpty())
+            <section class="space-y-3" aria-labelledby="paid-title">
+                <h3 id="paid-title" class="text-base font-semibold text-gray-900 dark:text-white">Recent payments</h3>
+                <x-table caption="Recent payments" class="hidden md:block">
+                    <x-slot name="head">
+                        <x-table.th>Date</x-table.th>
+                        <x-table.th>For</x-table.th>
+                        <x-table.th>Period</x-table.th>
+                        <x-table.th>Paid to</x-table.th>
+                        <x-table.th>Reference</x-table.th>
+                        <x-table.th num>Amount</x-table.th>
+                    </x-slot>
+                    @foreach ($remittances as $r)
+                        <tr>
+                            <td class="tbl-muted whitespace-nowrap">{{ $r->paid_on->format('j M Y') }}</td>
+                            <td>{{ \App\Support\PayrollStatutory::LABELS[$r->body] ?? 'Account '.$r->account_code }}</td>
+                            <td class="tbl-muted">{{ $r->period_start->format('M Y') }}{{ $r->period_start->isSameMonth($r->period_end) ? '' : ' to '.$r->period_end->format('M Y') }}</td>
+                            <td class="{{ $r->paid_to ? '' : 'tbl-zero' }}">{{ $r->paid_to ?: '—' }}</td>
+                            <td class="{{ $r->reference ? 'tbl-muted' : 'tbl-zero' }}">{{ $r->reference ?: '—' }}</td>
+                            <td class="num">{{ $money($r->amount) }}</td>
+                        </tr>
+                    @endforeach
+                </x-table>
+                <ul class="space-y-2 md:hidden" aria-label="Recent payments">
+                    @foreach ($remittances as $r)
+                        <li class="rounded-lg border border-gray-200 bg-white px-3.5 py-3 dark:border-gray-700 dark:bg-gray-800">
+                            <span class="flex items-baseline justify-between gap-3">
+                                <span class="min-w-0 truncate font-semibold text-gray-900 dark:text-white">{{ \App\Support\PayrollStatutory::LABELS[$r->body] ?? 'Account '.$r->account_code }}</span>
+                                <span class="whitespace-nowrap font-semibold tabular-nums text-gray-900 dark:text-white">{{ $money($r->amount) }}</span>
+                            </span>
+                            <span class="mt-1 block text-sm text-gray-600 dark:text-gray-400">{{ $r->paid_on->format('j M Y') }} · for {{ $r->period_start->format('M Y') }}{{ $r->paid_to ? ' · '.$r->paid_to : '' }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </section>
             @endif
 
             @can('edit payroll')
@@ -205,6 +220,5 @@
                 </form>
             </x-card>
             @endcan
-        </div>
     </div>
 </x-app-layout>

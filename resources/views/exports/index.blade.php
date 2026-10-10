@@ -1,175 +1,108 @@
+{{-- Exports (tables plan T5): files of your records to download, and full backups. --}}
+@php
+    $tone = ['pending' => 'pending', 'processing' => 'processing', 'completed' => 'completed', 'failed' => 'failed'];
+    $label = ['pending' => 'Waiting', 'processing' => 'Preparing', 'completed' => 'Ready', 'failed' => 'Failed'];
+    $quick = ['customers' => 'Customers', 'vendors' => 'Vendors', 'items' => 'Items', 'invoices' => 'Invoices', 'expenses' => 'Expenses'];
+    $busy = $exports->whereIn('status', ['pending', 'processing'])->isNotEmpty();
+    $expired = $exports->filter(fn ($e) => $e->isExpired())->isNotEmpty();
+    $kind = fn ($e) => $exportTypes[$e->type] ?? \Illuminate\Support\Str::headline($e->type);
+@endphp
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    {{ __('Data Export & Backup') }}
-                </h2>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Export your data in various formats or create full backups</p>
-            </div>
-            <div class="flex gap-2">
-                <a href="{{ route('exports.backup') }}" class="inline-flex items-center justify-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
-                    </svg>
-                    Full Backup
+        <x-table.page-header title="Exports" description="Download your records as a file, or make a full backup. Files are kept for a few days.">
+            <x-slot name="more">
+                <x-table.menu-item :href="route('exports.backup')">Full backup</x-table.menu-item>
+                @if ($expired)
+                    <x-table.menu-item :post="route('exports.cleanup')">Remove expired files</x-table.menu-item>
+                @endif
+                @can('view settings')<x-table.menu-item :href="route('activity-logs.index')">Activity log</x-table.menu-item>@endcan
+            </x-slot>
+            <x-slot name="actions">
+                <a href="{{ route('exports.create') }}" class="btn-new">
+                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 4a1 1 0 011 1v4h4a1 1 0 110 2h-4v4a1 1 0 11-2 0v-4H5a1 1 0 110-2h4V5a1 1 0 011-1z"/></svg>
+                    New export
                 </a>
-                <a href="{{ route('exports.create') }}" class="inline-flex items-center justify-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    New Export
-                </a>
-            </div>
-        </div>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <!-- Quick Export Cards -->
-            <div class="mb-6">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Quick Export</h3>
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    @foreach(['customers' => 'Customers', 'vendors' => 'Vendors', 'items' => 'Items', 'invoices' => 'Invoices', 'expenses' => 'Expenses'] as $type => $label)
-                    <form action="{{ route('exports.quick') }}" method="POST" class="inline">
-                        @csrf
-                        <input type="hidden" name="type" value="{{ $type }}">
-                        <input type="hidden" name="format" value="csv">
-                        <button type="submit" class="w-full flex flex-col items-center justify-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                            <svg class="w-8 h-8 text-gray-500 dark:text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $label }}</span>
-                            <span class="text-xs text-gray-500 dark:text-gray-400">CSV</span>
-                        </button>
-                    </form>
-                    @endforeach
-                </div>
-            </div>
-
-            <!-- Export History -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Export History</h3>
-                        @if($exports->whereIn('status', ['pending', 'processing'])->isNotEmpty())
-                            {{-- Built on the queue (P3): reload until ready. --}}
-                            <span class="text-sm text-gray-500 dark:text-gray-400" x-data x-init="setTimeout(() => window.location.reload(), 5000)">
-                                Preparing your export. This page refreshes by itself.
-                            </span>
-                        @endif
-                        @if($exports->where('expires_at', '<', now())->count() > 0)
-                        <form action="{{ route('exports.cleanup') }}" method="POST" class="inline">
-                            @csrf
-                            <button type="submit" class="text-sm text-red-600 hover:text-red-800 dark:text-red-300 dark:hover:text-red-300">
-                                Clean up expired exports
-                            </button>
-                        </form>
-                        @endif
-                    </div>
-
-                    @if($exports->isEmpty())
-                        <div class="text-center py-12">
-                            <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
-                            </svg>
-                            <p class="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">No exports yet</p>
-                            <p class="mt-2 text-gray-500 dark:text-gray-400">Create your first export to see it here.</p>
-                            <a href="{{ route('exports.create') }}" class="mt-4 inline-flex items-center px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700">
-                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                </svg>
-                                Create Export
-                            </a>
-                        </div>
-                    @else
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead class="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Format</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Size</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Created</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Expires</th>
-                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                    @foreach($exports as $export)
-                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                    {{ $exportTypes[$export->type] ?? ucwords(str_replace('_', ' ', $export->type)) }}
-                                                </div>
-                                                @if($export->type === 'full_backup' && $export->included_data)
-                                                    <div class="text-xs text-gray-500 dark:text-gray-400">
-                                                        {{ count($export->included_data) }} data types
-                                                    </div>
-                                                @endif
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 uppercase">
-                                                    {{ $export->format }}
-                                                </span>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $export->status_badge_class }}">
-                                                    {{ ucfirst($export->status) }}
-                                                </span>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                                {{ $export->formatted_file_size }}
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                                {{ $export->created_at->format('M j, Y g:i A') }}
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                                @if($export->expires_at)
-                                                    @if($export->isExpired())
-                                                        <span class="text-red-600 dark:text-red-300">Expired</span>
-                                                    @else
-                                                        <span class="text-gray-500 dark:text-gray-400">{{ $export->expires_at->diffForHumans() }}</span>
-                                                    @endif
-                                                @else
-                                                    <span class="text-gray-500 dark:text-gray-400">-</span>
-                                                @endif
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <div class="flex justify-end items-center space-x-2">
-                                                    @if($export->isDownloadable() && !$export->isExpired())
-                                                        <a href="{{ route('exports.download', $export) }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-300" title="Download">
-                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                                                            </svg>
-                                                        </a>
-                                                    @endif
-                                                    <form action="{{ route('exports.destroy', $export) }}" method="POST" class="inline" data-confirm="Are you sure you want to delete this export?">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-300 dark:hover:text-red-300" title="Delete">
-                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                                            </svg>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-
-                        @if($exports->hasPages())
-                            <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-                                {{ $exports->links() }}
-                            </div>
-                        @endif
-                    @endif
-                </div>
-            </div>
+    <div class="space-y-3">
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="text-sm text-gray-600 dark:text-gray-400">Quick CSV:</span>
+            @foreach ($quick as $type => $name)
+                <form action="{{ route('exports.quick') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="type" value="{{ $type }}">
+                    <input type="hidden" name="format" value="csv">
+                    <button type="submit" class="tbl-chip h-8">{{ $name }}</button>
+                </form>
+            @endforeach
         </div>
+
+        @if ($busy)
+            {{-- Built on the queue (P3): reload until ready. --}}
+            <p class="text-sm text-gray-600 dark:text-gray-400" role="status" x-data x-init="setTimeout(() => window.location.reload(), 5000)">Preparing your export. This page refreshes by itself.</p>
+        @endif
+
+        @if ($exports->isEmpty())
+            <div class="tbl-wrap">
+                <x-table.empty title="No exports yet" text="Pick a quick CSV above, or start a new export to choose the records, dates and file type.">
+                    <a href="{{ route('exports.create') }}" class="btn-new">New export</a>
+                </x-table.empty>
+            </div>
+        @else
+            <x-table caption="Exports" class="hidden md:block">
+                <x-slot name="head">
+                    <x-table.th>Records</x-table.th>
+                    <x-table.th>File</x-table.th>
+                    <x-table.th>Made</x-table.th>
+                    <x-table.th>Kept until</x-table.th>
+                    <x-table.th num>Size</x-table.th>
+                    <x-table.th>Status</x-table.th>
+                    <th scope="col" class="tbl-menu"><span class="sr-only">Actions</span></th>
+                </x-slot>
+                @foreach ($exports as $export)
+                    @php $ready = $export->isDownloadable() && ! $export->isExpired(); @endphp
+                    <tr>
+                        <td>
+                            @if ($ready)
+                                <a href="{{ route('exports.download', $export) }}" class="tbl-link">{{ $kind($export) }}</a>
+                            @else
+                                {{ $kind($export) }}
+                            @endif
+                            @if ($export->type === 'full_backup' && $export->included_data)
+                                <div class="text-xs tbl-muted">{{ count($export->included_data) }} kinds of record</div>
+                            @endif
+                        </td>
+                        <td class="tbl-muted">{{ strtoupper($export->format) }}</td>
+                        <td class="tbl-muted whitespace-nowrap">{{ $export->created_at->format('j M Y, H:i') }}</td>
+                        <td class="whitespace-nowrap {{ $export->isExpired() ? 'tbl-late' : ($export->expires_at ? 'tbl-muted' : 'tbl-zero') }}">
+                            {{ $export->expires_at ? ($export->isExpired() ? 'Expired' : $export->expires_at->format('j M Y')) : '—' }}
+                        </td>
+                        <td class="num {{ $export->file_size ? 'tbl-muted' : 'tbl-zero' }}">{{ $export->file_size ? $export->formatted_file_size : '—' }}</td>
+                        <td><x-status-badge :status="$tone[$export->status] ?? 'pending'" :label="$label[$export->status] ?? ucfirst($export->status)" /></td>
+                        <td class="tbl-menu">
+                            <x-table.dropdown :sr-label="'Actions for '.$kind($export).' export'">
+                                @if ($ready)<x-table.menu-item :href="route('exports.download', $export)">Download</x-table.menu-item>@endif
+                                <x-table.menu-item :href="route('exports.show', $export)">Details</x-table.menu-item>
+                                <x-table.menu-item :post="route('exports.destroy', $export)" method="DELETE" confirm="Delete this export file?" danger>Delete</x-table.menu-item>
+                            </x-table.dropdown>
+                        </td>
+                    </tr>
+                @endforeach
+            </x-table>
+            <ul class="space-y-2 md:hidden" aria-label="Exports">
+                @foreach ($exports as $export)
+                    @php $ready = $export->isDownloadable() && ! $export->isExpired(); @endphp
+                    <li>
+                        <x-table.card :href="$ready ? route('exports.download', $export) : route('exports.show', $export)" :title="$kind($export)"
+                            :meta="strtoupper($export->format).' · '.$export->created_at->format('j M Y')">
+                            <x-slot name="badge"><x-status-badge :status="$export->isExpired() ? 'expired' : ($tone[$export->status] ?? 'pending')" :label="$export->isExpired() ? 'Expired' : ($label[$export->status] ?? ucfirst($export->status))" /></x-slot>
+                        </x-table.card>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+        <x-table.footer :rows="$exports" links />
     </div>
 </x-app-layout>

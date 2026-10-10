@@ -319,12 +319,6 @@ parameters:
 			path: app/Listeners/HandleExpensePaid.php
 
 		-
-			message: '#^Access to an undefined property App\\Livewire\\ActivityLogs\\ActivityLogsTable\:\:\$bulkAction\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/ActivityLogs/ActivityLogsTable.php
-
-		-
 			message: '#^Access to an undefined property App\\Livewire\\Settings\\InvoiceTemplateEditor\:\:\$bulkAction\.$#'
 			identifier: property.notFound
 			count: 1

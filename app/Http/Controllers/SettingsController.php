@@ -115,7 +115,15 @@ class SettingsController extends Controller
 
     public function users()
     {
-        return view('settings.users.index');
+        $tenant = auth()->user()->tenant;
+
+        return view('settings.users.index', [
+            'users' => User::where('tenant_id', $tenant->id)->with('roles:id,name')->orderBy('name')->paginate(25),
+            'tenant' => $tenant,
+            'plan' => $tenant->currentPlan(),
+            'userCount' => $tenant->users()->count(),
+            'canAddUsers' => $tenant->canAddUsers(),
+        ]);
     }
 
     public function createUser()
@@ -261,7 +269,14 @@ class SettingsController extends Controller
 
     public function roles()
     {
-        return view('settings.roles.index');
+        $tenantId = auth()->user()->tenant_id;
+
+        return view('settings.roles.index', [
+            'roles' => Role::forTenant($tenantId)
+                ->withCount(['permissions', 'users' => fn ($q) => $q->where('tenant_id', $tenantId)])
+                ->orderByRaw('tenant_id IS NULL DESC')->orderBy('name')
+                ->paginate(25),
+        ]);
     }
 
     public function createRole()

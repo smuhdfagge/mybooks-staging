@@ -27,7 +27,7 @@
                                 class="form-control @error('employee_id') border-red-500 @enderror" @error('employee_id') aria-invalid="true" aria-describedby="employee_id-error" @enderror>
                                 <option value="">Select Employee</option>
                                 @foreach($employees as $employee)
-                                    <option value="{{ $employee->id }}" {{ old('employee_id') == $employee->id ? 'selected' : '' }}>
+                                    <option value="{{ $employee->id }}" {{ old('employee_id', request('employee_id')) == $employee->id ? 'selected' : '' }}>
                                         {{ $employee->first_name }} {{ $employee->last_name }}
                                     </option>
                                 @endforeach

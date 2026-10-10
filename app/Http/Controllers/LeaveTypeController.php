@@ -9,7 +9,7 @@ class LeaveTypeController extends Controller
 {
     public function index()
     {
-        $leaveTypes = LeaveType::withCount('leaves')->orderBy('name')->paginate(20);
+        $leaveTypes = LeaveType::withCount('leaves')->orderBy('name')->paginate(25);
 
         return view('leave-types.index', compact('leaveTypes'));
     }
