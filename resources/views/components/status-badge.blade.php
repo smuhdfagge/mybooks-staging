@@ -35,6 +35,9 @@
         'overdue' => 'badge-danger',
         'posted' => 'badge-success',
         'inactive' => 'badge-muted',
+        'confirmed' => 'badge-info',
+        'processing' => 'badge-warning',
+        'invoiced' => 'badge-info',
     ];
     $labels = ['partial' => 'Part paid'];
 @endphp

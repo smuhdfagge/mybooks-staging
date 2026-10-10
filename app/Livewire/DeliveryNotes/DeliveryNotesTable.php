@@ -3,72 +3,75 @@
 namespace App\Livewire\DeliveryNotes;
 
 use App\Enums\DeliveryNoteStatus;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\ListTable;
+use App\Models\Customer;
 use App\Models\DeliveryNote;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/**
+ * Delivery notes list (tables plan T2: the shared list design, see InvoicesTable).
+ */
 class DeliveryNotesTable extends Component
 {
-    use LimitsPageSize, WithPagination;
+    use ChecksPermissions, ListTable;
 
-    public $search = '';
+    public string $period = '';
 
-    public $status = '';
-
-    public $perPage = 15;
-
-    public $sortField = 'delivery_date';
-
-    public $sortDirection = 'desc';
+    public string $customer = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'status' => ['except' => ''],
+        'tab' => ['except' => '', 'as' => 'status'],
+        'period' => ['except' => ''],
+        'customer' => ['except' => ''],
     ];
 
-    private const SORTABLE = ['delivery_number', 'delivery_date', 'status'];
-
-    public function updatingSearch()
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['delivery_date', 'delivery_number'];
     }
 
-    public function updatingStatus()
+    protected function filterProperties(): array
     {
-        $this->resetPage();
+        return ['period', 'customer'];
     }
 
-    public function sortBy(string $field): void
+    protected function rowRelations(): array
     {
-        if (! in_array($field, self::SORTABLE, true)) {
-            return;
+        return ['customer:id,name', 'salesOrder:id,order_number'];
+    }
+
+    protected function baseQuery(): Builder
+    {
+        $query = DeliveryNote::query();
+        if (($term = trim($this->search)) !== '') {
+            $query->where(fn ($q) => $q->where('delivery_number', 'like', "%{$term}%")
+                ->orWhere('tracking_number', 'like', "%{$term}%")
+                ->orWhereHas('salesOrder', fn ($o) => $o->where('order_number', 'like', "%{$term}%"))
+                ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$term}%")));
         }
-        $this->sortDirection = $this->sortField === $field && $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        $this->sortField = $field;
+        if ($this->customer !== '' && ctype_digit($this->customer)) {
+            $query->where('customer_id', (int) $this->customer);
+        }
+
+        return $this->applyPeriod($query, 'delivery_date', $this->period);
     }
 
     public function render()
     {
-        $sort = in_array($this->sortField, self::SORTABLE, true) ? $this->sortField : 'delivery_date';
-
-        $notes = DeliveryNote::with(['customer', 'salesOrder'])
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('delivery_number', 'like', '%'.$this->search.'%')
-                        ->orWhere('tracking_number', 'like', '%'.$this->search.'%')
-                        ->orWhereHas('salesOrder', fn ($o) => $o->where('order_number', 'like', '%'.$this->search.'%'))
-                        ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', '%'.$this->search.'%'));
-                });
-            })
-            ->when(in_array($this->status, DeliveryNoteStatus::values(), true), fn ($q) => $q->where('status', $this->status))
-            ->orderBy($sort, $this->sortDirection === 'asc' ? 'asc' : 'desc')
-            ->orderByDesc('id')
-            ->paginate($this->pageSize());
+        $labels = [];
+        foreach (DeliveryNoteStatus::cases() as $s) {
+            $labels[$s->value] = ucfirst(str_replace('_', ' ', $s->value));
+        }
 
         return view('livewire.delivery-notes.delivery-notes-table', [
-            'notes' => $notes,
-            'statuses' => array_filter(DeliveryNoteStatus::cases(), fn ($s) => $s !== DeliveryNoteStatus::InTransit),
+            'notes' => $this->rows(),
+            'tabs' => $this->statusTabs($labels, [], 'status', hideEmpty: true),
+            'customers' => Customer::where('is_active', true)->orderBy('name')->pluck('name', 'id'),
+            'periods' => self::periodOptions(),
+            'filtered' => $this->isFiltered(),
         ]);
     }
 }

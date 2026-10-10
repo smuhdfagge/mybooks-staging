@@ -440,13 +440,13 @@ class PhaseDPerformanceTest extends TestCase
     public function test_p6_list_tables_only_accept_the_offered_page_sizes(): void
     {
         $this->createSuperAdmin();
-        Customer::factory()->count(12)->create(['tenant_id' => $this->tenant->id]);
+        Customer::factory()->count(30)->create(['tenant_id' => $this->tenant->id]);
 
-        // 100,000 rows asked for: back to the default of 10.
+        // 100,000 rows asked for: back to the default of 25 (tables plan).
         $table = Livewire::test(CustomersTable::class)->set('perPage', 100000);
-        $table->assertSet('perPage', 10);
-        $this->assertSame(10, $table->viewData('customers')->perPage());
-        $this->assertCount(10, $table->viewData('customers')->items());
+        $table->assertSet('perPage', 25);
+        $this->assertSame(25, $table->viewData('customers')->perPage());
+        $this->assertCount(25, $table->viewData('customers')->items());
 
         // An offered size is kept.
         $table->set('perPage', 50);

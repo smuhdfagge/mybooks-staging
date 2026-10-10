@@ -68,8 +68,8 @@ Nothing goes live until T8 merges `tables/main` into `main`.
 
 | # | Session | Branch | Status | Notes |
 |---|---|---|---|---|
-| T1 | Shared pieces and the pilot (Invoices) | `tables/t1-foundations` | Done, PR #58 | Shared pieces, ListTable trait, guard test (157 screens to do); Invoices list. Fixed on the way: the Date Range filter did not work (it pointed at a setting that did not exist); status filter had no "Part paid"; sorting accepted any column name. |
-| T2 | Sales lists | | To do | |
+| T1 | Shared pieces and the pilot (Invoices) | `tables/t1-foundations` | Done, PR #58 | Shared pieces, ListTable trait, guard test (157 screens to do); Invoices list. Also: status labels for confirmed, processing and invoiced orders; closed credit notes say "Used up"; sorting limited to listed columns on every sales list; 25 rows per page. |
+| T2 | Sales lists | `tables/t2-sales` | Done, PR #59 | Customers, quotations, sales orders, sales receipts, delivery notes, credit notes, payments received. Shared filter pieces added (`pick`, `check-all`, `check`, `tick-all-matching`, `veil`). Also: status labels for confirmed, processing and invoiced orders; closed credit notes say "Used up"; sorting limited to listed columns on every sales list; 25 rows per page. |
 | T3 | Purchases and expenses | | To do | |
 | T4 | Stock, banking and accounting | | To do | |
 | T5 | Payroll, HR, settings, admin | | To do | |

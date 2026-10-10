@@ -1,6 +1,8 @@
 {{--
     "Email statements" on the customers / suppliers list (session 10).
     $side ('customers' or 'suppliers'), $selected (ticked ids from the table).
+    $noButton: true when the list puts its own "Email statements" button in
+    the toolbar (tables plan); the button just needs data-open-modal="bulk-statements".
 --}}
 @php
     $isCustomer = $side === \App\Services\Statements\Subledger::CUSTOMERS;
@@ -8,6 +10,7 @@
     $mailer = app(\App\Services\Statements\StatementMailer::class);
     $count = count($selected);
 @endphp
+@unless ($noButton ?? false)
 <div class="mb-4 flex flex-wrap items-center justify-end gap-2">
     <button type="button" data-open-modal="bulk-statements"
         class="inline-flex items-center px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs font-semibold uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700">
@@ -15,6 +18,7 @@
         Email statements
     </button>
 </div>
+@endunless
 
 <x-modal name="bulk-statements" title="Email statements" maxWidth="lg">
     <form method="POST" action="{{ route($isCustomer ? 'customers.statements.send' : 'vendors.statements.send') }}" class="p-6 space-y-4"

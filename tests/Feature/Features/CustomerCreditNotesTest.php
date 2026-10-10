@@ -473,7 +473,7 @@ class CustomerCreditNotesTest extends TestCase
         $this->get(route('credit-notes.index'))->assertOk()->assertSee('Credit notes')->assertSeeLivewire('credit-notes.credit-notes-table');
         Livewire::test(CreditNotesTable::class)
             ->assertSee($note->credit_note_number)->assertSee($draft->credit_note_number)
-            ->set('status', 'draft')->assertDontSee($note->credit_note_number)->assertSee($draft->credit_note_number);
+            ->set('tab', 'draft')->assertDontSee($note->credit_note_number)->assertSee($draft->credit_note_number);
         $this->get(route('credit-notes.show', $note))->assertOk()
             ->assertSee('Apply to an invoice')->assertSee('Refund to the customer')->assertSee('Back in stock at cost')->assertSee('Ledger postings');
         $this->get(route('credit-notes.show', $draft))->assertOk()->assertSee('Post it');

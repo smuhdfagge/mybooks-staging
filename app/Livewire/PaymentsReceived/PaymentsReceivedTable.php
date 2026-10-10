@@ -4,109 +4,100 @@ namespace App\Livewire\PaymentsReceived;
 
 use App\Actions\Payments\DeletePaymentReceived;
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ListTable;
 use App\Models\Customer;
 use App\Models\PaymentReceived;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/**
+ * Payments received list (tables plan T2: the shared list design, see InvoicesTable).
+ */
 class PaymentsReceivedTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
+    use ChecksPermissions, ListTable;
 
-    public $search = '';
+    public string $period = '';
 
-    public $customer = '';
+    public string $customer = '';
 
-    public $paymentMethod = '';
-
-    public $paymentType = ''; // '', 'regular', 'deposit'
-
-    public $dateFrom = '';
-
-    public $dateTo = '';
-
-    public $sortField = 'payment_date';
-
-    public $sortDirection = 'desc';
-
-    public $perPage = 10;
-
-    // Bulk operation properties
-    public $selectedItems = [];
-
-    public $selectAll = false;
-
-    public $bulkAction = '';
-
-    public $successMessage = '';
-
-    public $errorMessage = '';
+    public string $method = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
+        'tab' => ['except' => '', 'as' => 'type'],
+        'period' => ['except' => ''],
         'customer' => ['except' => ''],
-        'paymentMethod' => ['except' => ''],
-        'paymentType' => ['except' => ''],
+        'method' => ['except' => ''],
     ];
 
-    public function updatingSearch()
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['payment_date', 'payment_number', 'amount'];
     }
 
-    public function updatingCustomer()
+    protected function filterProperties(): array
     {
-        $this->resetPage();
+        return ['period', 'customer', 'method'];
     }
 
-    public function updatingPaymentMethod()
+    protected function rowRelations(): array
     {
-        $this->resetPage();
+        return ['customer:id,name', 'invoice:id,invoice_number'];
     }
 
-    public function updatingPaymentType()
+    protected function baseQuery(): Builder
     {
-        $this->resetPage();
-    }
-
-    public function updatingPerPage()
-    {
-        $this->resetPage();
-    }
-
-    public function updatedSelectAll($value)
-    {
-        if ($value) {
-            $this->selectedItems = $this->getFilteredPaymentIds();
-        } else {
-            $this->selectedItems = [];
+        $query = PaymentReceived::query();
+        if (($term = trim($this->search)) !== '') {
+            $number = preg_replace('/[^0-9.]/', '', $term);
+            $query->where(function ($q) use ($term, $number) {
+                $q->where('payment_number', 'like', "%{$term}%")
+                    ->orWhere('reference', 'like', "%{$term}%")
+                    ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$term}%"))
+                    ->orWhereHas('invoice', fn ($i) => $i->where('invoice_number', 'like', "%{$term}%"));
+                if ($number !== '' && is_numeric($number)) {
+                    $q->orWhere('amount', (float) $number);
+                }
+            });
         }
+        if ($this->customer !== '' && ctype_digit($this->customer)) {
+            $query->where('customer_id', (int) $this->customer);
+        }
+        if ($this->method !== '') {
+            $query->where('payment_method', $this->method);
+        }
+
+        return $this->applyPeriod($query, 'payment_date', $this->period);
     }
 
-    public function updatedSelectedItems()
+    /** Tabs: all, payments against invoices, deposits (and deposits with credit left). */
+    protected function applyTab(Builder $query, string $tab): Builder
     {
-        $this->selectAll = count($this->selectedItems) === count($this->getFilteredPaymentIds());
+        return match ($tab) {
+            'payments' => $query->where(fn ($q) => $q->where('is_deposit', false)->orWhereNull('is_deposit')),
+            'deposits' => $query->where('is_deposit', true),
+            'unused' => $query->where('is_deposit', true)->where('unused_amount', '>', 0),
+            default => $query,
+        };
     }
 
-    private function getFilteredPaymentIds()
+    /** @return array<string, array{label: string, count: int, alert: bool}> */
+    private function tabs(): array
     {
-        return PaymentReceived::query()
-            ->when($this->search, fn ($q) => $q->where(function ($query) {
-                $query->where('payment_number', 'like', "%{$this->search}%")
-                    ->orWhere('reference', 'like', "%{$this->search}%")
-                    ->orWhereHas('customer', fn ($q2) => $q2->where('name', 'like', "%{$this->search}%"));
-            }))
-            ->when($this->customer, fn ($q) => $q->where('customer_id', $this->customer))
-            ->when($this->paymentMethod, fn ($q) => $q->where('payment_method', $this->paymentMethod))
-            ->when($this->paymentType === 'deposit', fn ($q) => $q->where('is_deposit', true))
-            ->when($this->paymentType === 'regular', fn ($q) => $q->where('is_deposit', false))
-            ->when($this->dateFrom, fn ($q) => $q->whereDate('payment_date', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn ($q) => $q->whereDate('payment_date', '<=', $this->dateTo))
-            ->pluck('id')
-            ->map(fn ($id) => (string) $id)
-            ->toArray();
+        $row = $this->baseQuery()->toBase()->selectRaw(
+            'COUNT(*) as all_rows, SUM(CASE WHEN is_deposit = 0 OR is_deposit IS NULL THEN 1 ELSE 0 END) as payments,
+             SUM(CASE WHEN is_deposit = 1 THEN 1 ELSE 0 END) as deposits,
+             SUM(CASE WHEN is_deposit = 1 AND unused_amount > 0 THEN 1 ELSE 0 END) as unused'
+        )->first();
+
+        return [
+            '' => ['label' => 'All', 'count' => (int) $row->all_rows, 'alert' => false],
+            'payments' => ['label' => 'Against invoices', 'count' => (int) $row->payments, 'alert' => false],
+            'deposits' => ['label' => 'Deposits', 'count' => (int) $row->deposits, 'alert' => false],
+            'unused' => ['label' => 'Deposits not yet used', 'count' => (int) $row->unused, 'alert' => false],
+        ];
     }
 
     /**
@@ -182,46 +173,19 @@ class PaymentsReceivedTable extends Component
         }
 
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
-    }
-
-    public function sortBy($field)
-    {
-        if ($this->sortField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            $this->sortDirection = 'desc';
-        }
-        $this->sortField = $field;
     }
 
     public function render()
     {
-        $payments = PaymentReceived::query()
-            ->with(['customer', 'invoice'])
-            ->when($this->search, fn ($q) => $q->where(function ($query) {
-                $query->where('payment_number', 'like', "%{$this->search}%")
-                    ->orWhere('reference', 'like', "%{$this->search}%")
-                    ->orWhereHas('customer', fn ($q2) => $q2->where('name', 'like', "%{$this->search}%"));
-            }))
-            ->when($this->customer, fn ($q) => $q->where('customer_id', $this->customer))
-            ->when($this->paymentMethod, fn ($q) => $q->where('payment_method', $this->paymentMethod))
-            ->when($this->paymentType === 'deposit', fn ($q) => $q->where('is_deposit', true))
-            ->when($this->paymentType === 'regular', fn ($q) => $q->where('is_deposit', false))
-            ->when($this->dateFrom, fn ($q) => $q->whereDate('payment_date', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn ($q) => $q->whereDate('payment_date', '<=', $this->dateTo))
-            ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->pageSize());
-
-        $customers = Customer::where('is_active', true)->get();
-
-        $paymentMethods = PaymentReceived::distinct()->pluck('payment_method')->filter();
-
         return view('livewire.payments-received.payments-received-table', [
-            'payments' => $payments,
-            'customers' => $customers,
-            'paymentMethods' => $paymentMethods,
+            'payments' => $this->rows(),
+            'tabs' => $this->tabs(),
+            'totals' => $this->filteredQuery()->toBase()->selectRaw('COUNT(*) as n, COALESCE(SUM(amount), 0) as amount, COALESCE(SUM(unused_amount), 0) as unused')->first(),
+            'customers' => Customer::where('is_active', true)->orderBy('name')->pluck('name', 'id'),
+            'methods' => PaymentReceived::query()->whereNotNull('payment_method')->distinct()->orderBy('payment_method')->pluck('payment_method'),
+            'periods' => self::periodOptions(),
+            'filtered' => $this->isFiltered(),
         ]);
     }
 }
