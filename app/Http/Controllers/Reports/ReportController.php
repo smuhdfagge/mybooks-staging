@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\JournalEntry;
 use App\Services\Accounting\FinancialStatements;
 use App\Services\ReportExportService;
+use Carbon\Carbon;
 
 /**
  * Shared set-up and ledger calculations for the report controllers
@@ -18,6 +19,26 @@ abstract class ReportController extends Controller
     public function __construct(ReportExportService $exportService)
     {
         $this->exportService = $exportService;
+    }
+
+    /**
+     * Documents issued from $from to $to, both days included (T6). Drafts,
+     * cancelled and void documents are not sales or purchases, so they are
+     * left out. "Before the next day" because SQLite keeps a time part on
+     * dates, which made "between" drop the last day.
+     *
+     * @template TQuery of \Illuminate\Database\Eloquent\Builder<*>|\Illuminate\Database\Eloquent\Relations\Relation<*, *, *>
+     *
+     * @param  TQuery  $query
+     * @return TQuery
+     */
+    protected function issuedBetween($query, string $column, string $from, string $to)
+    {
+        $query->where($column, '>=', $from)
+            ->where($column, '<', Carbon::parse($to)->addDay()->toDateString())
+            ->whereNotIn($query->getModel()->getTable().'.status', ['draft', 'cancelled', 'void']);
+
+        return $query;
     }
 
     /**

@@ -676,7 +676,8 @@ class PhaseBRegressionTest extends TestCase
 
         $this->assertLessThan(25, $queries, 'one grouped query, not one per account');
         $this->assertEqualsWithDelta($tb->viewData('totalDebits'), $tb->viewData('totalCredits'), 0.001);
-        $this->assertEqualsWithDelta(46500 + 500, $tb->viewData('totalDebits'), 0.001);
+        // Balances, not turnover (T6): cash 46,500 - 500 and rent 500 against sales 46,500.
+        $this->assertEqualsWithDelta(46000 + 500, $tb->viewData('totalDebits'), 0.001);
     }
 
     // ── A21: bill stock timing ──────────────────────────────────

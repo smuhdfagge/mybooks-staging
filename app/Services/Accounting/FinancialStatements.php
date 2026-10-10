@@ -99,15 +99,21 @@ class FinancialStatements
      * grouped query (finding P1; it used to load every journal line of
      * every account into memory).
      *
-     * @return Collection<int, ChartOfAccount> accounts with ->total_debit and ->total_credit
+     * @return Collection<int, ChartOfAccount> accounts with ->total_debit and ->total_credit (turnover)
+     *                                         and ->balance_debit / ->balance_credit (the balance)
      */
     public function trialBalance(int $tenantId, string $asOf): Collection
     {
         return $this->accountBalances($tenantId, '1900-01-01', $asOf)
             ->filter(fn ($a) => $a->ledger_debit > 0 || $a->ledger_credit > 0)
             ->each(function ($a) {
+                // Turnover: everything posted to each side (kept for the API).
                 $a->setAttribute('total_debit', $a->ledger_debit);
                 $a->setAttribute('total_credit', $a->ledger_credit);
+                // The balance, on the side it falls (T6): what a trial balance shows.
+                $net = round($a->ledger_debit - $a->ledger_credit, 2);
+                $a->setAttribute('balance_debit', max(0.0, $net));
+                $a->setAttribute('balance_credit', max(0.0, -$net));
             })
             ->values();
     }
@@ -115,7 +121,7 @@ class FinancialStatements
     /**
      * Profit and loss for a date range, without closing journals (A8).
      *
-     * @return array{revenue: float, costOfGoodsSold: float, operatingExpenses: float, payrollExpenses: float, totalExpenses: float, netProfit: float}
+     * @return array{lines: array<string, Collection<int, ChartOfAccount>>, revenue: float, costOfGoodsSold: float, operatingExpenses: float, payrollExpenses: float, totalExpenses: float, netProfit: float}
      */
     public function profitAndLoss(int $tenantId, string $from, string $to): array
     {
@@ -132,7 +138,17 @@ class FinancialStatements
             ->filter(fn ($a) => preg_match('/salar|wage|payroll/i', (string) $a->name))
             ->sum('balance'), 2);
 
+        // The accounts behind each figure (T6), for the statement's lines.
+        $isPayroll = fn ($a) => $a->sub_type !== 'cost_of_goods_sold' && preg_match('/salar|wage|payroll/i', (string) $a->name);
+        $moved = fn ($a) => abs($a->balance) >= 0.005;
+
         return [
+            'lines' => [
+                'income' => $income->filter($moved)->values(),
+                'cogs' => $expenses->where('sub_type', 'cost_of_goods_sold')->filter($moved)->values(),
+                'operating' => $expenses->where('sub_type', '!=', 'cost_of_goods_sold')->reject($isPayroll)->filter($moved)->values(),
+                'payroll' => $expenses->filter($isPayroll)->filter($moved)->values(),
+            ],
             'revenue' => $revenue,
             'costOfGoodsSold' => $cogs,
             'operatingExpenses' => round($totalExpenses - $cogs - $payroll, 2),

@@ -66,7 +66,13 @@
 
             // Sections whose first page isn't named "{resource}.index".
             $indexRoutes = ['withholding-tax' => 'withholding-tax.setup'];
-            $sectionActions = ['settings' => ['messaging' => 'SMS & WhatsApp', 'e-invoicing' => 'E-invoicing'], 'withholding-tax' => ['setup' => 'Rates & settings', 'schedule' => 'WHT payable schedule', 'receivable' => 'WHT credit notes']];
+            $sectionActions = ['reports' => [
+                'profit-loss' => 'Profit and loss', 'accounts-receivable' => 'Aged receivables', 'accounts-payable' => 'Aged payables',
+                'purchase-by-vendor' => 'Purchases by supplier', 'inventory-summary' => 'Stock summary', 'vat-gst-return' => 'VAT/GST return',
+                'vat-return' => 'VAT return', 'tax-liability' => 'Tax owed by period', 'control-reconciliation' => 'Receivables & payables check',
+                'comparative' => 'Compare periods', 'custom' => 'Custom reports', 'tax-liability-payroll' => 'PAYE and pension by month',
+                'ytd-earnings' => 'Earnings this year', 'bank-disbursement' => 'Bank payment list',
+            ], 'settings' => ['messaging' => 'SMS & WhatsApp', 'e-invoicing' => 'E-invoicing'], 'withholding-tax' => ['setup' => 'Rates & settings', 'schedule' => 'WHT payable schedule', 'receivable' => 'WHT credit notes']];
 
             $label = $labels[$resource] ?? ucwords(str_replace('-', ' ', $resource ?? ''));
 
@@ -91,7 +97,7 @@
                         'edit' => 'Edit',
                         'show' => 'View',
                     ];
-                    $crumbs[] = ['label' => $sectionActions[$resource][$action] ?? $actionLabels[$action] ?? ucfirst($action)];
+                    $crumbs[] = ['label' => $sectionActions[$resource][$action] ?? $actionLabels[$action] ?? ucfirst(str_replace('-', ' ', $action))];
                 }
             }
         }

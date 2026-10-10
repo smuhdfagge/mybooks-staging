@@ -181,6 +181,29 @@ html.dark .dark\:text-gray-400 {
     .btn-new {
         @apply inline-flex h-9 items-center gap-1.5 rounded-md bg-brand-600 px-3.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900;
     }
+    /* Reports (tables plan T6): statement layout inside <x-table>. A
+       section heading row, lines indented under it, a subtotal with a rule
+       above, and the bottom line with a double rule. */
+    .tbl tr.rpt-section td {
+        @apply bg-gray-50/70 pt-4 font-semibold text-gray-900 dark:bg-gray-900/20 dark:text-white;
+    }
+    .tbl tbody tr.rpt-sub td { @apply border-t border-gray-300 font-semibold dark:border-gray-600; }
+    .tbl tbody tr.rpt-total td { @apply border-b-4 border-t border-double border-gray-400 font-bold dark:border-gray-500; }
+    .tbl tbody tr.rpt-sub:hover td,
+    .tbl tbody tr.rpt-total:hover td { @apply bg-transparent; }
+    /* Phones: tighter cells so a report's figures fit without scrolling. */
+    @media (max-width: 639px) {
+        .tbl thead th, .tbl tbody td, .tbl tfoot td { @apply px-2; }
+        .tbl { @apply text-[13px]; }
+    }
+    /* A name that may wrap (reports): the cell rule keeps others on one line. */
+    .tbl tbody td.rpt-wrap { @apply min-w-[7rem] whitespace-normal; }
+    /* Report number strip: on a phone an odd last number takes the full row. */
+    @media (max-width: 639px) {
+        .rpt-stats > div:last-child:nth-child(odd) { grid-column: span 2 / span 2; }
+    }
+    .tbl .rpt-in1 { @apply pl-7; }
+    .tbl .rpt-in2 { @apply pl-11; }
     .tbl-chip {
         @apply inline-flex h-8 items-center gap-1.5 rounded-md border border-gray-300 bg-white px-2.5 text-[13px] font-medium text-gray-800 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200;
     }
