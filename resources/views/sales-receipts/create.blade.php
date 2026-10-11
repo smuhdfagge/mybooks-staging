@@ -132,22 +132,19 @@
                             Receipt Items
                         </h3>
                         
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full line-items">
-                                <thead>
-                                    <tr class="border-b border-gray-200 dark:border-gray-700">
-                                        <th class="text-left text-sm font-medium text-gray-700 dark:text-gray-300 pb-2 w-1/3">Description</th>
-                                        <th class="text-left text-sm font-medium text-gray-700 dark:text-gray-300 pb-2 w-24">Qty</th>
-                                        <th class="text-left text-sm font-medium text-gray-700 dark:text-gray-300 pb-2 w-32">Price</th>
-                                        <th class="text-left text-sm font-medium text-gray-700 dark:text-gray-300 pb-2 w-24">VAT %</th>
-                                        <th class="text-right text-sm font-medium text-gray-700 dark:text-gray-300 pb-2 w-32">Total</th>
-                                        <th class="w-12"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                        <x-table caption="Receipt items" table-class="line-items">
+<x-slot name="head">
+                                        <x-table.th class="w-1/3">Description</x-table.th>
+                                        <x-table.th class="w-24">Qty</x-table.th>
+                                        <x-table.th class="w-32">Price</x-table.th>
+                                        <x-table.th class="w-24">VAT %</x-table.th>
+                                        <x-table.th num class="w-32">Total</x-table.th>
+                                        <th scope="col" class="w-12"><span class="sr-only">Actions</span></th>
+</x-slot>
+
                                     <template x-for="(item, index) in items" :key="index">
-                                        <tr class="border-b border-gray-200 dark:border-gray-700">
-                                            <td class="py-2 pr-2" data-label="Description" data-cell="main">
+                                        <tr>
+                                            <td data-label="Description" data-cell="main">
                                                 <div class="relative mb-1">
                                                     <input type="hidden" :name="`items[${index}][item_id]`" x-model="item.item_id">
                                                     <input aria-label="Item" 
@@ -195,25 +192,25 @@
                                                 <input aria-label="Description" type="text" :name="`items[${index}][description]`" x-model="item.description" required placeholder="Description"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:placeholder-gray-500 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
                                             </td>
-                                            <td class="py-2 pr-2" data-label="Qty">
+                                            <td data-label="Qty">
                                                 <input aria-label="Quantity" type="number" :name="`items[${index}][quantity]`" x-model.number="item.quantity" min="0.01" step="0.01" required
                                                     @input="calculateTotals()"
                                                     class="form-control text-sm">
                                             </td>
-                                            <td class="py-2 pr-2" data-label="Price">
+                                            <td data-label="Price">
                                                 <input aria-label="Unit price" type="number" :name="`items[${index}][unit_price]`" x-model.number="item.unit_price" min="0" step="0.01" required
                                                     @input="calculateTotals()"
                                                     class="form-control text-sm">
                                             </td>
-                                            <td class="py-2 pr-2" data-label="VAT %">
+                                            <td data-label="VAT %">
                                                 {{-- VAT on cash sales, as on invoices (R3). Line discounts set elsewhere are kept. --}}
                                                 <input type="hidden" :name="`items[${index}][discount]`" :value="item.discount || 0">
                                                 <input aria-label="VAT rate (%)" type="number" :name="`items[${index}][tax_rate]`" x-model.number="item.tax_rate" min="0" max="100" step="0.01"
                                                     @input="calculateTotals()"
                                                     class="form-control text-sm">
                                             </td>
-                                            <td class="py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(lineTotal(index))" data-label="Total"></td>
-                                            <td class="py-2 text-center" data-cell="actions">
+                                            <td class="num font-medium" x-text="formatMoney(lineTotal(index))" data-label="Total"></td>
+                                            <td class="text-center" data-cell="actions">
                                                 <button type="button" @click="removeItem(index)" x-show="items.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-300 dark:hover:text-red-300" aria-label="Remove line">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
@@ -222,9 +219,7 @@
                                             </td>
                                         </tr>
                                     </template>
-                                </tbody>
-                            </table>
-                        </div>
+</x-table>
 
                         <button type="button" @click="addItem()" class="mt-4 inline-flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-medium text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

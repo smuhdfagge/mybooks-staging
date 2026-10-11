@@ -26,7 +26,7 @@
                 'items' => 'Items',
                 'item-categories' => 'Item Categories',
                 'employees' => 'Employees',
-                'payrolls' => 'Payroll',
+                'payrolls' => 'Payroll', 'payroll-batches' => 'Payroll runs',
                 'leaves' => 'Leaves',
                 'salary-structures' => 'Salary Structures',
                 'allowances' => 'Allowances',
@@ -65,14 +65,14 @@
             ];
 
             // Sections whose first page isn't named "{resource}.index".
-            $indexRoutes = ['withholding-tax' => 'withholding-tax.setup'];
+            $indexRoutes = ['withholding-tax' => 'withholding-tax.setup', 'payroll-batches' => 'payroll.index'];
             $sectionActions = ['reports' => [
                 'profit-loss' => 'Profit and loss', 'accounts-receivable' => 'Aged receivables', 'accounts-payable' => 'Aged payables',
                 'purchase-by-vendor' => 'Purchases by supplier', 'inventory-summary' => 'Stock summary', 'vat-gst-return' => 'VAT/GST return',
                 'vat-return' => 'VAT return', 'tax-liability' => 'Tax owed by period', 'control-reconciliation' => 'Receivables & payables check',
                 'comparative' => 'Compare periods', 'custom' => 'Custom reports', 'tax-liability-payroll' => 'PAYE and pension by month',
                 'ytd-earnings' => 'Earnings this year', 'bank-disbursement' => 'Bank payment list',
-            ], 'settings' => ['messaging' => 'SMS & WhatsApp', 'e-invoicing' => 'E-invoicing'], 'withholding-tax' => ['setup' => 'Rates & settings', 'schedule' => 'WHT payable schedule', 'receivable' => 'WHT credit notes']];
+            ], 'banks' => ['transactions' => 'Money in and out', 'reconcile' => 'Reconcile'], 'budgets' => ['vs-actual' => 'Budget and actual'], 'inventory' => ['history' => 'Stock history'], 'fixed-assets' => ['schedule' => 'Depreciation', 'register' => 'Asset register', 'depreciation-schedule' => 'Depreciation for the year'], 'settings' => ['messaging' => 'SMS & WhatsApp', 'e-invoicing' => 'E-invoicing'], 'withholding-tax' => ['setup' => 'Rates & settings', 'schedule' => 'WHT payable schedule', 'receivable' => 'WHT credit notes']];
 
             $label = $labels[$resource] ?? ucwords(str_replace('-', ' ', $resource ?? ''));
 

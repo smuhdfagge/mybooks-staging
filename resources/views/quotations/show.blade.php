@@ -39,40 +39,35 @@
                 <div class="lg:col-span-2 space-y-6">
                     <x-card>
                         <div class="p-4 sm:p-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div><p class="text-gray-500 dark:text-gray-400">Date</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $quotation->quotation_date->format('M d, Y') }}</p></div>
-                            <div><p class="text-gray-500 dark:text-gray-400">Valid until</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $quotation->expiry_date?->format('M d, Y') ?? '—' }}</p></div>
+                            <div><p class="text-gray-500 dark:text-gray-400">Date</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $quotation->quotation_date->format('j M Y') }}</p></div>
+                            <div><p class="text-gray-500 dark:text-gray-400">Valid until</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $quotation->expiry_date?->format('j M Y') ?? '—' }}</p></div>
                             <div><p class="text-gray-500 dark:text-gray-400">Reference</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $quotation->reference ?: '—' }}</p></div>
-                            <div><p class="text-gray-500 dark:text-gray-400">Sent</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $quotation->sent_at?->format('M d, Y') ?? '—' }}</p></div>
+                            <div><p class="text-gray-500 dark:text-gray-400">Sent</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $quotation->sent_at?->format('j M Y') ?? '—' }}</p></div>
                         </div>
                     </x-card>
 
                     <x-card>
                         <div class="p-4 sm:p-6">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Items</h3>
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                                    <thead>
-                                        <tr class="text-xs uppercase text-gray-500 dark:text-gray-400">
-                                            <th class="px-3 py-2 text-left">Description</th>
-                                            <th class="px-3 py-2 text-right">Qty</th>
-                                            <th class="px-3 py-2 text-right">Price</th>
-                                            <th class="px-3 py-2 text-right">VAT</th>
-                                            <th class="px-3 py-2 text-right">Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700 text-gray-900 dark:text-gray-100">
+                            <x-table caption="Items on this quotation">
+<x-slot name="head">
+                                            <x-table.th>Description</x-table.th>
+                                            <x-table.th num>Qty</x-table.th>
+                                            <x-table.th num>Price</x-table.th>
+                                            <x-table.th num>VAT</x-table.th>
+                                            <x-table.th num>Total</x-table.th>
+</x-slot>
+
                                         @foreach($quotation->items as $line)
                                             <tr>
-                                                <td class="px-3 py-2">{{ $line->description }}@if($line->item && $line->item->name !== $line->description)<span class="block text-xs text-gray-500">{{ $line->item->name }}</span>@endif</td>
-                                                <td class="px-3 py-2 text-right">{{ rtrim(rtrim(number_format((float) $line->quantity, 2), '0'), '.') }}</td>
-                                                <td class="px-3 py-2 text-right">@money($line->unit_price)</td>
-                                                <td class="px-3 py-2 text-right">{{ (float) $line->tax_rate }}%</td>
-                                                <td class="px-3 py-2 text-right font-medium">@money($line->total)</td>
+                                                <td>{{ $line->description }}@if($line->item && $line->item->name !== $line->description)<span class="block text-xs text-gray-500">{{ $line->item->name }}</span>@endif</td>
+                                                <td class="num">{{ rtrim(rtrim(number_format((float) $line->quantity, 2), '0'), '.') }}</td>
+                                                <td class="num">@fig($line->unit_price, false)</td>
+                                                <td class="num">{{ \App\Support\Figure::rate($line->tax_rate) }}</td>
+                                                <td class="num font-medium">@fig($line->total, false)</td>
                                             </tr>
                                         @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
+</x-table>
                             <div class="mt-4 ml-auto max-w-xs space-y-1 text-sm">
                                 <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Subtotal</span><span class="text-gray-900 dark:text-gray-100">@money($quotation->subtotal)</span></div>
                                 @if((float) $quotation->discount_amount > 0)

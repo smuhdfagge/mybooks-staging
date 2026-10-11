@@ -67,7 +67,7 @@
 
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Created</dt>
-                                    <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $designation->created_at->format('M d, Y') }}</dd>
+                                    <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $designation->created_at->format('j M Y') }}</dd>
                                 </div>
                             </dl>
                         </div>
@@ -81,31 +81,28 @@
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Employees with this Designation</h3>
                             
                             @if($designation->employees->count() > 0)
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                    <thead class="bg-gray-50 dark:bg-gray-700">
-                                        <tr>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Employee ID</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Department</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <x-table caption="Employees with this designation">
+<x-slot name="head">
+                                            <x-table.th>Name</x-table.th>
+                                            <x-table.th>Employee ID</x-table.th>
+                                            <x-table.th>Department</x-table.th>
+                                            <x-table.th>Status</x-table.th>
+</x-slot>
+
                                         @foreach($designation->employees as $employee)
-                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                            <td class="px-4 py-3 whitespace-nowrap">
-                                                <a href="{{ route('employees.show', $employee) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300 font-medium">
+                                        <tr>
+                                            <td>
+                                                <a href="{{ route('employees.show', $employee) }}" class="tbl-link">
                                                     {{ $employee->full_name }}
                                                 </a>
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                                {{ $employee->employee_id ?? '-' }}
+                                            <td>
+                                                {{ $employee->employee_id ?? '—' }}
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                                {{ $employee->department?->name ?? '-' }}
+                                            <td>
+                                                {{ $employee->department?->name ?? '—' }}
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap">
+                                            <td>
                                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                                                     {{ $employee->status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' : '' }}
                                                     {{ $employee->status === 'inactive' ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100' : '' }}
@@ -115,9 +112,7 @@
                                             </td>
                                         </tr>
                                         @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
+</x-table>
                             @else
                             <div class="text-center py-8">
                                 <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

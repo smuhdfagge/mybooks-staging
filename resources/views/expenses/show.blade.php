@@ -5,7 +5,7 @@
                 <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                     {{ $expense->expense_number }}
                 </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">{{ $expense->expense_date->format('F d, Y') }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ $expense->expense_date->format('j F Y') }}</p>
             </div>
             <div class="flex flex-wrap gap-2">
                 @if($expense->canBeEdited())
@@ -28,7 +28,6 @@
 
     <div class="py-6">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-
 
             <!-- Status and Amount Card -->
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
@@ -137,7 +136,7 @@
                             <p class="mt-1 text-sm text-red-700 dark:text-red-300">{{ $expense->rejection_reason }}</p>
                             @if($expense->rejectedByUser)
                                 <p class="mt-1 text-xs text-red-600 dark:text-red-300">
-                                    Rejected by {{ $expense->rejectedByUser->name }} on {{ $expense->rejected_at->format('M d, Y g:i A') }}
+                                    Rejected by {{ $expense->rejectedByUser->name }} on {{ $expense->rejected_at->format('j M Y, H:i') }}
                                 </p>
                             @endif
                         </div>
@@ -165,7 +164,7 @@
 
                             <div class="flex justify-between">
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Date</dt>
-                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $expense->expense_date->format('M d, Y') }}</dd>
+                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $expense->expense_date->format('j M Y') }}</dd>
                             </div>
 
                             @if($expense->expenseAccount)
@@ -246,7 +245,7 @@
                                     @if($expense->approved_at)
                                     <div class="flex justify-between">
                                         <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Approved At</dt>
-                                        <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $expense->approved_at->format('M d, Y g:i A') }}</dd>
+                                        <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $expense->approved_at->format('j M Y, H:i') }}</dd>
                                     </div>
                                     @endif
                                 </dl>
@@ -281,42 +280,37 @@
                             {{ $expense->journal->journal_number }}
                         </a>
                     </h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Account</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Debit</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Credit</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <x-table caption="Ledger postings">
+<x-slot name="head">
+                                    <x-table.th>Account</x-table.th>
+                                    <x-table.th num>Debit</x-table.th>
+                                    <x-table.th num>Credit</x-table.th>
+</x-slot>
+
                                 @foreach($expense->journal->entries as $entry)
                                 <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                                    <td>
                                         <span class="font-mono text-xs text-gray-500 dark:text-gray-400 mr-2">{{ $entry->account->account_code }}</span>
                                         {{ $entry->account->name }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $entry->debit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
+                                    <td class="num {{ $entry->debit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                                         {{ $entry->debit > 0 ? number_format($entry->debit, 2) : '-' }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $entry->credit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
+                                    <td class="num {{ $entry->credit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                                         {{ $entry->credit > 0 ? number_format($entry->credit, 2) : '-' }}
                                     </td>
                                 </tr>
                                 @endforeach
-                            </tbody>
-                            <tfoot class="bg-gray-50 dark:bg-gray-700">
+<x-slot name="foot">
                                 <tr class="font-semibold">
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">Total</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($expense->journal->total_debit, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($expense->journal->total_credit, 2) }}</td>
+                                    <td>Total</td>
+                                    <td class="num">@fig($expense->journal->total_debit, false)</td>
+                                    <td class="num">@fig($expense->journal->total_credit, false)</td>
                                 </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+</x-slot>
+</x-table>
                     <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                        Posted on {{ $expense->journal->posted_at?->format('M d, Y g:i A') ?? 'Not posted' }}
+                        Posted on {{ $expense->journal->posted_at?->format('j M Y, H:i') ?? 'Not posted' }}
                     </p>
                 </div>
             </div>

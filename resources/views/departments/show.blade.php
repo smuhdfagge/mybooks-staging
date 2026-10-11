@@ -3,14 +3,14 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                 {{ $department->name }}
-                @if($department->code)<span class="ml-2 text-sm font-normal text-gray-500">({{ $department->code }})</span>@endif
+                @if($department->code)<span class="ml-2 text-sm font-normal text-gray-600 dark:text-gray-400">({{ $department->code }})</span>@endif
             </h2>
             <div class="flex items-center gap-2">
                 <a href="{{ route('departments.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition ease-in-out duration-150">
                     Back to List
                 </a>
                 @can('edit departments')
-                    <a href="{{ route('departments.edit', $department) }}" class="inline-flex items-center px-4 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700 transition ease-in-out duration-150">
+                    <a href="{{ route('departments.edit', $department) }}" class="inline-flex items-center px-4 py-2 bg-amber-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-800 transition ease-in-out duration-150">
                         Edit
                     </a>
                 @endcan
@@ -59,34 +59,29 @@
                 @if($department->employees->isEmpty())
                     <p class="px-6 py-6 text-sm text-gray-500 dark:text-gray-400">No employees in this department yet.</p>
                 @else
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Employee ID</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Name</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Email</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    <x-table caption="Employees">
+<x-slot name="head">
+                                    <x-table.th>Employee ID</x-table.th>
+                                    <x-table.th>Name</x-table.th>
+                                    <x-table.th>Email</x-table.th>
+                                    <x-table.th>Status</x-table.th>
+</x-slot>
+
                                 @foreach($department->employees as $employee)
                                     <tr>
-                                        <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{{ $employee->employee_id }}</td>
-                                        <td class="px-6 py-3 text-sm">
+                                        <td>{{ $employee->employee_id }}</td>
+                                        <td>
                                             @can('view employees')
-                                                <a href="{{ route('employees.show', $employee) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $employee->full_name }}</a>
+                                                <a href="{{ route('employees.show', $employee) }}" class="tbl-link">{{ $employee->full_name }}</a>
                                             @else
                                                 <span class="text-gray-900 dark:text-gray-100">{{ $employee->full_name }}</span>
                                             @endcan
                                         </td>
-                                        <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{{ $employee->email }}</td>
-                                        <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{{ ucfirst((string) $employee->status) }}</td>
+                                        <td>{{ $employee->email }}</td>
+                                        <td>{{ ucfirst((string) $employee->status) }}</td>
                                     </tr>
                                 @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+</x-table>
                 @endif
             </div>
 

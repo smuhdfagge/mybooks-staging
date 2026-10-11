@@ -47,19 +47,17 @@
         <div class="p-4 sm:p-6">
             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">Items to send</h3>
             @error('items')<p class="form-error mb-2">{{ $message }}</p>@enderror
-            <table class="min-w-full line-items">
-                <thead>
-                    <tr class="border-b border-gray-200 dark:border-gray-700">
-                        <th class="text-left text-sm font-medium text-gray-700 dark:text-gray-300 pb-2">Item</th>
-                        <th class="text-left text-sm font-medium text-gray-700 dark:text-gray-300 pb-2 w-32">Quantity</th>
-                        <th class="text-right text-sm font-medium text-gray-700 dark:text-gray-300 pb-2 w-40">Free in <span x-text="warehouses[from] || 'warehouse'"></span></th>
-                        <th class="w-12"></th>
-                    </tr>
-                </thead>
-                <tbody>
+            <x-table caption="Items to send" table-class="line-items">
+<x-slot name="head">
+                        <x-table.th>Item</x-table.th>
+                        <x-table.th class="w-32">Quantity</x-table.th>
+                        <x-table.th num class="w-40">Free in <span x-text="warehouses[from] || 'warehouse'"></span></x-table.th>
+                        <th scope="col" class="w-12"><span class="sr-only">Actions</span></th>
+</x-slot>
+
                     <template x-for="(line, index) in lines" :key="line.key">
-                        <tr class="border-b border-gray-200 dark:border-gray-700">
-                            <td class="py-2 pr-2" data-label="Item" data-cell="main">
+                        <tr>
+                            <td data-label="Item" data-cell="main">
                                 <div class="relative">
                                     <input type="hidden" :name="`items[${index}][item_id]`" :value="line.item_id">
                                     <input type="hidden" :name="`items[${index}][itemSearch]`" :value="line.itemSearch">
@@ -86,22 +84,21 @@
                                 </div>
                                 <p class="form-error" x-show="errors[`items.${index}.item_id`]" x-text="errors[`items.${index}.item_id`]"></p>
                             </td>
-                            <td class="py-2 pr-2" data-label="Quantity">
+                            <td data-label="Quantity">
                                 <input aria-label="Quantity" type="number" :name="`items[${index}][quantity]`" x-model.number="line.quantity" min="0.0001" step="any" class="form-control text-sm"
                                     :class="line.free !== null && Number(line.quantity) > line.free ? 'border-red-500' : ''">
                                 <p class="form-error" x-show="errors[`items.${index}.quantity`]" x-text="errors[`items.${index}.quantity`]"></p>
                             </td>
-                            <td class="py-2 text-right text-sm" data-label="Free">
+                            <td class="num" data-label="Free">
                                 <span x-show="line.item_id" :class="line.free !== null && Number(line.quantity) > line.free ? 'text-red-600 dark:text-red-300 font-medium' : 'text-gray-700 dark:text-gray-300'" x-text="line.free === null ? '…' : qty(line.free)"></span>
                                 <span x-show="line.item_id && line.free !== null && Number(line.quantity) > line.free" class="block text-xs text-red-600 dark:text-red-300">Not enough free</span>
                             </td>
-                            <td class="py-2 text-center" data-cell="actions">
+                            <td class="text-center" data-cell="actions">
                                 <button type="button" @click="remove(index)" x-show="lines.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-300 text-sm" aria-label="Remove line">Remove</button>
                             </td>
                         </tr>
                     </template>
-                </tbody>
-            </table>
+</x-table>
             <button type="button" @click="add()" class="mt-4 inline-flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-medium text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
                 + Add line
             </button>

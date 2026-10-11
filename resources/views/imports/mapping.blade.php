@@ -44,7 +44,7 @@
                             <div class="w-24 h-1 mx-4 bg-gray-200 dark:bg-gray-700"></div>
                             <div class="flex items-center">
                                 <div class="flex items-center justify-center w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full">
-                                    <span class="text-gray-500 dark:text-gray-400 font-semibold">3</span>
+                                    <span class="text-gray-600 dark:text-gray-300 font-semibold">3</span>
                                 </div>
                                 <span class="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400">Import</span>
                             </div>
@@ -73,31 +73,28 @@
                             Match each column from your file to the corresponding field. Fields marked with <span class="text-red-600 dark:text-red-300">*</span> are required.
                         </p>
 
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead class="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">File Column</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Sample Data</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Maps To</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        <x-table caption="Column mapping">
+<x-slot name="head">
+                                        <x-table.th>File column</x-table.th>
+                                        <x-table.th>Sample data</x-table.th>
+                                        <x-table.th>Maps to</x-table.th>
+</x-slot>
+
                                     @foreach($preview['headers'] as $header)
                                         <tr>
-                                            <td class="px-4 py-3 whitespace-nowrap">
+                                            <td>
                                                 <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $header }}</span>
                                             </td>
-                                            <td class="px-4 py-3">
+                                            <td>
                                                 <div class="text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
                                                     @if(!empty($preview['rows']))
-                                                        {{ $preview['rows'][0][$header] ?? '-' }}
+                                                        {{ $preview['rows'][0][$header] ?? '—' }}
                                                     @else
                                                         -
                                                     @endif
                                                 </div>
                                             </td>
-                                            <td class="px-4 py-3">
+                                            <td>
                                                 <select name="mapping[{{ $header }}]" 
                                                         class="w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                                     <option value="">-- Skip this column --</option>
@@ -112,40 +109,31 @@
                                             </td>
                                         </tr>
                                     @endforeach
-                                </tbody>
-                            </table>
-                        </div>
+</x-table>
                     </div>
 
                     <!-- Data Preview -->
                     <div class="mb-6">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Data Preview</h3>
-                        <div class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead class="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">#</th>
+                        <x-table caption="First rows of the file">
+<x-slot name="head">
+                                        <x-table.th>#</x-table.th>
                                         @foreach($preview['headers'] as $header)
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase truncate max-w-[150px]">
-                                                {{ $header }}
-                                            </th>
+                                            <x-table.th>{{ $header }}</x-table.th>
                                         @endforeach
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+</x-slot>
+
                                     @foreach($preview['rows'] as $index => $row)
                                         <tr>
-                                            <td class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">{{ $index + 1 }}</td>
+                                            <td>{{ $index + 1 }}</td>
                                             @foreach($preview['headers'] as $header)
-                                                <td class="px-3 py-2 text-sm text-gray-900 dark:text-gray-100 truncate max-w-[150px]">
-                                                    {{ $row[$header] ?? '-' }}
+                                                <td class="truncate max-w-[150px]">
+                                                    {{ $row[$header] ?? '—' }}
                                                 </td>
                                             @endforeach
                                         </tr>
                                     @endforeach
-                                </tbody>
-                            </table>
-                        </div>
+</x-table>
                         <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
                             Showing first {{ count($preview['rows']) }} of {{ number_format($preview['total_rows']) }} rows
                         </p>

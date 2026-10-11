@@ -60,7 +60,7 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-6">
                     <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Purchase Cost</div>
                     <div class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">{{ number_format($fixedAsset->purchase_cost, 2) }}</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $fixedAsset->purchase_date->format('M d, Y') }}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $fixedAsset->purchase_date->format('j M Y') }}</div>
                 </div>
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-6">
                     <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Accumulated Depreciation</div>
@@ -144,34 +144,29 @@
                                     View Full Schedule →
                                 </a>
                             </div>
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                    <thead>
-                                        <tr>
-                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Period</th>
-                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date</th>
-                                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Depreciation</th>
-                                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Book Value</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                            <x-table caption="Depreciation plan">
+<x-slot name="head">
+                                            <x-table.th>Period</x-table.th>
+                                            <x-table.th>Date</x-table.th>
+                                            <x-table.th num>Depreciation</x-table.th>
+                                            <x-table.th num>Book value</x-table.th>
+</x-slot>
+
                                         @forelse(collect($schedule)->take(12) as $period)
                                         <tr>
-                                            <td class="px-4 py-2 text-sm text-gray-900 dark:text-white">{{ $period['period'] }}</td>
-                                            <td class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">{{ $period['date']->format('M Y') }}</td>
-                                            <td class="px-4 py-2 text-sm text-gray-900 dark:text-white text-right">{{ number_format($period['depreciation_amount'], 2) }}</td>
-                                            <td class="px-4 py-2 text-sm text-gray-900 dark:text-white text-right">{{ number_format($period['book_value'], 2) }}</td>
+                                            <td class="dark:text-white">{{ $period['period'] }}</td>
+                                            <td>{{ $period['date']->format('M Y') }}</td>
+                                            <td class="dark:text-white num">@fig($period['depreciation_amount'], false)</td>
+                                            <td class="dark:text-white num">@fig($period['book_value'], false)</td>
                                         </tr>
                                         @empty
                                         <tr>
-                                            <td colspan="4" class="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                                            <td colspan="4" class="text-center">
                                                 No depreciation schedule available
                                             </td>
                                         </tr>
                                         @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
+</x-table>
                             @if(count($schedule) > 12)
                             <p class="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
                                 Showing first 12 months of {{ count($schedule) }} total periods
@@ -229,7 +224,7 @@
                                 </div>
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">In Service Date</dt>
-                                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $fixedAsset->in_service_date->format('M d, Y') }}</dd>
+                                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $fixedAsset->in_service_date->format('j M Y') }}</dd>
                                 </div>
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Depreciable Amount</dt>
@@ -242,7 +237,7 @@
                                 @if($fixedAsset->next_depreciation_date)
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Next Depreciation</dt>
-                                    <dd class="mt-1 text-sm text-brand-600 dark:text-brand-300">{{ $fixedAsset->next_depreciation_date->format('M d, Y') }}</dd>
+                                    <dd class="mt-1 text-sm text-brand-600 dark:text-brand-300">{{ $fixedAsset->next_depreciation_date->format('j M Y') }}</dd>
                                 </div>
                                 @endif
                             </dl>
@@ -257,7 +252,7 @@
                             <dl class="space-y-3">
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Disposal Date</dt>
-                                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $fixedAsset->disposal_date->format('M d, Y') }}</dd>
+                                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $fixedAsset->disposal_date->format('j M Y') }}</dd>
                                 </div>
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Method</dt>

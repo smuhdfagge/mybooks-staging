@@ -110,93 +110,83 @@
                     <x-card class="p-4 ring-1 ring-brand-200 dark:ring-brand-800">
                         <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{{ $s->isActivity() ? 'Closing balance' : $s->balanceText() }}</p>
                         <p class="text-lg sm:text-2xl font-semibold text-brand-600 dark:text-brand-300">@money($s->closing)</p>
-                        @if($s->isActivity())<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $s->balanceText() }}</p>@endif
+                        @if($s->isActivity())<p class="text-xs text-gray-600 dark:text-gray-400 mt-1">{{ $s->balanceText() }}</p>@endif
                     </x-card>
                 </div>
 
                 @if($s->isActivity())
                     <x-card>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                                <thead class="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Date</th>
-                                        <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Details</th>
-                                        <th class="hidden sm:table-cell px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">{{ $s->chargesHeading() }}</th>
-                                        <th class="hidden sm:table-cell px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">{{ $s->creditsHeading() }}</th>
-                                        <th class="px-3 sm:px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Balance</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                    <tr class="bg-gray-50 dark:bg-gray-900/30 italic">
-                                        <td class="px-3 sm:px-4 py-2 whitespace-nowrap text-gray-600 dark:text-gray-400 text-xs sm:text-sm">{{ \Carbon\Carbon::parse($s->from)->format('j M y') }}</td>
-                                        <td class="px-3 sm:px-4 py-2 text-gray-600 dark:text-gray-400">Balance brought forward</td>
+                        <x-table caption="Statement lines">
+<x-slot name="head">
+                                        <x-table.th class="sm:px-4">Date</x-table.th>
+                                        <x-table.th class="sm:px-4">Details</x-table.th>
+                                        <x-table.th num class="hidden sm:table-cell">{{ $s->chargesHeading() }}</x-table.th>
+                                        <x-table.th num class="hidden sm:table-cell">{{ $s->creditsHeading() }}</x-table.th>
+                                        <x-table.th num class="sm:px-4">Balance</x-table.th>
+</x-slot>
+
+                                    <tr class="italic">
+                                        <td class="sm:px-4 sm:text-sm">{{ \Carbon\Carbon::parse($s->from)->format('j M Y') }}</td>
+                                        <td class="sm:px-4">Balance brought forward</td>
                                         <td class="hidden sm:table-cell"></td><td class="hidden sm:table-cell"></td>
-                                        <td class="px-3 sm:px-4 py-2 text-right whitespace-nowrap text-gray-900 dark:text-gray-100">@money($s->opening)</td>
+                                        <td class="sm:px-4 num">@fig($s->opening, false)</td>
                                     </tr>
                                     @forelse($s->rows as $row)
                                         <tr>
-                                            <td class="px-3 sm:px-4 py-2 whitespace-nowrap text-gray-700 dark:text-gray-300 text-xs sm:text-sm">{{ \Carbon\Carbon::parse($row['date'])->format('j M y') }}</td>
-                                            <td class="px-3 sm:px-4 py-2 text-gray-900 dark:text-gray-100">
-                                                @if($row['url'])<a href="{{ $row['url'] }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $row['label'] }}</a>@else{{ $row['label'] }}@endif
-                                                @if($row['due_date'] && $row['charge'] > 0)<span class="block text-xs text-gray-500 dark:text-gray-400">Due {{ \Carbon\Carbon::parse($row['due_date'])->format('j M Y') }}</span>@endif
+                                            <td class="sm:px-4 sm:text-sm">{{ \Carbon\Carbon::parse($row['date'])->format('j M Y') }}</td>
+                                            <td class="sm:px-4">
+                                                @if($row['url'])<a href="{{ $row['url'] }}" class="tbl-link">{{ $row['label'] }}</a>@else{{ $row['label'] }}@endif
+                                                @if($row['due_date'] && $row['charge'] > 0)<span class="block text-xs text-gray-600 dark:text-gray-400">Due {{ \Carbon\Carbon::parse($row['due_date'])->format('j M Y') }}</span>@endif
                                                 {{-- Amounts under the details on phones --}}
                                                 <span class="sm:hidden block text-xs mt-0.5">
-                                                    @if($row['charge'] > 0)<span class="whitespace-nowrap text-gray-700 dark:text-gray-300">+@money($row['charge'])</span>@endif
-                                                    @if($row['credit'] > 0)<span class="whitespace-nowrap text-green-700 dark:text-green-400 ml-1">-@money($row['credit'])</span>@endif
+                                                    @if($row['charge'] > 0)<span class="whitespace-nowrap text-gray-700 dark:text-gray-300">+@fig($row['charge'], false)</span>@endif
+                                                    @if($row['credit'] > 0)<span class="whitespace-nowrap text-green-700 dark:text-green-400 ml-1">-@fig($row['credit'], false)</span>@endif
                                                 </span>
                                             </td>
-                                            <td class="hidden sm:table-cell px-4 py-2 text-right whitespace-nowrap text-gray-900 dark:text-gray-100">{{ $row['charge'] > 0 ? \App\Support\Money::format($row['charge']) : '' }}</td>
-                                            <td class="hidden sm:table-cell px-4 py-2 text-right whitespace-nowrap text-green-700 dark:text-green-400">{{ $row['credit'] > 0 ? \App\Support\Money::format($row['credit']) : '' }}</td>
-                                            <td class="px-3 sm:px-4 py-2 text-right whitespace-nowrap font-medium text-gray-900 dark:text-gray-100">@money($row['balance'])</td>
+                                            <td class="hidden sm:table-cell num">{{ $row['charge'] > 0 ? \App\Support\Money::format($row['charge']) : '' }}</td>
+                                            <td class="hidden sm:table-cell num text-green-700 dark:text-green-400">{{ $row['credit'] > 0 ? \App\Support\Money::format($row['credit']) : '' }}</td>
+                                            <td class="sm:px-4 num font-medium">@fig($row['balance'], false)</td>
                                         </tr>
                                     @empty
-                                        <tr><td colspan="5" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">Nothing in this period.</td></tr>
+                                        <tr><td colspan="5" class="text-center">Nothing in this period.</td></tr>
                                     @endforelse
-                                </tbody>
-                                <tfoot class="bg-gray-50 dark:bg-gray-700 font-semibold">
+<x-slot name="foot">
                                     <tr>
-                                        <td class="px-3 sm:px-4 py-3"></td>
-                                        <td class="px-3 sm:px-4 py-3 text-gray-900 dark:text-gray-100">Closing balance</td>
-                                        <td class="hidden sm:table-cell px-4 py-3 text-right whitespace-nowrap">@money($s->totalCharges)</td>
-                                        <td class="hidden sm:table-cell px-4 py-3 text-right whitespace-nowrap text-green-700 dark:text-green-400">@money($s->totalCredits)</td>
-                                        <td class="px-3 sm:px-4 py-3 text-right whitespace-nowrap text-brand-600 dark:text-brand-300">@money($s->closing)</td>
+                                        <td class="sm:px-4"></td>
+                                        <td class="sm:px-4">Closing balance</td>
+                                        <td class="hidden sm:table-cell num">@fig($s->totalCharges, false)</td>
+                                        <td class="hidden sm:table-cell num text-green-700 dark:text-green-400">@fig($s->totalCredits, false)</td>
+                                        <td class="sm:px-4 num text-brand-600 dark:text-brand-300">@fig($s->closing, false)</td>
                                     </tr>
-                                </tfoot>
-                            </table>
-                        </div>
+</x-slot>
+</x-table>
                     </x-card>
                 @else
                     <x-card :title="$isCustomer ? 'Unpaid invoices' : 'Unpaid bills'">
-                        <div class="overflow-x-auto mt-3">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                                <thead class="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Details</th>
-                                        <th class="hidden sm:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Due</th>
-                                        <th class="px-3 sm:px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Days overdue</th>
-                                        <th class="hidden sm:table-cell px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Original</th>
-                                        <th class="px-3 sm:px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Still due</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <x-table :caption="$isCustomer ? 'Unpaid invoices' : 'Unpaid bills'">
+<x-slot name="head">
+                                        <x-table.th class="sm:px-4">Details</x-table.th>
+                                        <x-table.th class="hidden sm:table-cell">Due</x-table.th>
+                                        <x-table.th num class="sm:px-4">Days overdue</x-table.th>
+                                        <x-table.th num class="hidden sm:table-cell">Original</x-table.th>
+                                        <x-table.th num class="sm:px-4">Still due</x-table.th>
+</x-slot>
+
                                     @forelse($s->open['items'] as $item)
                                         <tr>
-                                            <td class="px-3 sm:px-4 py-2 text-gray-900 dark:text-gray-100">
-                                                @if($item['url'])<a href="{{ $item['url'] }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $item['label'] }}</a>@else{{ $item['label'] }}@endif
-                                                <span class="block text-xs text-gray-500 dark:text-gray-400">{{ \Carbon\Carbon::parse($item['date'])->format('j M Y') }}<span class="sm:hidden"> · due {{ \Carbon\Carbon::parse($item['due_date'])->format('j M Y') }}</span></span>
+                                            <td class="sm:px-4">
+                                                @if($item['url'])<a href="{{ $item['url'] }}" class="tbl-link">{{ $item['label'] }}</a>@else{{ $item['label'] }}@endif
+                                                <span class="block text-xs text-gray-600 dark:text-gray-400">{{ \Carbon\Carbon::parse($item['date'])->format('j M Y') }}<span class="sm:hidden"> · due {{ \Carbon\Carbon::parse($item['due_date'])->format('j M Y') }}</span></span>
                                             </td>
-                                            <td class="hidden sm:table-cell px-4 py-2 whitespace-nowrap text-gray-700 dark:text-gray-300">{{ \Carbon\Carbon::parse($item['due_date'])->format('j M Y') }}</td>
-                                            <td class="px-3 sm:px-4 py-2 text-right {{ $item['days_overdue'] > 0 ? 'text-red-600 dark:text-red-300 font-medium' : 'text-gray-500 dark:text-gray-400' }}">{{ $item['days_overdue'] > 0 ? $item['days_overdue'] : 'Not yet due' }}</td>
-                                            <td class="hidden sm:table-cell px-4 py-2 text-right whitespace-nowrap text-gray-700 dark:text-gray-300">@money($item['total'])</td>
-                                            <td class="px-3 sm:px-4 py-2 text-right whitespace-nowrap font-medium text-gray-900 dark:text-gray-100">@money($item['amount'])</td>
+                                            <td class="hidden sm:table-cell">{{ \Carbon\Carbon::parse($item['due_date'])->format('j M Y') }}</td>
+                                            <td class="sm:px-4 num {{ $item['days_overdue'] > 0 ? 'text-red-600 dark:text-red-300 font-medium' : 'text-gray-500 dark:text-gray-400' }}">{{ $item['days_overdue'] > 0 ? $item['days_overdue'] : 'Not yet due' }}</td>
+                                            <td class="hidden sm:table-cell num">@fig($item['total'], false)</td>
+                                            <td class="sm:px-4 num font-medium">@fig($item['amount'], false)</td>
                                         </tr>
                                     @empty
-                                        <tr><td colspan="5" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">Nothing unpaid.</td></tr>
+                                        <tr><td colspan="5" class="text-center">Nothing unpaid.</td></tr>
                                     @endforelse
-                                </tbody>
-                            </table>
-                        </div>
+</x-table>
                     </x-card>
                     @if(count($s->open['credits']))
                         <x-card title="Payments and credits not yet used">
@@ -206,7 +196,7 @@
                                         <span class="text-gray-900 dark:text-gray-100">
                                             {{ $credit['label'] }} ·
                                             @if($credit['url'])<a href="{{ $credit['url'] }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $credit['reference'] }}</a>@else{{ $credit['reference'] }}@endif
-                                            <span class="block text-xs text-gray-500 dark:text-gray-400">{{ \Carbon\Carbon::parse($credit['date'])->format('j M Y') }}</span>
+                                            <span class="block text-xs text-gray-600 dark:text-gray-400">{{ \Carbon\Carbon::parse($credit['date'])->format('j M Y') }}</span>
                                         </span>
                                         <span class="whitespace-nowrap text-green-700 dark:text-green-400 font-medium">-@money($credit['amount'])</span>
                                     </li>
@@ -220,7 +210,7 @@
                     <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-px bg-gray-200 dark:bg-gray-700 m-4 sm:m-6 mt-3 rounded-md overflow-hidden">
                         @foreach(\App\Services\Statements\Subledger::AGEING_LABELS as $key => $label)
                             <div class="p-3 {{ $key === 'total' ? 'col-span-2 sm:col-span-1 bg-brand-50 dark:bg-brand-900/40' : 'bg-white dark:bg-gray-800' }}">
-                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $label }}</p>
+                                <p class="text-xs text-gray-600 dark:text-gray-400">{{ $label }}</p>
                                 <p class="text-sm sm:text-base font-semibold {{ in_array($key, ['31_60', '61_90', 'over_90'], true) && $s->ageing[$key] > 0 ? 'text-red-600 dark:text-red-300' : 'text-gray-900 dark:text-gray-100' }}">@money($s->ageing[$key])</p>
                             </div>
                         @endforeach

@@ -9,7 +9,7 @@
                 </h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400">
                     <a href="{{ route('customers.show', $cn->customer) }}" class="text-brand-600 dark:text-brand-300">{{ $cn->customer->name }}</a>
-                    · {{ $cn->credit_note_date->format('d M Y') }}
+                    · {{ $cn->credit_note_date->format('j M Y') }}
                     @if($cn->invoice) · for invoice <a href="{{ route('invoices.show', $cn->invoice) }}" class="text-brand-600 dark:text-brand-300">{{ $cn->invoice->invoice_number }}</a>@endif
                     @if($cn->reason) · {{ \App\Models\CreditNote::REASONS[$cn->reason] ?? $cn->reason }}@endif
                 </p>
@@ -88,7 +88,7 @@
                                     <x-field name="invoice_id" label="Invoice" type="select" x-model="invoice" x-on:change="amount = Math.min(invoices[invoice] || 0, {{ (float) $cn->balance }}).toFixed(2)" required>
                                         <option value="">Choose an invoice</option>
                                         @foreach($invoices as $openInvoice)
-                                            <option value="{{ $openInvoice->id }}">{{ $openInvoice->invoice_number }} · due {{ $openInvoice->due_date?->format('d M Y') }} · owes {{ \App\Support\Money::format($openInvoice->balance_due) }}</option>
+                                            <option value="{{ $openInvoice->id }}">{{ $openInvoice->invoice_number }} · due {{ $openInvoice->due_date?->format('j M Y') }} · owes {{ \App\Support\Money::format($openInvoice->balance_due) }}</option>
                                         @endforeach
                                     </x-field>
                                     <x-field name="amount" id="apply_amount" label="Amount to apply" type="number" step="0.01" min="0.01" x-model="amount" required />
@@ -131,38 +131,33 @@
             @endif
 
             <x-card title="Lines">
-                <div class="overflow-x-auto p-6 pt-3">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                        <thead>
-                            <tr class="text-left text-xs uppercase text-gray-500 dark:text-gray-400">
-                                <th class="py-2 pr-3">Description</th>
-                                <th class="py-2 pr-3 text-right">Qty</th>
-                                <th class="py-2 pr-3 text-right">Price</th>
-                                <th class="py-2 pr-3 text-right">VAT</th>
-                                <th class="py-2 pr-3 text-right">Total</th>
-                                @if($cn->restock)<th class="py-2 text-right hidden sm:table-cell">Back in stock at cost</th>@endif
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700 text-gray-900 dark:text-gray-100">
+                <x-table caption="Lines">
+<x-slot name="head">
+                                <x-table.th>Description</x-table.th>
+                                <x-table.th num>Qty</x-table.th>
+                                <x-table.th num>Price</x-table.th>
+                                <x-table.th num>VAT</x-table.th>
+                                <x-table.th num>Total</x-table.th>
+                                @if($cn->restock)<x-table.th num class="hidden sm:table-cell">Back in stock at cost</x-table.th>@endif
+</x-slot>
+
                             @foreach($cn->items as $line)
                                 <tr>
-                                    <td class="py-2 pr-3">
+                                    <td>
                                         {{ $line->description }}
                                         @if($line->item)<span class="block text-xs text-gray-500 dark:text-gray-400">{{ $line->item->name }}</span>@endif
                                         @if((float) $line->tax_amount == 0 && $line->vat_treatment && $line->vat_treatment !== 'standard')
                                             <span class="block text-xs text-gray-500 dark:text-gray-400">{{ \App\Services\Accounting\VatTreatment::label($line->vat_treatment) }}</span>
                                         @endif
                                     </td>
-                                    <td class="py-2 pr-3 text-right">{{ rtrim(rtrim(number_format((float) $line->quantity, 2), '0'), '.') }}</td>
-                                    <td class="py-2 pr-3 text-right">@money($line->unit_price)</td>
-                                    <td class="py-2 pr-3 text-right">@money($line->tax_amount)</td>
-                                    <td class="py-2 pr-3 text-right">@money($line->total)</td>
-                                    @if($cn->restock)<td class="py-2 text-right hidden sm:table-cell">{{ $line->unit_cost !== null ? \App\Support\Money::format((float) $line->unit_cost * (float) $line->quantity) : '—' }}</td>@endif
+                                    <td class="num">{{ rtrim(rtrim(number_format((float) $line->quantity, 2), '0'), '.') }}</td>
+                                    <td class="num">@money($line->unit_price)</td>
+                                    <td class="num">@money($line->tax_amount)</td>
+                                    <td class="num">@money($line->total)</td>
+                                    @if($cn->restock)<td class="num hidden sm:table-cell">{{ $line->unit_cost !== null ? \App\Support\Money::format((float) $line->unit_cost * (float) $line->quantity) : '—' }}</td>@endif
                                 </tr>
                             @endforeach
-                        </tbody>
-                    </table>
-                </div>
+</x-table>
             </x-card>
 
             @if($cn->applications->isNotEmpty() || $cn->refunds->isNotEmpty())
@@ -170,13 +165,13 @@
                     <ul class="divide-y divide-gray-200 dark:divide-gray-700 p-6 pt-3 text-sm text-gray-900 dark:text-gray-100">
                         @foreach($cn->applications as $application)
                             <li class="py-2 flex justify-between gap-3">
-                                <span>{{ $application->applied_date->format('d M Y') }} · applied to invoice <a href="{{ route('invoices.show', $application->invoice) }}" class="text-brand-600 dark:text-brand-300">{{ $application->invoice->invoice_number }}</a></span>
+                                <span>{{ $application->applied_date->format('j M Y') }} · applied to invoice <a href="{{ route('invoices.show', $application->invoice) }}" class="text-brand-600 dark:text-brand-300">{{ $application->invoice->invoice_number }}</a></span>
                                 <span class="font-medium">@money($application->amount)</span>
                             </li>
                         @endforeach
                         @foreach($cn->refunds as $refund)
                             <li class="py-2 flex justify-between gap-3">
-                                <span>{{ $refund->refund_date->format('d M Y') }} · refunded to the customer{{ $refund->bank ? ' from '.$refund->bank->name : '' }}{{ $refund->reference ? ' ('.$refund->reference.')' : '' }}</span>
+                                <span>{{ $refund->refund_date->format('j M Y') }} · refunded to the customer{{ $refund->bank ? ' from '.$refund->bank->name : '' }}{{ $refund->reference ? ' ('.$refund->reference.')' : '' }}</span>
                                 <span class="font-medium">@money($refund->amount)</span>
                             </li>
                         @endforeach
@@ -189,16 +184,18 @@
                     <div class="p-6 pt-3 space-y-4">
                         @foreach($cn->journals as $journal)
                             <div class="overflow-x-auto">
-                                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $journal->journal_number }} · {{ $journal->journal_date->format('d M Y') }} · {{ $journal->description }}</p>
-                                <table class="min-w-full text-sm mt-1">
+                                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $journal->journal_number }} · {{ $journal->journal_date->format('j M Y') }} · {{ $journal->description }}</p>
+                                <x-table caption="Ledger postings">
+<x-slot name="head">
+</x-slot>
                                     @foreach($journal->entries as $entry)
-                                        <tr class="text-gray-900 dark:text-gray-100">
-                                            <td class="py-1 pr-3">{{ $entry->account->account_code }} {{ $entry->account->name }}</td>
-                                            <td class="py-1 pr-3 text-right">{{ (float) $entry->debit ? \App\Support\Money::format($entry->debit) : '' }}</td>
-                                            <td class="py-1 text-right">{{ (float) $entry->credit ? \App\Support\Money::format($entry->credit) : '' }}</td>
+                                        <tr>
+                                            <td>{{ $entry->account->account_code }} {{ $entry->account->name }}</td>
+                                            <td class="num">{{ (float) $entry->debit ? \App\Support\Money::format($entry->debit) : '' }}</td>
+                                            <td class="num">{{ (float) $entry->credit ? \App\Support\Money::format($entry->credit) : '' }}</td>
                                         </tr>
                                     @endforeach
-                                </table>
+</x-table>
                             </div>
                         @endforeach
                     </div>

@@ -1,5 +1,5 @@
 {{-- The linked bank feed as the statement (session 17) --}}
-<div class="card mb-6 p-6" data-testid="feed-panel">
+<div class="card p-6" data-testid="feed-panel">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
             <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Bank feed: {{ $feed['connection']->title() }}</h3>

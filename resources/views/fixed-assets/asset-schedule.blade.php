@@ -1,213 +1,114 @@
+{{-- Depreciation schedule for one asset (tables plan T7): what has been charged so far, and the plan to the end of its life. Amounts in ₦. --}}
+@php
+    $methods = \App\Models\FixedAsset::getDepreciationMethods();
+    $recorded = $depreciations->count();
+    $life = rtrim(rtrim(number_format((float) $fixedAsset->useful_life, 2), '0'), '.');
+@endphp
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Depreciation Schedule') }} - {{ $fixedAsset->name }}
-            </h2>
-            <div class="flex space-x-2">
-                <a href="{{ route('fixed-assets.show', $fixedAsset) }}" class="bg-brand-500 hover:bg-brand-700 text-white font-bold py-2 px-4 rounded">
-                    View Asset
-                </a>
-                <a href="{{ route('fixed-assets.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                    Back to Assets
-                </a>
-            </div>
-        </div>
+        <x-table.page-header :title="$fixedAsset->name.': depreciation'" :description="$fixedAsset->asset_number.' · '.($methods[$fixedAsset->depreciation_method] ?? \Illuminate\Support\Str::headline((string) $fixedAsset->depreciation_method)).' over '.$life.' '.\Illuminate\Support\Str::plural('year', (float) $fixedAsset->useful_life).'. Amounts in ₦.'">
+            <x-slot name="more">
+                <x-table.menu-item :href="route('fixed-assets.show', $fixedAsset)">Asset details</x-table.menu-item>
+                <x-table.menu-item :href="route('fixed-assets.depreciation-schedule')">All assets' schedule</x-table.menu-item>
+                <x-table.menu-item :href="route('fixed-assets.index')">All fixed assets</x-table.menu-item>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
-    @php $currency = auth()->user()->tenant->currency_symbol; @endphp
+    <div class="space-y-6">
+        <x-report.stats :cols="4">
+            <x-report.stat label="Cost" :value="\App\Support\Figure::show($fixedAsset->purchase_cost)" :hint="'Bought '.$fixedAsset->purchase_date?->format('j M Y')" />
+            <x-report.stat label="Depreciated so far" :value="\App\Support\Figure::show($fixedAsset->accumulated_depreciation)" :hint="$recorded ? $recorded.' of '.count($schedule).' months charged' : null" />
+            <x-report.stat label="Book value now" :value="\App\Support\Figure::show($fixedAsset->book_value)" />
+            <x-report.stat label="Left at the end" :value="\App\Support\Figure::show($fixedAsset->salvage_value)" :hint="'In use from '.($fixedAsset->in_service_date?->format('j M Y') ?? '—')" />
+        </x-report.stats>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <!-- Asset Summary -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                <div class="p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
-                        <div>
-                            <div class="text-sm text-gray-500 dark:text-gray-400">Asset Number</div>
-                            <div class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $fixedAsset->asset_number }}</div>
-                        </div>
-                        <div>
-                            <div class="text-sm text-gray-500 dark:text-gray-400">Purchase Cost</div>
-                            <div class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $currency }}{{ number_format($fixedAsset->purchase_cost, 2) }}</div>
-                        </div>
-                        <div>
-                            <div class="text-sm text-gray-500 dark:text-gray-400">Salvage Value</div>
-                            <div class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $currency }}{{ number_format($fixedAsset->salvage_value, 2) }}</div>
-                        </div>
-                        <div>
-                            <div class="text-sm text-gray-500 dark:text-gray-400">Accumulated Depreciation</div>
-                            <div class="text-lg font-bold text-red-600 dark:text-red-300">{{ $currency }}{{ number_format($fixedAsset->accumulated_depreciation, 2) }}</div>
-                        </div>
-                        <div>
-                            <div class="text-sm text-gray-500 dark:text-gray-400">Book Value</div>
-                            <div class="text-lg font-bold text-brand-600 dark:text-brand-300">{{ $currency }}{{ number_format($fixedAsset->book_value, 2) }}</div>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <div>
-                            <div class="text-sm text-gray-500 dark:text-gray-400">Purchase Date</div>
-                            <div class="text-md text-gray-900 dark:text-gray-100">{{ $fixedAsset->purchase_date->format('M d, Y') }}</div>
-                        </div>
-                        <div>
-                            <div class="text-sm text-gray-500 dark:text-gray-400">Depreciation Start</div>
-                            <div class="text-md text-gray-900 dark:text-gray-100">{{ $fixedAsset->depreciation_start_date->format('M d, Y') }}</div>
-                        </div>
-                        <div>
-                            <div class="text-sm text-gray-500 dark:text-gray-400">Useful Life</div>
-                            <div class="text-md text-gray-900 dark:text-gray-100">{{ $fixedAsset->useful_life }} years</div>
-                        </div>
-                        <div>
-                            <div class="text-sm text-gray-500 dark:text-gray-400">Depreciation Method</div>
-                            <div class="text-md text-gray-900 dark:text-gray-100">{{ ucwords(str_replace('_', ' ', $fixedAsset->depreciation_method)) }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        @if ($recorded > 0)
+            <section class="space-y-3" aria-labelledby="charged-title">
+                <h3 id="charged-title" class="text-base font-semibold text-gray-900 dark:text-white">Charged so far</h3>
+                <x-table caption="Depreciation charged so far">
+                    <x-slot name="head">
+                        <x-table.th num>Month</x-table.th>
+                        <x-table.th>Date</x-table.th>
+                        <x-table.th num>Charge</x-table.th>
+                        <x-table.th num class="hidden sm:table-cell">Total so far</x-table.th>
+                        <x-table.th num>Book value</x-table.th>
+                        <x-table.th class="hidden sm:table-cell">Journal</x-table.th>
+                    </x-slot>
+                    @foreach ($depreciations as $depreciation)
+                        <tr>
+                            <td class="num tbl-muted">{{ $depreciation->period_number }}</td>
+                            <td class="">{{ $depreciation->depreciation_date->format('j M Y') }}</td>
+                            <td class="num">@fig($depreciation->depreciation_amount)</td>
+                            <td class="num hidden sm:table-cell">@fig($depreciation->accumulated_depreciation)</td>
+                            <td class="num font-medium">@fig($depreciation->book_value)</td>
+                            <td class="hidden sm:table-cell">
+                                @if ($depreciation->journal_id)
+                                    <a href="{{ route('journals.show', $depreciation->journal_id) }}" class="tbl-link">View journal</a>
+                                @else
+                                    <span class="tbl-zero">—</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                    <x-slot name="foot">
+                        <tr>
+                            <th scope="row" colspan="2">Total charged</th>
+                            <td class="num">@fig($depreciations->sum('depreciation_amount'))</td>
+                            <td class="hidden sm:table-cell"></td>
+                            <td></td>
+                            <td class="hidden sm:table-cell"></td>
+                        </tr>
+                    </x-slot>
+                </x-table>
+            </section>
+        @endif
 
-            <!-- Recorded Depreciation -->
-            @if($depreciations->count() > 0)
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                <div class="p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Recorded Depreciation</h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Period
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Date
-                                    </th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Depreciation Amount
-                                    </th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Accumulated
-                                    </th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Book Value
-                                    </th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Journal
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                @foreach($depreciations as $depreciation)
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                            {{ $depreciation->period_number }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                            {{ $depreciation->depreciation_date->format('M d, Y') }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100">
-                                            {{ $currency }}{{ number_format($depreciation->depreciation_amount, 2) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100">
-                                            {{ $currency }}{{ number_format($depreciation->accumulated_depreciation, 2) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-900 dark:text-gray-100">
-                                            {{ $currency }}{{ number_format($depreciation->book_value, 2) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
-                                            @if($depreciation->journal_id)
-                                                <a href="{{ route('journals.show', $depreciation->journal_id) }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300">
-                                                    View
-                                                </a>
-                                            @else
-                                                <span class="text-gray-500 dark:text-gray-400">-</span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+        <section class="space-y-3" aria-labelledby="plan-title">
+            <h3 id="plan-title" class="text-base font-semibold text-gray-900 dark:text-white">Full plan</h3>
+            @if (count($schedule) === 0)
+                <div class="tbl-wrap">
+                    <x-table.empty title="No plan to show" text="This asset has nothing left to depreciate, or its cost, life or in-use date is missing." />
                 </div>
-            </div>
+            @else
+                <x-table caption="Depreciation plan, month by month">
+                    <x-slot name="head">
+                        <x-table.th num>Month</x-table.th>
+                        <x-table.th>Date</x-table.th>
+                        <x-table.th num class="hidden md:table-cell">Value at start</x-table.th>
+                        <x-table.th num>Charge</x-table.th>
+                        <x-table.th num class="hidden sm:table-cell">Total so far</x-table.th>
+                        <x-table.th num>Value at end</x-table.th>
+                    </x-slot>
+                    @php $opening = (float) $fixedAsset->purchase_cost; @endphp
+                    @foreach ($schedule as $row)
+                        @php $done = $row['period'] <= $recorded; @endphp
+                        <tr>
+                            <td class="num tbl-muted">{{ $row['period'] }}</td>
+                            <td class="">
+                                {{ \Illuminate\Support\Carbon::parse($row['date'])->format('j M Y') }}
+                                @if ($done)
+                                    <x-status-badge status="completed" label="Charged" />
+                                @endif
+                            </td>
+                            <td class="num hidden md:table-cell">@fig($opening)</td>
+                            <td class="num">@fig($row['depreciation_amount'])</td>
+                            <td class="num hidden sm:table-cell">@fig($row['accumulated_depreciation'])</td>
+                            <td class="num font-medium">@fig($row['book_value'])</td>
+                        </tr>
+                        @php $opening = (float) $row['book_value']; @endphp
+                    @endforeach
+                    <x-slot name="foot">
+                        <tr>
+                            <th scope="row" colspan="2">Total over its life</th>
+                            <td class="hidden md:table-cell"></td>
+                            <td class="num">@fig(collect($schedule)->sum('depreciation_amount'))</td>
+                            <td class="hidden sm:table-cell"></td>
+                            <td></td>
+                        </tr>
+                    </x-slot>
+                </x-table>
             @endif
-
-            <!-- Projected Schedule -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Projected Depreciation Schedule</h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Period
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Date
-                                    </th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Opening Value
-                                    </th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Depreciation
-                                    </th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Accumulated
-                                    </th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Closing Value
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                @forelse($schedule as $period)
-                                    <tr class="{{ $period['period'] <= $depreciations->count() ? 'bg-green-50 dark:bg-green-900/20' : '' }}">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                            {{ $period['period'] }}
-                                            @if($period['period'] <= $depreciations->count())
-                                                <span class="ml-2 text-xs text-green-700 dark:text-green-400">(Recorded)</span>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                            {{ \Carbon\Carbon::parse($period['date'])->format('M d, Y') }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100">
-                                            {{ $currency }}{{ number_format($period['opening_value'], 2) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100">
-                                            {{ $currency }}{{ number_format($period['depreciation'], 2) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100">
-                                            {{ $currency }}{{ number_format($period['accumulated'], 2) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-900 dark:text-gray-100">
-                                            {{ $currency }}{{ number_format($period['closing_value'], 2) }}
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="6" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                                            No depreciation schedule available.
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                            @if(count($schedule) > 0)
-                            <tfoot class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th colspan="3" class="px-6 py-3 text-left text-sm font-bold text-gray-700 dark:text-gray-300">
-                                        Total Depreciation
-                                    </th>
-                                    <th class="px-6 py-3 text-right text-sm font-bold text-gray-700 dark:text-gray-300">
-                                        {{ $currency }}{{ number_format(collect($schedule)->sum('depreciation'), 2) }}
-                                    </th>
-                                    <th colspan="2"></th>
-                                </tr>
-                            </tfoot>
-                            @endif
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </section>
     </div>
 </x-app-layout>

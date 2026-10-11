@@ -78,24 +78,21 @@
             <x-card title="Month by month">
                 <div class="p-4 sm:p-6 pt-3">
                     <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Each month is posted on its last day: {{ $prepaid ? 'Dr '.$schedule->plAccount->name.', Cr '.$schedule->balanceAccount->name : 'Dr '.$schedule->balanceAccount->name.', Cr '.$schedule->plAccount->name }}.</p>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead>
-                                <tr class="text-left text-xs uppercase text-gray-500 dark:text-gray-400">
-                                    <th class="py-2 pr-3 hidden sm:table-cell">#</th>
-                                    <th class="py-2 pr-3">Month</th>
-                                    <th class="py-2 pr-3 text-right">Amount</th>
-                                    <th class="py-2">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700 text-gray-900 dark:text-gray-100">
+                    <x-table caption="Month by month">
+<x-slot name="head">
+                                    <x-table.th class="hidden sm:table-cell">#</x-table.th>
+                                    <x-table.th>Month</x-table.th>
+                                    <x-table.th num>Amount</x-table.th>
+                                    <x-table.th>Status</x-table.th>
+</x-slot>
+
                                 @foreach($plan as $row)
                                     <tr>
-                                        <td class="py-2 pr-3 hidden sm:table-cell">{{ $row['sequence'] }}</td>
-                                        <td class="py-2 pr-3 whitespace-nowrap">{{ $row['due_date']->format('F Y') }}
+                                        <td class="hidden sm:table-cell">{{ $row['sequence'] }}</td>
+                                        <td>{{ $row['due_date']->format('F Y') }}
                                             <span class="block text-xs text-gray-500 dark:text-gray-400">{{ $row['due_date']->format('j M Y') }}</span></td>
-                                        <td class="py-2 pr-3 text-right whitespace-nowrap">@money($row['amount'])</td>
-                                        <td class="py-2">
+                                        <td class="num">@fig($row['amount'], false)</td>
+                                        <td>
                                             @switch($row['state'])
                                                 @case('released')
                                                     <span class="text-green-700 dark:text-green-400 font-medium">Released</span>
@@ -118,9 +115,7 @@
                                         </td>
                                     </tr>
                                 @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+</x-table>
                 </div>
             </x-card>
 

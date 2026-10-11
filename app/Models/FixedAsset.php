@@ -260,7 +260,7 @@ class FixedAsset extends Model
         $lastDepreciation = $this->depreciations()->latest('depreciation_date')->first();
 
         if ($lastDepreciation) {
-            return $lastDepreciation->depreciation_date->copy()->addMonth()->endOfMonth();
+            return $lastDepreciation->depreciation_date->copy()->addMonthNoOverflow()->endOfMonth();
         }
 
         return $this->in_service_date->copy()->endOfMonth();

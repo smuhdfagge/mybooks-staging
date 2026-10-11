@@ -36,21 +36,19 @@
             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">{{ $title }}</h3>
             @error('items')<p class="form-error mb-2">{{ $message }}</p>@enderror
             <div class="overflow-visible">
-                <table class="min-w-full line-items">
-                    <thead>
-                        <tr class="border-b border-gray-200 dark:border-gray-700">
-                            <th class="text-left text-sm font-medium text-gray-700 dark:text-gray-300 pb-2 w-1/3">Description</th>
-                            <th class="text-left text-sm font-medium text-gray-700 dark:text-gray-300 pb-2 w-24">Qty</th>
-                            <th class="text-left text-sm font-medium text-gray-700 dark:text-gray-300 pb-2 w-32">Price</th>
-                            <th class="text-left text-sm font-medium text-gray-700 dark:text-gray-300 pb-2 w-24">VAT %</th>
-                            <th class="text-right text-sm font-medium text-gray-700 dark:text-gray-300 pb-2 w-32">Total</th>
-                            <th class="w-12"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                <x-table :caption="$title" table-class="line-items">
+<x-slot name="head">
+                            <x-table.th class="w-1/3">Description</x-table.th>
+                            <x-table.th class="w-24">Qty</x-table.th>
+                            <x-table.th class="w-32">Price</x-table.th>
+                            <x-table.th class="w-24">VAT %</x-table.th>
+                            <x-table.th num class="w-32">Total</x-table.th>
+                            <th scope="col" class="w-12"><span class="sr-only">Actions</span></th>
+</x-slot>
+
                         <template x-for="(line, index) in lines" :key="line.key">
-                            <tr class="border-b border-gray-200 dark:border-gray-700">
-                                <td class="py-2 pr-2" data-label="Description" data-cell="main">
+                            <tr>
+                                <td data-label="Description" data-cell="main">
                                     <div class="relative mb-1">
                                         <input type="hidden" :name="`items[${index}][item_id]`" :value="line.item_id">
                                         <input type="hidden" :name="`items[${index}][discount]`" :value="line.discount">
@@ -75,25 +73,24 @@
                                     <input aria-label="Description" type="text" :name="`items[${index}][description]`" x-model="line.description" required placeholder="Description" class="form-control text-sm">
                                     <p class="form-error" x-show="errors[`items.${index}.description`]" x-text="errors[`items.${index}.description`]"></p>
                                 </td>
-                                <td class="py-2 pr-2" data-label="Qty">
+                                <td data-label="Qty">
                                     <input aria-label="Quantity" type="number" :name="`items[${index}][quantity]`" x-model.number="line.quantity" min="0.01" step="0.01" required class="form-control text-sm">
                                     <p class="form-error" x-show="errors[`items.${index}.quantity`]" x-text="errors[`items.${index}.quantity`]"></p>
                                 </td>
-                                <td class="py-2 pr-2" data-label="Price">
+                                <td data-label="Price">
                                     <input aria-label="Unit price" type="number" :name="`items[${index}][unit_price]`" x-model.number="line.unit_price" min="0" step="0.01" required class="form-control text-sm">
                                 </td>
-                                <td class="py-2 pr-2" data-label="VAT %">
+                                <td data-label="VAT %">
                                     <input aria-label="VAT rate (%)" type="number" :name="`items[${index}][tax_rate]`" x-model.number="line.tax_rate" min="0" max="100" step="0.01" class="form-control text-sm">
                                     <p class="form-error" x-show="errors[`items.${index}.tax_rate`]" x-text="errors[`items.${index}.tax_rate`]"></p>
                                 </td>
-                                <td class="py-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100" data-label="Total" x-text="money(lineTotal(line))"></td>
-                                <td class="py-2 text-center" data-cell="actions">
+                                <td class="num font-medium" data-label="Total" x-text="money(lineTotal(line))"></td>
+                                <td class="text-center" data-cell="actions">
                                     <button type="button" @click="remove(index)" x-show="lines.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-300 text-sm" aria-label="Remove line">Remove</button>
                                 </td>
                             </tr>
                         </template>
-                    </tbody>
-                </table>
+</x-table>
             </div>
             <button type="button" @click="add()" class="mt-4 inline-flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-medium text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
                 + Add line

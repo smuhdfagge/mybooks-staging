@@ -53,7 +53,7 @@
                                 <option value="">Select an invoice</option>
                                 @foreach($unpaidInvoices as $invoice)
                                 <option value="{{ $invoice->id }}" data-balance="{{ $invoice->balance_due }}">
-                                    {{ $invoice->invoice_number }} - Due: {{ number_format($invoice->balance_due, 2) }} ({{ $invoice->due_date->format('M d, Y') }})
+                                    {{ $invoice->invoice_number }} - Due: {{ number_format($invoice->balance_due, 2) }} ({{ $invoice->due_date->format('j M Y') }})
                                 </option>
                                 @endforeach
                             </select>
@@ -105,45 +105,40 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
                 <div class="p-6">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Unpaid Invoices for {{ $paymentReceived->customer->name }}</h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Invoice</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Due Date</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Balance Due</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <x-table :caption="'Unpaid invoices for '.$paymentReceived->customer->name">
+<x-slot name="head">
+                                    <x-table.th>Invoice</x-table.th>
+                                    <x-table.th>Date</x-table.th>
+                                    <x-table.th>Due date</x-table.th>
+                                    <x-table.th num>Total</x-table.th>
+                                    <x-table.th num>Balance due</x-table.th>
+</x-slot>
+
                                 @foreach($unpaidInvoices as $invoice)
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                    <td class="px-4 py-3 whitespace-nowrap">
-                                        <a href="{{ route('invoices.show', $invoice) }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">
+                                <tr>
+                                    <td>
+                                        <a href="{{ route('invoices.show', $invoice) }}" class="tbl-link">
                                             {{ $invoice->invoice_number }}
                                         </a>
                                     </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                        {{ $invoice->invoice_date->format('M d, Y') }}
+                                    <td>
+                                        {{ $invoice->invoice_date->format('j M Y') }}
                                     </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm {{ $invoice->due_date < now() ? 'text-red-600 dark:text-red-300' : 'text-gray-500 dark:text-gray-400' }}">
-                                        {{ $invoice->due_date->format('M d, Y') }}
+                                    <td class="{{ $invoice->due_date < now() ? 'text-red-600 dark:text-red-300' : 'text-gray-500 dark:text-gray-400' }}">
+                                        {{ $invoice->due_date->format('j M Y') }}
                                         @if($invoice->due_date < now())
                                             <span class="text-xs">(Overdue)</span>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 text-right">
-                                        {{ number_format($invoice->total, 2) }}
+                                    <td class="num">
+                                        @fig($invoice->total, false)
                                     </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-red-600 dark:text-red-300 text-right font-medium">
-                                        {{ number_format($invoice->balance_due, 2) }}
+                                    <td class="text-red-600 dark:text-red-300 num font-medium">
+                                        @fig($invoice->balance_due, false)
                                     </td>
                                 </tr>
                                 @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+</x-table>
                 </div>
             </div>
             @else

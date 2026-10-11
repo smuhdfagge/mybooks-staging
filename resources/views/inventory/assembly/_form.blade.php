@@ -49,27 +49,24 @@
                 </p>
             </div>
             @error('items')<p class="form-error mb-2">{{ $message }}</p>@enderror
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-sm divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead><tr class="text-xs uppercase text-gray-500 dark:text-gray-400">
-                        <th class="py-2 pr-2 text-left">Item</th>
-                        <th class="py-2 px-2 text-right">Needed</th>
-                        <th class="py-2 pl-2 text-right">Free</th>
-                    </tr></thead>
-                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700 text-gray-900 dark:text-gray-100">
+            <x-table :caption="$breakdown ? 'In stock' : 'Components needed'">
+<x-slot name="head">
+                        <x-table.th>Item</x-table.th>
+                        <x-table.th num>Needed</x-table.th>
+                        <x-table.th num>Free</x-table.th>
+</x-slot>
+
                         <template x-for="(c, i) in (info ? info.components : [])" :key="i">
                             <tr>
-                                <td class="py-2 pr-2" x-text="c.name"></td>
-                                <td class="py-2 px-2 text-right whitespace-nowrap" x-text="qty(c.per_unit * (Number(quantity) || 0)) + (c.unit ? ' ' + c.unit : '')"></td>
-                                <td class="py-2 pl-2 text-right whitespace-nowrap" :class="c.per_unit * (Number(quantity) || 0) > c.free + 0.00001 ? 'text-red-600 dark:text-red-300 font-medium' : ''">
+                                <td x-text="c.name"></td>
+                                <td class="num" x-text="qty(c.per_unit * (Number(quantity) || 0)) + (c.unit ? ' ' + c.unit : '')"></td>
+                                <td class="num" :class="c.per_unit * (Number(quantity) || 0) > c.free + 0.00001 ? 'text-red-600 dark:text-red-300 font-medium' : ''">
                                     <span x-text="qty(c.free) + (c.unit ? ' ' + c.unit : '')"></span>
                                     <span x-show="c.per_unit * (Number(quantity) || 0) > c.free + 0.00001" class="block text-xs">Not enough</span>
                                 </td>
                             </tr>
                         </template>
-                    </tbody>
-                </table>
-            </div>
+</x-table>
             @unless($breakdown)
                 <p class="mt-3 text-sm text-gray-700 dark:text-gray-300" x-show="info">
                     Estimated cost: <strong x-text="money(info ? info.unit_cost : 0)"></strong> each,

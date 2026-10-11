@@ -209,55 +209,28 @@
                             </div>
                             
                             @if($customer->invoices->count() > 0)
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                    <thead class="bg-gray-50 dark:bg-gray-700">
-                                        <tr>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Invoice #</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Balance</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                        @foreach($customer->invoices->take(10) as $invoice)
-                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                            <td class="px-4 py-3 whitespace-nowrap">
-                                                <a href="{{ route('invoices.show', $invoice) }}" class="text-brand-600 hover:text-brand-900 font-medium dark:text-brand-300 dark:hover:text-brand-200">
-                                                    {{ $invoice->invoice_number }}
-                                                </a>
-                                            </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                                {{ $invoice->invoice_date->format('M d, Y') }}
-                                            </td>
-                                            <td class="px-4 py-3 whitespace-nowrap">
-                                                @php
-                                                    $statusColors = [
-                                                        'draft' => 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300',
-                                                        'sent' => 'bg-brand-100 dark:bg-brand-900/50 text-brand-800 dark:text-brand-300',
-                                                        'viewed' => 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-400',
-                                                        'partial' => 'bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300',
-                                                        'paid' => 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-400',
-                                                        'overdue' => 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300',
-                                                        'cancelled' => 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300',
-                                                    ];
-                                                @endphp
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$invoice->status] ?? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300' }}">
-                                                    {{ ucfirst($invoice->status) }}
-                                                </span>
-                                            </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 text-right">
-                                                {{ number_format($invoice->total_amount, 2) }}
-                                            </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-right {{ $invoice->balance_due > 0 ? 'text-red-600 dark:text-red-300 font-medium' : 'text-gray-500 dark:text-gray-400' }}">
-                                                {{ number_format($invoice->balance_due, 2) }}
-                                            </td>
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
+                            @php
+                                $today = now()->startOfDay();
+                                $late = fn ($inv) => in_array($inv->status, ['sent', 'unpaid', 'partial', 'overdue'], true) && $inv->balance_due > 0 && $inv->due_date && $inv->due_date->lt($today);
+                            @endphp
+                            <x-table caption="Recent invoices">
+                                <x-slot name="head">
+                                    <x-table.th>Invoice</x-table.th>
+                                    <x-table.th class="hidden sm:table-cell">Date</x-table.th>
+                                    <x-table.th>Status</x-table.th>
+                                    <x-table.th num class="hidden sm:table-cell">Total</x-table.th>
+                                    <x-table.th num>Balance due</x-table.th>
+                                </x-slot>
+                                @foreach ($customer->invoices->take(10) as $invoice)
+                                    <tr>
+                                        <td><a href="{{ route('invoices.show', $invoice) }}" class="tbl-link">{{ $invoice->invoice_number }}</a></td>
+                                        <td class="hidden sm:table-cell tbl-muted">{{ $invoice->invoice_date->format('j M Y') }}</td>
+                                        <td><x-status-badge :status="$late($invoice) ? 'overdue' : $invoice->status" /></td>
+                                        <td class="num hidden sm:table-cell">@fig($invoice->total, false)</td>
+                                        <td class="num {{ $late($invoice) ? 'tbl-late' : \App\Support\Figure::tone($invoice->balance_due) }}">@fig($invoice->balance_due, false)</td>
+                                    </tr>
+                                @endforeach
+                            </x-table>
                             @else
                             <div class="text-center py-8">
                                 <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -284,23 +257,20 @@
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Recent Payments</h3>
                             
                             @if($customer->payments && $customer->payments->count() > 0)
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                    <thead class="bg-gray-50 dark:bg-gray-700">
-                                        <tr>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Invoice</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Method</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <x-table caption="Recent payments">
+<x-slot name="head">
+                                            <x-table.th>Date</x-table.th>
+                                            <x-table.th>Invoice</x-table.th>
+                                            <x-table.th>Method</x-table.th>
+                                            <x-table.th num>Amount</x-table.th>
+</x-slot>
+
                                         @foreach($customer->payments->take(5) as $payment)
-                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                                {{ $payment->payment_date->format('M d, Y') }}
+                                        <tr>
+                                            <td>
+                                                {{ $payment->payment_date->format('j M Y') }}
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                            <td>
                                                 @if($payment->invoice)
                                                     <a href="{{ route('invoices.show', $payment->invoice) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300">
                                                         {{ $payment->invoice->invoice_number }}
@@ -309,17 +279,15 @@
                                                     -
                                                 @endif
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                            <td>
                                                 {{ ucfirst($payment->payment_method) }}
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-green-700 dark:text-green-400 text-right font-medium">
-                                                +{{ number_format($payment->amount, 2) }}
+                                            <td class="text-green-700 dark:text-green-400 num font-medium">
+                                                +@fig($payment->amount, false)
                                             </td>
                                         </tr>
                                         @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
+</x-table>
                             @else
                             <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No payments recorded yet.</p>
                             @endif
@@ -345,7 +313,7 @@
                                 <ul class="divide-y divide-gray-200 dark:divide-gray-700 text-sm">
                                     @foreach($openCredits as $credit)
                                         <li class="py-2 flex justify-between gap-3">
-                                            <a href="{{ route('credit-notes.show', $credit) }}" class="text-brand-600 dark:text-brand-300">{{ $credit->credit_note_number }} · {{ $credit->credit_note_date->format('d M Y') }}</a>
+                                            <a href="{{ route('credit-notes.show', $credit) }}" class="text-brand-600 dark:text-brand-300">{{ $credit->credit_note_number }} · {{ $credit->credit_note_date->format('j M Y') }}</a>
                                             <span class="text-gray-900 dark:text-gray-100">@money($credit->balance)</span>
                                         </li>
                                     @endforeach
@@ -385,42 +353,37 @@
                             @endif
                             
                             @if($deposits->count() > 0)
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                    <thead class="bg-gray-50 dark:bg-gray-700">
-                                        <tr>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Reference</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Balance</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <x-table caption="Deposits">
+<x-slot name="head">
+                                            <x-table.th>Date</x-table.th>
+                                            <x-table.th>Reference</x-table.th>
+                                            <x-table.th num>Amount</x-table.th>
+                                            <x-table.th num>Balance</x-table.th>
+</x-slot>
+
                                         @foreach($deposits as $deposit)
-                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                                {{ $deposit->payment_date->format('M d, Y') }}
+                                        <tr>
+                                            <td>
+                                                {{ $deposit->payment_date->format('j M Y') }}
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap">
-                                                <a href="{{ route('payments-received.show', $deposit) }}" class="text-sm text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300">
+                                            <td>
+                                                <a href="{{ route('payments-received.show', $deposit) }}" class="tbl-link">
                                                     {{ $deposit->payment_number }}
                                                 </a>
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 text-right">
-                                                {{ number_format($deposit->amount, 2) }}
+                                            <td class="num">
+                                                @fig($deposit->amount, false)
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-right">
+                                            <td class="num">
                                                 @if($deposit->unused_amount > 0)
-                                                    <span class="text-green-700 dark:text-green-400 font-medium">{{ number_format($deposit->unused_amount, 2) }}</span>
+                                                    <span class="text-green-700 dark:text-green-400 font-medium">@fig($deposit->unused_amount, false)</span>
                                                 @else
                                                     <span class="text-gray-500 dark:text-gray-400">Used</span>
                                                 @endif
                                             </td>
                                         </tr>
                                         @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
+</x-table>
                             @else
                             <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No deposits recorded.</p>
                             @endif

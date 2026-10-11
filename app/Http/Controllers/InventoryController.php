@@ -96,10 +96,18 @@ class InventoryController extends Controller
         $warehouseId = $this->chosenWarehouse($request);
         $history = $item->inventoryHistory()->with(['createdBy', 'warehouse'])
             ->when($warehouseId, fn ($q) => $q->where('warehouse_id', $warehouseId))
-            ->latest()->paginate(50)->withQueryString();
+            ->latest()->latest('id')->paginate(25)->withQueryString();
         $warehouses = Warehouse::moduleOn() ? Warehouse::orderByDesc('is_default')->orderBy('name')->get() : collect();
 
-        return view('inventory.history', compact('item', 'history', 'warehouses', 'warehouseId'));
+        // In and out over all of the history, not just the page shown (tables plan T7).
+        $moved = $item->inventoryHistory()
+            ->when($warehouseId, fn ($q) => $q->where('warehouse_id', $warehouseId))
+            ->toBase()
+            ->selectRaw("COALESCE(SUM(CASE WHEN type IN ('in', 'purchase', 'return') THEN quantity ELSE 0 END), 0) as qty_in")
+            ->selectRaw("COALESCE(SUM(CASE WHEN type IN ('out', 'sale') THEN quantity ELSE 0 END), 0) as qty_out")
+            ->first();
+
+        return view('inventory.history', compact('item', 'history', 'warehouses', 'warehouseId', 'moved'));
     }
 
     /** The warehouse a report is filtered by, if it is one of this business's. */

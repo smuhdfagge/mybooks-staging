@@ -1,210 +1,87 @@
+{{-- Fixed asset register (tables plan T7): every asset bought by the "as at" date, its cost and what is left of it. Amounts in ₦. --}}
+@php
+    $labels = \App\Livewire\FixedAssets\FixedAssetsTable::LABELS;
+    $tones = ['active' => 'active', 'under_maintenance' => 'pending', 'idle' => 'inactive', 'fully_depreciated' => 'completed', 'disposed' => 'cancelled', 'sold' => 'closed'];
+    $methods = \App\Models\FixedAsset::getDepreciationMethods();
+    $asOfText = \Illuminate\Support\Carbon::parse($asOf)->format('j M Y');
+    $years = fn ($v) => rtrim(rtrim(number_format((float) $v, 2), '0'), '.');
+@endphp
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Fixed Assets Register') }}
-            </h2>
-            <div class="flex space-x-2">
-                <a href="{{ route('fixed-assets.depreciation-schedule') }}" class="bg-brand-500 hover:bg-brand-700 text-white font-bold py-2 px-4 rounded">
-                    Depreciation Schedule
-                </a>
-                <a href="{{ route('fixed-assets.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                    Back to Assets
-                </a>
-            </div>
-        </div>
+        <x-table.page-header title="Asset register" :description="'Every fixed asset bought by '.$asOfText.', what it cost and what is left of it. Amounts in ₦.'">
+            <x-slot name="more">
+                <x-table.menu-item :href="route('fixed-assets.depreciation-schedule')">Depreciation for the year</x-table.menu-item>
+                <x-table.menu-item :href="route('fixed-assets.index')">All fixed assets</x-table.menu-item>
+            </x-slot>
+            <x-slot name="actions">
+                <x-table.dropdown label="Export" align="right">
+                    <x-table.menu-item print>Print</x-table.menu-item>
+                </x-table.dropdown>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
-    @php $currency = auth()->user()->tenant->currency_symbol; @endphp
+    <x-report.sheet title="Asset register" :period="'As at '.$asOfText">
+        <x-report.filters :action="route('fixed-assets.register')" button="Show">
+            <x-report.date name="as_of" label="As at" :value="$asOf" />
+            <x-report.pick name="category_id" label="Category" :options="$categories->pluck('name', 'id')" :value="$categoryId" all="All categories" />
+            <x-report.pick name="status" label="Status" :options="$labels" :value="$status" all="Any status" />
+        </x-report.filters>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <!-- Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
-                        <div class="text-sm text-gray-500 dark:text-gray-400">Total Assets</div>
-                        <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ $totalAssets }}</div>
-                    </div>
-                </div>
+        <x-report.stats :cols="4">
+            <x-report.stat label="Assets" :value="$totalAssets" />
+            <x-report.stat label="Cost" :value="\App\Support\Figure::show($totalCost)" />
+            <x-report.stat label="Depreciated so far" :value="\App\Support\Figure::show($totalDepreciation)" />
+            <x-report.stat label="Book value" :value="\App\Support\Figure::show($totalBookValue)" />
+        </x-report.stats>
 
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
-                        <div class="text-sm text-gray-500 dark:text-gray-400">Total Cost</div>
-                        <div class="text-2xl font-bold text-brand-600 dark:text-brand-300">
-                            {{ $currency }}{{ number_format($totalCost, 2) }}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
-                        <div class="text-sm text-gray-500 dark:text-gray-400">Accumulated Depreciation</div>
-                        <div class="text-2xl font-bold text-amber-700 dark:text-amber-300">
-                            {{ $currency }}{{ number_format($totalDepreciation, 2) }}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
-                        <div class="text-sm text-gray-500 dark:text-gray-400">Net Book Value</div>
-                        <div class="text-2xl font-bold text-green-700 dark:text-green-400">
-                            {{ $currency }}{{ number_format($totalBookValue, 2) }}
-                        </div>
-                    </div>
-                </div>
+        @if ($assets->isEmpty())
+            <div class="tbl-wrap">
+                <x-table.empty title="No assets to show" text="No fixed assets match, or none were bought by this date." />
             </div>
-
-            <!-- Filters -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                <div class="p-6">
-                    <form method="GET" action="{{ route('fixed-assets.register') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>
-                            <label for="category_id" class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Category</label>
-                            <select name="category_id" id="category_id"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
-                                <option value="">All Categories</option>
-                                @foreach($categories as $category)
-                                    <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
-                                        {{ $category->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div>
-                            <label for="status" class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Status</label>
-                            <select name="status" id="status"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
-                                <option value="">All Statuses</option>
-                                <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
-                                <option value="under_maintenance" {{ request('status') == 'under_maintenance' ? 'selected' : '' }}>Under Maintenance</option>
-                                <option value="idle" {{ request('status') == 'idle' ? 'selected' : '' }}>Idle</option>
-                                <option value="disposed" {{ request('status') == 'disposed' ? 'selected' : '' }}>Disposed</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label for="date_from" class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Date From</label>
-                            <input type="date" name="date_from" id="date_from" value="{{ request('date_from') }}"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
-                        </div>
-
-                        <div>
-                            <label for="date_to" class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Date To</label>
-                            <input type="date" name="date_to" id="date_to" value="{{ request('date_to') }}"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Register Table -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Asset Number
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Asset Name
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Category
-                                    </th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Purchase Date
-                                    </th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Purchase Cost
-                                    </th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Salvage Value
-                                    </th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Useful Life
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Depreciation Method
-                                    </th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Accumulated Depreciation
-                                    </th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Book Value
-                                    </th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Status
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Location
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                @forelse($assets as $asset)
-                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <a href="{{ route('fixed-assets.show', $asset) }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-300">
-                                                {{ $asset->asset_number }}
-                                            </a>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                                            {{ $asset->name }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                            {{ $asset->category->name }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900 dark:text-gray-100">
-                                            {{ $asset->purchase_date->format('M d, Y') }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100">
-                                            {{ $currency }}{{ number_format($asset->purchase_cost, 2) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100">
-                                            {{ $currency }}{{ number_format($asset->salvage_value, 2) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900 dark:text-gray-100">
-                                            {{ $asset->useful_life }} years
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                            {{ ucfirst(str_replace('_', ' ', $asset->depreciation_method)) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-amber-700 dark:text-amber-300">
-                                            {{ $currency }}{{ number_format($asset->accumulated_depreciation, 2) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-green-700 dark:text-green-400">
-                                            {{ $currency }}{{ number_format($asset->book_value, 2) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                {{ $asset->status === 'active' ? 'bg-green-100 text-green-800' : '' }}
-                                                {{ $asset->status === 'under_maintenance' ? 'bg-yellow-100 text-yellow-800' : '' }}
-                                                {{ $asset->status === 'idle' ? 'bg-gray-100 text-gray-800' : '' }}
-                                                {{ $asset->status === 'disposed' ? 'bg-red-100 text-red-800' : '' }}">
-                                                {{ ucfirst(str_replace('_', ' ', $asset->status)) }}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                            {{ $asset->location ?? 'N/A' }}
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="12" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                                            No assets found.
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+        @else
+            <x-table caption="Asset register">
+                <x-slot name="head">
+                    <x-table.th>Asset</x-table.th>
+                    <x-table.th class="hidden md:table-cell">Category</x-table.th>
+                    <x-table.th class="hidden lg:table-cell">Bought</x-table.th>
+                    <x-table.th class="hidden xl:table-cell">Life and method</x-table.th>
+                    <x-table.th num class="hidden sm:table-cell">Cost</x-table.th>
+                    <x-table.th num class="hidden 2xl:table-cell">Left at the end</x-table.th>
+                    <x-table.th num class="hidden lg:table-cell">Depreciated so far</x-table.th>
+                    <x-table.th num>Book value</x-table.th>
+                    <x-table.th class="hidden md:table-cell">Status</x-table.th>
+                </x-slot>
+                @foreach ($assets as $asset)
+                    <tr>
+                        <td>
+                            <a href="{{ route('fixed-assets.show', $asset) }}" class="tbl-link font-medium">{{ $asset->name }}</a>
+                            <div class="text-xs tbl-muted">{{ $asset->asset_number }}{{ $asset->location ? ' · '.$asset->location : '' }}</div>
+                        </td>
+                        <td class="hidden md:table-cell">{{ $asset->category->name ?? '—' }}</td>
+                        <td class="hidden lg:table-cell">{{ $asset->purchase_date?->format('j M Y') ?? '—' }}</td>
+                        <td class="hidden xl:table-cell">{{ $years($asset->useful_life) }} {{ \Illuminate\Support\Str::plural('year', (float) $asset->useful_life) }}<div class="text-xs tbl-muted">{{ $methods[$asset->depreciation_method] ?? \Illuminate\Support\Str::headline((string) $asset->depreciation_method) }}</div></td>
+                        <td class="num hidden sm:table-cell">@fig($asset->purchase_cost)</td>
+                        <td class="num hidden 2xl:table-cell {{ \App\Support\Figure::tone($asset->salvage_value) }}">@fig($asset->salvage_value)</td>
+                        <td class="num hidden lg:table-cell">@fig($asset->accumulated_depreciation)</td>
+                        <td class="num font-medium">@fig($asset->book_value)</td>
+                        <td class="hidden md:table-cell"><x-status-badge :status="$tones[$asset->status] ?? 'draft'" :label="$labels[$asset->status] ?? \Illuminate\Support\Str::headline($asset->status)" /></td>
+                    </tr>
+                @endforeach
+                <x-slot name="foot">
+                    <tr>
+                        <th scope="row">Total</th>
+                        <td class="hidden md:table-cell"></td>
+                        <td class="hidden lg:table-cell"></td>
+                        <td class="hidden xl:table-cell"></td>
+                        <td class="num hidden sm:table-cell">@fig($totalCost)</td>
+                        <td class="num hidden 2xl:table-cell">@fig($assets->sum('salvage_value'))</td>
+                        <td class="num hidden lg:table-cell">@fig($totalDepreciation)</td>
+                        <td class="num">@fig($totalBookValue)</td>
+                        <td class="hidden md:table-cell"></td>
+                    </tr>
+                </x-slot>
+            </x-table>
+        @endif
+    </x-report.sheet>
 </x-app-layout>

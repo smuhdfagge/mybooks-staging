@@ -70,7 +70,7 @@
                                         <a href="{{ route('stock-transfers.show', $transfer) }}" class="font-medium text-brand-600 dark:text-brand-300 hover:underline">{{ $transfer->transfer_number }}</a>
                                         <span class="text-gray-600 dark:text-gray-400">
                                             {{ $transfer->to_warehouse_id === $warehouse->id ? 'coming from '.$transfer->fromWarehouse?->name : 'going to '.$transfer->toWarehouse?->name }},
-                                            sent {{ $transfer->transfer_date?->format('M d, Y') }}
+                                            sent {{ $transfer->transfer_date?->format('j M Y') }}
                                         </span>
                                         <span class="block text-xs text-gray-500 dark:text-gray-400">
                                             {{ $transfer->items->map(fn ($l) => rtrim(rtrim(number_format((float) $l->quantity, 4), '0'), '.').' '.$l->item?->name)->implode(', ') }}
@@ -89,33 +89,30 @@
                     <p class="p-6 text-sm text-gray-500 dark:text-gray-400">Nothing in stock here yet. Choose this warehouse on a bill or a stock adjustment to bring goods in.</p>
                 @else
                     <div class="mt-3 overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Item</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">On hand</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase hidden sm:table-cell">Reserved</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase hidden sm:table-cell">Available</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase hidden md:table-cell">Average cost</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Value</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <x-table caption="Stock in this warehouse">
+<x-slot name="head">
+                                    <x-table.th>Item</x-table.th>
+                                    <x-table.th num>On hand</x-table.th>
+                                    <x-table.th num class="hidden sm:table-cell">Reserved</x-table.th>
+                                    <x-table.th num class="hidden sm:table-cell">Available</x-table.th>
+                                    <x-table.th num class="hidden md:table-cell">Average cost</x-table.th>
+                                    <x-table.th num>Value</x-table.th>
+</x-slot>
+
                                 @foreach($inventories as $row)
-                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                        <td class="px-4 py-3 text-sm">
+                                    <tr>
+                                        <td>
                                             <a href="{{ route('inventory.show', $row->item_id) }}" class="text-brand-600 dark:text-brand-300 font-medium">{{ $row->item->name ?? '—' }}</a>
                                             @if($row->item?->sku)<span class="block text-xs text-gray-500 dark:text-gray-400 font-mono">{{ $row->item->sku }}</span>@endif
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ rtrim(rtrim(number_format((float) $row->quantity, 4), '0'), '.') }}</td>
-                                        <td class="px-4 py-3 text-sm text-right text-amber-700 dark:text-amber-300 hidden sm:table-cell">{{ rtrim(rtrim(number_format((float) $row->reserved_quantity, 4), '0'), '.') }}</td>
-                                        <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100 hidden sm:table-cell">{{ rtrim(rtrim(number_format((float) $row->quantity - (float) $row->reserved_quantity, 4), '0'), '.') }}</td>
-                                        <td class="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-300 hidden md:table-cell">@money($row->unit_cost)</td>
-                                        <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100 whitespace-nowrap">@money((float) $row->quantity * (float) $row->unit_cost)</td>
+                                        <td class="num">{{ rtrim(rtrim(number_format((float) $row->quantity, 4), '0'), '.') }}</td>
+                                        <td class="num text-amber-700 dark:text-amber-300 hidden sm:table-cell">{{ rtrim(rtrim(number_format((float) $row->reserved_quantity, 4), '0'), '.') }}</td>
+                                        <td class="num hidden sm:table-cell">{{ rtrim(rtrim(number_format((float) $row->quantity - (float) $row->reserved_quantity, 4), '0'), '.') }}</td>
+                                        <td class="num hidden md:table-cell">@fig($row->unit_cost, false)</td>
+                                        <td class="num">@fig((float) $row->quantity * (float) $row->unit_cost, false)</td>
                                     </tr>
                                 @endforeach
-                            </tbody>
-                        </table>
+</x-table>
                     </div>
                     <div class="p-4">{{ $inventories->links() }}</div>
                 @endif

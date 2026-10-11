@@ -23,7 +23,7 @@
                 <div class="lg:col-span-2 space-y-6">
                     <x-card>
                         <div class="p-4 sm:p-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div><p class="text-gray-500 dark:text-gray-400">Delivery date</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $deliveryNote->delivery_date->format('M d, Y') }}</p></div>
+                            <div><p class="text-gray-500 dark:text-gray-400">Delivery date</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $deliveryNote->delivery_date->format('j M Y') }}</p></div>
                             <div><p class="text-gray-500 dark:text-gray-400">Sales order</p>
                                 @if($deliveryNote->salesOrder)
                                     @can('view sales-orders')
@@ -38,29 +38,28 @@
                             @if($warehouseName = \App\Models\Warehouse::nameIfMany($deliveryNote->warehouse_id))
                                 <div><p class="text-gray-500 dark:text-gray-400">Sent from</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $warehouseName }}</p></div>
                             @endif
-                            <div><p class="text-gray-500 dark:text-gray-400">Dispatched</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $deliveryNote->dispatched_at?->format('M d, Y H:i') ?? '—' }}</p></div>
+                            <div><p class="text-gray-500 dark:text-gray-400">Dispatched</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $deliveryNote->dispatched_at?->format('j M Y, H:i') ?? '—' }}</p></div>
                             <div><p class="text-gray-500 dark:text-gray-400">Received by</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $deliveryNote->received_by ?: '—' }}</p></div>
-                            <div><p class="text-gray-500 dark:text-gray-400">Received</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $deliveryNote->received_at?->format('M d, Y H:i') ?? '—' }}</p></div>
+                            <div><p class="text-gray-500 dark:text-gray-400">Received</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $deliveryNote->received_at?->format('j M Y, H:i') ?? '—' }}</p></div>
                         </div>
                     </x-card>
 
                     <x-card>
                         <div class="p-4 sm:p-6">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Goods</h3>
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                                <thead><tr class="text-xs uppercase text-gray-500 dark:text-gray-400">
-                                    <th class="px-3 py-2 text-left">Item</th><th class="px-3 py-2 text-right">Ordered</th><th class="px-3 py-2 text-right">This delivery</th>
-                                </tr></thead>
-                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700 text-gray-900 dark:text-gray-100">
+                            <x-table caption="Goods">
+<x-slot name="head">
+                                    <x-table.th>Item</x-table.th><x-table.th num>Ordered</x-table.th><x-table.th num>This delivery</x-table.th>
+</x-slot>
+
                                     @foreach($deliveryNote->items as $line)
                                         <tr>
-                                            <td class="px-3 py-2">{{ $line->description }}</td>
-                                            <td class="px-3 py-2 text-right">{{ (float) $line->quantity_ordered }}</td>
-                                            <td class="px-3 py-2 text-right font-medium">{{ (float) $line->quantity_delivered }}</td>
+                                            <td>{{ $line->description }}</td>
+                                            <td class="num">{{ (float) $line->quantity_ordered }}</td>
+                                            <td class="num font-medium">{{ (float) $line->quantity_delivered }}</td>
                                         </tr>
                                     @endforeach
-                                </tbody>
-                            </table>
+</x-table>
                             <p class="form-help mt-4">Delivery notes don't change stock. Stock comes out when the invoice is released (waybill).</p>
                         </div>
                     </x-card>

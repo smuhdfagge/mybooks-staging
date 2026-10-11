@@ -98,10 +98,10 @@
                         </div>
                         <div class="text-left lg:text-right">
                             <p class="text-sm text-gray-500 dark:text-gray-400">Invoice Date</p>
-                            <p class="font-medium text-gray-900 dark:text-gray-100">{{ $invoice->invoice_date->format('F d, Y') }}</p>
+                            <p class="font-medium text-gray-900 dark:text-gray-100">{{ $invoice->invoice_date->format('j F Y') }}</p>
                             <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Due Date</p>
                             <p class="font-medium {{ $invoice->due_date->isPast() && $invoice->balance_due > 0 ? 'text-red-600 dark:text-red-300' : 'text-gray-900 dark:text-gray-100' }}">
-                                {{ $invoice->due_date->format('F d, Y') }}
+                                {{ $invoice->due_date->format('j F Y') }}
                             </p>
                             @if($warehouseName = \App\Models\Warehouse::nameIfMany($invoice->warehouse_id))
                                 <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Warehouse</p>
@@ -133,35 +133,30 @@
                     </div>
 
                     <!-- Line Items -->
-                    <div class="overflow-x-auto mb-8">
-                        <table class="min-w-full">
-                            <thead>
-                                <tr class="border-b-2 border-gray-200 dark:border-gray-700">
-                                    <th class="text-left py-3 text-sm font-semibold text-gray-900 dark:text-gray-100">Description</th>
-                                    <th class="text-right py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 w-24">Qty</th>
-                                    <th class="text-right py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 w-32">Price</th>
-                                    <th class="text-right py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 w-24">Tax</th>
-                                    <th class="text-right py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 w-32">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                    <x-table caption="Items on this invoice">
+<x-slot name="head">
+                                    <x-table.th>Description</x-table.th>
+                                    <x-table.th num class="w-24">Qty</x-table.th>
+                                    <x-table.th num class="w-32">Price</x-table.th>
+                                    <x-table.th num class="w-24">Tax</x-table.th>
+                                    <x-table.th num class="w-32">Total</x-table.th>
+</x-slot>
+
                                 @foreach($invoice->items as $item)
-                                <tr class="border-b border-gray-100 dark:border-gray-700">
-                                    <td class="py-4">
+                                <tr>
+                                    <td>
                                         <p class="font-medium text-gray-900 dark:text-gray-100">{{ $item->description }}</p>
                                         @if($item->item)
                                             <p class="text-sm text-gray-500 dark:text-gray-400">SKU: {{ $item->item->sku }}</p>
                                         @endif
                                     </td>
-                                    <td class="py-4 text-right text-gray-600 dark:text-gray-400">{{ number_format($item->quantity, 2) }}</td>
-                                    <td class="py-4 text-right text-gray-600 dark:text-gray-400">{{ number_format($item->unit_price, 2) }}</td>
-                                    <td class="py-4 text-right text-gray-600 dark:text-gray-400">{{ $item->tax_rate }}%</td>
-                                    <td class="py-4 text-right font-medium text-gray-900 dark:text-gray-100">{{ number_format($item->total, 2) }}</td>
+                                    <td class="num">{{ \App\Support\Figure::qty($item->quantity) }}</td>
+                                    <td class="num">@fig($item->unit_price, false)</td>
+                                    <td class="num">{{ \App\Support\Figure::rate($item->tax_rate) }}</td>
+                                    <td class="num font-medium">@fig($item->total, false)</td>
                                 </tr>
                                 @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+</x-table>
 
                     <!-- Totals -->
                     <div class="flex justify-end">
@@ -222,30 +217,25 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
                 <div class="p-6">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Payment History</h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Method</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Reference</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Amount</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">WHT deducted</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    <x-table caption="Payments">
+<x-slot name="head">
+                                    <x-table.th>Date</x-table.th>
+                                    <x-table.th>Method</x-table.th>
+                                    <x-table.th>Reference</x-table.th>
+                                    <x-table.th num>Amount</x-table.th>
+                                    <x-table.th num>WHT deducted</x-table.th>
+</x-slot>
+
                                 @foreach($invoice->payments as $payment)
                                 <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $payment->payment_date?->format('M d, Y') ?? 'N/A' }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{{ ucfirst($payment->payment_method) }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{{ $payment->reference ?? '-' }}</td>
-                                    <td class="px-4 py-3 text-sm text-green-700 dark:text-green-400 text-right font-medium">{{ number_format($payment->amount, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-right">{{ (float) $payment->wht_amount > 0 ? number_format($payment->wht_amount, 2) : '-' }}</td>
+                                    <td>{{ $payment->payment_date?->format('j M Y') ?? '—' }}</td>
+                                    <td>{{ ucfirst($payment->payment_method) }}</td>
+                                    <td>{{ $payment->reference ?? '—' }}</td>
+                                    <td class="text-green-700 dark:text-green-400 num font-medium">@fig($payment->amount, false)</td>
+                                    <td class="num">{{ (float) $payment->wht_amount > 0 ? number_format($payment->wht_amount, 2) : '-' }}</td>
                                 </tr>
                                 @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+</x-table>
                 </div>
             </div>
             @endif
@@ -270,7 +260,7 @@
                         <p class="text-sm text-gray-700 dark:text-gray-300 flex flex-wrap justify-between gap-3">
                             <span>
                                 <a href="{{ route('credit-notes.show', $note) }}" class="text-brand-600 dark:text-brand-300">{{ $note->credit_note_number }}</a>
-                                · {{ $note->credit_note_date->format('d M Y') }}
+                                · {{ $note->credit_note_date->format('j M Y') }}
                                 · <x-status-badge :status="$note->status" :label="$note->status === 'closed' ? 'Used up' : null" />
                                 @if($note->restock) · goods returned @endif
                             </span>
@@ -283,7 +273,7 @@
                         <h4 class="pt-2 text-sm font-medium text-gray-900 dark:text-gray-100">Credit applied to this invoice</h4>
                         @foreach($invoice->creditNoteApplications as $application)
                             <p class="text-sm text-gray-700 dark:text-gray-300 flex justify-between gap-3">
-                                <span>{{ $application->applied_date->format('d M Y') }} · from credit note <a href="{{ route('credit-notes.show', $application->creditNote) }}" class="text-brand-600 dark:text-brand-300">{{ $application->creditNote->credit_note_number }}</a></span>
+                                <span>{{ $application->applied_date->format('j M Y') }} · from credit note <a href="{{ route('credit-notes.show', $application->creditNote) }}" class="text-brand-600 dark:text-brand-300">{{ $application->creditNote->credit_note_number }}</a></span>
                                 <span class="font-medium">-@money($application->amount)</span>
                             </p>
                         @endforeach
@@ -302,34 +292,31 @@
                         </svg>
                         Refund History
                     </h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Refund #</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Method</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Reason</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    <x-table caption="Refunds">
+<x-slot name="head">
+                                    <x-table.th>Refund #</x-table.th>
+                                    <x-table.th>Date</x-table.th>
+                                    <x-table.th>Method</x-table.th>
+                                    <x-table.th>Reason</x-table.th>
+                                    <x-table.th class="text-center">Status</x-table.th>
+                                    <x-table.th num>Amount</x-table.th>
+</x-slot>
+
                                 @foreach($invoice->refunds as $refund)
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                    <td class="px-4 py-3 text-sm">
-                                        <a href="{{ route('invoices.refunds.show', $refund) }}" class="text-brand-600 dark:text-brand-300 hover:underline font-medium">
+                                <tr>
+                                    <td>
+                                        <a href="{{ route('invoices.refunds.show', $refund) }}" class="tbl-link">
                                             {{ $refund->refund_number }}
                                         </a>
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $refund->refund_date->format('M d, Y') }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                    <td>{{ $refund->refund_date->format('j M Y') }}</td>
+                                    <td>
                                         {{ \App\Models\InvoiceRefund::METHODS[$refund->refund_method] ?? ucfirst($refund->refund_method) }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                    <td>
                                         {{ $refund->reason ? (\App\Models\InvoiceRefund::REASONS[$refund->reason] ?? $refund->reason) : '-' }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-center">
+                                    <td class="text-center">
                                         @php
                                             $refundStatusColors = [
                                                 'pending' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
@@ -341,24 +328,22 @@
                                             {{ ucfirst($refund->status) }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-red-600 dark:text-red-300 text-right font-medium">
-                                        -{{ number_format($refund->amount, 2) }}
+                                    <td class="text-red-600 dark:text-red-300 num font-medium">
+                                        -@fig($refund->amount, false)
                                     </td>
                                 </tr>
                                 @endforeach
-                            </tbody>
-                            <tfoot class="bg-gray-50 dark:bg-gray-700">
+<x-slot name="foot">
                                 <tr>
-                                    <td colspan="5" class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 text-right">
+                                    <td colspan="5" class="font-semibold num">
                                         Total Refunded:
                                     </td>
-                                    <td class="px-4 py-3 text-sm font-bold text-red-600 dark:text-red-300 text-right">
-                                        -{{ number_format($invoice->total_refunded ?? 0, 2) }}
+                                    <td class="font-bold text-red-600 dark:text-red-300 num">
+                                        -@fig($invoice->total_refunded ?? 0, false)
                                     </td>
                                 </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+</x-slot>
+</x-table>
                 </div>
             </div>
             @endif
@@ -435,7 +420,7 @@
                                                 <p class="text-xs text-gray-500 dark:text-gray-400">by {{ $invoice->createdBy?->name ?? 'System' }}</p>
                                             </div>
                                             <div class="whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
-                                                <time datetime="{{ $invoice->created_at }}">{{ $invoice->created_at->format('M d, Y') }}</time>
+                                                <time datetime="{{ $invoice->created_at }}">{{ $invoice->created_at->format('j M Y') }}</time>
                                                 <p class="text-xs">{{ $invoice->created_at->format('g:i A') }}</p>
                                             </div>
                                         </div>
@@ -461,7 +446,7 @@
                                                 <p class="text-sm text-gray-900 dark:text-gray-100">Invoice updated</p>
                                             </div>
                                             <div class="whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
-                                                <time datetime="{{ $invoice->updated_at }}">{{ $invoice->updated_at->format('M d, Y') }}</time>
+                                                <time datetime="{{ $invoice->updated_at }}">{{ $invoice->updated_at->format('j M Y') }}</time>
                                                 <p class="text-xs">{{ $invoice->updated_at->format('g:i A') }}</p>
                                             </div>
                                         </div>
@@ -496,7 +481,7 @@
                                                 </p>
                                             </div>
                                             <div class="whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
-                                                <time datetime="{{ $payment->payment_date }}">{{ $payment->payment_date->format('M d, Y') }}</time>
+                                                <time datetime="{{ $payment->payment_date }}">{{ $payment->payment_date->format('j M Y') }}</time>
                                                 <p class="text-xs">{{ $payment->created_at->format('g:i A') }}</p>
                                             </div>
                                         </div>
@@ -525,7 +510,7 @@
                                                 @endif
                                             </div>
                                             <div class="whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
-                                                <time datetime="{{ $invoice->released_at }}">{{ $invoice->released_at->format('M d, Y') }}</time>
+                                                <time datetime="{{ $invoice->released_at }}">{{ $invoice->released_at->format('j M Y') }}</time>
                                                 <p class="text-xs">{{ $invoice->released_at->format('g:i A') }}</p>
                                             </div>
                                         </div>
@@ -553,42 +538,37 @@
                             {{ $invoice->journal->journal_number }}
                         </a>
                     </h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Account</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Debit</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Credit</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <x-table caption="Ledger postings">
+<x-slot name="head">
+                                    <x-table.th>Account</x-table.th>
+                                    <x-table.th num>Debit</x-table.th>
+                                    <x-table.th num>Credit</x-table.th>
+</x-slot>
+
                                 @foreach($invoice->journal->entries as $entry)
                                 <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                                    <td>
                                         <span class="font-mono text-xs text-gray-500 dark:text-gray-400 mr-2">{{ $entry->account->account_code }}</span>
                                         {{ $entry->account->name }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $entry->debit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
+                                    <td class="num {{ $entry->debit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                                         {{ $entry->debit > 0 ? number_format($entry->debit, 2) : '-' }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $entry->credit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
+                                    <td class="num {{ $entry->credit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                                         {{ $entry->credit > 0 ? number_format($entry->credit, 2) : '-' }}
                                     </td>
                                 </tr>
                                 @endforeach
-                            </tbody>
-                            <tfoot class="bg-gray-50 dark:bg-gray-700">
+<x-slot name="foot">
                                 <tr class="font-semibold">
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">Total</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($invoice->journal->total_debit, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($invoice->journal->total_credit, 2) }}</td>
+                                    <td>Total</td>
+                                    <td class="num">@fig($invoice->journal->total_debit, false)</td>
+                                    <td class="num">@fig($invoice->journal->total_credit, false)</td>
                                 </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+</x-slot>
+</x-table>
                     <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                        Posted on {{ $invoice->journal->posted_at?->format('M d, Y g:i A') ?? 'Not posted' }}
+                        Posted on {{ $invoice->journal->posted_at?->format('j M Y, H:i') ?? 'Not posted' }}
                     </p>
                 </div>
             </div>
