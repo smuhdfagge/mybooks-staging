@@ -41,10 +41,11 @@ class FinancialReportController extends ReportController
         $payroll = $plData['payrollExpenses'];
         $totalExpenses = $plData['totalExpenses'];
         $netProfit = $plData['netProfit'];
+        $lines = $plData['lines'];
 
         return view('reports.profit-loss', compact(
             'revenue', 'costOfGoodsSold', 'grossProfit', 'operatingExpenses', 'payroll',
-            'totalExpenses', 'netProfit', 'startDate', 'endDate'
+            'totalExpenses', 'netProfit', 'startDate', 'endDate', 'lines'
         ));
     }
 
@@ -77,10 +78,12 @@ class FinancialReportController extends ReportController
         $asOf = $request->get('as_of', now()->format('Y-m-d'));
 
         // One grouped query instead of every line of every account (P1).
-        $accounts = app(FinancialStatements::class)->trialBalance($tenantId, $asOf);
+        $accounts = app(FinancialStatements::class)->trialBalance($tenantId, $asOf)
+            ->filter(fn ($a) => $a->balance_debit > 0 || $a->balance_credit > 0)->values();
 
-        $totalDebits = $accounts->sum('total_debit');
-        $totalCredits = $accounts->sum('total_credit');
+        // Each account's balance on its own side, as a trial balance shows it.
+        $totalDebits = round($accounts->sum('balance_debit'), 2);
+        $totalCredits = round($accounts->sum('balance_credit'), 2);
 
         return view('reports.trial-balance', compact('accounts', 'totalDebits', 'totalCredits', 'asOf'));
     }
@@ -266,10 +269,12 @@ class FinancialReportController extends ReportController
         $format = $request->get('format', 'pdf');
 
         // One grouped query instead of every line of every account (P1).
-        $accounts = app(FinancialStatements::class)->trialBalance($tenantId, $asOf);
+        $accounts = app(FinancialStatements::class)->trialBalance($tenantId, $asOf)
+            ->filter(fn ($a) => $a->balance_debit > 0 || $a->balance_credit > 0)->values();
 
-        $totalDebits = $accounts->sum('total_debit');
-        $totalCredits = $accounts->sum('total_credit');
+        // Each account's balance on its own side, as a trial balance shows it.
+        $totalDebits = round($accounts->sum('balance_debit'), 2);
+        $totalCredits = round($accounts->sum('balance_credit'), 2);
 
         $data = compact('accounts', 'totalDebits', 'totalCredits', 'asOf');
 

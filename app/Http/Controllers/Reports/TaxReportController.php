@@ -98,8 +98,8 @@ class TaxReportController extends ReportController
             DB::raw('COUNT(*) as invoice_count')
         )
             ->where('tenant_id', $tenantId)
-            ->whereBetween('invoice_date', [$startDate, $endDate])
-            ->whereIn('status', ['sent', 'paid', 'partial', 'overdue'])
+            // Every issued invoice; "unpaid" ones were missing (T6).
+            ->where(fn ($q) => $this->issuedBetween($q, 'invoice_date', $startDate, $endDate))
             ->groupBy('period')
             ->orderBy('period');
 
@@ -113,8 +113,8 @@ class TaxReportController extends ReportController
             DB::raw('COUNT(*) as bill_count')
         )
             ->where('tenant_id', $tenantId)
-            ->whereBetween('bill_date', [$startDate, $endDate])
-            ->whereIn('status', ['approved', 'paid', 'partial', 'overdue'])
+            // Every bill received; "unpaid" ones were missing and "approved" is not a bill status (T6).
+            ->where(fn ($q) => $this->issuedBetween($q, 'bill_date', $startDate, $endDate))
             ->groupBy('period')
             ->orderBy('period');
 
@@ -128,8 +128,9 @@ class TaxReportController extends ReportController
         )
             ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
             ->where('invoices.tenant_id', $tenantId)
-            ->whereBetween('invoices.invoice_date', [$startDate, $endDate])
-            ->whereIn('invoices.status', ['sent', 'paid', 'partial', 'overdue'])
+            ->where('invoices.invoice_date', '>=', $startDate)
+            ->where('invoices.invoice_date', '<', Carbon::parse($endDate)->addDay()->toDateString())
+            ->whereNotIn('invoices.status', ['draft', 'cancelled', 'void'])
             ->where('invoice_items.tax_rate', '>', 0)
             ->groupBy('invoice_items.tax_rate')
             ->orderBy('invoice_items.tax_rate')
@@ -142,8 +143,9 @@ class TaxReportController extends ReportController
         )
             ->join('bills', 'bill_items.bill_id', '=', 'bills.id')
             ->where('bills.tenant_id', $tenantId)
-            ->whereBetween('bills.bill_date', [$startDate, $endDate])
-            ->whereIn('bills.status', ['approved', 'paid', 'partial', 'overdue'])
+            ->where('bills.bill_date', '>=', $startDate)
+            ->where('bills.bill_date', '<', Carbon::parse($endDate)->addDay()->toDateString())
+            ->whereNotIn('bills.status', ['draft', 'cancelled', 'void'])
             ->where('bill_items.tax_rate', '>', 0)
             ->groupBy('bill_items.tax_rate')
             ->orderBy('bill_items.tax_rate')

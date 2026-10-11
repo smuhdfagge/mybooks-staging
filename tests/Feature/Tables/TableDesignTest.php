@@ -27,6 +27,7 @@ use App\Models\Employee;
 use App\Models\Inventory;
 use App\Models\Invoice;
 use App\Models\Item;
+use App\Models\Journal;
 use App\Models\PaymentMade;
 use App\Models\PaymentReceived;
 use App\Models\Payroll;
@@ -37,6 +38,8 @@ use App\Models\Tenant;
 use App\Models\Vendor;
 use App\Models\VendorAdvanceApplication;
 use App\Models\Warehouse;
+use App\Services\JournalService;
+use App\Support\Figure;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Livewire\Livewire;
@@ -563,6 +566,124 @@ class TableDesignTest extends TestCase
             $html = $this->get(route($page))->assertOk()->getContent();
             $this->assertStringContainsString('tbl-', $html, $page);
             $this->assertStringNotContainsString('uppercase tracking-wider', $html, $page);
+        }
+    }
+
+    // ---- T6: reports ----
+
+    /** Post a balanced journal: [[account code, debit, credit], ...]. */
+    private function postJournal(string $date, array $lines): void
+    {
+        $service = app(JournalService::class);
+        $journal = Journal::create(['tenant_id' => $this->tenant->id, 'journal_number' => Journal::generateNumber($this->tenant->id),
+            'journal_date' => $date, 'description' => 'T6', 'status' => 'posted', 'is_posted' => true, 'posted_at' => now()]);
+        foreach ($lines as [$code, $debit, $credit]) {
+            $service->createEntry($journal, $code, $debit, $credit, 'T6');
+        }
+        $journal->updateTotals();
+        $journal->save();
+        $service->updateAccountBalances($journal);
+    }
+
+    private function code(string $type, ?string $sub = null): string
+    {
+        return ChartOfAccount::where('tenant_id', $this->tenant->id)->where('type', $type)
+            ->when($sub, fn ($q) => $q->where('sub_type', $sub))->orderBy('account_code')->value('account_code');
+    }
+
+    public function test_report_figures_use_brackets_dashes_and_plain_percentages(): void
+    {
+        $this->assertSame('1,234.50', Figure::show(1234.5));
+        $this->assertSame('(1,234.50)', Figure::show(-1234.5));
+        $this->assertSame('-1,234.50', Figure::show(-1234.5, false));
+        $this->assertSame('—', Figure::show(0.001));
+        $this->assertSame('tbl-zero', Figure::tone(0));
+        $this->assertSame('12.5%', Figure::percent(25, 200));
+        $this->assertSame('—', Figure::percent(25, 0));
+    }
+
+    public function test_trial_balance_shows_each_balance_on_one_side_and_the_pl_lists_accounts(): void
+    {
+        $this->createSuperAdmin();
+        [$cash, $sales, $cost] = [$this->code('asset', 'cash') ?? $this->code('asset'), $this->code('income'), $this->code('expense')];
+        $this->postJournal('2026-03-01', [[$cash, 1000, 0], [$sales, 0, 1000]]);
+        $this->postJournal('2026-03-02', [[$cost, 400, 0], [$cash, 0, 400]]);
+
+        $tb = $this->get(route('reports.trial-balance', ['as_of' => '2026-03-31']))->assertOk()->assertSee('Trial balance');
+        $cashRow = $tb->viewData('accounts')->firstWhere('account_code', $cash);
+        $this->assertEqualsWithDelta(600, $cashRow->balance_debit, 0.001, 'cash shows its balance, not 1,000 and 400');
+        $this->assertEqualsWithDelta(0, $cashRow->balance_credit, 0.001);
+        $this->assertEqualsWithDelta(1000, $tb->viewData('totalDebits'), 0.001);
+        $this->assertEqualsWithDelta(1000, $tb->viewData('totalCredits'), 0.001);
+
+        $pl = $this->get(route('reports.profit-loss', ['start_date' => '2026-03-01', 'end_date' => '2026-03-31']))->assertOk();
+        $lines = $pl->viewData('lines');
+        $this->assertEqualsWithDelta(1000, $lines['income']->sum('balance'), 0.001);
+        $this->assertEqualsWithDelta(400, $lines['operating']->concat($lines['payroll'])->concat($lines['cogs'])->sum('balance'), 0.001);
+        $pl->assertSee('600.00')->assertSee(e(route('reports.general-ledger', ['account_id' => ChartOfAccount::where('tenant_id', $this->tenant->id)->where('account_code', $sales)->value('id'), 'start_date' => '2026-03-01', 'end_date' => '2026-03-31'])), false);
+    }
+
+    public function test_sales_and_tax_reports_count_issued_documents_up_to_the_last_day(): void
+    {
+        $this->createSuperAdmin();
+        $tid = $this->tenant->id;
+        $bala = Customer::factory()->create(['tenant_id' => $tid, 'name' => 'Bala Stores']);
+        Invoice::withoutEvents(function () use ($tid, $bala) {
+            foreach ([['S-1', 'unpaid', '2026-09-30 00:00:00'], ['S-2', 'draft', '2026-09-10'], ['S-3', 'cancelled', '2026-09-11'], ['S-4', 'paid', '2026-09-01']] as [$n, $st, $d]) {
+                Invoice::factory()->create(['tenant_id' => $tid, 'customer_id' => $bala->id, 'invoice_number' => $n, 'status' => $st,
+                    'subtotal' => 1000, 'tax_amount' => 75, 'total' => 1075, 'amount_paid' => 0, 'balance_due' => 1075, 'invoice_date' => $d, 'due_date' => $d]);
+            }
+        });
+        $period = ['start_date' => '2026-09-01', 'end_date' => '2026-09-30'];
+
+        $r = $this->get(route('reports.sales-by-customer', $period))->assertOk();
+        $this->assertEqualsWithDelta(2150, $r->viewData('totalSales'), 0.001, 'paid and unpaid, including the last day; not draft or cancelled');
+
+        $t = $this->get(route('reports.tax-liability', $period))->assertOk();
+        $this->assertEqualsWithDelta(150, $t->viewData('totalTaxCollected'), 0.001, 'unpaid invoices were missing');
+    }
+
+    public function test_payroll_reports_leave_out_draft_runs(): void
+    {
+        $this->createSuperAdmin();
+        $amina = $this->employee('Amina', 'active');
+        foreach ([['PB-1', 'paid', 'paid'], ['PB-2', 'draft', 'draft']] as $i => [$no, $bs, $ps]) {
+            $batch = PayrollBatch::create(['tenant_id' => $this->tenant->id, 'batch_number' => $no, 'pay_period_start' => '2026-0'.($i + 7).'-01',
+                'pay_period_end' => '2026-0'.($i + 7).'-28', 'status' => $bs, 'created_by' => $this->user->id]);
+            Payroll::withoutEvents(fn () => Payroll::create(['tenant_id' => $this->tenant->id, 'employee_id' => $amina->id, 'payroll_batch_id' => $batch->id,
+                'payroll_number' => 'PAY-'.$no, 'pay_period_start' => '2026-0'.($i + 7).'-01', 'pay_period_end' => '2026-0'.($i + 7).'-28', 'pay_date' => '2026-0'.($i + 7).'-28',
+                'basic_salary' => 1000, 'gross_salary' => 1000, 'total_deductions' => 100, 'net_salary' => 900, 'status' => $ps, 'created_by' => $this->user->id]));
+        }
+
+        $r = $this->get(route('reports.payroll-summary', ['start_date' => '2026-07-01', 'end_date' => '2026-08-31']))->assertOk()->assertSee('Payroll summary');
+        $this->assertEqualsWithDelta(1000, $r->viewData('totalGross'), 0.001, 'the draft August run is not pay');
+    }
+
+    public function test_comparing_months_on_the_31st_uses_the_month_before(): void
+    {
+        $this->createSuperAdmin();
+        $this->travelTo('2026-10-31 10:00');
+        $r = $this->get(route('reports.comparative.profit-loss', ['comparison_type' => 'month']))->assertOk();
+        $this->assertSame('September 2026', $r->viewData('periodData')['previous']['label']);
+        $this->assertSame('2026-09-30', $r->viewData('periodData')['previous']['end']);
+
+        $custom = $this->get(route('reports.comparative.cash-flow', ['comparison_type' => 'custom', 'current_start' => '2026-10-01', 'current_end' => '2026-10-15',
+            'previous_start' => '2026-09-01', 'previous_end' => '2026-09-15']))->assertOk();
+        $this->assertSame('1 Oct 2026 to 15 Oct 2026', $custom->viewData('periodData')['current']['label']);
+    }
+
+    public function test_every_report_page_uses_the_shared_design(): void
+    {
+        $this->createSuperAdmin();
+        foreach (['profit-loss', 'balance-sheet', 'cash-flow', 'trial-balance', 'general-ledger', 'accounts-receivable', 'accounts-payable',
+            'sales-by-customer', 'sales-by-item', 'purchase-by-vendor', 'control-reconciliation', 'inventory-summary', 'payroll-summary',
+            'payroll-by-department', 'employee-earnings', 'payroll-register', 'ytd-earnings', 'tax-liability-payroll', 'employer-contributions',
+            'bank-disbursement', 'salary-revision-history', 'comparative.profit-loss', 'comparative.balance-sheet', 'comparative.cash-flow',
+            'vat-gst-return', 'tax-liability', 'vat-return'] as $report) {
+            $html = $this->get(route('reports.'.$report))->assertOk()->getContent();
+            $this->assertStringContainsString('Amounts in ₦', $html, $report);
+            $this->assertStringContainsString('All reports', $html, $report);
+            $this->assertStringNotContainsString('uppercase tracking-wider', $html, $report);
         }
     }
 }

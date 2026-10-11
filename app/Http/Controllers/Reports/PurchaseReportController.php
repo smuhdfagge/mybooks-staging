@@ -25,7 +25,9 @@ class PurchaseReportController extends ReportController
         $asOf = $request->get('as_of', now()->format('Y-m-d'));
 
         $bills = Bill::where('tenant_id', $tenantId)
-            ->where('bill_date', '<=', $asOf)
+            // "Before the next day": SQLite keeps a time part on dates, so
+            // "<= as_of" left out bills dated on the day itself (as AR, session 10).
+            ->where('bill_date', '<', Carbon::parse($asOf)->addDay()->toDateString())
             ->whereIn('status', ['unpaid', 'partial', 'overdue'])
             ->where('balance_due', '>', 0)
             ->with('vendor')
@@ -56,16 +58,16 @@ class PurchaseReportController extends ReportController
 
         $vendors = Vendor::where('tenant_id', $tenantId)
             ->whereHas('bills', function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('bill_date', [$startDate, $endDate]);
+                $this->issuedBetween($q, 'bill_date', $startDate, $endDate);
             })
             ->withCount(['bills' => function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('bill_date', [$startDate, $endDate]);
+                $this->issuedBetween($q, 'bill_date', $startDate, $endDate);
             }])
             ->withSum(['bills' => function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('bill_date', [$startDate, $endDate]);
+                $this->issuedBetween($q, 'bill_date', $startDate, $endDate);
             }], 'total')
             ->withSum(['bills' => function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('bill_date', [$startDate, $endDate]);
+                $this->issuedBetween($q, 'bill_date', $startDate, $endDate);
             }], 'amount_paid')
             ->orderByDesc('bills_sum_total')
             ->get();
@@ -209,16 +211,16 @@ class PurchaseReportController extends ReportController
 
         $vendors = Vendor::where('tenant_id', $tenantId)
             ->whereHas('bills', function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('bill_date', [$startDate, $endDate]);
+                $this->issuedBetween($q, 'bill_date', $startDate, $endDate);
             })
             ->withCount(['bills' => function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('bill_date', [$startDate, $endDate]);
+                $this->issuedBetween($q, 'bill_date', $startDate, $endDate);
             }])
             ->withSum(['bills' => function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('bill_date', [$startDate, $endDate]);
+                $this->issuedBetween($q, 'bill_date', $startDate, $endDate);
             }], 'total')
             ->withSum(['bills' => function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('bill_date', [$startDate, $endDate]);
+                $this->issuedBetween($q, 'bill_date', $startDate, $endDate);
             }], 'amount_paid')
             ->orderByDesc('bills_sum_total')
             ->get();
