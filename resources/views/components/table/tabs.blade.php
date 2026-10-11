@@ -3,10 +3,11 @@
     phone. $tabs: ['key' => ['label' => 'Overdue', 'count' => 24, 'alert' => true]].
     The key '' means "All". Clicking sets the Livewire property $model.
     On a plain page give each tab an 'href' and it becomes a link.
+    label: what the tabs are for, read out by screen readers.
 --}}
-@props(['tabs' => [], 'active' => '', 'model' => 'tab'])
+@props(['tabs' => [], 'active' => '', 'model' => 'tab', 'label' => 'Filter by status'])
 <div {{ $attributes->merge(['class' => '']) }}>
-    <nav class="hidden md:flex gap-1 border-b border-gray-200 dark:border-gray-700" aria-label="Filter by status">
+    <nav class="hidden md:flex gap-1 border-b border-gray-200 dark:border-gray-700" aria-label="{{ $label }}">
         @foreach ($tabs as $key => $tab)
             @php $on = (string) $active === (string) $key; @endphp
             @php $tag = isset($tab['href']) ? 'a' : 'button'; @endphp
@@ -19,7 +20,7 @@
             </{{ $tag }}>
         @endforeach
     </nav>
-    <nav class="flex gap-2 overflow-x-auto pb-1 md:hidden" aria-label="Filter by status">
+    <nav class="flex gap-2 overflow-x-auto pb-1 md:hidden" aria-label="{{ $label }}">
         @foreach ($tabs as $key => $tab)
             @php $on = (string) $active === (string) $key; @endphp
             @php $tag = isset($tab['href']) ? 'a' : 'button'; @endphp

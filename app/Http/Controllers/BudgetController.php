@@ -141,15 +141,10 @@ class BudgetController extends Controller
         $summary = $this->budgetService->getBudgetSummary($budget);
         $months = Budget::getMonthColumns();
 
-        // Get budget vs actual if budget is active
-        $comparison = null;
-        $ytdUtilization = null;
-        if ($budget->isActive() || $budget->isLocked()) {
-            $comparison = $this->budgetService->getBudgetVsActual($budget);
-            $ytdUtilization = $this->budgetService->getYTDUtilization($budget);
-        }
+        // Spending so far against the budget, once the budget is in use (the page doesn't need the full comparison).
+        $ytdUtilization = ($budget->isActive() || $budget->isLocked()) ? $this->budgetService->getYTDUtilization($budget) : null;
 
-        return view('budgets.show', compact('budget', 'summary', 'months', 'comparison', 'ytdUtilization'));
+        return view('budgets.show', compact('budget', 'summary', 'months', 'ytdUtilization'));
     }
 
     public function edit(Budget $budget)
@@ -331,7 +326,9 @@ class BudgetController extends Controller
         $budget->load(['lines.account']);
         $months = Budget::getMonthColumns();
 
-        $comparison = $this->budgetService->getBudgetVsActual($budget);
+        // To date: through this month for this year's budget (tables plan T7).
+        $through = $this->budgetService->throughMonth($budget);
+        $comparison = $through ? $this->budgetService->getBudgetVsActual($budget, $through) : collect();
         $ytdUtilization = $this->budgetService->getYTDUtilization($budget);
         $summary = $this->budgetService->getBudgetSummary($budget);
 

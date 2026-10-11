@@ -5,7 +5,7 @@
                 <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                     {{ $paymentMade->payment_number }}
                 </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Payment made on {{ $paymentMade->payment_date?->format('M d, Y') ?? 'N/A' }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Payment made on {{ $paymentMade->payment_date?->format('j M Y') ?? 'N/A' }}</p>
             </div>
             <div class="flex flex-wrap gap-2">
                 <a href="{{ route('payments-made.edit', $paymentMade) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
@@ -60,7 +60,7 @@
                             </div>
                             <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Payment Date</dt>
-                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $paymentMade->payment_date?->format('F d, Y') ?? 'N/A' }}</dd>
+                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $paymentMade->payment_date?->format('j F Y') ?? 'N/A' }}</dd>
                             </div>
                             <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Payment Method</dt>
@@ -175,42 +175,37 @@
                             {{ $paymentMade->journal->journal_number }}
                         </a>
                     </h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Account</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Debit</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Credit</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <x-table caption="Ledger postings">
+<x-slot name="head">
+                                    <x-table.th>Account</x-table.th>
+                                    <x-table.th num>Debit</x-table.th>
+                                    <x-table.th num>Credit</x-table.th>
+</x-slot>
+
                                 @foreach($paymentMade->journal->entries as $entry)
                                 <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                                    <td>
                                         <span class="font-mono text-xs text-gray-500 dark:text-gray-400 mr-2">{{ $entry->account->account_code }}</span>
                                         {{ $entry->account->name }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $entry->debit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
+                                    <td class="num {{ $entry->debit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                                         {{ $entry->debit > 0 ? number_format($entry->debit, 2) : '-' }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $entry->credit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
+                                    <td class="num {{ $entry->credit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                                         {{ $entry->credit > 0 ? number_format($entry->credit, 2) : '-' }}
                                     </td>
                                 </tr>
                                 @endforeach
-                            </tbody>
-                            <tfoot class="bg-gray-50 dark:bg-gray-700">
+<x-slot name="foot">
                                 <tr class="font-semibold">
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">Total</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($paymentMade->journal->total_debit, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($paymentMade->journal->total_credit, 2) }}</td>
+                                    <td>Total</td>
+                                    <td class="num">@fig($paymentMade->journal->total_debit, false)</td>
+                                    <td class="num">@fig($paymentMade->journal->total_credit, false)</td>
                                 </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+</x-slot>
+</x-table>
                     <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                        Posted on {{ $paymentMade->journal->posted_at?->format('M d, Y g:i A') ?? 'Not posted' }}
+                        Posted on {{ $paymentMade->journal->posted_at?->format('j M Y, H:i') ?? 'Not posted' }}
                     </p>
                 </div>
             </div>

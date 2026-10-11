@@ -69,7 +69,7 @@
                         </div>
                         <div>
                             <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Created</label>
-                            <p class="text-gray-900 dark:text-white mt-1">{{ $tenant->created_at->format('M d, Y h:i A') }}</p>
+                            <p class="text-gray-900 dark:text-white mt-1">{{ $tenant->created_at->format('j M Y, H:i') }}</p>
                         </div>
                         <div>
                             <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</label>
@@ -138,23 +138,20 @@
                 <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Subscription History</h3>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-750">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Plan</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Billing</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Period</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                <x-table caption="Subscription history">
+<x-slot name="head">
+                                <x-table.th>Plan</x-table.th>
+                                <x-table.th>Status</x-table.th>
+                                <x-table.th>Billing</x-table.th>
+                                <x-table.th>Period</x-table.th>
+</x-slot>
+
                             @forelse($tenant->subscriptions as $subscription)
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                <tr>
+                                    <td class="font-medium dark:text-white">
                                         {{ $subscription->plan->name ?? 'Unknown' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td>
                                         <span class="px-2.5 py-1 text-xs font-semibold rounded-full 
                                             @if($subscription->status === 'active') bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-700
                                             @elseif($subscription->status === 'trialing') bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-700
@@ -164,23 +161,21 @@
                                             {{ ucfirst($subscription->status) }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                                    <td>
                                         {{ ucfirst($subscription->billing_cycle) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                        {{ $subscription->starts_at->format('M d, Y') }} - {{ $subscription->ends_at?->format('M d, Y') ?? 'Ongoing' }}
+                                    <td>
+                                        {{ $subscription->starts_at->format('j M Y') }} - {{ $subscription->ends_at?->format('j M Y') ?? 'Ongoing' }}
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                                    <td colspan="4" class="text-center">
                                         No subscription history
                                     </td>
                                 </tr>
                             @endforelse
-                        </tbody>
-                    </table>
-                </div>
+</x-table>
             </div>
         </div>
 
@@ -212,11 +207,11 @@
                                 </div>
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-500 dark:text-gray-400">Started</span>
-                                    <span class="text-gray-900 dark:text-white">{{ $tenant->activeSubscription->starts_at->format('M d, Y') }}</span>
+                                    <span class="text-gray-900 dark:text-white">{{ $tenant->activeSubscription->starts_at->format('j M Y') }}</span>
                                 </div>
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-500 dark:text-gray-400">Expires</span>
-                                    <span class="text-gray-900 dark:text-white">{{ $tenant->activeSubscription->ends_at?->format('M d, Y') ?? 'Never' }}</span>
+                                    <span class="text-gray-900 dark:text-white">{{ $tenant->activeSubscription->ends_at?->format('j M Y') ?? 'Never' }}</span>
                                 </div>
                                 @if($tenant->activeSubscription->ends_at)
                                     <div class="flex justify-between text-sm">
@@ -265,7 +260,7 @@
                         <span class="text-gray-500 dark:text-gray-400">Last attempt</span>
                         <span class="text-right text-gray-900 dark:text-white">
                             @if($lastRenewalAttempt)
-                                {{ $lastRenewalAttempt->created_at->format('M d, Y') }}:
+                                {{ $lastRenewalAttempt->created_at->format('j M Y') }}:
                                 <x-status-badge :status="$lastRenewalAttempt->status" />
                                 <span class="block text-xs text-gray-500 dark:text-gray-400">{{ $lastRenewalAttempt->message }}</span>
                             @else

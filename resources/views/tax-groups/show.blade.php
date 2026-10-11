@@ -70,29 +70,27 @@
             <div class="mt-8">
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Included Tax Rates</h3>
                 <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">#</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Name</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Rate</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Type</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Compound</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <x-table caption="Tax rates in this group">
+<x-slot name="head">
+                                <x-table.th>#</x-table.th>
+                                <x-table.th>Name</x-table.th>
+                                <x-table.th>Rate</x-table.th>
+                                <x-table.th>Type</x-table.th>
+                                <x-table.th>Compound</x-table.th>
+</x-slot>
+
                             @forelse($taxGroup->taxRates as $index => $taxRate)
                                 <tr>
-                                    <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $index + 1 }}</td>
-                                    <td class="px-6 py-4">
-                                        <a href="{{ route('tax-rates.show', $taxRate) }}" class="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-brand-600 dark:hover:text-brand-300">
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>
+                                        <a href="{{ route('tax-rates.show', $taxRate) }}" class="tbl-link">
                                             {{ $taxRate->name }}
-                                            @if($taxRate->code) <span class="text-gray-500">({{ $taxRate->code }})</span> @endif
+                                            @if($taxRate->code) <span class="tbl-muted">({{ $taxRate->code }})</span> @endif
                                         </a>
                                     </td>
-                                    <td class="px-6 py-4 text-sm font-semibold text-brand-600 dark:text-brand-300">{{ $taxRate->formatted_rate }}</td>
-                                    <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 capitalize">{{ $taxRate->type }}</td>
-                                    <td class="px-6 py-4">
+                                    <td class="font-medium">{{ $taxRate->formatted_rate }}</td>
+                                    <td class="capitalize">{{ $taxRate->type }}</td>
+                                    <td>
                                         @if($taxRate->is_compound)
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent-100 text-accent-800 dark:bg-accent-900/50 dark:text-accent-200">Yes</span>
                                         @else
@@ -102,11 +100,10 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">No tax rates in this group</td>
+                                    <td colspan="5" class="text-center">No tax rates in this group</td>
                                 </tr>
                             @endforelse
-                        </tbody>
-                    </table>
+</x-table>
                 </div>
             </div>
 
@@ -134,7 +131,7 @@
                         
                         <div class="pt-2 border-t border-gray-300 dark:border-gray-600 flex justify-between">
                             <span class="font-semibold text-gray-900 dark:text-gray-100">Total Tax</span>
-                            <span class="font-semibold text-brand-600 dark:text-brand-300">@money($totalTax)</span>
+                            <span class="font-semibold text-brand-700 dark:text-brand-200">@money($totalTax)</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="font-semibold text-gray-900 dark:text-gray-100">Grand Total</span>
@@ -146,7 +143,7 @@
 
             <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <p class="text-sm text-gray-500 dark:text-gray-400">
-                    Created: {{ $taxGroup->created_at->format('M d, Y h:i A') }} • Last Updated: {{ $taxGroup->updated_at->format('M d, Y h:i A') }}
+                    Created: {{ $taxGroup->created_at->format('j M Y, H:i') }} • Last Updated: {{ $taxGroup->updated_at->format('j M Y, H:i') }}
                 </p>
             </div>
         </div>

@@ -84,20 +84,18 @@
             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">Components per batch</h3>
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Stock items used up. Wastage % adds to what is taken from stock (spillage, offcuts); it is part of the product's cost.</p>
             @error('components')<p class="form-error mb-2">{{ $message }}</p>@enderror
-            <table class="min-w-full line-items">
-                <thead>
-                    <tr class="border-b border-gray-200 dark:border-gray-700">
-                        <th class="text-left text-sm font-medium text-gray-700 dark:text-gray-300 pb-2">Item</th>
-                        <th class="text-left text-sm font-medium text-gray-700 dark:text-gray-300 pb-2 w-32">Quantity</th>
-                        <th class="text-left text-sm font-medium text-gray-700 dark:text-gray-300 pb-2 w-24">Wastage %</th>
-                        <th class="text-right text-sm font-medium text-gray-700 dark:text-gray-300 pb-2 w-32">Est. cost</th>
-                        <th class="w-12"></th>
-                    </tr>
-                </thead>
-                <tbody>
+            <x-table caption="Components per batch" table-class="line-items">
+<x-slot name="head">
+                        <x-table.th>Item</x-table.th>
+                        <x-table.th class="w-32">Quantity</x-table.th>
+                        <x-table.th class="w-24">Wastage %</x-table.th>
+                        <x-table.th num class="w-32">Est. cost</x-table.th>
+                        <th scope="col" class="w-12"><span class="sr-only">Actions</span></th>
+</x-slot>
+
                     <template x-for="(line, index) in lines" :key="line.key">
-                        <tr class="border-b border-gray-200 dark:border-gray-700">
-                            <td class="py-2 pr-2" data-label="Item" data-cell="main">
+                        <tr>
+                            <td data-label="Item" data-cell="main">
                                 <div class="relative">
                                     <input type="hidden" :name="`components[${index}][item_id]`" :value="line.item_id">
                                     <input type="hidden" :name="`components[${index}][itemSearch]`" :value="line.itemSearch">
@@ -123,25 +121,24 @@
                                 </div>
                                 <p class="form-error" x-show="errors[`components.${index}.item_id`]" x-text="errors[`components.${index}.item_id`]"></p>
                             </td>
-                            <td class="py-2 pr-2" data-label="Quantity">
+                            <td data-label="Quantity">
                                 <div class="flex items-center gap-1">
                                     <input aria-label="Quantity per batch" type="number" :name="`components[${index}][quantity]`" x-model.number="line.quantity" min="0" step="any" inputmode="decimal" class="form-control text-sm">
                                     <span class="text-xs text-gray-500 dark:text-gray-400" x-text="line.unit"></span>
                                 </div>
                                 <p class="form-error" x-show="errors[`components.${index}.quantity`]" x-text="errors[`components.${index}.quantity`]"></p>
                             </td>
-                            <td class="py-2 pr-2" data-label="Wastage %">
+                            <td data-label="Wastage %">
                                 <input aria-label="Wastage percent" type="number" :name="`components[${index}][waste_percentage]`" x-model.number="line.waste_percentage" min="0" max="100" step="any" inputmode="decimal" class="form-control text-sm">
                                 <p class="form-error" x-show="errors[`components.${index}.waste_percentage`]" x-text="errors[`components.${index}.waste_percentage`]"></p>
                             </td>
-                            <td class="py-2 text-right text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap" data-label="Est. cost" x-text="money(lineCost(line))"></td>
-                            <td class="py-2 text-center" data-cell="actions">
+                            <td class="num" data-label="Est. cost" x-text="money(lineCost(line))"></td>
+                            <td class="text-center" data-cell="actions">
                                 <button type="button" @click="lines.splice(index, 1)" x-show="lines.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-300 text-sm" aria-label="Remove component">Remove</button>
                             </td>
                         </tr>
                     </template>
-                </tbody>
-            </table>
+</x-table>
             <button type="button" @click="lines.push(blankLine())" class="mt-4 inline-flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-medium text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">+ Add component</button>
         </div>
     </x-card>

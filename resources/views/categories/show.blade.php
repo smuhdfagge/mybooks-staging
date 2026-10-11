@@ -14,7 +14,7 @@
                 <form method="POST" action="{{ route('fixed-asset-categories.destroy', $category) }}" class="inline" data-confirm="Are you sure you want to delete this category?">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                    <button type="submit" class="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded">
                         Delete
                     </button>
                 </form>
@@ -131,46 +131,31 @@
                 <div class="p-6">
                     <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Assets in this Category</h3>
                     
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Asset Number
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Asset Name
-                                    </th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Purchase Cost
-                                    </th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Book Value
-                                    </th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Status
-                                    </th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <x-table caption="Assets in this category">
+<x-slot name="head">
+                                    <x-table.th>Asset number</x-table.th>
+                                    <x-table.th>Asset name</x-table.th>
+                                    <x-table.th num>Purchase cost</x-table.th>
+                                    <x-table.th num>Book value</x-table.th>
+                                    <x-table.th class="text-center">Status</x-table.th>
+                                    <x-table.th class="text-center">Actions</x-table.th>
+</x-slot>
+
                                 @forelse($category->assets as $asset)
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                                        <td>
                                             {{ $asset->asset_number }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                                        <td class="font-medium">
                                             {{ $asset->name }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100">
-                                            @money($asset->purchase_cost)
+                                        <td class="num">
+                                            @fig($asset->purchase_cost, false)
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-900 dark:text-gray-100">
-                                            @money($asset->book_value)
+                                        <td class="num font-semibold">
+                                            @fig($asset->book_value, false)
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        <td class="text-center">
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                                                 {{ $asset->status === 'active' ? 'bg-green-100 text-green-800' : '' }}
                                                 {{ $asset->status === 'under_maintenance' ? 'bg-yellow-100 text-yellow-800' : '' }}
@@ -179,22 +164,20 @@
                                                 {{ ucfirst(str_replace('_', ' ', $asset->status)) }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                            <a href="{{ route('fixed-assets.show', $asset) }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-300">
+                                        <td class="text-center font-medium">
+                                            <a href="{{ route('fixed-assets.show', $asset) }}" class="tbl-link">
                                                 View
                                             </a>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                        <td colspan="6" class="text-center">
                                             No assets in this category yet.
                                         </td>
                                     </tr>
                                 @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+</x-table>
                 </div>
             </div>
         </div>

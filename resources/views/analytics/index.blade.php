@@ -41,9 +41,9 @@
                 </div>
 
                 <div class="text-sm text-gray-500 dark:text-gray-400">
-                    <span class="font-medium">{{ \Carbon\Carbon::parse($startDate)->format('M d, Y') }}</span>
+                    <span class="font-medium">{{ \Carbon\Carbon::parse($startDate)->format('j M Y') }}</span>
                     <span>to</span>
-                    <span class="font-medium">{{ \Carbon\Carbon::parse($endDate)->format('M d, Y') }}</span>
+                    <span class="font-medium">{{ \Carbon\Carbon::parse($endDate)->format('j M Y') }}</span>
                     @if($rangeCapped ?? false)
                         <span class="block text-xs text-amber-600 dark:text-amber-400">Custom ranges are limited to 24 months, so the start date was moved.</span>
                     @endif
@@ -278,71 +278,61 @@
             <!-- Top Selling Items -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Top Selling Items</h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead>
-                            <tr>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Item</th>
-                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Qty Sold</th>
-                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Revenue</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                <x-table caption="Top selling items">
+<x-slot name="head">
+                                <x-table.th>Item</x-table.th>
+                                <x-table.th num>Qty sold</x-table.th>
+                                <x-table.th num>Revenue</x-table.th>
+</x-slot>
+
                             @forelse($topSellingItems as $item)
                                 <tr>
-                                    <td class="px-3 py-2 text-sm text-gray-900 dark:text-gray-200">
+                                    <td>
                                         {{ $item['name'] }}
                                         @if($item['sku'])
                                             <span class="text-xs text-gray-500 dark:text-gray-400">({{ $item['sku'] }})</span>
                                         @endif
                                     </td>
-                                    <td class="px-3 py-2 text-sm text-right text-gray-900 dark:text-gray-200">{{ number_format($item['quantity_sold'], 2) }}</td>
-                                    <td class="px-3 py-2 text-sm text-right font-medium text-gray-900 dark:text-gray-200">{{ number_format($item['total_revenue'], 2) }}</td>
+                                    <td class="num">{{ \App\Support\Figure::qty($item['quantity_sold']) }}</td>
+                                    <td class="num font-medium">@fig($item['total_revenue'], false)</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="3" class="px-3 py-4 text-center text-gray-500 dark:text-gray-400">No sales data available</td>
+                                    <td colspan="3" class="text-center">No sales data available</td>
                                 </tr>
                             @endforelse
-                        </tbody>
-                    </table>
-                </div>
+</x-table>
             </div>
 
             <!-- Top Customers -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Top Customers</h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead>
-                            <tr>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Customer</th>
-                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Orders</th>
-                                <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Total Sales</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                <x-table caption="Top customers">
+<x-slot name="head">
+                                <x-table.th>Customer</x-table.th>
+                                <x-table.th num>Orders</x-table.th>
+                                <x-table.th num>Total sales</x-table.th>
+</x-slot>
+
                             @forelse($salesByCustomer as $customer)
                                 <tr>
-                                    <td class="px-3 py-2 text-sm text-gray-900 dark:text-gray-200">
-                                        <a href="{{ route('customers.show', $customer['id']) }}" class="hover:text-brand-600 dark:hover:text-brand-300">
+                                    <td>
+                                        <a href="{{ route('customers.show', $customer['id']) }}" class="tbl-link">
                                             {{ $customer['name'] }}
                                         </a>
                                         @if($customer['company'])
                                             <span class="block text-xs text-gray-500 dark:text-gray-400">{{ $customer['company'] }}</span>
                                         @endif
                                     </td>
-                                    <td class="px-3 py-2 text-sm text-right text-gray-900 dark:text-gray-200">{{ $customer['invoice_count'] }}</td>
-                                    <td class="px-3 py-2 text-sm text-right font-medium text-gray-900 dark:text-gray-200">{{ number_format($customer['total_sales'], 2) }}</td>
+                                    <td class="num">{{ $customer['invoice_count'] }}</td>
+                                    <td class="num font-medium">@fig($customer['total_sales'], false)</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="3" class="px-3 py-4 text-center text-gray-500 dark:text-gray-400">No customer data available</td>
+                                    <td colspan="3" class="text-center">No customer data available</td>
                                 </tr>
                             @endforelse
-                        </tbody>
-                    </table>
-                </div>
+</x-table>
             </div>
         </div>
 
@@ -355,30 +345,27 @@
                 </svg>
                 Overdue Invoices
             </h3>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead>
-                        <tr>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Invoice</th>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Customer</th>
-                            <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Balance Due</th>
-                            <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Due Date</th>
-                            <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Days Overdue</th>
-                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <x-table caption="Overdue invoices">
+<x-slot name="head">
+                            <x-table.th>Invoice</x-table.th>
+                            <x-table.th>Customer</x-table.th>
+                            <x-table.th num>Balance due</x-table.th>
+                            <x-table.th num>Due date</x-table.th>
+                            <x-table.th num>Days overdue</x-table.th>
+                            <x-table.th class="text-center">Action</x-table.th>
+</x-slot>
+
                         @foreach($overdueAnalysis as $invoice)
                             <tr>
-                                <td class="px-3 py-2 text-sm">
-                                    <a href="{{ route('invoices.show', $invoice['id']) }}" class="text-brand-600 dark:text-brand-300 hover:underline">
+                                <td>
+                                    <a href="{{ route('invoices.show', $invoice['id']) }}" class="tbl-link">
                                         {{ $invoice['invoice_number'] }}
                                     </a>
                                 </td>
-                                <td class="px-3 py-2 text-sm text-gray-900 dark:text-gray-200">{{ $invoice['customer'] }}</td>
-                                <td class="px-3 py-2 text-sm text-right font-medium text-red-600 dark:text-red-300">{{ number_format($invoice['balance_due'], 2) }}</td>
-                                <td class="px-3 py-2 text-sm text-right text-gray-900 dark:text-gray-200">{{ $invoice['due_date'] }}</td>
-                                <td class="px-3 py-2 text-sm text-right">
+                                <td>{{ $invoice['customer'] }}</td>
+                                <td class="num font-medium text-red-600 dark:text-red-300">@fig($invoice['balance_due'], false)</td>
+                                <td class="num">{{ $invoice['due_date'] }}</td>
+                                <td class="num">
                                     <span class="px-2 py-1 text-xs font-medium rounded-full 
                                         {{ $invoice['days_overdue'] > 60 ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 
                                            ($invoice['days_overdue'] > 30 ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' : 
@@ -386,16 +373,14 @@
                                         {{ $invoice['days_overdue'] }} days
                                     </span>
                                 </td>
-                                <td class="px-3 py-2 text-center">
+                                <td class="text-center">
                                     <a href="{{ route('payments-received.create', ['invoice_id' => $invoice['id']]) }}" class="text-xs text-brand-600 dark:text-brand-300 hover:underline">
                                         Record Payment
                                     </a>
                                 </td>
                             </tr>
                         @endforeach
-                    </tbody>
-                </table>
-            </div>
+</x-table>
         </div>
         @endif
     </div>

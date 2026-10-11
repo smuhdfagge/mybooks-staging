@@ -81,22 +81,19 @@
 
                         @include('journals.partials.control-account-warning')
 
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full" id="entriesTable">
-                                <thead class="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/3">Account</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Description</th>
-                                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">Debit</th>
-                                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">Credit</th>
-                                        <th class="px-4 py-3 w-16"></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="entriesBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        <x-table caption="Journal lines" id="entriesTable">
+<x-slot name="head">
+                                        <x-table.th class="w-1/3">Account</x-table.th>
+                                        <x-table.th>Description</x-table.th>
+                                        <x-table.th num class="w-32">Debit</x-table.th>
+                                        <x-table.th num class="w-32">Credit</x-table.th>
+                                        <th scope="col" class="w-16"><span class="sr-only">Actions</span></th>
+</x-slot>
+
                                     @if(old('entries'))
                                         @foreach(old('entries') as $index => $entry)
                                             <tr class="entry-row">
-                                                <td class="px-4 py-2">
+                                                <td>
                                                     <select name="entries[{{ $index }}][account_id]" required
                                                         class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                                         <option value="">Select Account</option>
@@ -107,22 +104,22 @@
                                                         @endforeach
                                                     </select>
                                                 </td>
-                                                <td class="px-4 py-2">
+                                                <td>
                                                     <input aria-label="Line description" type="text" name="entries[{{ $index }}][description]" value="{{ $entry['description'] ?? '' }}"
                                                         class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                                                         placeholder="Line description">
                                                 </td>
-                                                <td class="px-4 py-2">
+                                                <td>
                                                     <input aria-label="Debit" type="number" name="entries[{{ $index }}][debit]" value="{{ $entry['debit'] ?? '' }}" min="0" step="0.01"
                                                         class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 text-right debit-input"
                                                         placeholder="0.00">
                                                 </td>
-                                                <td class="px-4 py-2">
+                                                <td>
                                                     <input aria-label="Credit" type="number" name="entries[{{ $index }}][credit]" value="{{ $entry['credit'] ?? '' }}" min="0" step="0.01"
                                                         class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 text-right credit-input"
                                                         placeholder="0.00">
                                                 </td>
-                                                <td class="px-4 py-2 text-center">
+                                                <td class="text-center">
                                                     <button type="button" class="remove-row-btn text-red-600 hover:text-red-900 dark:text-red-300 dark:hover:text-red-300">
                                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
@@ -133,7 +130,7 @@
                                         @endforeach
                                     @else
                                         <tr class="entry-row">
-                                            <td class="px-4 py-2">
+                                            <td>
                                                 <select name="entries[0][account_id]" required
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                                     <option value="">Select Account</option>
@@ -142,22 +139,22 @@
                                                     @endforeach
                                                 </select>
                                             </td>
-                                            <td class="px-4 py-2">
+                                            <td>
                                                 <input aria-label="Line description" type="text" name="entries[0][description]"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                                                     placeholder="Line description">
                                             </td>
-                                            <td class="px-4 py-2">
+                                            <td>
                                                 <input aria-label="Debit" type="number" name="entries[0][debit]" min="0" step="0.01"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 text-right debit-input"
                                                     placeholder="0.00">
                                             </td>
-                                            <td class="px-4 py-2">
+                                            <td>
                                                 <input aria-label="Credit" type="number" name="entries[0][credit]" min="0" step="0.01"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 text-right credit-input"
                                                     placeholder="0.00">
                                             </td>
-                                            <td class="px-4 py-2 text-center">
+                                            <td class="text-center">
                                                 <button type="button" class="remove-row-btn text-red-600 hover:text-red-900 dark:text-red-300 dark:hover:text-red-300">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
@@ -166,7 +163,7 @@
                                             </td>
                                         </tr>
                                         <tr class="entry-row">
-                                            <td class="px-4 py-2">
+                                            <td>
                                                 <select name="entries[1][account_id]" required
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                                     <option value="">Select Account</option>
@@ -175,22 +172,22 @@
                                                     @endforeach
                                                 </select>
                                             </td>
-                                            <td class="px-4 py-2">
+                                            <td>
                                                 <input aria-label="Line description" type="text" name="entries[1][description]"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                                                     placeholder="Line description">
                                             </td>
-                                            <td class="px-4 py-2">
+                                            <td>
                                                 <input aria-label="Debit" type="number" name="entries[1][debit]" min="0" step="0.01"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 text-right debit-input"
                                                     placeholder="0.00">
                                             </td>
-                                            <td class="px-4 py-2">
+                                            <td>
                                                 <input aria-label="Credit" type="number" name="entries[1][credit]" min="0" step="0.01"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 text-right credit-input"
                                                     placeholder="0.00">
                                             </td>
-                                            <td class="px-4 py-2 text-center">
+                                            <td class="text-center">
                                                 <button type="button" class="remove-row-btn text-red-600 hover:text-red-900 dark:text-red-300 dark:hover:text-red-300">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
@@ -199,32 +196,30 @@
                                             </td>
                                         </tr>
                                     @endif
-                                </tbody>
-                                <tfoot class="bg-gray-50 dark:bg-gray-700">
+<x-slot name="foot">
                                     <tr>
-                                        <td colspan="2" class="px-4 py-3 text-right text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        <td colspan="2" class="num font-medium">
                                             Totals:
                                         </td>
-                                        <td class="px-4 py-3 text-right text-sm font-bold text-gray-900 dark:text-gray-100">
+                                        <td class="num font-bold">
                                             $<span id="totalDebit">0.00</span>
                                         </td>
-                                        <td class="px-4 py-3 text-right text-sm font-bold text-gray-900 dark:text-gray-100">
+                                        <td class="num font-bold">
                                             $<span id="totalCredit">0.00</span>
                                         </td>
                                         <td></td>
                                     </tr>
                                     <tr id="differenceRow" class="hidden">
-                                        <td colspan="2" class="px-4 py-2 text-right text-sm font-medium text-red-600 dark:text-red-300">
+                                        <td colspan="2" class="num font-medium text-red-600 dark:text-red-300">
                                             Difference:
                                         </td>
-                                        <td colspan="2" class="px-4 py-2 text-center text-sm font-bold text-red-600 dark:text-red-300">
+                                        <td colspan="2" class="text-center font-bold text-red-600 dark:text-red-300">
                                             $<span id="difference">0.00</span>
                                         </td>
                                         <td></td>
                                     </tr>
-                                </tfoot>
-                            </table>
-                        </div>
+</x-slot>
+</x-table>
 
                         <div class="mt-4">
                             <button type="button" id="addLineBtn" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">

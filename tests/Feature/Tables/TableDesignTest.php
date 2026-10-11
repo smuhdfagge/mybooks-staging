@@ -24,7 +24,9 @@ use App\Models\Budget;
 use App\Models\ChartOfAccount;
 use App\Models\Customer;
 use App\Models\Employee;
+use App\Models\FixedAsset;
 use App\Models\Inventory;
+use App\Models\InventoryHistory;
 use App\Models\Invoice;
 use App\Models\Item;
 use App\Models\Journal;
@@ -38,9 +40,13 @@ use App\Models\Tenant;
 use App\Models\Vendor;
 use App\Models\VendorAdvanceApplication;
 use App\Models\Warehouse;
+use App\Services\BudgetService;
+use App\Services\DepreciationService;
 use App\Services\JournalService;
 use App\Support\Figure;
+use App\Support\JournalSource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\File;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
@@ -55,8 +61,8 @@ class TableDesignTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** Printed documents, PDFs and emails have their own layout. */
-    private const NOT_SCREENS = '#(^vendor/|pdf|print|mail|statements/document|waybill|payslip|components/table/)#';
+    /** Printed documents (and their shared layout and the invoice template preview), PDFs and emails have their own layout. */
+    private const NOT_SCREENS = '#(^vendor/|pdf|print|mail|statements/document|waybill|payslip|components/table/|^documents/|templates/preview)#';
 
     /** @return list<string> */
     private function todo(): array
@@ -107,7 +113,7 @@ class TableDesignTest extends TestCase
         $stale = [];
         foreach ($this->todo() as $rel) {
             $path = resource_path("views/{$rel}");
-            if (! File::exists($path) || ! str_contains(File::get($path), '<table') || $this->usesNewDesign(File::get($path))) {
+            if (! File::exists($path) || preg_match(self::NOT_SCREENS, $rel) || ! str_contains(File::get($path), '<table') || $this->usesNewDesign(File::get($path))) {
                 $stale[] = $rel;
             }
         }
@@ -684,6 +690,149 @@ class TableDesignTest extends TestCase
             $this->assertStringContainsString('Amounts in ₦', $html, $report);
             $this->assertStringContainsString('All reports', $html, $report);
             $this->assertStringNotContainsString('uppercase tracking-wider', $html, $report);
+        }
+    }
+
+    // ---- T7: record pages and forms ----
+
+    public function test_stock_history_adds_up_every_move_not_just_the_page_shown(): void
+    {
+        $this->createSuperAdmin();
+        $item = Item::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Rice 50kg', 'track_inventory' => true]);
+        foreach (range(1, 30) as $i) {
+            InventoryHistory::create(['tenant_id' => $this->tenant->id, 'item_id' => $item->id, 'type' => $i <= 20 ? 'in' : 'out',
+                'quantity' => 2, 'notes' => 'Move '.$i, 'created_by' => $this->user->id]);
+        }
+
+        $html = $this->get(route('inventory.history', $item))->assertOk()->getContent();
+        // 30 moves, 25 to a page; the cards count all of them: 20 x 2 in, 10 x 2 out.
+        $this->assertStringContainsString('1–25 of 30', $html);
+        $this->assertMatchesRegularExpression('/Taken in.*?>\s*40\s*</s', $html);
+        $this->assertMatchesRegularExpression('/Sent out.*?>\s*20\s*</s', $html);
+    }
+
+    public function test_bank_money_in_and_out_reads_the_ledger_with_a_running_balance(): void
+    {
+        $this->createSuperAdmin();
+        $tid = $this->tenant->id;
+        $code = $this->code('asset');
+        $account = ChartOfAccount::where('tenant_id', $tid)->where('account_code', $code)->first();
+        $bank = Bank::factory()->create(['tenant_id' => $tid, 'name' => 'Till account', 'chart_of_account_id' => $account->id, 'opening_balance' => 1000]);
+        $income = $this->code('income');
+        $expense = $this->code('expense');
+
+        $this->postJournal('2026-09-15', [[$code, 500, 0], [$income, 0, 500]]);     // before the period
+        $this->postJournal('2026-10-02', [[$code, 2000, 0], [$income, 0, 2000]]);   // money in
+        $this->postJournal('2026-10-03', [[$expense, 300, 0], [$code, 0, 300]]);    // money out (a manual journal, no payment record)
+        foreach (range(1, 27) as $i) {
+            $this->postJournal('2026-10-05', [[$code, 10, 0], [$income, 0, 10]]);
+        }
+        $this->postJournal('2026-11-01', [[$code, 99, 0], [$income, 0, 99]]);       // after the period
+
+        $html = $this->get(route('banks.transactions', ['bank' => $bank, 'from' => '2026-10-01', 'to' => '2026-10-31']))->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/Balance at the start.*?1,500\.00/s', $html);   // opening 1,000 + 500 before
+        $this->assertMatchesRegularExpression('/Money in.*?2,270\.00/s', $html);
+        $this->assertMatchesRegularExpression('/Money out.*?300\.00/s', $html);
+        $this->assertMatchesRegularExpression('/Balance at the end.*?3,470\.00/s', $html);
+        $this->assertStringContainsString('1–25 of 29', $html);
+
+        // Page 2 starts from what the first 25 lines left: 1,500 + 2,000 - 300 + 23 x 10.
+        $page2 = $this->get(route('banks.transactions', ['bank' => $bank, 'from' => '2026-10-01', 'to' => '2026-10-31', 'page' => 2]))->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/Brought forward from earlier pages.*?3,430\.00/s', $page2);
+    }
+
+    public function test_journal_source_links_to_the_document_or_the_journal(): void
+    {
+        $this->createSuperAdmin();
+        $this->invoices();
+        $invoice = Invoice::where('invoice_number', 'INV-1')->first();
+        $journal = Journal::create(['tenant_id' => $this->tenant->id, 'journal_number' => Journal::generateNumber($this->tenant->id), 'journal_date' => '2026-10-01',
+            'description' => 'Invoice', 'status' => 'posted', 'is_posted' => true, 'reference_type' => Invoice::class, 'reference_id' => $invoice->id]);
+        $this->assertSame(['label' => 'Invoice INV-1', 'url' => route('invoices.show', $invoice)], JournalSource::of($journal->load('reference')));
+
+        $manual = Journal::create(['tenant_id' => $this->tenant->id, 'journal_number' => Journal::generateNumber($this->tenant->id), 'journal_date' => '2026-10-01',
+            'description' => 'Owner put money in', 'status' => 'posted', 'is_posted' => true]);
+        $this->assertSame(route('journals.show', $manual), JournalSource::of($manual)['url']);
+    }
+
+    private function asset(string $inService = '2026-01-31'): FixedAsset
+    {
+        return FixedAsset::create([
+            'tenant_id' => $this->tenant->id, 'name' => 'Delivery van', 'purchase_date' => $inService, 'in_service_date' => $inService,
+            'purchase_cost' => 60000, 'salvage_value' => 0, 'depreciable_amount' => 60000, 'useful_life' => 5,
+            'depreciation_method' => 'straight_line', 'accumulated_depreciation' => 0, 'book_value' => 60000, 'status' => 'active',
+        ]);
+    }
+
+    public function test_depreciation_goes_month_by_month_and_the_schedule_pages_open(): void
+    {
+        $this->createSuperAdmin();
+        $asset = $this->asset();
+
+        // From 31 Jan the next month is February, not March (dates used to skip short months).
+        $dates = collect($asset->generateDepreciationSchedule())->take(4)->map(fn ($r) => $r['date']->toDateString())->all();
+        $this->assertSame(['2026-01-31', '2026-02-28', '2026-03-31', '2026-04-30'], $dates);
+        app(DepreciationService::class)->recordDepreciation($asset, Carbon::parse('2026-01-31'));
+        $this->assertSame('2026-02-28', $asset->fresh()->next_depreciation_date->toDateString());
+
+        // The asset's schedule used to fail (it read a column that doesn't exist).
+        $this->get(route('fixed-assets.schedule', $asset))->assertOk()
+            ->assertSee('Depreciation charged so far')->assertSee('28 Feb 2026')->assertSee('Charged');
+
+        // The year's charge across assets used to add up a key that doesn't exist (always 0).
+        $this->get(route('fixed-assets.depreciation-schedule', ['year' => 2026]))->assertOk()->assertSee('Charge for 2026')->assertSee('12,000.00');
+        $this->get(route('fixed-assets.register', ['as_of' => '2026-12-31']))->assertOk()->assertSee('Asset register')->assertSee('Delivery van')->assertSee('As at');
+    }
+
+    public function test_budget_and_actual_counts_income_above_budget_as_better(): void
+    {
+        $this->travelTo('2026-03-15 09:00');
+        $this->createSuperAdmin();
+        $this->plan->update(['slug' => 'professional']);
+        $tid = $this->tenant->id;
+        $months = array_fill_keys(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'], 100);
+        $budget = Budget::create(['tenant_id' => $tid, 'name' => 'Plan 2026', 'fiscal_year' => 2026, 'status' => 'active', 'created_by' => $this->user->id]);
+        $incomeCode = $this->code('income');
+        $expenseCode = $this->code('expense');
+        $income = ChartOfAccount::where('tenant_id', $tid)->where('account_code', $incomeCode)->first();
+        $expense = ChartOfAccount::where('tenant_id', $tid)->where('account_code', $expenseCode)->first();
+        $budget->lines()->create(['account_id' => $income->id, 'annual_total' => 1200] + $months);
+        $budget->lines()->create(['account_id' => $expense->id, 'annual_total' => 1200] + $months);
+        $bank = $this->code('asset');
+        $this->postJournal('2026-02-10', [[$bank, 500, 0], [$incomeCode, 0, 500]]);   // sold 500 against 300 budgeted so far
+        $this->postJournal('2026-02-11', [[$expenseCode, 400, 0], [$bank, 0, 400]]);  // spent 400 against 300
+
+        $ytd = app(BudgetService::class)->getYTDUtilization($budget);
+        $this->assertSame('mar', $ytd['through']);
+        $this->assertEqualsWithDelta(300, $ytd['total_budget_ytd'], 0.001);           // spending only
+        $this->assertEqualsWithDelta(400, $ytd['total_actual_ytd'], 0.001);
+        $this->assertSame(1, $ytd['over_budget_count']);                              // the spending, not the income
+
+        $this->get(route('budgets.vs-actual', $budget))->assertOk()
+            ->assertSee('+200.00')->assertSee('-100.00')->assertSee('On or above')->assertSee('Over budget')
+            ->assertDontSee('Below budget')->assertSee('1 account worse than budget');
+    }
+
+    public function test_customer_page_shows_each_invoice_total(): void
+    {
+        $this->createSuperAdmin();
+        $this->invoices();
+        $bala = Customer::where('name', 'Bala Stores')->first();
+        // It read a column invoices don't have, so every total showed as 0.00.
+        $this->get(route('customers.show', $bala))->assertOk()->assertSee('2,000.00')->assertSee('Overdue');
+    }
+
+    public function test_every_record_report_page_uses_the_shared_design(): void
+    {
+        $this->createSuperAdmin();
+        foreach (['fixed-assets.register', 'fixed-assets.depreciation-schedule', 'assembly-orders.report', 'withholding-tax.setup',
+            'withholding-tax.schedule', 'withholding-tax.receivable'] as $page) {
+            $html = $this->get(route($page))->assertOk()->getContent();
+            $this->assertStringNotContainsString('uppercase tracking-wider', $html, $page);
+            $this->assertStringContainsString('tbl-', $html, $page);
+        }
+        foreach (['fixed-assets.register', 'fixed-assets.depreciation-schedule', 'assembly-orders.report', 'withholding-tax.schedule', 'withholding-tax.receivable'] as $page) {
+            $this->assertStringContainsString('Amounts in ₦', $this->get(route($page))->getContent(), $page);
         }
     }
 }

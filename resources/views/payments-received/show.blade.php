@@ -17,9 +17,9 @@
                 </h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400">
                     @if($paymentReceived->is_deposit)
-                        Customer deposit received on {{ $paymentReceived->payment_date?->format('M d, Y') ?? 'N/A' }}
+                        Customer deposit received on {{ $paymentReceived->payment_date?->format('j M Y') ?? 'N/A' }}
                     @else
-                        Payment received on {{ $paymentReceived->payment_date?->format('M d, Y') ?? 'N/A' }}
+                        Payment received on {{ $paymentReceived->payment_date?->format('j M Y') ?? 'N/A' }}
                     @endif
                 </p>
             </div>
@@ -100,7 +100,7 @@
                             </div>
                             <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Payment Date</dt>
-                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $paymentReceived->payment_date?->format('F d, Y') ?? 'N/A' }}</dd>
+                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $paymentReceived->payment_date?->format('j F Y') ?? 'N/A' }}</dd>
                             </div>
                             <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Payment Method</dt>
@@ -213,40 +213,35 @@
                         </svg>
                         Deposit Applications
                     </h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Invoice</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Amount Applied</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <x-table caption="Where this deposit went">
+<x-slot name="head">
+                                    <x-table.th>Date</x-table.th>
+                                    <x-table.th>Invoice</x-table.th>
+                                    <x-table.th num>Amount applied</x-table.th>
+</x-slot>
+
                                 @foreach($paymentReceived->depositApplications as $application)
                                 <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                                        {{ $application->application_date->format('M d, Y') }}
+                                    <td>
+                                        {{ $application->application_date->format('j M Y') }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm">
+                                    <td>
                                         <a href="{{ route('invoices.show', $application->invoice) }}" class="text-brand-600 dark:text-brand-300 hover:underline">
                                             {{ $application->invoice->invoice_number }}
                                         </a>
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100 font-medium">
-                                        {{ number_format($application->amount, 2) }}
+                                    <td class="num font-medium">
+                                        @fig($application->amount, false)
                                     </td>
                                 </tr>
                                 @endforeach
-                            </tbody>
-                            <tfoot class="bg-gray-50 dark:bg-gray-700">
+<x-slot name="foot">
                                 <tr class="font-semibold">
-                                    <td colspan="2" class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">Total Applied</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($paymentReceived->applied_amount, 2) }}</td>
+                                    <td colspan="2">Total Applied</td>
+                                    <td class="num">@fig($paymentReceived->applied_amount, false)</td>
                                 </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+</x-slot>
+</x-table>
                 </div>
             </div>
             @endif
@@ -281,42 +276,37 @@
                             {{ $paymentReceived->journal->journal_number }}
                         </a>
                     </h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Account</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Debit</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Credit</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <x-table caption="Ledger postings">
+<x-slot name="head">
+                                    <x-table.th>Account</x-table.th>
+                                    <x-table.th num>Debit</x-table.th>
+                                    <x-table.th num>Credit</x-table.th>
+</x-slot>
+
                                 @foreach($paymentReceived->journal->entries as $entry)
                                 <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                                    <td>
                                         <span class="font-mono text-xs text-gray-500 dark:text-gray-400 mr-2">{{ $entry->account->account_code }}</span>
                                         {{ $entry->account->name }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $entry->debit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
+                                    <td class="num {{ $entry->debit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                                         {{ $entry->debit > 0 ? number_format($entry->debit, 2) : '-' }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $entry->credit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
+                                    <td class="num {{ $entry->credit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                                         {{ $entry->credit > 0 ? number_format($entry->credit, 2) : '-' }}
                                     </td>
                                 </tr>
                                 @endforeach
-                            </tbody>
-                            <tfoot class="bg-gray-50 dark:bg-gray-700">
+<x-slot name="foot">
                                 <tr class="font-semibold">
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">Total</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($paymentReceived->journal->total_debit, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($paymentReceived->journal->total_credit, 2) }}</td>
+                                    <td>Total</td>
+                                    <td class="num">@fig($paymentReceived->journal->total_debit, false)</td>
+                                    <td class="num">@fig($paymentReceived->journal->total_credit, false)</td>
                                 </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+</x-slot>
+</x-table>
                     <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                        Posted on {{ $paymentReceived->journal->posted_at?->format('M d, Y g:i A') ?? 'Not posted' }}
+                        Posted on {{ $paymentReceived->journal->posted_at?->format('j M Y, H:i') ?? 'Not posted' }}
                     </p>
                 </div>
             </div>

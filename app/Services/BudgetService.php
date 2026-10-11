@@ -27,6 +27,7 @@ class BudgetService
         }
 
         return $budget->lines()->with('account')->get()->map(function ($line) use ($year, $months) {
+            $isIncome = $line->account->type === 'income';
             $budgeted = 0;
             $actual = 0;
             $monthlyData = [];
@@ -45,12 +46,15 @@ class BudgetService
                 $monthlyData[$monthKey] = [
                     'budget' => $monthBudget,
                     'actual' => $monthActual,
-                    'variance' => $monthBudget - $monthActual,
+                    'variance' => $isIncome ? $monthActual - $monthBudget : $monthBudget - $monthActual,
                 ];
             }
 
-            $variance = $budgeted - $actual;
-            $variancePercent = $budgeted != 0 ? ($variance / $budgeted) * 100 : 0;
+            // Variance is how much better (+) or worse (-) than the budget:
+            // income above its budget is better, spending above it is worse.
+            // (Tables plan T7: income used to count as "over budget" when it beat the target.)
+            $variance = $isIncome ? $actual - $budgeted : $budgeted - $actual;
+            $variancePercent = $budgeted != 0 ? ($variance / abs($budgeted)) * 100 : 0;
 
             return [
                 'account' => $line->account,
@@ -61,7 +65,7 @@ class BudgetService
                 'actual' => $actual,
                 'variance' => $variance,
                 'variance_percent' => round($variancePercent, 2),
-                'is_over_budget' => $variance < 0,
+                'is_over_budget' => $variance < 0, // worse than budget: spent more, or earned less
                 'monthly_data' => $monthlyData,
             ];
         });
@@ -200,20 +204,40 @@ class BudgetService
     }
 
     /**
-     * Get YTD budget utilization
+     * The last month "to date" covers: this month for this year's budget,
+     * December for a past year, and null for a future year (nothing yet).
+     */
+    public function throughMonth(Budget $budget): ?string
+    {
+        $year = (int) $budget->fiscal_year;
+        $now = now();
+
+        return match (true) {
+            $year < $now->year => 'dec',
+            $year > $now->year => null,
+            default => strtolower($now->format('M')),
+        };
+    }
+
+    /**
+     * Budget so far against actual so far (tables plan T7). "Used" counts
+     * spending only (expense accounts); adding income and spending together
+     * gave a meaningless figure. Accounts worse than budget are listed.
      */
     public function getYTDUtilization(Budget $budget): array
     {
-        $currentMonth = strtolower(date('M'));
-        $comparison = $this->getBudgetVsActual($budget, $currentMonth);
+        $through = $this->throughMonth($budget);
+        $comparison = $through ? $this->getBudgetVsActual($budget, $through) : collect();
+        $spending = $comparison->where('account_type', 'expense');
 
-        $totalBudget = $comparison->sum('budgeted');
-        $totalActual = $comparison->sum('actual');
+        $totalBudget = $spending->sum('budgeted');
+        $totalActual = $spending->sum('actual');
         $utilizationPercent = $totalBudget != 0 ? ($totalActual / $totalBudget) * 100 : 0;
 
         $overBudgetAccounts = $comparison->filter(fn ($item) => $item['is_over_budget']);
 
         return [
+            'through' => $through,
             'total_budget_ytd' => $totalBudget,
             'total_actual_ytd' => $totalActual,
             'utilization_percent' => round($utilizationPercent, 2),

@@ -117,7 +117,7 @@ class PrepaidDeferredSchedulesTest extends TestCase
         $schedule = $this->createSchedule($this->rent(['total_amount' => 1000000]));
         $this->assertSame([], $schedule->releases()->pluck('id')->all());
         $this->get(route('accrual-schedules.show', $schedule))->assertOk()
-            ->assertSee('₦83,333.33')->assertSee('₦83,333.37')->assertSee('Upcoming')
+            ->assertSee('83,333.33')->assertSee('83,333.37')->assertSee('Upcoming')
             ->assertSee('May 2026')->assertSee('30 Apr 2027');
 
         // Too small to give every month something.

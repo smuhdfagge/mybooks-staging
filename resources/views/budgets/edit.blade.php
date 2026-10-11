@@ -100,29 +100,26 @@
                         </div>
 
                         <!-- Lines Table -->
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead class="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-48">Account</th>
+                        <x-table caption="Accounts in this budget">
+<x-slot name="head">
+                                        <x-table.th class="w-48">Account</x-table.th>
                                         @foreach($months as $key => $name)
-                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24">{{ substr($name, 0, 3) }}</th>
+                                        <x-table.th class="text-center w-24">{{ substr($name, 0, 3) }}</x-table.th>
                                         @endforeach
-                                        <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider bg-gray-100 dark:bg-gray-600 w-28">Annual</th>
-                                        <th class="px-2 py-3 w-10"></th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                        <x-table.th num class="w-28">Annual</x-table.th>
+                                        <th scope="col" class="w-10"><span class="sr-only">Actions</span></th>
+</x-slot>
+
                                     <template x-for="(line, index) in lines" :key="line.key">
-                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                            <td class="px-3 py-2 text-sm">
+                                        <tr>
+                                            <td>
                                                 <input type="hidden" :name="'lines['+index+'][id]'" :value="line.id">
                                                 <input type="hidden" :name="'lines['+index+'][account_id]'" :value="line.account_id">
                                                 <span class="text-gray-500 dark:text-gray-400 text-xs" x-text="line.account_code"></span>
                                                 <span class="text-gray-900 dark:text-gray-100 block text-xs" x-text="line.account_name"></span>
                                             </td>
                                             @foreach($months as $key => $name)
-                                            <td class="px-1 py-2">
+                                            <td>
                                                 <input type="number" step="0.01" min="0"
                                                        :name="'lines['+index+'][{{ $key }}]'"
                                                        x-model.number="line.{{ $key }}"
@@ -130,10 +127,10 @@
                                                        class="w-full text-right text-sm rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 focus:border-brand-500 focus:ring-brand-500 px-1 py-1">
                                             </td>
                                             @endforeach
-                                            <td class="px-3 py-2 text-sm text-right font-semibold text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700">
+                                            <td class="num font-semibold">
                                                 <span x-text="formatNumber(line.annual_total)"></span>
                                             </td>
-                                            <td class="px-2 py-2">
+                                            <td>
                                                 <button type="button" @click="removeLine(index)" class="text-red-600 hover:text-red-800" title="Remove">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -143,27 +140,25 @@
                                         </tr>
                                     </template>
                                     <tr x-show="lines.length === 0">
-                                        <td colspan="15" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                                        <td colspan="15" class="text-center">
                                             No budget lines. Click "Add Account" to add your first budget line item.
                                         </td>
                                     </tr>
-                                </tbody>
-                                <tfoot class="bg-gray-100 dark:bg-gray-700">
+<x-slot name="foot">
                                     <tr>
-                                        <th class="px-3 py-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Totals</th>
+                                        <th class="font-semibold">Totals</th>
                                         @foreach($months as $key => $name)
-                                        <th class="px-2 py-3 text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                        <th class="num font-semibold">
                                             <span x-text="formatNumber(monthTotals.{{ $key }})"></span>
                                         </th>
                                         @endforeach
-                                        <th class="px-3 py-3 text-right text-sm font-bold text-gray-900 dark:text-gray-100 bg-gray-200 dark:bg-gray-600">
+                                        <th class="num font-bold">
                                             <span x-text="formatNumber(grandTotal)"></span>
                                         </th>
                                         <th></th>
                                     </tr>
-                                </tfoot>
-                            </table>
-                        </div>
+</x-slot>
+</x-table>
                     </div>
                 </div>
 

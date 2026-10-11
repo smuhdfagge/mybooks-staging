@@ -12,7 +12,7 @@
                     Back to List
                 </a>
                 @if($salesOrder->status === 'draft')
-                    <a href="{{ route('sales-orders.edit', $salesOrder) }}" class="inline-flex items-center px-4 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700 focus:bg-yellow-700 active:bg-yellow-900 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                    <a href="{{ route('sales-orders.edit', $salesOrder) }}" class="inline-flex items-center px-4 py-2 bg-amber-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-800 focus:bg-yellow-700 active:bg-yellow-900 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                         </svg>
@@ -83,11 +83,11 @@
                                 </div>
                                 <div>
                                     <p class="text-sm text-gray-500 dark:text-gray-400">Order Date</p>
-                                    <p class="font-medium text-gray-900 dark:text-gray-100">{{ $salesOrder->order_date->format('M d, Y') }}</p>
+                                    <p class="font-medium text-gray-900 dark:text-gray-100">{{ $salesOrder->order_date->format('j M Y') }}</p>
                                 </div>
                                 <div>
                                     <p class="text-sm text-gray-500 dark:text-gray-400">Expected Delivery</p>
-                                    <p class="font-medium text-gray-900 dark:text-gray-100">{{ $salesOrder->expected_date?->format('M d, Y') ?? 'N/A' }}</p>
+                                    <p class="font-medium text-gray-900 dark:text-gray-100">{{ $salesOrder->expected_date?->format('j M Y') ?? 'N/A' }}</p>
                                 </div>
                                 <div>
                                     <p class="text-sm text-gray-500 dark:text-gray-400">Reference</p>
@@ -106,36 +106,31 @@
                                 </svg>
                                 Order Items
                             </h3>
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                    <thead>
-                                        <tr>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Item</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Qty</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Delivered</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Invoiced</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Price</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tax</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                        @foreach($salesOrder->items as $item)
-                                            <tr>
-                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $item->item?->name ?? '-' }}</td>
-                                                <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{{ $item->description }}</td>
-                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{{ number_format($item->quantity, 2) }}</td>
-                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{{ number_format((float) $item->quantity_fulfilled, 2) }}</td>
-                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{{ number_format((float) $item->quantity_invoiced, 2) }}</td>
-                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{{ number_format($item->unit_price, 2) }}</td>
-                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{{ $item->tax_rate }}%</td>
-                                                <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 text-right">{{ number_format($item->total, 2) }}</td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
+                            <x-table caption="Items on this order">
+                                <x-slot name="head">
+                                    <x-table.th>Item</x-table.th>
+                                    <x-table.th num>Qty</x-table.th>
+                                    <x-table.th num class="hidden md:table-cell">Delivered</x-table.th>
+                                    <x-table.th num class="hidden md:table-cell">Invoiced</x-table.th>
+                                    <x-table.th num class="hidden sm:table-cell">Price</x-table.th>
+                                    <x-table.th num class="hidden lg:table-cell">VAT</x-table.th>
+                                    <x-table.th num>Total</x-table.th>
+                                </x-slot>
+                                @foreach ($salesOrder->items as $item)
+                                    <tr>
+                                        <td>
+                                            {{ $item->item?->name ?? $item->description ?? '—' }}
+                                            @if ($item->item && $item->description && $item->description !== $item->item->name)<div class="text-xs tbl-muted">{{ $item->description }}</div>@endif
+                                        </td>
+                                        <td class="num">{{ \App\Support\Figure::qty($item->quantity) }}</td>
+                                        <td class="num hidden md:table-cell {{ \App\Support\Figure::tone($item->quantity_fulfilled) }}">{{ \App\Support\Figure::qty($item->quantity_fulfilled) }}</td>
+                                        <td class="num hidden md:table-cell {{ \App\Support\Figure::tone($item->quantity_invoiced) }}">{{ \App\Support\Figure::qty($item->quantity_invoiced) }}</td>
+                                        <td class="num hidden sm:table-cell">@fig($item->unit_price, false)</td>
+                                        <td class="num hidden lg:table-cell">{{ \App\Support\Figure::rate($item->tax_rate) }}</td>
+                                        <td class="num font-medium">@fig($item->total, false)</td>
+                                    </tr>
+                                @endforeach
+                            </x-table>
                         </div>
                     </div>
 

@@ -1,343 +1,134 @@
+{{-- A payroll run (tables plan T7): its totals, who is in it, and what to do next. Amounts in ₦. --}}
+@php
+    $b = $payrollBatch;
+    $period = ($b->pay_period_start?->format('j M') ?? '—').' – '.($b->pay_period_end?->format('j M Y') ?? '—');
+    $statusLabels = ['draft' => 'Draft', 'approved' => 'Approved', 'paid' => 'Paid', 'cancelled' => 'Cancelled'];
+    $filtered = request()->filled('search') || request()->filled('status') || request()->filled('department');
+@endphp
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    {{ $payrollBatch->batch_number }}
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                    {{ $payrollBatch->pay_period_start?->format('M d') }} - {{ $payrollBatch->pay_period_end?->format('M d, Y') }}
-                    · {{ $payrollBatch->employee_count }} {{ Str::plural('employee', $payrollBatch->employee_count) }}
-                </p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                @if($payrollBatch->status === 'draft')
-                    <form action="{{ route('payroll-batches.approve', $payrollBatch) }}" method="POST" class="inline"
-                        data-confirm="Approve all payroll records in this batch?">
+        <x-table.page-header :title="'Payroll run '.$b->batch_number" :description="$period.' · '.$b->employee_count.' '.\Illuminate\Support\Str::plural('employee', $b->employee_count).'. Amounts in ₦.'">
+            <x-slot name="badge"><x-status-badge :status="$b->status" :label="ucfirst($b->status)" /></x-slot>
+            <x-slot name="more">
+                <x-table.menu-item :href="route('payroll-batches.payslips', $b)">Download all payslips</x-table.menu-item>
+                <x-table.menu-item :href="route('payroll.index')">All payroll runs</x-table.menu-item>
+                @if ($b->status === 'draft')
+                    <x-table.menu-item danger :post="route('payroll-batches.destroy', $b)" method="DELETE" confirm="Delete this payroll run and all its payroll records?">Delete payroll run</x-table.menu-item>
+                @endif
+            </x-slot>
+            <x-slot name="actions">
+                @if ($b->status === 'draft')
+                    <form action="{{ route('payroll-batches.approve', $b) }}" method="POST" data-confirm="Approve all payroll records in this run?">
                         @csrf
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            Approve All
-                        </button>
+                        <button type="submit" class="btn-new">Approve all</button>
+                    </form>
+                @elseif (in_array($b->status, ['approved', 'failed'], true))
+                    <form action="{{ route('payroll-batches.mark-paid', $b) }}" method="POST" data-confirm="Mark all payroll records as paid?">
+                        @csrf
+                        <button type="submit" class="btn-new">{{ $b->status === 'failed' ? 'Try again' : 'Mark all as paid' }}</button>
                     </form>
                 @endif
-                @if(in_array($payrollBatch->status, ['approved', 'failed']))
-                    <form action="{{ route('payroll-batches.mark-paid', $payrollBatch) }}" method="POST" class="inline"
-                        data-confirm="Mark all payroll records as paid?">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                            {{ $payrollBatch->status === 'failed' ? 'Try Again' : 'Mark All as Paid' }}
-                        </button>
-                    </form>
-                @endif
-                @if($payrollBatch->status === 'draft')
-                    <form action="{{ route('payroll-batches.destroy', $payrollBatch) }}" method="POST" class="inline"
-                        data-confirm="Are you sure you want to delete this batch and all its payroll records?">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                            </svg>
-                            Delete Batch
-                        </button>
-                    </form>
-                @endif
-                <a href="{{ route('payroll-batches.payslips', $payrollBatch) }}" class="btn-secondary">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
-                    Download All Payslips
-                </a>
-                <a href="{{ route('payroll.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back
-                </a>
-            </div>
-        </div>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <!-- Status Badge -->
-            <div class="mb-6">
-                <span class="px-4 py-2 inline-flex text-sm leading-5 font-semibold rounded-full
-                    {{ $payrollBatch->status === 'draft' ? 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100' : '' }}
-                    {{ $payrollBatch->status === 'approved' ? 'bg-brand-100 text-brand-800 dark:bg-brand-800 dark:text-brand-100' : '' }}
-                    {{ $payrollBatch->status === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' : '' }}
-                    {{ $payrollBatch->status === 'processing' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100' : '' }}
-                    {{ $payrollBatch->status === 'failed' ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100' : '' }}
-                    {{ $payrollBatch->status === 'cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100' : '' }}">
-                    Status: {{ ucfirst($payrollBatch->status) }}
-                </span>
-                @if($payrollBatch->status === 'processing')
-                    <p class="mt-2 text-sm text-yellow-700 dark:text-yellow-300">Being paid in the background. Refresh this page in a minute.</p>
-                @elseif($payrollBatch->status === 'failed')
-                    <p class="mt-2 text-sm text-red-700 dark:text-red-300">Paying this batch failed and nothing was paid: {{ $payrollBatch->failure_reason }}. Fix the problem and use Try Again.</p>
-                @endif
-            </div>
+    <div class="space-y-6">
+        @if ($b->status === 'processing')
+            <p class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-100">Being paid in the background. Refresh this page in a minute.</p>
+        @elseif ($b->status === 'failed')
+            <p class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-700 dark:bg-red-900/30 dark:text-red-100">Paying this run failed and nothing was paid: {{ $b->failure_reason }}. Fix the problem and use Try again.</p>
+        @endif
 
-            <!-- Summary Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0 bg-brand-100 dark:bg-brand-900/50 rounded-full p-3">
-                            <svg class="w-6 h-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                            </svg>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Employees</p>
-                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $payrollBatch->employee_count }}</p>
-                        </div>
-                    </div>
-                </div>
+        <x-report.stats :cols="4">
+            <x-report.stat label="Employees" :value="$b->employee_count" />
+            <x-report.stat label="Gross pay" :value="\App\Support\Figure::show($b->total_gross)" />
+            <x-report.stat label="Deductions" :value="\App\Support\Figure::show($b->total_deductions)" hint="Tax, pension and others" />
+            <x-report.stat label="Net pay" :value="\App\Support\Figure::show($b->total_net)" />
+        </x-report.stats>
 
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0 bg-green-100 dark:bg-green-900/50 rounded-full p-3">
-                            <svg class="w-6 h-6 text-green-700 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Gross</p>
-                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ number_format($payrollBatch->total_gross, 2) }}</p>
-                        </div>
-                    </div>
-                </div>
+        <dl class="grid grid-cols-2 gap-x-6 gap-y-3 rounded-lg border border-gray-200 bg-white p-4 text-sm sm:grid-cols-4 dark:border-gray-700 dark:bg-gray-800">
+            <div><dt class="text-gray-600 dark:text-gray-400">Pay period</dt><dd class="font-medium text-gray-900 dark:text-white">{{ $b->pay_period_start?->format('j M Y') }} to {{ $b->pay_period_end?->format('j M Y') }}</dd></div>
+            <div><dt class="text-gray-600 dark:text-gray-400">Tax rate</dt><dd class="font-medium text-gray-900 dark:text-white">{{ rtrim(rtrim(number_format((float) $b->tax_rate, 2), '0'), '.') }}%</dd></div>
+            <div><dt class="text-gray-600 dark:text-gray-400">Made by</dt><dd class="font-medium text-gray-900 dark:text-white">{{ $b->createdBy?->name ?? '—' }}</dd></div>
+            @if ($b->approved_at)
+                <div><dt class="text-gray-600 dark:text-gray-400">Approved</dt><dd class="font-medium text-gray-900 dark:text-white">{{ $b->approved_at->format('j M Y, H:i') }}<span class="font-normal text-gray-600 dark:text-gray-400"> by {{ $b->approvedBy?->name ?? '—' }}</span></dd></div>
+            @endif
+            @if ($b->paid_at)
+                <div><dt class="text-gray-600 dark:text-gray-400">Paid</dt><dd class="font-medium text-gray-900 dark:text-white">{{ $b->paid_at->format('j M Y, H:i') }}</dd></div>
+            @endif
+        </dl>
 
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0 bg-red-100 dark:bg-red-900/50 rounded-full p-3">
-                            <svg class="w-6 h-6 text-red-600 dark:text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Deductions</p>
-                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ number_format($payrollBatch->total_deductions, 2) }}</p>
-                        </div>
-                    </div>
-                </div>
+        <section class="space-y-3" aria-labelledby="people-title">
+            <h3 id="people-title" class="text-base font-semibold text-gray-900 dark:text-white">Employees in this run</h3>
+            <x-table.query-bar :action="route('payroll-batches.show', $b)" placeholder="Search name or employee ID" :filtered="$filtered">
+                <x-slot name="filters">
+                    <x-table.query-select name="department" label="Department" :options="$departments" />
+                    <x-table.query-select name="status" label="Status" :options="$statusLabels" />
+                </x-slot>
+            </x-table.query-bar>
 
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0 bg-brand-100 dark:bg-brand-900/50 rounded-full p-3">
-                            <svg class="w-6 h-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-                            </svg>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Net Pay</p>
-                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ number_format($payrollBatch->total_net, 2) }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Batch Details -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                <div class="p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Batch Details</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                        <div>
-                            <p class="text-gray-500 dark:text-gray-400">Batch Number</p>
-                            <p class="font-medium text-gray-900 dark:text-gray-100">{{ $payrollBatch->batch_number }}</p>
-                        </div>
-                        <div>
-                            <p class="text-gray-500 dark:text-gray-400">Pay Period</p>
-                            <p class="font-medium text-gray-900 dark:text-gray-100">{{ $payrollBatch->pay_period_start?->format('M d, Y') }} - {{ $payrollBatch->pay_period_end?->format('M d, Y') }}</p>
-                        </div>
-                        <div>
-                            <p class="text-gray-500 dark:text-gray-400">Tax Rate</p>
-                            <p class="font-medium text-gray-900 dark:text-gray-100">{{ number_format($payrollBatch->tax_rate, 2) }}%</p>
-                        </div>
-                        <div>
-                            <p class="text-gray-500 dark:text-gray-400">Created By</p>
-                            <p class="font-medium text-gray-900 dark:text-gray-100">{{ $payrollBatch->createdBy?->name ?? 'N/A' }}</p>
-                        </div>
-                        @if($payrollBatch->approved_at)
-                        <div>
-                            <p class="text-gray-500 dark:text-gray-400">Approved By</p>
-                            <p class="font-medium text-gray-900 dark:text-gray-100">{{ $payrollBatch->approvedBy?->name ?? 'N/A' }}</p>
-                        </div>
-                        <div>
-                            <p class="text-gray-500 dark:text-gray-400">Approved At</p>
-                            <p class="font-medium text-gray-900 dark:text-gray-100">{{ $payrollBatch->approved_at?->format('M d, Y h:i A') }}</p>
-                        </div>
-                        @endif
-                        @if($payrollBatch->paid_at)
-                        <div>
-                            <p class="text-gray-500 dark:text-gray-400">Paid At</p>
-                            <p class="font-medium text-gray-900 dark:text-gray-100">{{ $payrollBatch->paid_at?->format('M d, Y h:i A') }}</p>
-                        </div>
-                        @endif
-                    </div>
-                </div>
-            </div>
-
-            <!-- Employee Payroll Table -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Employee Payroll Records</h3>
-
-                    <!-- Search & Filters -->
-                    <form method="GET" action="{{ route('payroll-batches.show', $payrollBatch) }}" class="mb-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 sm:p-4">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
-                            <div class="sm:col-span-2 lg:col-span-1">
-                                <label for="search" class="form-label">Search</label>
-                                <input id="search" type="text" name="search" value="{{ request('search') }}" placeholder="Name or Employee ID..."
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-                            </div>
-                            <div>
-                                <label for="status" class="form-label">Status</label>
-                                <select id="status" name="status" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-                                    <option value="">All Status</option>
-                                    <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
-                                    <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Approved</option>
-                                    <option value="paid" {{ request('status') === 'paid' ? 'selected' : '' }}>Paid</option>
-                                    <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="department" class="form-label">Department</label>
-                                <select id="department" name="department" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-                                    <option value="">All Departments</option>
-                                    @foreach($departments as $id => $name)
-                                        <option value="{{ $id }}" {{ request('department') == $id ? 'selected' : '' }}>{{ $name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div>
-                                <label for="per_page" class="form-label">Per Page</label>
-                                <select id="per_page" name="per_page" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-                                    <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10</option>
-                                    <option value="15" {{ request('per_page', 15) == 15 ? 'selected' : '' }}>15</option>
-                                    <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
-                                    <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
-                                </select>
-                            </div>
-                            <div class="flex items-end gap-2">
-                                <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                                    Filter
-                                </button>
-                                @if(request()->hasAny(['search', 'status', 'department', 'per_page']))
-                                    <a href="{{ route('payroll-batches.show', $payrollBatch) }}" class="inline-flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-gray-700 dark:text-gray-200 uppercase tracking-widest hover:bg-gray-300 dark:hover:bg-gray-500 transition">
-                                        Clear
-                                    </a>
-                                @endif
-                            </div>
-                        </div>
-                    </form>
-
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">#</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Employee ID</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Department</th>
-                                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Basic Salary</th>
-                                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Gross Salary</th>
-                                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Deductions</th>
-                                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Net Pay</th>
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                @forelse($payrolls as $index => $payroll)
-                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $payrolls->firstItem() + $index }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                                            {{ $payroll->employee?->employee_id ?? 'N/A' }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                            {{ $payroll->employee?->first_name }} {{ $payroll->employee?->last_name }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                            {{ $payroll->employee?->department?->name ?? '-' }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100">
-                                            {{ number_format($payroll->basic_salary, 2) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100">
-                                            {{ number_format($payroll->gross_salary, 2) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600 dark:text-red-300">
-                                            {{ number_format($payroll->total_deductions, 2) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-900 dark:text-gray-100">
-                                            {{ number_format($payroll->net_salary, 2) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                                {{ $payroll->status === 'draft' ? 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100' : '' }}
-                                                {{ $payroll->status === 'approved' ? 'bg-brand-100 text-brand-800 dark:bg-brand-800 dark:text-brand-100' : '' }}
-                                                {{ $payroll->status === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' : '' }}
-                                                {{ $payroll->status === 'cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100' : '' }}">
-                                                {{ ucfirst($payroll->status) }}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
-                                            <a href="{{ route('payroll.show', $payroll) }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-300">
-                                                View
-                                            </a>
-                                            <span class="text-gray-300 dark:text-gray-600 mx-1">|</span>
-                                            <a href="{{ route('payroll.payslip', $payroll) }}" class="text-accent-700 hover:text-accent-900 dark:text-accent-300 dark:hover:text-accent-200">
-                                                Payslip
-                                            </a>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="10" class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                                            No payroll records found in this batch.
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                            @if($payrolls->count() > 0)
-                            <tfoot class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <td colspan="4" class="px-6 py-3 text-right text-sm font-bold text-gray-900 dark:text-gray-100 uppercase">Batch Totals</td>
-                                    <td class="px-6 py-3 text-right text-sm font-bold text-gray-900 dark:text-gray-100">{{ number_format($payrollBatch->payrolls()->sum('basic_salary'), 2) }}</td>
-                                    <td class="px-6 py-3 text-right text-sm font-bold text-gray-900 dark:text-gray-100">{{ number_format($payrollBatch->total_gross, 2) }}</td>
-                                    <td class="px-6 py-3 text-right text-sm font-bold text-red-600 dark:text-red-300">{{ number_format($payrollBatch->total_deductions, 2) }}</td>
-                                    <td class="px-6 py-3 text-right text-sm font-bold text-gray-900 dark:text-gray-100">{{ number_format($payrollBatch->total_net, 2) }}</td>
-                                    <td colspan="2"></td>
-                                </tr>
-                            </tfoot>
-                            @endif
-                        </table>
-                    </div>
-
-                    @if($payrolls->hasPages())
-                        <div class="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
-                            {{ $payrolls->links() }}
-                        </div>
+            @if ($payrolls->isEmpty())
+                <div class="tbl-wrap">
+                    @if ($filtered)
+                        <x-table.empty filtered title="Nobody matches these filters" :clear="route('payroll-batches.show', $b)" />
+                    @else
+                        <x-table.empty title="No one in this run" text="This payroll run has no payroll records." />
                     @endif
                 </div>
-            </div>
-
-            @if($payrollBatch->notes)
-            <div class="mt-6 bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Notes</h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ $payrollBatch->notes }}</p>
-                </div>
-            </div>
+            @else
+                <x-table caption="Employees in this payroll run">
+                    <x-slot name="head">
+                        <x-table.th>Employee</x-table.th>
+                        <x-table.th class="hidden lg:table-cell">Department</x-table.th>
+                        <x-table.th num class="hidden xl:table-cell">Basic</x-table.th>
+                        <x-table.th num class="hidden sm:table-cell">Gross</x-table.th>
+                        <x-table.th num class="hidden md:table-cell">Deductions</x-table.th>
+                        <x-table.th num>Net pay</x-table.th>
+                        <x-table.th class="hidden sm:table-cell">Status</x-table.th>
+                        <th scope="col" class="tbl-menu"><span class="sr-only">Actions</span></th>
+                    </x-slot>
+                    @foreach ($payrolls as $payroll)
+                        <tr>
+                            <td>
+                                <a href="{{ route('payroll.show', $payroll) }}" class="tbl-link font-medium">{{ trim(($payroll->employee?->first_name ?? '').' '.($payroll->employee?->last_name ?? '')) ?: '—' }}</a>
+                                <div class="text-xs tbl-muted">{{ $payroll->employee?->employee_id ?? '—' }}</div>
+                            </td>
+                            <td class="hidden lg:table-cell">{{ $payroll->employee?->department?->name ?? '—' }}</td>
+                            <td class="num hidden xl:table-cell">@fig($payroll->basic_salary, false)</td>
+                            <td class="num hidden sm:table-cell">@fig($payroll->gross_salary, false)</td>
+                            <td class="num hidden md:table-cell">@fig($payroll->total_deductions, false)</td>
+                            <td class="num font-medium">@fig($payroll->net_salary, false)</td>
+                            <td class="hidden sm:table-cell"><x-status-badge :status="$payroll->status" :label="$statusLabels[$payroll->status] ?? ucfirst($payroll->status)" /></td>
+                            <td class="tbl-menu">
+                                <x-table.dropdown sr-label="Actions for this employee">
+                                    <x-table.menu-item :href="route('payroll.show', $payroll)">View</x-table.menu-item>
+                                    <x-table.menu-item :href="route('payroll.payslip', $payroll)">Payslip</x-table.menu-item>
+                                </x-table.dropdown>
+                            </td>
+                        </tr>
+                    @endforeach
+                    <x-slot name="foot">
+                        <tr>
+                            <th scope="row">Whole run</th>
+                            <td class="hidden lg:table-cell"></td>
+                            <td class="num hidden xl:table-cell">@fig($b->payrolls()->sum('basic_salary'), false)</td>
+                            <td class="num hidden sm:table-cell">@fig($b->total_gross, false)</td>
+                            <td class="num hidden md:table-cell">@fig($b->total_deductions, false)</td>
+                            <td class="num">@fig($b->total_net, false)</td>
+                            <td class="hidden sm:table-cell"></td>
+                            <td></td>
+                        </tr>
+                    </x-slot>
+                </x-table>
+                <x-table.footer :rows="$payrolls" links />
             @endif
-        </div>
+        </section>
+
+        @if ($b->notes)
+            <section class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Notes</h3>
+                <p class="mt-1 text-sm text-gray-700 dark:text-gray-300">{{ $b->notes }}</p>
+            </section>
+        @endif
     </div>
 </x-app-layout>

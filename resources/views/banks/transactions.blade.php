@@ -1,92 +1,88 @@
+{{-- Money in and out of one bank account (tables plan T7): the postings to its ledger account, with the balance after each. Amounts in the business currency (the ledger). --}}
+@php
+    $fromText = \Carbon\Carbon::parse($from)->format('j M Y');
+    $toText = \Carbon\Carbon::parse($to)->format('j M Y');
+    $running = $pageOpening;
+@endphp
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    {{ $bank->name }} - Transactions
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    Current Balance: @money($bank->current_balance, $bank->currency)
-                </p>
-            </div>
-            <a href="{{ route('banks.show', $bank) }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition ease-in-out duration-150">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                Back to Account
-            </a>
-        </div>
+        <x-table.page-header :title="$bank->name.': money in and out'" :description="'Everything posted to this account from '.$fromText.' to '.$toText.', with the balance after each. Amounts in '.trim(\App\Support\Money::symbol()).'.'">
+            <x-slot name="more">
+                <x-table.menu-item :href="route('banks.show', $bank)">The account</x-table.menu-item>
+                @can('reconcile banks')<x-table.menu-item :href="route('banks.reconcile', $bank)">Reconcile</x-table.menu-item>@endcan
+                @if ($bank->chart_of_account_id)
+                    <x-table.menu-item :href="route('reports.general-ledger', ['account_id' => $bank->chart_of_account_id, 'start_date' => $from, 'end_date' => $to])">General ledger</x-table.menu-item>
+                @endif
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    @if($transactions->count() > 0)
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead class="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Reference</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Customer/Vendor</th>
-                                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Amount</th>
-                                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                    @foreach($transactions as $transaction)
-                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                                {{ $transaction['date']->format('M d, Y') }}
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                @if($transaction['type'] === 'deposit')
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
-                                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                                        </svg>
-                                                        Deposit
-                                                    </span>
-                                                @else
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100">
-                                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
-                                                        </svg>
-                                                        Withdrawal
-                                                    </span>
-                                                @endif
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                                {{ $transaction['reference'] }}
-                                                @if($transaction['extra_ref'])
-                                                    <span class="text-gray-500 dark:text-gray-400">({{ $transaction['extra_ref'] }})</span>
-                                                @endif
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                                {{ $transaction['party'] }}
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium {{ $transaction['type'] === 'deposit' ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
-                                                {{ $transaction['type'] === 'deposit' ? '+' : '-' }}@money($transaction['amount'], $bank->currency)
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
-                                                <a href="{{ $transaction['route'] }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-300">
-                                                    View
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @else
-                        <p class="text-gray-500 dark:text-gray-400 text-center py-8">
-                            No transactions found for this bank account. Transactions will appear here when payments are received or made via bank transfer.
-                        </p>
-                    @endif
-                </div>
-            </div>
-        </div>
+    <div class="space-y-3">
+        <x-report.filters :action="route('banks.transactions', $bank)" button="Show">
+            <x-report.date name="from" label="From" :value="$from" />
+            <x-report.date name="to" label="To" :value="$to" />
+        </x-report.filters>
+
+        @unless ($linked)
+            <x-report.check :ok="false">This bank account isn't linked to an account in the chart of accounts, so nothing posted to it can be shown. Edit the bank account to link it.</x-report.check>
+        @endunless
+
+        <x-report.stats :cols="4">
+            <x-report.stat label="Balance at the start" :value="\App\Support\Figure::show($opening)" :hint="$fromText" />
+            <x-report.stat label="Money in" :value="\App\Support\Figure::show($moneyIn)" tone="good" />
+            <x-report.stat label="Money out" :value="\App\Support\Figure::show($moneyOut)" />
+            <x-report.stat label="Balance at the end" :value="\App\Support\Figure::show($opening + $moneyIn - $moneyOut)" :hint="$toText" :tone="($opening + $moneyIn - $moneyOut) < 0 ? 'bad' : null" />
+        </x-report.stats>
+
+        @if ($entries->isEmpty())
+            <div class="tbl-wrap"><x-table.empty title="No money in or out in this period" text="Payments, cash sales, transfers, payroll and journals that use this account show here." /></div>
+        @else
+            <x-table caption="Money in and out" class="hidden md:block">
+                <x-slot name="head">
+                    <x-table.th>Date</x-table.th>
+                    <x-table.th>What</x-table.th>
+                    <x-table.th num>Money in</x-table.th>
+                    <x-table.th num>Money out</x-table.th>
+                    <x-table.th num>Balance</x-table.th>
+                </x-slot>
+                <tr class="rpt-section">
+                    <td>{{ $fromText }}</td>
+                    <td colspan="3">{{ $entries->currentPage() > 1 ? 'Brought forward from earlier pages' : 'Balance at the start' }}</td>
+                    <td class="num">@fig($pageOpening)</td>
+                </tr>
+                @foreach ($entries as $entry)
+                    @php $running += $entry->debit - $entry->credit; $src = \App\Support\JournalSource::of($entry->journal); @endphp
+                    <tr>
+                        <td class="tbl-muted">{{ $entry->journal->journal_date->format('j M Y') }}</td>
+                        <td class="rpt-wrap max-w-[28rem]">
+                            <a href="{{ $src['url'] }}" class="tbl-link">{{ $src['label'] }}</a>
+                            <span class="block text-xs tbl-muted">{{ $entry->description ?: $entry->journal->description }}</span>
+                        </td>
+                        <td class="num {{ \App\Support\Figure::tone($entry->debit) }}">@fig($entry->debit)</td>
+                        <td class="num {{ \App\Support\Figure::tone($entry->credit) }}">@fig($entry->credit)</td>
+                        <td class="num">@fig($running)</td>
+                    </tr>
+                @endforeach
+                <x-slot name="foot">
+                    <tr>
+                        <td colspan="2">Total for the period · balance at the end</td>
+                        <td class="num">@fig($moneyIn)</td>
+                        <td class="num">@fig($moneyOut)</td>
+                        <td class="num">@fig($opening + $moneyIn - $moneyOut)</td>
+                    </tr>
+                </x-slot>
+            </x-table>
+            @php $running = $pageOpening; @endphp
+            <ul class="space-y-2 md:hidden" aria-label="Money in and out">
+                @foreach ($entries as $entry)
+                    @php $running += $entry->debit - $entry->credit; $src = \App\Support\JournalSource::of($entry->journal); @endphp
+                    <li>
+                        <x-table.card :href="$src['url']" :title="$src['label']" :amount="($entry->debit > 0 ? '+' : '-').number_format(max($entry->debit, $entry->credit), 2)"
+                            :meta="$entry->journal->journal_date->format('j M Y').' · balance '.\App\Support\Figure::show($running)" :tone="$entry->credit > 0 ? 'bad' : 'muted'" />
+                    </li>
+                @endforeach
+            </ul>
+            <x-table.footer :rows="$entries" links />
+        @endif
     </div>
 </x-app-layout>

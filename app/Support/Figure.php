@@ -21,6 +21,23 @@ final class Figure
         return $v < 0 ? ($brackets ? "({$text})" : "-{$text}") : $text;
     }
 
+    /** A quantity: no trailing zeros ("3", "2.5"), up to four decimals, zero as a dash. */
+    public static function qty(float|int|string|null $value): string
+    {
+        $v = round((float) $value, 4);
+        if (abs($v) < 0.00005) {
+            return '—';
+        }
+
+        return rtrim(rtrim(number_format($v, 4), '0'), '.');
+    }
+
+    /** A rate as "7.5%" (no trailing zeros). */
+    public static function rate(float|int|string|null $value): string
+    {
+        return rtrim(rtrim(number_format((float) $value, 2), '0'), '.').'%';
+    }
+
     /** The cell class for a figure: muted when it is zero. */
     public static function tone(float|int|string|null $value): string
     {

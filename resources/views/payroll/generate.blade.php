@@ -70,21 +70,18 @@
                                 </label>
                             </div>
 
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                    <thead class="bg-gray-50 dark:bg-gray-700">
-                                        <tr>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase w-10"></th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Employee</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Department</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Basic Salary</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Allowances</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Deductions</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Gross</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Net</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <x-table caption="Employees to pay">
+<x-slot name="head">
+                                            <th scope="col" class="w-10"><span class="sr-only">Actions</span></th>
+                                            <x-table.th>Employee</x-table.th>
+                                            <x-table.th>Department</x-table.th>
+                                            <x-table.th num>Basic salary</x-table.th>
+                                            <x-table.th num>Allowances</x-table.th>
+                                            <x-table.th num>Deductions</x-table.th>
+                                            <x-table.th num>Gross</x-table.th>
+                                            <x-table.th num>Net</x-table.th>
+</x-slot>
+
                                         @foreach($employeesWithStructures as $employee)
                                             @php
                                                 $structure = $employee->salaryStructure;
@@ -93,40 +90,38 @@
                                                 $gross = $structure ? $structure->gross_salary : 0;
                                                 $net = $structure ? $structure->net_salary : 0;
                                             @endphp
-                                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                <td class="px-4 py-3">
+                                            <tr>
+                                                <td>
                                                     <input type="checkbox" name="employee_ids[]" value="{{ $employee->id }}"
                                                         class="employee-checkbox rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300"
                                                         @click="updateSelectAll()"
                                                         {{ in_array($employee->id, old('employee_ids', [])) ? 'checked' : '' }}>
                                                 </td>
-                                                <td class="px-4 py-3">
+                                                <td>
                                                     <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $employee->first_name }} {{ $employee->last_name }}</div>
                                                     <div class="text-xs text-gray-500 dark:text-gray-400">{{ $employee->employee_id }}</div>
                                                 </td>
-                                                <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                                                    {{ $employee->department->name ?? '-' }}
+                                                <td>
+                                                    {{ $employee->department->name ?? '—' }}
                                                 </td>
-                                                <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">
+                                                <td class="num">
                                                     {{ number_format($structure->basic_salary ?? 0, 2) }}
                                                 </td>
-                                                <td class="px-4 py-3 text-sm text-right text-green-700 dark:text-green-400">
+                                                <td class="num text-green-700 dark:text-green-400">
                                                     +{{ number_format($totalAllow, 2) }}
                                                 </td>
-                                                <td class="px-4 py-3 text-sm text-right text-red-600 dark:text-red-300">
+                                                <td class="num text-red-600 dark:text-red-300">
                                                     -{{ number_format($totalDeduct, 2) }}
                                                 </td>
-                                                <td class="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-gray-100">
+                                                <td class="num font-medium">
                                                     {{ number_format($gross, 2) }}
                                                 </td>
-                                                <td class="px-4 py-3 text-sm text-right font-bold text-gray-900 dark:text-gray-100">
+                                                <td class="num font-bold">
                                                     {{ number_format($net, 2) }}
                                                 </td>
                                             </tr>
                                         @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
+</x-table>
                         </div>
 
                         <!-- Actions -->

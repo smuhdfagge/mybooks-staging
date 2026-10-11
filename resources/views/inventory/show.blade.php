@@ -254,20 +254,18 @@
                     @if($history->count() > 0)
                     <div class="overflow-x-auto -mx-6">
                         <div class="inline-block min-w-full align-middle px-6">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead class="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
-                                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Quantity</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Notes</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <x-table caption="Recent stock moves">
+<x-slot name="head">
+                                        <x-table.th>Date</x-table.th>
+                                        <x-table.th>Type</x-table.th>
+                                        <x-table.th num>Quantity</x-table.th>
+                                        <x-table.th>Notes</x-table.th>
+</x-slot>
+
                                     @foreach($history->take(10) as $record)
-                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                        <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 whitespace-nowrap">{{ $record->created_at->format('M d, Y H:i') }}</td>
-                                        <td class="px-4 py-3 whitespace-nowrap">
+                                    <tr>
+                                        <td>{{ $record->created_at->format('j M Y, H:i') }}</td>
+                                        <td>
                                             @php
                                                 $typeColors = [
                                                     'in' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400',
@@ -288,18 +286,17 @@
                                                 {{ $typeLabels[$record->type] ?? $record->type }}
                                             </span>
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-right font-medium whitespace-nowrap {{ $record->type === 'in' ? 'text-green-700 dark:text-green-400' : ($record->type === 'out' ? 'text-red-600 dark:text-red-300' : 'text-gray-900 dark:text-gray-100') }}">
+                                        <td class="num font-medium {{ $record->type === 'in' ? 'text-green-700 dark:text-green-400' : ($record->type === 'out' ? 'text-red-600 dark:text-red-300' : 'text-gray-900 dark:text-gray-100') }}">
                                             @if(in_array($record->type, ['transfer', 'assembly'], true))
                                                 {{ (float) $record->quantity > 0 ? '+' : '' }}{{ rtrim(rtrim(number_format((float) $record->quantity, 4), '0'), '.') }}
                                             @else
                                                 {{ $record->type === 'in' ? '+' : ($record->type === 'out' ? '-' : '') }}{{ $record->quantity }}
                                             @endif
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">@include('inventory._history-note', ['record' => $record])</td>
+                                        <td class="max-w-xs truncate">@include('inventory._history-note', ['record' => $record])</td>
                                     </tr>
                                     @endforeach
-                                </tbody>
-                            </table>
+</x-table>
                         </div>
                     </div>
                     @else

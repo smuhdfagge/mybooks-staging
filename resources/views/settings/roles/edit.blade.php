@@ -68,20 +68,17 @@
                             </button>
                         </div>
                         
-                        <div class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead class="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Resource</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">View</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">Create</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">Edit</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">Delete</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">Other</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">All</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        <x-table caption="Permissions">
+<x-slot name="head">
+                                        <x-table.th>Resource</x-table.th>
+                                        <x-table.th class="text-center w-20">View</x-table.th>
+                                        <x-table.th class="text-center w-20">Create</x-table.th>
+                                        <x-table.th class="text-center w-20">Edit</x-table.th>
+                                        <x-table.th class="text-center w-20">Delete</x-table.th>
+                                        <x-table.th class="text-center w-20">Other</x-table.th>
+                                        <x-table.th class="text-center w-20">All</x-table.th>
+</x-slot>
+
                                     @php
                                         $standardActions = ['view', 'create', 'edit', 'delete'];
                                         $oldPermissions = old('permissions', $rolePermissions);
@@ -102,21 +99,21 @@
                                             }
                                             $resourceLabel = ucwords(str_replace('-', ' ', $resource));
                                         @endphp
-                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                            <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{{ $resourceLabel }}</td>
+                                        <tr>
+                                            <td class="font-medium">{{ $resourceLabel }}</td>
                                             @foreach($standardActions as $action)
-                                                <td class="px-4 py-3 text-center">
+                                                <td class="text-center">
                                                     @if(isset($permissionMap[$action]))
                                                         <input type="checkbox" name="permissions[]" value="{{ $permissionMap[$action] }}"
                                                             class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 permission-checkbox dark:text-brand-300"
                                                             data-resource="{{ $resource }}"
                                                             {{ in_array($permissionMap[$action], $oldPermissions) ? 'checked' : '' }}>
                                                     @else
-                                                        <span class="text-gray-300 dark:text-gray-600">—</span>
+                                                        <span class="tbl-zero" aria-label="Not used">—</span>
                                                     @endif
                                                 </td>
                                             @endforeach
-                                            <td class="px-4 py-3 text-center">
+                                            <td class="text-center">
                                                 @if(count($otherPermissions) > 0)
                                                     <div class="flex flex-wrap justify-center gap-1">
                                                         @foreach($otherPermissions as $otherPerm)
@@ -133,18 +130,16 @@
                                                         @endforeach
                                                     </div>
                                                 @else
-                                                    <span class="text-gray-300 dark:text-gray-600">—</span>
+                                                    <span class="tbl-zero" aria-label="Not used">—</span>
                                                 @endif
                                             </td>
-                                            <td class="px-4 py-3 text-center">
+                                            <td class="text-center">
                                                 <input type="checkbox" class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 row-toggle dark:text-brand-300"
                                                     data-resource="{{ $resource }}" title="Toggle all for {{ $resourceLabel }}">
                                             </td>
                                         </tr>
                                     @endforeach
-                                </tbody>
-                            </table>
-                        </div>
+</x-table>
                         @include('settings.roles._dashboard-widgets', ['selected' => $oldPermissions])
                     </div>
 

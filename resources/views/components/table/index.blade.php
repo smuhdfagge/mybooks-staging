@@ -8,11 +8,13 @@
     </x-table>
 
     On a list, add class="hidden md:block" and give phones <x-table.card>s.
+    A line-item editor passes table-class="line-items": on a phone each row
+    becomes a card (see app.css).
 --}}
-@props(['caption' => null])
+@props(['caption' => null, 'tableClass' => null])
 <div {{ $attributes->merge(['class' => 'tbl-wrap']) }}>
     <div class="tbl-scroll">
-        <table class="tbl">
+        <table class="{{ trim('tbl '.$tableClass) }}">
             @if ($caption)<caption class="sr-only">{{ $caption }}</caption>@endif
             <thead><tr>{{ $head }}</tr></thead>
             <tbody>{{ $slot }}</tbody>

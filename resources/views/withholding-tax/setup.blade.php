@@ -1,18 +1,16 @@
+{{-- Withholding tax rates and settings (tables plan T7). --}}
 <x-app-layout>
     <x-slot name="header">
-        <div>
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Withholding Tax</h2>
-            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">WHT transaction types, rates and settings for this business</p>
-        </div>
+        <x-table.page-header title="Withholding tax" description="WHT transaction types, rates and settings for this business." />
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div>
+        <div class="space-y-6">
             @include('withholding-tax._tabs')
 
             @php $canManage = auth()->user()->can('manage withholding-tax'); @endphp
 
-            <x-card title="WHT rates" class="mb-6">
+            <x-card title="WHT rates">
                 <div class="px-6 pt-2 text-sm text-gray-600 dark:text-gray-400 space-y-1">
                     <p>Rates are percentages for resident payees, worked out on the amount before VAT. A payee without a TIN is charged twice the rate where "Double without TIN" is ticked.</p>
                     <p>The seeded rates follow the Deduction of Tax at Source (Withholding) Regulations 2024 (in force 1 January 2025), which the Nigeria Tax Administration Act 2025 keeps in place. Please confirm them with your accountant; you can change any of them.</p>
@@ -21,55 +19,50 @@
                 <form method="POST" action="{{ route('withholding-tax.rates.update') }}" class="p-6">
                     @csrf
                     @method('PUT')
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th scope="col" class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">Transaction type</th>
-                                    <th scope="col" class="px-3 py-2 text-right font-medium text-gray-600 dark:text-gray-300">Companies %</th>
-                                    <th scope="col" class="px-3 py-2 text-right font-medium text-gray-600 dark:text-gray-300">Individuals %</th>
-                                    <th scope="col" class="px-3 py-2 text-center font-medium text-gray-600 dark:text-gray-300">Double without TIN</th>
-                                    <th scope="col" class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">Effective from</th>
-                                    <th scope="col" class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">Source</th>
-                                    <th scope="col" class="px-3 py-2 text-center font-medium text-gray-600 dark:text-gray-300">Active</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    <x-table caption="WHT rates">
+<x-slot name="head">
+                                    <x-table.th>Transaction type</x-table.th>
+                                    <x-table.th num>Companies %</x-table.th>
+                                    <x-table.th num>Individuals %</x-table.th>
+                                    <x-table.th class="text-center">Double without TIN</x-table.th>
+                                    <x-table.th>Effective from</x-table.th>
+                                    <x-table.th>Source</x-table.th>
+                                    <x-table.th class="text-center">Active</x-table.th>
+</x-slot>
+
                                 @foreach($categories as $category)
                                     <tr>
-                                        <td class="px-3 py-2">
+                                        <td>
                                             <label class="sr-only" for="rate-name-{{ $category->id }}">Transaction type</label>
-                                            <input id="rate-name-{{ $category->id }}" name="rates[{{ $category->id }}][name]" value="{{ old("rates.{$category->id}.name", $category->name) }}" class="form-control min-w-[16rem]" @disabled(! $canManage) required>
+                                            <input id="rate-name-{{ $category->id }}" name="rates[{{ $category->id }}][name]" value="{{ old("rates.{$category->id}.name", $category->name) }}" class="form-control min-w-[14rem]" @disabled(! $canManage) required>
                                         </td>
-                                        <td class="px-3 py-2">
+                                        <td>
                                             <label class="sr-only" for="rate-co-{{ $category->id }}">Rate for companies</label>
                                             <input id="rate-co-{{ $category->id }}" type="number" step="0.01" min="0" max="100" name="rates[{{ $category->id }}][rate_company]" value="{{ old("rates.{$category->id}.rate_company", $category->rate_company) }}" class="form-control w-24 text-right" @disabled(! $canManage) required>
                                         </td>
-                                        <td class="px-3 py-2">
+                                        <td>
                                             <label class="sr-only" for="rate-ind-{{ $category->id }}">Rate for individuals</label>
                                             <input id="rate-ind-{{ $category->id }}" type="number" step="0.01" min="0" max="100" name="rates[{{ $category->id }}][rate_individual]" value="{{ old("rates.{$category->id}.rate_individual", $category->rate_individual) }}" class="form-control w-24 text-right" @disabled(! $canManage) required>
                                         </td>
-                                        <td class="px-3 py-2 text-center">
+                                        <td class="text-center">
                                             <input type="hidden" name="rates[{{ $category->id }}][double_without_tin]" value="0">
                                             <input type="checkbox" name="rates[{{ $category->id }}][double_without_tin]" value="1" aria-label="Double without TIN" @checked($category->double_without_tin) @disabled(! $canManage)>
                                         </td>
-                                        <td class="px-3 py-2">
+                                        <td>
                                             <label class="sr-only" for="rate-eff-{{ $category->id }}">Effective from</label>
                                             <input id="rate-eff-{{ $category->id }}" type="date" name="rates[{{ $category->id }}][effective_from]" value="{{ $category->effective_from?->format('Y-m-d') }}" class="form-control" @disabled(! $canManage)>
                                         </td>
-                                        <td class="px-3 py-2">
+                                        <td>
                                             <label class="sr-only" for="rate-src-{{ $category->id }}">Source</label>
                                             <input id="rate-src-{{ $category->id }}" name="rates[{{ $category->id }}][source]" value="{{ $category->source }}" title="{{ $category->source }}" class="form-control min-w-[12rem]" @disabled(! $canManage)>
                                         </td>
-                                        <td class="px-3 py-2 text-center">
+                                        <td class="text-center">
                                             <input type="hidden" name="rates[{{ $category->id }}][is_active]" value="0">
                                             <input type="checkbox" name="rates[{{ $category->id }}][is_active]" value="1" aria-label="Active" @checked($category->is_active) @disabled(! $canManage)>
                                         </td>
                                     </tr>
                                 @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+</x-table>
                     @if($canManage)
                         <div class="mt-4 flex justify-end">
                             <button type="submit" class="btn-primary">Save rates</button>

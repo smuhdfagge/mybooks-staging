@@ -362,7 +362,7 @@ class Phase6RegressionTest extends TestCase
         $this->assertSame(0, $batch->payrolls()->where('status', 'paid')->count());   // rolled back
 
         // It can be tried again from the page
-        $this->get(route('payroll-batches.show', $batch))->assertOk()->assertSee('Try Again');
+        $this->get(route('payroll-batches.show', $batch))->assertOk()->assertSee('Try again');
     }
 
     /** A 500 credit note (465.12 + 7.5% VAT) for $customerId, created through the page. */
