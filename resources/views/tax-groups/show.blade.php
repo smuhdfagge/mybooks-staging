@@ -1,45 +1,19 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <div class="flex items-center gap-3">
-                <a href="{{ route('tax-groups.index') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                    </svg>
-                </a>
-                <div>
-                    <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">{{ $taxGroup->name }}</h2>
-                    <div class="flex items-center gap-2 mt-1">
-                        @if($taxGroup->is_default)
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200">Default</span>
-                        @endif
-                        @if($taxGroup->is_active)
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Active</span>
-                        @else
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">Inactive</span>
-                        @endif
-                    </div>
-                </div>
-            </div>
-            <div class="flex gap-2">
-                @can('edit tax-rates')
-                <a href="{{ route('tax-groups.edit', $taxGroup) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                    Edit
-                </a>
-                @endcan
-                @can('delete tax-rates')
-                <form action="{{ route('tax-groups.destroy', $taxGroup) }}" method="POST" data-confirm="Are you sure?">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        Delete
-                    </button>
-                </form>
-                @endcan
-            </div>
-        </div>
+        <x-table.page-header :title="$taxGroup->name">
+            <x-slot name="badge">
+                @if ($taxGroup->is_default)<x-status-badge status="sent" label="Default" />@endif
+                <x-status-badge :status="$taxGroup->is_active ? 'active' : 'inactive'" :label="$taxGroup->is_active ? 'Active' : 'Not in use'" />
+            </x-slot>
+            @can('delete tax-rates')
+                <x-slot name="more">
+                    <x-table.menu-item danger :post="route('tax-groups.destroy', $taxGroup)" method="DELETE" confirm="Delete this?">Delete</x-table.menu-item>
+                </x-slot>
+            @endcan
+            @can('edit tax-rates')
+                <x-slot name="actions"><a href="{{ route('tax-groups.edit', $taxGroup) }}" class="btn-secondary">Edit</a></x-slot>
+            @endcan
+        </x-table.page-header>
     </x-slot>
 
     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">

@@ -1,6 +1,6 @@
 @php
-    $btn = 'inline-flex items-center justify-center px-3 py-2 border rounded-md font-semibold text-xs uppercase tracking-widest transition';
-    $secondary = $btn.' bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600';
+    $btn = 'btn-secondary';
+    $secondary = 'btn-secondary';
     $status = $quotation->status;
     $editable = in_array($status, \App\Enums\QuotationStatus::editableValues(), true);
     $convertible = in_array($status, \App\Enums\QuotationStatus::convertibleValues(), true);
@@ -8,29 +8,33 @@
 @endphp
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div class="flex items-center gap-3">
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Quotation {{ $quotation->quotation_number }}</h2>
+        <x-table.page-header :title="'Quotation '.$quotation->quotation_number">
+            <x-slot name="badge">
                 <x-status-badge :status="$status" />
-                @if($status !== 'expired' && $quotation->isExpired())
+                @if ($status !== 'expired' && $quotation->isExpired())
                     <x-status-badge status="expired" label="Past expiry date" />
                 @endif
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
-                <a href="{{ route('quotations.print', $quotation) }}" target="_blank" class="{{ $secondary }}">Print</a>
-                <a href="{{ route('quotations.pdf', $quotation) }}" class="{{ $secondary }}">PDF</a>
+            </x-slot>
+            <x-slot name="description">
+                <a href="{{ route('customers.show', $quotation->customer) }}" class="link">{{ $quotation->customer->name }}</a> · {{ $quotation->quotation_date->format('j M Y') }} · Total @money($quotation->total)
+            </x-slot>
+            <x-slot name="more">
+                <x-table.menu-item :href="route('quotations.print', $quotation)" new-tab>Print</x-table.menu-item>
+                <x-table.menu-item :href="route('quotations.pdf', $quotation)">Download PDF</x-table.menu-item>
+            </x-slot>
+            <x-slot name="actions">
                 @can('edit invoices')
-                    @if($editable)
-                        <a href="{{ route('quotations.edit', $quotation) }}" class="{{ $secondary }}">Edit</a>
+                    @if ($editable)
+                        <a href="{{ route('quotations.edit', $quotation) }}" class="btn-secondary">Edit</a>
                     @endif
                 @endcan
                 @can('send invoices')
-                    @if(in_array($status, ['draft', 'sent'], true))
+                    @if (in_array($status, ['draft', 'sent'], true))
                         <button type="button" data-open-modal="send-quotation" class="btn-primary">{{ $status === 'sent' ? 'Email again' : 'Email to customer' }}</button>
                     @endif
                 @endcan
-            </div>
-        </div>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -126,10 +130,10 @@
                                 @if($answerable)
                                     <div class="grid grid-cols-2 gap-2">
                                         <form method="POST" action="{{ route('quotations.accept', $quotation) }}">@csrf
-                                            <button type="submit" class="{{ $btn }} w-full bg-green-700 border-transparent text-white hover:bg-green-700">Accepted</button>
+                                            <button type="submit" class="btn-primary w-full">Accepted</button>
                                         </form>
                                         <form method="POST" action="{{ route('quotations.reject', $quotation) }}" data-confirm="Mark this quotation as rejected by the customer?">@csrf
-                                            <button type="submit" class="{{ $btn }} w-full bg-red-600 border-transparent text-white hover:bg-red-700">Rejected</button>
+                                            <button type="submit" class="btn-danger w-full">Rejected</button>
                                         </form>
                                     </div>
                                 @endif

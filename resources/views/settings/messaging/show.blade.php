@@ -1,9 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">SMS &amp; WhatsApp</h2>
-            <a href="{{ route('settings.messaging.messages') }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">All messages sent</a>
-        </div>
+        <x-table.page-header title="SMS & WhatsApp" />
     </x-slot>
 
     @php

@@ -1,37 +1,20 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    {{ $vendor->name }}
-                </h2>
-                @if($vendor->company_name)
-                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ $vendor->company_name }}</p>
-                @endif
-            </div>
-            <div class="flex flex-wrap gap-2">
-                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('statements'))
-                    <a href="{{ route('vendors.statement', $vendor) }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-200 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        Statement
-                    </a>
-                @endif
-                <a href="{{ route('vendors.edit', $vendor) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                    </svg>
-                    Edit
-                </a>
-                <a href="{{ route('vendors.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back
-                </a>
-            </div>
-        </div>
+        <x-table.page-header :title="$vendor->name" :description="$vendor->company_name">
+            @if (\App\Http\Middleware\EnsureFeatureEnabled::enabled('statements'))
+                <x-slot name="more">
+                    <x-table.menu-item :href="route('vendors.statement', $vendor)">Statement</x-table.menu-item>
+                </x-slot>
+            @endif
+            <x-slot name="actions">
+                @can('edit vendors')
+                    <a href="{{ route('vendors.edit', $vendor) }}" class="btn-secondary">Edit</a>
+                @endcan
+                @can('create bills')
+                    <a href="{{ route('bills.create', ['vendor_id' => $vendor->id]) }}" class="btn-primary">New bill</a>
+                @endcan
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">

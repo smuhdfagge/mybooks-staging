@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Taking you to your bank</h2>
+        <x-table.page-header title="Taking you to your bank" />
     </x-slot>
 
     <div class="py-6">

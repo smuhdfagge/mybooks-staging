@@ -1,28 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <div class="flex items-center gap-3">
-                <a href="{{ route('item-categories.index') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                    </svg>
-                </a>
-                <div>
-                    <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                        {{ $itemCategory->name }}
-                    </h2>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Item Category Details</p>
-                </div>
-            </div>
-            <div class="flex gap-2">
-                <a href="{{ route('item-categories.edit', $itemCategory) }}" class="inline-flex items-center px-4 py-2 bg-amber-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-700 focus:bg-amber-700 active:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                    </svg>
-                    Edit
-                </a>
-            </div>
-        </div>
+        <x-table.page-header description="Item Category Details">
+            <x-slot name="title">{{ $itemCategory->name }}</x-slot>
+            <x-slot name="actions">
+                <a href="{{ route('item-categories.edit', $itemCategory) }}" class="btn-secondary"> Edit </a>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

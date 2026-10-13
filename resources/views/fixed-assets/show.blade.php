@@ -1,60 +1,28 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Fixed Asset Details') }}
-            </h2>
-            <div class="flex gap-2">
-                <a href="{{ route('fixed-assets.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back
-                </a>
+        <x-table.page-header :title="$fixedAsset->name" :description="$fixedAsset->asset_number.($fixedAsset->category ? ' · '.$fixedAsset->category->name : '')">
+            <x-slot name="badge"><x-status-badge :status="['active' => 'active', 'under_maintenance' => 'pending', 'idle' => 'inactive', 'fully_depreciated' => 'completed', 'disposed' => 'cancelled', 'sold' => 'closed'][$fixedAsset->status] ?? 'draft'" :label="\App\Livewire\FixedAssets\FixedAssetsTable::LABELS[$fixedAsset->status] ?? ucfirst(str_replace('_', ' ', $fixedAsset->status))" /></x-slot>
+            <x-slot name="more">
+                <x-table.menu-item :href="route('fixed-assets.schedule', $fixedAsset)">Depreciation schedule</x-table.menu-item>
                 @can('edit fixed-assets')
-                    @if($fixedAsset->canDispose())
-                    <button type="button" data-open-modal="dispose-asset" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                        </svg>
-                        Dispose
-                    </button>
+                    @if ($fixedAsset->canDispose())
+                        <x-table.menu-item danger data-open-modal="dispose-asset">Dispose of this asset</x-table.menu-item>
                     @endif
-                    @if($fixedAsset->canDepreciate())
-                    <button type="button" data-open-modal="record-depreciation" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
-                        Record Depreciation
-                    </button>
-                    @endif
-                    <a href="{{ route('fixed-assets.edit', $fixedAsset) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
-                        Edit
-                    </a>
                 @endcan
-            </div>
-        </div>
+            </x-slot>
+            @can('edit fixed-assets')
+                <x-slot name="actions">
+                    <a href="{{ route('fixed-assets.edit', $fixedAsset) }}" class="btn-secondary">Edit</a>
+                    @if ($fixedAsset->canDepreciate())
+                        <button type="button" data-open-modal="record-depreciation" class="btn-new">Record depreciation</button>
+                    @endif
+                </x-slot>
+            @endcan
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <!-- Asset Header -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg mb-6">
-                <div class="p-6">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ $fixedAsset->name }}</h3>
-                            <p class="text-gray-600 dark:text-gray-400">{{ $fixedAsset->asset_number }}</p>
-                        </div>
-                        <span class="px-3 py-1 text-sm font-semibold rounded-full
-                            @if($fixedAsset->status === 'active') bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100
-                            @elseif($fixedAsset->status === 'fully_depreciated') bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100
-                            @elseif($fixedAsset->status === 'disposed') bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100
-                            @else bg-brand-100 text-brand-800 dark:bg-brand-800 dark:text-brand-100
-                            @endif">
-                            {{ ucfirst(str_replace('_', ' ', $fixedAsset->status)) }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
             <!-- Stats Cards -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-6">
@@ -317,7 +285,7 @@
                         <button type="button" data-close-modal="record-depreciation" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-400">
                             Cancel
                         </button>
-                        <button type="submit" class="px-4 py-2 bg-brand-600 text-white rounded-md hover:bg-brand-700">
+                        <button type="submit" class="btn-primary">
                             Record Depreciation
                         </button>
                     </div>
@@ -363,7 +331,7 @@
                         <button type="button" data-close-modal="dispose-asset" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-400">
                             Cancel
                         </button>
-                        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+                        <button type="submit" class="btn-danger">
                             Dispose Asset
                         </button>
                     </div>

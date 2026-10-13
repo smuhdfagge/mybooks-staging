@@ -1,18 +1,10 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Allowance Details') }}
-            </h2>
-            <div class="flex items-center space-x-2">
-                <a href="{{ route('allowances.edit', $allowance) }}" class="inline-flex items-center px-4 py-2 bg-yellow-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-600 transition ease-in-out duration-150">
-                    Edit
-                </a>
-                <a href="{{ route('allowances.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition ease-in-out duration-150">
-                    Back
-                </a>
-            </div>
-        </div>
+        <x-table.page-header title="Allowance details">
+            <x-slot name="actions">
+                <a href="{{ route('allowances.edit', $allowance) }}" class="btn-secondary"> Edit </a>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">

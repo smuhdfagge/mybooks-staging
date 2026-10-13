@@ -1,36 +1,12 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div class="flex items-center gap-4">
-                @if($employee->photo_path)
-                    <img src="{{ asset('storage/' . $employee->photo_path) }}" alt="{{ $employee->full_name }}" class="h-14 w-14 rounded-full object-cover ring-2 ring-brand-500/20">
-                @else
-                    <div class="h-14 w-14 rounded-full bg-brand-600 flex items-center justify-center ring-2 ring-brand-500/20">
-                        <span class="text-lg font-bold text-white">{{ strtoupper(substr($employee->first_name, 0, 1) . substr($employee->last_name, 0, 1)) }}</span>
-                    </div>
-                @endif
-                <div>
-                    <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                        {{ $employee->full_name }}
-                    </h2>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ $employee->employee_id }} · {{ $employee->designation?->name ?? 'No Designation' }}</p>
-                </div>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                <a href="{{ route('employees.edit', $employee) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                    </svg>
-                    Edit
-                </a>
-                <a href="{{ route('employees.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back
-                </a>
-            </div>
-        </div>
+        <x-table.page-header>
+            <x-slot name="title">{{ $employee->full_name }}</x-slot>
+            <x-slot name="description">{{ $employee->employee_id }} · {{ $employee->designation?->name ?? 'No Designation' }}</x-slot>
+            <x-slot name="actions">
+                <a href="{{ route('employees.edit', $employee) }}" class="btn-secondary"> Edit </a>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">

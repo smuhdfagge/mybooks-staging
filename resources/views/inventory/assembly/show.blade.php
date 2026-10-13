@@ -1,6 +1,6 @@
 @php
-    $btn = 'inline-flex items-center justify-center px-3 py-2 border rounded-md font-semibold text-xs uppercase tracking-widest transition';
-    $secondary = $btn.' bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600';
+    $btn = 'btn-secondary';
+    $secondary = 'btn-secondary';
     $fmt = fn ($v) => rtrim(rtrim(number_format((float) $v, 4), '0'), '.');
     $bom = $order->billOfMaterial;
     $finished = $bom?->item;
@@ -18,19 +18,15 @@
 @endphp
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div class="flex flex-wrap items-center gap-3">
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">{{ $order->kindLabel() }} {{ $order->order_number }}</h2>
-                <x-status-badge :status="$order->status" />
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
-                <a href="{{ route('assembly-orders.print', $order) }}" target="_blank" class="{{ $secondary }}">Print production sheet</a>
-                @if($order->isDraft())
-                    <a href="{{ route('assembly-orders.edit', $order) }}" class="{{ $secondary }}">Edit</a>
-                @endif
-                <a href="{{ route('assembly-orders.index') }}" class="{{ $secondary }}">All assembly orders</a>
-            </div>
-        </div>
+        <x-table.page-header :title="$order->kindLabel().' '.$order->order_number">
+            <x-slot name="badge"><x-status-badge :status="$order->status" /></x-slot>
+            <x-slot name="more">
+                <x-table.menu-item :href="route('assembly-orders.print', $order)" new-tab>Print production sheet</x-table.menu-item>
+            </x-slot>
+            @if ($order->isDraft())
+                <x-slot name="actions"><a href="{{ route('assembly-orders.edit', $order) }}" class="btn-secondary">Edit</a></x-slot>
+            @endif
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">

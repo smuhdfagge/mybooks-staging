@@ -1,18 +1,14 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Supplier advance {{ $advance->payment_number }}</h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                    <a href="{{ route('vendors.show', $advance->vendor) }}" class="text-brand-600 dark:text-brand-300">{{ $advance->vendor->name }}</a>
-                    · paid {{ $advance->payment_date->format('d M Y') }}{{ $advance->bank ? ' from '.$advance->bank->name : '' }}
-                </p>
-            </div>
-            <div class="flex gap-2">
-                <a href="{{ route('payments-made.show', $advance) }}" class="text-sm text-brand-600 dark:text-brand-300">Payment details</a>
-                <a href="{{ route('supplier-advances.index') }}" class="text-sm text-brand-600 dark:text-brand-300">Back</a>
-            </div>
-        </div>
+        <x-table.page-header :title="'Supplier advance '.$advance->payment_number">
+            <x-slot name="description">
+                <a href="{{ route('vendors.show', $advance->vendor) }}" class="link">{{ $advance->vendor->name }}</a>
+                · paid {{ $advance->payment_date->format('j M Y') }}{{ $advance->bank ? ' from '.$advance->bank->name : '' }}
+            </x-slot>
+            <x-slot name="actions">
+                <a href="{{ route('payments-made.show', $advance) }}" class="btn-secondary">Payment details</a>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">

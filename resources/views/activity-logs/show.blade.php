@@ -1,15 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center">
-            <a href="{{ route('activity-logs.index') }}" class="mr-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-            </a>
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Activity Log Details') }}
-            </h2>
-        </div>
+        <x-table.page-header title="Activity log details" />
     </x-slot>
 
     <div class="py-12">
@@ -54,7 +45,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <!-- User Info -->
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                            <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
                                 User Information
                             </h3>
                             <dl class="space-y-2">
@@ -77,7 +68,7 @@
 
                         <!-- Request Info -->
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                            <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
                                 Request Information
                             </h3>
                             <dl class="space-y-2">
@@ -102,7 +93,7 @@
                     <!-- Model Info -->
                     @if($activityLog->model_type)
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
-                            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                            <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
                                 Record Information
                             </h3>
                             <dl class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -133,7 +124,7 @@
                     <!-- Changed Fields -->
                     @if($activityLog->changed_fields && count($activityLog->changed_fields) > 0)
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
-                            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                            <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
                                 Changed Fields
                             </h3>
                             <div class="flex flex-wrap gap-2">
@@ -151,7 +142,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             @if($activityLog->old_values)
                                 <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
-                                    <h3 class="text-sm font-medium text-red-800 dark:text-red-300 uppercase tracking-wider mb-3">
+                                    <h3 class="text-sm font-medium text-red-800 dark:text-red-300 mb-3">
                                         @if($activityLog->action === 'deleted')
                                             Deleted Values
                                         @else
@@ -183,7 +174,7 @@
 
                             @if($activityLog->new_values)
                                 <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
-                                    <h3 class="text-sm font-medium text-green-800 dark:text-green-300 uppercase tracking-wider mb-3">
+                                    <h3 class="text-sm font-medium text-green-800 dark:text-green-300 mb-3">
                                         @if($activityLog->action === 'created')
                                             Created Values
                                         @else

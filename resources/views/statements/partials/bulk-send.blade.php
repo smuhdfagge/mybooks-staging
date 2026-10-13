@@ -13,8 +13,8 @@
 @unless ($noButton ?? false)
 <div class="mb-4 flex flex-wrap items-center justify-end gap-2">
     <button type="button" data-open-modal="bulk-statements"
-        class="inline-flex items-center px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs font-semibold uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700">
-        <svg class="w-4 h-4 mr-2" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        class="btn-secondary">
+        <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
         Email statements
     </button>
 </div>
@@ -60,7 +60,7 @@
         <div><x-field name="message" id="bulk-message" label="Message" type="textarea" rows="5" :value="$mailer->defaultMessage($side)" required
             help="{name}, {period}, {balance} and {business} are filled in for each one." /></div>
         <div class="flex justify-end gap-3">
-            <button type="button" data-close-modal="bulk-statements" class="inline-flex items-center px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold uppercase tracking-widest">Cancel</button>
+            <button type="button" data-close-modal="bulk-statements" class="btn-secondary">Cancel</button>
             <button type="submit" class="btn-primary">Send statements</button>
         </div>
     </form>

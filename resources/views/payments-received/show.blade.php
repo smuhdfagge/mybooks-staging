@@ -1,51 +1,29 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    {{ $paymentReceived->payment_number }}
-                    @if($paymentReceived->is_deposit)
-                        <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400">
-                            Deposit
-                        </span>
+        @php $pr = $paymentReceived; @endphp
+        <x-table.page-header :title="($pr->is_deposit ? 'Deposit ' : 'Payment ').$pr->payment_number">
+            @if ($pr->is_deposit || $pr->payment_method === 'deposit')
+                <x-slot name="badge"><x-status-badge status="open" :label="$pr->is_deposit ? 'Deposit' : 'From a deposit'" /></x-slot>
+            @endif
+            <x-slot name="description">
+                @if ($pr->customer)<a href="{{ route('customers.show', $pr->customer) }}" class="link">{{ $pr->customer->name }}</a> · @endif
+                received {{ $pr->payment_date?->format('j M Y') ?? '—' }} · @money($pr->amount)
+                @if ($pr->invoice) · for invoice <a href="{{ route('invoices.show', $pr->invoice) }}" class="link">{{ $pr->invoice->invoice_number }}</a>@endif
+            </x-slot>
+            @can('delete payments-received')
+                <x-slot name="more">
+                    <x-table.menu-item danger :post="route('payments-received.destroy', $pr)" method="DELETE" confirm="Delete this payment? Its journal is reversed.">Delete payment</x-table.menu-item>
+                </x-slot>
+            @endcan
+            <x-slot name="actions">
+                @can('edit payments-received')
+                    <a href="{{ route('payments-received.edit', $pr) }}" class="btn-secondary">Edit</a>
+                    @if ($pr->is_deposit && $pr->unused_amount > 0)
+                        <a href="{{ route('payments-received.apply-deposit', $pr) }}" class="btn-primary">Apply to an invoice</a>
                     @endif
-                    @if($paymentReceived->payment_method === 'deposit')
-                        <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800 dark:bg-brand-900/50 dark:text-brand-300">
-                            From Deposit
-                        </span>
-                    @endif
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                    @if($paymentReceived->is_deposit)
-                        Customer deposit received on {{ $paymentReceived->payment_date?->format('j M Y') ?? 'N/A' }}
-                    @else
-                        Payment received on {{ $paymentReceived->payment_date?->format('j M Y') ?? 'N/A' }}
-                    @endif
-                </p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                @if($paymentReceived->is_deposit && $paymentReceived->unused_amount > 0)
-                    <a href="{{ route('payments-received.apply-deposit', $paymentReceived) }}" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                        </svg>
-                        Apply to Invoice
-                    </a>
-                @endif
-                <a href="{{ route('payments-received.edit', $paymentReceived) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                    </svg>
-                    Edit
-                </a>
-                <a href="{{ route('payments-received.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back
-                </a>
-            </div>
-        </div>
+                @endcan
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -312,23 +290,9 @@
             </div>
             @endif
 
-            <!-- Actions -->
-            <div class="mt-6 flex justify-between items-center">
-                <form action="{{ route('payments-received.destroy', $paymentReceived) }}" method="POST" data-confirm="Are you sure you want to delete this payment?">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                        </svg>
-                        Delete Payment
-                    </button>
-                </form>
-
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-6 text-sm text-gray-600 dark:text-gray-400">
                     Created {{ $paymentReceived->created_at->diffForHumans() }}
-                </p>
-            </div>
+                            </p>
         </div>
     </div>
 </x-app-layout>

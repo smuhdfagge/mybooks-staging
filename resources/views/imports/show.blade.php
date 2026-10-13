@@ -1,19 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    {{ __('Import Results') }}
-                </h2>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Review the results of your import</p>
-            </div>
-            <a href="{{ route('imports.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                Back to Imports
-            </a>
-        </div>
+        <x-table.page-header description="Review the results of your import" title="Import results" />
     </x-slot>
 
     <div class="py-6">
@@ -68,7 +55,7 @@
                         </div>
                         <div class="bg-red-50 dark:bg-red-900/30 rounded-lg p-4 text-center">
                             <p class="text-2xl font-bold text-red-600 dark:text-red-300">{{ number_format($import->failed_rows) }}</p>
-                            <p class="text-sm text-red-600 dark:text-red-300">Failed</p>
+                            <p class="text-sm text-red-700 dark:text-red-300">Failed</p>
                         </div>
                         <div class="bg-yellow-50 dark:bg-yellow-900/30 rounded-lg p-4 text-center">
                             <p class="text-2xl font-bold text-yellow-700 dark:text-yellow-400">{{ number_format($import->skipped_rows) }}</p>
@@ -150,7 +137,7 @@
                         <div class="max-h-64 overflow-y-auto">
                             <ul class="space-y-2">
                                 @foreach(array_slice($import->errors, 0, 50) as $error)
-                                    <li class="text-sm text-red-600 dark:text-red-300 flex items-start">
+                                    <li class="text-sm text-red-700 dark:text-red-300 flex items-start">
                                         <svg class="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
                                         </svg>
@@ -200,26 +187,26 @@
                     @if($import->canRetry())
                         <form action="{{ route('imports.retry', $import) }}" method="POST">
                             @csrf
-                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700 transition">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <button type="submit" class="btn-secondary">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                                 </svg>
-                                Retry Import
+                                Retry import
                             </button>
                         </form>
                     @endif
-                    <a href="{{ route('imports.create', ['type' => $import->type]) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <a href="{{ route('imports.create', ['type' => $import->type]) }}" class="btn-primary">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>
-                        New Import
+                        New import
                     </a>
                 </div>
                 <form action="{{ route('imports.destroy', $import) }}" method="POST" data-confirm="Are you sure you want to delete this import record?">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button type="submit" class="btn-danger">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                         </svg>
                         Delete

@@ -1,12 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">New Supplier Credit</h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">For goods you sent back, or a credit note from the supplier.</p>
-            </div>
-            <a href="{{ $bill ? route('bills.show', $bill) : route('vendor-credits.index') }}" class="text-sm text-brand-600 dark:text-brand-300">Back</a>
-        </div>
+        <x-table.page-header description="For goods you sent back, or a credit note from the supplier." title="New supplier credit" />
     </x-slot>
 
     @php
@@ -126,7 +120,7 @@
                 </x-card>
 
                 <div class="flex flex-col sm:flex-row gap-3 sm:justify-end">
-                    <button type="submit" name="status" value="draft" class="inline-flex justify-center items-center px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 text-xs font-semibold uppercase tracking-widest text-gray-700 dark:text-gray-200">Save as draft</button>
+                    <button type="submit" name="status" value="draft" class="btn-secondary">Save as draft</button>
                     <button type="submit" name="status" value="open" class="btn-primary">Save and post</button>
                 </div>
             </form>

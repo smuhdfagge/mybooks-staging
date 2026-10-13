@@ -1,29 +1,21 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    {{ $chartOfAccount->account_code }} - {{ $chartOfAccount->name }}
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400 capitalize">{{ $chartOfAccount->type }} Account</p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                @if(!$chartOfAccount->is_system)
-                    <a href="{{ route('chart-of-accounts.edit', $chartOfAccount) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                        </svg>
-                        Edit
-                    </a>
+        <x-table.page-header :title="$chartOfAccount->account_code.' '.$chartOfAccount->name" :description="ucfirst($chartOfAccount->type).' account'">
+            @if ($chartOfAccount->is_system)
+                <x-slot name="badge"><x-status-badge status="sent" label="Built in" /></x-slot>
+            @endif
+            <x-slot name="more">
+                <x-table.menu-item :href="route('reports.general-ledger', ['account_id' => $chartOfAccount->id])">General ledger</x-table.menu-item>
+                @if (! $chartOfAccount->is_system && $chartOfAccount->journalEntries->count() == 0)
+                    @can('delete chart-of-accounts')
+                        <x-table.menu-item danger :post="route('chart-of-accounts.destroy', $chartOfAccount)" method="DELETE" confirm="Delete this account?">Delete</x-table.menu-item>
+                    @endcan
                 @endif
-                <a href="{{ route('chart-of-accounts.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back
-                </a>
-            </div>
-        </div>
+            </x-slot>
+            @unless ($chartOfAccount->is_system)
+                <x-slot name="actions"><a href="{{ route('chart-of-accounts.edit', $chartOfAccount) }}" class="btn-secondary">Edit</a></x-slot>
+            @endunless
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -175,33 +167,6 @@
                     @endif
                 </div>
             </div>
-
-            <!-- Actions -->
-            @if(!$chartOfAccount->is_system)
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
-                <div class="p-6 flex flex-wrap gap-4">
-                    <a href="{{ route('chart-of-accounts.edit', $chartOfAccount) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                        </svg>
-                        Edit Account
-                    </a>
-
-                    @if($chartOfAccount->journalEntries->count() == 0)
-                        <form action="{{ route('chart-of-accounts.destroy', $chartOfAccount) }}" method="POST" class="inline" data-confirm="Are you sure you want to delete this account?">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                </svg>
-                                Delete
-                            </button>
-                        </form>
-                    @endif
-                </div>
-            </div>
-            @endif
         </div>
     </div>
 </x-app-layout>

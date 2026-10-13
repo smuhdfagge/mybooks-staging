@@ -1,29 +1,15 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ $category->name }}
-            </h2>
-            <div class="flex space-x-2">
-                @can('edit fixed-asset-categories')
-                <a href="{{ route('fixed-asset-categories.edit', $category) }}" class="bg-brand-500 hover:bg-brand-700 text-white font-bold py-2 px-4 rounded">
-                    Edit Category
-                </a>
-                @endcan
-                @can('delete fixed-asset-categories')
-                <form method="POST" action="{{ route('fixed-asset-categories.destroy', $category) }}" class="inline" data-confirm="Are you sure you want to delete this category?">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded">
-                        Delete
-                    </button>
-                </form>
-                @endcan
-                <a href="{{ route('fixed-asset-categories.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                    Back to Categories
-                </a>
-            </div>
-        </div>
+        <x-table.page-header :title="$category->name" description="Fixed asset category">
+            @can('delete fixed-asset-categories')
+                <x-slot name="more">
+                    <x-table.menu-item danger :post="route('fixed-asset-categories.destroy', $category)" method="DELETE" confirm="Delete this category?">Delete</x-table.menu-item>
+                </x-slot>
+            @endcan
+            @can('edit fixed-asset-categories')
+                <x-slot name="actions"><a href="{{ route('fixed-asset-categories.edit', $category) }}" class="btn-secondary">Edit</a></x-slot>
+            @endcan
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-12">

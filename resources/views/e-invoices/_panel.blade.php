@@ -38,7 +38,7 @@
                     @elseif($st === 'pending' && $sub)
                         <form action="{{ route('e-invoices.check', $sub) }}" method="POST">
                             @csrf
-                            <button type="submit" class="inline-flex items-center px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold uppercase tracking-widest">Check with NRS</button>
+                            <button type="submit" class="btn-secondary">Check with NRS</button>
                         </form>
                     @endif
                 @endcan

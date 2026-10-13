@@ -1,55 +1,28 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    {{ $payroll->payroll_number }}
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">{{ $payroll->employee?->first_name }} {{ $payroll->employee?->last_name }} · {{ $payroll->pay_period_start?->format('M d') }} - {{ $payroll->pay_period_end?->format('M d, Y') }}</p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                @if($payroll->status === 'draft')
-                    <form action="{{ route('payroll.approve', $payroll) }}" method="POST" class="inline">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            Approve
-                        </button>
-                    </form>
-                    <a href="{{ route('payroll.edit', $payroll) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                        </svg>
-                        Edit
-                    </a>
+        <x-table.page-header :title="'Payslip '.$payroll->payroll_number" :description="trim(($payroll->employee?->first_name ?? '').' '.($payroll->employee?->last_name ?? '')).' · '.$payroll->pay_period_start?->format('j M').' – '.$payroll->pay_period_end?->format('j M Y')">
+            <x-slot name="badge"><x-status-badge :status="$payroll->status" /></x-slot>
+            <x-slot name="more">
+                <x-table.menu-item :href="route('payroll.payslip', $payroll)">Download payslip</x-table.menu-item>
+                @if ($payroll->status === 'draft')
+                    @can('delete payroll')
+                        <x-table.menu-item danger :post="route('payroll.destroy', $payroll)" method="DELETE" confirm="Delete this payroll record?">Delete</x-table.menu-item>
+                    @endcan
                 @endif
-                @if($payroll->status === 'approved')
-                    <form action="{{ route('payroll.mark-paid', $payroll) }}" method="POST" class="inline">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                            Mark as Paid
-                        </button>
+            </x-slot>
+            <x-slot name="actions">
+                @if ($payroll->status === 'draft')
+                    <a href="{{ route('payroll.edit', $payroll) }}" class="btn-secondary">Edit</a>
+                    <form action="{{ route('payroll.approve', $payroll) }}" method="POST">@csrf
+                        <button type="submit" class="btn-new">Approve</button>
+                    </form>
+                @elseif ($payroll->status === 'approved')
+                    <form action="{{ route('payroll.mark-paid', $payroll) }}" method="POST">@csrf
+                        <button type="submit" class="btn-new">Mark as paid</button>
                     </form>
                 @endif
-                <a href="{{ route('payroll.payslip', $payroll) }}" class="btn-secondary">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
-                    Download Payslip
-                </a>
-                <a href="{{ route('payroll.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back
-                </a>
-            </div>
-        </div>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -270,21 +243,6 @@
             </div>
             @endif
 
-            <!-- Delete Button -->
-            @if($payroll->status === 'draft')
-            <div class="mt-6 flex justify-end">
-                <form action="{{ route('payroll.destroy', $payroll) }}" method="POST" data-confirm="Are you sure you want to delete this payroll record?">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                        </svg>
-                        Delete Payroll
-                    </button>
-                </form>
-            </div>
-            @endif
         </div>
     </div>
 </x-app-layout>

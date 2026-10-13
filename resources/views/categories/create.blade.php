@@ -1,13 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Create Asset Category') }}
-            </h2>
-            <a href="{{ route('fixed-asset-categories.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                Cancel
-            </a>
-        </div>
+        <x-table.page-header title="New asset category" />
     </x-slot>
 
     <div class="py-12">
@@ -146,10 +139,10 @@
                         </div>
 
                         <div class="flex justify-end space-x-4">
-                            <a href="{{ route('fixed-asset-categories.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                            <a href="{{ route('fixed-asset-categories.index') }}" class="btn-secondary">
                                 Cancel
                             </a>
-                            <button type="submit" class="bg-brand-500 hover:bg-brand-700 text-white font-bold py-2 px-4 rounded">
+                            <button type="submit" class="btn-primary">
                                 Create Category
                             </button>
                         </div>

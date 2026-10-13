@@ -1,13 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Retroactive Pay Adjustment Preview') }}
-            </h2>
-            <a href="{{ route('payroll.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                &larr; Back to Payroll
-            </a>
-        </div>
+        <x-table.page-header title="Back pay preview" description="What changes for past months if the new salary applies from the date you chose. Amounts in ₦." />
     </x-slot>
 
     <div class="py-6">
@@ -90,7 +83,7 @@
                             <input type="hidden" name="employee_id" value="{{ $employee->id }}">
                             <input type="hidden" name="effective_from" value="{{ $effectiveFrom }}">
                             <input type="hidden" name="recalculate" value="1">
-                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
+                            <button type="submit" class="btn-primary">
                                 Create Adjustment Payroll ({{ $totalAdjustment >= 0 ? '+' : '' }}{{ number_format($totalAdjustment, 2) }})
                             </button>
                         </form>

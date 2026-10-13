@@ -1,41 +1,39 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight flex items-center gap-3">
-                    Supplier credit {{ $credit->vendor_credit_number }}
-                    @include('vendor-credits._status', ['status' => $credit->status])
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                    <a href="{{ route('vendors.show', $credit->vendor) }}" class="text-brand-600 dark:text-brand-300">{{ $credit->vendor->name }}</a>
-                    · {{ $credit->credit_date->format('j M Y') }}
-                    @if($credit->bill) · for bill <a href="{{ route('bills.show', $credit->bill) }}" class="text-brand-600 dark:text-brand-300">{{ $credit->bill->bill_number }}</a>@endif
-                    @if($credit->vendor_reference) · supplier's ref {{ $credit->vendor_reference }}@endif
-                </p>
-            </div>
-            <div class="flex flex-wrap gap-2">
+        @php $canVoid = in_array($credit->status, ['draft', 'open']) && $credit->applications->isEmpty() && $credit->refunds->isEmpty(); @endphp
+        <x-table.page-header :title="'Supplier credit '.$credit->vendor_credit_number">
+            <x-slot name="badge">@include('vendor-credits._status', ['status' => $credit->status])</x-slot>
+            <x-slot name="description">
+                <a href="{{ route('vendors.show', $credit->vendor) }}" class="link">{{ $credit->vendor->name }}</a>
+                · {{ $credit->credit_date->format('j M Y') }}
+                @if ($credit->bill) · for bill <a href="{{ route('bills.show', $credit->bill) }}" class="link">{{ $credit->bill->bill_number }}</a>@endif
+                @if ($credit->vendor_reference) · supplier's ref {{ $credit->vendor_reference }}@endif
+            </x-slot>
+            @if ($canVoid || in_array($credit->status, ['draft', 'void'], true))
+                <x-slot name="more">
+                    @can('edit bills')
+                        @if ($canVoid)
+                            <x-table.menu-item danger :post="route('vendor-credits.void', $credit)" confirm="Void this supplier credit? Its journal is reversed and any returned goods go back into stock.">Void</x-table.menu-item>
+                        @endif
+                    @endcan
+                    @can('delete bills')
+                        @if (in_array($credit->status, ['draft', 'void'], true))
+                            <x-table.menu-item danger :post="route('vendor-credits.destroy', $credit)" method="DELETE" confirm="Delete this supplier credit?">Delete</x-table.menu-item>
+                        @endif
+                    @endcan
+                </x-slot>
+            @endif
+            <x-slot name="actions">
                 @can('edit bills')
-                    @if($credit->status === 'draft')
-                        <form method="POST" action="{{ route('vendor-credits.open', $credit) }}">@csrf
-                            <button class="btn-primary">Post it</button>
-                        </form>
-                    @endif
-                    @if(in_array($credit->status, ['draft', 'open']) && $credit->applications->isEmpty() && $credit->refunds->isEmpty())
-                        <form method="POST" action="{{ route('vendor-credits.void', $credit) }}" data-confirm="Void this supplier credit? Its journal is reversed and any returned goods go back into stock.">@csrf
-                            <button class="inline-flex items-center px-4 py-2 rounded-md bg-red-600 text-white text-xs font-semibold uppercase tracking-widest hover:bg-red-700">Void</button>
+                    @if ($credit->status === 'draft')
+                        <form method="POST" action="{{ route('vendor-credits.open', $credit) }}">
+                            @csrf
+                            <button type="submit" class="btn-primary">Post it</button>
                         </form>
                     @endif
                 @endcan
-                @can('delete bills')
-                    @if(in_array($credit->status, ['draft', 'void']))
-                        <form method="POST" action="{{ route('vendor-credits.destroy', $credit) }}" data-confirm="Delete this supplier credit?">@csrf @method('DELETE')
-                            <button class="inline-flex items-center px-4 py-2 rounded-md border border-red-300 text-red-700 dark:text-red-300 text-xs font-semibold uppercase tracking-widest">Delete</button>
-                        </form>
-                    @endif
-                @endcan
-                <a href="{{ route('vendor-credits.index') }}" class="inline-flex items-center px-4 py-2 rounded-md bg-gray-600 text-white text-xs font-semibold uppercase tracking-widest">Back</a>
-            </div>
-        </div>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">

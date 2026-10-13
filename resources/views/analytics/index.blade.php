@@ -1,15 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Sales Analytics Dashboard') }}
-            </h2>
-            <div class="mt-2 sm:mt-0">
-                <a href="{{ route('dashboard') }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">
-                    ← Back to Dashboard
-                </a>
-            </div>
-        </div>
+        <x-table.page-header title="Sales analytics" description="How sales, invoices and payments are going over the period you pick." />
     </x-slot>
 
     <div x-data="analyticsApp()" x-init="initCharts()" class="space-y-6">
@@ -37,7 +28,7 @@
                     <input type="date" name="start_date" value="{{ $startDate }}" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm text-sm">
                     <span class="text-gray-500">to</span>
                     <input type="date" name="end_date" value="{{ $endDate }}" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm text-sm">
-                    <button type="submit" class="px-3 py-1.5 bg-brand-600 text-white text-sm rounded-md hover:bg-brand-700">Apply</button>
+                    <button type="submit" class="btn-primary">Apply</button>
                 </div>
 
                 <div class="text-sm text-gray-500 dark:text-gray-400">

@@ -1,19 +1,9 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    Edit Budget: {{ $budget->name }}
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Fiscal Year {{ $budget->fiscal_year }}</p>
-            </div>
-            <a href="{{ route('budgets.show', $budget) }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                Back to Budget
-            </a>
-        </div>
+        <x-table.page-header>
+            <x-slot name="title">Edit budget {{ $budget->name }}</x-slot>
+            <x-slot name="description">Fiscal Year {{ $budget->fiscal_year }}</x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6" x-data="budgetEditor()">
@@ -48,18 +38,18 @@
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Budget Line Items</h3>
                             <div class="flex gap-2">
                                 <button type="button" @click="showImportModal = true"
-                                        class="inline-flex items-center px-3 py-2 bg-green-700 text-white text-sm rounded-md hover:bg-green-700">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        class="btn-primary">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
                                     </svg>
-                                    Import Lines
+                                    Import lines
                                 </button>
                                 <button type="button" @click="showAddAccount = true" 
-                                        class="inline-flex items-center px-3 py-2 bg-brand-600 text-white text-sm rounded-md hover:bg-brand-700">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        class="btn-primary">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                     </svg>
-                                    Add Account
+                                    Add account
                                 </button>
                             </div>
                         </div>
@@ -93,7 +83,7 @@
                                     </select>
                                     <div class="flex justify-end gap-2">
                                         <button type="button" @click="showAddAccount = false" class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">Cancel</button>
-                                        <button type="button" @click="addAccount()" class="px-4 py-2 bg-brand-600 text-white rounded-md hover:bg-brand-700">Add</button>
+                                        <button type="button" @click="addAccount()" class="btn-primary">Add</button>
                                     </div>
                                 </div>
                             </div>
@@ -164,10 +154,10 @@
 
                 <!-- Submit -->
                 <div class="mt-6 flex justify-end gap-3">
-                    <a href="{{ route('budgets.show', $budget) }}" class="inline-flex items-center px-4 py-2 bg-gray-300 dark:bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-400">
+                    <a href="{{ route('budgets.show', $budget) }}" class="btn-secondary">
                         Cancel
                     </a>
-                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
+                    <button type="submit" class="btn-primary">
                         Save Budget
                     </button>
                 </div>
@@ -221,7 +211,7 @@
 
                             <div class="flex justify-end gap-2">
                                 <button type="button" @click="showImportModal = false" class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">Cancel</button>
-                                <button type="submit" class="px-4 py-2 bg-green-700 text-white rounded-md hover:bg-green-700">Import</button>
+                                <button type="submit" class="btn-primary">Import</button>
                             </div>
                         </form>
                     </div>
