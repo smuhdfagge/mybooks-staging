@@ -5,42 +5,37 @@
         $hasReleases = $schedule->releases->isNotEmpty();
     @endphp
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight flex flex-wrap items-center gap-3">
-                    {{ $schedule->schedule_number }} · {{ $schedule->description }}
-                    <x-status-badge :status="$schedule->status" />
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                    {{ $schedule->typeLabel() }} ·
-                    {{ $schedule->months }} {{ \Illuminate\Support\Str::plural('month', $schedule->months) }},
-                    {{ $schedule->start_date->format('M Y') }} to {{ $schedule->dueDate($schedule->months)->format('M Y') }}
-                </p>
-            </div>
-            <div class="flex flex-wrap gap-2">
+        <x-table.page-header :title="$schedule->schedule_number.' · '.$schedule->description" :description="$schedule->typeLabel().' · '.$schedule->months.' '.\Illuminate\Support\Str::plural('month', $schedule->months).', '.$schedule->start_date->format('M Y').' to '.$schedule->dueDate($schedule->months)->format('M Y')">
+            <x-slot name="badge"><x-status-badge :status="$schedule->status" /></x-slot>
+            @canany(['edit accrual-schedules', 'delete accrual-schedules'])
+                @if ($schedule->isActive() || ! $hasReleases)
+                    <x-slot name="more">
+                        @can('edit accrual-schedules')
+                            @if ($schedule->isActive())
+                                <x-table.menu-item data-open-modal="cancel-schedule">Cancel schedule</x-table.menu-item>
+                            @endif
+                        @endcan
+                        @can('delete accrual-schedules')
+                            @if (! $hasReleases)
+                                <x-table.menu-item danger :post="route('accrual-schedules.destroy', $schedule)" method="DELETE" confirm="Delete this schedule? Nothing has been released from it, so nothing is posted or undone.">Delete</x-table.menu-item>
+                            @endif
+                        @endcan
+                    </x-slot>
+                @endif
+            @endcanany
+            <x-slot name="actions">
                 @can('edit accrual-schedules')
-                    @if($schedule->isActive())
-                        @if($dueCount > 0)
-                            <form method="POST" action="{{ route('accrual-schedules.release', $schedule) }}">@csrf
-                                <button class="btn-primary">Release due months now</button>
-                            </form>
-                        @endif
-                        @if(! $hasReleases)
-                            <a href="{{ route('accrual-schedules.edit', $schedule) }}" class="inline-flex items-center px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold uppercase tracking-widest">Edit</a>
-                        @endif
-                        <button type="button" x-data @click="$dispatch('open-modal', 'cancel-schedule')" class="inline-flex items-center px-4 py-2 rounded-md border border-red-300 text-red-700 dark:text-red-300 text-xs font-semibold uppercase tracking-widest">Cancel schedule</button>
+                    @if ($schedule->isActive() && ! $hasReleases)
+                        <a href="{{ route('accrual-schedules.edit', $schedule) }}" class="btn-secondary">Edit</a>
                     @endif
-                @endcan
-                @can('delete accrual-schedules')
-                    @if(! $hasReleases)
-                        <form method="POST" action="{{ route('accrual-schedules.destroy', $schedule) }}" data-confirm="Delete this schedule? Nothing has been released from it, so nothing is posted or undone.">@csrf @method('DELETE')
-                            <button class="inline-flex items-center px-4 py-2 rounded-md bg-red-600 text-white text-xs font-semibold uppercase tracking-widest hover:bg-red-700">Delete</button>
+                    @if ($schedule->isActive() && $dueCount > 0)
+                        <form method="POST" action="{{ route('accrual-schedules.release', $schedule) }}">@csrf
+                            <button type="submit" class="btn-new">Release due months now</button>
                         </form>
                     @endif
                 @endcan
-                <a href="{{ route('accrual-schedules.index') }}" class="inline-flex items-center px-4 py-2 rounded-md bg-gray-600 text-white text-xs font-semibold uppercase tracking-widest">Back</a>
-            </div>
-        </div>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -149,7 +144,7 @@
                     <p class="text-sm text-gray-700 dark:text-gray-300"><span class="font-semibold">@money($schedule->remaining())</span> stays in {{ $schedule->balanceAccount->name }}. If it should go elsewhere (for example the rest of the rent was refunded), move it with a manual journal.</p>
                     <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                         <button type="button" x-on:click="$dispatch('close-modal', 'cancel-schedule')" class="text-sm text-gray-600 dark:text-gray-400 hover:underline">Keep it</button>
-                        <button type="submit" class="inline-flex justify-center items-center px-4 py-2 rounded-md bg-red-600 text-white text-xs font-semibold uppercase tracking-widest hover:bg-red-700">Cancel schedule</button>
+                        <button type="submit" class="btn-danger">Cancel schedule</button>
                     </div>
                 </form>
             </x-modal>

@@ -65,7 +65,7 @@
                     Not Now
                 </button>
                 <button @click="installApp()" 
-                        class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-xl transition flex items-center justify-center gap-2">
+                        class="btn-primary flex-1">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                     </svg>
@@ -144,7 +144,7 @@
                 
                 <div class="mt-6">
                     <button @click="showIosModal = false" 
-                            class="w-full px-4 py-2.5 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-xl transition">
+                            class="btn-primary w-full">
                         Got it!
                     </button>
                 </div>

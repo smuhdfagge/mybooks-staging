@@ -1,9 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">E-invoicing (NRS)</h2>
-            <a href="{{ route('e-invoices.index') }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">See e-invoices</a>
-        </div>
+        <x-table.page-header title="E-invoicing (NRS)" description="Sending invoices to the Nigeria Revenue Service.">
+            <x-slot name="actions"><a href="{{ route('e-invoices.index') }}" class="btn-secondary">See e-invoices</a></x-slot>
+        </x-table.page-header>
     </x-slot>
 
     @php

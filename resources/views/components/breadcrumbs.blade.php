@@ -85,6 +85,19 @@
                     // Route may not exist
                 }
 
+                // The record the page is about, named by its number or name (tables plan T8),
+                // so a page under a record (edit, history, ...) links back to it.
+                $record = collect(request()->route()?->parameters() ?? [])->first(fn ($p) => $p instanceof \Illuminate\Database\Eloquent\Model);
+                $recordLabel = null;
+                if ($record) {
+                    $numberKey = collect(array_keys($record->getAttributes()))->first(fn ($k) => str_ends_with($k, '_number') && filled($record->getAttribute($k)) && $k !== 'account_number' && $k !== 'phone_number');
+                    $person = trim($record->getAttribute('first_name').' '.$record->getAttribute('last_name'));
+                    $recordLabel = $numberKey ? $record->getAttribute($numberKey)
+                        : collect([$record->getAttribute('name'), $record->getAttribute('profile_name'), $record->getAttribute('title'), $person])->first(fn ($v) => filled($v));
+                    $recordLabel = $recordLabel !== null ? \Illuminate\Support\Str::limit((string) $recordLabel, 40) : null;
+                }
+                $showRoute = $resource.'.show';
+
                 if ($action === 'index') {
                     $crumbs[] = ['label' => $label];
                 } else {
@@ -93,11 +106,22 @@
                     }
 
                     $actionLabels = [
-                        'create' => 'Create',
+                        'create' => 'New',
                         'edit' => 'Edit',
                         'show' => 'View',
                     ];
-                    $crumbs[] = ['label' => $sectionActions[$resource][$action] ?? $actionLabels[$action] ?? ucfirst(str_replace('-', ' ', $action))];
+                    if ($action === 'show') {
+                        $crumbs[] = ['label' => $recordLabel ?? 'View'];
+                    } else {
+                        if ($record && $action !== 'create' && \Illuminate\Support\Facades\Route::has($showRoute)) {
+                            try {
+                                $crumbs[] = ['label' => $recordLabel ?? 'View', 'url' => route($showRoute, $record)];
+                            } catch (\Exception $e) {
+                                // The show route takes other parameters
+                            }
+                        }
+                        $crumbs[] = ['label' => $sectionActions[$resource][$action] ?? $actionLabels[$action] ?? ucfirst(str_replace('-', ' ', $action))];
+                    }
                 }
             }
         }

@@ -1,44 +1,15 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    {{ $recurrentBill->profile_name }}
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">{{ ucfirst($recurrentBill->frequency) }} • {{ $recurrentBill->vendor->name ?? 'Unknown Vendor' }}</p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                <form action="{{ route('recurrent-bills.toggle', $recurrentBill) }}" method="POST" class="inline">
-                    @csrf
-                    <button type="submit" class="inline-flex items-center px-4 py-2 {{ $recurrentBill->status === 'active' ? 'bg-amber-700 hover:bg-amber-800' : 'bg-green-700 hover:bg-green-700' }} border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest transition">
-                        @if($recurrentBill->status === 'active')
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            Pause
-                        @else
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            Activate
-                        @endif
-                    </button>
-                </form>
-                <a href="{{ route('recurrent-bills.edit', $recurrentBill) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                    </svg>
-                    Edit
-                </a>
-                <a href="{{ route('recurrent-bills.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back
-                </a>
-            </div>
-        </div>
+        <x-table.page-header :title="$recurrentBill->profile_name" :description="ucfirst($recurrentBill->frequency).' · '.($recurrentBill->vendor->name ?? 'Unknown supplier')">
+            <x-slot name="badge"><x-status-badge :status="$recurrentBill->status === 'active' ? 'active' : 'paused'" :label="$recurrentBill->status === 'active' ? 'Active' : 'Paused'" /></x-slot>
+            <x-slot name="more">
+                <x-table.menu-item :post="route('recurrent-bills.toggle', $recurrentBill)">{{ $recurrentBill->status === 'active' ? 'Pause' : 'Start again' }}</x-table.menu-item>
+                @can('delete recurrent-bills')
+                    <x-table.menu-item danger :post="route('recurrent-bills.destroy', $recurrentBill)" method="DELETE" confirm="Delete this profile? Bills already made stay.">Delete profile</x-table.menu-item>
+                @endcan
+            </x-slot>
+            <x-slot name="actions"><a href="{{ route('recurrent-bills.edit', $recurrentBill) }}" class="btn-secondary">Edit</a></x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -213,22 +184,6 @@
                         </div>
                     </div>
 
-                    <!-- Danger Zone -->
-                    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg border border-red-200 dark:border-red-800">
-                        <div class="p-6">
-                            <h3 class="text-lg font-medium text-red-600 dark:text-red-300 mb-4">Danger Zone</h3>
-                            <form action="{{ route('recurrent-bills.destroy', $recurrentBill) }}" method="POST" data-confirm="Are you sure you want to delete this profile? This action cannot be undone.">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                    </svg>
-                                    Delete Profile
-                                </button>
-                            </form>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

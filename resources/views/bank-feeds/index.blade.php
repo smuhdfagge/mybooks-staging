@@ -1,16 +1,15 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Bank feeds</h2>
-            <div class="flex flex-wrap gap-2">
+        <x-table.page-header title="Bank feeds" description="Bank accounts linked to MyBooks, and the lines they bring in.">
+            <x-slot name="actions">
                 <a href="{{ route('bank-feeds.lines') }}" class="btn-secondary">Review bank lines</a>
                 @can('edit banks')
-                    @if($live && ! $limitReached)
-                        <a href="{{ route('bank-feeds.connect') }}" class="btn-primary" data-testid="connect-feed">Connect a bank account</a>
+                    @if ($live && ! $limitReached)
+                        <a href="{{ route('bank-feeds.connect') }}" class="btn-new" data-testid="connect-feed">Connect a bank account</a>
                     @endif
                 @endcan
-            </div>
-        </div>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">

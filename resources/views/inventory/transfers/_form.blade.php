@@ -114,8 +114,8 @@
     {{-- Transfer now comes first, so pressing Enter does the default. --}}
     <div class="flex flex-col sm:flex-row-reverse sm:justify-start gap-2">
         <button type="submit" name="action" value="transfer_now" class="btn-primary">Transfer now</button>
-        <button type="submit" name="action" value="ship" class="inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-gray-800 border border-brand-300 dark:border-brand-500 rounded-md font-semibold text-xs text-brand-700 dark:text-brand-300 uppercase tracking-widest shadow-sm hover:bg-brand-50 dark:hover:bg-gray-700">Ship only (goods on the road)</button>
-        <button type="submit" name="action" value="draft" class="inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-500 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700">Save as draft</button>
+        <button type="submit" name="action" value="ship" class="btn-secondary">Ship only (goods on the road)</button>
+        <button type="submit" name="action" value="draft" class="btn-secondary">Save as draft</button>
     </div>
     <p class="form-help sm:text-right">"Transfer now" moves the goods straight away. Use "Ship only" when they will take time to arrive, and receive them when they get there.</p>
 </div>

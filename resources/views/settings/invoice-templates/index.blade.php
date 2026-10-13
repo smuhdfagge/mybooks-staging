@@ -1,17 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Invoice Templates') }}
-            </h2>
-            <a href="{{ route('settings.invoice-templates.create') }}"
-                class="inline-flex items-center px-4 py-2 bg-brand-600 text-white text-sm font-medium rounded-md hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500">
-                <svg class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
-                New Template
-            </a>
-        </div>
+        <x-table.page-header title="Invoice templates" description="How your invoices look when printed or sent.">
+            <x-slot name="actions"><a href="{{ route('settings.invoice-templates.create') }}" class="btn-new">New template</a></x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -89,11 +80,11 @@
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating your first invoice template.</p>
                     <div class="mt-6">
                         <a href="{{ route('settings.invoice-templates.create') }}"
-                            class="inline-flex items-center px-4 py-2 bg-brand-600 text-white text-sm font-medium rounded-md hover:bg-brand-700">
-                            <svg class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            class="btn-primary">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                             </svg>
-                            New Template
+                            New template
                         </a>
                     </div>
                 </div>

@@ -835,4 +835,44 @@ class TableDesignTest extends TestCase
             $this->assertStringContainsString('Amounts in ₦', $this->get(route($page))->getContent(), $page);
         }
     }
+
+    // ---- T8: buttons and page headers ----
+
+    public function test_screens_use_the_shared_buttons_and_page_header(): void
+    {
+        $old = [];
+        foreach (File::allFiles(resource_path('views')) as $file) {
+            $rel = str_replace('\\', '/', $file->getRelativePathname());
+            if (! str_ends_with($rel, '.blade.php') || preg_match(self::NOT_SCREENS, $rel) || str_starts_with($rel, 'layouts/')) {
+                continue;
+            }
+            $html = File::get($file->getPathname());
+            // All-caps hand-made buttons: use btn-primary, btn-secondary or btn-danger.
+            if (preg_match('/<(a|button)\b[^>]*class="[^"]*\buppercase\b[^"]*\btracking-widest/', $html)
+                || str_contains($html, '<h2 class="font-semibold text-xl')) {
+                $old[] = $rel;
+            }
+        }
+
+        $this->assertSame([], $old, 'Use <x-table.page-header> and the shared btn-* classes (tables plan T8).');
+    }
+
+    public function test_record_page_keeps_delete_under_more_and_names_the_record_in_the_breadcrumb(): void
+    {
+        $this->createSuperAdmin();
+        $this->invoices();
+        $tid = $this->tenant->id;
+        $journal = Journal::create(['tenant_id' => $tid, 'journal_number' => 'JV-T8', 'journal_date' => '2026-10-01',
+            'description' => 'Draft journal', 'status' => 'draft', 'is_posted' => false]);
+
+        $html = $this->get(route('journals.show', $journal))->assertOk()->getContent();
+        $this->assertStringContainsString('Post journal', $html);
+        $this->assertMatchesRegularExpression('/role="menuitem"[^>]*>\s*Delete/s', $html);   // in the More menu
+        $this->assertStringNotContainsString('Journal is Posted', $html);
+
+        // Edit page: Dashboard > Journals > JV-T8 (a link back) > Edit.
+        $edit = $this->get(route('journals.edit', $journal))->assertOk()->getContent();
+        $this->assertStringContainsString('href="'.route('journals.show', $journal).'"', $edit);
+        $this->assertMatchesRegularExpression('/aria-label="Breadcrumb".*JV-T8.*Edit/s', $edit);
+    }
 }

@@ -1,6 +1,6 @@
 @php
-    $btn = 'inline-flex items-center justify-center px-3 py-2 border rounded-md font-semibold text-xs uppercase tracking-widest transition';
-    $secondary = $btn.' bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600';
+    $btn = 'btn-secondary';
+    $secondary = 'btn-secondary';
     $status = $transfer->status;
     $fmt = fn ($v) => rtrim(rtrim(number_format((float) $v, 4), '0'), '.');
     $done = in_array($status, ['received', 'cancelled'], true);
@@ -8,19 +8,15 @@
 @endphp
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div class="flex flex-wrap items-center gap-3">
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Transfer {{ $transfer->transfer_number }}</h2>
-                <x-status-badge :status="$status" :label="$statusLabel" />
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
-                <a href="{{ route('stock-transfers.print', $transfer) }}" target="_blank" class="{{ $secondary }}">Print transfer note</a>
-                @if($transfer->isDraft())
-                    <a href="{{ route('stock-transfers.edit', $transfer) }}" class="{{ $secondary }}">Edit</a>
-                @endif
-                <a href="{{ route('stock-transfers.index') }}" class="{{ $secondary }}">All transfers</a>
-            </div>
-        </div>
+        <x-table.page-header :title="'Transfer '.$transfer->transfer_number">
+            <x-slot name="badge"><x-status-badge :status="$status" :label="$statusLabel" /></x-slot>
+            <x-slot name="more">
+                <x-table.menu-item :href="route('stock-transfers.print', $transfer)" new-tab>Print transfer note</x-table.menu-item>
+            </x-slot>
+            @if ($transfer->isDraft())
+                <x-slot name="actions"><a href="{{ route('stock-transfers.edit', $transfer) }}" class="btn-secondary">Edit</a></x-slot>
+            @endif
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">

@@ -1,13 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                Create Accounting Period
-            </h2>
-            <a href="{{ route('accounting-periods.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 border border-transparent rounded-md font-semibold text-xs text-gray-800 dark:text-gray-200 uppercase tracking-widest hover:bg-gray-300 dark:hover:bg-gray-600 transition">
-                Back
-            </a>
-        </div>
+        <x-table.page-header title="New accounting period" />
     </x-slot>
 
     <div class="py-6">
@@ -43,7 +36,7 @@
                             <a href="{{ route('accounting-periods.index') }}" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500 transition">
                                 Cancel
                             </a>
-                            <button type="submit" class="px-4 py-2 bg-brand-600 text-white rounded-md hover:bg-brand-700 transition">
+                            <button type="submit" class="btn-primary">
                                 Create Period
                             </button>
                         </div>

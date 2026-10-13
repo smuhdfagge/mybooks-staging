@@ -1,24 +1,34 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Bill') }}: {{ $bill->bill_number }}
-            </h2>
-            <div class="flex items-center gap-2">
-                <a href="{{ route('bills.edit', $bill) }}" class="inline-flex items-center px-4 py-2 bg-amber-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-800 focus:bg-yellow-700 active:bg-yellow-900 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                    </svg>
-                    Edit
-                </a>
-                <a href="{{ route('bills.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back to List
-                </a>
-            </div>
-        </div>
+        @php
+            $billLate = $bill->balance_due > 0 && $bill->due_date && $bill->due_date->lt(now()->startOfDay()) && $bill->status !== 'draft';
+        @endphp
+        <x-table.page-header :title="'Bill '.$bill->bill_number">
+            <x-slot name="badge"><x-status-badge :status="$billLate ? 'overdue' : $bill->status" /></x-slot>
+            <x-slot name="description">
+                <a href="{{ route('vendors.show', $bill->vendor) }}" class="link">{{ $bill->vendor->name }}</a> · {{ $bill->bill_date->format('j M Y') }}
+                @if ($bill->balance_due > 0)
+                    · <span class="{{ $billLate ? 'tbl-late' : 'font-medium text-gray-900 dark:text-white' }}">To pay @money($bill->balance_due)</span>{{ $bill->due_date ? ', due '.$bill->due_date->format('j M Y') : '' }}
+                @else
+                    · Paid in full
+                @endif
+            </x-slot>
+            @can('create bills')
+                <x-slot name="more">
+                    <x-table.menu-item :href="route('vendor-credits.create', ['bill_id' => $bill->id])">Return goods or record a credit note</x-table.menu-item>
+                </x-slot>
+            @endcan
+            <x-slot name="actions">
+                @can('edit bills')
+                    <a href="{{ route('bills.edit', $bill) }}" class="btn-secondary">Edit</a>
+                @endcan
+                @if ($bill->balance_due > 0)
+                    @can('create payments-made')
+                        <a href="{{ route('payments-made.create', ['bill_id' => $bill->id]) }}" class="btn-primary">Record payment</a>
+                    @endcan
+                @endif
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -300,11 +310,11 @@
                         <p class="text-sm text-gray-600 dark:text-gray-400">Balance remaining on this bill</p>
                         <p class="text-2xl font-bold text-red-600 dark:text-red-300">{{ number_format($bill->balance_due, 2) }}</p>
                     </div>
-                    <a href="{{ route('payments-made.create', ['bill_id' => $bill->id]) }}" class="inline-flex items-center px-6 py-3 bg-green-700 border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <a href="{{ route('payments-made.create', ['bill_id' => $bill->id]) }}" class="btn-primary">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
                         </svg>
-                        Record Payment
+                        Record payment
                     </a>
                 </div>
             </div>

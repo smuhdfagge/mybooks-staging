@@ -1,30 +1,22 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Sales Receipt') }} #{{ $salesReceipt->receipt_number }}
-            </h2>
-            <div class="flex items-center gap-2">
-                <a href="{{ route('sales-receipts.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back to List
-                </a>
-                <a href="{{ route('sales-receipts.pdf', $salesReceipt) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M6 20h12a2 2 0 002-2V8l-6-6H6a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                    </svg>
-                    PDF
-                </a>
-                <a href="{{ route('sales-receipts.edit', $salesReceipt) }}" class="inline-flex items-center px-4 py-2 bg-amber-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-800 focus:bg-yellow-700 active:bg-yellow-900 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                    </svg>
-                    Edit
-                </a>
-            </div>
-        </div>
+        <x-table.page-header :title="'Sales receipt '.$salesReceipt->receipt_number">
+            <x-slot name="badge"><x-status-badge status="paid" /></x-slot>
+            <x-slot name="description">
+                {{ $salesReceipt->customer?->name ?? 'Walk-in customer' }} · {{ $salesReceipt->receipt_date->format('j M Y') }} · Total @money($salesReceipt->total)
+            </x-slot>
+            <x-slot name="more">
+                <x-table.menu-item :href="route('sales-receipts.pdf', $salesReceipt)">Download PDF</x-table.menu-item>
+                @can('delete sales-receipts')
+                    <x-table.menu-item danger :post="route('sales-receipts.destroy', $salesReceipt)" method="DELETE" confirm="Delete this sales receipt?">Delete</x-table.menu-item>
+                @endcan
+            </x-slot>
+            <x-slot name="actions">
+                @can('edit sales-receipts')
+                    <a href="{{ route('sales-receipts.edit', $salesReceipt) }}" class="btn-secondary">Edit</a>
+                @endcan
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -185,22 +177,6 @@
                         </div>
                     </div>
 
-                    <!-- Actions -->
-                    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="p-6">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">Actions</h3>
-                            <form action="{{ route('sales-receipts.destroy', $salesReceipt) }}" method="POST" data-confirm="Are you sure you want to delete this sales receipt?">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                    </svg>
-                                    Delete Sales Receipt
-                                </button>
-                            </form>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

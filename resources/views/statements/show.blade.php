@@ -9,27 +9,15 @@
     $who = $isCustomer ? 'customer' : 'supplier';
     $s = $statement;
     $query = ['type' => $type, 'from' => $type === 'activity' ? $from : null, 'to' => $to];
-    $secondary = 'inline-flex items-center justify-center px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs font-semibold uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700';
+    $secondary = 'btn-secondary';
 @endphp
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    {{ $isCustomer ? 'Customer statement' : 'Supplier statement' }}@if($party) · {{ $party->name }}@endif
-                </h2>
-                @if($s)
-                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ $s->isActivity() ? 'Activity' : 'Open items' }} · {{ $s->periodText() }}</p>
-                @endif
-            </div>
-            <div class="flex flex-wrap gap-2">
-                @if($party)
-                    <a href="{{ route($base.'.show', $party) }}" class="{{ $secondary }}">Back to {{ $who }}</a>
-                @else
-                    <a href="{{ route('reports.index') }}" class="{{ $secondary }}">Back to reports</a>
-                @endif
-            </div>
-        </div>
+        <x-table.page-header :title="($isCustomer ? 'Customer statement' : 'Supplier statement').($party ? ' · '.$party->name : '')" :description="$s ? ($s->isActivity() ? 'Activity' : 'Open items').' · '.$s->periodText() : null">
+            @if ($party)
+                <x-slot name="more"><x-table.menu-item :href="route($base.'.show', $party)">{{ ucfirst($who) }}'s page</x-table.menu-item></x-slot>
+            @endif
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">

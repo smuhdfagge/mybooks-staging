@@ -6,6 +6,7 @@
     <x-table.menu-item href="…">View</x-table.menu-item>
     <x-table.menu-item post="…" confirm="Release this invoice?">Release</x-table.menu-item>
     <x-table.menu-item wire="deleteOne(5)" confirm="Delete INV-5?" danger>Delete</x-table.menu-item>
+    <x-table.menu-item data-open-modal="dispose-asset">Dispose</x-table.menu-item>   (a button for a dialog)
 --}}
 @props(['href' => null, 'post' => null, 'method' => null, 'wire' => null, 'print' => false, 'confirm' => null, 'danger' => false, 'newTab' => false])
 @php
@@ -24,6 +25,9 @@
     <button type="button" role="menuitem" data-print class="{{ $cls }}">{{ $slot }}</button>
 @elseif ($wire)
     <button type="button" role="menuitem" wire:click="{{ $wire }}" @if ($confirm) wire:confirm="{{ $confirm }}" @endif class="{{ $cls }}">{{ $slot }}</button>
+@elseif ($href !== null)
+    <a href="{{ $href }}" role="menuitem" @if ($newTab) target="_blank" rel="noopener" @endif {{ $attributes->merge(['class' => $cls]) }}>{{ $slot }}</a>
 @else
-    <a href="{{ $href }}" role="menuitem" @if ($newTab) target="_blank" rel="noopener" @endif class="{{ $cls }}">{{ $slot }}</a>
+    {{-- No link or action: a plain button, e.g. one that opens a dialog (data-open-modal, x-on:click). --}}
+    <button type="button" role="menuitem" {{ $attributes->merge(['class' => $cls]) }}>{{ $slot }}</button>
 @endif

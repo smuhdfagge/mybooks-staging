@@ -148,7 +148,7 @@
                 <p class="text-xs text-gray-600 dark:text-gray-400">Assets already disposed of or sold are skipped.</p>
                 <div class="flex justify-end gap-2">
                     <button type="button" wire:click="closeDisposeModal" class="tbl-chip h-9">Keep them</button>
-                    <button type="button" wire:click="disposeSelected" wire:loading.attr="disabled" class="inline-flex h-9 items-center rounded-md bg-red-700 px-3 text-sm font-semibold text-white hover:bg-red-800">Write off</button>
+                    <button type="button" wire:click="disposeSelected" wire:loading.attr="disabled" class="btn-danger h-9">Write off</button>
                 </div>
             </div>
         </div>

@@ -1,13 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                Edit: {{ $accountingPeriod->name }}
-            </h2>
-            <a href="{{ route('accounting-periods.show', $accountingPeriod) }}" class="inline-flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 border border-transparent rounded-md font-semibold text-xs text-gray-800 dark:text-gray-200 uppercase tracking-widest hover:bg-gray-300 dark:hover:bg-gray-600 transition">
-                Back
-            </a>
-        </div>
+        <x-table.page-header>
+            <x-slot name="title">Edit {{ $accountingPeriod->name }}</x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -62,7 +57,7 @@
                             <a href="{{ route('accounting-periods.show', $accountingPeriod) }}" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500 transition">
                                 Cancel
                             </a>
-                            <button type="submit" class="px-4 py-2 bg-brand-600 text-white rounded-md hover:bg-brand-700 transition">
+                            <button type="submit" class="btn-primary">
                                 Update Period
                             </button>
                         </div>

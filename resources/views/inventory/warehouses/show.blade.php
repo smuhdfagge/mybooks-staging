@@ -1,36 +1,23 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    {{ $warehouse->name }}
-                    @if($warehouse->is_default)
-                        <span class="ml-1 align-middle inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800 dark:bg-brand-900/50 dark:text-brand-300">Default</span>
-                    @endif
-                    @unless($warehouse->is_active)
-                        <span class="ml-1 align-middle inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">Not in use</span>
-                    @endunless
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                    <span class="font-mono">{{ $warehouse->code }}</span>@if($warehouse->address) · {{ $warehouse->address }}@endif
-                </p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                @can('edit items')
-                    <a href="{{ route('warehouses.edit', $warehouse) }}" class="inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-500 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700">Edit</a>
-                @endcan
-                @can('delete items')
-                    @unless($warehouse->is_default)
-                        <form method="POST" action="{{ route('warehouses.destroy', $warehouse) }}" data-confirm="Delete this warehouse?">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="inline-flex items-center justify-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500">Delete</button>
-                        </form>
-                    @endunless
-                @endcan
-                <a href="{{ route('warehouses.index') }}" class="inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-500 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700">All warehouses</a>
-            </div>
-        </div>
+        <x-table.page-header :title="$warehouse->name" :description="$warehouse->code.($warehouse->address ? ' · '.$warehouse->address : '')">
+            @if ($warehouse->is_default || ! $warehouse->is_active)
+                <x-slot name="badge">
+                    @if ($warehouse->is_default)<x-status-badge status="sent" label="Default" />@endif
+                    @unless ($warehouse->is_active)<x-status-badge status="inactive" label="Not in use" />@endunless
+                </x-slot>
+            @endif
+            @can('delete items')
+                @unless ($warehouse->is_default)
+                    <x-slot name="more">
+                        <x-table.menu-item danger :post="route('warehouses.destroy', $warehouse)" method="DELETE" confirm="Delete this warehouse?">Delete</x-table.menu-item>
+                    </x-slot>
+                @endunless
+            @endcan
+            @can('edit items')
+                <x-slot name="actions"><a href="{{ route('warehouses.edit', $warehouse) }}" class="btn-secondary">Edit</a></x-slot>
+            @endcan
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">

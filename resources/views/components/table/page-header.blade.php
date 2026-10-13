@@ -8,8 +8,9 @@
     </x-table.page-header>
 
     On a record page, a badge slot sits next to the title (its status).
+    title and description can also be slots, for text with markup.
 --}}
-@props(['title', 'description' => null])
+@props(['title' => null, 'description' => null])
 <div class="flex flex-wrap items-end justify-between gap-3">
     <div class="min-w-0">
         <h2 class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xl font-semibold leading-tight text-gray-900 dark:text-white">

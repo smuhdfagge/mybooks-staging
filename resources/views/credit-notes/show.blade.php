@@ -1,45 +1,41 @@
+@php $cn = $creditNote; @endphp
 <x-app-layout>
-    @php($cn = $creditNote)
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight flex items-center gap-3">
-                    Credit note {{ $cn->credit_note_number }}
-                    <x-status-badge :status="$cn->status" :label="$cn->status === 'closed' ? 'Used up' : null" />
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                    <a href="{{ route('customers.show', $cn->customer) }}" class="text-brand-600 dark:text-brand-300">{{ $cn->customer->name }}</a>
-                    · {{ $cn->credit_note_date->format('j M Y') }}
-                    @if($cn->invoice) · for invoice <a href="{{ route('invoices.show', $cn->invoice) }}" class="text-brand-600 dark:text-brand-300">{{ $cn->invoice->invoice_number }}</a>@endif
-                    @if($cn->reason) · {{ \App\Models\CreditNote::REASONS[$cn->reason] ?? $cn->reason }}@endif
-                </p>
-            </div>
-            <div class="flex flex-wrap gap-2">
+        @php $canVoid = in_array($cn->status, ['draft', 'open']) && $cn->applications->isEmpty() && $cn->refunds->isEmpty(); @endphp
+        <x-table.page-header :title="'Credit note '.$cn->credit_note_number">
+            <x-slot name="badge"><x-status-badge :status="$cn->status" :label="$cn->status === 'closed' ? 'Used up' : null" /></x-slot>
+            <x-slot name="description">
+                <a href="{{ route('customers.show', $cn->customer) }}" class="link">{{ $cn->customer->name }}</a>
+                · {{ $cn->credit_note_date->format('j M Y') }}
+                @if ($cn->invoice) · for invoice <a href="{{ route('invoices.show', $cn->invoice) }}" class="link">{{ $cn->invoice->invoice_number }}</a>@endif
+                @if ($cn->reason) · {{ \App\Models\CreditNote::REASONS[$cn->reason] ?? $cn->reason }}@endif
+            </x-slot>
+            <x-slot name="more">
+                <x-table.menu-item :href="route('credit-notes.print', $cn)" new-tab>Print</x-table.menu-item>
+                <x-table.menu-item :href="route('credit-notes.pdf', $cn)">Download PDF</x-table.menu-item>
                 @can('edit invoices')
-                    @if($cn->isDraft())
-                        <a href="{{ route('credit-notes.edit', $cn) }}" class="inline-flex items-center px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold uppercase tracking-widest">Edit</a>
-                        <form method="POST" action="{{ route('credit-notes.open', $cn) }}">@csrf
-                            <button class="btn-primary">Post it</button>
-                        </form>
-                    @endif
-                    @if(in_array($cn->status, ['draft', 'open']) && $cn->applications->isEmpty() && $cn->refunds->isEmpty())
-                        <form method="POST" action="{{ route('credit-notes.void', $cn) }}" data-confirm="Void this credit note?{{ $cn->isOpen() ? ' Its journal is reversed'.($cn->restock ? ' and the returned goods are taken back out of stock' : '').'.' : '' }}">@csrf
-                            <button class="inline-flex items-center px-4 py-2 rounded-md bg-red-600 text-white text-xs font-semibold uppercase tracking-widest hover:bg-red-700">Void</button>
-                        </form>
+                    @if ($canVoid)
+                        <x-table.menu-item danger :post="route('credit-notes.void', $cn)" :confirm="'Void this credit note?'.($cn->isOpen() ? ' Its journal is reversed'.($cn->restock ? ' and the returned goods are taken back out of stock' : '').'.' : '')">Void</x-table.menu-item>
                     @endif
                 @endcan
                 @can('delete invoices')
-                    @if($cn->isDraft())
-                        <form method="POST" action="{{ route('credit-notes.destroy', $cn) }}" data-confirm="Delete this draft credit note?">@csrf @method('DELETE')
-                            <button class="inline-flex items-center px-4 py-2 rounded-md border border-red-300 text-red-700 dark:text-red-300 text-xs font-semibold uppercase tracking-widest">Delete</button>
+                    @if ($cn->isDraft())
+                        <x-table.menu-item danger :post="route('credit-notes.destroy', $cn)" method="DELETE" confirm="Delete this draft credit note?">Delete</x-table.menu-item>
+                    @endif
+                @endcan
+            </x-slot>
+            <x-slot name="actions">
+                @can('edit invoices')
+                    @if ($cn->isDraft())
+                        <a href="{{ route('credit-notes.edit', $cn) }}" class="btn-secondary">Edit</a>
+                        <form method="POST" action="{{ route('credit-notes.open', $cn) }}">
+                            @csrf
+                            <button type="submit" class="btn-primary">Post it</button>
                         </form>
                     @endif
                 @endcan
-                <a href="{{ route('credit-notes.print', $cn) }}" target="_blank" class="inline-flex items-center px-4 py-2 rounded-md bg-brand-600 text-white text-xs font-semibold uppercase tracking-widest hover:bg-brand-700">Print</a>
-                <a href="{{ route('credit-notes.pdf', $cn) }}" class="inline-flex items-center px-4 py-2 rounded-md bg-brand-600 text-white text-xs font-semibold uppercase tracking-widest hover:bg-brand-700">PDF</a>
-                <a href="{{ route('credit-notes.index') }}" class="inline-flex items-center px-4 py-2 rounded-md bg-gray-600 text-white text-xs font-semibold uppercase tracking-widest">Back</a>
-            </div>
-        </div>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">

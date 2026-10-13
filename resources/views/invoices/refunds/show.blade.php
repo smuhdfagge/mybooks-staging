@@ -1,45 +1,17 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    Refund {{ $refund->refund_number }}
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                    Invoice {{ $refund->invoice->invoice_number }} - {{ $refund->customer->name }}
-                </p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                <a href="{{ route('invoices.refunds.print', $refund) }}" target="_blank" 
-                   class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                    </svg>
-                    Print
-                </a>
-                @if($refund->status !== 'cancelled')
-                <form action="{{ route('invoices.refunds.cancel', $refund) }}" method="POST" class="inline"
-                      data-confirm="Are you sure you want to cancel this refund? This will reverse the refund amount back to the invoice.">
-                    @csrf
-                    @method('PATCH')
-                    <button type="submit" 
-                            class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                        Cancel Refund
-                    </button>
-                </form>
+        <x-table.page-header :title="'Refund '.$refund->refund_number">
+            <x-slot name="badge"><x-status-badge :status="$refund->status" /></x-slot>
+            <x-slot name="description">
+                For invoice <a href="{{ route('invoices.show', $refund->invoice) }}" class="link">{{ $refund->invoice->invoice_number }}</a> · {{ $refund->customer->name }}
+            </x-slot>
+            <x-slot name="more">
+                <x-table.menu-item :href="route('invoices.refunds.print', $refund)" new-tab>Print</x-table.menu-item>
+                @if ($refund->status !== 'cancelled')
+                    <x-table.menu-item danger :post="route('invoices.refunds.cancel', $refund)" method="PATCH" confirm="Cancel this refund? The amount goes back onto the invoice.">Cancel refund</x-table.menu-item>
                 @endif
-                <a href="{{ route('invoices.show', $refund->invoice) }}" 
-                   class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back to Invoice
-                </a>
-            </div>
-        </div>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">

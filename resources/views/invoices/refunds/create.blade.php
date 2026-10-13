@@ -1,19 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    Issue Refund
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Invoice {{ $invoice->invoice_number }} - {{ $invoice->customer->name }}</p>
-            </div>
-            <a href="{{ route('invoices.show', $invoice) }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                </svg>
-                Back to Invoice
-            </a>
-        </div>
+        <x-table.page-header title="Issue refund">
+            <x-slot name="description">Invoice {{ $invoice->invoice_number }} - {{ $invoice->customer->name }}</x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -212,7 +201,7 @@
                                     Cancel
                                 </a>
                                 <button type="submit" 
-                                        class="px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-sm text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition">
+                                        class="btn-danger">
                                     Process Refund
                                 </button>
                             </div>

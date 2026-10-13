@@ -1,9 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Bank line</h2>
-            <a href="{{ route('bank-feeds.lines') }}" class="btn-secondary">Back to the list</a>
-        </div>
+        <x-table.page-header title="Bank line" />
     </x-slot>
 
     <div class="py-6">

@@ -1,11 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Export') }}: {{ ucwords(str_replace('_', ' ', $export->type)) }}
-            </h2>
-            <a href="{{ route('exports.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition ease-in-out duration-150">Back to Exports</a>
-        </div>
+        <x-table.page-header>
+            <x-slot name="title">Export: {{ ucwords(str_replace('_', ' ', $export->type)) }}</x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -57,12 +54,12 @@
 
                 <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-3">
                     @if($export->isDownloadable() && ! $export->isExpired())
-                        <a href="{{ route('exports.download', $export) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition ease-in-out duration-150">Download</a>
+                        <a href="{{ route('exports.download', $export) }}" class="btn-primary">Download</a>
                     @endif
                     <form action="{{ route('exports.destroy', $export) }}" method="POST" data-confirm="Delete this export?">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-red-300 dark:border-red-600 rounded-md font-semibold text-xs text-red-600 dark:text-red-300 uppercase tracking-widest hover:bg-red-50 dark:hover:bg-red-900/20 transition ease-in-out duration-150">Delete</button>
+                        <button type="submit" class="btn-secondary">Delete</button>
                     </form>
                 </div>
             </div>

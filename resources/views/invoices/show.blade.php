@@ -1,89 +1,54 @@
 <x-app-layout>
+    @php
+        $maxRefundable = $invoice->amount_paid - ($invoice->total_refunded ?? 0);
+        $open = in_array($invoice->status, ['sent', 'unpaid', 'partial', 'overdue', 'viewed'], true) && $invoice->balance_due > 0;
+        $late = $open && $invoice->due_date && $invoice->due_date->lt(now()->startOfDay());
+        $locked = \App\Models\EInvoiceSubmission::isLocked($invoice);
+    @endphp
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    Invoice {{ $invoice->invoice_number }}
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">{{ $invoice->customer->name }}</p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                @if($invoice->status === 'draft')
-                <form action="{{ route('invoices.send', $invoice) }}" method="POST" class="inline">
-                    @csrf
-                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-                        </svg>
-                        Send
-                    </button>
-                </form>
+        <x-table.page-header :title="'Invoice '.$invoice->invoice_number">
+            <x-slot name="badge"><x-status-badge :status="$late ? 'overdue' : $invoice->status" /></x-slot>
+            <x-slot name="description">
+                <a href="{{ route('customers.show', $invoice->customer) }}" class="link">{{ $invoice->customer->name }}</a>
+                · {{ $invoice->invoice_date->format('j M Y') }}
+                @if ($invoice->balance_due > 0 && $invoice->status !== 'cancelled')
+                    · <span class="{{ $late ? 'tbl-late' : 'font-medium text-gray-900 dark:text-white' }}">Balance due @money($invoice->balance_due)</span>{{ $late ? ', due '.$invoice->due_date->format('j M Y') : '' }}
+                @elseif ($invoice->status === 'paid')
+                    · Paid in full
                 @endif
-                @php
-                    $maxRefundable = $invoice->amount_paid - ($invoice->total_refunded ?? 0);
-                @endphp
-                @if($maxRefundable > 0 && !in_array($invoice->status, ['draft', 'cancelled']))
-                <a href="{{ route('invoices.refunds.create', $invoice) }}" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
-                    </svg>
-                    Refund
-                </a>
+            </x-slot>
+            <x-slot name="more">
+                <x-table.menu-item :href="route('invoices.print', $invoice)" new-tab>Print</x-table.menu-item>
+                <x-table.menu-item :href="route('invoices.pdf', $invoice)">Download PDF</x-table.menu-item>
+                @if ($invoice->released_at)
+                    <x-table.menu-item :href="route('invoices.waybill', $invoice)" new-tab>Print waybill</x-table.menu-item>
                 @endif
-                <a href="{{ route('invoices.print', $invoice) }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                    </svg>
-                    Print
-                </a>
-                @unless(\App\Models\EInvoiceSubmission::isLocked($invoice))
-                <a href="{{ route('invoices.edit', $invoice) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                    </svg>
-                    Edit
-                </a>
+                @if ($maxRefundable > 0 && ! in_array($invoice->status, ['draft', 'cancelled']))
+                    <x-table.menu-item :href="route('invoices.refunds.create', $invoice)">Refund the customer</x-table.menu-item>
+                @endif
+            </x-slot>
+            <x-slot name="actions">
+                @unless ($locked)
+                    <a href="{{ route('invoices.edit', $invoice) }}" class="btn-secondary">Edit</a>
                 @endunless
-                <a href="{{ route('invoices.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back
-                </a>
-            </div>
-        </div>
+                @if ($invoice->status === 'draft')
+                    @can('send invoices')
+                        <form action="{{ route('invoices.send', $invoice) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn-primary">Send</button>
+                        </form>
+                    @endcan
+                @elseif ($open)
+                    @can('create payments-received')
+                        <a href="#record-payment" class="btn-primary">Record payment</a>
+                    @endcan
+                @endif
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
-            <!-- Status Banner -->
-            @php
-                $statusColors = [
-                    'draft' => 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200',
-                    'sent' => 'bg-brand-100 dark:bg-brand-900/50 border-brand-300 dark:border-brand-700 text-brand-800 dark:text-brand-200',
-                    'viewed' => 'bg-yellow-100 dark:bg-yellow-900/50 border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200',
-                    'unpaid' => 'bg-amber-100 dark:bg-amber-900/50 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200',
-                    'partial' => 'bg-amber-100 dark:bg-amber-900/50 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200',
-                    'paid' => 'bg-green-100 dark:bg-green-900/50 border-green-300 dark:border-green-700 text-green-800 dark:text-green-200',
-                    'overdue' => 'bg-red-100 dark:bg-red-900/50 border-red-300 dark:border-red-700 text-red-800 dark:text-red-200',
-                    'cancelled' => 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200',
-                ];
-            @endphp
-            <div class="mb-6 p-4 rounded-lg border {{ $statusColors[$invoice->status] ?? 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200' }}">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <div class="flex items-center gap-3">
-                        <span class="font-semibold">Status: {{ ucfirst($invoice->status) }}</span>
-                        @if($invoice->status === 'overdue')
-                            <span class="text-sm">({{ $invoice->due_date->diffForHumans() }})</span>
-                        @endif
-                    </div>
-                    <div class="text-sm">
-                        <span>Balance Due: </span>
-                        <span class="font-bold text-lg">{{ number_format($invoice->balance_due, 2) }}</span>
-                    </div>
-                </div>
-            </div>
-
             <!-- Invoice Document -->
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 lg:p-8">
@@ -113,7 +78,7 @@
                     <!-- Bill To -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                         <div>
-                            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Bill To</h3>
+                            <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Bill to</h3>
                             <p class="font-medium text-gray-900 dark:text-gray-100">{{ $invoice->customer->name }}</p>
                             @if($invoice->customer->company_name)
                                 <p class="text-gray-600 dark:text-gray-400">{{ $invoice->customer->company_name }}</p>
@@ -197,13 +162,13 @@
                     <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-6">
                         @if($invoice->notes)
                         <div>
-                            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Notes</h4>
+                            <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Notes</h4>
                             <p class="text-sm text-gray-600 dark:text-gray-400">{{ $invoice->notes }}</p>
                         </div>
                         @endif
                         @if($invoice->terms)
                         <div>
-                            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Terms & Conditions</h4>
+                            <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Terms and conditions</h4>
                             <p class="text-sm text-gray-600 dark:text-gray-400">{{ $invoice->terms }}</p>
                         </div>
                         @endif
@@ -253,7 +218,7 @@
                     <div class="flex flex-wrap items-center justify-between gap-2">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Credit notes</h3>
                         @can('create invoices')
-                            <a href="{{ route('credit-notes.create', ['invoice_id' => $invoice->id]) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">Create credit note</a>
+                            <a href="{{ route('credit-notes.create', ['invoice_id' => $invoice->id]) }}" class="btn-primary">Create credit note</a>
                         @endcan
                     </div>
                     @forelse($invoice->creditNotes as $note)
@@ -350,7 +315,7 @@
 
             <!-- Record Payment -->
             @if($invoice->balance_due > 0 && !in_array($invoice->status, ['draft', 'cancelled']))
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
+            <div id="record-payment" class="scroll-mt-20 bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
                 <div class="p-6">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Record Payment</h3>
                     <form action="{{ route('payments-received.store') }}" method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -382,7 +347,7 @@
                         </div>
                         
                         <div class="flex items-end">
-                            <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
+                            <button type="submit" class="btn-primary w-full">
                                 Record Payment
                             </button>
                         </div>

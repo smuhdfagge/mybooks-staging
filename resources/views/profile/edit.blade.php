@@ -1,8 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Profile') }}
-        </h2>
+        <x-table.page-header title="Profile" />
     </x-slot>
 
     <div class="py-12">
@@ -45,7 +43,7 @@
                             </div>
                         @endif
                         <a href="{{ route('two-factor.setup') }}"
-                            class="inline-flex items-center px-4 py-2 bg-gray-800 dark:bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-white dark:text-gray-800 uppercase tracking-widest hover:bg-gray-700 dark:hover:bg-white transition">
+                            class="btn-secondary">
                             {{ auth()->user()->two_factor_confirmed_at ? 'Manage 2FA' : 'Enable 2FA' }}
                         </a>
                     </div>

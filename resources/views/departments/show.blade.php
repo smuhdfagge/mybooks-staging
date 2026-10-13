@@ -1,21 +1,10 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ $department->name }}
-                @if($department->code)<span class="ml-2 text-sm font-normal text-gray-600 dark:text-gray-400">({{ $department->code }})</span>@endif
-            </h2>
-            <div class="flex items-center gap-2">
-                <a href="{{ route('departments.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition ease-in-out duration-150">
-                    Back to List
-                </a>
-                @can('edit departments')
-                    <a href="{{ route('departments.edit', $department) }}" class="inline-flex items-center px-4 py-2 bg-amber-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-800 transition ease-in-out duration-150">
-                        Edit
-                    </a>
-                @endcan
-            </div>
-        </div>
+        <x-table.page-header :title="$department->name" :description="$department->code ? 'Code '.$department->code : 'Department'">
+            @can('edit departments')
+                <x-slot name="actions"><a href="{{ route('departments.edit', $department) }}" class="btn-secondary">Edit</a></x-slot>
+            @endcan
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">

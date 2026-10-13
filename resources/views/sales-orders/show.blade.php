@@ -1,53 +1,52 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Sales Order') }} #{{ $salesOrder->order_number }}
-            </h2>
-            <div class="flex items-center gap-2">
-                <a href="{{ route('sales-orders.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back to List
-                </a>
-                @if($salesOrder->status === 'draft')
-                    <a href="{{ route('sales-orders.edit', $salesOrder) }}" class="inline-flex items-center px-4 py-2 bg-amber-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-800 focus:bg-yellow-700 active:bg-yellow-900 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                        </svg>
-                        Edit
-                    </a>
-                    <form action="{{ route('sales-orders.confirm', $salesOrder) }}" method="POST" class="inline">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                            Confirm
-                        </button>
-                    </form>
-                @endif
-                @if(in_array($salesOrder->status, ['confirmed', 'processing', 'invoiced', 'completed'], true) && $salesOrder->hasUninvoicedItems())
-                    <form action="{{ route('sales-orders.convert', $salesOrder) }}" method="POST" class="inline">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                            Convert to Invoice
-                        </button>
-                    </form>
-                @endif
-                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('delivery_notes') && in_array($salesOrder->status, \App\Actions\DeliveryNotes\SaveDeliveryNote::OPEN_ORDER_STATUSES, true) && $salesOrder->hasUnfulfilledItems())
+        @php
+            $so = $salesOrder;
+            $canInvoice = in_array($so->status, ['confirmed', 'processing', 'invoiced', 'completed'], true) && $so->hasUninvoicedItems();
+            $canDeliver = \App\Http\Middleware\EnsureFeatureEnabled::enabled('delivery_notes') && in_array($so->status, \App\Actions\DeliveryNotes\SaveDeliveryNote::OPEN_ORDER_STATUSES, true) && $so->hasUnfulfilledItems();
+        @endphp
+        <x-table.page-header :title="'Sales order '.$so->order_number">
+            <x-slot name="badge"><x-status-badge :status="$so->status" /></x-slot>
+            <x-slot name="description">
+                <a href="{{ route('customers.show', $so->customer) }}" class="link">{{ $so->customer->name }}</a> · {{ $so->order_date->format('j M Y') }} · Total @money($so->total)
+            </x-slot>
+            @if (($canInvoice && $canDeliver) || $so->status === 'draft')
+                <x-slot name="more">
+                    @if ($canInvoice && $canDeliver)
+                        @can('create invoices')
+                            <x-table.menu-item :href="route('delivery-notes.create', ['sales_order_id' => $so->id])">Make a delivery note</x-table.menu-item>
+                        @endcan
+                    @endif
+                    @if ($so->status === 'draft')
+                        @can('delete sales-orders')
+                            <x-table.menu-item danger :post="route('sales-orders.destroy', $so)" method="DELETE" confirm="Delete this sales order?">Delete</x-table.menu-item>
+                        @endcan
+                    @endif
+                </x-slot>
+            @endif
+            <x-slot name="actions">
+                @if ($so->status === 'draft')
+                    @can('edit sales-orders')
+                        <a href="{{ route('sales-orders.edit', $so) }}" class="btn-secondary">Edit</a>
+                        <form action="{{ route('sales-orders.confirm', $so) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn-primary">Confirm order</button>
+                        </form>
+                    @endcan
+                @elseif ($canInvoice)
+                    @can('edit sales-orders')
+                        <form action="{{ route('sales-orders.convert', $so) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn-primary">Convert to invoice</button>
+                        </form>
+                    @endcan
+                @elseif ($canDeliver)
                     @can('create invoices')
-                        <a href="{{ route('delivery-notes.create', ['sales_order_id' => $salesOrder->id]) }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-200 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-600 transition">
-                            Deliver (delivery note)
-                        </a>
+                        <a href="{{ route('delivery-notes.create', ['sales_order_id' => $so->id]) }}" class="btn-primary">Make a delivery note</a>
                     @endcan
                 @endif
-            </div>
-        </div>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -227,24 +226,6 @@
                         </div>
                     @endif
 
-                    <!-- Actions -->
-                    @if($salesOrder->status === 'draft')
-                        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                            <div class="p-6">
-                                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">Actions</h3>
-                                <form action="{{ route('sales-orders.destroy', $salesOrder) }}" method="POST" data-confirm="Are you sure you want to delete this sales order?">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                        </svg>
-                                        Delete Sales Order
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    @endif
                 </div>
             </div>
         </div>

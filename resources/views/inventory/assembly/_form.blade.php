@@ -85,7 +85,7 @@
     {{-- The main action comes first, so pressing Enter does it. --}}
     <div class="flex flex-col sm:flex-row-reverse sm:justify-start gap-2">
         <button type="submit" name="action" value="complete" class="btn-primary">{{ $breakdown ? 'Break down now' : 'Build now' }}</button>
-        <button type="submit" name="action" value="draft" class="inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-500 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700">Save as draft</button>
+        <button type="submit" name="action" value="draft" class="btn-secondary">Save as draft</button>
     </div>
     <p class="form-help sm:text-right">{{ $breakdown ? '"Break down now" takes the items out of stock and puts the parts back in.' : '"Build now" uses the components and adds the finished goods to stock straight away, as planned. Save as a draft if you want to record what was really used and made afterwards.' }}</p>
 </div>

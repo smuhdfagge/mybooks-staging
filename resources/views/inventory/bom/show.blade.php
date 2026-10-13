@@ -1,28 +1,28 @@
 @php
-    $btn = 'inline-flex items-center justify-center px-3 py-2 border rounded-md font-semibold text-xs uppercase tracking-widest transition';
-    $secondary = $btn.' bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600';
+    $btn = 'btn-secondary';
+    $secondary = 'btn-secondary';
     $fmt = fn ($v) => rtrim(rtrim(number_format((float) $v, 4), '0'), '.');
     $unit = $bom->item?->unit ? ' '.$bom->item->unit : '';
     $canBuild = $bom->is_active && auth()->user()->can('adjust inventory');
 @endphp
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div class="flex flex-wrap items-center gap-3">
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">{{ $bom->label() }}</h2>
-                <x-status-badge :status="$bom->is_active ? 'active' : 'draft'" :label="$bom->is_active ? 'In use' : 'Not in use'" />
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
-                @if($canBuild)
-                    <a href="{{ route('assembly-orders.create', ['bill' => $bom->id]) }}" class="btn-primary">Build</a>
-                    <a href="{{ route('assembly-orders.create', ['bill' => $bom->id, 'kind' => 'breakdown']) }}" class="{{ $secondary }}">Break down</a>
-                @endif
+        <x-table.page-header :title="$bom->label()" description="Bill of materials">
+            <x-slot name="badge"><x-status-badge :status="$bom->is_active ? 'active' : 'draft'" :label="$bom->is_active ? 'In use' : 'Not in use'" /></x-slot>
+            @if ($canBuild)
+                <x-slot name="more">
+                    <x-table.menu-item :href="route('assembly-orders.create', ['bill' => $bom->id, 'kind' => 'breakdown'])">Break down</x-table.menu-item>
+                </x-slot>
+            @endif
+            <x-slot name="actions">
                 @can('edit items')
-                    <a href="{{ route('bill-of-materials.edit', $bom) }}" class="{{ $secondary }}">Edit</a>
+                    <a href="{{ route('bill-of-materials.edit', $bom) }}" class="btn-secondary">Edit</a>
                 @endcan
-                <a href="{{ route('bill-of-materials.index') }}" class="{{ $secondary }}">All bills</a>
-            </div>
-        </div>
+                @if ($canBuild)
+                    <a href="{{ route('assembly-orders.create', ['bill' => $bom->id]) }}" class="btn-new">Build</a>
+                @endif
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">

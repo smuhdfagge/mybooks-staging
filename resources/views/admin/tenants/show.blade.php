@@ -307,7 +307,7 @@
                                     <option value="past_due" {{ $tenant->activeSubscription?->status === 'past_due' ? 'selected' : '' }}>Past Due</option>
                                 </select>
                             </div>
-                            <button type="submit" class="w-full px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition font-medium">
+                            <button type="submit" class="btn-primary w-full">
                                 Update Subscription
                             </button>
                         </div>
@@ -336,7 +336,7 @@
                                     <option value="365">365 Days (1 Year)</option>
                                 </select>
                             </div>
-                            <button type="submit" class="w-full px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-700 transition font-medium">
+                            <button type="submit" class="btn-primary w-full">
                                 Extend Subscription
                             </button>
                         </div>
@@ -357,7 +357,7 @@
                         <form method="POST" action="{{ route('admin.tenants.cancel-subscription', $tenant) }}" data-confirm="Are you sure you want to cancel this subscription?">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium">
+                            <button type="submit" class="btn-danger w-full">
                                 Cancel Subscription
                             </button>
                         </form>

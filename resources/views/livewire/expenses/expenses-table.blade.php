@@ -130,7 +130,7 @@
                 <textarea id="rejection_reason" wire:model="rejectionReason" rows="3" class="form-control" placeholder="For example: receipt missing"></textarea>
                 <div class="mt-4 flex justify-end gap-2">
                     <button type="button" wire:click="closeRejectModal" class="tbl-chip h-9">Keep it</button>
-                    <button type="button" wire:click="rejectExpense" wire:loading.attr="disabled" class="inline-flex h-9 items-center rounded-md bg-red-700 px-3 text-sm font-semibold text-white hover:bg-red-800">Reject</button>
+                    <button type="button" wire:click="rejectExpense" wire:loading.attr="disabled" class="btn-danger h-9">Reject</button>
                 </div>
             </div>
         </div>
