@@ -2,87 +2,75 @@
 
 namespace App\Livewire\StockTransfers;
 
-use App\Enums\StockTransferStatus;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\ListTable;
 use App\Models\StockTransfer;
 use App\Models\Warehouse;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
-use Livewire\WithPagination;
 
-/** Stock transfers list (session 13), filtered by status and warehouse. */
+/** Stock transfers list (tables plan T4: the shared list design). */
 class StockTransfersTable extends Component
 {
-    use LimitsPageSize, WithPagination;
+    use ChecksPermissions, ListTable;
 
-    public $search = '';
+    public string $period = '';
 
-    public $status = '';
-
-    public $warehouse = '';
-
-    public $perPage = 15;
-
-    public $sortField = 'transfer_date';
-
-    public $sortDirection = 'desc';
+    public string $warehouse = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'status' => ['except' => ''],
+        'tab' => ['except' => '', 'as' => 'status'],
+        'period' => ['except' => ''],
         'warehouse' => ['except' => ''],
     ];
 
-    private const SORTABLE = ['transfer_number', 'transfer_date', 'status'];
+    public const LABELS = ['draft' => 'Draft', 'in_transit' => 'In transit', 'received' => 'Received', 'cancelled' => 'Cancelled'];
 
-    public function updatingSearch()
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['transfer_date', 'transfer_number'];
     }
 
-    public function updatingStatus()
+    protected function rowRelations(): array
     {
-        $this->resetPage();
+        return ['fromWarehouse:id,name', 'toWarehouse:id,name'];
     }
 
-    public function updatingWarehouse()
+    protected function decorateRows(Builder $query): Builder
     {
-        $this->resetPage();
+        return $query->withCount('items')->withSum('items', 'shipped_cost');
     }
 
-    public function sortBy(string $field): void
+    protected function filterProperties(): array
     {
-        if (! in_array($field, self::SORTABLE, true)) {
-            return;
+        return ['period', 'warehouse'];
+    }
+
+    protected function baseQuery(): Builder
+    {
+        $query = StockTransfer::query();
+        if (($term = trim($this->search)) !== '') {
+            $query->where(fn ($q) => $q->where('transfer_number', 'like', "%{$term}%")
+                ->orWhere('reference', 'like', "%{$term}%")
+                ->orWhereHas('items.item', fn ($i) => $i->where('name', 'like', "%{$term}%")));
         }
-        $this->sortDirection = $this->sortField === $field && $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        $this->sortField = $field;
+        if ($this->warehouse !== '' && ctype_digit($this->warehouse)) {
+            $w = (int) $this->warehouse;
+            $query->where(fn ($q) => $q->where('from_warehouse_id', $w)->orWhere('to_warehouse_id', $w));
+        }
+
+        return $this->applyPeriod($query, 'transfer_date', $this->period);
     }
 
     public function render()
     {
-        $sort = in_array($this->sortField, self::SORTABLE, true) ? $this->sortField : 'transfer_date';
-        $warehouseId = (int) $this->warehouse;
-
-        $transfers = StockTransfer::with(['fromWarehouse', 'toWarehouse'])
-            ->withCount('items')
-            ->withSum('items', 'shipped_cost')
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('transfer_number', 'like', '%'.$this->search.'%')
-                        ->orWhere('reference', 'like', '%'.$this->search.'%')
-                        ->orWhereHas('items.item', fn ($i) => $i->where('name', 'like', '%'.$this->search.'%'));
-                });
-            })
-            ->when(in_array($this->status, StockTransferStatus::values(), true), fn ($q) => $q->where('status', $this->status))
-            ->when($warehouseId, fn ($q) => $q->where(fn ($w) => $w->where('from_warehouse_id', $warehouseId)->orWhere('to_warehouse_id', $warehouseId)))
-            ->orderBy($sort, $this->sortDirection === 'asc' ? 'asc' : 'desc')
-            ->orderByDesc('id')
-            ->paginate($this->pageSize());
-
         return view('livewire.stock-transfers.stock-transfers-table', [
-            'transfers' => $transfers,
-            'statuses' => StockTransferStatus::cases(),
-            'warehouses' => Warehouse::orderByDesc('is_default')->orderBy('name')->get(['id', 'name']),
+            'transfers' => $this->rows(),
+            'tabs' => $this->statusTabs(self::LABELS, [], 'status', hideEmpty: true),
+            'warehouses' => Warehouse::orderByDesc('is_default')->orderBy('name')->pluck('name', 'id'),
+            'periods' => self::periodOptions(),
+            'filtered' => $this->isFiltered(),
         ]);
     }
 }

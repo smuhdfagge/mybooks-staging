@@ -1,19 +1,16 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Stock transfers</h2>
-            <a href="{{ route('stock-transfers.create') }}" class="btn-primary">New transfer</a>
-        </div>
+        <x-table.page-header title="Stock transfers" :description="'Stock moved from one warehouse to another, at cost. Amounts in '.\App\Support\Money::symbol().'.'">
+            <x-slot name="actions">
+                @can('adjust inventory')
+                    <a href="{{ route('stock-transfers.create') }}" class="btn-new">
+                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 4a1 1 0 011 1v4h4a1 1 0 110 2h-4v4a1 1 0 11-2 0v-4H5a1 1 0 110-2h4V5a1 1 0 011-1z"/></svg>
+                        New transfer
+                    </a>
+                @endcan
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <x-card>
-                <div class="p-4 sm:p-6">
-                    <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">A transfer moves stock from one warehouse to another at the cost it was bought at. It doesn't change the value of your stock, unless goods are lost on the way.</p>
-                    @livewire('stock-transfers.stock-transfers-table')
-                </div>
-            </x-card>
-        </div>
-    </div>
+    <livewire:stock-transfers.stock-transfers-table />
 </x-app-layout>

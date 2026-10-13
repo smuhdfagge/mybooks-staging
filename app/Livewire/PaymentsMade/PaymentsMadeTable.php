@@ -4,99 +4,99 @@ namespace App\Livewire\PaymentsMade;
 
 use App\Actions\Payments\DeletePaymentMade;
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ListTable;
 use App\Models\PaymentMade;
 use App\Models\Vendor;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/**
+ * Payments made list (tables plan T3): money paid to suppliers, against
+ * bills or in advance. Mirrors the Payments received list.
+ */
 class PaymentsMadeTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
+    use ChecksPermissions, ListTable;
 
-    public $search = '';
+    public string $period = '';
 
-    public $vendor = '';
+    public string $vendor = '';
 
-    public $paymentMethod = '';
-
-    public $dateFrom = '';
-
-    public $dateTo = '';
-
-    public $sortField = 'payment_date';
-
-    public $sortDirection = 'desc';
-
-    public $perPage = 10;
-
-    // Bulk operation properties
-    public $selectedItems = [];
-
-    public $selectAll = false;
-
-    public $bulkAction = '';
-
-    public $successMessage = '';
-
-    public $errorMessage = '';
+    public string $method = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
+        'tab' => ['except' => '', 'as' => 'type'],
+        'period' => ['except' => ''],
         'vendor' => ['except' => ''],
-        'paymentMethod' => ['except' => ''],
+        'method' => ['except' => ''],
     ];
 
-    public function updatingSearch()
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['payment_date', 'payment_number', 'amount'];
     }
 
-    public function updatingVendor()
+    protected function rowRelations(): array
     {
-        $this->resetPage();
+        return ['vendor:id,name', 'bill:id,bill_number'];
     }
 
-    public function updatingPaymentMethod()
+    protected function filterProperties(): array
     {
-        $this->resetPage();
+        return ['period', 'vendor', 'method'];
     }
 
-    public function updatingPerPage()
+    protected function baseQuery(): Builder
     {
-        $this->resetPage();
-    }
-
-    public function updatedSelectAll($value)
-    {
-        if ($value) {
-            $this->selectedItems = $this->getFilteredPaymentIds();
-        } else {
-            $this->selectedItems = [];
+        $query = PaymentMade::query();
+        if (($term = trim($this->search)) !== '') {
+            $number = preg_replace('/[^0-9.]/', '', $term);
+            $query->where(function ($q) use ($term, $number) {
+                $q->where('payment_number', 'like', "%{$term}%")
+                    ->orWhere('reference', 'like', "%{$term}%")
+                    ->orWhereHas('vendor', fn ($v) => $v->where('name', 'like', "%{$term}%")->orWhere('company_name', 'like', "%{$term}%"));
+                if ($number !== '' && is_numeric($number)) {
+                    $q->orWhere('amount', (float) $number);
+                }
+            });
         }
+        if ($this->vendor !== '' && ctype_digit($this->vendor)) {
+            $query->where('vendor_id', (int) $this->vendor);
+        }
+        if ($this->method !== '') {
+            $query->where('payment_method', $this->method);
+        }
+
+        return $this->applyPeriod($query, 'payment_date', $this->period);
     }
 
-    public function updatedSelectedItems()
+    protected function applyTab(Builder $query, string $tab): Builder
     {
-        $this->selectAll = count($this->selectedItems) === count($this->getFilteredPaymentIds());
+        return match ($tab) {
+            'bills' => $query->where(fn ($q) => $q->where('is_advance', false)->orWhereNull('is_advance')),
+            'advances' => $query->where('is_advance', true),
+            'unused' => $query->where('is_advance', true)->where('unused_amount', '>', 0),
+            default => $query,
+        };
     }
 
-    private function getFilteredPaymentIds()
+    /** @return array<string, array{label: string, count: int, alert: bool}> */
+    private function tabs(): array
     {
-        return PaymentMade::query()
-            ->when($this->search, fn ($q) => $q->where(function ($query) {
-                $query->where('payment_number', 'like', "%{$this->search}%")
-                    ->orWhere('reference', 'like', "%{$this->search}%")
-                    ->orWhereHas('vendor', fn ($q2) => $q2->where('company_name', 'like', "%{$this->search}%")->orWhere('contact_name', 'like', "%{$this->search}%"));
-            }))
-            ->when($this->vendor, fn ($q) => $q->where('vendor_id', $this->vendor))
-            ->when($this->paymentMethod, fn ($q) => $q->where('payment_method', $this->paymentMethod))
-            ->when($this->dateFrom, fn ($q) => $q->whereDate('payment_date', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn ($q) => $q->whereDate('payment_date', '<=', $this->dateTo))
-            ->pluck('id')
-            ->map(fn ($id) => (string) $id)
-            ->toArray();
+        $row = $this->baseQuery()->toBase()->selectRaw(
+            'COUNT(*) as all_rows,
+             SUM(CASE WHEN is_advance = 1 THEN 1 ELSE 0 END) as advances,
+             SUM(CASE WHEN is_advance = 1 AND unused_amount > 0 THEN 1 ELSE 0 END) as unused'
+        )->first();
+
+        return [
+            '' => ['label' => 'All', 'count' => (int) $row->all_rows, 'alert' => false],
+            'bills' => ['label' => 'Against bills', 'count' => (int) $row->all_rows - (int) $row->advances, 'alert' => false],
+            'advances' => ['label' => 'Advances', 'count' => (int) $row->advances, 'alert' => false],
+            'unused' => ['label' => 'Advances not yet used', 'count' => (int) $row->unused, 'alert' => false],
+        ];
     }
 
     /**
@@ -115,96 +115,71 @@ class PaymentsMadeTable extends Component
         $this->errorMessage = '';
 
         if (empty($this->selectedItems)) {
-            $this->errorMessage = 'Please select at least one payment.';
+            $this->errorMessage = 'Tick at least one payment first.';
 
             return;
         }
-
-        if (empty($this->bulkAction)) {
-            $this->errorMessage = 'Please select an action.';
-
-            return;
-        }
-
-        $count = count($this->selectedItems);
 
         $this->authorizeBulkAction();
 
-        switch ($this->bulkAction) {
-            case 'delete':
-                $deletedCount = 0;
+        if ($this->bulkAction !== 'delete') {
+            $this->errorMessage = 'Invalid action selected.';
 
-                DB::transaction(function () use (&$deletedCount) {
-                    foreach ($this->selectedItems as $paymentId) {
-                        $payment = PaymentMade::find($paymentId);
-                        if (! $payment) {
-                            continue;
-                        }
+            return;
+        }
 
-                        // Same as the web and API delete (R3).
-                        app(DeletePaymentMade::class)->handle($payment);
-                        $deletedCount++;
-                    }
-                });
+        $deleted = 0;
+        $skipped = 0;
+        $delete = app(DeletePaymentMade::class);
+        DB::transaction(function () use (&$deleted, &$skipped, $delete) {
+            foreach (PaymentMade::whereIn('id', $this->selectedItems)->get() as $payment) {
+                // Same rule as deleting from the payment's page: an advance
+                // that has been used can't be deleted.
+                if ($delete->blockedBecause($payment)) {
+                    $skipped++;
 
-                if ($deletedCount > 0) {
-                    $this->successMessage = "Successfully deleted {$deletedCount} payment(s). Journal entries and chart of account balances have been updated.";
-                } else {
-                    $this->errorMessage = 'Could not delete any payments.';
+                    continue;
                 }
-                break;
+                $delete->handle($payment);
+                $deleted++;
+            }
+        });
 
-            default:
-                $this->errorMessage = 'Invalid action selected.';
-
-                return;
+        if ($deleted > 0) {
+            $this->successMessage = "Deleted {$deleted} payment(s). The bills they paid show as owing again.".($skipped ? " Skipped {$skipped} advance(s) already used." : '');
+        } else {
+            $this->errorMessage = 'None deleted: every ticked payment is an advance that has been used.';
         }
 
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
     }
 
-    public function sortBy($field)
+    /** Delete one payment from its row menu, by the same rules as its page. */
+    public function deleteOne(int $id, DeletePaymentMade $delete): void
     {
-        if ($this->sortField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            $this->sortDirection = 'desc';
-        }
-        $this->sortField = $field;
-    }
+        $this->requirePermission('delete payments-made');
+        $payment = PaymentMade::findOrFail($id);
+        if ($reason = $delete->blockedBecause($payment)) {
+            $this->errorMessage = $reason;
 
-    public function clearFilters()
-    {
-        $this->reset(['search', 'vendor', 'paymentMethod', 'dateFrom', 'dateTo']);
-        $this->resetPage();
+            return;
+        }
+        DB::transaction(fn () => $delete->handle($payment));
+        $this->successMessage = "Deleted {$payment->payment_number}.";
+        $this->selectedItems = array_values(array_diff($this->selectedItems, [(string) $id]));
     }
 
     public function render()
     {
-        $payments = PaymentMade::query()
-            ->with(['vendor', 'bill'])
-            ->when($this->search, fn ($q) => $q->where(function ($query) {
-                $query->where('payment_number', 'like', "%{$this->search}%")
-                    ->orWhere('reference', 'like', "%{$this->search}%")
-                    ->orWhereHas('vendor', fn ($q2) => $q2->where('company_name', 'like', "%{$this->search}%")->orWhere('contact_name', 'like', "%{$this->search}%"));
-            }))
-            ->when($this->vendor, fn ($q) => $q->where('vendor_id', $this->vendor))
-            ->when($this->paymentMethod, fn ($q) => $q->where('payment_method', $this->paymentMethod))
-            ->when($this->dateFrom, fn ($q) => $q->whereDate('payment_date', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn ($q) => $q->whereDate('payment_date', '<=', $this->dateTo))
-            ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->pageSize());
-
-        $vendors = Vendor::where('is_active', true)->orderBy('company_name')->get();
-
-        $paymentMethods = PaymentMade::distinct()->pluck('payment_method')->filter();
-
         return view('livewire.payments-made.payments-made-table', [
-            'payments' => $payments,
-            'vendors' => $vendors,
-            'paymentMethods' => $paymentMethods,
+            'payments' => $this->rows(),
+            'tabs' => $this->tabs(),
+            'totals' => $this->filteredQuery()->toBase()->selectRaw('COUNT(*) as n, COALESCE(SUM(amount), 0) as amount, COALESCE(SUM(CASE WHEN is_advance = 1 THEN unused_amount ELSE 0 END), 0) as unused')->first(),
+            'vendors' => Vendor::where('is_active', true)->orderBy('name')->pluck('name', 'id'),
+            'methods' => PaymentMade::query()->whereNotNull('payment_method')->distinct()->orderBy('payment_method')->pluck('payment_method'),
+            'periods' => self::periodOptions(),
+            'filtered' => $this->isFiltered(),
         ]);
     }
 }

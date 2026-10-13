@@ -1,21 +1,9 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    Apply Deposit {{ $paymentReceived->payment_number }}
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                    Available balance: <span class="font-semibold text-green-700 dark:text-green-400">{{ number_format($paymentReceived->unused_amount, 2) }}</span>
-                </p>
-            </div>
-            <a href="{{ route('payments-received.show', $paymentReceived) }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                </svg>
-                Back
-            </a>
-        </div>
+        <x-table.page-header>
+            <x-slot name="title">Apply deposit {{ $paymentReceived->payment_number }}</x-slot>
+            <x-slot name="description">Available balance: {{ number_format($paymentReceived->unused_amount, 2) }}</x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -53,7 +41,7 @@
                                 <option value="">Select an invoice</option>
                                 @foreach($unpaidInvoices as $invoice)
                                 <option value="{{ $invoice->id }}" data-balance="{{ $invoice->balance_due }}">
-                                    {{ $invoice->invoice_number }} - Due: {{ number_format($invoice->balance_due, 2) }} ({{ $invoice->due_date->format('M d, Y') }})
+                                    {{ $invoice->invoice_number }} - Due: {{ number_format($invoice->balance_due, 2) }} ({{ $invoice->due_date->format('j M Y') }})
                                 </option>
                                 @endforeach
                             </select>
@@ -88,14 +76,14 @@
                     </div>
 
                     <div class="mt-6 flex justify-end gap-3">
-                        <a href="{{ route('payments-received.show', $paymentReceived) }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <a href="{{ route('payments-received.show', $paymentReceived) }}" class="btn-secondary">
                             Cancel
                         </a>
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <button type="submit" class="btn-primary">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>
-                            Apply Deposit
+                            Apply deposit
                         </button>
                     </div>
                 </form>
@@ -105,45 +93,40 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
                 <div class="p-6">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Unpaid Invoices for {{ $paymentReceived->customer->name }}</h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Invoice</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Due Date</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Balance Due</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <x-table :caption="'Unpaid invoices for '.$paymentReceived->customer->name">
+<x-slot name="head">
+                                    <x-table.th>Invoice</x-table.th>
+                                    <x-table.th>Date</x-table.th>
+                                    <x-table.th>Due date</x-table.th>
+                                    <x-table.th num>Total</x-table.th>
+                                    <x-table.th num>Balance due</x-table.th>
+</x-slot>
+
                                 @foreach($unpaidInvoices as $invoice)
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                    <td class="px-4 py-3 whitespace-nowrap">
-                                        <a href="{{ route('invoices.show', $invoice) }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">
+                                <tr>
+                                    <td>
+                                        <a href="{{ route('invoices.show', $invoice) }}" class="tbl-link">
                                             {{ $invoice->invoice_number }}
                                         </a>
                                     </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                        {{ $invoice->invoice_date->format('M d, Y') }}
+                                    <td>
+                                        {{ $invoice->invoice_date->format('j M Y') }}
                                     </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm {{ $invoice->due_date < now() ? 'text-red-600 dark:text-red-300' : 'text-gray-500 dark:text-gray-400' }}">
-                                        {{ $invoice->due_date->format('M d, Y') }}
+                                    <td class="{{ $invoice->due_date < now() ? 'text-red-600 dark:text-red-300' : 'text-gray-500 dark:text-gray-400' }}">
+                                        {{ $invoice->due_date->format('j M Y') }}
                                         @if($invoice->due_date < now())
                                             <span class="text-xs">(Overdue)</span>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 text-right">
-                                        {{ number_format($invoice->total, 2) }}
+                                    <td class="num">
+                                        @fig($invoice->total, false)
                                     </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-red-600 dark:text-red-300 text-right font-medium">
-                                        {{ number_format($invoice->balance_due, 2) }}
+                                    <td class="text-red-600 dark:text-red-300 num font-medium">
+                                        @fig($invoice->balance_due, false)
                                     </td>
                                 </tr>
                                 @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+</x-table>
                 </div>
             </div>
             @else
@@ -155,7 +138,7 @@
                     <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No unpaid invoices</h3>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">This customer has no unpaid invoices to apply the deposit to.</p>
                     <div class="mt-6">
-                        <a href="{{ route('payments-received.show', $paymentReceived) }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
+                        <a href="{{ route('payments-received.show', $paymentReceived) }}" class="btn-secondary">
                             Back to Deposit
                         </a>
                     </div>

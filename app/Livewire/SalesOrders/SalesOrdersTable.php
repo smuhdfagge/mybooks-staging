@@ -3,106 +3,60 @@
 namespace App\Livewire\SalesOrders;
 
 use App\Actions\SalesOrders\DeleteSalesOrder;
+use App\Enums\SalesOrderStatus;
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ListTable;
 use App\Models\Customer;
 use App\Models\SalesOrder;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/**
+ * Sales orders list (tables plan T2: the shared list design, see InvoicesTable).
+ */
 class SalesOrdersTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
+    use ChecksPermissions, ListTable;
 
-    public $search = '';
+    public string $period = '';
 
-    public $status = '';
-
-    public $customer = '';
-
-    public $dateFrom = '';
-
-    public $dateTo = '';
-
-    public $perPage = 10;
-
-    // Bulk operation properties
-    public $selectedItems = [];
-
-    public $selectAll = false;
-
-    public $bulkAction = '';
-
-    public $successMessage = '';
-
-    public $errorMessage = '';
+    public string $customer = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'status' => ['except' => ''],
+        'tab' => ['except' => '', 'as' => 'status'],
+        'period' => ['except' => ''],
         'customer' => ['except' => ''],
     ];
 
-    public function updatingSearch()
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['order_date', 'order_number', 'expected_date', 'total'];
     }
 
-    public function updatingStatus()
+    protected function filterProperties(): array
     {
-        $this->resetPage();
+        return ['period', 'customer'];
     }
 
-    public function updatingCustomer()
+    protected function rowRelations(): array
     {
-        $this->resetPage();
+        return ['customer:id,name'];
     }
 
-    public function updatingPerPage()
+    protected function baseQuery(): Builder
     {
-        $this->resetPage();
-    }
-
-    public function clearFilters()
-    {
-        $this->reset(['search', 'status', 'customer', 'dateFrom', 'dateTo']);
-        $this->resetPage();
-    }
-
-    public function updatedSelectAll($value)
-    {
-        if ($value) {
-            $this->selectedItems = $this->getFilteredOrderIds();
-        } else {
-            $this->selectedItems = [];
+        $query = SalesOrder::query();
+        if (($term = trim($this->search)) !== '') {
+            $query->where(fn ($q) => $q->where('order_number', 'like', "%{$term}%")
+                ->orWhere('reference', 'like', "%{$term}%")
+                ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$term}%")->orWhere('company_name', 'like', "%{$term}%")));
         }
-    }
+        if ($this->customer !== '' && ctype_digit($this->customer)) {
+            $query->where('customer_id', (int) $this->customer);
+        }
 
-    public function updatedSelectedItems()
-    {
-        $this->selectAll = count($this->selectedItems) === count($this->getFilteredOrderIds());
-    }
-
-    private function getFilteredOrderIds()
-    {
-        return SalesOrder::query()
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('order_number', 'like', '%'.$this->search.'%')
-                        ->orWhere('reference', 'like', '%'.$this->search.'%')
-                        ->orWhereHas('customer', function ($q) {
-                            $q->where('name', 'like', '%'.$this->search.'%')
-                                ->orWhere('company_name', 'like', '%'.$this->search.'%');
-                        });
-                });
-            })
-            ->when($this->status, fn ($q) => $q->where('status', $this->status))
-            ->when($this->customer, fn ($q) => $q->where('customer_id', $this->customer))
-            ->when($this->dateFrom, fn ($q) => $q->whereDate('order_date', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn ($q) => $q->whereDate('order_date', '<=', $this->dateTo))
-            ->pluck('id')
-            ->map(fn ($id) => (string) $id)
-            ->toArray();
+        return $this->applyPeriod($query, 'order_date', $this->period);
     }
 
     /**
@@ -191,43 +145,23 @@ class SalesOrdersTable extends Component
         }
 
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
     }
 
     public function render()
     {
-        $orders = SalesOrder::with(['customer'])
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('order_number', 'like', '%'.$this->search.'%')
-                        ->orWhere('reference', 'like', '%'.$this->search.'%')
-                        ->orWhereHas('customer', function ($q) {
-                            $q->where('name', 'like', '%'.$this->search.'%')
-                                ->orWhere('company_name', 'like', '%'.$this->search.'%');
-                        });
-                });
-            })
-            ->when($this->status, function ($query) {
-                $query->where('status', $this->status);
-            })
-            ->when($this->customer, function ($query) {
-                $query->where('customer_id', $this->customer);
-            })
-            ->when($this->dateFrom, function ($query) {
-                $query->whereDate('order_date', '>=', $this->dateFrom);
-            })
-            ->when($this->dateTo, function ($query) {
-                $query->whereDate('order_date', '<=', $this->dateTo);
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate($this->pageSize());
-
-        $customers = Customer::where('is_active', true)->orderBy('name')->get();
+        $labels = [];
+        foreach (SalesOrderStatus::cases() as $s) {
+            $labels[$s->value] = ucfirst($s->value);
+        }
 
         return view('livewire.sales-orders.sales-orders-table', [
-            'orders' => $orders,
-            'customers' => $customers,
+            'orders' => $this->rows(),
+            'tabs' => $this->statusTabs($labels, [], 'status', hideEmpty: true),
+            'totals' => $this->filteredQuery()->toBase()->selectRaw('COUNT(*) as n, COALESCE(SUM(total), 0) as total')->first(),
+            'customers' => Customer::where('is_active', true)->orderBy('name')->pluck('name', 'id'),
+            'periods' => self::periodOptions(),
+            'filtered' => $this->isFiltered(),
         ]);
     }
 }

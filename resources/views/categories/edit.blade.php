@@ -1,13 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Edit Category') }} - {{ $category->name }}
-            </h2>
-            <a href="{{ route('fixed-asset-categories.show', $category) }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                Cancel
-            </a>
-        </div>
+        <x-table.page-header>
+            <x-slot name="title">Edit category {{ $category->name }}</x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-12">
@@ -147,10 +142,10 @@
                         </div>
 
                         <div class="flex justify-end space-x-4">
-                            <a href="{{ route('fixed-asset-categories.show', $category) }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                            <a href="{{ route('fixed-asset-categories.show', $category) }}" class="btn-secondary">
                                 Cancel
                             </a>
-                            <button type="submit" class="bg-brand-500 hover:bg-brand-700 text-white font-bold py-2 px-4 rounded">
+                            <button type="submit" class="btn-primary">
                                 Update Category
                             </button>
                         </div>

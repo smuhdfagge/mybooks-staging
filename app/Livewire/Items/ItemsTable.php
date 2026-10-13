@@ -3,102 +3,91 @@
 namespace App\Livewire\Items;
 
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ListTable;
 use App\Models\Item;
 use App\Models\ItemCategory;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/**
+ * Items list (tables plan T4: the shared list design, see InvoicesTable).
+ */
 class ItemsTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
-
-    public string $search = '';
-
-    public string $type = '';
+    use ChecksPermissions, ListTable;
 
     public string $category = '';
 
-    public string $sortField = 'name';
-
-    public string $sortDirection = 'asc';
-
-    public int $perPage = 10;
-
-    // Bulk operation properties
-    public $selectedItems = [];
-
-    public $selectAll = false;
-
-    public $bulkAction = '';
-
-    public $successMessage = '';
-
-    public $errorMessage = '';
-
     protected $queryString = [
         'search' => ['except' => ''],
-        'type' => ['except' => ''],
+        'tab' => ['except' => '', 'as' => 'show'],
         'category' => ['except' => ''],
     ];
 
-    public function updatingSearch()
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['name', 'sku', 'selling_price', 'cost_price', 'on_hand'];
     }
 
-    public function updatingType()
+    /** Items sort by name A–Z first. */
+    public function mountListTable(): void
     {
-        $this->resetPage();
-    }
-
-    public function updatingCategory()
-    {
-        $this->resetPage();
-    }
-
-    public function updatingPerPage()
-    {
-        $this->resetPage();
-    }
-
-    public function sortBy($field)
-    {
-        if ($this->sortField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
+        if (! in_array($this->sortField, $this->sortable(), true)) {
+            $this->sortField = 'name';
             $this->sortDirection = 'asc';
         }
-        $this->sortField = $field;
     }
 
-    public function updatedSelectAll($value)
+    protected function filterProperties(): array
     {
-        if ($value) {
-            $this->selectedItems = $this->getFilteredItemIds();
-        } else {
-            $this->selectedItems = [];
+        return ['category'];
+    }
+
+    protected function baseQuery(): Builder
+    {
+        $query = Item::query();
+        if (($term = trim($this->search)) !== '') {
+            $query->where(fn ($q) => $q->where('name', 'like', "%{$term}%")
+                ->orWhere('sku', 'like', "%{$term}%")
+                ->orWhere('description', 'like', "%{$term}%"));
         }
+        if ($this->category !== '' && ctype_digit($this->category)) {
+            $query->where('category_id', (int) $this->category);
+        }
+
+        return $query;
     }
 
-    public function updatedSelectedItems()
+    protected function applyTab(Builder $query, string $tab): Builder
     {
-        $this->selectAll = count($this->selectedItems) === count($this->getFilteredItemIds());
+        return match ($tab) {
+            'products' => $query->where('type', 'product'),
+            'services' => $query->where('type', 'service'),
+            'low' => $query->where('track_inventory', true)->where('reorder_level', '>', 0)->whereRaw(Item::onHandSql().' <= items.reorder_level'),
+            'inactive' => $query->where('is_active', false),
+            default => $query,
+        };
     }
 
-    private function getFilteredItemIds()
+    /** @return array<string, array{label: string, count: int, alert: bool}> one query */
+    private function tabs(): array
     {
-        return Item::query()
-            ->when($this->search, fn ($q) => $q->where(function ($query) {
-                $query->where('name', 'like', "%{$this->search}%")
-                    ->orWhere('sku', 'like', "%{$this->search}%")
-                    ->orWhere('description', 'like', "%{$this->search}%");
-            }))
-            ->when($this->type, fn ($q) => $q->where('type', $this->type))
-            ->when($this->category, fn ($q) => $q->where('category_id', $this->category))
-            ->pluck('id')
-            ->map(fn ($id) => (string) $id)
-            ->toArray();
+        $onHand = Item::onHandSql();
+        $row = $this->baseQuery()->toBase()->selectRaw(
+            "COUNT(*) as all_rows,
+             SUM(CASE WHEN type = 'product' THEN 1 ELSE 0 END) as products,
+             SUM(CASE WHEN type = 'service' THEN 1 ELSE 0 END) as services,
+             SUM(CASE WHEN track_inventory = 1 AND reorder_level > 0 AND {$onHand} <= reorder_level THEN 1 ELSE 0 END) as low,
+             SUM(CASE WHEN is_active = 0 THEN 1 ELSE 0 END) as inactive"
+        )->first();
+
+        return [
+            '' => ['label' => 'All', 'count' => (int) $row->all_rows, 'alert' => false],
+            'products' => ['label' => 'Goods', 'count' => (int) $row->products, 'alert' => false],
+            'services' => ['label' => 'Services', 'count' => (int) $row->services, 'alert' => false],
+            'low' => ['label' => 'Running low', 'count' => (int) $row->low, 'alert' => true],
+            'inactive' => ['label' => 'Inactive', 'count' => (int) $row->inactive, 'alert' => false],
+        ];
     }
 
     /**
@@ -119,13 +108,7 @@ class ItemsTable extends Component
         $this->errorMessage = '';
 
         if (empty($this->selectedItems)) {
-            $this->errorMessage = 'Please select at least one item.';
-
-            return;
-        }
-
-        if (empty($this->bulkAction)) {
-            $this->errorMessage = 'Please select an action.';
+            $this->errorMessage = 'Tick at least one item first.';
 
             return;
         }
@@ -137,41 +120,30 @@ class ItemsTable extends Component
         switch ($this->bulkAction) {
             case 'activate':
                 Item::whereIn('id', $this->selectedItems)->update(['is_active' => true]);
-                $this->successMessage = "Successfully activated {$count} item(s).";
+                $this->successMessage = "{$count} item(s) made active.";
                 break;
 
             case 'deactivate':
                 Item::whereIn('id', $this->selectedItems)->update(['is_active' => false]);
-                $this->successMessage = "Successfully deactivated {$count} item(s).";
+                $this->successMessage = "{$count} item(s) made inactive.";
                 break;
 
             case 'delete':
-                $deletedCount = 0;
-                $skippedCount = 0;
-
-                foreach ($this->selectedItems as $itemId) {
-                    $item = Item::find($itemId);
-                    if (! $item) {
-                        continue;
-                    }
-
-                    // Check if item has related records
-                    if ($item->invoiceItems()->exists() || $item->billItems()->exists()) {
-                        $skippedCount++;
+                $deleted = 0;
+                $skipped = 0;
+                foreach (Item::whereIn('id', $this->selectedItems)->get() as $item) {
+                    if ($this->inUse($item)) {
+                        $skipped++;
 
                         continue;
                     }
-
                     $item->delete();
-                    $deletedCount++;
+                    $deleted++;
                 }
-
-                if ($deletedCount > 0 && $skippedCount > 0) {
-                    $this->successMessage = "Deleted {$deletedCount} item(s). Skipped {$skippedCount} item(s) with existing records.";
-                } elseif ($deletedCount > 0) {
-                    $this->successMessage = "Successfully deleted {$deletedCount} item(s).";
+                if ($deleted > 0) {
+                    $this->successMessage = "Deleted {$deleted} item(s).".($skipped ? " Skipped {$skipped} used on invoices or bills." : '');
                 } else {
-                    $this->errorMessage = 'Could not delete any items. All selected items have existing records.';
+                    $this->errorMessage = 'None deleted: every ticked item is used on invoices or bills. Make them inactive instead.';
                 }
                 break;
 
@@ -182,52 +154,44 @@ class ItemsTable extends Component
         }
 
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
     }
 
-    public function deleteItem($itemId)
+    /** Delete one item from its row menu (items on invoices or bills are kept). */
+    public function deleteOne(int $id): void
     {
         $this->requirePermission('delete items');
-
-        $item = Item::findOrFail($itemId);
-
-        // Check if item has related records that prevent deletion
-        if ($item->invoiceItems()->exists()) {
-            session()->flash('error', 'Cannot delete item with existing invoice items.');
+        $item = Item::findOrFail($id);
+        if ($this->inUse($item)) {
+            $this->errorMessage = "{$item->name} can't be deleted: it is on invoices or bills. Make it inactive instead.";
 
             return;
         }
-
-        if ($item->billItems()->exists()) {
-            session()->flash('error', 'Cannot delete item with existing bill items.');
-
-            return;
-        }
-
         $item->delete();
+        $this->successMessage = "Deleted {$item->name}.";
+        $this->selectedItems = array_values(array_diff($this->selectedItems, [(string) $id]));
+    }
 
-        session()->flash('success', 'Item deleted successfully.');
+    private function inUse(Item $item): bool
+    {
+        return $item->invoiceItems()->exists() || $item->billItems()->exists();
     }
 
     public function render()
     {
-        $items = Item::query()
-            ->when($this->search, fn ($q) => $q->where(function ($query) {
-                $query->where('name', 'like', "%{$this->search}%")
-                    ->orWhere('sku', 'like', "%{$this->search}%")
-                    ->orWhere('description', 'like', "%{$this->search}%");
-            }))
-            ->when($this->type, fn ($q) => $q->where('type', $this->type))
-            ->when($this->category, fn ($q) => $q->where('category_id', $this->category))
-            ->orderBy($this->sortField, $this->sortDirection)
+        // Stock across all warehouses, in the same query (no query per row).
+        $items = $this->filteredQuery()
+            ->select('items.*')->selectRaw(Item::onHandSql().' as on_hand')
+            ->with('category:id,name')
+            ->orderBy($this->sortColumn(), $this->sortDirection === 'asc' ? 'asc' : 'desc')
+            ->orderBy('items.id')
             ->paginate($this->pageSize());
-
-        $categories = ItemCategory::where('is_active', true)->get();
 
         return view('livewire.items.items-table', [
             'items' => $items,
-            'categories' => $categories,
+            'tabs' => $this->tabs(),
+            'categories' => ItemCategory::where('is_active', true)->orderBy('name')->pluck('name', 'id'),
+            'filtered' => $this->isFiltered(),
         ]);
     }
 }

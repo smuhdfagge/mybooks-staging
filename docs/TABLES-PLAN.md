@@ -1,0 +1,78 @@
+# MyBooks tables plan
+
+The full plan, with the sample design, is "MyBooks-Tables-Plan" (Word/PDF).
+This file is the working copy: the rules, the shared pieces, and the status
+of each session.
+
+## Decisions (10 Oct 2026)
+
+Row actions in one "⋯" menu; currency once ("Amounts in ₦") with plain
+figures in cells (phone cards keep ₦); 25 rows per page; status tabs with
+counts; brackets for negatives on financial statements; totals row on lists.
+
+## The rules
+
+- Page header: title, one line about the list ending "Amounts in ₦", the
+  main button (`btn-new`), everything else under "More".
+- Status tabs with counts instead of a Status dropdown.
+- One toolbar row: search, two or three filters (`x-table.select`), Export.
+  On a phone the filters fold behind "Filters".
+- Headers in sentence case on a light band; one text size, one row height.
+- First column: the record number or name as a link (`tbl-link`).
+- Dates "10 Oct 2026"; overdue dates `tbl-late`.
+- Amounts right-aligned with even-width digits (`num`), two decimals, zero
+  as a muted dash (`tbl-zero`).
+- Status: `<x-status-badge>`.
+- One "⋯" menu per row, last column; Delete last, in red, after a line.
+- Ticking rows turns the toolbar into the bulk bar.
+- Totals row for money columns (everything the filter matches), then
+  `<x-table.footer>`: range, rows per page, pages.
+- Empty: `<x-table.empty>` (nothing yet, or `filtered` with Clear filters).
+- Phones: `<x-table.card>` per row instead of the table.
+
+## The shared pieces
+
+| Piece | Use |
+|---|---|
+| `<x-table>` | Frame: header band, rows, totals (`foot` slot) |
+| `<x-table.th>` | Header; `field` makes it sortable, `num` right-aligns |
+| `<x-table.page-header>` | Title, description, `more` and `actions` slots |
+| `<x-table.tabs>` | Status tabs with counts (chips on a phone) |
+| `<x-table.toolbar>` | Search, `filters`, `end`; `bulk` slot when rows are ticked |
+| `<x-table.select>` | Small filter picker |
+| `<x-table.bulk-button>` | A bulk action button (`runBulk`) |
+| `<x-table.dropdown>` + `<x-table.menu-item>` | "⋯" row menu and "More" |
+| `<x-table.footer>` | Range, rows per page, pages |
+| `<x-table.empty>` | Nothing to show |
+| `<x-table.card>` | A row as a card on a phone |
+| `ListTable` (Livewire trait) | Search, tab, sort (whitelisted), rows per page, ticked rows, bulk actions |
+
+A list component uses `ChecksPermissions, ListTable` and provides
+`filteredQuery()`, `sortable()` (first = default sort), and optionally
+`rowRelations()` and `filterProperties()`. See `InvoicesTable` for the
+pattern, including tab counts in one grouped query and the totals row.
+
+## The routine for every session
+
+1. Branch from the latest `tables/main`, e.g. `tables/t2-sales`.
+2. Before screenshots (computer, phone, dark).
+3. Move each screen onto the shared pieces; take it off
+   `tests/Feature/Tables/tables-todo.txt` (the guard test fails otherwise).
+4. Readability check (light and dark), phone check (no sideways scroll).
+5. Full test suite, Pint, PHPStan.
+6. After screenshots; pull request into `tables/main`; update the table below.
+
+Nothing goes live until T8 merges `tables/main` into `main`.
+
+## Sessions and status
+
+| # | Session | Branch | Status | Notes |
+|---|---|---|---|---|
+| T1 | Shared pieces and the pilot (Invoices) | `tables/t1-foundations` | Done, PR #58 | Shared pieces, ListTable trait, guard test (157 screens to do); Invoices list. Also: status labels for confirmed, processing and invoiced orders; closed credit notes say "Used up"; sorting limited to listed columns on every sales list; 25 rows per page. |
+| T2 | Sales lists | `tables/t2-sales` | Done, PR #59 | Customers, quotations, sales orders, sales receipts, delivery notes, credit notes, payments received. Shared filter pieces added (`pick`, `check-all`, `check`, `tick-all-matching`, `veil`). Also: status labels for confirmed, processing and invoiced orders; closed credit notes say "Used up"; sorting limited to listed columns on every sales list; 25 rows per page. |
+| T3 | Purchases and expenses | `tables/t3-purchases` | Done, PR #60 | Vendors, purchase orders, bills, payments made, expenses, supplier credits, supplier advances, recurrent bills, recurrent expenses (the last four are now Livewire lists with search, sort and pages). Fixed on the way: vendor and payments-made search used a column that does not exist; the bills status filter offered "Pending" (no such status) and had no "Unpaid"; deleting a bill from its row skipped the normal delete rules; bulk delete could remove a supplier advance that had already been used; bills took any sort column from the address bar; New buttons on vendors, bills, payments made and expenses showed to people without permission; recurrent lists loaded every row on one page. The guard test skipped any screen with "vendor" in its path; fixed, and five more screens added to the to-do list. |
+| T4 | Stock, banking and accounting | `tables/t4-stock-banking` | Done, PR #61 | Items, item categories, stock, warehouses, stock transfers, assembly orders, bills of materials, banks, bank lines to review, chart of accounts, journals, budgets, tax rates, tax groups, prepaid and deferred schedules, fixed assets, asset categories, accounting periods (with lock date history), e-invoices. Bills of materials is now a Livewire list; warehouses and accounting periods stay plain pages (the footer now works on plain pages too). Fixed on the way: the items and categories lists ran extra queries for every row (stock, category, item counts); a bank account could be deleted while payments still pointed at it; tax groups and rates could be deleted while items used them; system accounts could be bulk-made inactive; the asset categories list checked permissions the routes do not use; row toggles on tax rates flashed messages nobody saw; the low-stock alert now opens the Running low tab. Removed an unused categories-table view. |
+| T5 | Payroll, HR, settings, admin | `tables/t5-payroll-admin` | Done, PR #62 | Employees, departments, designations, leave, leave types, payroll runs, salary structures, allowances, deductions, tax and pension to pay, tax templates, users, roles, activity log, imports, exports; admin tenants, admin team, data requests, SMS and WhatsApp. Plain pages get `query-bar` and `query-select` (search and filters as an ordinary form); tabs and the empty state now work on plain pages too; row menus can send DELETE, PUT or PATCH. Fixed on the way: the employees bulk "deactivate" set a status employees cannot have (removed; "Back at work" only moves people on leave); departments and designations loaded every employee just to count them; New buttons on departments and designations ignored permissions; leave types and admin data requests showed each message twice; the users and roles pages ran their queries inside the page, had no pages, and roles loaded permissions one role at a time; approving leave in bulk did not go in the activity log (approving from the row now stays on the list and logs it); the activity log record filter also matched other records ending in the same word, and its export now follows the date filter; Full backup and Exports links showed to people who could not open them; imports, exports and admin lists showed 15 rows (now 25). Activity log actions now read in plain words ("Signed in", "Failed sign-in"). Leave types keeps the sidebar's name. |
+| T6 | Reports | `tables/t6-reports` | Done, PR #63 | All 28 report screens: the statements (profit and loss, balance sheet, cash flow, trial balance, general ledger, the three comparisons, receivables and payables check), aged receivables and payables, sales by customer and item, purchases by supplier, stock summary, VAT/GST return, VAT return (Form 002), tax owed by period, custom reports, and the nine payroll reports. New shared pieces under `x-report.*` (header with Export menu, filters, date, pick, stats, stat, check, sheet) and `@fig` / `App\Support\Figure` (brackets for negatives, dash for zero). Statements use section, subtotal and double-ruled total rows; accounts link to their general ledger; on paper the business, title and period print first. Changed on the way: the trial balance shows each account's balance on one side, not everything posted to both sides (web, PDF and CSV; the API keeps both); profit and loss lists its accounts (it showed four totals); aged receivables and payables add a table by customer or supplier, and ages count from the "as at" date, not today. Fixed on the way: sales by customer and item, purchases by supplier and tax owed counted draft and cancelled documents and missed the last day of the period on SQLite; tax owed left out unpaid invoices and bills (and looked for a bill status that does not exist); payroll summary, by department and employee earnings counted draft and cancelled runs; on the 29th to 31st, "compare month" compared the month with itself; changes in cost of sales, running costs and liabilities were always shown as better; aged payables missed bills dated on the "as at" day on SQLite. Breadcrumbs say "Trial balance", not "Trial-balance". |
+| T7 | Record pages and forms | `tables/t7-records` | Done, PR #64 | All 80 remaining table screens; the to-do list is empty (printed documents are not screens). Plain figures in record tables, quantities and rates without trailing zeros, real captions. Rebuilt: bank reconcile, bank money in and out (now from the ledger, paged, running balance), stock history (all-time cards), asset depreciation, asset register, depreciation for the year, production report, WHT pages, payroll run, budget, budget and actual. Fixed on the way: asset depreciation page always crashed; depreciation dates skipped short months (plan and next charge); the year's charge across assets was always 0; asset register filters had no Show button; customer page showed invoice totals as 0.00; budget and actual called income above budget "over budget", compared a full-year budget with year-to-date actuals and mixed income into "utilisation"; WHT rates page scrolled sideways on phones. Left for T8: all-caps header buttons on document pages. |
+| T8 | Checks and go-live | `tables/t8-golive` | Done, PR #65; go-live PR #66 | Buttons in sentence case (shared btn-primary, btn-secondary, btn-danger; hand-styled all-caps buttons converted). One header on every record page: title with status badge, one main action, Edit, the rest under More (Delete or Void last, red, confirmed), no Back button, breadcrumb names the record. Guard tests stop old buttons and headers returning. To-do list empty. Go-live PR #66 merges tables/main into main; deploying is still the deploy script. Left open: the old invoice template colours. |

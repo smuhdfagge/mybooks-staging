@@ -1,13 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Edit Fixed Asset') }}
-            </h2>
-            <a href="{{ route('fixed-assets.show', $asset) }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                Cancel
-            </a>
-        </div>
+        <x-table.page-header title="Edit fixed asset" />
     </x-slot>
 
     <div class="py-12">
@@ -119,10 +112,10 @@
                         </div>
 
                         <div class="flex justify-end space-x-4">
-                            <a href="{{ route('fixed-assets.show', $asset) }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                            <a href="{{ route('fixed-assets.show', $asset) }}" class="btn-secondary">
                                 Cancel
                             </a>
-                            <button type="submit" class="bg-brand-500 hover:bg-brand-700 text-white font-bold py-2 px-4 rounded">
+                            <button type="submit" class="btn-primary">
                                 Update Asset
                             </button>
                         </div>

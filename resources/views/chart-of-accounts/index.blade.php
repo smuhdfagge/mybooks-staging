@@ -1,16 +1,19 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Chart of Accounts') }}
-            </h2>
-            <a href="{{ route('chart-of-accounts.create') }}" class="inline-flex items-center justify-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-                New Account
-            </a>
-        </div>
+        <x-table.page-header title="Chart of accounts" :description="'The accounts your books are kept in, and the balance of each. Amounts in '.\App\Support\Money::symbol().'.'">
+            <x-slot name="more">
+                @can('view reports')<x-table.menu-item :href="route('reports.trial-balance')">Trial balance</x-table.menu-item>@endcan
+                @can('view journals')<x-table.menu-item :href="route('journals.index')">Journals</x-table.menu-item>@endcan
+            </x-slot>
+            <x-slot name="actions">
+                @can('create chart-of-accounts')
+                    <a href="{{ route('chart-of-accounts.create') }}" class="btn-new">
+                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 4a1 1 0 011 1v4h4a1 1 0 110 2h-4v4a1 1 0 11-2 0v-4H5a1 1 0 110-2h4V5a1 1 0 011-1z"/></svg>
+                        New account
+                    </a>
+                @endcan
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <livewire:chart-of-accounts.chart-of-accounts-table />

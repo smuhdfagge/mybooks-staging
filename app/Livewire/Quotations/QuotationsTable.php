@@ -3,72 +3,70 @@
 namespace App\Livewire\Quotations;
 
 use App\Enums\QuotationStatus;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\ListTable;
+use App\Models\Customer;
 use App\Models\Quotation;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/**
+ * Quotations list (tables plan T2: the shared list design, see InvoicesTable).
+ */
 class QuotationsTable extends Component
 {
-    use LimitsPageSize, WithPagination;
+    use ChecksPermissions, ListTable;
 
-    public $search = '';
+    public string $period = '';
 
-    public $status = '';
-
-    public $perPage = 15;
-
-    public $sortField = 'quotation_date';
-
-    public $sortDirection = 'desc';
+    public string $customer = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'status' => ['except' => ''],
+        'tab' => ['except' => '', 'as' => 'status'],
+        'period' => ['except' => ''],
+        'customer' => ['except' => ''],
     ];
 
-    private const SORTABLE = ['quotation_number', 'quotation_date', 'expiry_date', 'total', 'status'];
-
-    public function updatingSearch()
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['quotation_date', 'quotation_number', 'expiry_date', 'total'];
     }
 
-    public function updatingStatus()
+    protected function filterProperties(): array
     {
-        $this->resetPage();
+        return ['period', 'customer'];
     }
 
-    public function sortBy(string $field): void
+    protected function rowRelations(): array
     {
-        if (! in_array($field, self::SORTABLE, true)) {
-            return;
+        return ['customer:id,name'];
+    }
+
+    protected function baseQuery(): Builder
+    {
+        $query = Quotation::query();
+        if (($term = trim($this->search)) !== '') {
+            $query->where(fn ($q) => $q->where('quotation_number', 'like', "%{$term}%")
+                ->orWhere('reference', 'like', "%{$term}%")
+                ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$term}%")->orWhere('company_name', 'like', "%{$term}%")));
         }
-        $this->sortDirection = $this->sortField === $field && $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        $this->sortField = $field;
+        if ($this->customer !== '' && ctype_digit($this->customer)) {
+            $query->where('customer_id', (int) $this->customer);
+        }
+
+        return $this->applyPeriod($query, 'quotation_date', $this->period);
     }
 
     public function render()
     {
-        $sort = in_array($this->sortField, self::SORTABLE, true) ? $this->sortField : 'quotation_date';
-
-        $quotations = Quotation::with('customer')
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('quotation_number', 'like', '%'.$this->search.'%')
-                        ->orWhere('reference', 'like', '%'.$this->search.'%')
-                        ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', '%'.$this->search.'%')
-                            ->orWhere('company_name', 'like', '%'.$this->search.'%'));
-                });
-            })
-            ->when(in_array($this->status, QuotationStatus::values(), true), fn ($q) => $q->where('status', $this->status))
-            ->orderBy($sort, $this->sortDirection === 'asc' ? 'asc' : 'desc')
-            ->orderByDesc('id')
-            ->paginate($this->pageSize());
-
         return view('livewire.quotations.quotations-table', [
-            'quotations' => $quotations,
-            'statuses' => QuotationStatus::cases(),
+            'quotations' => $this->rows(),
+            'tabs' => $this->statusTabs(collect(QuotationStatus::cases())->mapWithKeys(fn ($s) => [$s->value => ucfirst($s->value)])->all()),
+            'totals' => $this->filteredQuery()->toBase()->selectRaw('COUNT(*) as n, COALESCE(SUM(total), 0) as total')->first(),
+            'customers' => Customer::where('is_active', true)->orderBy('name')->pluck('name', 'id'),
+            'periods' => self::periodOptions(),
+            'filtered' => $this->isFiltered(),
         ]);
     }
 }

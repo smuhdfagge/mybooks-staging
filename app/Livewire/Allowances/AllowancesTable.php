@@ -3,88 +3,71 @@
 namespace App\Livewire\Allowances;
 
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ListTable;
 use App\Models\Allowance;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/** Allowances that can go into salary structures (tables plan T5). */
 class AllowancesTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
-
-    public $search = '';
-
-    public $amountType = '';
-
-    public $showInactive = false;
-
-    public $perPage = 15;
-
-    public $selectedItems = [];
-
-    public $selectAll = false;
-
-    public $bulkAction = '';
-
-    public $successMessage = '';
-
-    public $errorMessage = '';
+    use ChecksPermissions, ListTable;
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'amountType' => ['except' => ''],
-        'showInactive' => ['except' => false],
+        'tab' => ['except' => '', 'as' => 'show'],
     ];
 
-    public function updatingSearch()
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['name', 'amount'];
     }
 
-    public function updatingAmountType()
+    public function mountListTable(): void
     {
-        $this->resetPage();
+        if (! in_array($this->sortField, $this->sortable(), true)) {
+            $this->sortField = 'name';
+            $this->sortDirection = 'asc';
+        }
     }
 
-    public function updatingShowInactive()
+    protected function baseQuery(): Builder
     {
-        $this->resetPage();
+        $query = Allowance::query();
+        if (($term = trim($this->search)) !== '') {
+            $query->where(fn ($q) => $q->where('name', 'like', "%{$term}%")->orWhere('description', 'like', "%{$term}%"));
+        }
+
+        return $query;
     }
 
-    public function updatingPerPage()
+    protected function applyTab(Builder $query, string $tab): Builder
     {
-        $this->resetPage();
+        return match ($tab) {
+            'active' => $query->where('is_active', true),
+            'inactive' => $query->where('is_active', false),
+            default => $query,
+        };
     }
 
-    public function clearFilters()
+    /** @return array<string, array{label: string, count: int, alert: bool}> */
+    private function tabs(): array
     {
-        $this->reset(['search', 'amountType', 'showInactive']);
-        $this->resetPage();
+        $row = $this->baseQuery()->toBase()->selectRaw('COUNT(*) as all_rows, SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active')->first();
+
+        return [
+            '' => ['label' => 'All', 'count' => (int) $row->all_rows, 'alert' => false],
+            'active' => ['label' => 'Active', 'count' => (int) $row->active, 'alert' => false],
+            'inactive' => ['label' => 'Inactive', 'count' => (int) $row->all_rows - (int) $row->active, 'alert' => false],
+        ];
     }
 
-    public function toggleActive(Allowance $allowance)
+    public function toggleActive(int $id): void
     {
         $this->requirePermission('create payroll');
-
-        abort_unless($allowance->tenant_id === auth()->user()->tenant_id, 403);
-
-        $allowance->update(['is_active' => ! $allowance->is_active]);
-        $this->successMessage = 'Allowance status updated.';
-    }
-
-    public function updatedSelectAll($value)
-    {
-        $this->selectedItems = $value ? $this->getFilteredIds() : [];
-    }
-
-    public function updatedSelectedItems()
-    {
-        $this->selectAll = count($this->selectedItems) === count($this->getFilteredIds());
-    }
-
-    private function getFilteredIds()
-    {
-        return $this->buildQuery()->pluck('id')->map(fn ($id) => (string) $id)->toArray();
+        $row = Allowance::findOrFail($id);
+        $row->update(['is_active' => ! $row->is_active]);
+        $this->successMessage = $row->is_active ? "{$row->name} is active again." : "{$row->name} made inactive.";
     }
 
     /**
@@ -105,13 +88,7 @@ class AllowancesTable extends Component
         $this->errorMessage = '';
 
         if (empty($this->selectedItems)) {
-            $this->errorMessage = 'Please select at least one allowance.';
-
-            return;
-        }
-
-        if (empty($this->bulkAction)) {
-            $this->errorMessage = 'Please select an action.';
+            $this->errorMessage = 'Tick at least one allowance first.';
 
             return;
         }
@@ -122,24 +99,15 @@ class AllowancesTable extends Component
 
         switch ($this->bulkAction) {
             case 'activate':
-                Allowance::whereIn('id', $this->selectedItems)
-                    ->where('tenant_id', auth()->user()->tenant_id)
-                    ->update(['is_active' => true]);
-                $this->successMessage = "Successfully activated {$count} allowance(s).";
-                break;
-
             case 'deactivate':
-                Allowance::whereIn('id', $this->selectedItems)
-                    ->where('tenant_id', auth()->user()->tenant_id)
-                    ->update(['is_active' => false]);
-                $this->successMessage = "Successfully deactivated {$count} allowance(s).";
+                Allowance::whereIn('id', $this->selectedItems)->update(['is_active' => $this->bulkAction === 'activate']);
+                $this->successMessage = "{$count} allowance(s) made ".($this->bulkAction === 'activate' ? 'active.' : 'inactive.');
                 break;
 
             case 'delete':
-                Allowance::whereIn('id', $this->selectedItems)
-                    ->where('tenant_id', auth()->user()->tenant_id)
-                    ->delete();
-                $this->successMessage = "Successfully deleted {$count} allowance(s).";
+                // Salary structures keep their own copy of each line, so deleting here changes no one's pay.
+                Allowance::whereIn('id', $this->selectedItems)->delete();
+                $this->successMessage = "Deleted {$count} allowance(s).";
                 break;
 
             default:
@@ -149,36 +117,24 @@ class AllowancesTable extends Component
         }
 
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
     }
 
-    private function buildQuery()
+    public function deleteOne(int $id): void
     {
-        $query = Allowance::query()->latest();
-
-        if ($this->search) {
-            $query->where(function ($q) {
-                $q->where('name', 'like', "%{$this->search}%")
-                    ->orWhere('description', 'like', "%{$this->search}%");
-            });
-        }
-
-        if ($this->amountType) {
-            $query->where('amount_type', $this->amountType);
-        }
-
-        if (! $this->showInactive) {
-            $query->where('is_active', true);
-        }
-
-        return $query;
+        $this->requirePermission('create payroll');
+        $row = Allowance::findOrFail($id);
+        $row->delete();
+        $this->successMessage = "Deleted {$row->name}.";
+        $this->selectedItems = array_values(array_diff($this->selectedItems, [(string) $id]));
     }
 
     public function render()
     {
-        $allowances = $this->buildQuery()->paginate($this->pageSize());
-
-        return view('livewire.allowances.allowances-table', compact('allowances'));
+        return view('livewire.allowances.allowances-table', [
+            'rows' => $this->rows(),
+            'tabs' => $this->tabs(),
+            'filtered' => $this->isFiltered(),
+        ]);
     }
 }

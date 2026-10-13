@@ -1,45 +1,17 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    Refund {{ $refund->refund_number }}
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                    Invoice {{ $refund->invoice->invoice_number }} - {{ $refund->customer->name }}
-                </p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                <a href="{{ route('invoices.refunds.print', $refund) }}" target="_blank" 
-                   class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                    </svg>
-                    Print
-                </a>
-                @if($refund->status !== 'cancelled')
-                <form action="{{ route('invoices.refunds.cancel', $refund) }}" method="POST" class="inline"
-                      data-confirm="Are you sure you want to cancel this refund? This will reverse the refund amount back to the invoice.">
-                    @csrf
-                    @method('PATCH')
-                    <button type="submit" 
-                            class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                        Cancel Refund
-                    </button>
-                </form>
+        <x-table.page-header :title="'Refund '.$refund->refund_number">
+            <x-slot name="badge"><x-status-badge :status="$refund->status" /></x-slot>
+            <x-slot name="description">
+                For invoice <a href="{{ route('invoices.show', $refund->invoice) }}" class="link">{{ $refund->invoice->invoice_number }}</a> · {{ $refund->customer->name }}
+            </x-slot>
+            <x-slot name="more">
+                <x-table.menu-item :href="route('invoices.refunds.print', $refund)" new-tab>Print</x-table.menu-item>
+                @if ($refund->status !== 'cancelled')
+                    <x-table.menu-item danger :post="route('invoices.refunds.cancel', $refund)" method="PATCH" confirm="Cancel this refund? The amount goes back onto the invoice.">Cancel refund</x-table.menu-item>
                 @endif
-                <a href="{{ route('invoices.show', $refund->invoice) }}" 
-                   class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back to Invoice
-                </a>
-            </div>
-        </div>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -89,7 +61,7 @@
                             </div>
                             <div>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">Refund Date</p>
-                                <p class="font-medium text-gray-900 dark:text-gray-100">{{ $refund->refund_date->format('F d, Y') }}</p>
+                                <p class="font-medium text-gray-900 dark:text-gray-100">{{ $refund->refund_date->format('j F Y') }}</p>
                             </div>
                             <div>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">Refund Method</p>
@@ -126,7 +98,7 @@
                                 <p class="font-medium text-gray-900 dark:text-gray-100">
                                     {{ $refund->createdBy?->name ?? 'System' }}
                                     <span class="text-sm text-gray-500 dark:text-gray-400">
-                                        on {{ $refund->created_at->format('M d, Y g:i A') }}
+                                        on {{ $refund->created_at->format('j M Y, H:i') }}
                                     </span>
                                 </p>
                             </div>
@@ -144,7 +116,7 @@
                     <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                         <p class="text-sm text-gray-500 dark:text-gray-400">
                             Processed by <span class="font-medium text-gray-900 dark:text-gray-100">{{ $refund->approvedBy->name }}</span>
-                            on {{ $refund->approved_at->format('M d, Y g:i A') }}
+                            on {{ $refund->approved_at->format('j M Y, H:i') }}
                         </p>
                     </div>
                     @endif
@@ -166,40 +138,35 @@
                             {{ $refund->journal->journal_number }}
                         </a>
                     </h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Account</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Debit</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Credit</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <x-table caption="Ledger postings">
+<x-slot name="head">
+                                    <x-table.th>Account</x-table.th>
+                                    <x-table.th num>Debit</x-table.th>
+                                    <x-table.th num>Credit</x-table.th>
+</x-slot>
+
                                 @foreach($refund->journal->entries as $entry)
                                 <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                                    <td>
                                         <span class="font-mono text-xs text-gray-500 dark:text-gray-400 mr-2">{{ $entry->account->account_code }}</span>
                                         {{ $entry->account->name }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $entry->debit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
+                                    <td class="num {{ $entry->debit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                                         {{ $entry->debit > 0 ? number_format($entry->debit, 2) : '-' }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $entry->credit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
+                                    <td class="num {{ $entry->credit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                                         {{ $entry->credit > 0 ? number_format($entry->credit, 2) : '-' }}
                                     </td>
                                 </tr>
                                 @endforeach
-                            </tbody>
-                            <tfoot class="bg-gray-50 dark:bg-gray-700">
+<x-slot name="foot">
                                 <tr class="font-semibold">
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">Total</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($refund->journal->total_debit, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($refund->journal->total_credit, 2) }}</td>
+                                    <td>Total</td>
+                                    <td class="num">@fig($refund->journal->total_debit, false)</td>
+                                    <td class="num">@fig($refund->journal->total_credit, false)</td>
                                 </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+</x-slot>
+</x-table>
                 </div>
             </div>
             @endif

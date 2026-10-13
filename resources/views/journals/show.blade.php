@@ -1,29 +1,27 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    {{ $journal->journal_number }}
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">{{ $journal->journal_date->format('F d, Y') }}</p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                @if(!$journal->is_posted)
-                    <a href="{{ route('journals.edit', $journal) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                        </svg>
-                        Edit
-                    </a>
-                @endif
-                <a href="{{ route('journals.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back
-                </a>
-            </div>
-        </div>
+        <x-table.page-header :title="'Journal '.$journal->journal_number">
+            <x-slot name="badge"><x-status-badge :status="$journal->is_posted ? 'posted' : 'draft'" :label="$journal->is_posted ? 'Posted' : 'Draft'" /></x-slot>
+            <x-slot name="description">{{ $journal->journal_date->format('j M Y') }}{{ $journal->description ? ' · '.$journal->description : '' }}</x-slot>
+            @if (! $journal->is_posted)
+                @can('delete journals')
+                    <x-slot name="more">
+                        <x-table.menu-item danger :post="route('journals.destroy', $journal)" method="DELETE" confirm="Delete this journal?">Delete</x-table.menu-item>
+                    </x-slot>
+                @endcan
+                <x-slot name="actions">
+                    @can('edit journals')
+                        <a href="{{ route('journals.edit', $journal) }}" class="btn-secondary">Edit</a>
+                    @endcan
+                    @can('post journals')
+                        <form action="{{ route('journals.post', $journal) }}" method="POST" data-confirm="Post this journal? It can't be changed afterwards.">
+                            @csrf
+                            <button type="submit" class="btn-new">Post journal</button>
+                        </form>
+                    @endcan
+                </x-slot>
+            @endif
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -73,7 +71,7 @@
                             </div>
                             <div>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Date</dt>
-                                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $journal->journal_date->format('M d, Y') }}</dd>
+                                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $journal->journal_date->format('j M Y') }}</dd>
                             </div>
                             @if($journal->reference)
                             <div>
@@ -142,7 +140,7 @@
                             @if($journal->is_posted && $journal->posted_at)
                             <div>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Posted At</dt>
-                                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $journal->posted_at->format('M d, Y H:i') }}</dd>
+                                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $journal->posted_at->format('j M Y, H:i') }}</dd>
                             </div>
                             @endif
                         </dl>
@@ -168,7 +166,7 @@
                             @endif
                             <div>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Created At</dt>
-                                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $journal->created_at->format('M d, Y H:i') }}</dd>
+                                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $journal->created_at->format('j M Y, H:i') }}</dd>
                             </div>
                             @if($journal->approvedBy)
                             <div>
@@ -185,104 +183,53 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Journal Entries</h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Account</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Description</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Debit</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Credit</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <x-table caption="Journal lines">
+<x-slot name="head">
+                                    <x-table.th>Account</x-table.th>
+                                    <x-table.th>Description</x-table.th>
+                                    <x-table.th num>Debit</x-table.th>
+                                    <x-table.th num>Credit</x-table.th>
+</x-slot>
+
                                 @foreach($journal->entries as $entry)
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                {{ $entry->account->account_code }} - {{ $entry->account->name }}
-                                            </div>
+                                        <td>
+                                            <a href="{{ route('reports.general-ledger', ['account_id' => $entry->account_id]) }}" class="tbl-link font-medium">{{ $entry->account->account_code }} {{ $entry->account->name }}</a>
                                             <div class="text-xs text-gray-500 dark:text-gray-400 capitalize">
                                                 {{ $entry->account->type }}
                                             </div>
                                         </td>
-                                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                                        <td>
                                             {{ $entry->description ?? '—' }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $entry->debit > 0 ? 'font-medium text-gray-900 dark:text-gray-100' : 'text-gray-400' }}">
+                                        <td class="num {{ $entry->debit > 0 ? 'font-medium text-gray-900 dark:text-gray-100' : 'tbl-zero' }}">
                                             {{ $entry->debit > 0 ? number_format($entry->debit, 2) : '—' }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $entry->credit > 0 ? 'font-medium text-gray-900 dark:text-gray-100' : 'text-gray-400' }}">
+                                        <td class="num {{ $entry->credit > 0 ? 'font-medium text-gray-900 dark:text-gray-100' : 'tbl-zero' }}">
                                             {{ $entry->credit > 0 ? number_format($entry->credit, 2) : '—' }}
                                         </td>
                                     </tr>
                                 @endforeach
-                            </tbody>
-                            <tfoot class="bg-gray-50 dark:bg-gray-700">
+<x-slot name="foot">
                                 <tr>
-                                    <td colspan="2" class="px-6 py-3 text-right text-sm font-bold text-gray-900 dark:text-gray-100">
-                                        Totals:
-                                    </td>
-                                    <td class="px-6 py-3 text-right text-sm font-bold text-gray-900 dark:text-gray-100">
-                                        {{ number_format($journal->total_debit, 2) }}
-                                    </td>
-                                    <td class="px-6 py-3 text-right text-sm font-bold text-gray-900 dark:text-gray-100">
-                                        {{ number_format($journal->total_credit, 2) }}
-                                    </td>
+                                    <th scope="row" colspan="2">Total</th>
+                                    <td class="num">@fig($journal->total_debit, false)</td>
+                                    <td class="num">@fig($journal->total_credit, false)</td>
                                 </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+</x-slot>
+</x-table>
                 </div>
             </div>
 
-            <!-- Actions -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
-                <div class="p-6 flex flex-wrap gap-4">
-                    @if(!$journal->is_posted)
-                        <a href="{{ route('journals.edit', $journal) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                            </svg>
-                            Edit Journal
-                        </a>
-
-                        <form action="{{ route('journals.post', $journal) }}" method="POST" class="inline" data-confirm="Are you sure you want to post this journal? This action cannot be undone.">
-                            @csrf
-                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                </svg>
-                                Post Journal
-                            </button>
-                        </form>
-
-                        <form action="{{ route('journals.destroy', $journal) }}" method="POST" class="inline" data-confirm="Are you sure you want to delete this journal?">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                </svg>
-                                Delete
-                            </button>
-                        </form>
+            @if ($journal->is_posted && ($journal->isScheduleRelease() || $journal->isAutoReversal()))
+                <p class="mt-6 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                    @if ($journal->isScheduleRelease())
+                        This journal is one month released from a prepaid or deferred revenue schedule. It can't be edited, deleted or voided on its own; cancel the schedule to stop the months still to come.
                     @else
-                        <span class="inline-flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-500 dark:text-gray-400 uppercase tracking-widest">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                            </svg>
-                            Journal is Posted (Locked)
-                        </span>
-                        @if($journal->isScheduleRelease())
-                            <p class="w-full text-sm text-gray-500 dark:text-gray-400">This journal is one month released from a prepaid or deferred revenue schedule. It can't be edited, deleted or voided on its own; cancel the schedule to stop the months still to come.</p>
-                        @endif
-                        @if($journal->isAutoReversal())
-                            <p class="w-full text-sm text-gray-500 dark:text-gray-400">This journal was posted automatically to reverse {{ $journal->reversalOf?->journal_number }}. It can't be edited, deleted or voided on its own.</p>
-                        @endif
+                        This journal was posted automatically to reverse {{ $journal->reversalOf?->journal_number }}. It can't be edited, deleted or voided on its own.
                     @endif
-                </div>
-            </div>
+                </p>
+            @endif
         </div>
     </div>
 </x-app-layout>

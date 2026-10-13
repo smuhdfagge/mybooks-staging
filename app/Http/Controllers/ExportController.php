@@ -24,7 +24,7 @@ class ExportController extends Controller
     {
         $exports = Export::where('tenant_id', auth()->user()->tenant_id)
             ->orderByDesc('created_at')
-            ->paginate(15);
+            ->paginate(25);
 
         $exportTypes = Export::getExportTypes();
         $formats = Export::getFormats();

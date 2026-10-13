@@ -1,36 +1,12 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div class="flex items-center gap-4">
-                @if($employee->photo_path)
-                    <img src="{{ asset('storage/' . $employee->photo_path) }}" alt="{{ $employee->full_name }}" class="h-14 w-14 rounded-full object-cover ring-2 ring-brand-500/20">
-                @else
-                    <div class="h-14 w-14 rounded-full bg-brand-600 flex items-center justify-center ring-2 ring-brand-500/20">
-                        <span class="text-lg font-bold text-white">{{ strtoupper(substr($employee->first_name, 0, 1) . substr($employee->last_name, 0, 1)) }}</span>
-                    </div>
-                @endif
-                <div>
-                    <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                        {{ $employee->full_name }}
-                    </h2>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ $employee->employee_id }} · {{ $employee->designation?->name ?? 'No Designation' }}</p>
-                </div>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                <a href="{{ route('employees.edit', $employee) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                    </svg>
-                    Edit
-                </a>
-                <a href="{{ route('employees.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back
-                </a>
-            </div>
-        </div>
+        <x-table.page-header>
+            <x-slot name="title">{{ $employee->full_name }}</x-slot>
+            <x-slot name="description">{{ $employee->employee_id }} · {{ $employee->designation?->name ?? 'No Designation' }}</x-slot>
+            <x-slot name="actions">
+                <a href="{{ route('employees.edit', $employee) }}" class="btn-secondary"> Edit </a>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -77,7 +53,7 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Hire Date</p>
-                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $employee->hire_date?->format('M d, Y') ?? 'N/A' }}</p>
+                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $employee->hire_date?->format('j M Y') ?? 'N/A' }}</p>
                         </div>
                     </div>
                 </div>
@@ -125,7 +101,7 @@
                                 @if($employee->date_of_birth)
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Date of Birth</dt>
-                                    <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $employee->date_of_birth->format('M d, Y') }}</dd>
+                                    <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $employee->date_of_birth->format('j M Y') }}</dd>
                                 </div>
                                 @endif
 
@@ -255,29 +231,26 @@
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Recent Leave Records</h3>
                             
                             @if($employee->leaves && $employee->leaves->count() > 0)
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                    <thead class="bg-gray-50 dark:bg-gray-700">
-                                        <tr>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">From</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">To</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <x-table caption="Recent leave">
+<x-slot name="head">
+                                            <x-table.th>Type</x-table.th>
+                                            <x-table.th>From</x-table.th>
+                                            <x-table.th>To</x-table.th>
+                                            <x-table.th>Status</x-table.th>
+</x-slot>
+
                                         @foreach($employee->leaves->take(5) as $leave)
-                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                                {{ $leave->leaveType?->name ?? 'N/A' }}
+                                        <tr>
+                                            <td>
+                                                {{ $leave->leaveType?->name ?? '—' }}
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                                {{ $leave->start_date?->format('M d, Y') }}
+                                            <td>
+                                                {{ $leave->start_date?->format('j M Y') }}
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                                {{ $leave->end_date?->format('M d, Y') }}
+                                            <td>
+                                                {{ $leave->end_date?->format('j M Y') }}
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap">
+                                            <td>
                                                 @php
                                                     $statusColors = [
                                                         'pending' => 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-400',
@@ -291,9 +264,7 @@
                                             </td>
                                         </tr>
                                         @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
+</x-table>
                             @else
                             <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No leave records found.</p>
                             @endif
@@ -306,33 +277,30 @@
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Recent Payroll Records</h3>
                             
                             @if($employee->payrolls && $employee->payrolls->count() > 0)
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                    <thead class="bg-gray-50 dark:bg-gray-700">
-                                        <tr>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Period</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Gross</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Deductions</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Net Pay</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <x-table caption="Recent pay">
+<x-slot name="head">
+                                            <x-table.th>Period</x-table.th>
+                                            <x-table.th num>Gross</x-table.th>
+                                            <x-table.th num>Deductions</x-table.th>
+                                            <x-table.th num>Net pay</x-table.th>
+                                            <x-table.th>Status</x-table.th>
+</x-slot>
+
                                         @foreach($employee->payrolls->take(5) as $payroll)
-                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                                {{ $payroll->pay_period_start?->format('M d') }} - {{ $payroll->pay_period_end?->format('M d, Y') }}
+                                        <tr>
+                                            <td>
+                                                {{ $payroll->pay_period_start?->format('j M') }} – {{ $payroll->pay_period_end?->format('j M Y') }}
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-right">
-                                                {{ number_format($payroll->gross_salary ?? 0, 2) }}
+                                            <td class="num">
+                                                @fig($payroll->gross_salary ?? 0, false)
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-red-600 dark:text-red-300 text-right">
-                                                -{{ number_format($payroll->total_deductions ?? 0, 2) }}
+                                            <td class="num">
+                                                @fig($payroll->total_deductions ?? 0, false)
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-green-700 dark:text-green-400 text-right font-medium">
-                                                {{ number_format($payroll->net_salary ?? 0, 2) }}
+                                            <td class="num font-medium">
+                                                @fig($payroll->net_salary ?? 0, false)
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap">
+                                            <td>
                                                 @php
                                                     $payrollStatusColors = [
                                                         'pending' => 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-400',
@@ -346,9 +314,7 @@
                                             </td>
                                         </tr>
                                         @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
+</x-table>
                             @else
                             <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No payroll records found.</p>
                             @endif

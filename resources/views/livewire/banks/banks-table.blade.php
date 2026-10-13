@@ -1,208 +1,104 @@
-<div class="relative py-6">
-    <x-table-loading />
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <!-- Summary Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-green-100 dark:bg-green-900">
-                        <svg class="w-6 h-6 text-green-700 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Balance</p>
-                        <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">@money($totals['total_balance'])</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-brand-100 dark:bg-brand-900">
-                        <svg class="w-6 h-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-                        </svg>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Active Accounts</p>
-                        <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ $totals['active_accounts'] }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+{{-- Bank and cash accounts list (tables plan T4). --}}
+@php
+    $user = auth()->user();
+    $money = fn ($v) => number_format((float) $v, 2);
+    $canBulk = $user->canAny(['edit banks', 'delete banks']);
+    $ids = $banks->pluck('id')->map(fn ($id) => (string) $id)->all();
+    $home = \App\Support\Money::currency();
+@endphp
+<div class="relative space-y-3">
+    <x-flash-messages :successMessage="$successMessage" :errorMessage="$errorMessage" />
 
-        <!-- Flash Messages -->
-        @if ($successMessage)
-            <div class="mb-4 p-4 bg-green-100 dark:bg-green-900/50 border border-green-200 dark:border-green-700 rounded-lg">
-                <p class="text-green-700 dark:text-green-300">{{ $successMessage }}</p>
-            </div>
+    <x-table.tabs :tabs="$tabs" :active="$tab" />
+
+    <x-table.toolbar placeholder="Search account or bank name" :selected="count($selectedItems)" :filtered="$filtered">
+        <x-slot name="filters">
+            <x-table.pick model="type" label="Type" :options="$types" />
+        </x-slot>
+        @if ($canBulk)
+            <x-slot name="bulk">
+                @can('edit banks')
+                    <x-table.bulk-button action="activate">Put back in use</x-table.bulk-button>
+                    <x-table.bulk-button action="deactivate">Take out of use</x-table.bulk-button>
+                @endcan
+                @can('delete banks')<x-table.bulk-button action="delete" danger confirm="Delete the ticked accounts? Accounts with money recorded through them are skipped.">Delete</x-table.bulk-button>@endcan
+                <x-table.tick-all-matching :rows="$banks" :selected="$selectedItems" />
+            </x-slot>
         @endif
+    </x-table.toolbar>
 
-        @if ($errorMessage)
-            <div class="mb-4 p-4 bg-red-100 dark:bg-red-900/50 border border-red-200 dark:border-red-700 rounded-lg">
-                <p class="text-red-700 dark:text-red-300">{{ $errorMessage }}</p>
-            </div>
-        @endif
-
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-6">
-                <!-- Filters -->
-                <div class="flex flex-col md:flex-row gap-4 mb-6">
-                    <div class="flex-1">
-                        <input aria-label="Search bank accounts" wire:model.live.debounce.300ms="search" type="text" placeholder="Search bank accounts..."
-                               class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                        <select aria-label="Type filter" wire:model.live="typeFilter"
-                                class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                            <option value="">All Types</option>
-                            @foreach($accountTypes as $value => $label)
-                                <option value="{{ $value }}">{{ $label }}</option>
-                            @endforeach
-                        </select>
-                        <select aria-label="Status filter" wire:model.live="statusFilter"
-                                class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                            <option value="">All Status</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
-                        <select aria-label="Per page" wire:model.live="perPage"
-                                class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                            <option value="10">10</option>
-                            <option value="15">15</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Bulk Actions -->
-                @if(count($selectedItems) > 0)
-                <div class="mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg flex flex-wrap items-center gap-4">
-                    <span class="text-sm text-gray-600 dark:text-gray-300">{{ count($selectedItems) }} selected</span>
-                    <select aria-label="Bulk action" wire:model="bulkAction"
-                            class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-                        <option value="">Select Action</option>
-                        <option value="activate">Activate</option>
-                        <option value="deactivate">Deactivate</option>
-                        <option value="delete">Delete</option>
-                    </select>
-                    <button wire:click="applyBulkAction" wire:loading.attr="disabled"
-                            class="px-3 py-1.5 bg-brand-600 text-white text-sm rounded-md hover:bg-brand-700">
-                        Apply
-                    </button>
-                </div>
+    <div class="relative">
+        <x-table.veil />
+        @if ($banks->isEmpty())
+            <div class="tbl-wrap">
+                @if ($filtered || $tab !== '')
+                    <x-table.empty filtered title="No accounts match these filters" />
+                @else
+                    <x-table.empty title="No bank accounts yet" text="Add each bank account, till or cash box, so payments go to the right place.">
+                        @can('create banks')<a href="{{ route('banks.create') }}" class="btn-new">New account</a>@endcan
+                    </x-table.empty>
                 @endif
-
-                <!-- Table -->
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                                <th scope="col" class="px-4 py-3 w-10">
-                                    <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
-                                           class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
-                                </th>
-                                <x-sort-header field="name" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-100">Account Name</x-sort-header>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                    Bank
-                                </th>
-                                <x-sort-header field="account_type" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-100">Type</x-sort-header>
-                                <x-sort-header field="current_balance" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-100">Balance</x-sort-header>
-                                <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                    Status
-                                </th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                            @forelse($banks as $bank)
-                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                <td class="px-4 py-3">
-                                    <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $bank->id }}"
-                                           class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div class="flex items-center">
-                                        <div>
-                                            <a href="{{ route('banks.show', $bank) }}" class="text-sm font-medium text-brand-600 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-300">
-                                                {{ $bank->name }}
-                                            </a>
-                                            @if($bank->is_primary)
-                                                <span class="ml-2 px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 rounded-full">Primary</span>
-                                            @endif
-                                            @if($bank->account_number)
-                                                <div class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ $bank->masked_account_number }}</div>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                                    {{ $bank->bank_name ?? '-' }}
-                                </td>
-                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                                    {{ $accountTypes[$bank->account_type] ?? $bank->account_type }}
-                                </td>
-                                <td class="px-4 py-3 text-sm text-right font-medium {{ $bank->current_balance >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
-                                    {{ $bank->currency }} {{ number_format($bank->current_balance, 2) }}
-                                </td>
-                                <td class="px-4 py-3 text-center">
-                                    @if($bank->is_active)
-                                        <span class="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-full">Active</span>
-                                    @else
-                                        <span class="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300 rounded-full">Inactive</span>
-                                    @endif
-                                </td>
-                                <td class="px-4 py-3 text-right text-sm font-medium">
-                                    <div class="flex justify-end gap-2">
-                                        <a href="{{ route('banks.show', $bank) }}" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200" title="View" aria-label="View">
-                                            <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                            </svg>
-                                        </a>
-                                        @can('edit banks')
-                                        <a href="{{ route('banks.edit', $bank) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-200" title="Edit" aria-label="Edit">
-                                            <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                            </svg>
-                                        </a>
-                                        @endcan
-                                        @can('delete banks')
-                                        <form action="{{ route('banks.destroy', $bank) }}" method="POST" class="inline" data-confirm="Are you sure you want to delete this bank account?">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-red-600 dark:text-red-300 hover:text-red-900 dark:hover:text-red-200" title="Delete" aria-label="Delete">
-                                                <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                                </svg>
-                                            </button>
-                                        </form>
-                                        @endcan
-                                    </div>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="7" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                                    No bank accounts found. 
-                                    @can('create banks')
-                                    <a href="{{ route('banks.create') }}" class="text-brand-600 hover:text-brand-800 dark:text-brand-300">Add your first bank account</a>
-                                    @endcan
-                                </td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Pagination -->
-                <div class="mt-4">
-                    {{ $banks->links() }}
-                </div>
             </div>
-        </div>
+        @else
+            <x-table caption="Bank accounts" class="hidden md:block">
+                <x-slot name="head">
+                    @if ($canBulk)<x-table.check-all :ids="$ids" :selected="$selectedItems" label="Tick every account on this page" />@endif
+                    <x-table.th field="name" :sort="[$sortField, $sortDirection]">Account</x-table.th>
+                    <x-table.th>Bank</x-table.th>
+                    <x-table.th>Type</x-table.th>
+                    <x-table.th field="current_balance" :sort="[$sortField, $sortDirection]" num>Balance</x-table.th>
+                    <x-table.th>Status</x-table.th>
+                    <th scope="col" class="tbl-menu"><span class="sr-only">Actions</span></th>
+                </x-slot>
+                @foreach ($banks as $bank)
+                    @php $ticked = in_array((string) $bank->id, $selectedItems, true); @endphp
+                    <tr wire:key="bk-{{ $bank->id }}" @if ($ticked) data-picked @endif>
+                        @if ($canBulk)<x-table.check :id="$bank->id" :label="$bank->name" />@endif
+                        <td>
+                            <a href="{{ route('banks.show', $bank) }}" class="tbl-link">{{ $bank->name }}</a>
+                            <div class="text-xs tbl-muted">{{ collect([$bank->is_primary ? 'Main account' : null, $bank->account_number ? $bank->masked_account_number : null])->filter()->implode(' · ') }}</div>
+                        </td>
+                        <td class="{{ $bank->bank_name ? '' : 'tbl-zero' }}">{{ $bank->bank_name ?: '—' }}</td>
+                        <td class="tbl-muted">{{ $types[$bank->account_type] ?? ucfirst((string) $bank->account_type) }}</td>
+                        <td class="num">{{ $money($bank->current_balance) }}@if ($bank->currency && $bank->currency !== $home) <span class="tbl-muted">{{ $bank->currency }}</span>@endif</td>
+                        <td><x-status-badge :status="$bank->is_active ? 'active' : 'inactive'" :label="$bank->is_active ? 'In use' : 'Not in use'" /></td>
+                        <td class="tbl-menu">
+                            <x-table.dropdown :sr-label="'Actions for '.$bank->name">
+                                <x-table.menu-item :href="route('banks.show', $bank)">View</x-table.menu-item>
+                                <x-table.menu-item :href="route('banks.transactions', $bank)">Money in and out</x-table.menu-item>
+                                @can('reconcile banks')<x-table.menu-item :href="route('banks.reconcile', $bank)">Reconcile</x-table.menu-item>@endcan
+                                @can('edit banks')<x-table.menu-item :href="route('banks.edit', $bank)">Edit</x-table.menu-item>@endcan
+                                @can('delete banks')
+                                    <x-table.menu-item wire="deleteOne({{ $bank->id }})" :confirm="'Delete '.$bank->name.'? This can\'t be undone.'" danger>Delete</x-table.menu-item>
+                                @endcan
+                            </x-table.dropdown>
+                        </td>
+                    </tr>
+                @endforeach
+                <x-slot name="foot">
+                    <tr>
+                        @if ($canBulk)<td></td>@endif
+                        <td colspan="3">Total in accounts in use @if ($filtered || $tab !== '') <span class="font-normal tbl-muted">(this filter)</span>@endif</td>
+                        <td class="num">{{ $money($totals->balance) }}</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </x-slot>
+            </x-table>
+            <ul class="space-y-2 md:hidden" aria-label="Bank accounts">
+                @foreach ($banks as $bank)
+                    <li wire:key="bk-card-{{ $bank->id }}">
+                        <x-table.card :href="route('banks.show', $bank)" :title="$bank->name" :amount="\App\Support\Money::format($bank->current_balance)"
+                            :meta="collect([$bank->bank_name, $bank->account_number ? $bank->masked_account_number : null, $types[$bank->account_type] ?? null])->filter()->implode(' · ')">
+                            @if (! $bank->is_active)
+                                <x-slot name="badge"><x-status-badge status="inactive" label="Not in use" /></x-slot>
+                            @endif
+                        </x-table.card>
+                    </li>
+                @endforeach
+            </ul>
+            <p class="text-sm font-medium text-gray-700 md:hidden dark:text-gray-300">Total {{ \App\Support\Money::format($totals->balance) }}</p>
+        @endif
     </div>
+
+    <x-table.footer :rows="$banks" />
 </div>

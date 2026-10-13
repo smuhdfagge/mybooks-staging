@@ -1,38 +1,25 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div class="flex items-center gap-4">
-                @if($item->image_path)
-                    <img src="{{ asset('storage/' . $item->image_path) }}" alt="{{ $item->name }}" class="h-14 w-14 rounded-lg object-cover ring-2 ring-gray-200 dark:ring-gray-700">
-                @else
-                    <div class="h-14 w-14 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center ring-2 ring-gray-200 dark:ring-gray-700">
-                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                        </svg>
-                    </div>
-                @endif
-                <div>
-                    <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                        {{ $item->name }}
-                    </h2>
-                    @if($item->sku)
-                        <p class="text-sm text-gray-500 dark:text-gray-400">SKU: {{ $item->sku }}</p>
-                    @endif
-                </div>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                <a href="{{ route('items.edit', $item) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                    </svg>
-                    Edit
-                </a>
-                <a href="{{ route('items.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back
-                </a>
+        <div class="flex items-center gap-3">
+            @if ($item->image_path)
+                <img src="{{ asset('storage/'.$item->image_path) }}" alt="" class="h-12 w-12 shrink-0 rounded-md object-cover">
+            @endif
+            <div class="min-w-0 flex-1">
+                <x-table.page-header :title="$item->name" :description="$item->sku ? 'SKU '.$item->sku : null">
+                    @can('delete items')
+                        <x-slot name="more">
+                            <x-table.menu-item danger :post="route('items.destroy', $item)" method="DELETE" confirm="Delete this item?">Delete</x-table.menu-item>
+                        </x-slot>
+                    @endcan
+                    <x-slot name="actions">
+                        @can('edit items')
+                            <a href="{{ route('items.edit', $item) }}" class="btn-secondary">Edit</a>
+                        @endcan
+                        @can('create invoices')
+                            <a href="{{ route('invoices.create') }}?item_id={{ $item->id }}" class="btn-new">New invoice</a>
+                        @endcan
+                    </x-slot>
+                </x-table.page-header>
             </div>
         </div>
     </x-slot>
@@ -198,39 +185,9 @@
                     @endif
                 </div>
 
-                <!-- Quick Actions & Info -->
+                <!-- Info -->
                 <div class="lg:col-span-1">
                     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="p-6">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Quick Actions</h3>
-                            <div class="space-y-3">
-                                <a href="{{ route('invoices.create') }}?item_id={{ $item->id }}" class="btn-primary w-full">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                                    </svg>
-                                    Create Invoice
-                                </a>
-                                <a href="{{ route('items.edit', $item) }}" class="btn-secondary w-full">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                    </svg>
-                                    Edit Item
-                                </a>
-                                <form action="{{ route('items.destroy', $item) }}" method="POST" data-confirm="Are you sure you want to delete this item?">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn-danger w-full">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                        </svg>
-                                        Delete Item
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
                         <div class="p-6">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Item Info</h3>
                             <dl class="space-y-3">

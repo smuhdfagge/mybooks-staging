@@ -1,0 +1,5 @@
+# Table screens not yet on the shared table design (tables plan).
+# Each session takes its screens off this list; TableDesignTest fails if a
+# finished screen is still listed or a new table skips the shared design.
+# Empty since T7: every table screen uses the shared design. Printed
+# documents (PDFs, print layouts, emails) are not screens and stay as they are.

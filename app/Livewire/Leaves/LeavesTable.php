@@ -3,112 +3,65 @@
 namespace App\Livewire\Leaves;
 
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
-use App\Models\Employee;
+use App\Livewire\Concerns\ListTable;
+use App\Models\ActivityLog;
 use App\Models\Leave;
 use App\Models\LeaveType;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/** Leave requests (tables plan T5: the shared list design). */
 class LeavesTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
+    use ChecksPermissions, ListTable;
 
-    public $search = '';
+    public string $period = '';
 
-    public $status = '';
+    public string $leaveType = '';
 
-    public $leaveType = '';
-
-    public $employee = '';
-
-    public $sortField = 'start_date';
-
-    public $sortDirection = 'desc';
-
-    public $perPage = 10;
-
-    // Bulk operation properties
-    public $selectedItems = [];
-
-    public $selectAll = false;
-
-    public $bulkAction = '';
-
-    public $successMessage = '';
-
-    public $errorMessage = '';
+    public string $employee = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'status' => ['except' => ''],
-        'leaveType' => ['except' => ''],
+        'tab' => ['except' => '', 'as' => 'status'],
+        'period' => ['except' => ''],
+        'leaveType' => ['except' => '', 'as' => 'type'],
         'employee' => ['except' => ''],
     ];
 
-    public function updatingSearch()
+    public const LABELS = ['pending' => 'Waiting', 'approved' => 'Approved', 'rejected' => 'Rejected', 'cancelled' => 'Cancelled'];
+
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['start_date', 'days'];
     }
 
-    public function updatingStatus()
+    protected function rowRelations(): array
     {
-        $this->resetPage();
+        return ['employee:id,first_name,last_name,employee_id', 'leaveType:id,name'];
     }
 
-    public function updatingLeaveType()
+    protected function filterProperties(): array
     {
-        $this->resetPage();
+        return ['period', 'leaveType', 'employee'];
     }
 
-    public function updatingEmployee()
+    protected function baseQuery(): Builder
     {
-        $this->resetPage();
-    }
-
-    public function updatingPerPage()
-    {
-        $this->resetPage();
-    }
-
-    public function sortBy($field)
-    {
-        if ($this->sortField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            $this->sortDirection = 'asc';
+        $query = Leave::query();
+        if (($term = trim($this->search)) !== '') {
+            $query->whereHas('employee', fn ($e) => $e->where('first_name', 'like', "%{$term}%")
+                ->orWhere('last_name', 'like', "%{$term}%")
+                ->orWhere('employee_id', 'like', "%{$term}%"));
         }
-        $this->sortField = $field;
-    }
-
-    public function updatedSelectAll($value)
-    {
-        if ($value) {
-            $this->selectedItems = $this->getFilteredLeaveIds();
-        } else {
-            $this->selectedItems = [];
+        if ($this->leaveType !== '' && ctype_digit($this->leaveType)) {
+            $query->where('leave_type_id', (int) $this->leaveType);
         }
-    }
+        if ($this->employee !== '' && ctype_digit($this->employee)) {
+            $query->where('employee_id', (int) $this->employee);
+        }
 
-    public function updatedSelectedItems()
-    {
-        $this->selectAll = count($this->selectedItems) === count($this->getFilteredLeaveIds());
-    }
-
-    private function getFilteredLeaveIds()
-    {
-        return Leave::query()
-            ->with(['employee'])
-            ->when($this->search, fn ($q) => $q->whereHas('employee', function ($query) {
-                $query->where('first_name', 'like', "%{$this->search}%")
-                    ->orWhere('last_name', 'like', "%{$this->search}%");
-            }))
-            ->when($this->status, fn ($q) => $q->where('status', $this->status))
-            ->when($this->leaveType, fn ($q) => $q->where('leave_type_id', $this->leaveType))
-            ->when($this->employee, fn ($q) => $q->where('employee_id', $this->employee))
-            ->pluck('id')
-            ->map(fn ($id) => (string) $id)
-            ->toArray();
+        return $this->applyPeriod($query, 'start_date', $this->period);
     }
 
     /**
@@ -129,109 +82,33 @@ class LeavesTable extends Component
         $this->errorMessage = '';
 
         if (empty($this->selectedItems)) {
-            $this->errorMessage = 'Please select at least one leave request.';
+            $this->errorMessage = 'Tick at least one request first.';
 
             return;
         }
-
-        if (empty($this->bulkAction)) {
-            $this->errorMessage = 'Please select an action.';
-
-            return;
-        }
-
-        $count = count($this->selectedItems);
 
         $this->authorizeBulkAction();
+        $pending = fn () => Leave::with('employee')->whereIn('id', $this->selectedItems)->where('status', 'pending')->get();
 
         switch ($this->bulkAction) {
             case 'approve':
-                $approvedCount = 0;
-                $skippedCount = 0;
-
-                foreach ($this->selectedItems as $leaveId) {
-                    $leave = Leave::find($leaveId);
-                    if (! $leave || $leave->status !== 'pending') {
-                        $skippedCount++;
-
-                        continue;
-                    }
-
-                    $leave->update([
-                        'status' => 'approved',
-                        'approved_by' => auth()->id(),
-                        'approved_at' => now(),
-                    ]);
-                    $approvedCount++;
-                }
-
-                if ($approvedCount > 0) {
-                    $this->successMessage = "Approved {$approvedCount} leave request(s).";
-                    if ($skippedCount > 0) {
-                        $this->successMessage .= " Skipped {$skippedCount} non-pending request(s).";
-                    }
-                } else {
-                    $this->errorMessage = 'No pending leave requests to approve.';
-                }
-                break;
-
             case 'reject':
-                $rejectedCount = 0;
-                $skippedCount = 0;
-
-                foreach ($this->selectedItems as $leaveId) {
-                    $leave = Leave::find($leaveId);
-                    if (! $leave || $leave->status !== 'pending') {
-                        $skippedCount++;
-
-                        continue;
-                    }
-
-                    $leave->update([
-                        'status' => 'rejected',
-                        'approved_by' => auth()->id(),
-                        'approved_at' => now(),
-                    ]);
-                    $rejectedCount++;
+                $status = $this->bulkAction === 'approve' ? 'approved' : 'rejected';
+                $n = 0;
+                foreach ($pending() as $leave) {
+                    $this->answer($leave, $status);
+                    $n++;
                 }
-
-                if ($rejectedCount > 0) {
-                    $this->successMessage = "Rejected {$rejectedCount} leave request(s).";
-                    if ($skippedCount > 0) {
-                        $this->successMessage .= " Skipped {$skippedCount} non-pending request(s).";
-                    }
-                } else {
-                    $this->errorMessage = 'No pending leave requests to reject.';
-                }
+                $this->successMessage = ucfirst($status)." {$n} request(s). Only requests still waiting change.";
                 break;
 
             case 'delete':
-                $deletedCount = 0;
-                $skippedCount = 0;
-
-                foreach ($this->selectedItems as $leaveId) {
-                    $leave = Leave::find($leaveId);
-                    if (! $leave) {
-                        continue;
-                    }
-
-                    if ($leave->status !== 'pending') {
-                        $skippedCount++;
-
-                        continue;
-                    }
-
+                $n = 0;
+                foreach ($pending() as $leave) {
                     $leave->delete();
-                    $deletedCount++;
+                    $n++;
                 }
-
-                if ($deletedCount > 0 && $skippedCount > 0) {
-                    $this->successMessage = "Deleted {$deletedCount} leave request(s). Skipped {$skippedCount} non-pending request(s).";
-                } elseif ($deletedCount > 0) {
-                    $this->successMessage = "Successfully deleted {$deletedCount} leave request(s).";
-                } else {
-                    $this->errorMessage = 'Could not delete any leave requests. Only pending leaves can be deleted.';
-                }
+                $this->successMessage = "Deleted {$n} request(s). Only requests still waiting can be deleted.";
                 break;
 
             default:
@@ -241,31 +118,55 @@ class LeavesTable extends Component
         }
 
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
+    }
+
+    /** Approve one waiting request from its row menu, staying on the list. */
+    public function approveOne(int $id): void
+    {
+        $this->requirePermission('approve leaves');
+        $this->reset(['successMessage', 'errorMessage']);
+        $leave = Leave::with('employee')->findOrFail($id);
+        if ($leave->status !== 'pending') {
+            $this->errorMessage = 'This request has already been answered.';
+
+            return;
+        }
+        $this->answer($leave, 'approved');
+        $this->successMessage = "Approved leave for {$leave->employee->full_name}.";
+    }
+
+    /** Same record and log entry as approving or rejecting from the leave's own page. */
+    private function answer(Leave $leave, string $status): void
+    {
+        $leave->update(['status' => $status, 'approved_by' => auth()->id(), 'approved_at' => now()]);
+        $leave->logCustomActivity($status === 'approved' ? ActivityLog::ACTION_APPROVED : ActivityLog::ACTION_REJECTED, "Leave request for {$leave->employee->first_name} {$leave->employee->last_name} was {$status}");
+    }
+
+    /** Delete one request still waiting for an answer. */
+    public function deleteOne(int $id): void
+    {
+        $this->requirePermission('delete leaves');
+        $leave = Leave::findOrFail($id);
+        if ($leave->status !== 'pending') {
+            $this->errorMessage = 'Only requests still waiting can be deleted.';
+
+            return;
+        }
+        $leave->delete();
+        $this->successMessage = 'Request deleted.';
+        $this->selectedItems = array_values(array_diff($this->selectedItems, [(string) $id]));
     }
 
     public function render()
     {
-        $leaves = Leave::query()
-            ->with(['employee', 'leaveType', 'approvedBy'])
-            ->when($this->search, fn ($q) => $q->whereHas('employee', function ($query) {
-                $query->where('first_name', 'like', "%{$this->search}%")
-                    ->orWhere('last_name', 'like', "%{$this->search}%");
-            }))
-            ->when($this->status, fn ($q) => $q->where('status', $this->status))
-            ->when($this->leaveType, fn ($q) => $q->where('leave_type_id', $this->leaveType))
-            ->when($this->employee, fn ($q) => $q->where('employee_id', $this->employee))
-            ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->pageSize());
-
-        $leaveTypes = LeaveType::where('is_active', true)->get();
-        $employees = Employee::where('status', 'active')->get();
-
         return view('livewire.leaves.leaves-table', [
-            'leaves' => $leaves,
-            'leaveTypes' => $leaveTypes,
-            'employees' => $employees,
+            'leaves' => $this->rows(),
+            'tabs' => $this->statusTabs(self::LABELS, ['pending'], 'status', hideEmpty: false),
+            'totals' => $this->filteredQuery()->toBase()->selectRaw('COUNT(*) as n, COALESCE(SUM(days), 0) as days')->first(),
+            'leaveTypes' => LeaveType::where('is_active', true)->orderBy('name')->pluck('name', 'id'),
+            'periods' => self::periodOptions(),
+            'filtered' => $this->isFiltered(),
         ]);
     }
 }

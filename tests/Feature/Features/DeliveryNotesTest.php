@@ -175,7 +175,7 @@ class DeliveryNotesTest extends TestCase
     public function test_pages_open_and_the_note_prints(): void
     {
         $order = $this->order();
-        $this->get(route('sales-orders.show', $order))->assertOk()->assertSee('Deliver (delivery note)');
+        $this->get(route('sales-orders.show', $order))->assertOk()->assertSee('Make a delivery note');
         $this->get(route('delivery-notes.create'))->assertOk()->assertSee($order->order_number);
         $this->get(route('delivery-notes.create', ['sales_order_id' => $order->id]))->assertOk()->assertSee('Still to deliver');
 

@@ -1,15 +1,15 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Bank lines to review</h2>
-            <a href="{{ route('bank-feeds.index') }}" class="btn-secondary">Bank feeds</a>
-        </div>
+        <x-table.page-header title="Bank lines to review" :description="'What your bank sent us. Match each line to a record in MyBooks, record it, or ignore it. Amounts in '.\App\Support\Money::symbol().'.'">
+            <x-slot name="more">
+                <x-table.menu-item :href="route('bank-feeds.index')">Bank feeds</x-table.menu-item>
+                <x-table.menu-item :href="route('banks.index')">Banks</x-table.menu-item>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
-            @include('bank-feeds._not-set-up')
-            <livewire:banks.bank-feed-lines-table />
-        </div>
+    <div class="space-y-3">
+        @include('bank-feeds._not-set-up')
+        <livewire:banks.bank-feed-lines-table />
     </div>
 </x-app-layout>

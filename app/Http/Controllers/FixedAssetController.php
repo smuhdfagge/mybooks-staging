@@ -318,7 +318,7 @@ class FixedAssetController extends Controller
                 $scheduleData[] = [
                     'asset' => $asset,
                     'schedule' => $yearSchedule,
-                    'year_depreciation' => $yearSchedule->sum('depreciation'),
+                    'year_depreciation' => $yearSchedule->sum('depreciation_amount'),
                 ];
             }
         }

@@ -29,9 +29,25 @@
         'queued' => 'badge-warning',
         'sending' => 'badge-warning',
         'pending' => 'badge-warning',
+        'paid' => 'badge-success',
+        'unpaid' => 'badge-warning',
+        'partial' => 'badge-warning',
+        'overdue' => 'badge-danger',
+        'posted' => 'badge-success',
+        'inactive' => 'badge-muted',
+        'confirmed' => 'badge-info',
+        'processing' => 'badge-warning',
+        'invoiced' => 'badge-info',
+        'pending_approval' => 'badge-warning',
+        'approved' => 'badge-info',
+        'partially_received' => 'badge-warning',
+        'billed' => 'badge-info',
+        'paused' => 'badge-warning',
+        'stopped' => 'badge-muted',
     ];
+    $labels = ['partial' => 'Part paid', 'pending_approval' => 'Waiting for approval', 'partially_received' => 'Part received'];
 @endphp
 
 <span {{ $attributes->merge(['class' => 'badge '.($colours[$status] ?? $colours['draft'])]) }}>
-    {{ $label ?? ucwords(str_replace('_', ' ', $status)) }}
+    {{ $label ?? $labels[$status] ?? ucfirst(str_replace('_', ' ', $status)) }}
 </span>

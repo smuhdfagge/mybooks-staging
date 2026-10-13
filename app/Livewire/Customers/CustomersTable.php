@@ -3,92 +3,79 @@
 namespace App\Livewire\Customers;
 
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ListTable;
 use App\Models\Customer;
+use App\Models\Invoice;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/**
+ * Customers list (tables plan T2: the shared list design, see InvoicesTable).
+ */
 class CustomersTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
-
-    public $search = '';
-
-    public $status = '';
-
-    public $sortField = 'name';
-
-    public $sortDirection = 'asc';
-
-    public $perPage = 10;
-
-    public $successMessage = '';
-
-    public $errorMessage = '';
-
-    // Bulk operation properties
-    public $selectedItems = [];
-
-    public $selectAll = false;
-
-    public $bulkAction = '';
+    use ChecksPermissions, ListTable;
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'status' => ['except' => ''],
+        'tab' => ['except' => '', 'as' => 'status'],
     ];
 
-    public function updatingSearch()
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['name', 'outstanding_balance', 'created_at'];
     }
 
-    public function sortBy($field)
+    protected function rowRelations(): array
     {
-        if ($this->sortField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
+        return [];
+    }
+
+    protected function baseQuery(): Builder
+    {
+        $query = Customer::query();
+        if (($term = trim($this->search)) !== '') {
+            $query->where(fn ($q) => $q->where('name', 'like', "%{$term}%")
+                ->orWhere('company_name', 'like', "%{$term}%")
+                ->orWhere('email', 'like', "%{$term}%")
+                ->orWhere('phone', 'like', "%{$term}%"));
+        }
+
+        return $query;
+    }
+
+    /** Tabs: active, owing (an unpaid balance), inactive. */
+    protected function applyTab(Builder $query, string $tab): Builder
+    {
+        return match ($tab) {
+            'active' => $query->where('is_active', true),
+            'inactive' => $query->where('is_active', false),
+            'owing' => $query->whereHas('invoices', fn ($i) => $i->whereNotIn('status', Customer::NOT_OWED_STATUSES)->where('balance_due', '>', 0)),
+            default => $query,
+        };
+    }
+
+    /** Customers sort by name A–Z first. */
+    public function mountListTable(): void
+    {
+        if (! in_array($this->sortField, $this->sortable(), true)) {
+            $this->sortField = 'name';
             $this->sortDirection = 'asc';
         }
-        $this->sortField = $field;
     }
 
-    public function updatingStatus()
+    /** @return array<string, array{label: string, count: int, alert: bool}> */
+    private function tabs(): array
     {
-        $this->resetPage();
-    }
+        $row = $this->baseQuery()->toBase()->selectRaw('COUNT(*) as all_rows, SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active')->first();
+        $owing = $this->applyTab($this->baseQuery(), 'owing')->count();
 
-    public function updatingPerPage()
-    {
-        $this->resetPage();
-    }
-
-    public function updatedSelectAll($value)
-    {
-        if ($value) {
-            $this->selectedItems = $this->getFilteredCustomerIds();
-        } else {
-            $this->selectedItems = [];
-        }
-    }
-
-    public function updatedSelectedItems()
-    {
-        $this->selectAll = count($this->selectedItems) === count($this->getFilteredCustomerIds());
-    }
-
-    private function getFilteredCustomerIds()
-    {
-        return Customer::query()
-            ->when($this->search, fn ($q) => $q->where(function ($query) {
-                $query->where('name', 'like', "%{$this->search}%")
-                    ->orWhere('email', 'like', "%{$this->search}%")
-                    ->orWhere('phone', 'like', "%{$this->search}%");
-            }))
-            ->when($this->status !== '', fn ($q) => $q->where('is_active', $this->status === 'active'))
-            ->pluck('id')
-            ->map(fn ($id) => (string) $id)
-            ->toArray();
+        return [
+            '' => ['label' => 'All', 'count' => (int) $row->all_rows, 'alert' => false],
+            'active' => ['label' => 'Active', 'count' => (int) $row->active, 'alert' => false],
+            'owing' => ['label' => 'Owe you', 'count' => $owing, 'alert' => false],
+            'inactive' => ['label' => 'Inactive', 'count' => (int) $row->all_rows - (int) $row->active, 'alert' => false],
+        ];
     }
 
     /**
@@ -175,7 +162,6 @@ class CustomersTable extends Component
         }
 
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
     }
 
@@ -220,19 +206,22 @@ class CustomersTable extends Component
 
     public function render()
     {
-        $customers = Customer::query()
-            ->withBalances()
-            ->when($this->search, fn ($q) => $q->where(function ($query) {
-                $query->where('name', 'like', "%{$this->search}%")
-                    ->orWhere('email', 'like', "%{$this->search}%")
-                    ->orWhere('phone', 'like', "%{$this->search}%");
-            }))
-            ->when($this->status !== '', fn ($q) => $q->where('is_active', $this->status === 'active'))
-            ->orderBy($this->sortField, $this->sortDirection)
+        // Balances in the same query (P4: no query per row).
+        $customers = $this->filteredQuery()->scopes(['withBalances'])
+            ->orderBy($this->sortColumn(), $this->sortDirection === 'asc' ? 'asc' : 'desc')
+            ->orderBy('customers.id')
             ->paginate($this->pageSize());
+
+        $owed = Invoice::query()
+            ->whereIn('customer_id', $this->filteredQuery()->select('customers.id'))
+            ->whereNotIn('status', Customer::NOT_OWED_STATUSES)
+            ->sum('balance_due');
 
         return view('livewire.customers.customers-table', [
             'customers' => $customers,
+            'tabs' => $this->tabs(),
+            'totals' => (object) ['n' => $customers->total(), 'owed' => (float) $owed],
+            'filtered' => $this->isFiltered(),
         ]);
     }
 }

@@ -1,14 +1,10 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">{{ $leaveType->name }}</h2>
-            <div class="flex items-center gap-2">
-                <a href="{{ route('leave-types.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition ease-in-out duration-150">Back to List</a>
-                @can('edit leave-types')
-                    <a href="{{ route('leave-types.edit', $leaveType) }}" class="inline-flex items-center px-4 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700 transition ease-in-out duration-150">Edit</a>
-                @endcan
-            </div>
-        </div>
+        <x-table.page-header :title="$leaveType->name" description="Leave type">
+            @can('edit leave-types')
+                <x-slot name="actions"><a href="{{ route('leave-types.edit', $leaveType) }}" class="btn-secondary">Edit</a></x-slot>
+            @endcan
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">

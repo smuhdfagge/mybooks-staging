@@ -502,7 +502,7 @@ class DashboardService
                 'tone' => 'warn',
                 'title' => $n === 1 ? '1 item low on stock' : "{$n} items low on stock",
                 'text' => implode(', ', $facts['lowStockNames']).($n > count($facts['lowStockNames']) ? ' and more.' : '.'),
-                'url' => route('inventory.index'),
+                'url' => route('inventory.index', ['stock' => 'low']),
             ];
         }
 

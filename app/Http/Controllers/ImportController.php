@@ -26,7 +26,7 @@ class ImportController extends Controller
     {
         $imports = Import::where('tenant_id', auth()->user()->tenant_id)
             ->orderByDesc('created_at')
-            ->paginate(15);
+            ->paginate(25);
 
         $importTypes = Import::getImportTypes();
 

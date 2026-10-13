@@ -1,9 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">New delivery note for {{ $salesOrder->order_number }}</h2>
-            <a href="{{ route('sales-orders.show', $salesOrder) }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">Back to sales order</a>
-        </div>
+        <x-table.page-header>
+            <x-slot name="title">New delivery note for {{ $salesOrder->order_number }}</x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -37,27 +36,25 @@
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">What is being delivered</h3>
                         <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Enter how many of each line go out on this delivery. Leave 0 for lines not in this delivery.</p>
                         @error('lines')<p class="form-error mb-2">{{ $message }}</p>@enderror
-                        <table class="min-w-full line-items">
-                            <thead>
-                                <tr class="border-b border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300">
-                                    <th class="text-left pb-2">Item</th>
-                                    <th class="text-right pb-2">Ordered</th>
-                                    <th class="text-right pb-2">Already delivered</th>
-                                    <th class="text-right pb-2">Still to deliver</th>
-                                    <th class="text-right pb-2 w-36">Deliver now</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                        <x-table caption="What is being delivered" table-class="line-items">
+<x-slot name="head">
+                                    <x-table.th>Item</x-table.th>
+                                    <x-table.th num>Ordered</x-table.th>
+                                    <x-table.th num>Already delivered</x-table.th>
+                                    <x-table.th num>Still to deliver</x-table.th>
+                                    <x-table.th num class="w-36">Deliver now</x-table.th>
+</x-slot>
+
                                 @foreach($salesOrder->items as $i => $line)
                                     @php($left = $outstanding[$line->id] ?? 0)
-                                    <tr class="border-b border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-gray-100">
-                                        <td class="py-2 pr-2" data-label="Item" data-cell="main">{{ $line->description }}
+                                    <tr>
+                                        <td data-label="Item" data-cell="main">{{ $line->description }}
                                             <input type="hidden" name="lines[{{ $i }}][sales_order_item_id]" value="{{ $line->id }}">
                                         </td>
-                                        <td class="py-2 text-right" data-label="Ordered">{{ (float) $line->quantity }}</td>
-                                        <td class="py-2 text-right" data-label="Already delivered">{{ (float) $line->quantity_fulfilled }}</td>
-                                        <td class="py-2 text-right" data-label="Still to deliver">{{ $left }}</td>
-                                        <td class="py-2 pl-2" data-label="Deliver now">
+                                        <td class="num" data-label="Ordered">{{ (float) $line->quantity }}</td>
+                                        <td class="num" data-label="Already delivered">{{ (float) $line->quantity_fulfilled }}</td>
+                                        <td class="num" data-label="Still to deliver">{{ $left }}</td>
+                                        <td data-label="Deliver now">
                                             <input type="number" name="lines[{{ $i }}][quantity]" aria-label="Deliver now: {{ $line->description }}"
                                                 value="{{ old("lines.$i.quantity", $left) }}" min="0" max="{{ $left }}" step="0.01" @disabled($left <= 0)
                                                 class="form-control text-sm text-right @error("lines.$i.quantity") border-red-500 @enderror">
@@ -65,8 +62,7 @@
                                         </td>
                                     </tr>
                                 @endforeach
-                            </tbody>
-                        </table>
+</x-table>
                     </div>
                 </x-card>
 

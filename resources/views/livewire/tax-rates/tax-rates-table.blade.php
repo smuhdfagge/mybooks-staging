@@ -1,170 +1,95 @@
-<div class="relative">
-    <x-table-loading />
-    <!-- Flash Messages -->
+{{-- Tax rates list (tables plan T4). --}}
+@php
+    $user = auth()->user();
+    $canBulk = $user->canAny(['edit tax-rates', 'delete tax-rates']);
+    $ids = $taxRates->pluck('id')->map(fn ($id) => (string) $id)->all();
+    $rate = fn ($r) => rtrim(rtrim(number_format((float) $r, 4), '0'), '.').'%';
+    $on = ['sales' => 'Sales', 'purchases' => 'Purchases', 'both' => 'Sales and purchases'];
+@endphp
+<div class="relative space-y-3">
     <x-flash-messages :successMessage="$successMessage" :errorMessage="$errorMessage" />
 
-    <!-- Filters -->
-    <div class="mb-4 sm:mb-6 bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-4">
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div>
-                <label class="form-label">Search</label>
-                <input aria-label="Search by name or code" type="text" wire:model.live.debounce.300ms="search" placeholder="Search by name or code..."
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-            </div>
-            <div>
-                <label for="appliesTo" class="form-label">Applies To</label>
-                <select id="appliesTo" wire:model.live="appliesTo"
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-                    <option value="">All</option>
-                    <option value="sales">Sales Only</option>
-                    <option value="purchases">Purchases Only</option>
-                    <option value="both">Both</option>
-                </select>
-            </div>
-            <div class="flex items-end">
-                <label class="flex items-center">
-                    <input type="checkbox" wire:model.live="showInactive"
-                        class="h-4 w-4 text-brand-600 border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded focus:ring-brand-500 dark:text-brand-300">
-                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Show Inactive</span>
-                </label>
-            </div>
-            <div class="flex items-end">
-                <button wire:click="clearFilters" class="text-brand-600 hover:text-brand-800 dark:text-brand-300 dark:hover:text-brand-300 text-sm">
-                    Clear Filters
-                </button>
-            </div>
-            <!-- Bulk Actions -->
-            <x-bulk-actions :actions="['activate' => 'Activate', 'deactivate' => 'Deactivate', 'delete' => 'Delete']" :selectedCount="count($selectedItems)" />
-        </div>
-    </div>
+    <x-table.tabs :tabs="$tabs" :active="$tab" />
 
-    <!-- Table -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead class="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                        <th scope="col" class="px-4 py-3 text-left">
-                            <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
-                                class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Code</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Rate</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Applies To</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+    <x-table.toolbar placeholder="Search name or code" :selected="count($selectedItems)" :filtered="$filtered">
+        @if ($canBulk)
+            <x-slot name="bulk">
+                @can('edit tax-rates')
+                    <x-table.bulk-button action="activate">Make active</x-table.bulk-button>
+                    <x-table.bulk-button action="deactivate" confirm="Make the ticked rates inactive? They drop out of pick lists; past documents keep them.">Make inactive</x-table.bulk-button>
+                @endcan
+                @can('delete tax-rates')<x-table.bulk-button action="delete" danger confirm="Delete the ticked rates? Rates used in tax groups or on items are skipped.">Delete</x-table.bulk-button>@endcan
+            </x-slot>
+        @endif
+    </x-table.toolbar>
+
+    <div class="relative">
+        <x-table.veil />
+        @if ($taxRates->isEmpty())
+            <div class="tbl-wrap">
+                @if ($filtered || $tab !== '')
+                    <x-table.empty filtered title="No tax rates match these filters" />
+                @else
+                    <x-table.empty title="No tax rates yet" text="Add the rates you charge on sales and pay on purchases, such as VAT at 7.5%.">
+                        @can('create tax-rates')<a href="{{ route('tax-rates.create') }}" class="btn-new">New tax rate</a>@endcan
+                    </x-table.empty>
+                @endif
+            </div>
+        @else
+            <x-table caption="Tax rates" class="hidden md:block">
+                <x-slot name="head">
+                    @if ($canBulk)<x-table.check-all :ids="$ids" :selected="$selectedItems" label="Tick every rate on this page" />@endif
+                    <x-table.th field="name" :sort="[$sortField, $sortDirection]">Name</x-table.th>
+                    <x-table.th>Code</x-table.th>
+                    <x-table.th field="rate" :sort="[$sortField, $sortDirection]" num>Rate</x-table.th>
+                    <x-table.th>Price</x-table.th>
+                    <x-table.th>Used on</x-table.th>
+                    <x-table.th>Status</x-table.th>
+                    <th scope="col" class="tbl-menu"><span class="sr-only">Actions</span></th>
+                </x-slot>
+                @foreach ($taxRates as $taxRate)
+                    @php $ticked = in_array((string) $taxRate->id, $selectedItems, true); @endphp
+                    <tr wire:key="tr-{{ $taxRate->id }}" @if ($ticked) data-picked @endif>
+                        @if ($canBulk)<x-table.check :id="$taxRate->id" :label="$taxRate->name" />@endif
+                        <td>
+                            <a href="{{ route('tax-rates.show', $taxRate) }}" class="tbl-link">{{ $taxRate->name }}</a>
+                            @if ($taxRate->is_default)<div class="text-xs tbl-muted">Default</div>@endif
+                        </td>
+                        <td class="tbl-muted">{{ $taxRate->code ?: '—' }}</td>
+                        <td class="num">{{ $rate($taxRate->rate) }}</td>
+                        <td class="tbl-muted">{{ $taxRate->type === 'inclusive' ? 'Includes tax' : 'Tax added on top' }}</td>
+                        <td class="tbl-muted">{{ $on[$taxRate->applies_to] ?? ucfirst((string) $taxRate->applies_to) }}</td>
+                        <td><x-status-badge :status="$taxRate->is_active ? 'active' : 'inactive'" /></td>
+                        <td class="tbl-menu">
+                            <x-table.dropdown :sr-label="'Actions for '.$taxRate->name">
+                                <x-table.menu-item :href="route('tax-rates.show', $taxRate)">View</x-table.menu-item>
+                                @can('edit tax-rates')
+                                    <x-table.menu-item :href="route('tax-rates.edit', $taxRate)">Edit</x-table.menu-item>
+                                    @if (! $taxRate->is_default && $taxRate->is_active)<x-table.menu-item wire="toggleDefault({{ $taxRate->id }})">Make it the default</x-table.menu-item>@endif
+                                    <x-table.menu-item wire="toggleActive({{ $taxRate->id }})">{{ $taxRate->is_active ? 'Make inactive' : 'Make active' }}</x-table.menu-item>
+                                @endcan
+                                @can('delete tax-rates')
+                                    <x-table.menu-item wire="deleteOne({{ $taxRate->id }})" :confirm="'Delete '.$taxRate->name.'?'" danger>Delete</x-table.menu-item>
+                                @endcan
+                            </x-table.dropdown>
+                        </td>
                     </tr>
-                </thead>
-                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    @forelse($taxRates as $taxRate)
-                        <tr wire:key="taxRate-{{ $taxRate->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                            <td class="px-4 py-4">
-                                <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $taxRate->id }}"
-                                    class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    <div>
-                                        <a href="{{ route('tax-rates.show', $taxRate) }}" class="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-brand-600 dark:hover:text-brand-300">
-                                            {{ $taxRate->name }}
-                                        </a>
-                                        @if($taxRate->is_default)
-                                            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200">
-                                                Default
-                                            </span>
-                                        @endif
-                                        @if($taxRate->is_compound)
-                                            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-accent-100 text-accent-800 dark:bg-accent-900/50 dark:text-accent-200">
-                                                Compound
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                {{ $taxRate->code ?? '-' }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                {{ $taxRate->formatted_rate }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 capitalize">
-                                {{ $taxRate->type }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 capitalize">
-                                @if($taxRate->applies_to == 'both')
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">Both</span>
-                                @elseif($taxRate->applies_to == 'sales')
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Sales</span>
-                                @else
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Purchases</span>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                @if($taxRate->is_active)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                        Active
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                                        Inactive
-                                    </span>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <div class="flex justify-end items-center space-x-2">
-                                    @if(!$taxRate->is_default)
-                                        <button wire:click="toggleDefault({{ $taxRate->id }})" class="text-brand-600 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-300" title="Set as default" aria-label="Set as default">
-                                            <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
-                                            </svg>
-                                        </button>
-                                    @endif
-                                    <button wire:click="toggleActive({{ $taxRate->id }})" class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200" title="{{ $taxRate->is_active ? 'Deactivate' : 'Activate' }}" aria-label="{{ $taxRate->is_active ? 'Deactivate' : 'Activate' }}">
-                                        @if($taxRate->is_active)
-                                            <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
-                                            </svg>
-                                        @else
-                                            <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                            </svg>
-                                        @endif
-                                    </button>
-                                    <a href="{{ route('tax-rates.edit', $taxRate) }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-300">
-                                        <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                        </svg>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="8" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                                <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z"></path>
-                                </svg>
-                                <p class="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">No tax rates found</p>
-                                <p class="mt-2">Get started by creating a new tax rate.</p>
-                                <a href="{{ route('tax-rates.create') }}" class="mt-4 inline-flex items-center px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700">
-                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                    </svg>
-                                    Add Tax Rate
-                                </a>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        @if($taxRates->hasPages())
-            <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-                {{ $taxRates->links() }}
-            </div>
+                @endforeach
+            </x-table>
+            <ul class="space-y-2 md:hidden" aria-label="Tax rates">
+                @foreach ($taxRates as $taxRate)
+                    <li wire:key="tr-card-{{ $taxRate->id }}">
+                        <x-table.card :href="route('tax-rates.show', $taxRate)" :title="$taxRate->name" :amount="$rate($taxRate->rate)"
+                            :meta="($on[$taxRate->applies_to] ?? '').($taxRate->is_default ? ' · Default' : '')">
+                            @if (! $taxRate->is_active)
+                                <x-slot name="badge"><x-status-badge status="inactive" /></x-slot>
+                            @endif
+                        </x-table.card>
+                    </li>
+                @endforeach
+            </ul>
         @endif
     </div>
+
+    <x-table.footer :rows="$taxRates" />
 </div>

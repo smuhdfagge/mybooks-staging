@@ -521,13 +521,13 @@ class WarehousesTest extends TestCase
         $this->buy($beans, 2, 1000, $this->main);
 
         $all = Livewire::test(InventoryTable::class)->viewData('items');
-        $this->assertSame([10.0, 2.0], [(float) $all->firstWhere('id', $rice->id)->inventory->quantity, (float) $all->firstWhere('id', $beans->id)->inventory->quantity]);
+        $this->assertSame([10.0, 2.0], [(float) $all->firstWhere('id', $rice->id)->on_hand, (float) $all->firstWhere('id', $beans->id)->on_hand]);
 
-        $kano = Livewire::test(InventoryTable::class)->set('warehouseFilter', (string) $this->kano->id)->set('stockFilter', 'in_stock')->viewData('items');
+        $kano = Livewire::test(InventoryTable::class)->set('warehouse', (string) $this->kano->id)->set('tab', 'in')->viewData('items');
         $this->assertSame([$rice->id], $kano->pluck('id')->all());
-        $this->assertSame(6.0, (float) $kano->first()->inventory->quantity);
+        $this->assertSame(6.0, (float) $kano->first()->on_hand);
 
-        $out = Livewire::test(InventoryTable::class)->set('warehouseFilter', (string) $this->kano->id)->set('stockFilter', 'out_of_stock')->viewData('items');
+        $out = Livewire::test(InventoryTable::class)->set('warehouse', (string) $this->kano->id)->set('tab', 'out')->viewData('items');
         $this->assertSame([$beans->id], $out->pluck('id')->all());
     }
 

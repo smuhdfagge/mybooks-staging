@@ -1,218 +1,102 @@
+{{-- Budget and actual (tables plan T7): each account's budget so far against what happened, and whether it is better or worse. Amounts in ₦. --}}
+@php
+    $through = $ytdUtilization['through'] ?? null;
+    $monthName = $through ? \Illuminate\Support\Str::ucfirst($months[$through] ?? $through) : null;
+    $period = $through ? 'January to '.$monthName.' '.$budget->fiscal_year : 'Not started yet';
+    $groups = ['income' => 'Income', 'expense' => 'Spending'];
+    $sign = fn ($v) => (round((float) $v, 2) > 0 ? '+' : '').\App\Support\Figure::show($v, false);
+    $tone = fn ($v) => round((float) $v, 2) < 0 ? 'tbl-late' : (round((float) $v, 2) > 0 ? 'text-green-800 dark:text-green-300' : 'tbl-zero');
+@endphp
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    Budget vs Actual: {{ $budget->name }}
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Fiscal Year {{ $budget->fiscal_year }}</p>
-            </div>
-            <a href="{{ route('budgets.show', $budget) }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                Back to Budget
-            </a>
-        </div>
+        <x-table.page-header :title="'Budget and actual: '.$budget->name" :description="'What was planned and what happened, '.($through ? 'January to '.$monthName : 'by account').'. A plus is better than budget (more income, less spending). Amounts in ₦.'">
+            <x-slot name="more">
+                <x-table.menu-item :href="route('budgets.show', $budget)">The budget</x-table.menu-item>
+                <x-table.menu-item :href="route('budgets.index')">All budgets</x-table.menu-item>
+            </x-slot>
+            <x-slot name="actions">
+                <x-table.dropdown label="Export" align="right">
+                    <x-table.menu-item print>Print</x-table.menu-item>
+                </x-table.dropdown>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <!-- YTD Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <div class="text-sm text-gray-500 dark:text-gray-400">YTD Budget</div>
-                    <div class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
-                        {{ number_format($ytdUtilization['total_budget_ytd'], 2) }}
-                    </div>
-                </div>
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <div class="text-sm text-gray-500 dark:text-gray-400">YTD Actual</div>
-                    <div class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
-                        {{ number_format($ytdUtilization['total_actual_ytd'], 2) }}
-                    </div>
-                </div>
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <div class="text-sm text-gray-500 dark:text-gray-400">Budget Utilization</div>
-                    <div class="mt-1">
-                        <span class="text-2xl font-semibold {{ $ytdUtilization['utilization_percent'] > 100 ? 'text-red-600 dark:text-red-300' : 'text-green-700 dark:text-green-400' }}">
-                            {{ $ytdUtilization['utilization_percent'] }}%
-                        </span>
-                    </div>
-                    <div class="mt-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                        <div class="h-2 rounded-full {{ $ytdUtilization['utilization_percent'] > 100 ? 'bg-red-600' : 'bg-green-600' }}"
-                             style="width: {{ min($ytdUtilization['utilization_percent'], 100) }}%"></div>
-                    </div>
-                </div>
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <div class="text-sm text-gray-500 dark:text-gray-400">Remaining Budget</div>
-                    <div class="mt-1 text-2xl font-semibold {{ $ytdUtilization['remaining'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
-                        {{ number_format($ytdUtilization['remaining'], 2) }}
-                    </div>
-                </div>
+    <x-report.sheet :title="'Budget and actual: '.$budget->name" :period="$period">
+        <x-report.stats :cols="4">
+            <x-report.stat label="Spending budget so far" :value="\App\Support\Figure::show($ytdUtilization['total_budget_ytd'])" :hint="$period" />
+            <x-report.stat label="Spent so far" :value="\App\Support\Figure::show($ytdUtilization['total_actual_ytd'])" />
+            <x-report.stat label="Spending budget used" :value="\App\Support\Figure::percent($ytdUtilization['total_actual_ytd'], $ytdUtilization['total_budget_ytd'])" :tone="$ytdUtilization['utilization_percent'] > 100 ? 'bad' : null" />
+            <x-report.stat label="Spending budget left" :value="\App\Support\Figure::show($ytdUtilization['remaining'])" :tone="$ytdUtilization['remaining'] < 0 ? 'bad' : null" />
+        </x-report.stats>
+
+        @if ($ytdUtilization['over_budget_count'] > 0)
+            <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-100">
+                <p class="font-medium">{{ $ytdUtilization['over_budget_count'] }} {{ \Illuminate\Support\Str::plural('account', $ytdUtilization['over_budget_count']) }} worse than budget</p>
+                <ul class="mt-1 list-disc space-y-0.5 pl-5">
+                    @foreach ($ytdUtilization['over_budget_accounts'] as $item)
+                        <li>{{ $item['account_name'] }}: {{ number_format(abs($item['variance']), 2) }} {{ $item['account_type'] === 'income' ? 'below' : 'over' }} budget ({{ number_format(abs($item['variance_percent']), 1) }}%)</li>
+                    @endforeach
+                </ul>
             </div>
+        @endif
 
-            <!-- Over Budget Alerts -->
-            @if($ytdUtilization['over_budget_count'] > 0)
-            <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                <div class="flex">
-                    <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                    </svg>
-                    <div class="ml-3">
-                        <h3 class="text-sm font-medium text-red-800 dark:text-red-300">
-                            {{ $ytdUtilization['over_budget_count'] }} Account(s) Over Budget
-                        </h3>
-                        <div class="mt-2 text-sm text-red-700 dark:text-red-300">
-                            <ul class="list-disc pl-5 space-y-1">
-                                @foreach($ytdUtilization['over_budget_accounts'] as $item)
-                                <li>{{ $item['account_name'] }}: {{ number_format(abs($item['variance']), 2) }} over budget ({{ abs($item['variance_percent']) }}%)</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    </div>
-                </div>
+        @if ($comparison->isEmpty())
+            <div class="tbl-wrap">
+                <x-table.empty title="Nothing to compare yet" :text="$through ? 'This budget has no lines.' : 'This budget is for a year that has not started.'" />
             </div>
-            @endif
-
-            <!-- Comparison Table -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Budget vs Actual by Account</h3>
-                    
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Account</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">YTD Budget</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">YTD Actual</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Variance</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Variance %</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                @php
-                                    $incomeComparison = $comparison->filter(fn($item) => $item['account_type'] === 'income');
-                                    $expenseComparison = $comparison->filter(fn($item) => $item['account_type'] === 'expense');
-                                @endphp
-
-                                @if($incomeComparison->count() > 0)
-                                <tr class="bg-green-50 dark:bg-green-900/20">
-                                    <td colspan="6" class="px-4 py-2 text-sm font-semibold text-green-800 dark:text-green-300">Income Accounts</td>
-                                </tr>
-                                @foreach($incomeComparison as $item)
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                    <td class="px-4 py-3 text-sm">
-                                        <span class="text-gray-500 dark:text-gray-400">{{ $item['account_code'] }}</span>
-                                        <span class="text-gray-900 dark:text-gray-100 ml-2">{{ $item['account_name'] }}</span>
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">
-                                        {{ number_format($item['budgeted'], 2) }}
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">
-                                        {{ number_format($item['actual'], 2) }}
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $item['variance'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
-                                        {{ $item['variance'] >= 0 ? '+' : '' }}{{ number_format($item['variance'], 2) }}
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $item['variance'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
-                                        {{ $item['variance'] >= 0 ? '+' : '' }}{{ number_format($item['variance_percent'], 1) }}%
-                                    </td>
-                                    <td class="px-4 py-3 text-center">
-                                        @if($item['is_over_budget'])
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
-                                                Under Target
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
-                                                On Track
-                                            </span>
-                                        @endif
-                                    </td>
-                                </tr>
-                                @endforeach
+        @else
+            <x-table caption="Budget and actual, by account">
+                <x-slot name="head">
+                    <x-table.th>Account</x-table.th>
+                    <x-table.th num class="hidden sm:table-cell">Budget</x-table.th>
+                    <x-table.th num class="hidden sm:table-cell">Actual</x-table.th>
+                    <x-table.th num>Better or worse</x-table.th>
+                    <x-table.th num class="hidden md:table-cell">%</x-table.th>
+                    <x-table.th class="hidden md:table-cell">Status</x-table.th>
+                </x-slot>
+                @foreach ($groups as $type => $heading)
+                    @php $rows = $comparison->where('account_type', $type); @endphp
+                    @continue($rows->isEmpty())
+                    <tr class="rpt-section"><td colspan="6">{{ $heading }}</td></tr>
+                    @foreach ($rows as $item)
+                        <tr>
+                            <td class="rpt-in1"><span class="tbl-muted">{{ $item['account_code'] }}</span> {{ $item['account_name'] }}</td>
+                            <td class="num hidden sm:table-cell">@fig($item['budgeted'], false)</td>
+                            <td class="num hidden sm:table-cell">@fig($item['actual'], false)</td>
+                            <td class="num {{ $tone($item['variance']) }}">{{ $sign($item['variance']) }}</td>
+                            <td class="num hidden md:table-cell {{ $tone($item['variance']) }}">{{ (float) $item['budgeted'] != 0 ? (($item['variance'] > 0 ? '+' : '').number_format($item['variance_percent'], 1).'%') : '—' }}</td>
+                            <td class="hidden md:table-cell">
+                                @if ($item['is_over_budget'])
+                                    <x-status-badge status="overdue" :label="$type === 'income' ? 'Below budget' : 'Over budget'" />
+                                @else
+                                    <x-status-badge status="completed" :label="$type === 'income' ? 'On or above' : 'Within budget'" />
                                 @endif
-
-                                @if($expenseComparison->count() > 0)
-                                <tr class="bg-red-50 dark:bg-red-900/20">
-                                    <td colspan="6" class="px-4 py-2 text-sm font-semibold text-red-800 dark:text-red-300">Expense Accounts</td>
-                                </tr>
-                                @foreach($expenseComparison as $item)
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                    <td class="px-4 py-3 text-sm">
-                                        <span class="text-gray-500 dark:text-gray-400">{{ $item['account_code'] }}</span>
-                                        <span class="text-gray-900 dark:text-gray-100 ml-2">{{ $item['account_name'] }}</span>
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">
-                                        {{ number_format($item['budgeted'], 2) }}
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">
-                                        {{ number_format($item['actual'], 2) }}
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $item['variance'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
-                                        {{ $item['variance'] >= 0 ? '+' : '' }}{{ number_format($item['variance'], 2) }}
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $item['variance'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
-                                        {{ $item['variance'] >= 0 ? '+' : '' }}{{ number_format($item['variance_percent'], 1) }}%
-                                    </td>
-                                    <td class="px-4 py-3 text-center">
-                                        @if($item['is_over_budget'])
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
-                                                Over Budget
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
-                                                Under Budget
-                                            </span>
-                                        @endif
-                                    </td>
-                                </tr>
-                                @endforeach
-                                @endif
-
-                                @if($comparison->count() === 0)
-                                <tr>
-                                    <td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                                        No budget data available for comparison.
-                                    </td>
-                                </tr>
-                                @endif
-                            </tbody>
-                            <tfoot class="bg-gray-100 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Total</th>
-                                    <th class="px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                        {{ number_format($comparison->sum('budgeted'), 2) }}
-                                    </th>
-                                    <th class="px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                        {{ number_format($comparison->sum('actual'), 2) }}
-                                    </th>
-                                    <th class="px-4 py-3 text-right text-sm font-semibold {{ $comparison->sum('variance') >= 0 ? 'text-green-700' : 'text-red-600' }}">
-                                        {{ $comparison->sum('variance') >= 0 ? '+' : '' }}{{ number_format($comparison->sum('variance'), 2) }}
-                                    </th>
-                                    <th colspan="2"></th>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Legend -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-4">
-                <div class="flex flex-wrap gap-6 text-sm">
-                    <div class="flex items-center gap-2">
-                        <span class="inline-block w-3 h-3 rounded bg-green-500"></span>
-                        <span class="text-gray-600 dark:text-gray-400">Positive variance (under budget / above income target)</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="inline-block w-3 h-3 rounded bg-red-500"></span>
-                        <span class="text-gray-600 dark:text-gray-400">Negative variance (over budget / below income target)</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                    <tr class="rpt-sub">
+                        <td class="rpt-in1">Total {{ strtolower($heading) }}</td>
+                        <td class="num hidden sm:table-cell">@fig($rows->sum('budgeted'), false)</td>
+                        <td class="num hidden sm:table-cell">@fig($rows->sum('actual'), false)</td>
+                        <td class="num {{ $tone($rows->sum('variance')) }}">{{ $sign($rows->sum('variance')) }}</td>
+                        <td class="hidden md:table-cell"></td>
+                        <td class="hidden md:table-cell"></td>
+                    </tr>
+                @endforeach
+                @php
+                    $inc = $comparison->where('account_type', 'income'); $exp = $comparison->where('account_type', 'expense');
+                    $profitBudget = $inc->sum('budgeted') - $exp->sum('budgeted'); $profitActual = $inc->sum('actual') - $exp->sum('actual');
+                @endphp
+                <tr class="rpt-total">
+                    <td>Profit</td>
+                    <td class="num hidden sm:table-cell">@fig($profitBudget)</td>
+                    <td class="num hidden sm:table-cell">@fig($profitActual)</td>
+                    <td class="num {{ $tone($profitActual - $profitBudget) }}">{{ $sign($profitActual - $profitBudget) }}</td>
+                    <td class="hidden md:table-cell"></td>
+                    <td class="hidden md:table-cell"></td>
+                </tr>
+            </x-table>
+        @endif
+    </x-report.sheet>
 </x-app-layout>

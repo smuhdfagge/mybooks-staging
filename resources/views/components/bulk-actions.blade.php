@@ -10,7 +10,7 @@
             @endforeach
         </select>
         <button type="button" wire:click="applyBulkAction" wire:confirm="Are you sure you want to apply this action to the selected items?"
-            class="flex-shrink-0 px-3 py-2 bg-brand-600 text-white text-sm font-medium rounded-md hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50"
+            class="btn-primary flex-shrink-0"
             {{ $selectedCount === 0 ? 'disabled' : '' }}>
             Apply
         </button>

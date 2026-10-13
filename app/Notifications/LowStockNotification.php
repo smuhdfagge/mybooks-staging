@@ -36,7 +36,7 @@ class LowStockNotification extends Notification implements ShouldQueue
         }
 
         return $message
-            ->action('View Inventory', route('inventory.index'))
+            ->action('See what is running low', route('inventory.index', ['stock' => 'low']))
             ->line('Please review and place orders as needed.');
     }
 

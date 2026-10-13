@@ -656,11 +656,11 @@ class AssemblyTest extends TestCase
         $this->get(route('assembly-orders.print', $order))->assertOk()->assertSee('PRODUCTION SHEET')->assertSee('Maize')->assertSee('Made by');
         $this->get(route('assembly-orders.index'))->assertOk()->assertSee('Assembly orders');
         $this->get(route('assembly-orders.report', ['from' => '2026-10-10', 'to' => '2026-10-10']))->assertOk()
-            ->assertSee('Feed 25kg bag')->assertSee('₦463,000.00');
+            ->assertSee('Feed 25kg bag')->assertSee('463,000.00')->assertSee('Amounts in ₦');
 
         Livewire::test(AssemblyOrdersTable::class)->assertSee($order->order_number)
-            ->set('status', 'draft')->assertDontSee($order->order_number)
-            ->set('status', '')->set('kind', 'breakdown')->assertDontSee($order->order_number)
+            ->set('tab', 'draft')->assertDontSee($order->order_number)
+            ->set('tab', '')->set('kind', 'breakdown')->assertDontSee($order->order_number)
             ->set('kind', '')->set('search', 'Feed')->assertSee($order->order_number);
     }
 

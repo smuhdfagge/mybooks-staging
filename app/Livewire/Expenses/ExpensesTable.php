@@ -3,281 +3,174 @@
 namespace App\Livewire\Expenses;
 
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ListTable;
+use App\Models\ChartOfAccount;
 use App\Models\Expense;
+use App\Models\Vendor;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/**
+ * Expenses list (tables plan T3: the shared list design, see InvoicesTable),
+ * with the approval steps: submit, approve or reject, mark as paid.
+ */
 class ExpensesTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
+    use ChecksPermissions, ListTable;
 
-    public $search = '';
+    public string $period = '';
 
-    public $sortField = 'expense_date';
+    public string $vendor = '';
 
-    public $sortDirection = 'desc';
+    public string $account = '';
 
-    public $perPage = 10;
-
-    public $statusFilter = '';
-
-    // Bulk operation properties
-    public $selectedItems = [];
-
-    public $selectAll = false;
-
-    public $bulkAction = '';
-
-    public $successMessage = '';
-
-    public $errorMessage = '';
-
-    // Rejection modal properties
+    // Rejection dialog
     public $showRejectionModal = false;
 
     public $rejectionExpenseId = null;
 
     public $rejectionReason = '';
 
-    protected $queryString = ['search', 'sortField', 'sortDirection', 'statusFilter'];
+    protected $queryString = [
+        'search' => ['except' => ''],
+        'tab' => ['except' => '', 'as' => 'status'],
+        'period' => ['except' => ''],
+        'vendor' => ['except' => ''],
+        'account' => ['except' => ''],
+    ];
 
-    public function updatingSearch()
+    /** Status => tab label, in the order an expense moves through them. */
+    public const LABELS = [
+        Expense::STATUS_DRAFT => 'Draft',
+        Expense::STATUS_PENDING_APPROVAL => 'Waiting for approval',
+        Expense::STATUS_APPROVED => 'Approved',
+        Expense::STATUS_REJECTED => 'Rejected',
+        Expense::STATUS_PAID => 'Paid',
+    ];
+
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['expense_date', 'expense_number', 'total'];
     }
 
-    public function updatingPerPage()
+    protected function rowRelations(): array
     {
-        $this->resetPage();
+        return ['vendor:id,name', 'expenseAccount:id,name'];
     }
 
-    public function updatingStatusFilter()
+    protected function filterProperties(): array
     {
-        $this->resetPage();
+        return ['period', 'vendor', 'account'];
     }
 
-    public function sortBy($field)
+    protected function baseQuery(): Builder
     {
-        if ($this->sortField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            $this->sortField = $field;
-            $this->sortDirection = 'asc';
+        $query = Expense::query();
+        if (($term = trim($this->search)) !== '') {
+            $number = preg_replace('/[^0-9.]/', '', $term);
+            $query->where(function ($q) use ($term, $number) {
+                $q->where('expense_number', 'like', "%{$term}%")
+                    ->orWhere('name', 'like', "%{$term}%")
+                    ->orWhere('description', 'like', "%{$term}%")
+                    ->orWhere('reference', 'like', "%{$term}%")
+                    ->orWhereHas('vendor', fn ($v) => $v->where('name', 'like', "%{$term}%"));
+                if ($number !== '' && is_numeric($number)) {
+                    $q->orWhere('total', (float) $number);
+                }
+            });
         }
-    }
-
-    public function updatedSelectAll($value)
-    {
-        if ($value) {
-            $this->selectedItems = $this->getFilteredExpenseIds();
-        } else {
-            $this->selectedItems = [];
+        if ($this->vendor !== '' && ctype_digit($this->vendor)) {
+            $query->where('vendor_id', (int) $this->vendor);
         }
+        if ($this->account !== '' && ctype_digit($this->account)) {
+            $query->where('expense_account_id', (int) $this->account);
+        }
+
+        return $this->applyPeriod($query, 'expense_date', $this->period);
     }
 
-    public function updatedSelectedItems()
+    private function isAdmin(): bool
     {
-        $this->selectAll = count($this->selectedItems) === count($this->getFilteredExpenseIds());
+        return auth()->user()->hasRole('admin') || auth()->user()->isSuperAdmin();
     }
 
-    private function getFilteredExpenseIds()
-    {
-        return Expense::query()
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('expense_number', 'like', '%'.$this->search.'%')
-                        ->orWhere('description', 'like', '%'.$this->search.'%')
-                        ->orWhere('reference', 'like', '%'.$this->search.'%')
-                        ->orWhereHas('vendor', function ($vq) {
-                            $vq->where('name', 'like', '%'.$this->search.'%');
-                        });
-                });
-            })
-            ->when($this->statusFilter, function ($query) {
-                $query->where('status', $this->statusFilter);
-            })
-            ->pluck('id')
-            ->map(fn ($id) => (string) $id)
-            ->toArray();
-    }
-
-    public $confirmingDeletion = false;
-
-    public $expenseToDelete = null;
-
-    public function confirmDelete($expenseId)
+    /** Delete one draft or rejected expense from its row menu. */
+    public function deleteOne(int $id): void
     {
         $this->requirePermission('delete expenses');
-
-        $expense = Expense::find($expenseId);
-        if ($expense && ! in_array($expense->status, [Expense::STATUS_DRAFT, Expense::STATUS_REJECTED])) {
+        $expense = Expense::findOrFail($id);
+        if (! in_array($expense->status, [Expense::STATUS_DRAFT, Expense::STATUS_REJECTED], true)) {
             $this->errorMessage = 'Only draft or rejected expenses can be deleted.';
 
             return;
         }
-        $this->expenseToDelete = $expenseId;
-        $this->confirmingDeletion = true;
+        DB::transaction(fn () => $expense->delete());
+        $this->successMessage = "Deleted {$expense->expense_number}.";
+        $this->selectedItems = array_values(array_diff($this->selectedItems, [(string) $id]));
     }
 
-    public function deleteExpense()
-    {
-        $this->requirePermission('delete expenses');
-
-        $this->successMessage = '';
-        $this->errorMessage = '';
-
-        if (! $this->expenseToDelete) {
-            return;
-        }
-
-        $expense = Expense::find($this->expenseToDelete);
-
-        if ($expense) {
-            if (! in_array($expense->status, [Expense::STATUS_DRAFT, Expense::STATUS_REJECTED])) {
-                $this->errorMessage = 'Only draft or rejected expenses can be deleted.';
-                $this->confirmingDeletion = false;
-                $this->expenseToDelete = null;
-
-                return;
-            }
-
-            DB::transaction(function () use ($expense) {
-                $expense->delete();
-            });
-            $this->successMessage = 'Expense deleted successfully.';
-        } else {
-            $this->errorMessage = 'Expense not found.';
-        }
-
-        $this->confirmingDeletion = false;
-        $this->expenseToDelete = null;
-    }
-
-    public function cancelDelete()
-    {
-        $this->confirmingDeletion = false;
-        $this->expenseToDelete = null;
-    }
-
-    /**
-     * Submit expense for approval
-     */
     public function submitForApproval($expenseId)
     {
         $this->requirePermission('edit expenses');
-
         $this->successMessage = '';
         $this->errorMessage = '';
 
         $expense = Expense::find($expenseId);
-        if (! $expense) {
-            $this->errorMessage = 'Expense not found.';
+        if (! $expense || ! $expense->canBeSubmitted()) {
+            $this->errorMessage = 'This expense can\'t be sent for approval.';
 
             return;
         }
-
-        if (! $expense->canBeSubmitted()) {
-            $this->errorMessage = 'This expense cannot be submitted for approval.';
-
-            return;
-        }
-
         $expense->submitForApproval();
-        $this->successMessage = 'Expense submitted for approval.';
+        $this->successMessage = "{$expense->expense_number} sent for approval.";
     }
 
-    /**
-     * Approve expense (admin only)
-     */
+    /** Approve (admins only). */
     public function approveExpense($expenseId)
     {
         $this->requireAdmin();
-
         $this->successMessage = '';
         $this->errorMessage = '';
 
-        if (! auth()->user()->hasRole('admin') && ! auth()->user()->isSuperAdmin()) {
-            $this->errorMessage = 'You do not have permission to approve expenses.';
-
-            return;
-        }
-
         $expense = Expense::find($expenseId);
-        if (! $expense) {
-            $this->errorMessage = 'Expense not found.';
+        if (! $expense || ! $expense->canBeApproved()) {
+            $this->errorMessage = 'This expense can\'t be approved.';
 
             return;
         }
-
-        if (! $expense->canBeApproved()) {
-            $this->errorMessage = 'This expense cannot be approved.';
-
-            return;
-        }
-
         $expense->approve(auth()->id());
-        $this->successMessage = 'Expense approved successfully.';
+        $this->successMessage = "{$expense->expense_number} approved.";
     }
 
-    /**
-     * Open rejection modal
-     */
+    /** Open the reject dialog (admins only). */
     public function openRejectModal($expenseId)
     {
         $this->requireAdmin();
-
-        if (! auth()->user()->hasRole('admin') && ! auth()->user()->isSuperAdmin()) {
-            $this->errorMessage = 'You do not have permission to reject expenses.';
-
-            return;
-        }
-
         $this->rejectionExpenseId = $expenseId;
         $this->rejectionReason = '';
         $this->showRejectionModal = true;
     }
 
-    /**
-     * Reject expense (admin only)
-     */
+    /** Reject (admins only): the expense goes back to whoever made it. */
     public function rejectExpense()
     {
         $this->requireAdmin();
-
         $this->successMessage = '';
         $this->errorMessage = '';
 
-        if (! auth()->user()->hasRole('admin') && ! auth()->user()->isSuperAdmin()) {
-            $this->errorMessage = 'You do not have permission to reject expenses.';
-
-            return;
-        }
-
         $expense = Expense::find($this->rejectionExpenseId);
-        if (! $expense) {
-            $this->errorMessage = 'Expense not found.';
+        if (! $expense || ! $expense->canBeRejected()) {
+            $this->errorMessage = 'This expense can\'t be rejected.';
             $this->closeRejectModal();
 
             return;
         }
-
-        if (! $expense->canBeRejected()) {
-            $this->errorMessage = 'This expense cannot be rejected.';
-            $this->closeRejectModal();
-
-            return;
-        }
-
         $expense->reject(auth()->id(), $this->rejectionReason);
-        $this->successMessage = 'Expense rejected and sent back for review.';
+        $this->successMessage = "{$expense->expense_number} rejected and sent back.";
         $this->closeRejectModal();
     }
 
-    /**
-     * Close rejection modal
-     */
     public function closeRejectModal()
     {
         $this->showRejectionModal = false;
@@ -285,40 +178,21 @@ class ExpensesTable extends Component
         $this->rejectionReason = '';
     }
 
-    /**
-     * Mark expense as paid (admin only)
-     */
+    /** Mark as paid (admins only): posts the expense to the books. */
     public function markAsPaid($expenseId)
     {
         $this->requireAdmin();
-
         $this->successMessage = '';
         $this->errorMessage = '';
 
-        if (! auth()->user()->hasRole('admin') && ! auth()->user()->isSuperAdmin()) {
-            $this->errorMessage = 'You do not have permission to mark expenses as paid.';
-
-            return;
-        }
-
         $expense = Expense::find($expenseId);
-        if (! $expense) {
-            $this->errorMessage = 'Expense not found.';
+        if (! $expense || ! $expense->canBeMarkedAsPaid()) {
+            $this->errorMessage = 'This expense must be approved before it is marked as paid.';
 
             return;
         }
-
-        if (! $expense->canBeMarkedAsPaid()) {
-            $this->errorMessage = 'This expense must be approved before marking as paid.';
-
-            return;
-        }
-
-        DB::transaction(function () use ($expense) {
-            $expense->markAsPaid();
-        });
-
-        $this->successMessage = 'Expense marked as paid. Journal entries and account balances have been updated.';
+        DB::transaction(fn () => $expense->markAsPaid());
+        $this->successMessage = "{$expense->expense_number} marked as paid.";
     }
 
     /**
@@ -340,87 +214,63 @@ class ExpensesTable extends Component
         $this->errorMessage = '';
 
         if (empty($this->selectedItems)) {
-            $this->errorMessage = 'Please select at least one expense.';
+            $this->errorMessage = 'Tick at least one expense first.';
 
             return;
         }
-
-        if (empty($this->bulkAction)) {
-            $this->errorMessage = 'Please select an action.';
-
-            return;
-        }
-
-        $count = count($this->selectedItems);
-        $isAdmin = auth()->user()->hasRole('admin') || auth()->user()->isSuperAdmin();
 
         $this->authorizeBulkAction();
 
+        $expenses = fn () => Expense::whereIn('id', $this->selectedItems)->get();
+        $n = 0;
+
         switch ($this->bulkAction) {
             case 'delete':
-                $deletedCount = 0;
-                DB::transaction(function () use (&$deletedCount) {
-                    foreach ($this->selectedItems as $expenseId) {
-                        $expense = Expense::find($expenseId);
-                        if ($expense && in_array($expense->status, [Expense::STATUS_DRAFT, Expense::STATUS_REJECTED])) {
+                DB::transaction(function () use ($expenses, &$n) {
+                    foreach ($expenses() as $expense) {
+                        if (in_array($expense->status, [Expense::STATUS_DRAFT, Expense::STATUS_REJECTED], true)) {
                             $expense->delete();
-                            $deletedCount++;
+                            $n++;
                         }
                     }
                 });
-                $this->successMessage = "Successfully deleted {$deletedCount} expense(s).";
+                $this->successMessage = "Deleted {$n} expense(s). Only drafts and rejected expenses can be deleted.";
                 break;
 
             case 'submit':
-                $submittedCount = 0;
-                DB::transaction(function () use (&$submittedCount) {
-                    foreach ($this->selectedItems as $expenseId) {
-                        $expense = Expense::find($expenseId);
-                        if ($expense && $expense->canBeSubmitted()) {
+                DB::transaction(function () use ($expenses, &$n) {
+                    foreach ($expenses() as $expense) {
+                        if ($expense->canBeSubmitted()) {
                             $expense->submitForApproval();
-                            $submittedCount++;
+                            $n++;
                         }
                     }
                 });
-                $this->successMessage = "Successfully submitted {$submittedCount} expense(s) for approval.";
+                $this->successMessage = "Sent {$n} expense(s) for approval.";
                 break;
 
             case 'approve':
-                if (! $isAdmin) {
-                    $this->errorMessage = 'You do not have permission to approve expenses.';
-
-                    return;
-                }
-                $approvedCount = 0;
-                DB::transaction(function () use (&$approvedCount) {
-                    foreach ($this->selectedItems as $expenseId) {
-                        $expense = Expense::find($expenseId);
-                        if ($expense && $expense->canBeApproved()) {
+                DB::transaction(function () use ($expenses, &$n) {
+                    foreach ($expenses() as $expense) {
+                        if ($expense->canBeApproved()) {
                             $expense->approve(auth()->id());
-                            $approvedCount++;
+                            $n++;
                         }
                     }
                 });
-                $this->successMessage = "Successfully approved {$approvedCount} expense(s).";
+                $this->successMessage = "Approved {$n} expense(s).";
                 break;
 
             case 'mark_paid':
-                if (! $isAdmin) {
-                    $this->errorMessage = 'You do not have permission to mark expenses as paid.';
-
-                    return;
-                }
-                $paidCount = 0;
-                DB::transaction(function () use (&$paidCount) {
-                    foreach ($this->selectedItems as $expenseId) {
-                        $expense = Expense::find($expenseId);
-                        if ($expense && $expense->canBeMarkedAsPaid()) {
+                DB::transaction(function () use ($expenses, &$n) {
+                    foreach ($expenses() as $expense) {
+                        if ($expense->canBeMarkedAsPaid()) {
                             $expense->markAsPaid();
-                            $paidCount++;
+                            $n++;
                         }
                     }
                 });
-                $this->successMessage = "Successfully marked {$paidCount} expense(s) as paid.";
+                $this->successMessage = "Marked {$n} expense(s) as paid.";
                 break;
 
             default:
@@ -430,47 +280,20 @@ class ExpensesTable extends Component
         }
 
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
     }
 
     public function render()
     {
-        $expenses = Expense::with(['vendor', 'expenseAccount', 'createdBy'])
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('expense_number', 'like', '%'.$this->search.'%')
-                        ->orWhere('description', 'like', '%'.$this->search.'%')
-                        ->orWhere('reference', 'like', '%'.$this->search.'%')
-                        ->orWhereHas('vendor', function ($vq) {
-                            $vq->where('name', 'like', '%'.$this->search.'%');
-                        });
-                });
-            })
-            ->when($this->statusFilter, function ($query) {
-                $query->where('status', $this->statusFilter);
-            })
-            ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->pageSize());
-
-        $isAdmin = auth()->user()->hasRole('admin') || auth()->user()->isSuperAdmin();
-
-        // Build bulk actions based on user role
-        $bulkActions = [
-            'delete' => 'Delete (Draft/Rejected only)',
-            'submit' => 'Submit for Approval',
-        ];
-
-        if ($isAdmin) {
-            $bulkActions['approve'] = 'Approve';
-            $bulkActions['mark_paid'] = 'Mark as Paid';
-        }
-
         return view('livewire.expenses.expenses-table', [
-            'expenses' => $expenses,
-            'statuses' => Expense::getStatuses(),
-            'bulkActions' => $bulkActions,
-            'isAdmin' => $isAdmin,
+            'expenses' => $this->rows(),
+            'tabs' => $this->statusTabs(self::LABELS, [Expense::STATUS_PENDING_APPROVAL], 'status', hideEmpty: true),
+            'totals' => $this->filteredQuery()->toBase()->selectRaw('COUNT(*) as n, COALESCE(SUM(total), 0) as total')->first(),
+            'vendors' => Vendor::where('is_active', true)->orderBy('name')->pluck('name', 'id'),
+            'accounts' => ChartOfAccount::whereIn('id', Expense::query()->select('expense_account_id')->distinct())->orderBy('name')->pluck('name', 'id'),
+            'periods' => self::periodOptions(),
+            'filtered' => $this->isFiltered(),
+            'isAdmin' => $this->isAdmin(),
         ]);
     }
 }

@@ -3,92 +3,74 @@
 namespace App\Livewire\Vendors;
 
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ListTable;
+use App\Models\Bill;
 use App\Models\Vendor;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/**
+ * Vendors list (tables plan T3: the shared list design, see InvoicesTable).
+ */
 class VendorsTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
-
-    public $search = '';
-
-    public $status = '';
-
-    public $sortField = 'company_name';
-
-    public $sortDirection = 'asc';
-
-    public $perPage = 10;
-
-    // Bulk operation properties
-    public $selectedItems = [];
-
-    public $selectAll = false;
-
-    public $bulkAction = '';
-
-    public $successMessage = '';
-
-    public $errorMessage = '';
+    use ChecksPermissions, ListTable;
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'status' => ['except' => ''],
+        'tab' => ['except' => '', 'as' => 'status'],
     ];
 
-    public function updatingSearch()
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['name', 'outstanding_balance', 'total_purchases', 'created_at'];
     }
 
-    public function sortBy($field)
+    protected function baseQuery(): Builder
     {
-        if ($this->sortField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
+        $query = Vendor::query();
+        if (($term = trim($this->search)) !== '') {
+            $query->where(fn ($q) => $q->where('name', 'like', "%{$term}%")
+                ->orWhere('company_name', 'like', "%{$term}%")
+                ->orWhere('email', 'like', "%{$term}%")
+                ->orWhere('phone', 'like', "%{$term}%"));
+        }
+
+        return $query;
+    }
+
+    /** Tabs: active, owed (unpaid bills), inactive. */
+    protected function applyTab(Builder $query, string $tab): Builder
+    {
+        return match ($tab) {
+            'active' => $query->where('is_active', true),
+            'inactive' => $query->where('is_active', false),
+            'owed' => $query->whereHas('bills', fn ($b) => $b->whereNotIn('status', Vendor::NOT_OWED_STATUSES)->where('balance_due', '>', 0)),
+            default => $query,
+        };
+    }
+
+    /** Vendors sort by name A–Z first. */
+    public function mountListTable(): void
+    {
+        if (! in_array($this->sortField, $this->sortable(), true)) {
+            $this->sortField = 'name';
             $this->sortDirection = 'asc';
         }
-        $this->sortField = $field;
     }
 
-    public function updatingStatus()
+    /** @return array<string, array{label: string, count: int, alert: bool}> */
+    private function tabs(): array
     {
-        $this->resetPage();
-    }
+        $row = $this->baseQuery()->toBase()->selectRaw('COUNT(*) as all_rows, SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active')->first();
+        $owed = $this->applyTab($this->baseQuery(), 'owed')->count();
 
-    public function updatingPerPage()
-    {
-        $this->resetPage();
-    }
-
-    public function updatedSelectAll($value)
-    {
-        if ($value) {
-            $this->selectedItems = $this->getFilteredVendorIds();
-        } else {
-            $this->selectedItems = [];
-        }
-    }
-
-    public function updatedSelectedItems()
-    {
-        $this->selectAll = count($this->selectedItems) === count($this->getFilteredVendorIds());
-    }
-
-    private function getFilteredVendorIds()
-    {
-        return Vendor::query()
-            ->when($this->search, fn ($q) => $q->where(function ($query) {
-                $query->where('company_name', 'like', "%{$this->search}%")
-                    ->orWhere('contact_name', 'like', "%{$this->search}%")
-                    ->orWhere('email', 'like', "%{$this->search}%");
-            }))
-            ->when($this->status !== '', fn ($q) => $q->where('is_active', $this->status === 'active'))
-            ->pluck('id')
-            ->map(fn ($id) => (string) $id)
-            ->toArray();
+        return [
+            '' => ['label' => 'All', 'count' => (int) $row->all_rows, 'alert' => false],
+            'active' => ['label' => 'Active', 'count' => (int) $row->active, 'alert' => false],
+            'owed' => ['label' => 'You owe', 'count' => $owed, 'alert' => false],
+            'inactive' => ['label' => 'Inactive', 'count' => (int) $row->all_rows - (int) $row->active, 'alert' => false],
+        ];
     }
 
     /**
@@ -109,13 +91,7 @@ class VendorsTable extends Component
         $this->errorMessage = '';
 
         if (empty($this->selectedItems)) {
-            $this->errorMessage = 'Please select at least one vendor.';
-
-            return;
-        }
-
-        if (empty($this->bulkAction)) {
-            $this->errorMessage = 'Please select an action.';
+            $this->errorMessage = 'Tick at least one vendor first.';
 
             return;
         }
@@ -127,42 +103,30 @@ class VendorsTable extends Component
         switch ($this->bulkAction) {
             case 'activate':
                 Vendor::whereIn('id', $this->selectedItems)->update(['is_active' => true]);
-                $this->successMessage = "Successfully activated {$count} vendor(s).";
+                $this->successMessage = "{$count} vendor(s) made active.";
                 break;
 
             case 'deactivate':
                 Vendor::whereIn('id', $this->selectedItems)->update(['is_active' => false]);
-                $this->successMessage = "Successfully deactivated {$count} vendor(s).";
+                $this->successMessage = "{$count} vendor(s) made inactive.";
                 break;
 
             case 'delete':
-                $deletedCount = 0;
-                $skippedCount = 0;
-
-                foreach ($this->selectedItems as $vendorId) {
-                    $vendor = Vendor::find($vendorId);
-                    if (! $vendor) {
-                        continue;
-                    }
-
-                    // Check if vendor has related records
-                    if ($vendor->bills()->exists() ||
-                        $vendor->expenses()->exists()) {
-                        $skippedCount++;
+                $deleted = 0;
+                $skipped = 0;
+                foreach (Vendor::whereIn('id', $this->selectedItems)->get() as $vendor) {
+                    if ($this->hasRecords($vendor)) {
+                        $skipped++;
 
                         continue;
                     }
-
                     $vendor->delete();
-                    $deletedCount++;
+                    $deleted++;
                 }
-
-                if ($deletedCount > 0 && $skippedCount > 0) {
-                    $this->successMessage = "Deleted {$deletedCount} vendor(s). Skipped {$skippedCount} vendor(s) with existing records.";
-                } elseif ($deletedCount > 0) {
-                    $this->successMessage = "Successfully deleted {$deletedCount} vendor(s).";
+                if ($deleted > 0) {
+                    $this->successMessage = "Deleted {$deleted} vendor(s).".($skipped ? " Skipped {$skipped} with bills or expenses." : '');
                 } else {
-                    $this->errorMessage = 'Could not delete any vendors. All selected vendors have existing records.';
+                    $this->errorMessage = 'None deleted: every ticked vendor has bills or expenses.';
                 }
                 break;
 
@@ -173,25 +137,47 @@ class VendorsTable extends Component
         }
 
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
+    }
+
+    /** Delete one vendor from its row menu (vendors with records are kept). */
+    public function deleteOne(int $id): void
+    {
+        $this->requirePermission('delete vendors');
+        $vendor = Vendor::findOrFail($id);
+        if ($this->hasRecords($vendor)) {
+            $this->errorMessage = "{$vendor->name} can't be deleted: it has bills or expenses. Make it inactive instead.";
+
+            return;
+        }
+        $vendor->delete();
+        $this->successMessage = "Deleted {$vendor->name}.";
+        $this->selectedItems = array_values(array_diff($this->selectedItems, [(string) $id]));
+    }
+
+    private function hasRecords(Vendor $vendor): bool
+    {
+        return $vendor->bills()->exists() || $vendor->expenses()->exists();
     }
 
     public function render()
     {
-        $vendors = Vendor::query()
-            ->withBalances()
-            ->when($this->search, fn ($q) => $q->where(function ($query) {
-                $query->where('company_name', 'like', "%{$this->search}%")
-                    ->orWhere('contact_name', 'like', "%{$this->search}%")
-                    ->orWhere('email', 'like', "%{$this->search}%");
-            }))
-            ->when($this->status !== '', fn ($q) => $q->where('is_active', $this->status === 'active'))
-            ->orderBy($this->sortField, $this->sortDirection)
+        // Balances in the same query (no query per row).
+        $vendors = $this->filteredQuery()->scopes(['withBalances'])
+            ->orderBy($this->sortColumn(), $this->sortDirection === 'asc' ? 'asc' : 'desc')
+            ->orderBy('vendors.id')
             ->paginate($this->pageSize());
+
+        $owed = Bill::query()
+            ->whereIn('vendor_id', $this->filteredQuery()->select('vendors.id'))
+            ->whereNotIn('status', Vendor::NOT_OWED_STATUSES)
+            ->sum('balance_due');
 
         return view('livewire.vendors.vendors-table', [
             'vendors' => $vendors,
+            'tabs' => $this->tabs(),
+            'totals' => (object) ['n' => $vendors->total(), 'owed' => (float) $owed],
+            'filtered' => $this->isFiltered(),
         ]);
     }
 }

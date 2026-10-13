@@ -1,215 +1,108 @@
+{{-- Bank reconcile (tables plan T7): tick the lines on the bank statement, enter its closing balance, and check they agree. --}}
+@php
+    $cur = \App\Support\Money::symbol($bank->currency ?: null);
+    $amountsIn = trim($cur);
+    $typeLabels = \App\Models\BankTransaction::getTypes();
+    $filtered = filled($fromDate) || filled($toDate);
+@endphp
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    {{ $bank->name }} - Bank Reconciliation
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    Book Balance: {{ $bank->currency }} {{ number_format($bank->current_balance, 2) }}
-                </p>
-            </div>
-            <a href="{{ route('banks.show', $bank) }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition ease-in-out duration-150">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                Back to Account
-            </a>
-        </div>
+        <x-table.page-header :title="$bank->name.': reconcile'" :description="'Tick the lines that are on your bank statement and enter its closing balance; they must agree. Amounts in '.$amountsIn.'.'">
+            <x-slot name="more">
+                <x-table.menu-item :href="route('banks.show', $bank)">Bank account</x-table.menu-item>
+                <x-table.menu-item :href="route('banks.transactions', $bank)">Money in and out</x-table.menu-item>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="space-y-6">
+        {{-- The message itself is shown by the layout (U9); this adds the figure. --}}
+        @if (session('error') && session('reconciliation_difference'))
+            <p class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-700 dark:bg-red-900/30 dark:text-red-100">
+                Difference: {{ $cur }}{{ number_format(session('reconciliation_difference'), 2) }}
+            </p>
+        @endif
 
-            {{-- The message itself is shown by the layout (U9); this adds the figure. --}}
-            @if(session('error') && session('reconciliation_difference'))
-                <div class="mb-4 bg-red-50 dark:bg-red-900/50 border-l-4 border-red-400 p-4 rounded">
-                    <p class="text-sm text-red-700 dark:text-red-300">
-                        Difference: {{ $bank->currency }} {{ number_format(session('reconciliation_difference'), 2) }}
+        <x-report.stats :cols="4">
+            <x-report.stat label="Reconciled balance" :value="\App\Support\Figure::show($summary['reconciled_balance'], false)" hint="Opening balance and ticked lines" />
+            <x-report.stat label="Book balance" :value="\App\Support\Figure::show($summary['book_balance'], false)" />
+            <x-report.stat label="Difference" :value="\App\Support\Figure::show($summary['difference'], false)" :tone="abs($summary['difference']) < 0.005 ? 'good' : 'bad'" />
+            <x-report.stat label="Lines to reconcile" :value="$summary['unreconciled_count']" :hint="$summary['last_reconciled_date'] ? 'Last done '.$summary['last_reconciled_date']->format('j M Y') : 'Never done'" />
+        </x-report.stats>
+
+        @if (! empty($feed))
+            @include('banks._feed-panel')
+        @endif
+
+        <x-report.filters :action="route('banks.reconcile', $bank)" button="Show">
+            <x-report.date name="from_date" label="From" :value="$fromDate" />
+            <x-report.date name="to_date" label="To" :value="$toDate" />
+        </x-report.filters>
+
+        @if ($unreconciledTransactions->isEmpty())
+            <div class="tbl-wrap">
+                @if ($filtered)
+                    <x-table.empty filtered title="Nothing to reconcile in these dates" :clear="route('banks.reconcile', $bank)" />
+                @else
+                    <x-table.empty title="All caught up" text="Every bank line has been reconciled." />
+                @endif
+            </div>
+        @else
+            <form method="POST" action="{{ route('banks.reconcile.process', $bank) }}" x-data="reconciliationForm()" class="space-y-3">
+                @csrf
+                <div class="flex flex-wrap items-end gap-3">
+                    <label class="flex flex-col gap-1 text-[13px] font-medium text-gray-700 dark:text-gray-300">
+                        Statement closing balance
+                        <input type="number" step="0.01" name="statement_balance" required x-model="statementBalance" placeholder="From your bank statement"
+                            class="h-9 w-56 rounded-md border-gray-300 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
+                    </label>
+                    <label class="flex flex-col gap-1 text-[13px] font-medium text-gray-700 dark:text-gray-300">
+                        Statement date
+                        <input type="date" name="statement_date" required value="{{ now()->format('Y-m-d') }}"
+                            class="h-9 rounded-md border-gray-300 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
+                    </label>
+                    <span class="flex-1"></span>
+                    <p class="text-sm text-gray-700 dark:text-gray-300" aria-live="polite">
+                        <span x-text="selectedCount"></span> ticked ·
+                        in <span class="font-medium tabular-nums" x-text="formatMoney(selectedDeposits, '')"></span> ·
+                        out <span class="font-medium tabular-nums" x-text="formatMoney(selectedWithdrawals, '')"></span>
                     </p>
+                    <button type="submit" class="btn-new" x-bind:disabled="selectedCount === 0" x-bind:class="selectedCount === 0 && 'opacity-50'">Reconcile ticked lines</button>
                 </div>
-            @endif
 
-            {{-- Summary Cards --}}
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <div class="text-sm text-gray-500 dark:text-gray-400">Reconciled Balance</div>
-                    <div class="text-2xl font-bold text-green-700 dark:text-green-400">{{ $bank->currency }} {{ number_format($summary['reconciled_balance'], 2) }}</div>
-                </div>
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <div class="text-sm text-gray-500 dark:text-gray-400">Book Balance</div>
-                    <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ $bank->currency }} {{ number_format($summary['book_balance'], 2) }}</div>
-                </div>
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <div class="text-sm text-gray-500 dark:text-gray-400">Difference</div>
-                    <div class="text-2xl font-bold {{ $summary['difference'] == 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
-                        {{ $bank->currency }} {{ number_format($summary['difference'], 2) }}
-                    </div>
-                </div>
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <div class="text-sm text-gray-500 dark:text-gray-400">Unreconciled Items</div>
-                    <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ $summary['unreconciled_count'] }}</div>
-                    @if($summary['last_reconciled_date'])
-                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Last: {{ $summary['last_reconciled_date']->format('M d, Y') }}</div>
-                    @endif
-                </div>
-            </div>
-
-            @if(! empty($feed))
-                @include('banks._feed-panel')
-            @endif
-
-            {{-- Date Filter --}}
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                <div class="p-4">
-                    <form method="GET" action="{{ route('banks.reconcile', $bank) }}" class="flex flex-wrap items-end gap-4">
-                        <div>
-                            <label for="from_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">From Date</label>
-                            <input type="date" name="from_date" id="from_date" value="{{ $fromDate }}"
-                                   class="mt-1 block form-control sm:text-sm">
-                        </div>
-                        <div>
-                            <label for="to_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">To Date</label>
-                            <input type="date" name="to_date" id="to_date" value="{{ $toDate }}"
-                                   class="mt-1 block form-control sm:text-sm">
-                        </div>
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition ease-in-out duration-150">
-                            Filter
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            {{-- Reconciliation Form --}}
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg" x-data="reconciliationForm()">
-                <div class="p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Unreconciled Transactions</h3>
-
-                    @if($unreconciledTransactions->count() > 0)
-                        <form method="POST" action="{{ route('banks.reconcile.process', $bank) }}">
-                            @csrf
-
-                            <div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="statement_balance" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Bank Statement Closing Balance</label>
-                                    <input type="number" step="0.01" name="statement_balance" id="statement_balance" required
-                                           x-model="statementBalance"
-                                           class="mt-1 block form-control sm:text-sm"
-                                           placeholder="Enter closing balance from bank statement">
-                                </div>
-                                <div>
-                                    <label for="statement_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Statement Date</label>
-                                    <input type="date" name="statement_date" id="statement_date" required
-                                           value="{{ now()->format('Y-m-d') }}"
-                                           class="mt-1 block form-control sm:text-sm">
-                                </div>
-                            </div>
-
-                            {{-- Running totals --}}
-                            <div class="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600 dark:text-gray-300">Selected deposits:</span>
-                                    <span class="font-medium text-green-700 dark:text-green-400" x-text="formatMoney(selectedDeposits, '{{ $bank->currency }} ')"></span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600 dark:text-gray-300">Selected withdrawals:</span>
-                                    <span class="font-medium text-red-600 dark:text-red-300" x-text="formatMoney(selectedWithdrawals, '{{ $bank->currency }} ')"></span>
-                                </div>
-                                <div class="flex justify-between border-t border-gray-200 dark:border-gray-600 mt-2 pt-2">
-                                    <span class="text-gray-600 dark:text-gray-300">Selected count:</span>
-                                    <span class="font-medium" x-text="selectedCount"></span>
-                                </div>
-                            </div>
-
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                    <thead class="bg-gray-50 dark:bg-gray-700">
-                                        <tr>
-                                            <th scope="col" class="px-4 py-3 text-left">
-                                                <input type="checkbox" x-on:change="toggleAll($event.target.checked)"
-                                                       class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
-                                            </th>
-                                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
-                                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
-                                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Reference</th>
-                                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Description</th>
-                                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Payee</th>
-                                            <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Deposit</th>
-                                            <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Withdrawal</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                        @foreach($unreconciledTransactions as $txn)
-                                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                <td class="px-4 py-3">
-                                                    <input type="checkbox" name="transaction_ids[]" value="{{ $txn->id }}"
-                                                           x-on:change="updateTotals()"
-                                                           data-amount="{{ $txn->amount }}"
-                                                           data-inflow="{{ $txn->isInflow() ? '1' : '0' }}"
-                                                           class="txn-checkbox rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
-                                                </td>
-                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                                    {{ $txn->date->format('M d, Y') }}
-                                                </td>
-                                                <td class="px-4 py-3 whitespace-nowrap">
-                                                    @if($txn->isInflow())
-                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
-                                                            {{ ucfirst(str_replace('_', ' ', $txn->type)) }}
-                                                        </span>
-                                                    @else
-                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100">
-                                                            {{ ucfirst(str_replace('_', ' ', $txn->type)) }}
-                                                        </span>
-                                                    @endif
-                                                </td>
-                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                                    {{ $txn->reference ?? '-' }}
-                                                </td>
-                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate">
-                                                    {{ $txn->description ?? '-' }}
-                                                </td>
-                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                                    {{ $txn->payee ?? '-' }}
-                                                </td>
-                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-right font-medium text-green-700 dark:text-green-400">
-                                                    @if($txn->isInflow())
-                                                        {{ number_format($txn->amount, 2) }}
-                                                    @endif
-                                                </td>
-                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-right font-medium text-red-600 dark:text-red-300">
-                                                    @if($txn->isOutflow())
-                                                        {{ number_format($txn->amount, 2) }}
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div class="mt-4 flex justify-end">
-                                <button type="submit"
-                                        class="inline-flex items-center px-6 py-3 bg-green-700 border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                                        x-bind:disabled="selectedCount === 0">
-                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    Reconcile Selected
-                                </button>
-                            </div>
-                        </form>
-                    @else
-                        <div class="text-center py-12">
-                            <svg class="mx-auto h-12 w-12 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">All caught up!</h3>
-                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">No unreconciled transactions found for the selected period.</p>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
+                <x-table caption="Bank lines not reconciled yet">
+                    <x-slot name="head">
+                        <th scope="col" class="tbl-check">
+                            <input type="checkbox" class="tbl-checkbox" aria-label="Tick every line" x-on:change="toggleAll($event.target.checked)">
+                        </th>
+                        <x-table.th>Date</x-table.th>
+                        <x-table.th>What</x-table.th>
+                        <x-table.th class="hidden md:table-cell">Reference</x-table.th>
+                        <x-table.th class="hidden lg:table-cell">Payee</x-table.th>
+                        <x-table.th num>Money in</x-table.th>
+                        <x-table.th num>Money out</x-table.th>
+                    </x-slot>
+                    @foreach ($unreconciledTransactions as $txn)
+                        <tr>
+                            <td class="tbl-check">
+                                <input type="checkbox" name="transaction_ids[]" value="{{ $txn->id }}" x-on:change="updateTotals()"
+                                    data-amount="{{ $txn->amount }}" data-inflow="{{ $txn->isInflow() ? '1' : '0' }}"
+                                    class="txn-checkbox tbl-checkbox" aria-label="Tick {{ $txn->reference ?: 'line' }} of {{ $txn->date->format('j M Y') }}">
+                            </td>
+                            <td class="">{{ $txn->date->format('j M Y') }}</td>
+                            <td class="rpt-wrap max-w-[22rem]">
+                                <span class="font-medium">{{ $typeLabels[$txn->type] ?? \Illuminate\Support\Str::headline((string) $txn->type) }}</span>
+                                @if ($txn->description)<div class="text-xs tbl-muted">{{ $txn->description }}</div>@endif
+                            </td>
+                            <td class="hidden md:table-cell {{ $txn->reference ? '' : 'tbl-zero' }}">{{ $txn->reference ?: '—' }}</td>
+                            <td class="hidden lg:table-cell {{ $txn->payee ? '' : 'tbl-zero' }}">{{ $txn->payee ?: '—' }}</td>
+                            <td class="num {{ $txn->isInflow() ? '' : 'tbl-zero' }}">@if ($txn->isInflow())@fig($txn->amount, false)@else—@endif</td>
+                            <td class="num {{ $txn->isOutflow() ? '' : 'tbl-zero' }}">@if ($txn->isOutflow())@fig($txn->amount, false)@else—@endif</td>
+                        </tr>
+                    @endforeach
+                </x-table>
+            </form>
+        @endif
     </div>
 
     @push('scripts')

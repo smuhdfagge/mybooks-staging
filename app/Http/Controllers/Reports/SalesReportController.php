@@ -56,16 +56,16 @@ class SalesReportController extends ReportController
 
         $customers = Customer::where('tenant_id', $tenantId)
             ->whereHas('invoices', function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('invoice_date', [$startDate, $endDate]);
+                $this->issuedBetween($q, 'invoice_date', $startDate, $endDate);
             })
             ->withCount(['invoices' => function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('invoice_date', [$startDate, $endDate]);
+                $this->issuedBetween($q, 'invoice_date', $startDate, $endDate);
             }])
             ->withSum(['invoices' => function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('invoice_date', [$startDate, $endDate]);
+                $this->issuedBetween($q, 'invoice_date', $startDate, $endDate);
             }], 'total')
             ->withSum(['invoices' => function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('invoice_date', [$startDate, $endDate]);
+                $this->issuedBetween($q, 'invoice_date', $startDate, $endDate);
             }], 'amount_paid')
             ->orderByDesc('invoices_sum_total')
             ->get();
@@ -87,8 +87,7 @@ class SalesReportController extends ReportController
         $items = Item::where('tenant_id', $tenantId)
             ->with(['invoiceItems' => function ($q) use ($tenantId, $startDate, $endDate) {
                 $q->whereHas('invoice', function ($iq) use ($tenantId, $startDate, $endDate) {
-                    $iq->where('tenant_id', $tenantId)
-                        ->whereBetween('invoice_date', [$startDate, $endDate]);
+                    $this->issuedBetween($iq->where('tenant_id', $tenantId), 'invoice_date', $startDate, $endDate);
                 });
             }])
             ->get()
@@ -175,16 +174,16 @@ class SalesReportController extends ReportController
 
         $customers = Customer::where('tenant_id', $tenantId)
             ->whereHas('invoices', function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('invoice_date', [$startDate, $endDate]);
+                $this->issuedBetween($q, 'invoice_date', $startDate, $endDate);
             })
             ->withCount(['invoices' => function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('invoice_date', [$startDate, $endDate]);
+                $this->issuedBetween($q, 'invoice_date', $startDate, $endDate);
             }])
             ->withSum(['invoices' => function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('invoice_date', [$startDate, $endDate]);
+                $this->issuedBetween($q, 'invoice_date', $startDate, $endDate);
             }], 'total')
             ->withSum(['invoices' => function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('invoice_date', [$startDate, $endDate]);
+                $this->issuedBetween($q, 'invoice_date', $startDate, $endDate);
             }], 'amount_paid')
             ->orderByDesc('invoices_sum_total')
             ->get();
@@ -222,8 +221,7 @@ class SalesReportController extends ReportController
         $items = Item::where('tenant_id', $tenantId)
             ->with(['invoiceItems' => function ($q) use ($tenantId, $startDate, $endDate) {
                 $q->whereHas('invoice', function ($iq) use ($tenantId, $startDate, $endDate) {
-                    $iq->where('tenant_id', $tenantId)
-                        ->whereBetween('invoice_date', [$startDate, $endDate]);
+                    $this->issuedBetween($iq->where('tenant_id', $tenantId), 'invoice_date', $startDate, $endDate);
                 });
             }])
             ->get()

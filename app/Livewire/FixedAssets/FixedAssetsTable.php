@@ -4,38 +4,18 @@ namespace App\Livewire\FixedAssets;
 
 use App\Actions\FixedAssets\WriteOffAssets;
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ListTable;
 use App\Models\FixedAsset;
 use App\Models\FixedAssetCategory;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/** Fixed assets list (tables plan T4), with the bulk write-off (F2). */
 class FixedAssetsTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
+    use ChecksPermissions, ListTable;
 
-    public $search = '';
-
-    public $categoryFilter = '';
-
-    public $statusFilter = '';
-
-    public $sortField = 'asset_number';
-
-    public $sortDirection = 'asc';
-
-    public $perPage = 10;
-
-    // Bulk operation properties
-    public $selectedItems = [];
-
-    public $selectAll = false;
-
-    public $bulkAction = '';
-
-    public $successMessage = '';
-
-    public $errorMessage = '';
+    public string $category = '';
 
     // Bulk write-off (F2)
     public bool $showDisposeModal = false;
@@ -48,74 +28,56 @@ class FixedAssetsTable extends Component
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'categoryFilter' => ['except' => ''],
-        'statusFilter' => ['except' => ''],
-        'sortField' => ['except' => 'asset_number'],
-        'sortDirection' => ['except' => 'asc'],
+        'tab' => ['except' => '', 'as' => 'status'],
+        'category' => ['except' => ''],
     ];
 
-    public function updatingSearch()
+    public const LABELS = [
+        FixedAsset::STATUS_ACTIVE => 'In use',
+        FixedAsset::STATUS_UNDER_MAINTENANCE => 'Being repaired',
+        FixedAsset::STATUS_IDLE => 'Not in use',
+        FixedAsset::STATUS_FULLY_DEPRECIATED => 'Fully written down',
+        FixedAsset::STATUS_DISPOSED => 'Disposed of',
+        FixedAsset::STATUS_SOLD => 'Sold',
+    ];
+
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['asset_number', 'name', 'purchase_date', 'purchase_cost', 'book_value'];
     }
 
-    public function updatingCategoryFilter()
+    public function mountListTable(): void
     {
-        $this->resetPage();
-    }
-
-    public function updatingStatusFilter()
-    {
-        $this->resetPage();
-    }
-
-    public function updatingPerPage()
-    {
-        $this->resetPage();
-    }
-
-    public function sortBy($field)
-    {
-        if ($this->sortField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            $this->sortField = $field;
+        if (! in_array($this->sortField, $this->sortable(), true)) {
+            $this->sortField = 'asset_number';
             $this->sortDirection = 'asc';
         }
     }
 
-    public function updatedSelectAll($value)
+    protected function rowRelations(): array
     {
-        if ($value) {
-            $this->selectedItems = $this->getFilteredAssetIds();
-        } else {
-            $this->selectedItems = [];
+        return ['category:id,name'];
+    }
+
+    protected function filterProperties(): array
+    {
+        return ['category'];
+    }
+
+    protected function baseQuery(): Builder
+    {
+        $query = FixedAsset::query();
+        if (($term = trim($this->search)) !== '') {
+            $query->where(fn ($q) => $q->where('asset_number', 'like', "%{$term}%")
+                ->orWhere('name', 'like', "%{$term}%")
+                ->orWhere('serial_number', 'like', "%{$term}%")
+                ->orWhere('location', 'like', "%{$term}%"));
         }
-    }
+        if ($this->category !== '' && ctype_digit($this->category)) {
+            $query->where('category_id', (int) $this->category);
+        }
 
-    public function updatedSelectedItems()
-    {
-        $this->selectAll = count($this->selectedItems) === count($this->getFilteredAssetIds());
-    }
-
-    private function getFilteredAssetIds()
-    {
-        $tenantId = auth()->user()->tenant_id;
-
-        return FixedAsset::where('tenant_id', $tenantId)
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('asset_number', 'like', '%'.$this->search.'%')
-                        ->orWhere('name', 'like', '%'.$this->search.'%')
-                        ->orWhere('serial_number', 'like', '%'.$this->search.'%')
-                        ->orWhere('location', 'like', '%'.$this->search.'%');
-                });
-            })
-            ->when($this->categoryFilter, fn ($q) => $q->where('category_id', $this->categoryFilter))
-            ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))
-            ->pluck('id')
-            ->map(fn ($id) => (string) $id)
-            ->toArray();
+        return $query;
     }
 
     /**
@@ -136,18 +98,10 @@ class FixedAssetsTable extends Component
         $this->errorMessage = '';
 
         if (empty($this->selectedItems)) {
-            $this->errorMessage = 'Please select at least one asset.';
+            $this->errorMessage = 'Tick at least one asset first.';
 
             return;
         }
-
-        if (empty($this->bulkAction)) {
-            $this->errorMessage = 'Please select an action.';
-
-            return;
-        }
-
-        $count = count($this->selectedItems);
 
         $this->authorizeBulkAction();
 
@@ -155,10 +109,10 @@ class FixedAssetsTable extends Component
             case 'activate':
                 // A disposed or sold asset is out of the books; making it
                 // active again here would leave its disposal journal standing (F2).
-                $activated = FixedAsset::whereIn('id', $this->selectedItems)
+                $n = FixedAsset::whereIn('id', $this->selectedItems)
                     ->whereNotIn('status', [FixedAsset::STATUS_DISPOSED, FixedAsset::STATUS_SOLD])
-                    ->update(['status' => 'active']);
-                $this->successMessage = "Successfully activated {$activated} asset(s).".($activated < $count ? ' Disposed or sold assets were left as they are.' : '');
+                    ->update(['status' => FixedAsset::STATUS_ACTIVE]);
+                $this->successMessage = "Put {$n} asset(s) back in use. Disposed or sold assets stay as they are.";
                 break;
 
             case 'dispose':
@@ -169,32 +123,21 @@ class FixedAssetsTable extends Component
                 return;
 
             case 'delete':
-                $deletedCount = 0;
-                $skippedCount = 0;
-
-                foreach ($this->selectedItems as $assetId) {
-                    $asset = FixedAsset::find($assetId);
-                    if (! $asset) {
-                        continue;
-                    }
-
-                    // Check if asset has depreciation records
+                $deleted = 0;
+                $skipped = 0;
+                foreach (FixedAsset::whereIn('id', $this->selectedItems)->get() as $asset) {
                     if ($asset->depreciations()->exists()) {
-                        $skippedCount++;
+                        $skipped++;
 
                         continue;
                     }
-
                     $asset->delete();
-                    $deletedCount++;
+                    $deleted++;
                 }
-
-                if ($deletedCount > 0 && $skippedCount > 0) {
-                    $this->successMessage = "Deleted {$deletedCount} asset(s). Skipped {$skippedCount} asset(s) with depreciation records.";
-                } elseif ($deletedCount > 0) {
-                    $this->successMessage = "Successfully deleted {$deletedCount} asset(s).";
+                if ($deleted > 0) {
+                    $this->successMessage = "Deleted {$deleted} asset(s).".($skipped ? " Skipped {$skipped} with depreciation posted." : '');
                 } else {
-                    $this->errorMessage = 'Could not delete any assets. All selected assets have depreciation records.';
+                    $this->errorMessage = 'None deleted: every ticked asset has depreciation posted. Dispose of them instead.';
                 }
                 break;
 
@@ -205,8 +148,22 @@ class FixedAssetsTable extends Component
         }
 
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
+    }
+
+    /** Delete one asset with no depreciation from its row menu. */
+    public function deleteOne(int $id): void
+    {
+        $this->requirePermission('delete fixed-assets');
+        $asset = FixedAsset::findOrFail($id);
+        if ($asset->depreciations()->exists()) {
+            $this->errorMessage = "{$asset->name} has depreciation posted, so it can't be deleted. Dispose of it instead.";
+
+            return;
+        }
+        $asset->delete();
+        $this->successMessage = "Deleted {$asset->name}.";
+        $this->selectedItems = array_values(array_diff($this->selectedItems, [(string) $id]));
     }
 
     /**
@@ -217,6 +174,7 @@ class FixedAssetsTable extends Component
     {
         $this->bulkAction = 'dispose';
         $this->authorizeBulkAction();
+
         $this->validate([
             'disposalDate' => 'required|date|before_or_equal:today',
             'disposalMethod' => 'required|in:'.implode(',', WriteOffAssets::METHODS),
@@ -226,15 +184,14 @@ class FixedAssetsTable extends Component
         $result = $writeOff->handle($this->selectedItems, $this->disposalDate, $this->disposalMethod, $this->disposalReason);
 
         $this->successMessage = "Disposed of {$result['disposed']} asset(s), each with its disposal journal."
-            .($result['skipped'] ? " Skipped {$result['skipped']} already disposed or sold." : '');
+            .($result['skipped'] ? " Skipped {$result['skipped']} already disposed of or sold." : '');
         $this->errorMessage = $result['failed']
-            ? count($result['failed']).' could not be disposed: '.collect($result['failed'])->map(fn ($why, $name) => "{$name} ({$why})")->implode('; ').'.'
+            ? count($result['failed']).' could not be disposed of: '.collect($result['failed'])->map(fn ($why, $name) => "{$name} ({$why})")->implode('; ').'.'
             : '';
 
         $this->showDisposeModal = false;
         $this->disposalReason = '';
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
     }
 
@@ -245,51 +202,12 @@ class FixedAssetsTable extends Component
 
     public function render()
     {
-        $tenantId = auth()->user()->tenant_id;
-
-        $query = FixedAsset::where('tenant_id', $tenantId)
-            ->with(['category', 'vendor']);
-
-        if ($this->search) {
-            $query->where(function ($q) {
-                $q->where('asset_number', 'like', '%'.$this->search.'%')
-                    ->orWhere('name', 'like', '%'.$this->search.'%')
-                    ->orWhere('serial_number', 'like', '%'.$this->search.'%')
-                    ->orWhere('location', 'like', '%'.$this->search.'%');
-            });
-        }
-
-        if ($this->categoryFilter) {
-            $query->where('category_id', $this->categoryFilter);
-        }
-
-        if ($this->statusFilter) {
-            $query->where('status', $this->statusFilter);
-        }
-
-        $assets = $query->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->pageSize());
-
-        $categories = FixedAssetCategory::where('tenant_id', $tenantId)
-            ->orderBy('name')
-            ->get();
-
-        $statuses = FixedAsset::getStatuses();
-
-        // Summary stats
-        $totalAssets = FixedAsset::where('tenant_id', $tenantId)->count();
-        $activeAssets = FixedAsset::where('tenant_id', $tenantId)->where('status', 'active')->count();
-        $totalValue = FixedAsset::where('tenant_id', $tenantId)->where('status', 'active')->sum('book_value');
-        $totalCost = FixedAsset::where('tenant_id', $tenantId)->sum('purchase_cost');
-
         return view('livewire.fixed-assets.fixed-assets-table', [
-            'assets' => $assets,
-            'categories' => $categories,
-            'statuses' => $statuses,
-            'totalAssets' => $totalAssets,
-            'activeAssets' => $activeAssets,
-            'totalValue' => $totalValue,
-            'totalCost' => $totalCost,
+            'assets' => $this->rows(),
+            'tabs' => $this->statusTabs(self::LABELS, [], 'status', hideEmpty: true),
+            'totals' => $this->filteredQuery()->toBase()->selectRaw('COUNT(*) as n, COALESCE(SUM(purchase_cost), 0) as cost, COALESCE(SUM(accumulated_depreciation), 0) as depreciation, COALESCE(SUM(book_value), 0) as book_value')->first(),
+            'categories' => FixedAssetCategory::orderBy('name')->pluck('name', 'id'),
+            'filtered' => $this->isFiltered(),
         ]);
     }
 }

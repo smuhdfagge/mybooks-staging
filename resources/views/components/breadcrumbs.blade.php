@@ -26,7 +26,7 @@
                 'items' => 'Items',
                 'item-categories' => 'Item Categories',
                 'employees' => 'Employees',
-                'payrolls' => 'Payroll',
+                'payrolls' => 'Payroll', 'payroll-batches' => 'Payroll runs',
                 'leaves' => 'Leaves',
                 'salary-structures' => 'Salary Structures',
                 'allowances' => 'Allowances',
@@ -65,8 +65,14 @@
             ];
 
             // Sections whose first page isn't named "{resource}.index".
-            $indexRoutes = ['withholding-tax' => 'withholding-tax.setup'];
-            $sectionActions = ['settings' => ['messaging' => 'SMS & WhatsApp', 'e-invoicing' => 'E-invoicing'], 'withholding-tax' => ['setup' => 'Rates & settings', 'schedule' => 'WHT payable schedule', 'receivable' => 'WHT credit notes']];
+            $indexRoutes = ['withholding-tax' => 'withholding-tax.setup', 'payroll-batches' => 'payroll.index'];
+            $sectionActions = ['reports' => [
+                'profit-loss' => 'Profit and loss', 'accounts-receivable' => 'Aged receivables', 'accounts-payable' => 'Aged payables',
+                'purchase-by-vendor' => 'Purchases by supplier', 'inventory-summary' => 'Stock summary', 'vat-gst-return' => 'VAT/GST return',
+                'vat-return' => 'VAT return', 'tax-liability' => 'Tax owed by period', 'control-reconciliation' => 'Receivables & payables check',
+                'comparative' => 'Compare periods', 'custom' => 'Custom reports', 'tax-liability-payroll' => 'PAYE and pension by month',
+                'ytd-earnings' => 'Earnings this year', 'bank-disbursement' => 'Bank payment list',
+            ], 'banks' => ['transactions' => 'Money in and out', 'reconcile' => 'Reconcile'], 'budgets' => ['vs-actual' => 'Budget and actual'], 'inventory' => ['history' => 'Stock history'], 'fixed-assets' => ['schedule' => 'Depreciation', 'register' => 'Asset register', 'depreciation-schedule' => 'Depreciation for the year'], 'settings' => ['messaging' => 'SMS & WhatsApp', 'e-invoicing' => 'E-invoicing'], 'withholding-tax' => ['setup' => 'Rates & settings', 'schedule' => 'WHT payable schedule', 'receivable' => 'WHT credit notes']];
 
             $label = $labels[$resource] ?? ucwords(str_replace('-', ' ', $resource ?? ''));
 
@@ -79,6 +85,19 @@
                     // Route may not exist
                 }
 
+                // The record the page is about, named by its number or name (tables plan T8),
+                // so a page under a record (edit, history, ...) links back to it.
+                $record = collect(request()->route()?->parameters() ?? [])->first(fn ($p) => $p instanceof \Illuminate\Database\Eloquent\Model);
+                $recordLabel = null;
+                if ($record) {
+                    $numberKey = collect(array_keys($record->getAttributes()))->first(fn ($k) => str_ends_with($k, '_number') && filled($record->getAttribute($k)) && $k !== 'account_number' && $k !== 'phone_number');
+                    $person = trim($record->getAttribute('first_name').' '.$record->getAttribute('last_name'));
+                    $recordLabel = $numberKey ? $record->getAttribute($numberKey)
+                        : collect([$record->getAttribute('name'), $record->getAttribute('profile_name'), $record->getAttribute('title'), $person])->first(fn ($v) => filled($v));
+                    $recordLabel = $recordLabel !== null ? \Illuminate\Support\Str::limit((string) $recordLabel, 40) : null;
+                }
+                $showRoute = $resource.'.show';
+
                 if ($action === 'index') {
                     $crumbs[] = ['label' => $label];
                 } else {
@@ -87,11 +106,22 @@
                     }
 
                     $actionLabels = [
-                        'create' => 'Create',
+                        'create' => 'New',
                         'edit' => 'Edit',
                         'show' => 'View',
                     ];
-                    $crumbs[] = ['label' => $sectionActions[$resource][$action] ?? $actionLabels[$action] ?? ucfirst($action)];
+                    if ($action === 'show') {
+                        $crumbs[] = ['label' => $recordLabel ?? 'View'];
+                    } else {
+                        if ($record && $action !== 'create' && \Illuminate\Support\Facades\Route::has($showRoute)) {
+                            try {
+                                $crumbs[] = ['label' => $recordLabel ?? 'View', 'url' => route($showRoute, $record)];
+                            } catch (\Exception $e) {
+                                // The show route takes other parameters
+                            }
+                        }
+                        $crumbs[] = ['label' => $sectionActions[$resource][$action] ?? $actionLabels[$action] ?? ucfirst(str_replace('-', ' ', $action))];
+                    }
                 }
             }
         }

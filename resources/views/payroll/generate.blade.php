@@ -1,16 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Generate Payroll') }}
-            </h2>
-            <a href="{{ route('payroll.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                </svg>
-                Back to Payroll
-            </a>
-        </div>
+        <x-table.page-header title="Generate payroll" />
     </x-slot>
 
     <div class="py-6">
@@ -25,7 +15,7 @@
                         <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No salary structures found</h3>
                         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">You need to set up salary structures for employees before generating payroll.</p>
                         <div class="mt-6">
-                            <a href="{{ route('salary-structures.create') }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
+                            <a href="{{ route('salary-structures.create') }}" class="btn-primary">
                                 Setup Salary Structure
                             </a>
                         </div>
@@ -70,21 +60,18 @@
                                 </label>
                             </div>
 
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                    <thead class="bg-gray-50 dark:bg-gray-700">
-                                        <tr>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase w-10"></th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Employee</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Department</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Basic Salary</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Allowances</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Deductions</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Gross</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Net</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <x-table caption="Employees to pay">
+<x-slot name="head">
+                                            <th scope="col" class="w-10"><span class="sr-only">Actions</span></th>
+                                            <x-table.th>Employee</x-table.th>
+                                            <x-table.th>Department</x-table.th>
+                                            <x-table.th num>Basic salary</x-table.th>
+                                            <x-table.th num>Allowances</x-table.th>
+                                            <x-table.th num>Deductions</x-table.th>
+                                            <x-table.th num>Gross</x-table.th>
+                                            <x-table.th num>Net</x-table.th>
+</x-slot>
+
                                         @foreach($employeesWithStructures as $employee)
                                             @php
                                                 $structure = $employee->salaryStructure;
@@ -93,50 +80,48 @@
                                                 $gross = $structure ? $structure->gross_salary : 0;
                                                 $net = $structure ? $structure->net_salary : 0;
                                             @endphp
-                                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                <td class="px-4 py-3">
+                                            <tr>
+                                                <td>
                                                     <input type="checkbox" name="employee_ids[]" value="{{ $employee->id }}"
                                                         class="employee-checkbox rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300"
                                                         @click="updateSelectAll()"
                                                         {{ in_array($employee->id, old('employee_ids', [])) ? 'checked' : '' }}>
                                                 </td>
-                                                <td class="px-4 py-3">
+                                                <td>
                                                     <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $employee->first_name }} {{ $employee->last_name }}</div>
                                                     <div class="text-xs text-gray-500 dark:text-gray-400">{{ $employee->employee_id }}</div>
                                                 </td>
-                                                <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                                                    {{ $employee->department->name ?? '-' }}
+                                                <td>
+                                                    {{ $employee->department->name ?? '—' }}
                                                 </td>
-                                                <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">
+                                                <td class="num">
                                                     {{ number_format($structure->basic_salary ?? 0, 2) }}
                                                 </td>
-                                                <td class="px-4 py-3 text-sm text-right text-green-700 dark:text-green-400">
+                                                <td class="num text-green-700 dark:text-green-400">
                                                     +{{ number_format($totalAllow, 2) }}
                                                 </td>
-                                                <td class="px-4 py-3 text-sm text-right text-red-600 dark:text-red-300">
+                                                <td class="num text-red-600 dark:text-red-300">
                                                     -{{ number_format($totalDeduct, 2) }}
                                                 </td>
-                                                <td class="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-gray-100">
+                                                <td class="num font-medium">
                                                     {{ number_format($gross, 2) }}
                                                 </td>
-                                                <td class="px-4 py-3 text-sm text-right font-bold text-gray-900 dark:text-gray-100">
+                                                <td class="num font-bold">
                                                     {{ number_format($net, 2) }}
                                                 </td>
                                             </tr>
                                         @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
+</x-table>
                         </div>
 
                         <!-- Actions -->
                         <div class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                            <a href="{{ route('payroll.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600">
+                            <a href="{{ route('payroll.index') }}" class="btn-secondary">
                                 Cancel
                             </a>
-                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                                Generate Payroll
+                            <button type="submit" class="btn-primary">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                Generate payroll
                             </button>
                         </div>
                     </form>

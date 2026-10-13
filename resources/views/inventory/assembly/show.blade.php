@@ -1,6 +1,6 @@
 @php
-    $btn = 'inline-flex items-center justify-center px-3 py-2 border rounded-md font-semibold text-xs uppercase tracking-widest transition';
-    $secondary = $btn.' bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600';
+    $btn = 'btn-secondary';
+    $secondary = 'btn-secondary';
     $fmt = fn ($v) => rtrim(rtrim(number_format((float) $v, 4), '0'), '.');
     $bom = $order->billOfMaterial;
     $finished = $bom?->item;
@@ -18,19 +18,15 @@
 @endphp
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div class="flex flex-wrap items-center gap-3">
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">{{ $order->kindLabel() }} {{ $order->order_number }}</h2>
-                <x-status-badge :status="$order->status" />
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
-                <a href="{{ route('assembly-orders.print', $order) }}" target="_blank" class="{{ $secondary }}">Print production sheet</a>
-                @if($order->isDraft())
-                    <a href="{{ route('assembly-orders.edit', $order) }}" class="{{ $secondary }}">Edit</a>
-                @endif
-                <a href="{{ route('assembly-orders.index') }}" class="{{ $secondary }}">All assembly orders</a>
-            </div>
-        </div>
+        <x-table.page-header :title="$order->kindLabel().' '.$order->order_number">
+            <x-slot name="badge"><x-status-badge :status="$order->status" /></x-slot>
+            <x-slot name="more">
+                <x-table.menu-item :href="route('assembly-orders.print', $order)" new-tab>Print production sheet</x-table.menu-item>
+            </x-slot>
+            @if ($order->isDraft())
+                <x-slot name="actions"><a href="{{ route('assembly-orders.edit', $order) }}" class="btn-secondary">Edit</a></x-slot>
+            @endif
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -48,7 +44,7 @@
                                     <span class="block text-xs text-gray-500 dark:text-gray-400">@can('view items')<a href="{{ route('bill-of-materials.show', $bom) }}" class="hover:underline">{{ $bom->label() }}</a>@else{{ $bom->label() }}@endcan</span>
                                 @endif
                             </div>
-                            <div><p class="text-gray-500 dark:text-gray-400">Date</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $order->assembly_date?->format('M d, Y') }}</p></div>
+                            <div><p class="text-gray-500 dark:text-gray-400">Date</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $order->assembly_date?->format('j M Y') }}</p></div>
                             <div><p class="text-gray-500 dark:text-gray-400">Planned</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $fmt($planned) }}{{ $unit }}</p></div>
                             @if($done)
                                 <div><p class="text-gray-500 dark:text-gray-400">{{ $breakdown ? 'Broken down' : 'Made' }}</p>
@@ -65,43 +61,40 @@
                     <x-card>
                         <div class="p-4 sm:p-6">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">{{ $breakdown ? 'Parts back in stock' : 'Components' }}</h3>
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                                    <thead><tr class="text-xs uppercase text-gray-500 dark:text-gray-400">
-                                        <th class="px-3 py-2 text-left">Item</th>
-                                        <th class="px-3 py-2 text-right">Planned</th>
+                            <x-table :caption="$breakdown ? 'Parts back in stock' : 'Components'">
+<x-slot name="head">
+                                        <x-table.th>Item</x-table.th>
+                                        <x-table.th num>Planned</x-table.th>
                                         @if($done)
-                                            <th class="px-3 py-2 text-right">{{ $breakdown ? 'Got back' : 'Used' }}</th>
-                                            <th class="px-3 py-2 text-right hidden sm:table-cell">Cost</th>
+                                            <x-table.th num>{{ $breakdown ? 'Got back' : 'Used' }}</x-table.th>
+                                            <x-table.th num class="hidden sm:table-cell">Cost</x-table.th>
                                         @elseif($order->isDraft() && ! $breakdown)
-                                            <th class="px-3 py-2 text-right">Free now</th>
+                                            <x-table.th num>Free now</x-table.th>
                                         @endif
-                                    </tr></thead>
-                                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700 text-gray-900 dark:text-gray-100">
+</x-slot>
+
                                         @forelse($order->items as $line)
                                             @php $lineUnit = $line->item?->unit ? ' '.$line->item->unit : ''; @endphp
                                             <tr>
-                                                <td class="px-3 py-2">
+                                                <td>
                                                     <a href="{{ route('inventory.show', $line->item_id) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $line->item?->name }}</a>
-                                                    @if($done)<span class="sm:hidden block text-xs text-gray-500 dark:text-gray-400">Cost @money($line->cost)</span>@endif
+                                                    @if($done)<span class="sm:hidden block text-xs text-gray-500 dark:text-gray-400">Cost @fig($line->cost, false)</span>@endif
                                                 </td>
-                                                <td class="px-3 py-2 text-right whitespace-nowrap">{{ $fmt($line->planned_quantity) }}{{ $lineUnit }}</td>
+                                                <td class="num">{{ $fmt($line->planned_quantity) }}{{ $lineUnit }}</td>
                                                 @if($done)
-                                                    <td class="px-3 py-2 text-right whitespace-nowrap font-medium {{ abs((float) $line->quantity - (float) $line->planned_quantity) > 0.00001 ? 'text-amber-700 dark:text-amber-400' : '' }}">{{ $fmt($line->quantity) }}{{ $lineUnit }}</td>
-                                                    <td class="px-3 py-2 text-right whitespace-nowrap hidden sm:table-cell">@money($line->cost)
-                                                        @if((float) $line->quantity > 0)<span class="block text-xs text-gray-500 dark:text-gray-400">@money($line->unitCost()) each</span>@endif
+                                                    <td class="num font-medium {{ abs((float) $line->quantity - (float) $line->planned_quantity) > 0.00001 ? 'text-amber-700 dark:text-amber-400' : '' }}">{{ $fmt($line->quantity) }}{{ $lineUnit }}</td>
+                                                    <td class="num hidden sm:table-cell">@fig($line->cost, false)
+                                                        @if((float) $line->quantity > 0)<span class="block text-xs text-gray-500 dark:text-gray-400">@fig($line->unitCost(), false) each</span>@endif
                                                     </td>
                                                 @elseif($order->isDraft() && ! $breakdown)
                                                     @php $freeQty = $free[$line->item_id] ?? 0; @endphp
-                                                    <td class="px-3 py-2 text-right whitespace-nowrap {{ $freeQty + 0.00001 < (float) $line->planned_quantity ? 'text-red-600 dark:text-red-300 font-medium' : '' }}">{{ $fmt($freeQty) }}{{ $lineUnit }}</td>
+                                                    <td class="num {{ $freeQty + 0.00001 < (float) $line->planned_quantity ? 'text-red-600 dark:text-red-300 font-medium' : '' }}">{{ $fmt($freeQty) }}{{ $lineUnit }}</td>
                                                 @endif
                                             </tr>
                                         @empty
-                                            <tr><td colspan="4" class="px-3 py-4 text-gray-500 dark:text-gray-400">The components come from {{ $bom?->label() }} when the build is completed.</td></tr>
+                                            <tr><td colspan="4">The components come from {{ $bom?->label() }} when the build is completed.</td></tr>
                                         @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
+</x-table>
                         </div>
                     </x-card>
 
@@ -109,24 +102,23 @@
                         <x-card>
                             <div class="p-4 sm:p-6">
                                 <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Extra costs</h3>
-                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                                    <thead><tr class="text-xs uppercase text-gray-500 dark:text-gray-400">
-                                        <th class="px-3 py-2 text-left">Cost</th>
-                                        <th class="px-3 py-2 text-right">Planned</th>
-                                        @if($done)<th class="px-3 py-2 text-right">Actual</th>@endif
-                                    </tr></thead>
-                                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700 text-gray-900 dark:text-gray-100">
+                                <x-table caption="Extra costs">
+<x-slot name="head">
+                                        <x-table.th>Cost</x-table.th>
+                                        <x-table.th num>Planned</x-table.th>
+                                        @if($done)<x-table.th num>Actual</x-table.th>@endif
+</x-slot>
+
                                         @foreach($order->costs as $cost)
                                             <tr>
-                                                <td class="px-3 py-2">{{ $cost->description }}
+                                                <td>{{ $cost->description }}
                                                     <span class="block text-xs text-gray-500 dark:text-gray-400">From {{ $cost->account ? $cost->account->account_code.' '.$cost->account->name : 'Production Costs Applied' }}</span>
                                                 </td>
-                                                <td class="px-3 py-2 text-right whitespace-nowrap">@money($cost->planned_amount)</td>
-                                                @if($done)<td class="px-3 py-2 text-right whitespace-nowrap font-medium">@money($cost->amount)</td>@endif
+                                                <td class="num">@fig($cost->planned_amount, false)</td>
+                                                @if($done)<td class="num font-medium">@fig($cost->amount, false)</td>@endif
                                             </tr>
                                         @endforeach
-                                    </tbody>
-                                </table>
+</x-table>
                             </div>
                         </x-card>
                     @endif

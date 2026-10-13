@@ -755,12 +755,13 @@ class EInvoicingTest extends TestCase
 
         $this->get(route('e-invoices.index'))->assertOk()->assertSee($a->invoice_number)->assertSee('Not submitted');
 
+        $this->travelTo('2026-12-01 09:00');
         Livewire::test(EInvoicesTable::class)
-            ->set('status', 'accepted')->assertSee($c->invoice_number)->assertDontSee($a->invoice_number)->assertDontSee($b->invoice_number)
-            ->set('status', 'rejected')->assertSee($b->invoice_number)->assertDontSee($c->invoice_number)
-            ->set('status', 'not_submitted')->assertSee($a->invoice_number)->assertDontSee($b->invoice_number)
-            ->set('status', '')->set('dateFrom', '2026-10-06')->assertDontSee($a->invoice_number)
-            ->set('dateFrom', '')->set('search', $b->invoice_number)->assertSee($b->invoice_number)->assertDontSee($a->invoice_number);
+            ->set('tab', 'accepted')->assertSee($c->invoice_number)->assertDontSee($a->invoice_number)->assertDontSee($b->invoice_number)
+            ->set('tab', 'rejected')->assertSee($b->invoice_number)->assertDontSee($c->invoice_number)
+            ->set('tab', 'not_submitted')->assertSee($a->invoice_number)->assertDontSee($b->invoice_number)
+            ->set('tab', '')->set('period', 'this_month')->assertDontSee($a->invoice_number)
+            ->set('period', '')->set('search', $b->invoice_number)->assertSee($b->invoice_number)->assertDontSee($a->invoice_number);
 
         $this->nrs = 'accepted';
         Livewire::test(EInvoicesTable::class)

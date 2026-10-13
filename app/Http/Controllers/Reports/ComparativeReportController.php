@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Reports;
 
-use App\Models\Expense;
 use App\Models\Journal;
 use App\Services\Accounting\FinancialStatements;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 /**
@@ -159,9 +159,9 @@ class ComparativeReportController extends ReportController
                     'end' => $now->copy()->endOfMonth()->format('Y-m-d'),
                 ];
                 $periods['previous'] = [
-                    'label' => $now->copy()->subMonth()->format('F Y'),
-                    'start' => $now->copy()->subMonth()->startOfMonth()->format('Y-m-d'),
-                    'end' => $now->copy()->subMonth()->endOfMonth()->format('Y-m-d'),
+                    'label' => $now->copy()->subMonthNoOverflow()->format('F Y'),
+                    'start' => $now->copy()->subMonthNoOverflow()->startOfMonth()->format('Y-m-d'),
+                    'end' => $now->copy()->subMonthNoOverflow()->endOfMonth()->format('Y-m-d'),
                 ];
                 break;
 
@@ -172,7 +172,7 @@ class ComparativeReportController extends ReportController
                     'start' => $now->copy()->firstOfQuarter()->format('Y-m-d'),
                     'end' => $now->copy()->lastOfQuarter()->format('Y-m-d'),
                 ];
-                $prevQuarter = $now->copy()->subQuarter();
+                $prevQuarter = $now->copy()->subQuarterNoOverflow();
                 $periods['previous'] = [
                     'label' => 'Q'.$prevQuarter->quarter.' '.$prevQuarter->year,
                     'start' => $prevQuarter->copy()->firstOfQuarter()->format('Y-m-d'),
@@ -183,12 +183,12 @@ class ComparativeReportController extends ReportController
             case 'year':
                 // Current year vs previous year
                 $periods['current'] = [
-                    'label' => $now->year,
+                    'label' => (string) $now->year,
                     'start' => $now->copy()->startOfYear()->format('Y-m-d'),
                     'end' => $now->copy()->endOfYear()->format('Y-m-d'),
                 ];
                 $periods['previous'] = [
-                    'label' => $now->year - 1,
+                    'label' => (string) ($now->year - 1),
                     'start' => $now->copy()->subYear()->startOfYear()->format('Y-m-d'),
                     'end' => $now->copy()->subYear()->endOfYear()->format('Y-m-d'),
                 ];
@@ -197,29 +197,26 @@ class ComparativeReportController extends ReportController
             case 'ytd':
                 // Year to date vs same period last year
                 $periods['current'] = [
-                    'label' => 'YTD '.$now->year,
+                    'label' => 'Year to date '.$now->year,
                     'start' => $now->copy()->startOfYear()->format('Y-m-d'),
                     'end' => $now->format('Y-m-d'),
                 ];
                 $periods['previous'] = [
-                    'label' => 'YTD '.($now->year - 1),
+                    'label' => 'Same dates '.($now->year - 1),
                     'start' => $now->copy()->subYear()->startOfYear()->format('Y-m-d'),
-                    'end' => $now->copy()->subYear()->format('Y-m-d'),
+                    'end' => $now->copy()->subYearNoOverflow()->format('Y-m-d'),
                 ];
                 break;
 
             case 'custom':
-                // Custom date ranges
-                $periods['current'] = [
-                    'label' => 'Current Period',
-                    'start' => $request->get('current_start', $now->copy()->startOfMonth()->format('Y-m-d')),
-                    'end' => $request->get('current_end', $now->format('Y-m-d')),
-                ];
-                $periods['previous'] = [
-                    'label' => 'Previous Period',
-                    'start' => $request->get('previous_start', $now->copy()->subMonth()->startOfMonth()->format('Y-m-d')),
-                    'end' => $request->get('previous_end', $now->copy()->subMonth()->endOfMonth()->format('Y-m-d')),
-                ];
+                // Two date ranges the user picks, named by their dates.
+                $range = fn (string $from, string $to) => Carbon::parse($from)->format('j M Y').' to '.Carbon::parse($to)->format('j M Y');
+                $cs = $request->get('current_start', $now->copy()->startOfMonth()->format('Y-m-d'));
+                $ce = $request->get('current_end', $now->format('Y-m-d'));
+                $ps = $request->get('previous_start', $now->copy()->subMonthNoOverflow()->startOfMonth()->format('Y-m-d'));
+                $pe = $request->get('previous_end', $now->copy()->subMonthNoOverflow()->endOfMonth()->format('Y-m-d'));
+                $periods['current'] = ['label' => $range($cs, $ce), 'start' => $cs, 'end' => $ce];
+                $periods['previous'] = ['label' => $range($ps, $pe), 'start' => $ps, 'end' => $pe];
                 break;
 
             default:
@@ -267,24 +264,18 @@ class ComparativeReportController extends ReportController
     }
 
     /**
-     * Determine if a change is an improvement
+     * Whether a change is for the better: true, false, or null when it is
+     * neither (totals that only restate others). Costs going down is better.
      */
-    protected function isImprovement(string $metric, float $diff): bool
+    protected function isImprovement(string $metric, float $diff): ?bool
     {
-        // For revenue/profit metrics, positive change is good
-        $positiveMetrics = ['revenue', 'netProfit', 'profitMargin', 'paymentsReceived', 'totalInflows', 'netCashFlow', 'accountsReceivable', 'totalAssets', 'equity'];
+        $moreIsBetter = ['revenue', 'grossProfit', 'grossMargin', 'netProfit', 'profitMargin', 'paymentsReceived', 'totalInflows', 'netCashFlow', 'accountsReceivable', 'totalAssets', 'equity'];
+        $lessIsBetter = ['expenses', 'operatingExpenses', 'costOfGoodsSold', 'billsPaid', 'payroll', 'totalExpenses', 'paymentsMade', 'expensesPaid', 'payrollPaid', 'totalOutflows', 'accountsPayable', 'totalLiabilities'];
 
-        // For expense metrics, negative change is good
-        $negativeMetrics = ['expenses', 'billsPaid', 'payroll', 'totalExpenses', 'paymentsMade', 'expensesPaid', 'payrollPaid', 'totalOutflows', 'accountsPayable'];
-
-        if (in_array($metric, $positiveMetrics)) {
-            return $diff >= 0;
-        }
-
-        if (in_array($metric, $negativeMetrics)) {
-            return $diff <= 0;
-        }
-
-        return true;
+        return match (true) {
+            in_array($metric, $moreIsBetter, true) => $diff >= 0,
+            in_array($metric, $lessIsBetter, true) => $diff <= 0,
+            default => null,
+        };
     }
 }

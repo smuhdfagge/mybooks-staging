@@ -3,80 +3,81 @@
 namespace App\Livewire\SalaryStructures;
 
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ListTable;
 use App\Models\SalaryStructure;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/** Salary structures (tables plan T5): basic pay plus allowances and deductions. */
 class SalaryStructuresTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
-
-    public $search = '';
-
-    public $status = '';
-
-    public $perPage = 15;
-
-    public $selectedItems = [];
-
-    public $selectAll = false;
-
-    public $bulkAction = '';
-
-    public $successMessage = '';
-
-    public $errorMessage = '';
+    use ChecksPermissions, ListTable;
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'status' => ['except' => ''],
+        'tab' => ['except' => '', 'as' => 'show'],
     ];
 
-    public function updatingSearch()
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['name', 'basic_salary', 'effective_from', 'employees_count'];
     }
 
-    public function updatingStatus()
+    public function mountListTable(): void
     {
-        $this->resetPage();
+        if (! in_array($this->sortField, $this->sortable(), true)) {
+            $this->sortField = 'name';
+            $this->sortDirection = 'asc';
+        }
     }
 
-    public function updatingPerPage()
+    protected function rowRelations(): array
     {
-        $this->resetPage();
+        return ['allowances', 'deductions'];
     }
 
-    public function clearFilters()
+    protected function decorateRows(Builder $query): Builder
     {
-        $this->reset(['search', 'status']);
-        $this->resetPage();
+        return $query->withCount('employees');
     }
 
-    public function toggleActive(SalaryStructure $salaryStructure)
+    protected function baseQuery(): Builder
+    {
+        $query = SalaryStructure::query();
+        if (($term = trim($this->search)) !== '') {
+            $query->where(fn ($q) => $q->where('name', 'like', "%{$term}%")->orWhere('notes', 'like', "%{$term}%"));
+        }
+
+        return $query;
+    }
+
+    protected function applyTab(Builder $query, string $tab): Builder
+    {
+        return match ($tab) {
+            'active' => $query->where('is_active', true),
+            'inactive' => $query->where('is_active', false),
+            default => $query,
+        };
+    }
+
+    /** @return array<string, array{label: string, count: int, alert: bool}> */
+    private function tabs(): array
+    {
+        $row = $this->baseQuery()->toBase()->selectRaw('COUNT(*) as all_rows, SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active')->first();
+
+        return [
+            '' => ['label' => 'All', 'count' => (int) $row->all_rows, 'alert' => false],
+            'active' => ['label' => 'In use', 'count' => (int) $row->active, 'alert' => false],
+            'inactive' => ['label' => 'Not in use', 'count' => (int) $row->all_rows - (int) $row->active, 'alert' => false],
+        ];
+    }
+
+    public function toggleActive(int $id): void
     {
         $this->requirePermission('create payroll');
-
-        abort_unless($salaryStructure->tenant_id === auth()->user()->tenant_id, 403);
-
-        $salaryStructure->update(['is_active' => ! $salaryStructure->is_active]);
-        $this->successMessage = 'Salary structure status updated.';
-    }
-
-    public function updatedSelectAll($value)
-    {
-        $this->selectedItems = $value ? $this->getFilteredIds() : [];
-    }
-
-    public function updatedSelectedItems()
-    {
-        $this->selectAll = count($this->selectedItems) === count($this->getFilteredIds());
-    }
-
-    private function getFilteredIds()
-    {
-        return $this->buildQuery()->pluck('id')->map(fn ($id) => (string) $id)->toArray();
+        $structure = SalaryStructure::findOrFail($id);
+        $structure->update(['is_active' => ! $structure->is_active]);
+        $this->successMessage = $structure->is_active ? "{$structure->name} is in use again." : "{$structure->name} taken out of use.";
     }
 
     /**
@@ -97,13 +98,7 @@ class SalaryStructuresTable extends Component
         $this->errorMessage = '';
 
         if (empty($this->selectedItems)) {
-            $this->errorMessage = 'Please select at least one salary structure.';
-
-            return;
-        }
-
-        if (empty($this->bulkAction)) {
-            $this->errorMessage = 'Please select an action.';
+            $this->errorMessage = 'Tick at least one structure first.';
 
             return;
         }
@@ -114,45 +109,27 @@ class SalaryStructuresTable extends Component
 
         switch ($this->bulkAction) {
             case 'activate':
-                SalaryStructure::whereIn('id', $this->selectedItems)
-                    ->where('tenant_id', auth()->user()->tenant_id)
-                    ->update(['is_active' => true]);
-                $this->successMessage = "Successfully activated {$count} salary structure(s).";
-                break;
-
             case 'deactivate':
-                SalaryStructure::whereIn('id', $this->selectedItems)
-                    ->where('tenant_id', auth()->user()->tenant_id)
-                    ->update(['is_active' => false]);
-                $this->successMessage = "Successfully deactivated {$count} salary structure(s).";
+                SalaryStructure::whereIn('id', $this->selectedItems)->update(['is_active' => $this->bulkAction === 'activate']);
+                $this->successMessage = $this->bulkAction === 'activate' ? "{$count} structure(s) put in use." : "{$count} structure(s) taken out of use.";
                 break;
 
             case 'delete':
-                $deletedCount = 0;
-                $skippedCount = 0;
-
-                foreach ($this->selectedItems as $id) {
-                    $structure = SalaryStructure::find($id);
-                    if (! $structure) {
-                        continue;
-                    }
-
-                    if ($structure->payrolls()->exists() || $structure->employees()->exists()) {
-                        $skippedCount++;
+                $deleted = 0;
+                $skipped = 0;
+                foreach (SalaryStructure::whereIn('id', $this->selectedItems)->get() as $structure) {
+                    if ($this->inUse($structure)) {
+                        $skipped++;
 
                         continue;
                     }
-
                     $structure->delete();
-                    $deletedCount++;
+                    $deleted++;
                 }
-
-                if ($deletedCount > 0 && $skippedCount > 0) {
-                    $this->successMessage = "Deleted {$deletedCount} structure(s). Skipped {$skippedCount} in use.";
-                } elseif ($deletedCount > 0) {
-                    $this->successMessage = "Successfully deleted {$deletedCount} salary structure(s).";
+                if ($deleted > 0) {
+                    $this->successMessage = "Deleted {$deleted} structure(s).".($skipped ? " Skipped {$skipped} that employees or payroll runs use." : '');
                 } else {
-                    $this->errorMessage = 'Could not delete any structures. All selected are in use.';
+                    $this->errorMessage = 'None deleted: every ticked structure is used by employees or payroll runs.';
                 }
                 break;
 
@@ -163,31 +140,34 @@ class SalaryStructuresTable extends Component
         }
 
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
     }
 
-    private function buildQuery()
+    public function deleteOne(int $id): void
     {
-        $query = SalaryStructure::with(['items'])->latest();
+        $this->requirePermission('create payroll');
+        $structure = SalaryStructure::findOrFail($id);
+        if ($this->inUse($structure)) {
+            $this->errorMessage = "{$structure->name} is used by employees or payroll runs, so it can't be deleted. Take it out of use instead.";
 
-        if ($this->search) {
-            $query->where('name', 'like', "%{$this->search}%");
+            return;
         }
+        $structure->delete();
+        $this->successMessage = "Deleted {$structure->name}.";
+        $this->selectedItems = array_values(array_diff($this->selectedItems, [(string) $id]));
+    }
 
-        if ($this->status === 'active') {
-            $query->where('is_active', true);
-        } elseif ($this->status === 'inactive') {
-            $query->where('is_active', false);
-        }
-
-        return $query;
+    private function inUse(SalaryStructure $structure): bool
+    {
+        return $structure->payrolls()->exists() || $structure->employees()->exists();
     }
 
     public function render()
     {
-        $salaryStructures = $this->buildQuery()->paginate($this->pageSize());
-
-        return view('livewire.salary-structures.salary-structures-table', compact('salaryStructures'));
+        return view('livewire.salary-structures.salary-structures-table', [
+            'structures' => $this->rows(),
+            'tabs' => $this->tabs(),
+            'filtered' => $this->isFiltered(),
+        ]);
     }
 }

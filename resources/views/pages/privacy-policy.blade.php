@@ -174,26 +174,21 @@
 
                             <h3 id="sub-processors" class="mt-6 text-lg font-semibold text-gray-900 dark:text-white">Sub-processors</h3>
                             <p>These companies process personal data on our behalf:</p>
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full text-sm border border-gray-200 dark:border-gray-700">
-                                    <thead class="bg-gray-50 dark:bg-gray-800">
-                                        <tr>
-                                            <th class="px-3 py-2 text-left font-medium text-gray-900 dark:text-white">Sub-processor</th>
-                                            <th class="px-3 py-2 text-left font-medium text-gray-900 dark:text-white">What for</th>
-                                            <th class="px-3 py-2 text-left font-medium text-gray-900 dark:text-white">Where</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                            <x-table caption="Sub-processors">
+<x-slot name="head">
+                                            <x-table.th>Sub-processor</x-table.th>
+                                            <x-table.th>What for</x-table.th>
+                                            <x-table.th>Where</x-table.th>
+</x-slot>
+
                                         @foreach (config('mybooks.sub_processors', []) as $processor)
                                             <tr>
-                                                <td class="px-3 py-2">{{ $processor['name'] }}</td>
-                                                <td class="px-3 py-2">{{ $processor['purpose'] }}</td>
-                                                <td class="px-3 py-2">{{ $processor['location'] }}</td>
+                                                <td>{{ $processor['name'] }}</td>
+                                                <td>{{ $processor['purpose'] }}</td>
+                                                <td>{{ $processor['location'] }}</td>
                                             </tr>
                                         @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
+</x-table>
                         </div>
                     </div>
 

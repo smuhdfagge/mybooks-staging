@@ -48,8 +48,8 @@
                     <td>{{ $account->account_code }}</td>
                     <td>{{ $account->name }}</td>
                     <td>{{ ucfirst($account->type) }}</td>
-                    <td class="text-right">{{ $account->total_debit > 0 ? number_format($account->total_debit, 2) : '' }}</td>
-                    <td class="text-right">{{ $account->total_credit > 0 ? number_format($account->total_credit, 2) : '' }}</td>
+                    <td class="text-right">{{ $account->balance_debit > 0 ? number_format($account->balance_debit, 2) : '' }}</td>
+                    <td class="text-right">{{ $account->balance_credit > 0 ? number_format($account->balance_credit, 2) : '' }}</td>
                 </tr>
             @empty
                 <tr>

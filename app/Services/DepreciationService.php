@@ -150,7 +150,7 @@ class DepreciationService
                 break;
             }
 
-            $date->addMonth()->endOfMonth();
+            $date->addMonthNoOverflow()->endOfMonth();
         }
 
         return $schedule;

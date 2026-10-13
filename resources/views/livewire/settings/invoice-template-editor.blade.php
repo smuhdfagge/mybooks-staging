@@ -177,12 +177,12 @@
                 {{-- Actions --}}
                 <div class="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
                     <button wire:click="save" wire:loading.attr="disabled"
-                        class="w-full inline-flex items-center justify-center px-4 py-2 bg-brand-600 text-white text-sm font-medium rounded-md hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50">
-                        <svg wire:loading wire:target="save" class="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        class="btn-primary w-full">
+                        <svg wire:loading wire:target="save" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                         </svg>
-                        <span wire:loading.remove wire:target="save">Save Template</span>
+                        <span wire:loading.remove wire:target="save">Save template</span>
                         <span wire:loading wire:target="save">Saving...</span>
                     </button>
 

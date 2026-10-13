@@ -3,98 +3,53 @@
 namespace App\Livewire\Budgets;
 
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ListTable;
 use App\Models\Budget;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/** Budgets list (tables plan T4: the shared list design). */
 class BudgetsTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
+    use ChecksPermissions, ListTable;
 
-    public $search = '';
+    public string $year = '';
 
-    public $sortField = 'fiscal_year';
+    protected $queryString = [
+        'search' => ['except' => ''],
+        'tab' => ['except' => '', 'as' => 'status'],
+        'year' => ['except' => ''],
+    ];
 
-    public $sortDirection = 'desc';
+    public const LABELS = ['draft' => 'Draft', 'active' => 'In use', 'locked' => 'Locked'];
 
-    public $perPage = 15;
-
-    public $yearFilter = '';
-
-    public $statusFilter = '';
-
-    // Bulk operation properties
-    public $selectedItems = [];
-
-    public $selectAll = false;
-
-    public $bulkAction = '';
-
-    public $successMessage = '';
-
-    public $errorMessage = '';
-
-    protected $queryString = ['search', 'sortField', 'sortDirection', 'yearFilter', 'statusFilter'];
-
-    public function updatingSearch()
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['fiscal_year', 'name', 'lines_sum_annual_total'];
     }
 
-    public function updatingYearFilter()
+    protected function filterProperties(): array
     {
-        $this->resetPage();
+        return ['year'];
     }
 
-    public function updatingStatusFilter()
+    protected function decorateRows(Builder $query): Builder
     {
-        $this->resetPage();
+        return $query->withCount('lines')->withSum('lines', 'annual_total');
     }
 
-    public function updatingPerPage()
+    protected function baseQuery(): Builder
     {
-        $this->resetPage();
-    }
-
-    public function sortBy($field)
-    {
-        if ($this->sortField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            $this->sortField = $field;
-            $this->sortDirection = 'asc';
+        $query = Budget::query();
+        if (($term = trim($this->search)) !== '') {
+            $query->where(fn ($q) => $q->where('name', 'like', "%{$term}%")->orWhere('description', 'like', "%{$term}%"));
         }
-    }
-
-    public function updatedSelectAll($value)
-    {
-        if ($value) {
-            $this->selectedItems = $this->getFilteredBudgetIds();
-        } else {
-            $this->selectedItems = [];
+        if ($this->year !== '' && ctype_digit($this->year)) {
+            $query->where('fiscal_year', (int) $this->year);
         }
-    }
 
-    public function updatedSelectedItems()
-    {
-        $this->selectAll = count($this->selectedItems) === count($this->getFilteredBudgetIds());
-    }
-
-    private function getFilteredBudgetIds()
-    {
-        return Budget::query()
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('name', 'like', '%'.$this->search.'%')
-                        ->orWhere('description', 'like', '%'.$this->search.'%');
-                });
-            })
-            ->when($this->yearFilter, fn ($q) => $q->where('fiscal_year', $this->yearFilter))
-            ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))
-            ->pluck('id')
-            ->map(fn ($id) => (string) $id)
-            ->toArray();
+        return $query;
     }
 
     /**
@@ -115,69 +70,46 @@ class BudgetsTable extends Component
         $this->errorMessage = '';
 
         if (empty($this->selectedItems)) {
-            $this->errorMessage = 'Please select at least one budget.';
+            $this->errorMessage = 'Tick at least one budget first.';
 
             return;
         }
-
-        if (empty($this->bulkAction)) {
-            $this->errorMessage = 'Please select an action.';
-
-            return;
-        }
-
-        $count = count($this->selectedItems);
 
         $this->authorizeBulkAction();
+        $budgets = Budget::withCount('lines')->whereIn('id', $this->selectedItems)->get();
 
         switch ($this->bulkAction) {
             case 'activate':
-                $activated = 0;
-                foreach ($this->selectedItems as $id) {
-                    $budget = Budget::find($id);
-                    if ($budget && $budget->isDraft() && $budget->lines()->count() > 0) {
+                $n = 0;
+                foreach ($budgets as $budget) {
+                    if ($budget->isDraft() && $budget->lines_count > 0) {
                         $budget->activate();
-                        $activated++;
+                        $n++;
                     }
                 }
-                if ($activated < $count) {
-                    $this->errorMessage = "Activated {$activated} of {$count} budgets. Some budgets are already active/locked or have no line items.";
-                } else {
-                    $this->successMessage = "Successfully activated {$activated} budget(s).";
-                }
+                $this->successMessage = "Put {$n} budget(s) in use. Only drafts with lines change.";
                 break;
 
             case 'lock':
-                $locked = 0;
-                foreach ($this->selectedItems as $id) {
-                    $budget = Budget::find($id);
-                    if ($budget && $budget->isActive()) {
+                $n = 0;
+                foreach ($budgets as $budget) {
+                    if ($budget->isActive()) {
                         $budget->lock();
-                        $locked++;
+                        $n++;
                     }
                 }
-                if ($locked < $count) {
-                    $this->errorMessage = "Locked {$locked} of {$count} budgets. Only active budgets can be locked.";
-                } else {
-                    $this->successMessage = "Successfully locked {$locked} budget(s).";
-                }
+                $this->successMessage = "Locked {$n} budget(s). Only budgets in use can be locked.";
                 break;
 
             case 'delete':
-                $deleted = 0;
-                foreach ($this->selectedItems as $id) {
-                    $budget = Budget::find($id);
-                    if ($budget && ! $budget->isLocked()) {
-                        $budget->lines()->delete();
-                        $budget->delete();
-                        $deleted++;
+                $n = 0;
+                foreach ($budgets as $budget) {
+                    if (! $budget->isLocked()) {
+                        $this->deleteBudget($budget);
+                        $n++;
                     }
                 }
-                if ($deleted < $count) {
-                    $this->errorMessage = "Deleted {$deleted} of {$count} budgets. Locked budgets cannot be deleted.";
-                } else {
-                    $this->successMessage = "Successfully deleted {$deleted} budget(s).";
-                }
+                $this->successMessage = "Deleted {$n} budget(s). Locked budgets are kept.";
                 break;
 
             default:
@@ -187,41 +119,39 @@ class BudgetsTable extends Component
         }
 
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
+    }
+
+    /** Delete one budget from its row menu (locked budgets are kept). */
+    public function deleteOne(int $id): void
+    {
+        $this->requirePermission('delete budgets');
+        $budget = Budget::findOrFail($id);
+        if ($budget->isLocked()) {
+            $this->errorMessage = "{$budget->name} is locked, so it can't be deleted.";
+
+            return;
+        }
+        $this->deleteBudget($budget);
+        $this->successMessage = "Deleted {$budget->name}.";
+        $this->selectedItems = array_values(array_diff($this->selectedItems, [(string) $id]));
+    }
+
+    private function deleteBudget(Budget $budget): void
+    {
+        DB::transaction(function () use ($budget) {
+            $budget->lines()->delete();
+            $budget->delete();
+        });
     }
 
     public function render()
     {
-        $query = Budget::query()
-            ->with(['createdBy', 'approvedBy'])
-            ->withCount('lines');
-
-        // Search
-        if ($this->search) {
-            $query->where(function ($q) {
-                $q->where('name', 'like', '%'.$this->search.'%')
-                    ->orWhere('description', 'like', '%'.$this->search.'%');
-            });
-        }
-
-        // Filters
-        if ($this->yearFilter) {
-            $query->where('fiscal_year', $this->yearFilter);
-        }
-        if ($this->statusFilter) {
-            $query->where('status', $this->statusFilter);
-        }
-
-        // Sorting
-        $query->orderBy($this->sortField, $this->sortDirection);
-
-        $budgets = $query->paginate($this->pageSize());
-
-        // Get available years for filter
-        $availableYears = Budget::distinct()->pluck('fiscal_year')->sort()->reverse()->values();
-        $statuses = Budget::getStatuses();
-
-        return view('livewire.budgets.budgets-table', compact('budgets', 'availableYears', 'statuses'));
+        return view('livewire.budgets.budgets-table', [
+            'budgets' => $this->rows(),
+            'tabs' => $this->statusTabs(self::LABELS),
+            'years' => Budget::query()->distinct()->orderByDesc('fiscal_year')->pluck('fiscal_year')->mapWithKeys(fn ($y) => [(string) $y => (string) $y]),
+            'filtered' => $this->isFiltered(),
+        ]);
     }
 }

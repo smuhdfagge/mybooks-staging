@@ -17,15 +17,30 @@ class AdminDataRequestController extends Controller
 {
     public function index(Request $request)
     {
+        $open = [DataRequest::STATUS_RECEIVED, DataRequest::STATUS_SCHEDULED];
+        $status = in_array($request->query('status'), ['open', DataRequest::STATUS_COMPLETED, DataRequest::STATUS_CANCELLED], true) ? (string) $request->query('status') : '';
+
         $requests = DataRequest::query()
-            ->when($request->query('status') === 'open', fn ($q) => $q->whereIn('status', [DataRequest::STATUS_RECEIVED, DataRequest::STATUS_SCHEDULED]))
+            ->when($status === 'open', fn ($q) => $q->whereIn('status', $open))
+            ->when(in_array($status, [DataRequest::STATUS_COMPLETED, DataRequest::STATUS_CANCELLED], true), fn ($q) => $q->where('status', $status))
             ->latest()
             ->paginate(25)
             ->withQueryString();
 
+        $counts = DataRequest::query()->toBase()->selectRaw('status, COUNT(*) as n')->groupBy('status')->pluck('n', 'status')->map(fn ($n) => (int) $n);
+        $late = DataRequest::query()->whereIn('status', $open)->where('due_at', '<', now())->count();
+        $url = fn (string $key) => route('admin.data-requests.index', $key === '' ? [] : ['status' => $key]);
+
         return view('admin.data-requests.index', [
             'requests' => $requests,
             'types' => DataRequest::TYPES,
+            'status' => $status,
+            'tabs' => [
+                '' => ['label' => 'All', 'count' => (int) $counts->sum(), 'href' => $url('')],
+                'open' => ['label' => 'To answer', 'count' => (int) $counts->only($open)->sum(), 'alert' => $late > 0, 'href' => $url('open')],
+                'completed' => ['label' => 'Done', 'count' => (int) ($counts[DataRequest::STATUS_COMPLETED] ?? 0), 'href' => $url('completed')],
+                'cancelled' => ['label' => 'Cancelled', 'count' => (int) ($counts[DataRequest::STATUS_CANCELLED] ?? 0), 'href' => $url('cancelled')],
+            ],
         ]);
     }
 

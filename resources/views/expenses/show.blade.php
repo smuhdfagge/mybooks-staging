@@ -1,34 +1,27 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    {{ $expense->expense_number }}
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">{{ $expense->expense_date->format('F d, Y') }}</p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                @if($expense->canBeEdited())
-                    <a href="{{ route('expenses.edit', $expense) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                        </svg>
-                        Edit
-                    </a>
+        <x-table.page-header :title="'Expense '.$expense->expense_number">
+            <x-slot name="badge"><x-status-badge :status="$expense->status" :label="$expense->status_label" /></x-slot>
+            <x-slot name="description">{{ $expense->name }} · {{ $expense->expense_date->format('j M Y') }} · @money($expense->amount)</x-slot>
+            @if ($expense->canBeEdited())
+                @can('delete expenses')
+                    <x-slot name="more">
+                        <x-table.menu-item danger :post="route('expenses.destroy', $expense)" method="DELETE" confirm="Delete this expense?">Delete</x-table.menu-item>
+                    </x-slot>
+                @endcan
+            @endif
+            <x-slot name="actions">
+                @if ($expense->canBeEdited())
+                    @can('edit expenses')
+                        <a href="{{ route('expenses.edit', $expense) }}" class="btn-secondary">Edit</a>
+                    @endcan
                 @endif
-                <a href="{{ route('expenses.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back
-                </a>
-            </div>
-        </div>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-
 
             <!-- Status and Amount Card -->
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
@@ -74,11 +67,11 @@
                             @if($expense->canBeSubmitted())
                                 <form action="{{ route('expenses.submit', $expense) }}" method="POST" class="inline">
                                     @csrf
-                                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <button type="submit" class="btn-primary">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                         </svg>
-                                        Submit for Approval
+                                        Submit for approval
                                     </button>
                                 </form>
                             @endif
@@ -88,8 +81,8 @@
                                 @if($expense->canBeApproved())
                                     <form action="{{ route('expenses.approve', $expense) }}" method="POST" class="inline">
                                         @csrf
-                                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <button type="submit" class="btn-primary">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                             </svg>
                                             Approve
@@ -98,8 +91,8 @@
                                 @endif
 
                                 @if($expense->canBeRejected())
-                                    <button type="button" data-open-modal="reject-expense" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <button type="button" data-open-modal="reject-expense" class="btn-danger">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                         </svg>
                                         Reject
@@ -109,11 +102,11 @@
                                 @if($expense->canBeMarkedAsPaid())
                                     <form action="{{ route('expenses.mark-paid', $expense) }}" method="POST" class="inline">
                                         @csrf
-                                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <button type="submit" class="btn-primary">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                             </svg>
-                                            Mark as Paid
+                                            Mark as paid
                                         </button>
                                     </form>
                                 @endif
@@ -137,7 +130,7 @@
                             <p class="mt-1 text-sm text-red-700 dark:text-red-300">{{ $expense->rejection_reason }}</p>
                             @if($expense->rejectedByUser)
                                 <p class="mt-1 text-xs text-red-600 dark:text-red-300">
-                                    Rejected by {{ $expense->rejectedByUser->name }} on {{ $expense->rejected_at->format('M d, Y g:i A') }}
+                                    Rejected by {{ $expense->rejectedByUser->name }} on {{ $expense->rejected_at->format('j M Y, H:i') }}
                                 </p>
                             @endif
                         </div>
@@ -165,7 +158,7 @@
 
                             <div class="flex justify-between">
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Date</dt>
-                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $expense->expense_date->format('M d, Y') }}</dd>
+                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $expense->expense_date->format('j M Y') }}</dd>
                             </div>
 
                             @if($expense->expenseAccount)
@@ -246,7 +239,7 @@
                                     @if($expense->approved_at)
                                     <div class="flex justify-between">
                                         <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Approved At</dt>
-                                        <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $expense->approved_at->format('M d, Y g:i A') }}</dd>
+                                        <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $expense->approved_at->format('j M Y, H:i') }}</dd>
                                     </div>
                                     @endif
                                 </dl>
@@ -281,42 +274,37 @@
                             {{ $expense->journal->journal_number }}
                         </a>
                     </h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Account</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Debit</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Credit</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <x-table caption="Ledger postings">
+<x-slot name="head">
+                                    <x-table.th>Account</x-table.th>
+                                    <x-table.th num>Debit</x-table.th>
+                                    <x-table.th num>Credit</x-table.th>
+</x-slot>
+
                                 @foreach($expense->journal->entries as $entry)
                                 <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                                    <td>
                                         <span class="font-mono text-xs text-gray-500 dark:text-gray-400 mr-2">{{ $entry->account->account_code }}</span>
                                         {{ $entry->account->name }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $entry->debit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
+                                    <td class="num {{ $entry->debit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                                         {{ $entry->debit > 0 ? number_format($entry->debit, 2) : '-' }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $entry->credit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
+                                    <td class="num {{ $entry->credit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                                         {{ $entry->credit > 0 ? number_format($entry->credit, 2) : '-' }}
                                     </td>
                                 </tr>
                                 @endforeach
-                            </tbody>
-                            <tfoot class="bg-gray-50 dark:bg-gray-700">
+<x-slot name="foot">
                                 <tr class="font-semibold">
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">Total</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($expense->journal->total_debit, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($expense->journal->total_credit, 2) }}</td>
+                                    <td>Total</td>
+                                    <td class="num">@fig($expense->journal->total_debit, false)</td>
+                                    <td class="num">@fig($expense->journal->total_credit, false)</td>
                                 </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+</x-slot>
+</x-table>
                     <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                        Posted on {{ $expense->journal->posted_at?->format('M d, Y g:i A') ?? 'Not posted' }}
+                        Posted on {{ $expense->journal->posted_at?->format('j M Y, H:i') ?? 'Not posted' }}
                     </p>
                 </div>
             </div>
@@ -335,30 +323,6 @@
             </div>
             @endif
 
-            <!-- Actions -->
-            @if($expense->canBeEdited())
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
-                <div class="p-6 flex flex-wrap gap-4">
-                    <a href="{{ route('expenses.edit', $expense) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                        </svg>
-                        Edit Expense
-                    </a>
-
-                    <form action="{{ route('expenses.destroy', $expense) }}" method="POST" class="inline" data-confirm="Are you sure you want to delete this expense?">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                            </svg>
-                            Delete
-                        </button>
-                    </form>
-                </div>
-            </div>
-            @endif
         </div>
     </div>
 
@@ -393,7 +357,7 @@
                         </div>
                     </div>
                     <div class="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
-                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:w-auto sm:text-sm">
+                        <button type="submit" class="btn-danger w-full sm:w-auto sm:text-sm">
                             Reject Expense
                         </button>
                         <button type="button" data-close-modal="reject-expense" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 sm:mt-0 sm:w-auto sm:text-sm">

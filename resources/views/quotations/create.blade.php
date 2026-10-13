@@ -1,9 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">New quotation</h2>
-            <a href="{{ route('quotations.index') }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">Back to quotations</a>
-        </div>
+        <x-table.page-header title="New quotation" />
     </x-slot>
 
     <div class="py-6">

@@ -1,158 +1,112 @@
-<div class="relative py-6">
-    <x-table-loading />
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <!-- Flash Messages -->
-        <x-flash-messages :successMessage="$successMessage" :errorMessage="$errorMessage" />
+{{-- Journals list (tables plan T4). --}}
+@php
+    $user = auth()->user();
+    $money = fn ($v) => number_format((float) $v, 2);
+    $date = fn ($d) => $d ? $d->format('j M Y') : '—';
+    $canBulk = $user->canAny(['post journals', 'edit journals', 'delete journals']);
+    $ids = $journals->pluck('id')->map(fn ($id) => (string) $id)->all();
+    $source = fn ($j) => $j->reference_type ? \Illuminate\Support\Str::of(class_basename($j->reference_type))->snake(' ')->ucfirst() : 'Manual';
+    $label = ['pending' => 'Waiting'];
+@endphp
+<div class="relative space-y-3">
+    <x-flash-messages :successMessage="$successMessage" :errorMessage="$errorMessage" />
 
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-6">
-                <!-- Search and Filters -->
-                <div class="mb-6 flex flex-col sm:flex-row gap-4 justify-between">
-                    <div class="flex flex-col sm:flex-row gap-4">
-                        <div class="relative">
-                            <input aria-label="Search journals" type="text" wire:model.live.debounce.300ms="search" placeholder="Search journals..."
-                                class="w-full sm:w-80 pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 focus:border-brand-500 focus:ring-brand-500">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                                </svg>
-                            </div>
-                        </div>
-                        <select aria-label="Status filter" wire:model.live="statusFilter" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-brand-500 focus:ring-brand-500">
-                            <option value="">All Status</option>
-                            <option value="draft">Draft</option>
-                            <option value="posted">Posted</option>
-                        </select>
-                        <!-- Bulk Actions -->
-                        <x-bulk-actions :actions="['post' => 'Post', 'void' => 'Void', 'delete' => 'Delete']" :selectedCount="count($selectedItems)" />
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <label for="perPage" class="text-sm text-gray-600 dark:text-gray-400">Show:</label>
-                        <select id="perPage" wire:model.live="perPage" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm focus:border-brand-500 focus:ring-brand-500">
-                            <option value="10">10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                        </select>
-                    </div>
-                </div>
+    <x-table.tabs :tabs="$tabs" :active="$tab" />
 
-                <!-- Quick Actions -->
-                <div class="mb-4 flex gap-2">
-                    <a href="{{ route('journals.bulk-update') }}" class="inline-flex items-center px-3 py-1.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                        </svg>
-                        Bulk Update
-                    </a>
-                </div>
+    <x-table.toolbar placeholder="Search number, description, reference or amount" :selected="count($selectedItems)" :filtered="$filtered">
+        <x-slot name="filters">
+            <x-table.select model="period" label="Date" :options="$periods" />
+            <x-table.pick model="source" label="From" :options="$sources" />
+        </x-slot>
+        @if ($canBulk)
+            <x-slot name="bulk">
+                @can('post journals')<x-table.bulk-button action="post" confirm="Post the ticked draft journals to the books?">Post</x-table.bulk-button>@endcan
+                @can('edit journals')<x-table.bulk-button action="void" confirm="Reverse the ticked manual journals? Each gets a reversing entry; journals made by documents are skipped.">Reverse</x-table.bulk-button>@endcan
+                @can('delete journals')<x-table.bulk-button action="delete" danger confirm="Delete the ticked draft journals? Posted journals are skipped.">Delete</x-table.bulk-button>@endcan
+                <x-table.tick-all-matching :rows="$journals" :selected="$selectedItems" />
+            </x-slot>
+        @endif
+    </x-table.toolbar>
 
-                <!-- Table -->
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                                <th scope="col" class="px-4 py-3 text-left">
-                                    <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
-                                        class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
-                                </th>
-                                <x-sort-header field="journal_date" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Date</x-sort-header>
-                                <x-sort-header field="journal_number" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Number</x-sort-header>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Reference</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Description</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                                <x-sort-header field="total_debit" :sort-field="$sortField" :sort-direction="$sortDirection" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-600">Amount</x-sort-header>
-                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                            @forelse($journals as $journal)
-                                <tr wire:key="journal-{{ $journal->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                    <td class="px-4 py-4">
-                                        <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $journal->id }}"
-                                            class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                        {{ $journal->journal_date->format('M d, Y') }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <a href="{{ route('journals.show', $journal) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300 font-medium">
-                                            {{ $journal->journal_number }}
-                                        </a>
-                                        {{-- Accruals (S8) --}}
-                                        @if($journal->isAutoReversal())
-                                            <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">Auto reversal</span>
-                                        @elseif($journal->hasPendingReversal())
-                                            <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 dark:bg-brand-900/50 text-brand-800 dark:text-brand-300" title="Reversed automatically on {{ $journal->reverse_on->format('j M Y') }}">Reverses {{ $journal->reverse_on->format('j M') }}</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                        {{ $journal->reference ?? '—' }}
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                                        {{ Str::limit($journal->description, 40) ?? '—' }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        @if($journal->is_posted)
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-400">
-                                                Posted
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-400">
-                                                Draft
-                                            </span>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 text-right">
-                                        {{ number_format($journal->total_debit, 2) }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <div class="flex items-center justify-end space-x-2">
-                                            <a href="{{ route('journals.show', $journal) }}" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200" title="View" aria-label="View">
-                                                <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                                </svg>
-                                            </a>
-                                            @if(!$journal->is_posted)
-                                                <a href="{{ route('journals.edit', $journal) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300" title="Edit" aria-label="Edit">
-                                                    <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                                    </svg>
-                                                </a>
-                                            @endif
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="8" class="px-6 py-12 text-center">
-                                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                        </svg>
-                                        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No journal entries</h3>
-                                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new journal entry.</p>
-                                        <div class="mt-6">
-                                            <a href="{{ route('journals.create') }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                                                </svg>
-                                                New Journal Entry
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Pagination -->
-                @if($journals->hasPages())
-                    <div class="mt-6">
-                        {{ $journals->links() }}
-                    </div>
+    <div class="relative">
+        <x-table.veil />
+        @if ($journals->isEmpty())
+            <div class="tbl-wrap">
+                @if ($filtered || $tab !== '')
+                    <x-table.empty filtered title="No journals match these filters" />
+                @else
+                    <x-table.empty title="No journals yet" text="Invoices, bills and payments make their own entries. Add a journal by hand for anything else.">
+                        @can('create journals')<a href="{{ route('journals.create') }}" class="btn-new">New journal</a>@endcan
+                    </x-table.empty>
                 @endif
             </div>
-        </div>
+        @else
+            <x-table caption="Journals" class="hidden md:block">
+                <x-slot name="head">
+                    @if ($canBulk)<x-table.check-all :ids="$ids" :selected="$selectedItems" label="Tick every journal on this page" />@endif
+                    <x-table.th field="journal_number" :sort="[$sortField, $sortDirection]">Number</x-table.th>
+                    <x-table.th field="journal_date" :sort="[$sortField, $sortDirection]">Date</x-table.th>
+                    <x-table.th>Description</x-table.th>
+                    <x-table.th>From</x-table.th>
+                    <x-table.th field="total_debit" :sort="[$sortField, $sortDirection]" num>Amount</x-table.th>
+                    <x-table.th>Status</x-table.th>
+                    <th scope="col" class="tbl-menu"><span class="sr-only">Actions</span></th>
+                </x-slot>
+                @foreach ($journals as $journal)
+                    @php $ticked = in_array((string) $journal->id, $selectedItems, true); $manual = ! $journal->reference_type; @endphp
+                    <tr wire:key="jr-{{ $journal->id }}" @if ($ticked) data-picked @endif>
+                        @if ($canBulk)<x-table.check :id="$journal->id" :label="$journal->journal_number" />@endif
+                        <td>
+                            <a href="{{ route('journals.show', $journal) }}" class="tbl-link">{{ $journal->journal_number }}</a>
+                            @php
+                                // Accruals (S8): an automatic reversal, or one still to come.
+                                $note = $journal->isAutoReversal() ? 'Automatic reversal'
+                                    : ($journal->hasPendingReversal() ? 'Reverses '.$journal->reverse_on->format('j M') : null);
+                            @endphp
+                            @if ($journal->reference || $note)<div class="text-xs tbl-muted">{{ collect([$journal->reference, $note])->filter()->implode(' · ') }}</div>@endif
+                        </td>
+                        <td class="tbl-muted">{{ $date($journal->journal_date) }}</td>
+                        <td class="max-w-[22rem] truncate">{{ $journal->description ?: '—' }}</td>
+                        <td class="tbl-muted">{{ $source($journal) }}</td>
+                        <td class="num">{{ $money($journal->total_debit) }}</td>
+                        <td><x-status-badge :status="$journal->status" :label="$label[$journal->status] ?? null" /></td>
+                        <td class="tbl-menu">
+                            <x-table.dropdown :sr-label="'Actions for '.$journal->journal_number">
+                                <x-table.menu-item :href="route('journals.show', $journal)">View</x-table.menu-item>
+                                @if ($journal->status === 'draft')
+                                    @can('edit journals')<x-table.menu-item :href="route('journals.edit', $journal)">Edit</x-table.menu-item>@endcan
+                                    @can('post journals')<x-table.menu-item :post="route('journals.post', $journal)" confirm="Post this journal to the books?">Post</x-table.menu-item>@endcan
+                                    @can('delete journals')
+                                        <x-table.menu-item wire="deleteOne({{ $journal->id }})" :confirm="'Delete '.$journal->journal_number.'?'" danger>Delete</x-table.menu-item>
+                                    @endcan
+                                @endif
+                            </x-table.dropdown>
+                        </td>
+                    </tr>
+                @endforeach
+                <x-slot name="foot">
+                    <tr>
+                        @if ($canBulk)<td></td>@endif
+                        <td colspan="4">Total of {{ number_format($totals->n) }} {{ $totals->n == 1 ? 'journal' : 'journals' }}@if ($filtered || $tab !== '') <span class="font-normal tbl-muted">(this filter)</span>@endif</td>
+                        <td class="num">{{ $money($totals->total) }}</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </x-slot>
+            </x-table>
+            <ul class="space-y-2 md:hidden" aria-label="Journals">
+                @foreach ($journals as $journal)
+                    <li wire:key="jr-card-{{ $journal->id }}">
+                        <x-table.card :href="route('journals.show', $journal)" :title="$journal->description ?: $journal->journal_number" :amount="\App\Support\Money::format($journal->total_debit)"
+                            :meta="$journal->journal_number.' · '.$date($journal->journal_date).' · '.$source($journal)">
+                            @if ($journal->status !== 'posted')
+                                <x-slot name="badge"><x-status-badge :status="$journal->status" :label="$label[$journal->status] ?? null" /></x-slot>
+                            @endif
+                        </x-table.card>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
     </div>
+
+    <x-table.footer :rows="$journals" />
 </div>

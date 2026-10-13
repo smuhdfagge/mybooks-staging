@@ -1,149 +1,95 @@
-<div class="relative">
-    <x-table-loading />
-    <!-- Flash Messages -->
+{{-- Sales receipts list (tables plan T2): cash sales, paid on the spot. --}}
+@php
+    $user = auth()->user();
+    $money = fn ($v) => number_format((float) $v, 2);
+    $date = fn ($d) => $d ? $d->format('j M Y') : '—';
+    $method = fn ($m) => $m === 'pos' ? 'POS' : ($m ? ucfirst(str_replace('_', ' ', $m)) : '—');
+    $methodOptions = collect($methods)->mapWithKeys(fn ($m) => [$m => $method($m)])->all();
+    $canBulk = $user->can('delete sales-receipts');
+    $ids = $receipts->pluck('id')->map(fn ($id) => (string) $id)->all();
+@endphp
+<div class="relative space-y-3">
     <x-flash-messages :successMessage="$successMessage" :errorMessage="$errorMessage" />
 
-    <!-- Filters -->
-    <div class="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-        <div>
-            <label for="search" class="form-label">Search</label>
-            <input type="text" id="search" wire:model.live.debounce.300ms="search" placeholder="Receipt #, Reference, Customer..."
-                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:placeholder-gray-500 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-        </div>
+    <x-table.toolbar placeholder="Search number, reference or customer" :selected="count($selectedItems)" :filtered="$filtered">
+        <x-slot name="filters">
+            <x-table.select model="period" label="Date" :options="$periods" />
+            <x-table.pick model="customer" label="Customer" :options="$customers" />
+            <x-table.pick model="method" label="Paid by" :options="$methodOptions" />
+        </x-slot>
+        @if ($canBulk)
+            <x-slot name="bulk">
+                <x-table.bulk-button action="delete" danger confirm="Delete the ticked receipts? This reverses their entries in the books.">Delete</x-table.bulk-button>
+                <x-table.tick-all-matching :rows="$receipts" :selected="$selectedItems" />
+            </x-slot>
+        @endif
+    </x-table.toolbar>
 
-        <div>
-            <label for="paymentMethod" class="form-label">Payment Method</label>
-            <select id="paymentMethod" wire:model.live="paymentMethod"
-                class="form-control text-sm">
-                <option value="">All Methods</option>
-                <option value="cash">Cash</option>
-                <option value="check">Check</option>
-                <option value="credit_card">Credit Card</option>
-                <option value="bank_transfer">Bank Transfer</option>
-                <option value="other">Other</option>
-            </select>
-        </div>
-
-        <div>
-            <label for="customer" class="form-label">Customer</label>
-            <select id="customer" wire:model.live="customer"
-                class="form-control text-sm">
-                <option value="">All Customers</option>
-                @foreach($customers as $cust)
-                    <option value="{{ $cust->id }}">{{ $cust->name }}</option>
+    <div class="relative">
+        <x-table.veil />
+        @if ($receipts->isEmpty())
+            <div class="tbl-wrap">
+                @if ($filtered)
+                    <x-table.empty filtered title="No sales receipts match these filters" />
+                @else
+                    <x-table.empty title="No sales receipts yet" text="Use a sales receipt when the customer pays on the spot.">
+                        @can('create sales-receipts')<a href="{{ route('sales-receipts.create') }}" class="btn-new">New sales receipt</a>@endcan
+                    </x-table.empty>
+                @endif
+            </div>
+        @else
+            <x-table caption="Sales receipts" class="hidden md:block">
+                <x-slot name="head">
+                    @if ($canBulk)<x-table.check-all :ids="$ids" :selected="$selectedItems" label="Tick every receipt on this page" />@endif
+                    <x-table.th field="receipt_number" :sort="[$sortField, $sortDirection]">Number</x-table.th>
+                    <x-table.th>Customer</x-table.th>
+                    <x-table.th field="receipt_date" :sort="[$sortField, $sortDirection]">Date</x-table.th>
+                    <x-table.th>Paid by</x-table.th>
+                    <x-table.th>Reference</x-table.th>
+                    <x-table.th field="total" :sort="[$sortField, $sortDirection]" num>Amount</x-table.th>
+                    <th scope="col" class="tbl-menu"><span class="sr-only">Actions</span></th>
+                </x-slot>
+                @foreach ($receipts as $receipt)
+                    @php $ticked = in_array((string) $receipt->id, $selectedItems, true); @endphp
+                    <tr wire:key="sr-{{ $receipt->id }}" @if ($ticked) data-picked @endif>
+                        @if ($canBulk)<x-table.check :id="$receipt->id" :label="$receipt->receipt_number" />@endif
+                        <td><a href="{{ route('sales-receipts.show', $receipt) }}" class="tbl-link">{{ $receipt->receipt_number }}</a></td>
+                        <td class="max-w-[16rem] truncate">{{ $receipt->customer?->name ?? 'Walk-in customer' }}</td>
+                        <td class="tbl-muted">{{ $date($receipt->receipt_date) }}</td>
+                        <td>{{ $method($receipt->payment_method) }}</td>
+                        <td class="max-w-[12rem] truncate {{ $receipt->reference ? 'tbl-muted' : 'tbl-zero' }}">{{ $receipt->reference ?: '—' }}</td>
+                        <td class="num">{{ $money($receipt->total) }}</td>
+                        <td class="tbl-menu">
+                            <x-table.dropdown :sr-label="'Actions for '.$receipt->receipt_number">
+                                <x-table.menu-item :href="route('sales-receipts.show', $receipt)">View</x-table.menu-item>
+                                <x-table.menu-item :href="route('sales-receipts.pdf', $receipt)">Download PDF</x-table.menu-item>
+                                @can('edit sales-receipts')
+                                    <x-table.menu-item :href="route('sales-receipts.edit', $receipt)">Edit</x-table.menu-item>
+                                @endcan
+                            </x-table.dropdown>
+                        </td>
+                    </tr>
                 @endforeach
-            </select>
-        </div>
-
-        <div>
-            <label for="dateFrom" class="form-label">From Date</label>
-            <input type="date" id="dateFrom" wire:model.live="dateFrom"
-                class="form-control text-sm">
-        </div>
-
-        <div>
-            <label for="dateTo" class="form-label">To Date</label>
-            <input type="date" id="dateTo" wire:model.live="dateTo"
-                class="form-control text-sm">
-        </div>
-
-        <!-- Bulk Actions -->
-        <x-bulk-actions :actions="['delete' => 'Delete']" :selectedCount="count($selectedItems)" />
-    </div>
-
-    @if($search || $paymentMethod || $customer || $dateFrom || $dateTo)
-        <div class="mb-4">
-            <button wire:click="clearFilters" class="text-sm text-brand-600 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-300">
-                Clear all filters
-            </button>
-        </div>
-    @endif
-
-    <!-- Table -->
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead class="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                    <th scope="col" class="px-4 py-3 text-left">
-                        <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
-                            class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Receipt #</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Customer</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Receipt Date</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Payment Method</th>
-                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total</th>
-                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                @forelse($receipts as $receipt)
-                    <tr wire:key="receipt-{{ $receipt->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                        <td class="px-4 py-4">
-                            <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $receipt->id }}"
-                                class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <a href="{{ route('sales-receipts.show', $receipt) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300 font-medium">
-                                {{ $receipt->receipt_number }}
-                            </a>
-                            @if($receipt->reference)
-                                <p class="text-xs text-gray-500 dark:text-gray-400">Ref: {{ $receipt->reference }}</p>
-                            @endif
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            @if($receipt->customer)
-                                <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $receipt->customer->name }}</div>
-                                @if($receipt->customer->company_name)
-                                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ $receipt->customer->company_name }}</div>
-                                @endif
-                            @else
-                                <div class="text-sm text-gray-500 dark:text-gray-400">Walk-in Customer</div>
-                            @endif
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                            {{ $receipt->receipt_date->format('M d, Y') }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
-                                {{ ucfirst(str_replace('_', ' ', $receipt->payment_method)) }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 text-right font-medium">
-                            @money($receipt->total)
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="{{ route('sales-receipts.show', $receipt) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900 dark:hover:text-brand-300 mr-3">View</a>
-                            <a href="{{ route('sales-receipts.edit', $receipt) }}" class="text-yellow-700 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-300">Edit</a>
-                        </td>
-                    </tr>
-                @empty
+                <x-slot name="foot">
                     <tr>
-                        <td colspan="7" class="px-6 py-12 text-center">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                            <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No sales receipts found</h3>
-                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new sales receipt.</p>
-                            <div class="mt-6">
-                                <a href="{{ route('sales-receipts.create') }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                                    </svg>
-                                    New Sales Receipt
-                                </a>
-                            </div>
-                        </td>
+                        @if ($canBulk)<td></td>@endif
+                        <td colspan="5">Total of {{ number_format($totals->n) }} {{ $totals->n == 1 ? 'receipt' : 'receipts' }}@if ($filtered) <span class="font-normal tbl-muted">(this filter)</span>@endif</td>
+                        <td class="num">{{ $money($totals->total) }}</td>
+                        <td></td>
                     </tr>
-                @endforelse
-            </tbody>
-        </table>
+                </x-slot>
+            </x-table>
+            <ul class="space-y-2 md:hidden" aria-label="Sales receipts">
+                @foreach ($receipts as $receipt)
+                    <li wire:key="sr-card-{{ $receipt->id }}">
+                        <x-table.card :href="route('sales-receipts.show', $receipt)" :title="$receipt->customer?->name ?? 'Walk-in customer'" :amount="\App\Support\Money::format($receipt->total)"
+                            :meta="$receipt->receipt_number.' · '.$date($receipt->receipt_date).' · '.$method($receipt->payment_method)" />
+                    </li>
+                @endforeach
+            </ul>
+            <p class="text-sm font-medium text-gray-700 md:hidden dark:text-gray-300">Total {{ \App\Support\Money::format($totals->total) }}</p>
+        @endif
     </div>
 
-    <!-- Pagination -->
-    @if($receipts->hasPages())
-        <div class="mt-4">
-            {{ $receipts->links() }}
-        </div>
-    @endif
+    <x-table.footer :rows="$receipts" />
 </div>

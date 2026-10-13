@@ -1,66 +1,34 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Fixed Asset Details') }}
-            </h2>
-            <div class="flex gap-2">
-                <a href="{{ route('fixed-assets.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back
-                </a>
+        <x-table.page-header :title="$fixedAsset->name" :description="$fixedAsset->asset_number.($fixedAsset->category ? ' · '.$fixedAsset->category->name : '')">
+            <x-slot name="badge"><x-status-badge :status="['active' => 'active', 'under_maintenance' => 'pending', 'idle' => 'inactive', 'fully_depreciated' => 'completed', 'disposed' => 'cancelled', 'sold' => 'closed'][$fixedAsset->status] ?? 'draft'" :label="\App\Livewire\FixedAssets\FixedAssetsTable::LABELS[$fixedAsset->status] ?? ucfirst(str_replace('_', ' ', $fixedAsset->status))" /></x-slot>
+            <x-slot name="more">
+                <x-table.menu-item :href="route('fixed-assets.schedule', $fixedAsset)">Depreciation schedule</x-table.menu-item>
                 @can('edit fixed-assets')
-                    @if($fixedAsset->canDispose())
-                    <button type="button" data-open-modal="dispose-asset" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                        </svg>
-                        Dispose
-                    </button>
+                    @if ($fixedAsset->canDispose())
+                        <x-table.menu-item danger data-open-modal="dispose-asset">Dispose of this asset</x-table.menu-item>
                     @endif
-                    @if($fixedAsset->canDepreciate())
-                    <button type="button" data-open-modal="record-depreciation" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
-                        Record Depreciation
-                    </button>
-                    @endif
-                    <a href="{{ route('fixed-assets.edit', $fixedAsset) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
-                        Edit
-                    </a>
                 @endcan
-            </div>
-        </div>
+            </x-slot>
+            @can('edit fixed-assets')
+                <x-slot name="actions">
+                    <a href="{{ route('fixed-assets.edit', $fixedAsset) }}" class="btn-secondary">Edit</a>
+                    @if ($fixedAsset->canDepreciate())
+                        <button type="button" data-open-modal="record-depreciation" class="btn-new">Record depreciation</button>
+                    @endif
+                </x-slot>
+            @endcan
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <!-- Asset Header -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg mb-6">
-                <div class="p-6">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ $fixedAsset->name }}</h3>
-                            <p class="text-gray-600 dark:text-gray-400">{{ $fixedAsset->asset_number }}</p>
-                        </div>
-                        <span class="px-3 py-1 text-sm font-semibold rounded-full
-                            @if($fixedAsset->status === 'active') bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100
-                            @elseif($fixedAsset->status === 'fully_depreciated') bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100
-                            @elseif($fixedAsset->status === 'disposed') bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100
-                            @else bg-brand-100 text-brand-800 dark:bg-brand-800 dark:text-brand-100
-                            @endif">
-                            {{ ucfirst(str_replace('_', ' ', $fixedAsset->status)) }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
             <!-- Stats Cards -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-6">
                     <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Purchase Cost</div>
                     <div class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">{{ number_format($fixedAsset->purchase_cost, 2) }}</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $fixedAsset->purchase_date->format('M d, Y') }}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $fixedAsset->purchase_date->format('j M Y') }}</div>
                 </div>
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg p-6">
                     <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Accumulated Depreciation</div>
@@ -144,34 +112,29 @@
                                     View Full Schedule →
                                 </a>
                             </div>
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                    <thead>
-                                        <tr>
-                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Period</th>
-                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date</th>
-                                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Depreciation</th>
-                                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Book Value</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                            <x-table caption="Depreciation plan">
+<x-slot name="head">
+                                            <x-table.th>Period</x-table.th>
+                                            <x-table.th>Date</x-table.th>
+                                            <x-table.th num>Depreciation</x-table.th>
+                                            <x-table.th num>Book value</x-table.th>
+</x-slot>
+
                                         @forelse(collect($schedule)->take(12) as $period)
                                         <tr>
-                                            <td class="px-4 py-2 text-sm text-gray-900 dark:text-white">{{ $period['period'] }}</td>
-                                            <td class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">{{ $period['date']->format('M Y') }}</td>
-                                            <td class="px-4 py-2 text-sm text-gray-900 dark:text-white text-right">{{ number_format($period['depreciation_amount'], 2) }}</td>
-                                            <td class="px-4 py-2 text-sm text-gray-900 dark:text-white text-right">{{ number_format($period['book_value'], 2) }}</td>
+                                            <td class="dark:text-white">{{ $period['period'] }}</td>
+                                            <td>{{ $period['date']->format('M Y') }}</td>
+                                            <td class="dark:text-white num">@fig($period['depreciation_amount'], false)</td>
+                                            <td class="dark:text-white num">@fig($period['book_value'], false)</td>
                                         </tr>
                                         @empty
                                         <tr>
-                                            <td colspan="4" class="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                                            <td colspan="4" class="text-center">
                                                 No depreciation schedule available
                                             </td>
                                         </tr>
                                         @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
+</x-table>
                             @if(count($schedule) > 12)
                             <p class="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
                                 Showing first 12 months of {{ count($schedule) }} total periods
@@ -229,7 +192,7 @@
                                 </div>
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">In Service Date</dt>
-                                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $fixedAsset->in_service_date->format('M d, Y') }}</dd>
+                                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $fixedAsset->in_service_date->format('j M Y') }}</dd>
                                 </div>
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Depreciable Amount</dt>
@@ -242,7 +205,7 @@
                                 @if($fixedAsset->next_depreciation_date)
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Next Depreciation</dt>
-                                    <dd class="mt-1 text-sm text-brand-600 dark:text-brand-300">{{ $fixedAsset->next_depreciation_date->format('M d, Y') }}</dd>
+                                    <dd class="mt-1 text-sm text-brand-600 dark:text-brand-300">{{ $fixedAsset->next_depreciation_date->format('j M Y') }}</dd>
                                 </div>
                                 @endif
                             </dl>
@@ -257,7 +220,7 @@
                             <dl class="space-y-3">
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Disposal Date</dt>
-                                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $fixedAsset->disposal_date->format('M d, Y') }}</dd>
+                                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $fixedAsset->disposal_date->format('j M Y') }}</dd>
                                 </div>
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Method</dt>
@@ -322,7 +285,7 @@
                         <button type="button" data-close-modal="record-depreciation" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-400">
                             Cancel
                         </button>
-                        <button type="submit" class="px-4 py-2 bg-brand-600 text-white rounded-md hover:bg-brand-700">
+                        <button type="submit" class="btn-primary">
                             Record Depreciation
                         </button>
                     </div>
@@ -368,7 +331,7 @@
                         <button type="button" data-close-modal="dispose-asset" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-400">
                             Cancel
                         </button>
-                        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+                        <button type="submit" class="btn-danger">
                             Dispose Asset
                         </button>
                     </div>

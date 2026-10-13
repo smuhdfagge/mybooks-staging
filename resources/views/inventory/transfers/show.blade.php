@@ -1,6 +1,6 @@
 @php
-    $btn = 'inline-flex items-center justify-center px-3 py-2 border rounded-md font-semibold text-xs uppercase tracking-widest transition';
-    $secondary = $btn.' bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600';
+    $btn = 'btn-secondary';
+    $secondary = 'btn-secondary';
     $status = $transfer->status;
     $fmt = fn ($v) => rtrim(rtrim(number_format((float) $v, 4), '0'), '.');
     $done = in_array($status, ['received', 'cancelled'], true);
@@ -8,19 +8,15 @@
 @endphp
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div class="flex flex-wrap items-center gap-3">
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Transfer {{ $transfer->transfer_number }}</h2>
-                <x-status-badge :status="$status" :label="$statusLabel" />
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
-                <a href="{{ route('stock-transfers.print', $transfer) }}" target="_blank" class="{{ $secondary }}">Print transfer note</a>
-                @if($transfer->isDraft())
-                    <a href="{{ route('stock-transfers.edit', $transfer) }}" class="{{ $secondary }}">Edit</a>
-                @endif
-                <a href="{{ route('stock-transfers.index') }}" class="{{ $secondary }}">All transfers</a>
-            </div>
-        </div>
+        <x-table.page-header :title="'Transfer '.$transfer->transfer_number">
+            <x-slot name="badge"><x-status-badge :status="$status" :label="$statusLabel" /></x-slot>
+            <x-slot name="more">
+                <x-table.menu-item :href="route('stock-transfers.print', $transfer)" new-tab>Print transfer note</x-table.menu-item>
+            </x-slot>
+            @if ($transfer->isDraft())
+                <x-slot name="actions"><a href="{{ route('stock-transfers.edit', $transfer) }}" class="btn-secondary">Edit</a></x-slot>
+            @endif
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -34,11 +30,11 @@
                                 <a href="{{ route('warehouses.show', $transfer->from_warehouse_id) }}" class="font-medium text-brand-600 dark:text-brand-300 hover:underline">{{ $transfer->fromWarehouse?->name }}</a></div>
                             <div><p class="text-gray-500 dark:text-gray-400">To</p>
                                 <a href="{{ route('warehouses.show', $transfer->to_warehouse_id) }}" class="font-medium text-brand-600 dark:text-brand-300 hover:underline">{{ $transfer->toWarehouse?->name }}</a></div>
-                            <div><p class="text-gray-500 dark:text-gray-400">Date sent</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $transfer->transfer_date?->format('M d, Y') }}</p></div>
+                            <div><p class="text-gray-500 dark:text-gray-400">Date sent</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $transfer->transfer_date?->format('j M Y') }}</p></div>
                             <div><p class="text-gray-500 dark:text-gray-400">Reference</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $transfer->reference ?: '—' }}</p></div>
-                            <div><p class="text-gray-500 dark:text-gray-400">Date received</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $transfer->received_date?->format('M d, Y') ?? '—' }}</p></div>
+                            <div><p class="text-gray-500 dark:text-gray-400">Date received</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $transfer->received_date?->format('j M Y') ?? '—' }}</p></div>
                             @if($transfer->cancelled_at)
-                                <div><p class="text-gray-500 dark:text-gray-400">Cancelled</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $transfer->cancelled_at->format('M d, Y') }}</p></div>
+                                <div><p class="text-gray-500 dark:text-gray-400">Cancelled</p><p class="font-medium text-gray-900 dark:text-gray-100">{{ $transfer->cancelled_at->format('j M Y') }}</p></div>
                             @endif
                         </div>
                     </x-card>
@@ -46,28 +42,27 @@
                     <x-card>
                         <div class="p-4 sm:p-6">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Goods</h3>
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                                    <thead><tr class="text-xs uppercase text-gray-500 dark:text-gray-400">
-                                        <th class="px-3 py-2 text-left">Item</th>
-                                        <th class="px-3 py-2 text-right">Sent</th>
+                            <x-table caption="Goods">
+<x-slot name="head">
+                                        <x-table.th>Item</x-table.th>
+                                        <x-table.th num>Sent</x-table.th>
                                         @if($done)
-                                            <th class="px-3 py-2 text-right">Received</th>
-                                            <th class="px-3 py-2 text-right hidden sm:table-cell">Back</th>
-                                            <th class="px-3 py-2 text-right hidden sm:table-cell">Lost</th>
+                                            <x-table.th num>Received</x-table.th>
+                                            <x-table.th num class="hidden sm:table-cell">Back</x-table.th>
+                                            <x-table.th num class="hidden sm:table-cell">Lost</x-table.th>
                                         @endif
                                         @unless($transfer->isDraft())
-                                            <th class="px-3 py-2 text-right hidden sm:table-cell">Cost</th>
+                                            <x-table.th num class="hidden sm:table-cell">Cost</x-table.th>
                                         @endunless
-                                    </tr></thead>
-                                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700 text-gray-900 dark:text-gray-100">
+</x-slot>
+
                                         @foreach($transfer->items as $line)
                                             <tr>
-                                                <td class="px-3 py-2">
+                                                <td>
                                                     <a href="{{ route('inventory.show', $line->item_id) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $line->item?->name }}</a>
                                                     @if($line->item?->sku)<span class="block text-xs text-gray-500 dark:text-gray-400 font-mono">{{ $line->item->sku }}</span>@endif
                                                     @unless($transfer->isDraft())
-                                                        <span class="sm:hidden block text-xs text-gray-500 dark:text-gray-400">Cost @money($line->shipped_cost)</span>
+                                                        <span class="sm:hidden block text-xs text-gray-500 dark:text-gray-400">Cost @fig($line->shipped_cost, false)</span>
                                                     @endunless
                                                     @if($done && ((float) $line->quantity_returned > 0 || (float) $line->quantity_lost > 0))
                                                         <span class="sm:hidden block text-xs text-gray-500 dark:text-gray-400">
@@ -76,22 +71,20 @@
                                                         </span>
                                                     @endif
                                                 </td>
-                                                <td class="px-3 py-2 text-right">{{ $fmt($line->quantity) }}</td>
+                                                <td class="num">{{ $fmt($line->quantity) }}</td>
                                                 @if($done)
-                                                    <td class="px-3 py-2 text-right font-medium">{{ $fmt($line->quantity_received) }}</td>
-                                                    <td class="px-3 py-2 text-right hidden sm:table-cell">{{ $fmt($line->quantity_returned) }}</td>
-                                                    <td class="px-3 py-2 text-right hidden sm:table-cell {{ (float) $line->quantity_lost > 0 ? 'text-red-600 dark:text-red-300' : '' }}">{{ $fmt($line->quantity_lost) }}</td>
+                                                    <td class="num font-medium">{{ $fmt($line->quantity_received) }}</td>
+                                                    <td class="num hidden sm:table-cell">{{ $fmt($line->quantity_returned) }}</td>
+                                                    <td class="num hidden sm:table-cell {{ (float) $line->quantity_lost > 0 ? 'text-red-600 dark:text-red-300' : '' }}">{{ $fmt($line->quantity_lost) }}</td>
                                                 @endif
                                                 @unless($transfer->isDraft())
-                                                    <td class="px-3 py-2 text-right whitespace-nowrap hidden sm:table-cell">@money($line->shipped_cost)
-                                                        <span class="block text-xs text-gray-500 dark:text-gray-400">@money($line->unitCost()) each</span>
+                                                    <td class="num hidden sm:table-cell">@fig($line->shipped_cost, false)
+                                                        <span class="block text-xs text-gray-500 dark:text-gray-400">@fig($line->unitCost(), false) each</span>
                                                     </td>
                                                 @endunless
                                             </tr>
                                         @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
+</x-table>
 
                             @unless($transfer->isDraft())
                                 <dl class="mt-3 border-t border-gray-200 dark:border-gray-700 pt-3 space-y-1 text-sm font-semibold">

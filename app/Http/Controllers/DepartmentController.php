@@ -11,10 +11,10 @@ class DepartmentController extends Controller
 {
     public function index()
     {
-        $departments = Department::with(['parent', 'manager', 'employees'])
+        $departments = Department::with(['parent:id,name', 'manager:id,first_name,last_name'])
             ->withCount('employees')
-            ->latest()
-            ->paginate(15);
+            ->orderBy('name')
+            ->paginate(25);
 
         return view('departments.index', compact('departments'));
     }

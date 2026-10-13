@@ -1,22 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                Salary Structure - {{ $salaryStructure->name }}
-            </h2>
-            <div class="flex flex-wrap gap-2">
-                <a href="{{ route('salary-structures.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back to List
-                </a>
-                <a href="{{ route('salary-structures.edit', $salaryStructure) }}" class="inline-flex items-center px-4 py-2 bg-yellow-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-600 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                    Edit
-                </a>
-            </div>
-        </div>
+        <x-table.page-header>
+            <x-slot name="title">Salary structure: {{ $salaryStructure->name }}</x-slot>
+            <x-slot name="actions">
+                <a href="{{ route('salary-structures.edit', $salaryStructure) }}" class="btn-secondary"> Edit </a>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -51,7 +40,7 @@
                     </div>
                     <div>
                         <span class="text-gray-500 dark:text-gray-400">Effective From</span>
-                        <p class="font-medium text-gray-900 dark:text-gray-100">{{ $salaryStructure->effective_from->format('M d, Y') }}</p>
+                        <p class="font-medium text-gray-900 dark:text-gray-100">{{ $salaryStructure->effective_from->format('j M Y') }}</p>
                     </div>
                     <div>
                         <span class="text-gray-500 dark:text-gray-400">Version</span>
@@ -79,29 +68,26 @@
                     <svg class="w-5 h-5 mr-2 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                     Allowances
                 </h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead>
-                            <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Name</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Type</th>
-                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Rate/Amount</th>
-                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Calculated</th>
-                                <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Taxable</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                <x-table caption="Allowances">
+<x-slot name="head">
+                                <x-table.th>Name</x-table.th>
+                                <x-table.th>Type</x-table.th>
+                                <x-table.th num>Rate/Amount</x-table.th>
+                                <x-table.th num>Calculated</x-table.th>
+                                <x-table.th class="text-center">Taxable</x-table.th>
+</x-slot>
+
                             @foreach($salaryStructure->allowances as $item)
                             <tr>
-                                <td class="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">{{ $item->name }}</td>
-                                <td class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">{{ $item->amount_type === 'percentage' ? '% of Basic' : 'Fixed' }}</td>
-                                <td class="px-4 py-2 text-sm text-right text-gray-900 dark:text-gray-100">
+                                <td>{{ $item->name }}</td>
+                                <td>{{ $item->amount_type === 'percentage' ? '% of Basic' : 'Fixed' }}</td>
+                                <td class="num">
                                     {{ $item->amount_type === 'percentage' ? $item->amount . '%' : number_format($item->amount, 2) }}
                                 </td>
-                                <td class="px-4 py-2 text-sm text-right font-medium text-green-700 dark:text-green-400">
-                                    {{ number_format($item->calculated_amount, 2) }}
+                                <td class="num font-medium text-green-700 dark:text-green-400">
+                                    @fig($item->calculated_amount, false)
                                 </td>
-                                <td class="px-4 py-2 text-sm text-center">
+                                <td class="text-center">
                                     @if($item->is_taxable)
                                         <span class="text-yellow-700 dark:text-yellow-400">Yes</span>
                                     @else
@@ -110,16 +96,14 @@
                                 </td>
                             </tr>
                             @endforeach
-                        </tbody>
-                        <tfoot>
-                            <tr class="bg-gray-50 dark:bg-gray-700/50">
-                                <td colspan="3" class="px-4 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 text-right">Total Allowances</td>
-                                <td class="px-4 py-2 text-sm font-bold text-right text-green-700 dark:text-green-400">{{ number_format($salaryStructure->total_allowances, 2) }}</td>
+<x-slot name="foot">
+                            <tr>
+                                <td colspan="3" class="font-medium num">Total Allowances</td>
+                                <td class="font-bold num text-green-700 dark:text-green-400">@fig($salaryStructure->total_allowances, false)</td>
                                 <td></td>
                             </tr>
-                        </tfoot>
-                    </table>
-                </div>
+</x-slot>
+</x-table>
             </div>
             @endif
 
@@ -130,38 +114,33 @@
                     <svg class="w-5 h-5 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
                     Deductions
                 </h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead>
-                            <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Name</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Type</th>
-                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Rate/Amount</th>
-                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Calculated</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                <x-table caption="Deductions">
+<x-slot name="head">
+                                <x-table.th>Name</x-table.th>
+                                <x-table.th>Type</x-table.th>
+                                <x-table.th num>Rate/Amount</x-table.th>
+                                <x-table.th num>Calculated</x-table.th>
+</x-slot>
+
                             @foreach($salaryStructure->deductions as $item)
                             <tr>
-                                <td class="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">{{ $item->name }}</td>
-                                <td class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">{{ $item->amount_type === 'percentage' ? '% of Gross' : 'Fixed' }}</td>
-                                <td class="px-4 py-2 text-sm text-right text-gray-900 dark:text-gray-100">
+                                <td>{{ $item->name }}</td>
+                                <td>{{ $item->amount_type === 'percentage' ? '% of Gross' : 'Fixed' }}</td>
+                                <td class="num">
                                     {{ $item->amount_type === 'percentage' ? $item->amount . '%' : number_format($item->amount, 2) }}
                                 </td>
-                                <td class="px-4 py-2 text-sm text-right font-medium text-red-600 dark:text-red-300">
-                                    {{ number_format($item->calculated_amount, 2) }}
+                                <td class="num font-medium text-red-600 dark:text-red-300">
+                                    @fig($item->calculated_amount, false)
                                 </td>
                             </tr>
                             @endforeach
-                        </tbody>
-                        <tfoot>
-                            <tr class="bg-gray-50 dark:bg-gray-700/50">
-                                <td colspan="3" class="px-4 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 text-right">Total Deductions</td>
-                                <td class="px-4 py-2 text-sm font-bold text-right text-red-600 dark:text-red-300">{{ number_format($salaryStructure->total_deductions, 2) }}</td>
+<x-slot name="foot">
+                            <tr>
+                                <td colspan="3" class="font-medium num">Total Deductions</td>
+                                <td class="font-bold num text-red-600 dark:text-red-300">@fig($salaryStructure->total_deductions, false)</td>
                             </tr>
-                        </tfoot>
-                    </table>
-                </div>
+</x-slot>
+</x-table>
             </div>
             @endif
 
@@ -194,7 +173,7 @@
                                     <span class="italic">{{ Str::limit($version->change_reason, 40) }}</span>
                                 @endif
                                 <span>{{ $version->changedByUser?->name ?? 'System' }}</span>
-                                <span>{{ $version->created_at->format('M d, Y H:i') }}</span>
+                                <span>{{ $version->created_at->format('j M Y, H:i') }}</span>
                                 <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                             </div>
                         </div>

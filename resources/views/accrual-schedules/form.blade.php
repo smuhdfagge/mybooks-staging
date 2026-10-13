@@ -7,10 +7,9 @@
         $back = $editing ? route('accrual-schedules.show', $schedule) : route('accrual-schedules.index');
     @endphp
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">{{ $editing ? 'Edit schedule '.$schedule->schedule_number : 'New prepaid or deferred schedule' }}</h2>
-            <a href="{{ $back }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">Back</a>
-        </div>
+        <x-table.page-header>
+            <x-slot name="title">{{ $editing ? 'Edit schedule '.$schedule->schedule_number : 'New prepaid or deferred schedule' }}</x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -59,12 +58,12 @@
                             <label class="flex items-start gap-2 p-3 rounded-lg border cursor-pointer" :class="type === 'prepaid_expense' ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20' : 'border-gray-200 dark:border-gray-700'">
                                 <input type="radio" name="type" value="prepaid_expense" x-model="type" class="mt-1">
                                 <span><span class="font-medium text-gray-900 dark:text-gray-100">Prepaid expense</span>
-                                    <span class="block text-sm text-gray-500 dark:text-gray-400">You paid in advance, e.g. a year's rent or insurance. Each month goes to an expense.</span></span>
+                                    <span class="block text-sm text-gray-600 dark:text-gray-400">You paid in advance, e.g. a year's rent or insurance. Each month goes to an expense.</span></span>
                             </label>
                             <label class="flex items-start gap-2 p-3 rounded-lg border cursor-pointer" :class="type === 'deferred_revenue' ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20' : 'border-gray-200 dark:border-gray-700'">
                                 <input type="radio" name="type" value="deferred_revenue" x-model="type" class="mt-1">
                                 <span><span class="font-medium text-gray-900 dark:text-gray-100">Deferred revenue</span>
-                                    <span class="block text-sm text-gray-500 dark:text-gray-400">A customer paid you in advance, e.g. for 6 months of service. Each month becomes income.</span></span>
+                                    <span class="block text-sm text-gray-600 dark:text-gray-400">A customer paid you in advance, e.g. for 6 months of service. Each month becomes income.</span></span>
                             </label>
                         </div>
                         @error('type')<p class="form-error">{{ $message }}</p>@enderror
@@ -139,24 +138,22 @@
                             <span x-show="pastCount > 0" class="block text-amber-700 dark:text-amber-300"><span x-text="pastCount"></span> month(s) are already over and will be released as soon as you save.</span>
                         </p>
                         <div class="mt-3 overflow-x-auto max-h-96">
-                            <table class="min-w-full text-sm divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead class="text-left text-xs uppercase text-gray-500 dark:text-gray-400">
-                                    <tr><th class="py-2 pr-3">#</th><th class="py-2 pr-3">Month</th><th class="py-2 pr-3">Posted on</th><th class="py-2 text-right">Amount</th></tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700 text-gray-900 dark:text-gray-100">
+                            <x-table caption="Month by month">
+<x-slot name="head"><x-table.th>#</x-table.th><x-table.th>Month</x-table.th><x-table.th>Posted on</x-table.th><x-table.th num>Amount</x-table.th>
+</x-slot>
+
                                     <template x-for="r in rows" :key="r.i">
                                         <tr>
-                                            <td class="py-2 pr-3" x-text="r.i"></td>
-                                            <td class="py-2 pr-3 whitespace-nowrap" x-text="r.month"></td>
-                                            <td class="py-2 pr-3 whitespace-nowrap"><span x-text="r.date"></span> <span x-show="r.past" class="text-xs text-amber-700 dark:text-amber-300">(released on save)</span></td>
-                                            <td class="py-2 text-right whitespace-nowrap" x-text="money(r.amount)"></td>
+                                            <td x-text="r.i"></td>
+                                            <td x-text="r.month"></td>
+                                            <td><span x-text="r.date"></span> <span x-show="r.past" class="text-xs text-amber-700 dark:text-amber-300">(released on save)</span></td>
+                                            <td class="num" x-text="money(r.amount)"></td>
                                         </tr>
                                     </template>
-                                </tbody>
-                                <tfoot class="font-semibold text-gray-900 dark:text-gray-100">
-                                    <tr><td colspan="3" class="py-2 pr-3">Total</td><td class="py-2 text-right whitespace-nowrap" x-text="money(rows.reduce((s, r) => s + Math.round(r.amount * 100), 0) / 100)"></td></tr>
-                                </tfoot>
-                            </table>
+<x-slot name="foot">
+                                    <tr><td colspan="3">Total</td><td class="num" x-text="money(rows.reduce((s, r) => s + Math.round(r.amount * 100), 0) / 100)"></td></tr>
+</x-slot>
+</x-table>
                         </div>
                     </div>
                 </x-card>

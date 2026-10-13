@@ -1,31 +1,12 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <div class="flex items-center gap-3">
-                <a href="{{ route('item-categories.index') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                    </svg>
-                </a>
-                <div>
-                    <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                        {{ $itemCategory->name }}
-                    </h2>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Item Category Details</p>
-                </div>
-            </div>
-            <div class="flex gap-2">
-                <a href="{{ route('item-categories.edit', $itemCategory) }}" class="inline-flex items-center px-4 py-2 bg-yellow-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-600 focus:bg-yellow-600 active:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                    </svg>
-                    Edit
-                </a>
-            </div>
-        </div>
+        <x-table.page-header description="Item Category Details">
+            <x-slot name="title">{{ $itemCategory->name }}</x-slot>
+            <x-slot name="actions">
+                <a href="{{ route('item-categories.edit', $itemCategory) }}" class="btn-secondary"> Edit </a>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
-
-
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Category Info -->
@@ -69,7 +50,7 @@
                         
                         <div>
                             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Created</dt>
-                            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $itemCategory->created_at->format('M d, Y') }}</dd>
+                            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $itemCategory->created_at->format('j M Y') }}</dd>
                         </div>
                     </dl>
                 </div>
@@ -83,11 +64,11 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div class="text-center p-4 bg-brand-50 dark:bg-brand-900/20 rounded-lg">
                             <div class="text-2xl font-bold text-brand-600 dark:text-brand-300">{{ $itemCategory->items->count() }}</div>
-                            <div class="text-xs text-gray-500 dark:text-gray-400">Items</div>
+                            <div class="text-xs text-gray-600 dark:text-gray-400">Items</div>
                         </div>
                         <div class="text-center p-4 bg-accent-50 dark:bg-accent-900/20 rounded-lg">
                             <div class="text-2xl font-bold text-accent-700 dark:text-accent-300">{{ $itemCategory->children->count() }}</div>
-                            <div class="text-xs text-gray-500 dark:text-gray-400">Subcategories</div>
+                            <div class="text-xs text-gray-600 dark:text-gray-400">Subcategories</div>
                         </div>
                     </div>
                 </div>
@@ -102,39 +83,34 @@
                 <div class="p-6">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Subcategories</h3>
                     
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Items</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <x-table caption="Subcategories">
+<x-slot name="head">
+                                    <x-table.th>Name</x-table.th>
+                                    <x-table.th>Items</x-table.th>
+                                    <x-table.th>Status</x-table.th>
+                                    <x-table.th num>Actions</x-table.th>
+</x-slot>
+
                                 @foreach($itemCategory->children as $child)
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                    <td class="font-medium dark:text-white">
                                         {{ $child->name }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                    <td>
                                         {{ $child->items->count() }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td>
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $child->is_active ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' : 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300' }}">
                                             {{ $child->is_active ? 'Active' : 'Inactive' }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <a href="{{ route('item-categories.show', $child) }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300 mr-3">View</a>
+                                    <td class="num font-medium">
+                                        <a href="{{ route('item-categories.show', $child) }}" class="tbl-link">View</a>
                                         <a href="{{ route('item-categories.edit', $child) }}" class="text-yellow-700 hover:text-yellow-900 dark:text-yellow-400">Edit</a>
                                     </td>
                                 </tr>
                                 @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+</x-table>
                 </div>
             </div>
             @endif
@@ -150,38 +126,33 @@
                     </div>
                     
                     @if($itemCategory->items->count() > 0)
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Item</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">SKU</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Price</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <x-table caption="Items in this category">
+<x-slot name="head">
+                                    <x-table.th>Item</x-table.th>
+                                    <x-table.th>SKU</x-table.th>
+                                    <x-table.th>Type</x-table.th>
+                                    <x-table.th num>Price</x-table.th>
+</x-slot>
+
                                 @foreach($itemCategory->items->take(10) as $item)
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <a href="{{ route('items.show', $item) }}" class="text-sm font-medium text-brand-600 hover:text-brand-800 dark:text-brand-300">
+                                    <td>
+                                        <a href="{{ route('items.show', $item) }}" class="tbl-link">
                                             {{ $item->name }}
                                         </a>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                        {{ $item->sku ?? '-' }}
+                                    <td>
+                                        {{ $item->sku ?? '—' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                    <td>
                                         {{ ucfirst($item->type) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right">
-                                        {{ number_format($item->selling_price ?? 0, 2) }}
+                                    <td class="dark:text-white num">
+                                        @fig($item->selling_price ?? 0, false)
                                     </td>
                                 </tr>
                                 @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+</x-table>
                     @if($itemCategory->items->count() > 10)
                     <p class="mt-4 text-sm text-gray-500 dark:text-gray-400 text-center">
                         Showing 10 of {{ $itemCategory->items->count() }} items

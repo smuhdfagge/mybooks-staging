@@ -1,19 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    Create Role
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Define a new role with specific permissions</p>
-            </div>
-            <a href="{{ route('settings.roles') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                </svg>
-                Back
-            </a>
-        </div>
+        <x-table.page-header description="Define a new role with specific permissions" title="New role" />
     </x-slot>
 
     <div class="py-6">
@@ -40,20 +27,17 @@
                             </button>
                         </div>
                         
-                        <div class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead class="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Resource</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">View</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">Create</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">Edit</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">Delete</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">Other</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">All</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        <x-table caption="Permissions">
+<x-slot name="head">
+                                        <x-table.th>Resource</x-table.th>
+                                        <x-table.th class="text-center w-20">View</x-table.th>
+                                        <x-table.th class="text-center w-20">Create</x-table.th>
+                                        <x-table.th class="text-center w-20">Edit</x-table.th>
+                                        <x-table.th class="text-center w-20">Delete</x-table.th>
+                                        <x-table.th class="text-center w-20">Other</x-table.th>
+                                        <x-table.th class="text-center w-20">All</x-table.th>
+</x-slot>
+
                                     @php
                                         $standardActions = ['view', 'create', 'edit', 'delete'];
                                         $oldPermissions = old('permissions', []);
@@ -74,21 +58,21 @@
                                             }
                                             $resourceLabel = ucwords(str_replace('-', ' ', $resource));
                                         @endphp
-                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                            <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{{ $resourceLabel }}</td>
+                                        <tr>
+                                            <td class="font-medium">{{ $resourceLabel }}</td>
                                             @foreach($standardActions as $action)
-                                                <td class="px-4 py-3 text-center">
+                                                <td class="text-center">
                                                     @if(isset($permissionMap[$action]))
                                                         <input type="checkbox" name="permissions[]" value="{{ $permissionMap[$action] }}"
                                                             class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 permission-checkbox dark:text-brand-300"
                                                             data-resource="{{ $resource }}"
                                                             {{ in_array($permissionMap[$action], $oldPermissions) ? 'checked' : '' }}>
                                                     @else
-                                                        <span class="text-gray-300 dark:text-gray-600">—</span>
+                                                        <span class="tbl-zero" aria-label="Not used">—</span>
                                                     @endif
                                                 </td>
                                             @endforeach
-                                            <td class="px-4 py-3 text-center">
+                                            <td class="text-center">
                                                 @if(count($otherPermissions) > 0)
                                                     <div class="flex flex-wrap justify-center gap-1">
                                                         @foreach($otherPermissions as $otherPerm)
@@ -105,30 +89,28 @@
                                                         @endforeach
                                                     </div>
                                                 @else
-                                                    <span class="text-gray-300 dark:text-gray-600">—</span>
+                                                    <span class="tbl-zero" aria-label="Not used">—</span>
                                                 @endif
                                             </td>
-                                            <td class="px-4 py-3 text-center">
+                                            <td class="text-center">
                                                 <input type="checkbox" class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 row-toggle dark:text-brand-300"
                                                     data-resource="{{ $resource }}" title="Toggle all for {{ $resourceLabel }}">
                                             </td>
                                         </tr>
                                     @endforeach
-                                </tbody>
-                            </table>
-                        </div>
+</x-table>
                         @include('settings.roles._dashboard-widgets', ['selected' => $oldPermissions])
                     </div>
 
                     <div class="flex justify-end gap-3">
-                        <a href="{{ route('settings.roles') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                        <a href="{{ route('settings.roles') }}" class="btn-secondary">
                             Cancel
                         </a>
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <button type="submit" class="btn-primary">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>
-                            Create Role
+                            Create role
                         </button>
                     </div>
                 </form>

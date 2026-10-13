@@ -18,6 +18,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property float $ledger_credit
  * @property float $total_debit set by FinancialStatements::trialBalance()
  * @property float $total_credit
+ * @property float $balance_debit set by FinancialStatements::trialBalance(): the balance when it is a debit
+ * @property float $balance_credit the balance when it is a credit
  */
 class ChartOfAccount extends Model
 {

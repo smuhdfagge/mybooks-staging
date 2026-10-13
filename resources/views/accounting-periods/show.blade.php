@@ -1,25 +1,17 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    {{ $accountingPeriod->name }}
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                    {{ $accountingPeriod->start_date->format('M d, Y') }} - {{ $accountingPeriod->end_date->format('M d, Y') }}
-                </p>
-            </div>
-            <div class="flex gap-2">
-                @if(!$accountingPeriod->isLocked())
-                    <a href="{{ route('accounting-periods.edit', $accountingPeriod) }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                        Edit
-                    </a>
-                @endif
-                <a href="{{ route('accounting-periods.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 border border-transparent rounded-md font-semibold text-xs text-gray-800 dark:text-gray-200 uppercase tracking-widest hover:bg-gray-300 dark:hover:bg-gray-600 transition">
-                    Back
-                </a>
-            </div>
-        </div>
+        <x-table.page-header :title="$accountingPeriod->name" :description="$accountingPeriod->start_date->format('j M Y').' to '.$accountingPeriod->end_date->format('j M Y')">
+            @if ($accountingPeriod->isOpen())
+                <x-slot name="more">
+                    <x-table.menu-item danger :post="route('accounting-periods.destroy', $accountingPeriod)" method="DELETE" confirm="Delete this period?">Delete period</x-table.menu-item>
+                </x-slot>
+            @endif
+            @if ($accountingPeriod->isLocked())
+                <x-slot name="badge"><x-status-badge status="inactive" label="Locked" /></x-slot>
+            @else
+                <x-slot name="actions"><a href="{{ route('accounting-periods.edit', $accountingPeriod) }}" class="btn-secondary">Edit</a></x-slot>
+            @endif
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -101,14 +93,14 @@
                                     <p class="text-sm text-brand-500 dark:text-brand-300">{{ number_format($summary['invoices']->total, 2) }}</p>
                                 </div>
                                 <div class="bg-brand-50 dark:bg-brand-900/20 rounded-lg p-4">
-                                    <p class="text-sm text-brand-600 dark:text-brand-400 font-medium">Bills</p>
+                                    <p class="text-sm text-brand-600 dark:text-brand-300 font-medium">Bills</p>
                                     <p class="text-2xl font-bold text-brand-700 dark:text-brand-300">{{ $summary['bills']->count }}</p>
-                                    <p class="text-sm text-brand-500 dark:text-brand-400">{{ number_format($summary['bills']->total, 2) }}</p>
+                                    <p class="text-sm text-brand-500 dark:text-brand-300">{{ number_format($summary['bills']->total, 2) }}</p>
                                 </div>
                                 <div class="bg-brand-50 dark:bg-brand-900/20 rounded-lg p-4">
-                                    <p class="text-sm text-brand-600 dark:text-brand-400 font-medium">Expenses</p>
+                                    <p class="text-sm text-brand-600 dark:text-brand-300 font-medium">Expenses</p>
                                     <p class="text-2xl font-bold text-brand-700 dark:text-brand-300">{{ $summary['expenses']->count }}</p>
-                                    <p class="text-sm text-brand-500 dark:text-brand-400">{{ number_format($summary['expenses']->total, 2) }}</p>
+                                    <p class="text-sm text-brand-500 dark:text-brand-300">{{ number_format($summary['expenses']->total, 2) }}</p>
                                 </div>
                                 <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
                                     <p class="text-sm text-green-700 dark:text-green-400 font-medium">Payments Received</p>
@@ -151,11 +143,11 @@
                                             <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">I understand that closing this period will prevent any transaction modifications.</span>
                                         </label>
                                     </div>
-                                    <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700 transition">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <button type="submit" class="btn-secondary w-full">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                                         </svg>
-                                        Close Period
+                                        Close period
                                     </button>
                                 </form>
 
@@ -172,11 +164,11 @@
                                         <x-field name="reason" label="Reason for reopening" type="textarea" rows="2" required :value="old('reason')"
                                                  help="Kept in the lock date history on the accounting periods page." />
                                     </div>
-                                    <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition" data-confirm="Are you sure you want to reopen this period?">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <button type="submit" class="btn-primary w-full" data-confirm="Are you sure you want to reopen this period?">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
                                         </svg>
-                                        Reopen Period
+                                        Reopen period
                                     </button>
                                 </form>
 
@@ -194,11 +186,11 @@
                                                 <span class="ml-2 text-sm text-red-600 dark:text-red-300">I understand this action is <strong>PERMANENT</strong> and cannot be undone.</span>
                                             </label>
                                         </div>
-                                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition" data-confirm="Are you absolutely sure? This action CANNOT be undone!">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <button type="submit" class="btn-danger w-full" data-confirm="Are you absolutely sure? This action CANNOT be undone!">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                                             </svg>
-                                            Lock Permanently (Year-End)
+                                            Lock permanently (Year-End)
                                         </button>
                                     </form>
                                 </div>
@@ -213,24 +205,6 @@
                         </div>
                     </div>
 
-                    <!-- Delete Period (only if open) -->
-                    @if($accountingPeriod->isOpen())
-                    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="p-6">
-                            <h3 class="text-lg font-medium text-red-600 dark:text-red-300 mb-4">Danger Zone</h3>
-                            <form action="{{ route('accounting-periods.destroy', $accountingPeriod) }}" method="POST">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-md font-semibold text-xs text-red-700 dark:text-red-300 uppercase tracking-widest hover:bg-red-200 dark:hover:bg-red-900/50 transition" data-confirm="Are you sure you want to delete this period?">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                    </svg>
-                                    Delete Period
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                    @endif
                 </div>
             </div>
         </div>

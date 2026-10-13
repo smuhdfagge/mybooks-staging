@@ -2,96 +2,80 @@
 
 namespace App\Livewire\Assembly;
 
-use App\Enums\AssemblyOrderStatus;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ChecksPermissions;
+use App\Livewire\Concerns\ListTable;
 use App\Models\AssemblyOrder;
 use App\Models\Warehouse;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
-use Livewire\WithPagination;
 
-/** Assembly orders list (session 14), filtered by status, kind and warehouse. */
+/** Assembly orders list (tables plan T4: the shared list design). */
 class AssemblyOrdersTable extends Component
 {
-    use LimitsPageSize, WithPagination;
+    use ChecksPermissions, ListTable;
 
-    public $search = '';
+    public string $period = '';
 
-    public $status = '';
+    public string $kind = '';
 
-    public $kind = '';
-
-    public $warehouse = '';
-
-    public $perPage = 15;
-
-    public $sortField = 'assembly_date';
-
-    public $sortDirection = 'desc';
+    public string $warehouse = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'status' => ['except' => ''],
+        'tab' => ['except' => '', 'as' => 'status'],
+        'period' => ['except' => ''],
         'kind' => ['except' => ''],
         'warehouse' => ['except' => ''],
     ];
 
-    private const SORTABLE = ['order_number', 'assembly_date', 'status', 'total_cost'];
+    public const LABELS = ['draft' => 'Draft', 'completed' => 'Done', 'cancelled' => 'Cancelled'];
 
-    public function updatingSearch()
+    protected function sortable(): array
     {
-        $this->resetPage();
+        return ['assembly_date', 'order_number', 'total_cost'];
     }
 
-    public function updatingStatus()
+    protected function rowRelations(): array
     {
-        $this->resetPage();
+        return ['billOfMaterial.item:id,name,unit', 'warehouse:id,name', 'toWarehouse:id,name'];
     }
 
-    public function updatingKind()
+    protected function filterProperties(): array
     {
-        $this->resetPage();
+        return ['period', 'kind', 'warehouse'];
     }
 
-    public function updatingWarehouse()
+    protected function baseQuery(): Builder
     {
-        $this->resetPage();
-    }
-
-    public function sortBy(string $field): void
-    {
-        if (! in_array($field, self::SORTABLE, true)) {
-            return;
+        $query = AssemblyOrder::query();
+        if (($term = trim($this->search)) !== '') {
+            $query->where(fn ($q) => $q->where('order_number', 'like', "%{$term}%")
+                ->orWhereHas('billOfMaterial', fn ($b) => $b->where('name', 'like', "%{$term}%"))
+                ->orWhereHas('billOfMaterial.item', fn ($i) => $i->where('name', 'like', "%{$term}%")));
         }
-        $this->sortDirection = $this->sortField === $field && $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        $this->sortField = $field;
+        if (in_array($this->kind, [AssemblyOrder::KIND_BUILD, AssemblyOrder::KIND_BREAKDOWN], true)) {
+            $query->where('kind', $this->kind);
+        }
+        if ($this->warehouse !== '' && ctype_digit($this->warehouse)) {
+            $w = (int) $this->warehouse;
+            $query->where(fn ($q) => $q->where('warehouse_id', $w)->orWhere('to_warehouse_id', $w));
+        }
+
+        return $this->applyPeriod($query, 'assembly_date', $this->period);
     }
 
     public function render()
     {
-        $sort = in_array($this->sortField, self::SORTABLE, true) ? $this->sortField : 'assembly_date';
-        $warehouseId = (int) $this->warehouse;
-
-        $orders = AssemblyOrder::with(['billOfMaterial.item', 'warehouse', 'toWarehouse'])
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('order_number', 'like', '%'.$this->search.'%')
-                        ->orWhereHas('billOfMaterial', fn ($b) => $b->where('name', 'like', '%'.$this->search.'%'))
-                        ->orWhereHas('billOfMaterial.item', fn ($i) => $i->where('name', 'like', '%'.$this->search.'%'));
-                });
-            })
-            ->when(in_array($this->status, AssemblyOrderStatus::values(), true), fn ($q) => $q->where('status', $this->status))
-            ->when(in_array($this->kind, [AssemblyOrder::KIND_BUILD, AssemblyOrder::KIND_BREAKDOWN], true), fn ($q) => $q->where('kind', $this->kind))
-            ->when($warehouseId, fn ($q) => $q->where(fn ($w) => $w->where('warehouse_id', $warehouseId)->orWhere('to_warehouse_id', $warehouseId)))
-            ->orderBy($sort, $this->sortDirection === 'asc' ? 'asc' : 'desc')
-            ->orderByDesc('id')
-            ->paginate($this->pageSize());
-
-        $warehouses = Warehouse::moduleOn() ? Warehouse::orderByDesc('is_default')->orderBy('name')->get(['id', 'name']) : collect();
+        $warehouses = Warehouse::moduleOn() ? Warehouse::orderByDesc('is_default')->orderBy('name')->pluck('name', 'id') : collect();
 
         return view('livewire.assembly.assembly-orders-table', [
-            'orders' => $orders,
-            'statuses' => AssemblyOrderStatus::cases(),
+            'orders' => $this->rows(),
+            'tabs' => $this->statusTabs(self::LABELS, [], 'status', hideEmpty: true),
+            'totals' => $this->filteredQuery()->toBase()->selectRaw("COUNT(*) as n, COALESCE(SUM(CASE WHEN status = 'completed' THEN total_cost ELSE 0 END), 0) as cost")->first(),
             'warehouses' => $warehouses->count() > 1 ? $warehouses : collect(),
+            'kinds' => [AssemblyOrder::KIND_BUILD => 'Make', AssemblyOrder::KIND_BREAKDOWN => 'Break down'],
+            'periods' => self::periodOptions(),
+            'filtered' => $this->isFiltered(),
         ]);
     }
 }

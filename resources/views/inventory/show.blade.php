@@ -1,29 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    {{ $item->name }} - Inventory
-                </h2>
-                @if($item->sku)
-                    <p class="text-sm text-gray-500 dark:text-gray-400">SKU: {{ $item->sku }}</p>
-                @endif
-            </div>
-            <div class="flex flex-wrap gap-2">
-                <a href="{{ route('inventory.history', $item) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    View History
-                </a>
-                <a href="{{ route('inventory.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back
-                </a>
-            </div>
-        </div>
+        <x-table.page-header :title="$item->name.': stock'" :description="$item->sku ? 'SKU '.$item->sku : null">
+            <x-slot name="more">
+                <x-table.menu-item :href="route('items.show', $item)">Item details</x-table.menu-item>
+            </x-slot>
+            <x-slot name="actions"><a href="{{ route('inventory.history', $item) }}" class="btn-secondary">Stock history</a></x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -167,11 +149,11 @@
                                 </div>
 
                                 <div class="md:col-span-2">
-                                    <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <button type="submit" class="btn-primary w-full">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                         </svg>
-                                        Submit Adjustment
+                                        Submit adjustment
                                     </button>
                                 </div>
                             </div>
@@ -254,20 +236,18 @@
                     @if($history->count() > 0)
                     <div class="overflow-x-auto -mx-6">
                         <div class="inline-block min-w-full align-middle px-6">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead class="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
-                                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Quantity</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Notes</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <x-table caption="Recent stock moves">
+<x-slot name="head">
+                                        <x-table.th>Date</x-table.th>
+                                        <x-table.th>Type</x-table.th>
+                                        <x-table.th num>Quantity</x-table.th>
+                                        <x-table.th>Notes</x-table.th>
+</x-slot>
+
                                     @foreach($history->take(10) as $record)
-                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                        <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 whitespace-nowrap">{{ $record->created_at->format('M d, Y H:i') }}</td>
-                                        <td class="px-4 py-3 whitespace-nowrap">
+                                    <tr>
+                                        <td>{{ $record->created_at->format('j M Y, H:i') }}</td>
+                                        <td>
                                             @php
                                                 $typeColors = [
                                                     'in' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400',
@@ -288,18 +268,17 @@
                                                 {{ $typeLabels[$record->type] ?? $record->type }}
                                             </span>
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-right font-medium whitespace-nowrap {{ $record->type === 'in' ? 'text-green-700 dark:text-green-400' : ($record->type === 'out' ? 'text-red-600 dark:text-red-300' : 'text-gray-900 dark:text-gray-100') }}">
+                                        <td class="num font-medium {{ $record->type === 'in' ? 'text-green-700 dark:text-green-400' : ($record->type === 'out' ? 'text-red-600 dark:text-red-300' : 'text-gray-900 dark:text-gray-100') }}">
                                             @if(in_array($record->type, ['transfer', 'assembly'], true))
                                                 {{ (float) $record->quantity > 0 ? '+' : '' }}{{ rtrim(rtrim(number_format((float) $record->quantity, 4), '0'), '.') }}
                                             @else
                                                 {{ $record->type === 'in' ? '+' : ($record->type === 'out' ? '-' : '') }}{{ $record->quantity }}
                                             @endif
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">@include('inventory._history-note', ['record' => $record])</td>
+                                        <td class="max-w-xs truncate">@include('inventory._history-note', ['record' => $record])</td>
                                     </tr>
                                     @endforeach
-                                </tbody>
-                            </table>
+</x-table>
                         </div>
                     </div>
                     @else

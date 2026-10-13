@@ -1,27 +1,9 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    {{ __('Custom Reports') }}
-                </h2>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Build and manage your custom reports</p>
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
-                <a href="{{ route('reports.index') }}" class="inline-flex items-center justify-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                    </svg>
-                    Back to Reports
-                </a>
-                <a href="{{ route('reports.custom.create') }}" class="inline-flex items-center justify-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    New Report
-                </a>
-            </div>
-        </div>
+        <x-table.page-header title="Custom reports" description="Reports you built yourself, to run again any time.">
+            <x-slot name="more"><x-table.menu-item :href="route('reports.index')">All reports</x-table.menu-item></x-slot>
+            <x-slot name="actions"><a href="{{ route('reports.custom.create') }}" class="btn-new">New report</a></x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="space-y-6">
@@ -81,8 +63,8 @@
                                             </button>
                                         </form>
                                         
-                                        <a href="{{ route('reports.custom.run', $report) }}" class="inline-flex items-center px-3 py-1.5 bg-green-700 text-white text-xs font-medium rounded hover:bg-green-700 transition-colors">
-                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <a href="{{ route('reports.custom.run', $report) }}" class="btn-primary">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                             </svg>
@@ -117,11 +99,11 @@
                         <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No custom reports</h3>
                         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating your first custom report.</p>
                         <div class="mt-6">
-                            <a href="{{ route('reports.custom.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700">
-                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <a href="{{ route('reports.custom.create') }}" class="btn-primary">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                 </svg>
-                                Create Report
+                                Create report
                             </a>
                         </div>
                     </div>
@@ -160,8 +142,8 @@
                                 </div>
 
                                 <div class="flex justify-end">
-                                    <a href="{{ route('reports.custom.run', $report) }}" class="inline-flex items-center px-3 py-1.5 bg-green-700 text-white text-xs font-medium rounded hover:bg-green-700 transition-colors">
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <a href="{{ route('reports.custom.run', $report) }}" class="btn-primary">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                         </svg>

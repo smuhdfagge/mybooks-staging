@@ -1,44 +1,15 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    {{ $recurrentBill->profile_name }}
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">{{ ucfirst($recurrentBill->frequency) }} • {{ $recurrentBill->vendor->name ?? 'Unknown Vendor' }}</p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                <form action="{{ route('recurrent-bills.toggle', $recurrentBill) }}" method="POST" class="inline">
-                    @csrf
-                    <button type="submit" class="inline-flex items-center px-4 py-2 {{ $recurrentBill->status === 'active' ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-700 hover:bg-green-700' }} border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest transition">
-                        @if($recurrentBill->status === 'active')
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            Pause
-                        @else
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            Activate
-                        @endif
-                    </button>
-                </form>
-                <a href="{{ route('recurrent-bills.edit', $recurrentBill) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                    </svg>
-                    Edit
-                </a>
-                <a href="{{ route('recurrent-bills.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back
-                </a>
-            </div>
-        </div>
+        <x-table.page-header :title="$recurrentBill->profile_name" :description="ucfirst($recurrentBill->frequency).' · '.($recurrentBill->vendor->name ?? 'Unknown supplier')">
+            <x-slot name="badge"><x-status-badge :status="$recurrentBill->status === 'active' ? 'active' : 'paused'" :label="$recurrentBill->status === 'active' ? 'Active' : 'Paused'" /></x-slot>
+            <x-slot name="more">
+                <x-table.menu-item :post="route('recurrent-bills.toggle', $recurrentBill)">{{ $recurrentBill->status === 'active' ? 'Pause' : 'Start again' }}</x-table.menu-item>
+                @can('delete recurrent-bills')
+                    <x-table.menu-item danger :post="route('recurrent-bills.destroy', $recurrentBill)" method="DELETE" confirm="Delete this profile? Bills already made stay.">Delete profile</x-table.menu-item>
+                @endcan
+            </x-slot>
+            <x-slot name="actions"><a href="{{ route('recurrent-bills.edit', $recurrentBill) }}" class="btn-secondary">Edit</a></x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -59,7 +30,7 @@
                 </div>
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Next Bill Date</div>
-                    <div class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">{{ $recurrentBill->next_bill_date?->format('M d, Y') ?? '—' }}</div>
+                    <div class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">{{ $recurrentBill->next_bill_date?->format('j M Y') ?? '—' }}</div>
                 </div>
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Bills Generated</div>
@@ -86,15 +57,15 @@
                                 </div>
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Start Date</dt>
-                                    <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $recurrentBill->start_date->format('M d, Y') }}</dd>
+                                    <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $recurrentBill->start_date->format('j M Y') }}</dd>
                                 </div>
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">End Date</dt>
-                                    <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $recurrentBill->end_date?->format('M d, Y') ?? 'Indefinite' }}</dd>
+                                    <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $recurrentBill->end_date?->format('j M Y') ?? 'Indefinite' }}</dd>
                                 </div>
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Next Bill Date</dt>
-                                    <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $recurrentBill->next_bill_date?->format('M d, Y') ?? '—' }}</dd>
+                                    <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $recurrentBill->next_bill_date?->format('j M Y') ?? '—' }}</dd>
                                 </div>
                             </dl>
                         </div>
@@ -109,49 +80,44 @@
                                 </svg>
                                 Bill Items
                             </h3>
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                    <thead>
-                                        <tr>
-                                            <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider pb-2">Description</th>
-                                            <th class="text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider pb-2">Qty</th>
-                                            <th class="text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider pb-2">Price</th>
-                                            <th class="text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider pb-2">Tax</th>
-                                            <th class="text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider pb-2">Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                            <x-table caption="Items on each bill">
+<x-slot name="head">
+                                            <x-table.th>Description</x-table.th>
+                                            <x-table.th num>Qty</x-table.th>
+                                            <x-table.th num>Price</x-table.th>
+                                            <x-table.th num>Tax</x-table.th>
+                                            <x-table.th num>Total</x-table.th>
+</x-slot>
+
                                         @foreach($recurrentBill->items as $item)
                                             <tr>
-                                                <td class="py-3 text-sm text-gray-900 dark:text-gray-100">
+                                                <td>
                                                     {{ $item->description }}
                                                     @if($item->item)
                                                         <span class="text-gray-500 dark:text-gray-400 text-xs">({{ $item->item->name }})</span>
                                                     @endif
                                                 </td>
-                                                <td class="py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{{ number_format($item->quantity, 2) }}</td>
-                                                <td class="py-3 text-sm text-gray-900 dark:text-gray-100 text-right">@money($item->unit_price)</td>
-                                                <td class="py-3 text-sm text-gray-500 dark:text-gray-400 text-right">{{ $item->tax_rate }}%</td>
-                                                <td class="py-3 text-sm font-medium text-gray-900 dark:text-gray-100 text-right">@money($item->total)</td>
+                                                <td class="num">{{ \App\Support\Figure::qty($item->quantity) }}</td>
+                                                <td class="num">@fig($item->unit_price, false)</td>
+                                                <td class="num">{{ \App\Support\Figure::rate($item->tax_rate) }}</td>
+                                                <td class="font-medium num">@fig($item->total, false)</td>
                                             </tr>
                                         @endforeach
-                                    </tbody>
-                                    <tfoot class="border-t-2 border-gray-300 dark:border-gray-600">
+<x-slot name="foot">
                                         <tr>
-                                            <td colspan="4" class="py-2 text-sm font-medium text-gray-700 dark:text-gray-300 text-right">Subtotal</td>
-                                            <td class="py-2 text-sm text-gray-900 dark:text-gray-100 text-right">@money($recurrentBill->subtotal)</td>
+                                            <td colspan="4" class="font-medium num">Subtotal</td>
+                                            <td class="num">@fig($recurrentBill->subtotal, false)</td>
                                         </tr>
                                         <tr>
-                                            <td colspan="4" class="py-2 text-sm font-medium text-gray-700 dark:text-gray-300 text-right">Tax</td>
-                                            <td class="py-2 text-sm text-gray-900 dark:text-gray-100 text-right">@money($recurrentBill->tax_amount)</td>
+                                            <td colspan="4" class="font-medium num">Tax</td>
+                                            <td class="num">@fig($recurrentBill->tax_amount, false)</td>
                                         </tr>
                                         <tr>
-                                            <td colspan="4" class="py-2 text-lg font-bold text-gray-900 dark:text-gray-100 text-right">Total</td>
-                                            <td class="py-2 text-lg font-bold text-gray-900 dark:text-gray-100 text-right">@money($recurrentBill->total)</td>
+                                            <td colspan="4" class="text-lg font-bold num">Total</td>
+                                            <td class="text-lg font-bold num">@fig($recurrentBill->total, false)</td>
                                         </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
+</x-slot>
+</x-table>
                         </div>
                     </div>
 
@@ -205,7 +171,7 @@
                                             <a href="{{ route('bills.show', $bill) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900">
                                                 {{ $bill->bill_number }}
                                             </a>
-                                            <span class="text-gray-500 dark:text-gray-400">{{ $bill->bill_date->format('M d, Y') }}</span>
+                                            <span class="text-gray-500 dark:text-gray-400">{{ $bill->bill_date->format('j M Y') }}</span>
                                         </li>
                                     @endforeach
                                 </ul>
@@ -218,22 +184,6 @@
                         </div>
                     </div>
 
-                    <!-- Danger Zone -->
-                    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg border border-red-200 dark:border-red-800">
-                        <div class="p-6">
-                            <h3 class="text-lg font-medium text-red-600 dark:text-red-300 mb-4">Danger Zone</h3>
-                            <form action="{{ route('recurrent-bills.destroy', $recurrentBill) }}" method="POST" data-confirm="Are you sure you want to delete this profile? This action cannot be undone.">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                    </svg>
-                                    Delete Profile
-                                </button>
-                            </form>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

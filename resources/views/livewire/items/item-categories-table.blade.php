@@ -1,142 +1,88 @@
-<div class="relative">
-    <x-table-loading />
-    <!-- Flash Messages -->
+{{-- Item categories list (tables plan T4). --}}
+@php
+    $user = auth()->user();
+    $canBulk = $user->canAny(['edit items', 'delete items']);
+    $ids = $categories->pluck('id')->map(fn ($id) => (string) $id)->all();
+@endphp
+<div class="relative space-y-3">
     <x-flash-messages :successMessage="$successMessage" :errorMessage="$errorMessage" />
 
-    <!-- Filters -->
-    <div class="mb-4 sm:mb-6 bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
-            <!-- Search -->
-            <div class="sm:col-span-2">
-                <label class="form-label">Search</label>
-                <input aria-label="Search categories" type="text" wire:model.live.debounce.300ms="search" 
-                    placeholder="Search categories..."
-                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-            </div>
-            
-            <!-- Show Inactive -->
-            <div class="flex items-end">
-                <label class="flex items-center">
-                    <input type="checkbox" wire:model.live="showInactive" class="rounded dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-brand-600 shadow-sm focus:ring-brand-500 dark:focus:ring-brand-600 dark:text-brand-300">
-                    <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Show Inactive</span>
-                </label>
-            </div>
-            
-            <!-- Per Page -->
-            <div>
-                <label for="perPage" class="form-label">Per Page</label>
-                <select id="perPage" wire:model.live="perPage" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
-                    <option value="10">10</option>
-                    <option value="15">15</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                </select>
-            </div>
+    <x-table.tabs :tabs="$tabs" :active="$tab" />
 
-            <!-- Bulk Actions -->
-            <x-bulk-actions :actions="['activate' => 'Activate', 'deactivate' => 'Deactivate', 'delete' => 'Delete']" :selectedCount="count($selectedItems)" />
-        </div>
-    </div>
+    <x-table.toolbar placeholder="Search name or description" :selected="count($selectedItems)" :filtered="$filtered">
+        @if ($canBulk)
+            <x-slot name="bulk">
+                @can('edit items')
+                    <x-table.bulk-button action="activate">Make active</x-table.bulk-button>
+                    <x-table.bulk-button action="deactivate">Make inactive</x-table.bulk-button>
+                @endcan
+                @can('delete items')<x-table.bulk-button action="delete" danger confirm="Delete the ticked categories? Categories with items or sub-categories are skipped.">Delete</x-table.bulk-button>@endcan
+                <x-table.tick-all-matching :rows="$categories" :selected="$selectedItems" />
+            </x-slot>
+        @endif
+    </x-table.toolbar>
 
-    <!-- Table Container -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead class="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                        <th scope="col" class="px-4 py-3 text-left">
-                            <input aria-label="Select all" type="checkbox" wire:model.live="selectAll"
-                                class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
-                        </th>
-                        <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Category</th>
-                        <th scope="col" class="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Parent</th>
-                        <th scope="col" class="hidden md:table-cell px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Items</th>
-                        <th scope="col" class="hidden lg:table-cell px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Subcategories</th>
-                        <th scope="col" class="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                        <th scope="col" class="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+    <div class="relative">
+        <x-table.veil />
+        @if ($categories->isEmpty())
+            <div class="tbl-wrap">
+                @if ($filtered || $tab !== '')
+                    <x-table.empty filtered title="No categories match these filters" />
+                @else
+                    <x-table.empty title="No categories yet" text="Group your items, for example Drinks or Spare parts.">
+                        @can('create items')<a href="{{ route('item-categories.create') }}" class="btn-new">New category</a>@endcan
+                    </x-table.empty>
+                @endif
+            </div>
+        @else
+            <x-table caption="Item categories" class="hidden md:block">
+                <x-slot name="head">
+                    @if ($canBulk)<x-table.check-all :ids="$ids" :selected="$selectedItems" label="Tick every category on this page" />@endif
+                    <x-table.th field="name" :sort="[$sortField, $sortDirection]">Name</x-table.th>
+                    <x-table.th>Inside</x-table.th>
+                    <x-table.th>Description</x-table.th>
+                    <x-table.th field="items_count" :sort="[$sortField, $sortDirection]" num>Items</x-table.th>
+                    <x-table.th>Status</x-table.th>
+                    <th scope="col" class="tbl-menu"><span class="sr-only">Actions</span></th>
+                </x-slot>
+                @foreach ($categories as $category)
+                    @php $ticked = in_array((string) $category->id, $selectedItems, true); @endphp
+                    <tr wire:key="ic-{{ $category->id }}" @if ($ticked) data-picked @endif>
+                        @if ($canBulk)<x-table.check :id="$category->id" :label="$category->name" />@endif
+                        <td><a href="{{ route('item-categories.show', $category) }}" class="tbl-link">{{ $category->name }}</a></td>
+                        <td class="{{ $category->parent ? 'tbl-muted' : 'tbl-zero' }}">{{ $category->parent?->name ?? '—' }}</td>
+                        <td class="max-w-[22rem] truncate {{ $category->description ? 'tbl-muted' : 'tbl-zero' }}">{{ $category->description ?: '—' }}</td>
+                        <td class="num {{ $category->items_count ? '' : 'tbl-zero' }}">{{ $category->items_count ? number_format($category->items_count) : '—' }}</td>
+                        <td><x-status-badge :status="$category->is_active ? 'active' : 'inactive'" /></td>
+                        <td class="tbl-menu">
+                            <x-table.dropdown :sr-label="'Actions for '.$category->name">
+                                <x-table.menu-item :href="route('item-categories.show', $category)">View</x-table.menu-item>
+                                @can('edit items')
+                                    <x-table.menu-item :href="route('item-categories.edit', $category)">Edit</x-table.menu-item>
+                                    <x-table.menu-item wire="toggleActive({{ $category->id }})">{{ $category->is_active ? 'Make inactive' : 'Make active' }}</x-table.menu-item>
+                                @endcan
+                                @if ($user->can('delete items') && ! $category->items_count && ! $category->children_count)
+                                    <x-table.menu-item wire="deleteOne({{ $category->id }})" :confirm="'Delete '.$category->name.'?'" danger>Delete</x-table.menu-item>
+                                @endif
+                            </x-table.dropdown>
+                        </td>
                     </tr>
-                </thead>
-                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    @forelse($categories as $category)
-                        <tr wire:key="category-{{ $category->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                            <td class="px-4 py-4">
-                                <input aria-label="Select row" type="checkbox" wire:model.live="selectedItems" value="{{ $category->id }}"
-                                    class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:text-brand-300">
-                            </td>
-                            <td class="px-4 sm:px-6 py-4">
-                                <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $category->name }}</div>
-                                @if($category->description)
-                                    <div class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">{{ $category->description }}</div>
-                                @endif
-                            </td>
-                            <td class="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                @if($category->parent)
-                                    <a href="{{ route('item-categories.show', $category->parent) }}" class="text-brand-600 hover:text-brand-800 dark:text-brand-300">
-                                        {{ $category->parent->name }}
-                                    </a>
-                                @else
-                                    <span class="text-gray-500 dark:text-gray-400">—</span>
-                                @endif
-                            </td>
-                            <td class="hidden md:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-400">
-                                {{ $category->items->count() }}
-                            </td>
-                            <td class="hidden lg:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-400">
-                                {{ $category->children->count() }}
-                            </td>
-                            <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-center">
-                                <button wire:click="toggleActive({{ $category->id }})" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $category->is_active ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100 hover:bg-green-200 dark:hover:bg-green-700' : 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-500' }} cursor-pointer transition">
-                                    {{ $category->is_active ? 'Active' : 'Inactive' }}
-                                </button>
-                            </td>
-                            <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <div class="flex items-center justify-end space-x-1 sm:space-x-2">
-                                    <a href="{{ route('item-categories.show', $category) }}" class="p-1 text-brand-600 hover:text-brand-900 dark:text-brand-300" title="View" aria-label="View">
-                                        <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                        </svg>
-                                    </a>
-                                    <a href="{{ route('item-categories.edit', $category) }}" class="p-1 text-yellow-700 hover:text-yellow-900 dark:text-yellow-400" title="Edit" aria-label="Edit">
-                                        <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                        </svg>
-                                    </a>
-                                    <button type="button" wire:click="deleteCategory({{ $category->id }})" wire:confirm="Are you sure you want to delete this category?" class="p-1 text-red-600 hover:text-red-900 dark:text-red-300" title="Delete" aria-label="Delete">
-                                        <svg class="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7" class="px-4 sm:px-6 py-12 text-center">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-                                </svg>
-                                <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No categories found</h3>
-                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new category.</p>
-                                <div class="mt-6">
-                                    <a href="{{ route('item-categories.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700">
-                                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                        </svg>
-                                        Add Category
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        
-        @if($categories->hasPages())
-            <div class="bg-white dark:bg-gray-800 px-4 py-3 border-t border-gray-200 dark:border-gray-700 sm:px-6">
-                {{ $categories->links() }}
-            </div>
+                @endforeach
+            </x-table>
+            <ul class="space-y-2 md:hidden" aria-label="Item categories">
+                @foreach ($categories as $category)
+                    <li wire:key="ic-card-{{ $category->id }}">
+                        <x-table.card :href="route('item-categories.show', $category)" :title="$category->name"
+                            :meta="number_format($category->items_count).' '.($category->items_count == 1 ? 'item' : 'items').($category->parent ? ' · in '.$category->parent->name : '')">
+                            @if (! $category->is_active)
+                                <x-slot name="badge"><x-status-badge status="inactive" /></x-slot>
+                            @endif
+                        </x-table.card>
+                    </li>
+                @endforeach
+            </ul>
         @endif
     </div>
+
+    <x-table.footer :rows="$categories" />
 </div>

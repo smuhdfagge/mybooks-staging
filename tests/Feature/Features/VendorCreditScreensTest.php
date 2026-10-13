@@ -98,7 +98,7 @@ class VendorCreditScreensTest extends TestCase
 
     public function test_supplier_advance_screens(): void
     {
-        $this->get(route('supplier-advances.create', ['vendor_id' => $this->vendor->id]))->assertOk()->assertSee('Pay a Supplier in Advance');
+        $this->get(route('supplier-advances.create', ['vendor_id' => $this->vendor->id]))->assertOk()->assertSee('Pay a supplier in advance');
 
         $this->post(route('supplier-advances.store'), [
             'vendor_id' => $this->vendor->id, 'payment_date' => now()->toDateString(), 'amount' => 50000, 'payment_method' => 'cash',

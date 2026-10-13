@@ -19,15 +19,10 @@ use Illuminate\Validation\Rule;
  */
 class SupplierAdvanceController extends Controller
 {
-    public function index(Request $request)
+    /** The list itself is a Livewire table (tables plan T3). */
+    public function index()
     {
-        $advances = PaymentMade::with('vendor')
-            ->where('is_advance', true)
-            ->when($request->boolean('unused'), fn ($q) => $q->where('unused_amount', '>', 0))
-            ->latest('payment_date')->latest('id')
-            ->paginate(25)->withQueryString();
-
-        return view('supplier-advances.index', compact('advances'));
+        return view('supplier-advances.index');
     }
 
     public function create(Request $request)

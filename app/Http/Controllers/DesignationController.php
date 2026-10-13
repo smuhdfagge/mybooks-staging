@@ -9,10 +9,10 @@ class DesignationController extends Controller
 {
     public function index()
     {
-        $designations = Designation::with(['department', 'employees'])
+        $designations = Designation::with(['department:id,name'])
             ->withCount('employees')
-            ->latest()
-            ->paginate(15);
+            ->orderBy('name')
+            ->paginate(25);
 
         return view('designations.index', compact('designations'));
     }

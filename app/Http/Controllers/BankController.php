@@ -8,11 +8,14 @@ use App\Models\Bank;
 use App\Models\BankFeedConnection;
 use App\Models\ChartOfAccount;
 use App\Models\Expense;
+use App\Models\JournalEntry;
 use App\Models\PaymentMade;
 use App\Models\PaymentReceived;
 use App\Services\BankFeeds\FeedStatement;
 use App\Services\BankReconciliationService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class BankController extends Controller
@@ -140,8 +143,8 @@ class BankController extends Controller
 
     public function destroy(Bank $bank)
     {
-        if ($bank->transactions()->count() > 0) {
-            return redirect()->back()->with('error', 'Cannot delete bank account with transactions.');
+        if ($reason = $bank->deleteBlockedReason()) {
+            return redirect()->back()->with('error', $reason);
         }
 
         $bank->delete();
@@ -149,58 +152,56 @@ class BankController extends Controller
         return redirect()->route('banks.index')->with('success', 'Bank account deleted successfully.');
     }
 
-    public function transactions(Bank $bank)
+    /**
+     * Money in and out of one bank account (tables plan T7): the postings to
+     * its ledger account, so cash sales, transfers, payroll and journals
+     * show too, a page at a time, with the balance after each.
+     */
+    public function transactions(Request $request, Bank $bank)
     {
-        $paymentsReceived = PaymentReceived::where('bank_id', $bank->id)
-            ->with('customer')
-            ->get()
-            ->map(function ($payment) {
-                return [
-                    'date' => $payment->payment_date,
-                    'type' => 'deposit',
-                    'reference' => $payment->payment_number,
-                    'extra_ref' => $payment->reference,
-                    'party' => $payment->customer?->name ?? 'N/A',
-                    'amount' => $payment->amount,
-                    'route' => route('payments-received.show', $payment),
-                ];
-            });
+        $tenantId = auth()->user()->tenant_id;
+        $validated = $request->validate(['from' => 'nullable|date', 'to' => 'nullable|date']);
+        $from = $validated['from'] ?? now()->startOfMonth()->toDateString();
+        $to = $validated['to'] ?? now()->toDateString();
+        $accountId = $bank->chart_of_account_id;
 
-        $paymentsMade = PaymentMade::where('bank_id', $bank->id)
-            ->with('vendor')
-            ->get()
-            ->map(function ($payment) {
-                return [
-                    'date' => $payment->payment_date,
-                    'type' => 'withdrawal',
-                    'reference' => $payment->payment_number,
-                    'extra_ref' => $payment->reference,
-                    'party' => $payment->vendor?->name ?? 'N/A',
-                    'amount' => $payment->amount,
-                    'route' => route('payments-made.show', $payment),
-                ];
-            });
+        $lines = fn (?string $start, ?string $end) => JournalEntry::query()
+            ->join('journals', 'journals.id', '=', 'journal_entries.journal_id')
+            ->where('journals.tenant_id', $tenantId)
+            ->where('journals.is_posted', true)
+            ->whereNull('journals.deleted_at')
+            ->where('journal_entries.account_id', $accountId)
+            ->when($start, fn ($q) => $q->where('journals.journal_date', '>=', $start))
+            ->when($end, fn ($q) => $q->where('journals.journal_date', '<', Carbon::parse($end)->addDay()->toDateString()));
+        $sum = fn ($q) => $q->toBase()->selectRaw('COALESCE(SUM(journal_entries.debit), 0) as debit, COALESCE(SUM(journal_entries.credit), 0) as credit')->first();
 
-        $expenses = Expense::where('bank_id', $bank->id)
-            ->with('vendor')
-            ->get()
-            ->map(function ($expense) {
-                return [
-                    'date' => $expense->expense_date,
-                    'type' => 'withdrawal',
-                    'reference' => $expense->expense_number,
-                    'extra_ref' => $expense->reference,
-                    'party' => $expense->vendor?->name ?? $expense->name,
-                    'amount' => $expense->total,
-                    'route' => route('expenses.show', $expense),
-                ];
-            });
+        $before = $sum($lines(null, Carbon::parse($from)->subDay()->toDateString()));
+        $opening = round((float) $bank->opening_balance + (float) $before->debit - (float) $before->credit, 2);
+        $period = $sum($lines($from, $to));
+        $moneyIn = round((float) $period->debit, 2);
+        $moneyOut = round((float) $period->credit, 2);
 
-        $transactions = $paymentsReceived->concat($paymentsMade)->concat($expenses)
-            ->sortByDesc('date')
-            ->values();
+        $entries = $lines($from, $to)
+            ->select('journal_entries.*')
+            ->with('journal.reference')
+            ->orderBy('journals.journal_date')->orderBy('journals.id')->orderBy('journal_entries.id')
+            ->paginate(25)->withQueryString();
 
-        return view('banks.transactions', compact('bank', 'transactions'));
+        // Balance brought forward to the first line of this page.
+        $pageOpening = $opening;
+        if ($entries->currentPage() > 1) {
+            $earlier = $lines($from, $to)->select('journal_entries.debit', 'journal_entries.credit')
+                ->orderBy('journals.journal_date')->orderBy('journals.id')->orderBy('journal_entries.id')
+                ->limit(($entries->currentPage() - 1) * $entries->perPage())->toBase();
+            $b = DB::query()->fromSub($earlier, 'earlier')->selectRaw('COALESCE(SUM(debit), 0) as debit, COALESCE(SUM(credit), 0) as credit')->first();
+            $pageOpening = round($opening + (float) $b->debit - (float) $b->credit, 2);
+        }
+
+        return view('banks.transactions', [
+            'bank' => $bank, 'entries' => $entries, 'from' => $from, 'to' => $to, 'linked' => (bool) $accountId,
+            'opening' => $opening, 'moneyIn' => $moneyIn, 'moneyOut' => $moneyOut,
+            'closing' => round($opening + $moneyIn - $moneyOut, 2), 'pageOpening' => $pageOpening,
+        ]);
     }
 
     public function reconcile(Request $request, Bank $bank, BankReconciliationService $reconciliationService, FeedStatement $feedStatement)

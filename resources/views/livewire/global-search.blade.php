@@ -39,7 +39,7 @@
 
         @if(isset($results['customers']))
             <div class="border-b border-gray-100 dark:border-gray-700">
-                <div class="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-900/50">
+                <div class="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">
                     Customers
                 </div>
                 @foreach($results['customers'] as $customer)
@@ -62,7 +62,7 @@
 
         @if(isset($results['vendors']))
             <div class="border-b border-gray-100 dark:border-gray-700">
-                <div class="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-900/50">
+                <div class="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">
                     Vendors
                 </div>
                 @foreach($results['vendors'] as $vendor)
@@ -85,7 +85,7 @@
 
         @if(isset($results['invoices']))
             <div class="border-b border-gray-100 dark:border-gray-700">
-                <div class="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-900/50">
+                <div class="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">
                     Invoices
                 </div>
                 @foreach($results['invoices'] as $invoice)
@@ -116,7 +116,7 @@
 
         @if(isset($results['bills']))
             <div class="border-b border-gray-100 dark:border-gray-700">
-                <div class="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-900/50">
+                <div class="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">
                     Bills
                 </div>
                 @foreach($results['bills'] as $bill)
@@ -146,7 +146,7 @@
 
         @if(isset($results['items']))
             <div class="border-b border-gray-100 dark:border-gray-700">
-                <div class="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-900/50">
+                <div class="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">
                     Items
                 </div>
                 @foreach($results['items'] as $item)
@@ -169,7 +169,7 @@
 
         @if(isset($results['employees']))
             <div>
-                <div class="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-900/50">
+                <div class="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">
                     Employees
                 </div>
                 @foreach($results['employees'] as $employee)

@@ -13,6 +13,7 @@ use App\Models\SubscriptionRenewalAttempt;
 use App\Models\Tenant;
 use App\Services\AdminAuditService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class AdminTenantController extends Controller
@@ -62,62 +63,55 @@ class AdminTenantController extends Controller
     /**
      * Display listing of tenants
      */
+    /** Status tab => label on the tenants list. */
+    public const LIST_TABS = ['active' => 'Paying', 'trial' => 'On trial', 'expired' => 'Expired', 'cancelled' => 'Cancelled', 'no_subscription' => 'No plan'];
+
     public function list(Request $request)
     {
-        $query = Tenant::with(['activeSubscription.plan', 'subscriptions']);
-
-        // Filter by status
-        if ($request->filled('status')) {
-            switch ($request->status) {
-                case 'active':
-                    $query->whereHas('subscriptions', function ($q) {
-                        $q->where('status', 'active')
-                            ->where(function ($q2) {
-                                $q2->whereNull('ends_at')->orWhere('ends_at', '>', now());
-                            });
-                    });
-                    break;
-                case 'trial':
-                    $query->whereHas('subscriptions', function ($q) {
-                        $q->where('status', 'trialing')->where('ends_at', '>', now());
-                    });
-                    break;
-                case 'cancelled':
-                    $query->whereHas('subscriptions', function ($q) {
-                        $q->where('status', 'cancelled');
-                    });
-                    break;
-                case 'expired':
-                    $query->whereHas('subscriptions', function ($q) {
-                        $q->where('ends_at', '<', now())->whereNotIn('status', ['cancelled']);
-                    });
-                    break;
-                case 'no_subscription':
-                    $query->doesntHave('subscriptions');
-                    break;
+        // Search and plan narrow every tab; the tab picks the status.
+        $base = function () use ($request) {
+            $query = Tenant::query();
+            if ($request->filled('plan')) {
+                $query->whereHas('activeSubscription', fn ($q) => $q->where('plan_id', $request->plan));
             }
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(fn ($q) => $q->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%"));
+            }
+
+            return $query;
+        };
+
+        $tabs = ['' => ['label' => 'All', 'count' => $base()->count(), 'href' => $this->listUrl($request, '')]];
+        foreach (self::LIST_TABS as $key => $label) {
+            $tabs[$key] = ['label' => $label, 'count' => $this->byStatus($base(), $key)->count(), 'href' => $this->listUrl($request, $key)];
         }
 
-        // Filter by plan
-        if ($request->filled('plan')) {
-            $query->whereHas('activeSubscription', function ($q) use ($request) {
-                $q->where('plan_id', $request->plan);
-            });
-        }
-
-        // Search
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
-            });
-        }
-
-        $tenants = $query->latest()->paginate(15)->withQueryString();
+        $status = array_key_exists((string) $request->status, self::LIST_TABS) ? (string) $request->status : '';
+        $tenants = $this->byStatus($base(), $status)
+            ->with('activeSubscription.plan')->withCount('users')
+            ->latest()->paginate(25)->withQueryString();
         $plans = Plan::active()->ordered()->get();
 
-        return view('admin.tenants.list', compact('tenants', 'plans'));
+        return view('admin.tenants.list', compact('tenants', 'plans', 'tabs', 'status'));
+    }
+
+    /** @param Builder<Tenant> $query */
+    private function byStatus($query, string $status)
+    {
+        return match ($status) {
+            'active' => $query->whereHas('subscriptions', fn ($q) => $q->where('status', 'active')->where(fn ($q2) => $q2->whereNull('ends_at')->orWhere('ends_at', '>', now()))),
+            'trial' => $query->whereHas('subscriptions', fn ($q) => $q->where('status', 'trialing')->where('ends_at', '>', now())),
+            'cancelled' => $query->whereHas('subscriptions', fn ($q) => $q->where('status', 'cancelled')),
+            'expired' => $query->whereHas('subscriptions', fn ($q) => $q->where('ends_at', '<', now())->whereNotIn('status', ['cancelled'])),
+            'no_subscription' => $query->doesntHave('subscriptions'),
+            default => $query,
+        };
+    }
+
+    private function listUrl(Request $request, string $status): string
+    {
+        return route('admin.tenants.list', array_filter(['status' => $status, 'search' => $request->search, 'plan' => $request->plan], fn ($v) => $v !== null && $v !== ''));
     }
 
     /**

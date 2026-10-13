@@ -3,104 +3,82 @@
 namespace App\Livewire\ChartOfAccounts;
 
 use App\Livewire\Concerns\ChecksPermissions;
-use App\Livewire\Concerns\LimitsPageSize;
+use App\Livewire\Concerns\ListTable;
 use App\Models\ChartOfAccount;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
-use Livewire\WithPagination;
 
+/**
+ * Chart of accounts (tables plan T4): one tab per account type, in code
+ * order, sub-accounts shown under their parent.
+ */
 class ChartOfAccountsTable extends Component
 {
-    use ChecksPermissions, LimitsPageSize, WithPagination;
+    use ChecksPermissions, ListTable;
 
-    public $search = '';
+    protected $queryString = [
+        'search' => ['except' => ''],
+        'tab' => ['except' => '', 'as' => 'type'],
+    ];
 
-    public $sortField = 'account_code';
+    /** Type => tab label, in the order accounts are usually read. */
+    public const LABELS = ['asset' => 'Assets', 'liability' => 'Liabilities', 'equity' => 'Equity', 'income' => 'Income', 'expense' => 'Expenses'];
 
-    public $sortDirection = 'asc';
-
-    public $perPage = 25;
-
-    public $typeFilter = '';
-
-    public $viewMode = 'tree'; // 'flat' or 'tree'
-
-    public $collapsedTypes = [];
-
-    // Bulk operation properties
-    public $selectedItems = [];
-
-    public $selectAll = false;
-
-    public $bulkAction = '';
-
-    public $successMessage = '';
-
-    public $errorMessage = '';
-
-    protected $queryString = ['search', 'sortField', 'sortDirection', 'typeFilter', 'viewMode'];
-
-    public function toggleType($type)
+    protected function sortable(): array
     {
-        if (in_array($type, $this->collapsedTypes)) {
-            $this->collapsedTypes = array_values(array_diff($this->collapsedTypes, [$type]));
-        } else {
-            $this->collapsedTypes[] = $type;
-        }
+        return ['account_code', 'name', 'current_balance'];
     }
 
-    public function updatingSearch()
+    /** Accounts read in code order. */
+    public function mountListTable(): void
     {
-        $this->resetPage();
-    }
-
-    public function updatingTypeFilter()
-    {
-        $this->resetPage();
-    }
-
-    public function updatingPerPage()
-    {
-        $this->resetPage();
-    }
-
-    public function sortBy($field)
-    {
-        if ($this->sortField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            $this->sortField = $field;
+        if (! in_array($this->sortField, $this->sortable(), true)) {
+            $this->sortField = 'account_code';
             $this->sortDirection = 'asc';
         }
     }
 
-    public function updatedSelectAll($value)
+    protected function rowRelations(): array
     {
-        if ($value) {
-            $this->selectedItems = $this->getFilteredAccountIds();
-        } else {
-            $this->selectedItems = [];
+        return ['parent:id,account_code,name'];
+    }
+
+    protected function baseQuery(): Builder
+    {
+        $query = ChartOfAccount::query();
+        if (($term = trim($this->search)) !== '') {
+            $query->where(fn ($q) => $q->where('account_code', 'like', "%{$term}%")
+                ->orWhere('name', 'like', "%{$term}%")
+                ->orWhere('description', 'like', "%{$term}%"));
         }
+
+        return $query;
     }
 
-    public function updatedSelectedItems()
+    protected function applyTab(Builder $query, string $tab): Builder
     {
-        $this->selectAll = count($this->selectedItems) === count($this->getFilteredAccountIds());
+        return match (true) {
+            array_key_exists($tab, self::LABELS) => $query->where('type', $tab),
+            $tab === 'inactive' => $query->where('is_active', false),
+            default => $query,
+        };
     }
 
-    private function getFilteredAccountIds()
+    /** @return array<string, array{label: string, count: int, alert: bool}> one grouped query */
+    private function tabs(): array
     {
-        return ChartOfAccount::query()
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('account_code', 'like', '%'.$this->search.'%')
-                        ->orWhere('name', 'like', '%'.$this->search.'%')
-                        ->orWhere('description', 'like', '%'.$this->search.'%');
-                });
-            })
-            ->when($this->typeFilter, fn ($q) => $q->where('type', $this->typeFilter))
-            ->pluck('id')
-            ->map(fn ($id) => (string) $id)
-            ->toArray();
+        $counts = $this->baseQuery()->toBase()->selectRaw('type, COUNT(*) as n')->groupBy('type')->pluck('n', 'type');
+        $inactive = $this->baseQuery()->where('is_active', false)->count();
+
+        $tabs = ['' => ['label' => 'All', 'count' => (int) $counts->sum(), 'alert' => false]];
+        foreach (self::LABELS as $key => $label) {
+            $tabs[$key] = ['label' => $label, 'count' => (int) ($counts[$key] ?? 0), 'alert' => false];
+        }
+        if ($inactive > 0 || $this->tab === 'inactive') {
+            $tabs['inactive'] = ['label' => 'Inactive', 'count' => $inactive, 'alert' => false];
+        }
+
+        return $tabs;
     }
 
     /**
@@ -121,13 +99,7 @@ class ChartOfAccountsTable extends Component
         $this->errorMessage = '';
 
         if (empty($this->selectedItems)) {
-            $this->errorMessage = 'Please select at least one account.';
-
-            return;
-        }
-
-        if (empty($this->bulkAction)) {
-            $this->errorMessage = 'Please select an action.';
+            $this->errorMessage = 'Tick at least one account first.';
 
             return;
         }
@@ -139,43 +111,30 @@ class ChartOfAccountsTable extends Component
         switch ($this->bulkAction) {
             case 'activate':
                 ChartOfAccount::whereIn('id', $this->selectedItems)->update(['is_active' => true]);
-                $this->successMessage = "Successfully activated {$count} account(s).";
+                $this->successMessage = "{$count} account(s) made active.";
                 break;
 
             case 'deactivate':
-                ChartOfAccount::whereIn('id', $this->selectedItems)->update(['is_active' => false]);
-                $this->successMessage = "Successfully deactivated {$count} account(s).";
+                ChartOfAccount::whereIn('id', $this->selectedItems)->where('is_system', false)->update(['is_active' => false]);
+                $this->successMessage = 'Accounts made inactive. Accounts MyBooks needs stay active.';
                 break;
 
             case 'delete':
-                $deletedCount = 0;
-                $skippedCount = 0;
-
-                foreach ($this->selectedItems as $accountId) {
-                    $account = ChartOfAccount::find($accountId);
-                    if (! $account) {
-                        continue;
-                    }
-
-                    // Check if account has related records
-                    if ($account->journalEntries()->exists() ||
-                        $account->children()->exists() ||
-                        $account->is_system) {
-                        $skippedCount++;
+                $deleted = 0;
+                $skipped = 0;
+                foreach (ChartOfAccount::whereIn('id', $this->selectedItems)->get() as $account) {
+                    if ($this->blockedBecause($account)) {
+                        $skipped++;
 
                         continue;
                     }
-
                     $account->delete();
-                    $deletedCount++;
+                    $deleted++;
                 }
-
-                if ($deletedCount > 0 && $skippedCount > 0) {
-                    $this->successMessage = "Deleted {$deletedCount} account(s). Skipped {$skippedCount} account(s) with existing records or system accounts.";
-                } elseif ($deletedCount > 0) {
-                    $this->successMessage = "Successfully deleted {$deletedCount} account(s).";
+                if ($deleted > 0) {
+                    $this->successMessage = "Deleted {$deleted} account(s).".($skipped ? " Skipped {$skipped} that are in use or that MyBooks needs." : '');
                 } else {
-                    $this->errorMessage = 'Could not delete any accounts. Selected accounts have existing records or are system accounts.';
+                    $this->errorMessage = 'None deleted: every ticked account is in use or is one MyBooks needs.';
                 }
                 break;
 
@@ -186,52 +145,47 @@ class ChartOfAccountsTable extends Component
         }
 
         $this->selectedItems = [];
-        $this->selectAll = false;
         $this->bulkAction = '';
+    }
+
+    /** Delete one unused account from its row menu. */
+    public function deleteOne(int $id): void
+    {
+        $this->requirePermission('delete chart-of-accounts');
+        $account = ChartOfAccount::findOrFail($id);
+        if ($reason = $this->blockedBecause($account)) {
+            $this->errorMessage = $reason;
+
+            return;
+        }
+        $account->delete();
+        $this->successMessage = "Deleted {$account->account_code} {$account->name}.";
+        $this->selectedItems = array_values(array_diff($this->selectedItems, [(string) $id]));
+    }
+
+    private function blockedBecause(ChartOfAccount $account): ?string
+    {
+        return match (true) {
+            (bool) $account->is_system => "{$account->name} is an account MyBooks needs, so it can't be deleted.",
+            $account->journalEntries()->exists() => "{$account->name} has entries, so it can't be deleted. Make it inactive instead.",
+            $account->children()->exists() => "{$account->name} has sub-accounts. Move or delete those first.",
+            default => null,
+        };
     }
 
     public function render()
     {
-        $accounts = ChartOfAccount::with(['parent'])
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('account_code', 'like', '%'.$this->search.'%')
-                        ->orWhere('name', 'like', '%'.$this->search.'%')
-                        ->orWhere('description', 'like', '%'.$this->search.'%');
-                });
-            })
-            ->when($this->typeFilter, function ($query) {
-                $query->where('type', $this->typeFilter);
-            })
-            ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->pageSize());
-
-        $types = ChartOfAccount::getTypes();
-
-        // Group accounts by type for tree view
-        $groupedAccounts = [];
-        if ($this->viewMode === 'tree') {
-            $allAccounts = ChartOfAccount::with(['parent', 'children'])
-                ->when($this->search, function ($query) {
-                    $query->where(function ($q) {
-                        $q->where('account_code', 'like', '%'.$this->search.'%')
-                            ->orWhere('name', 'like', '%'.$this->search.'%')
-                            ->orWhere('description', 'like', '%'.$this->search.'%');
-                    });
-                })
-                ->when($this->typeFilter, function ($query) {
-                    $query->where('type', $this->typeFilter);
-                })
-                ->orderBy('account_code', 'asc')
-                ->get();
-
-            $groupedAccounts = $allAccounts->groupBy('type');
+        $balances = null;
+        if (array_key_exists($this->tab, self::LABELS)) {
+            $balances = (float) $this->filteredQuery()->sum('current_balance');
         }
 
         return view('livewire.chart-of-accounts.chart-of-accounts-table', [
-            'accounts' => $accounts,
-            'types' => $types,
-            'groupedAccounts' => $groupedAccounts,
+            'accounts' => $this->rows(),
+            'tabs' => $this->tabs(),
+            'types' => ChartOfAccount::getTypes(),
+            'total' => $balances,
+            'filtered' => $this->isFiltered(),
         ]);
     }
 }

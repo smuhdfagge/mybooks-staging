@@ -1,76 +1,41 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ $bank->name }}
-                @if($bank->is_primary)
-                    <span class="ml-2 px-2 py-1 text-xs font-semibold bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 rounded-full">Primary</span>
-                @endif
-            </h2>
-            <div class="flex gap-2">
-                <a href="{{ route('banks.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                    </svg>
-                    Back
-                </a>
+        <x-table.page-header :title="$bank->name" :description="collect([$bank->bank_name, $bank->account_number ? $bank->masked_account_number : null])->filter()->push('Amounts in '.trim(\App\Support\Money::symbol($bank->currency ?: null)).'.')->join(' · ')">
+            @if ($bank->is_primary)
+                <x-slot name="badge"><x-status-badge status="active" label="Main account" /></x-slot>
+            @endif
+            <x-slot name="more">
+                <x-table.menu-item :href="route('banks.transactions', $bank)">Money in and out</x-table.menu-item>
                 @can('edit banks')
-                <a href="{{ route('banks.edit', $bank) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                    </svg>
-                    Edit
-                </a>
+                    <x-table.menu-item :href="route('banks.edit', $bank)">Edit</x-table.menu-item>
                 @endcan
-                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('bank_feeds'))
-                @can('edit banks')
-                    @if(! $feed)
-                    <a href="{{ route('bank-feeds.connect', ['bank' => $bank->id]) }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition ease-in-out duration-150" data-testid="connect-feed">Connect bank feed</a>
+                @if (\App\Http\Middleware\EnsureFeatureEnabled::enabled('bank_feeds'))
+                    @if ($feed)
+                        <a href="{{ route('bank-feeds.index') }}" role="menuitem" class="flex w-full items-center rounded-md px-2.5 py-1.5 text-left text-sm text-gray-800 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none dark:text-gray-200 dark:hover:bg-gray-700 dark:focus:bg-gray-700" data-testid="feed-status">Bank feed: {{ $feed->statusEnum()->label() }}</a>
+                    @else
+                        @can('edit banks')
+                            <a href="{{ route('bank-feeds.connect', ['bank' => $bank->id]) }}" role="menuitem" class="flex w-full items-center rounded-md px-2.5 py-1.5 text-left text-sm text-gray-800 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none dark:text-gray-200 dark:hover:bg-gray-700 dark:focus:bg-gray-700" data-testid="connect-feed">Connect bank feed</a>
+                        @endcan
                     @endif
-                @endcan
-                @if($feed)
-                <a href="{{ route('bank-feeds.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-500 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest" data-testid="feed-status">Bank feed: {{ $feed->statusEnum()->label() }}</a>
                 @endif
-                @endif
+                <x-table.menu-item :href="route('banks.index')">All bank accounts</x-table.menu-item>
+            </x-slot>
+            <x-slot name="actions">
                 @can('reconcile banks')
-                <a href="{{ route('banks.reconcile', $bank) }}" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    Reconcile
-                </a>
+                    <a href="{{ route('banks.reconcile', $bank) }}" class="btn-new">Reconcile</a>
                 @endcan
-            </div>
-        </div>
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <!-- Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <div class="text-sm text-gray-500 dark:text-gray-400">Current Balance</div>
-                    <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ $bank->currency }} {{ number_format($bank->current_balance, 2) }}</div>
-                </div>
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <div class="text-sm text-gray-500 dark:text-gray-400">Opening Balance</div>
-                    <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ $bank->currency }} {{ number_format($bank->opening_balance, 2) }}</div>
-                </div>
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <div class="text-sm text-gray-500 dark:text-gray-400">Account Type</div>
-                    <div class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ \App\Models\Bank::getAccountTypes()[$bank->account_type] ?? $bank->account_type }}</div>
-                </div>
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <div class="text-sm text-gray-500 dark:text-gray-400">Status</div>
-                    <div class="mt-1">
-                        @if($bank->is_active)
-                            <span class="px-3 py-1 text-sm font-semibold bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-full">Active</span>
-                        @else
-                            <span class="px-3 py-1 text-sm font-semibold bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 rounded-full">Inactive</span>
-                        @endif
-                    </div>
-                </div>
-            </div>
+            <x-report.stats :cols="4" class="mb-6">
+                <x-report.stat label="Balance" :value="\App\Support\Figure::show($bank->current_balance, false)" />
+                <x-report.stat label="Opening balance" :value="\App\Support\Figure::show($bank->opening_balance, false)" :hint="$bank->opening_balance_date?->format('j M Y')" />
+                <x-report.stat label="Account type" :value="\App\Models\Bank::getAccountTypes()[$bank->account_type] ?? \Illuminate\Support\Str::headline((string) $bank->account_type)" />
+                <x-report.stat label="Status" :value="$bank->is_active ? 'In use' : 'Not in use'" :tone="$bank->is_active ? null : 'bad'" />
+            </x-report.stats>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Bank Details -->
@@ -138,7 +103,7 @@
                                 @if($bank->opening_balance_date)
                                 <div>
                                     <dt class="text-sm text-gray-500 dark:text-gray-400">Opening Balance Date</dt>
-                                    <dd class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $bank->opening_balance_date->format('M d, Y') }}</dd>
+                                    <dd class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $bank->opening_balance_date->format('j M Y') }}</dd>
                                 </div>
                                 @endif
                                 @if($bank->description)
@@ -162,25 +127,22 @@
                             </div>
                             
                             @if($recentTransactions->count() > 0)
-                                <div class="overflow-x-auto">
-                                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                        <thead>
-                                            <tr>
-                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date</th>
-                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Reference</th>
-                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Customer/Vendor</th>
-                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Type</th>
-                                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Amount</th>
-                                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                <x-table caption="Recent transactions">
+<x-slot name="head">
+                                                <x-table.th>Date</x-table.th>
+                                                <x-table.th>Reference</x-table.th>
+                                                <x-table.th>Customer/Vendor</x-table.th>
+                                                <x-table.th>Type</x-table.th>
+                                                <x-table.th num>Amount</x-table.th>
+                                                <x-table.th class="text-center">Action</x-table.th>
+</x-slot>
+
                                             @foreach($recentTransactions as $transaction)
-                                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $transaction['date']->format('M d, Y') }}</td>
-                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $transaction['reference'] }}</td>
-                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $transaction['party'] }}</td>
-                                                <td class="px-4 py-3 text-sm">
+                                            <tr>
+                                                <td>{{ $transaction['date']->format('j M Y') }}</td>
+                                                <td>{{ $transaction['reference'] }}</td>
+                                                <td>{{ $transaction['party'] }}</td>
+                                                <td>
                                                     @if($transaction['type'] === 'deposit')
                                                         <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                                                             Deposit
@@ -191,19 +153,17 @@
                                                         </span>
                                                     @endif
                                                 </td>
-                                                <td class="px-4 py-3 text-sm text-right font-medium {{ $transaction['type'] === 'deposit' ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
-                                                    {{ $transaction['type'] === 'deposit' ? '+' : '-' }}@money($transaction['amount'], $bank->currency)
+                                                <td class="num font-medium {{ $transaction['type'] === 'deposit' ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-300' }}">
+                                                    {{ $transaction['type'] === 'deposit' ? '+' : '-' }}@fig($transaction['amount'], false)
                                                 </td>
-                                                <td class="px-4 py-3 text-sm text-center">
-                                                    <a href="{{ $transaction['route'] }}" class="text-brand-600 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-300">
+                                                <td class="text-center">
+                                                    <a href="{{ $transaction['route'] }}" class="tbl-link">
                                                         View
                                                     </a>
                                                 </td>
                                             </tr>
                                             @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
+</x-table>
                             @else
                                 <p class="text-gray-500 dark:text-gray-400 text-center py-8">No transactions yet. Transactions will appear here when payments are received or made via bank transfer.</p>
                             @endif

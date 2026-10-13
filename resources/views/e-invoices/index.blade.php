@@ -1,23 +1,17 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">E-invoices</h2>
+        <x-table.page-header title="E-invoices" :description="'Where each invoice and credit note stands with the Nigeria Revenue Service (NRS). Sending one to NRS does not change your books. Amounts in '.\App\Support\Money::symbol().'.'">
             @can('view e-invoices')
-                <a href="{{ route('settings.e-invoicing') }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">E-invoicing settings</a>
+                <x-slot name="more">
+                    <x-table.menu-item :href="route('settings.e-invoicing')">E-invoicing settings</x-table.menu-item>
+                </x-slot>
             @endcan
-        </div>
+        </x-table.page-header>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
-            <x-error-summary />
-            @include('e-invoices._setup-notice')
-            <x-card>
-                <div class="p-4 sm:p-6">
-                    <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">Where each invoice and credit note stands with the Nigeria Revenue Service (NRS). Sending a document to NRS does not change your books.</p>
-                    @livewire('e-invoices.e-invoices-table')
-                </div>
-            </x-card>
-        </div>
+    <div class="space-y-3">
+        <x-error-summary />
+        @include('e-invoices._setup-notice')
+        <livewire:e-invoices.e-invoices-table />
     </div>
 </x-app-layout>

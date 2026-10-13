@@ -18,7 +18,7 @@
 @endphp
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">{{ __('Dashboard') }}</h2>
+        <x-table.page-header title="Dashboard" />
     </x-slot>
 
     <div class="space-y-4 sm:space-y-5">
@@ -61,7 +61,7 @@
                 @if ($newMenu)
                     <div class="relative" x-data="{ open: false }" x-on:keydown.escape.window="open = false" x-on:click.outside="open = false">
                         <button type="button" x-on:click="open = !open" :aria-expanded="open.toString()" aria-haspopup="true" aria-controls="dash-new-menu"
-                            class="inline-flex h-9 items-center gap-1.5 rounded-md bg-brand-600 px-3.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900">
+                            class="btn-primary h-9">
                             <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 4a1 1 0 011 1v4h4a1 1 0 110 2h-4v4a1 1 0 11-2 0v-4H5a1 1 0 110-2h4V5a1 1 0 011-1z"/></svg>
                             New
                         </button>
@@ -185,28 +185,24 @@
                             Your chart appears after your first invoice or expense.
                         </div>
                     @endif
-                    <div x-show="table" style="display: none" class="overflow-x-auto">
-                        <table class="min-w-full text-sm">
-                            <caption class="sr-only">Income, expenses and profit by month</caption>
-                            <thead>
-                                <tr class="text-left text-gray-600 dark:text-gray-400">
-                                    <th scope="col" class="py-2 pr-4 font-medium">Month</th>
-                                    <th scope="col" class="py-2 pr-4 text-right font-medium">Income</th>
-                                    <th scope="col" class="py-2 pr-4 text-right font-medium">Expenses</th>
-                                    <th scope="col" class="py-2 text-right font-medium">Profit</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-100 dark:divide-gray-700 tabular-nums">
+                    <div x-show="table" style="display: none">
+                        <x-table caption="Income, expenses and profit by month">
+<x-slot name="head">
+                                    <x-table.th>Month</x-table.th>
+                                    <x-table.th num>Income</x-table.th>
+                                    <x-table.th num>Expenses</x-table.th>
+                                    <x-table.th num>Profit</x-table.th>
+</x-slot>
+
                                 @foreach ($series->reverse() as $m)
                                     <tr>
-                                        <th scope="row" class="py-1.5 pr-4 text-left font-normal text-gray-800 dark:text-gray-200">{{ $m['long'] }}{{ $m['partial'] ? ' (so far)' : '' }}</th>
-                                        <td class="py-1.5 pr-4 text-right text-gray-900 dark:text-gray-100">@moneyWhole($m['income'])</td>
-                                        <td class="py-1.5 pr-4 text-right text-gray-900 dark:text-gray-100">@moneyWhole($m['expenses'])</td>
-                                        <td class="py-1.5 text-right font-medium {{ $m['profit'] < 0 ? 'text-red-700 dark:text-red-300' : 'text-gray-900 dark:text-gray-100' }}">{{ $m['profit'] < 0 ? '−' : '' }}@moneyWhole(abs($m['profit']))</td>
+                                        <th scope="row">{{ $m['long'] }}{{ $m['partial'] ? ' (so far)' : '' }}</th>
+                                        <td class="num">@moneyWhole($m['income'])</td>
+                                        <td class="num">@moneyWhole($m['expenses'])</td>
+                                        <td class="num font-medium {{ $m['profit'] < 0 ? 'text-red-700 dark:text-red-300' : 'text-gray-900 dark:text-gray-100' }}">{{ $m['profit'] < 0 ? '−' : '' }}@moneyWhole(abs($m['profit']))</td>
                                     </tr>
                                 @endforeach
-                            </tbody>
-                        </table>
+</x-table>
                     </div>
                 </x-dashboard.card>
             @endif
@@ -251,7 +247,7 @@
         {{-- Cash flow, who owes whom, top customers, spending, recent activity --}}
         <livewire:dashboard.lower-cards lazy />
 
-        <p class="text-xs text-gray-600 dark:text-gray-400">Figures as of {{ $updatedAt->format('j M Y, g:i a') }}. Every card opens the report behind it.</p>
+        <p class="text-xs text-gray-600 dark:text-gray-400">Figures as of {{ $updatedAt->format('j M Y, H:i') }}. Every card opens the report behind it.</p>
     </div>
 
     @if ($hasChart)

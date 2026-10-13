@@ -1,24 +1,34 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Bill') }}: {{ $bill->bill_number }}
-            </h2>
-            <div class="flex items-center gap-2">
-                <a href="{{ route('bills.edit', $bill) }}" class="inline-flex items-center px-4 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700 focus:bg-yellow-700 active:bg-yellow-900 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                    </svg>
-                    Edit
-                </a>
-                <a href="{{ route('bills.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back to List
-                </a>
-            </div>
-        </div>
+        @php
+            $billLate = $bill->balance_due > 0 && $bill->due_date && $bill->due_date->lt(now()->startOfDay()) && $bill->status !== 'draft';
+        @endphp
+        <x-table.page-header :title="'Bill '.$bill->bill_number">
+            <x-slot name="badge"><x-status-badge :status="$billLate ? 'overdue' : $bill->status" /></x-slot>
+            <x-slot name="description">
+                <a href="{{ route('vendors.show', $bill->vendor) }}" class="link">{{ $bill->vendor->name }}</a> · {{ $bill->bill_date->format('j M Y') }}
+                @if ($bill->balance_due > 0)
+                    · <span class="{{ $billLate ? 'tbl-late' : 'font-medium text-gray-900 dark:text-white' }}">To pay @money($bill->balance_due)</span>{{ $bill->due_date ? ', due '.$bill->due_date->format('j M Y') : '' }}
+                @else
+                    · Paid in full
+                @endif
+            </x-slot>
+            @can('create bills')
+                <x-slot name="more">
+                    <x-table.menu-item :href="route('vendor-credits.create', ['bill_id' => $bill->id])">Return goods or record a credit note</x-table.menu-item>
+                </x-slot>
+            @endcan
+            <x-slot name="actions">
+                @can('edit bills')
+                    <a href="{{ route('bills.edit', $bill) }}" class="btn-secondary">Edit</a>
+                @endcan
+                @if ($bill->balance_due > 0)
+                    @can('create payments-made')
+                        <a href="{{ route('payments-made.create', ['bill_id' => $bill->id]) }}" class="btn-primary">Record payment</a>
+                    @endcan
+                @endif
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -126,12 +136,12 @@
                             @endif
                             <div class="flex justify-between">
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Bill Date</dt>
-                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $bill->bill_date->format('M d, Y') }}</dd>
+                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $bill->bill_date->format('j M Y') }}</dd>
                             </div>
                             <div class="flex justify-between">
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Due Date</dt>
                                 <dd class="text-sm {{ $bill->due_date->isPast() && $bill->balance_due > 0 ? 'text-red-600 dark:text-red-300 font-semibold' : 'text-gray-900 dark:text-gray-100' }}">
-                                    {{ $bill->due_date->format('M d, Y') }}
+                                    {{ $bill->due_date->format('j M Y') }}
                                     @if($bill->due_date->isPast() && $bill->balance_due > 0)
                                         <span class="text-xs ml-1">(Overdue)</span>
                                     @endif
@@ -192,57 +202,52 @@
                         Bill Items
                     </h3>
                     
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead>
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Qty</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Price</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tax</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <x-table caption="Items on this bill">
+<x-slot name="head">
+                                    <x-table.th>Description</x-table.th>
+                                    <x-table.th num>Qty</x-table.th>
+                                    <x-table.th num>Price</x-table.th>
+                                    <x-table.th num>Tax</x-table.th>
+                                    <x-table.th num>Total</x-table.th>
+</x-slot>
+
                                 @foreach($bill->items as $item)
                                 <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                                    <td>
                                         <div class="font-medium">{{ $item->description }}</div>
                                         @if($item->item)
                                         <div class="text-xs text-gray-500 dark:text-gray-400">{{ $item->item->name }}</div>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{{ number_format($item->quantity, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{{ number_format($item->unit_price, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{{ number_format($item->tax_amount, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 text-right">{{ number_format($item->total, 2) }}</td>
+                                    <td class="num">{{ \App\Support\Figure::qty($item->quantity) }}</td>
+                                    <td class="num">@fig($item->unit_price, false)</td>
+                                    <td class="num">@fig($item->tax_amount, false)</td>
+                                    <td class="font-medium num">@fig($item->total, false)</td>
                                 </tr>
                                 @endforeach
-                            </tbody>
-                            <tfoot class="bg-gray-50 dark:bg-gray-900">
+<x-slot name="foot">
                                 <tr>
-                                    <td colspan="4" class="px-4 py-2 text-sm text-right text-gray-600 dark:text-gray-400">Subtotal</td>
-                                    <td class="px-4 py-2 text-sm text-right font-medium text-gray-900 dark:text-gray-100">{{ number_format($bill->subtotal, 2) }}</td>
+                                    <td colspan="4" class="num">Subtotal</td>
+                                    <td class="num font-medium">@fig($bill->subtotal, false)</td>
                                 </tr>
                                 @if($bill->tax_amount > 0)
                                 <tr>
-                                    <td colspan="4" class="px-4 py-2 text-sm text-right text-gray-600 dark:text-gray-400">Tax</td>
-                                    <td class="px-4 py-2 text-sm text-right font-medium text-gray-900 dark:text-gray-100">{{ number_format($bill->tax_amount, 2) }}</td>
+                                    <td colspan="4" class="num">Tax</td>
+                                    <td class="num font-medium">@fig($bill->tax_amount, false)</td>
                                 </tr>
                                 @endif
                                 @if($bill->discount_amount > 0)
                                 <tr>
-                                    <td colspan="4" class="px-4 py-2 text-sm text-right text-gray-600 dark:text-gray-400">Discount</td>
-                                    <td class="px-4 py-2 text-sm text-right font-medium text-red-600 dark:text-red-300">-{{ number_format($bill->discount_amount, 2) }}</td>
+                                    <td colspan="4" class="num">Discount</td>
+                                    <td class="num font-medium text-red-600 dark:text-red-300">-@fig($bill->discount_amount, false)</td>
                                 </tr>
                                 @endif
-                                <tr class="border-t-2 border-gray-300 dark:border-gray-600">
-                                    <td colspan="4" class="px-4 py-3 text-right text-lg font-bold text-gray-900 dark:text-gray-100">Total</td>
-                                    <td class="px-4 py-3 text-right text-lg font-bold text-brand-600 dark:text-brand-300">{{ number_format($bill->total, 2) }}</td>
+                                <tr class="border-t-2">
+                                    <td colspan="4" class="num text-lg font-bold">Total</td>
+                                    <td class="num text-lg font-bold text-brand-600 dark:text-brand-300">@fig($bill->total, false)</td>
                                 </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+</x-slot>
+</x-table>
                 </div>
             </div>
 
@@ -257,32 +262,27 @@
                         Payments Made
                     </h3>
                     
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead>
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Payment #</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Method</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Reference</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">WHT withheld</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <x-table caption="Payments">
+<x-slot name="head">
+                                    <x-table.th>Date</x-table.th>
+                                    <x-table.th>Payment #</x-table.th>
+                                    <x-table.th>Method</x-table.th>
+                                    <x-table.th>Reference</x-table.th>
+                                    <x-table.th num>Amount</x-table.th>
+                                    <x-table.th num>WHT withheld</x-table.th>
+</x-slot>
+
                                 @foreach($bill->payments as $payment)
                                 <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $payment->payment_date->format('M d, Y') }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $payment->payment_number ?? '-' }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ ucfirst($payment->payment_method ?? '-') }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $payment->reference ?? '-' }}</td>
-                                    <td class="px-4 py-3 text-sm font-medium text-green-700 dark:text-green-400 text-right">{{ number_format($payment->amount, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{{ (float) $payment->wht_amount > 0 ? number_format($payment->wht_amount, 2) : '-' }}</td>
+                                    <td>{{ $payment->payment_date->format('j M Y') }}</td>
+                                    <td>{{ $payment->payment_number ?? '—' }}</td>
+                                    <td>{{ ucfirst($payment->payment_method ?? '—') }}</td>
+                                    <td>{{ $payment->reference ?? '—' }}</td>
+                                    <td class="font-medium text-green-700 dark:text-green-400 num">@fig($payment->amount, false)</td>
+                                    <td class="num">{{ (float) $payment->wht_amount > 0 ? number_format($payment->wht_amount, 2) : '-' }}</td>
                                 </tr>
                                 @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+</x-table>
                 </div>
             </div>
             @endif
@@ -310,11 +310,11 @@
                         <p class="text-sm text-gray-600 dark:text-gray-400">Balance remaining on this bill</p>
                         <p class="text-2xl font-bold text-red-600 dark:text-red-300">{{ number_format($bill->balance_due, 2) }}</p>
                     </div>
-                    <a href="{{ route('payments-made.create', ['bill_id' => $bill->id]) }}" class="inline-flex items-center px-6 py-3 bg-green-700 border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <a href="{{ route('payments-made.create', ['bill_id' => $bill->id]) }}" class="btn-primary">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
                         </svg>
-                        Record Payment
+                        Record payment
                     </a>
                 </div>
             </div>
@@ -332,7 +332,7 @@
                     </div>
                     @forelse($bill->vendorCreditApplications as $application)
                         <p class="text-sm text-gray-700 dark:text-gray-300 flex justify-between gap-3">
-                            <span>{{ $application->applied_date->format('d M Y') }} · credit <a href="{{ route('vendor-credits.show', $application->vendorCredit) }}" class="text-brand-600 dark:text-brand-300">{{ $application->vendorCredit->vendor_credit_number }}</a> used</span>
+                            <span>{{ $application->applied_date->format('j M Y') }} · credit <a href="{{ route('vendor-credits.show', $application->vendorCredit) }}" class="text-brand-600 dark:text-brand-300">{{ $application->vendorCredit->vendor_credit_number }}</a> used</span>
                             <span class="font-medium">@money($application->amount)</span>
                         </p>
                     @empty
@@ -371,7 +371,7 @@
                                                 <p class="text-xs text-gray-500 dark:text-gray-400">by {{ $bill->createdBy?->name ?? 'System' }}</p>
                                             </div>
                                             <div class="whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
-                                                <time datetime="{{ $bill->created_at }}">{{ $bill->created_at->format('M d, Y') }}</time>
+                                                <time datetime="{{ $bill->created_at }}">{{ $bill->created_at->format('j M Y') }}</time>
                                                 <p class="text-xs">{{ $bill->created_at->format('g:i A') }}</p>
                                             </div>
                                         </div>
@@ -397,7 +397,7 @@
                                                 <p class="text-sm text-gray-900 dark:text-gray-100">Bill updated</p>
                                             </div>
                                             <div class="whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
-                                                <time datetime="{{ $bill->updated_at }}">{{ $bill->updated_at->format('M d, Y') }}</time>
+                                                <time datetime="{{ $bill->updated_at }}">{{ $bill->updated_at->format('j M Y') }}</time>
                                                 <p class="text-xs">{{ $bill->updated_at->format('g:i A') }}</p>
                                             </div>
                                         </div>
@@ -435,7 +435,7 @@
                                                 </p>
                                             </div>
                                             <div class="whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
-                                                <time datetime="{{ $payment->payment_date }}">{{ $payment->payment_date->format('M d, Y') }}</time>
+                                                <time datetime="{{ $payment->payment_date }}">{{ $payment->payment_date->format('j M Y') }}</time>
                                                 <p class="text-xs">{{ $payment->created_at->format('g:i A') }}</p>
                                             </div>
                                         </div>
@@ -462,7 +462,7 @@
                                                 <p class="text-xs text-gray-500 dark:text-gray-400">Stock added to inventory</p>
                                             </div>
                                             <div class="whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
-                                                <time datetime="{{ $bill->inventory_updated_at }}">{{ $bill->inventory_updated_at->format('M d, Y') }}</time>
+                                                <time datetime="{{ $bill->inventory_updated_at }}">{{ $bill->inventory_updated_at->format('j M Y') }}</time>
                                                 <p class="text-xs">{{ $bill->inventory_updated_at->format('g:i A') }}</p>
                                             </div>
                                         </div>
@@ -490,42 +490,37 @@
                             {{ $bill->journal->journal_number }}
                         </a>
                     </h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Account</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Debit</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Credit</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <x-table caption="Ledger postings">
+<x-slot name="head">
+                                    <x-table.th>Account</x-table.th>
+                                    <x-table.th num>Debit</x-table.th>
+                                    <x-table.th num>Credit</x-table.th>
+</x-slot>
+
                                 @foreach($bill->journal->entries as $entry)
                                 <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                                    <td>
                                         <span class="font-mono text-xs text-gray-500 dark:text-gray-400 mr-2">{{ $entry->account->account_code }}</span>
                                         {{ $entry->account->name }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $entry->debit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
+                                    <td class="num {{ $entry->debit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                                         {{ $entry->debit > 0 ? number_format($entry->debit, 2) : '-' }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right {{ $entry->credit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
+                                    <td class="num {{ $entry->credit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                                         {{ $entry->credit > 0 ? number_format($entry->credit, 2) : '-' }}
                                     </td>
                                 </tr>
                                 @endforeach
-                            </tbody>
-                            <tfoot class="bg-gray-50 dark:bg-gray-700">
+<x-slot name="foot">
                                 <tr class="font-semibold">
-                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">Total</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($bill->journal->total_debit, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{{ number_format($bill->journal->total_credit, 2) }}</td>
+                                    <td>Total</td>
+                                    <td class="num">@fig($bill->journal->total_debit, false)</td>
+                                    <td class="num">@fig($bill->journal->total_credit, false)</td>
                                 </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+</x-slot>
+</x-table>
                     <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                        Posted on {{ $bill->journal->posted_at?->format('M d, Y g:i A') ?? 'Not posted' }}
+                        Posted on {{ $bill->journal->posted_at?->format('j M Y, H:i') ?? 'Not posted' }}
                     </p>
                 </div>
             </div>

@@ -1,77 +1,72 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">{{ __('Leave Types') }}</h2>
-            @can('create leave-types')
-                <a href="{{ route('leave-types.create') }}" class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 transition ease-in-out duration-150">Add Leave Type</a>
-            @endcan
-        </div>
+        <x-table.page-header title="Leave types" description="The leave your staff can take, how many days a year, and whether it is paid.">
+            <x-slot name="more">
+                @can('view leaves')<x-table.menu-item :href="route('leaves.index')">Leave requests</x-table.menu-item>@endcan
+            </x-slot>
+            <x-slot name="actions">
+                @can('create leave-types')
+                    <a href="{{ route('leave-types.create') }}" class="btn-new">
+                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 4a1 1 0 011 1v4h4a1 1 0 110 2h-4v4a1 1 0 11-2 0v-4H5a1 1 0 110-2h4V5a1 1 0 011-1z"/></svg>
+                        New kind of leave
+                    </a>
+                @endcan
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            @foreach(['success' => 'border-green-200 bg-green-50 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-200',
-                      'error' => 'border-red-200 bg-red-50 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-200'] as $key => $tone)
-                @if(session($key))
-                    <div class="mb-4 rounded-lg border p-4 text-sm {{ $tone }}">{{ session($key) }}</div>
-                @endif
-            @endforeach
-
-            <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg overflow-hidden">
-                @if($leaveTypes->isEmpty())
-                    <div class="p-10 text-center">
-                        <p class="text-gray-700 dark:text-gray-300 font-medium">No leave types yet</p>
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Add the kinds of leave your staff can take, such as annual, sick or maternity leave.</p>
-                    </div>
-                @else
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Name</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Code</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Days / year</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Paid</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Carry forward</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Requests</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
-                                    <th class="px-6 py-3"></th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                @foreach($leaveTypes as $type)
-                                    <tr>
-                                        <td class="px-6 py-3 text-sm"><a href="{{ route('leave-types.show', $type) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $type->name }}</a></td>
-                                        <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{{ $type->code ?: '—' }}</td>
-                                        <td class="px-6 py-3 text-sm text-right text-gray-700 dark:text-gray-300">{{ $type->days_per_year }}</td>
-                                        <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{{ $type->is_paid ? 'Yes' : 'No' }}</td>
-                                        <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{{ $type->is_carry_forward ? 'Up to '.$type->max_carry_forward_days.' days' : 'No' }}</td>
-                                        <td class="px-6 py-3 text-sm text-right text-gray-700 dark:text-gray-300">{{ $type->leaves_count }}</td>
-                                        <td class="px-6 py-3 text-sm">
-                                            <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ $type->is_active ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' }}">{{ $type->is_active ? 'Active' : 'Inactive' }}</span>
-                                        </td>
-                                        <td class="px-6 py-3 text-sm text-right whitespace-nowrap">
-                                            @can('edit leave-types')
-                                                <a href="{{ route('leave-types.edit', $type) }}" class="text-yellow-700 dark:text-yellow-400 hover:underline">Edit</a>
-                                            @endcan
-                                            @can('delete leave-types')
-                                                @if($type->leaves_count === 0)
-                                                    <form action="{{ route('leave-types.destroy', $type) }}" method="POST" class="inline ml-3" data-confirm="Delete this leave type?">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="text-red-600 dark:text-red-300 hover:underline">Delete</button>
-                                                    </form>
-                                                @endif
-                                            @endcan
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="px-6 py-3">{{ $leaveTypes->links() }}</div>
-                @endif
+    <div class="space-y-3">
+        @if ($leaveTypes->isEmpty())
+            <div class="tbl-wrap">
+                <x-table.empty title="No leave types yet" text="Add the types of leave your staff can take, such as annual, sick or maternity leave.">
+                    @can('create leave-types')<a href="{{ route('leave-types.create') }}" class="btn-new">New kind of leave</a>@endcan
+                </x-table.empty>
             </div>
-        </div>
+        @else
+            <x-table caption="Leave types" class="hidden md:block">
+                <x-slot name="head">
+                    <x-table.th>Name</x-table.th>
+                    <x-table.th>Code</x-table.th>
+                    <x-table.th num>Days a year</x-table.th>
+                    <x-table.th>Paid</x-table.th>
+                    <x-table.th>Unused days</x-table.th>
+                    <x-table.th num>Requests</x-table.th>
+                    <x-table.th>Status</x-table.th>
+                    <th scope="col" class="tbl-menu"><span class="sr-only">Actions</span></th>
+                </x-slot>
+                @foreach ($leaveTypes as $type)
+                    <tr>
+                        <td><a href="{{ route('leave-types.show', $type) }}" class="tbl-link">{{ $type->name }}</a></td>
+                        <td class="{{ $type->code ? 'tbl-muted' : 'tbl-zero' }}">{{ $type->code ?: '—' }}</td>
+                        <td class="num">{{ $type->days_per_year }}</td>
+                        <td class="tbl-muted">{{ $type->is_paid ? 'Paid' : 'Unpaid' }}</td>
+                        <td class="tbl-muted">{{ $type->is_carry_forward ? 'Carried over'.($type->max_carry_forward_days ? ' (up to '.$type->max_carry_forward_days.')' : '') : 'Lost at year end' }}</td>
+                        <td class="num {{ $type->leaves_count ? '' : 'tbl-zero' }}">{{ $type->leaves_count ?: '—' }}</td>
+                        <td><x-status-badge :status="$type->is_active ? 'active' : 'inactive'" /></td>
+                        <td class="tbl-menu">
+                            <x-table.dropdown :sr-label="'Actions for '.$type->name">
+                                <x-table.menu-item :href="route('leave-types.show', $type)">View</x-table.menu-item>
+                                @can('edit leave-types')<x-table.menu-item :href="route('leave-types.edit', $type)">Edit</x-table.menu-item>@endcan
+                                @if (! $type->leaves_count)
+                                    @can('delete leave-types')<x-table.menu-item :post="route('leave-types.destroy', $type)" method="DELETE" :confirm="'Delete '.$type->name.'?'" danger>Delete</x-table.menu-item>@endcan
+                                @endif
+                            </x-table.dropdown>
+                        </td>
+                    </tr>
+                @endforeach
+            </x-table>
+            <ul class="space-y-2 md:hidden" aria-label="Leave types">
+                @foreach ($leaveTypes as $type)
+                    <li>
+                        <x-table.card :href="route('leave-types.show', $type)" :title="$type->name" :amount="$type->days_per_year.' days'" :meta="($type->is_paid ? 'Paid' : 'Unpaid').' · '.$type->leaves_count.' requests'">
+                            @if (! $type->is_active)
+                                <x-slot name="badge"><x-status-badge status="inactive" /></x-slot>
+                            @endif
+                        </x-table.card>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+        <x-table.footer :rows="$leaveTypes" links />
     </div>
 </x-app-layout>

@@ -398,8 +398,9 @@ class PayrollController extends Controller
             });
         }
 
-        $perPage = in_array($request->input('per_page'), [10, 15, 25, 50]) ? (int) $request->input('per_page') : 15;
-        $payrolls = $query->paginate($perPage)->withQueryString();
+        // Tables plan T7: 25 rows per page like every other list, in a steady order.
+        $perPage = in_array((int) $request->input('per_page'), [10, 25, 50, 100], true) ? (int) $request->input('per_page') : 25;
+        $payrolls = $query->orderBy('id')->paginate($perPage)->withQueryString();
 
         $departments = Department::orderBy('name')->pluck('name', 'id');
 

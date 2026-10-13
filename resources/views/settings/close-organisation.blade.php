@@ -1,8 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Close Organisation') }}
-        </h2>
+        <x-table.page-header title="Close organisation" />
     </x-slot>
 
     <div class="py-6">
@@ -20,7 +18,7 @@
                     <form method="POST" action="{{ route('settings.close-organisation.cancel') }}" class="mt-4">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-brand-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
+                        <button type="submit" class="btn-primary">
                             Cancel closing
                         </button>
                     </form>
@@ -57,7 +55,7 @@
                             <textarea name="reason" id="reason" rows="2"
                                 class="mt-1 w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm">{{ old('reason') }}</textarea>
                         </div>
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700">
+                        <button type="submit" class="btn-danger">
                             Close organisation
                         </button>
                     </form>

@@ -1,10 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                Notification Settings
-            </h2>
-        </div>
+        <x-table.page-header title="Notification settings" />
     </x-slot>
 
     <div class="py-12">
@@ -262,7 +258,7 @@
                     <!-- Submit Button -->
                     <div class="flex justify-end">
                         <button type="submit"
-                            class="inline-flex justify-center rounded-md border border-transparent bg-brand-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+                            class="btn-primary">
                             Save Settings
                         </button>
                     </div>

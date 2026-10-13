@@ -1,16 +1,19 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Deductions') }}
-            </h2>
-            <a href="{{ route('deductions.create') }}" class="inline-flex items-center justify-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700 focus:bg-brand-700 active:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-                Add Deduction
-            </a>
-        </div>
+        <x-table.page-header title="Deductions" description="Amounts taken off pay, such as pension or a staff loan. Add them to salary structures.">
+            <x-slot name="more">
+                <x-table.menu-item :href="route('salary-structures.index')">Salary structures</x-table.menu-item>
+                <x-table.menu-item :href="route('allowances.index')">Allowances</x-table.menu-item>
+            </x-slot>
+            <x-slot name="actions">
+                @can('create payroll')
+                    <a href="{{ route('deductions.create') }}" class="btn-new">
+                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 4a1 1 0 011 1v4h4a1 1 0 110 2h-4v4a1 1 0 11-2 0v-4H5a1 1 0 110-2h4V5a1 1 0 011-1z"/></svg>
+                        New deduction
+                    </a>
+                @endcan
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <livewire:deductions.deductions-table />

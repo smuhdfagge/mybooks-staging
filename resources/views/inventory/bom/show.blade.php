@@ -1,28 +1,28 @@
 @php
-    $btn = 'inline-flex items-center justify-center px-3 py-2 border rounded-md font-semibold text-xs uppercase tracking-widest transition';
-    $secondary = $btn.' bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600';
+    $btn = 'btn-secondary';
+    $secondary = 'btn-secondary';
     $fmt = fn ($v) => rtrim(rtrim(number_format((float) $v, 4), '0'), '.');
     $unit = $bom->item?->unit ? ' '.$bom->item->unit : '';
     $canBuild = $bom->is_active && auth()->user()->can('adjust inventory');
 @endphp
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div class="flex flex-wrap items-center gap-3">
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">{{ $bom->label() }}</h2>
-                <x-status-badge :status="$bom->is_active ? 'active' : 'draft'" :label="$bom->is_active ? 'In use' : 'Not in use'" />
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
-                @if($canBuild)
-                    <a href="{{ route('assembly-orders.create', ['bill' => $bom->id]) }}" class="btn-primary">Build</a>
-                    <a href="{{ route('assembly-orders.create', ['bill' => $bom->id, 'kind' => 'breakdown']) }}" class="{{ $secondary }}">Break down</a>
-                @endif
+        <x-table.page-header :title="$bom->label()" description="Bill of materials">
+            <x-slot name="badge"><x-status-badge :status="$bom->is_active ? 'active' : 'draft'" :label="$bom->is_active ? 'In use' : 'Not in use'" /></x-slot>
+            @if ($canBuild)
+                <x-slot name="more">
+                    <x-table.menu-item :href="route('assembly-orders.create', ['bill' => $bom->id, 'kind' => 'breakdown'])">Break down</x-table.menu-item>
+                </x-slot>
+            @endif
+            <x-slot name="actions">
                 @can('edit items')
-                    <a href="{{ route('bill-of-materials.edit', $bom) }}" class="{{ $secondary }}">Edit</a>
+                    <a href="{{ route('bill-of-materials.edit', $bom) }}" class="btn-secondary">Edit</a>
                 @endcan
-                <a href="{{ route('bill-of-materials.index') }}" class="{{ $secondary }}">All bills</a>
-            </div>
-        </div>
+                @if ($canBuild)
+                    <a href="{{ route('assembly-orders.create', ['bill' => $bom->id]) }}" class="btn-new">Build</a>
+                @endif
+            </x-slot>
+        </x-table.page-header>
     </x-slot>
 
     <div class="py-6">
@@ -38,46 +38,44 @@
                             </p>
 
                             <h3 class="text-base font-medium text-gray-900 dark:text-gray-100 mt-6 mb-2">Components per batch</h3>
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                                    <thead><tr class="text-xs uppercase text-gray-500 dark:text-gray-400">
-                                        <th class="px-3 py-2 text-left">Item</th>
-                                        <th class="px-3 py-2 text-right">Quantity</th>
-                                        <th class="px-3 py-2 text-right hidden sm:table-cell">Wastage</th>
-                                        <th class="px-3 py-2 text-right hidden sm:table-cell">Cost each</th>
-                                        <th class="px-3 py-2 text-right">Est. cost</th>
-                                    </tr></thead>
-                                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700 text-gray-900 dark:text-gray-100">
+                            <x-table caption="Components per batch">
+<x-slot name="head">
+                                        <x-table.th>Item</x-table.th>
+                                        <x-table.th num>Quantity</x-table.th>
+                                        <x-table.th num class="hidden sm:table-cell">Wastage</x-table.th>
+                                        <x-table.th num class="hidden sm:table-cell">Cost each</x-table.th>
+                                        <x-table.th num>Est. cost</x-table.th>
+</x-slot>
+
                                         @foreach($estimate['lines'] as $row)
                                             @php $line = $row['line']; $lineUnit = $line->item?->unit ? ' '.$line->item->unit : ''; @endphp
                                             <tr>
-                                                <td class="px-3 py-2"><a href="{{ route('inventory.show', $line->item_id) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $line->item?->name }}</a>
+                                                <td><a href="{{ route('inventory.show', $line->item_id) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $line->item?->name }}</a>
                                                     @if((float) $line->waste_percentage > 0)<span class="sm:hidden block text-xs text-gray-500 dark:text-gray-400">+{{ $fmt($line->waste_percentage) }}% wastage</span>@endif
                                                 </td>
-                                                <td class="px-3 py-2 text-right whitespace-nowrap">{{ $fmt($line->quantity) }}{{ $lineUnit }}</td>
-                                                <td class="px-3 py-2 text-right hidden sm:table-cell">{{ (float) $line->waste_percentage > 0 ? $fmt($line->waste_percentage).'%' : '—' }}</td>
-                                                <td class="px-3 py-2 text-right whitespace-nowrap hidden sm:table-cell">@money($row['unit_cost'])</td>
-                                                <td class="px-3 py-2 text-right whitespace-nowrap">@money($row['cost'])</td>
+                                                <td class="num">{{ $fmt($line->quantity) }}{{ $lineUnit }}</td>
+                                                <td class="num hidden sm:table-cell">{{ (float) $line->waste_percentage > 0 ? $fmt($line->waste_percentage).'%' : '—' }}</td>
+                                                <td class="num hidden sm:table-cell">@fig($row['unit_cost'], false)</td>
+                                                <td class="num">@fig($row['cost'], false)</td>
                                             </tr>
                                         @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
+</x-table>
 
                             @if($bom->costs->isNotEmpty())
                                 <h3 class="text-base font-medium text-gray-900 dark:text-gray-100 mt-6 mb-2">Extra costs per batch</h3>
-                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700 text-gray-900 dark:text-gray-100">
+                                <x-table caption="Extra costs per batch">
+<x-slot name="head">
+</x-slot>
+                                    
                                         @foreach($bom->costs as $cost)
                                             <tr>
-                                                <td class="px-3 py-2">{{ $cost->description }}
+                                                <td>{{ $cost->description }}
                                                     <span class="block text-xs text-gray-500 dark:text-gray-400">Credited to {{ $cost->account ? $cost->account->account_code.' '.$cost->account->name : 'Production Costs Applied' }}</span>
                                                 </td>
-                                                <td class="px-3 py-2 text-right whitespace-nowrap">@money($cost->amount)</td>
+                                                <td class="num">@fig($cost->amount, false)</td>
                                             </tr>
                                         @endforeach
-                                    </tbody>
-                                </table>
+</x-table>
                             @endif
                         </div>
                     </x-card>
@@ -116,7 +114,7 @@
                                     @else
                                         <span>{{ $order->order_number }}</span>
                                     @endcan
-                                    <span class="text-gray-500 dark:text-gray-400">{{ $order->assembly_date?->format('M d, Y') }}</span>
+                                    <span class="text-gray-500 dark:text-gray-400">{{ $order->assembly_date?->format('j M Y') }}</span>
                                     <x-status-badge :status="$order->status" />
                                 </div>
                             @empty
