@@ -221,21 +221,6 @@
                         <a href="mailto:support@my-books.cloud" class="text-brand-600 dark:text-brand-300 font-medium hover:underline">support@my-books.cloud</a>
                     </div>
 
-                    <!-- Live Chat -->
-                    <div class="text-center p-8 bg-gray-50 dark:bg-gray-800 rounded-2xl">
-                        <div class="w-16 h-16 bg-brand-100 dark:bg-brand-900/40 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <svg class="w-8 h-8 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Live Chat</h3>
-                        <p class="text-gray-600 dark:text-gray-400 mb-4">Chat with our team in real-time</p>
-                        <button @click="if(typeof Tawk_API !== 'undefined') Tawk_API.maximize()" class="inline-flex items-center px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-700 transition font-medium">
-                            <span class="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></span>
-                            Start Chat Now
-                        </button>
-                    </div>
-
                     <!-- Phone Support -->
                     <div class="text-center p-8 bg-gray-50 dark:bg-gray-800 rounded-2xl">
                         <div class="w-16 h-16 bg-brand-100 dark:bg-brand-900/40 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -305,6 +290,5 @@
 
         @include('partials.public-footer', ['active' => 'support'])
 
-        @include('partials.tawk-to')
     </body>
 </html>

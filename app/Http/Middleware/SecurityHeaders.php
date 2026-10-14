@@ -92,9 +92,9 @@ class SecurityHeaders
             "script-src 'nonce-{$nonce}' 'strict-dynamic' 'unsafe-eval' 'unsafe-inline' https:",
             "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
             "font-src 'self' data:", // IBM Plex Sans is bundled (rebrand R1/R11)
-            "img-src 'self' data: blob: https://*.tawk.to",
-            "connect-src 'self' https://*.tawk.to wss://*.tawk.to",
-            "frame-src 'self' https://*.tawk.to",
+            "img-src 'self' data: blob:",
+            "connect-src 'self'",
+            "frame-src 'self'",
             "frame-ancestors 'self'",
             "base-uri 'self'",
             "form-action 'self'",

@@ -600,7 +600,7 @@ class PhaseDApiOpsTest extends TestCase
     public function test_o7_privacy_page_lists_sub_processors_and_admins_see_the_request_log(): void
     {
         $this->get(route('privacy-policy'))->assertOk()
-            ->assertSee('Sub-processors')->assertSee('Paystack')->assertSee('Tawk.to')->assertSee('Email delivery provider');
+            ->assertSee('Sub-processors')->assertSee('Paystack')->assertDontSee('Tawk.to')->assertSee('Email delivery provider');
 
         [$tenant, $owner] = $this->businessWithData();
         DataRequest::record('access', $tenant, $owner);

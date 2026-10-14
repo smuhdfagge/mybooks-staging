@@ -83,21 +83,6 @@
                                 </div>
                             </div>
 
-                            <!-- Live Chat -->
-                            <div class="flex items-start space-x-4">
-                                <div class="flex-shrink-0 w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center">
-                                    <svg class="w-6 h-6 text-orange-700 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 class="font-semibold text-gray-900 dark:text-white">Live Chat</h3>
-                                    <p class="text-gray-600 dark:text-gray-400">Chat with our support team.</p>
-                                    <button @click="if(typeof Tawk_API !== 'undefined') Tawk_API.maximize()" class="text-brand-600 dark:text-brand-300 hover:underline font-medium mt-1">
-                                        Start a chat now &rarr;
-                                    </button>
-                                </div>
-                            </div>
                         </div>
 
                         <!-- Social Links -->
@@ -289,7 +274,7 @@
                             </svg>
                         </button>
                         <div x-show="openFaq === 4" x-collapse class="px-6 pb-4">
-                            <p class="text-gray-600 dark:text-gray-400">We offer multiple support channels including email support, live chat, and phone support during business hours. Premium plans also include priority support with faster response times.</p>
+                            <p class="text-gray-600 dark:text-gray-400">We offer email support and phone support during business hours. Premium plans also include priority support with faster response times.</p>
                         </div>
                     </div>
                 </div>
@@ -298,6 +283,5 @@
 
         @include('partials.public-footer', ['active' => 'contact'])
 
-        @include('partials.tawk-to')
     </body>
 </html>

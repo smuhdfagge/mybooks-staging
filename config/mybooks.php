@@ -62,19 +62,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Tawk.to Live Chat
-    |--------------------------------------------------------------------------
-    |
-    | Set your Tawk.to widget embed URL to enable live chat across the site.
-    | Leave empty or set to null to disable. Find your URL at:
-    | https://dashboard.tawk.to → Administration → Chat Widget → Direct Chat Link
-    |
-    */
-
-    'tawk_to_url' => env('TAWK_TO_URL', 'https://embed.tawk.to/69c5485632b9fc1c3eedc710/1jkla551e'),
-
-    /*
-    |--------------------------------------------------------------------------
     | Sub-processors (finding O7)
     |--------------------------------------------------------------------------
     |
@@ -91,7 +78,6 @@ return [
         ['name' => 'Meta Platforms (WhatsApp)', 'purpose' => 'Delivering WhatsApp messages to customers who use WhatsApp', 'location' => 'United States / Ireland'],
         ['name' => 'Mono (Connect Technologies Ltd)', 'purpose' => 'Reading a business\'s own bank account transactions and balance, only when the business links the account (MyBooks never sees or stores bank login details; only the last 4 digits of the account number are kept)', 'location' => 'Nigeria'],
         ['name' => 'Nigeria Revenue Service (NRS)', 'purpose' => 'Receiving a business\'s invoices and credit notes (business and customer names, TINs, addresses, line items and amounts) for e-invoicing, only when the business switches e-invoicing on and submits a document', 'location' => 'Nigeria'],
-        ['name' => 'Tawk.to Inc.', 'purpose' => 'Live chat support on the website and app', 'location' => 'United States'],
         ['name' => 'Hosting provider', 'purpose' => 'Servers, database and file storage, and backups', 'location' => 'Varies by provider'],
     ],
 
