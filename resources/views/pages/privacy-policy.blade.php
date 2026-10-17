@@ -1,25 +1,10 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Privacy Policy - {{ config('app.name', 'MyBooks') }}</title>
-        <meta name="description" content="Privacy Policy for MyBooks - Learn how we collect, use, store, and protect your personal and business data.">
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <style>
-            .gradient-text { color: #1F4E79; }
-        .dark .gradient-text { color: #8AA9CB; }
-        </style>
-    </head>
-    <body class="bg-white dark:bg-gray-900 antialiased" x-data="{ mobileMenuOpen: false }">
-        
-        @include('partials.public-nav', ['active' => 'privacy-policy'])
+<x-public.layout title="Privacy policy" description="How MyBooks collects, uses, stores and protects your personal and business data.">
 
         <!-- Hero Section -->
-        <section class="pt-32 pb-12 px-4 sm:px-6 lg:px-8 bg-brand-50 dark:bg-gray-900">
+        <section class="pt-14 pb-12 lg:pt-20 px-4 sm:px-6 lg:px-8 bg-brand-50 dark:bg-gray-900">
             <div class="max-w-4xl mx-auto text-center">
-                <h1 class="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-                    Privacy <span class="gradient-text">Policy</span>
+                <h1 class="font-serif text-4xl lg:text-5xl font-semibold text-gray-900 dark:text-white mb-4">
+                    Privacy policy
                 </h1>
                 <p class="text-gray-600 dark:text-gray-400">
                     <strong>MyBooks</strong> (my-books.cloud)<br>
@@ -35,7 +20,7 @@
                     
                     <!-- Section 1 -->
                     <div class="mb-12">
-                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <h2 class="font-serif text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                             <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">1</span>
                             Introduction
                         </h2>
@@ -48,7 +33,7 @@
 
                     <!-- Section 2 -->
                     <div class="mb-12">
-                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <h2 class="font-serif text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                             <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">2</span>
                             Information We Collect
                         </h2>
@@ -90,7 +75,7 @@
 
                     <!-- Section 3 -->
                     <div class="mb-12">
-                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <h2 class="font-serif text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                             <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">3</span>
                             How We Use Information
                         </h2>
@@ -112,7 +97,7 @@
 
                     <!-- Section 4 -->
                     <div class="mb-12">
-                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <h2 class="font-serif text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                             <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">4</span>
                             Data Privacy and Confidentiality
                         </h2>
@@ -139,7 +124,7 @@
 
                     <!-- Section 5 -->
                     <div class="mb-12">
-                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <h2 class="font-serif text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                             <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">5</span>
                             Employee Conduct and Data Handling
                         </h2>
@@ -160,7 +145,7 @@
 
                     <!-- Section 6 -->
                     <div class="mb-12">
-                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <h2 class="font-serif text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                             <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">6</span>
                             Data Sharing and Third Parties
                         </h2>
@@ -194,7 +179,7 @@
 
                     <!-- Section 7 -->
                     <div class="mb-12">
-                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <h2 class="font-serif text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                             <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">7</span>
                             Data Retention
                         </h2>
@@ -211,7 +196,7 @@
 
                     <!-- Section 8 -->
                     <div class="mb-12">
-                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <h2 class="font-serif text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                             <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">8</span>
                             User Rights
                         </h2>
@@ -253,7 +238,7 @@
 
                     <!-- Section 9 -->
                     <div class="mb-12">
-                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <h2 class="font-serif text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                             <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">9</span>
                             Cookies and System Monitoring
                         </h2>
@@ -270,7 +255,7 @@
 
                     <!-- Section 10 -->
                     <div class="mb-12">
-                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <h2 class="font-serif text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                             <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">10</span>
                             Complaints and Concerns
                         </h2>
@@ -287,7 +272,7 @@
 
                     <!-- Section 11 -->
                     <div class="mb-12">
-                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <h2 class="font-serif text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                             <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">11</span>
                             Changes to This Policy
                         </h2>
@@ -299,7 +284,7 @@
 
                     <!-- Section 12 -->
                     <div class="mb-12">
-                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <h2 class="font-serif text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                             <span class="w-8 h-8 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center mr-3 text-brand-600 dark:text-brand-300 text-sm font-bold">12</span>
                             Contact Information
                         </h2>
@@ -323,8 +308,4 @@
                 </div>
             </div>
         </section>
-
-        @include('partials.public-footer', ['active' => 'privacy-policy'])
-
-    </body>
-</html>
+</x-public.layout>
