@@ -41,27 +41,27 @@
                                 We set out to create a solution that combines powerful features with an intuitive interface, making professional-grade accounting accessible to everyone.
                             </p>
                             <p>
-                                Today, MyBooks helps thousands of businesses manage their finances effortlessly, from invoicing and inventory to payroll and financial reporting.
+                                Today, MyBooks covers the whole job: invoicing and stock, purchases and payroll, Nigerian VAT, WHT, PAYE and pension, and the financial reports your accountant needs.
                             </p>
                         </div>
                     </div>
                     <div class="bg-brand-100 dark:bg-brand-900/30 rounded-2xl p-8">
                         <div class="grid grid-cols-2 gap-6">
                             <div class="text-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-                                <div class="text-3xl font-bold text-brand-600 dark:text-brand-300">10K+</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Active Users</div>
+                                <div class="text-3xl font-bold text-brand-600 dark:text-brand-300">₦</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Prices and figures in naira</div>
                             </div>
                             <div class="text-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-                                <div class="text-3xl font-bold text-brand-600 dark:text-brand-300">2</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Countries</div>
+                                <div class="text-3xl font-bold text-brand-600 dark:text-brand-300">VAT, WHT, PAYE</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Nigerian tax built in</div>
                             </div>
                             <div class="text-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-                                <div class="text-3xl font-bold text-brand-600 dark:text-brand-300">Over 10k</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Invoices Created</div>
+                                <div class="text-3xl font-bold text-brand-600 dark:text-brand-300">28</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Financial and payroll reports</div>
                             </div>
                             <div class="text-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-                                <div class="text-3xl font-bold text-brand-600 dark:text-brand-300">99.9%</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Uptime</div>
+                                <div class="text-3xl font-bold text-brand-600 dark:text-brand-300">Up to 50</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">People on one account</div>
                             </div>
                         </div>
                     </div>
@@ -98,7 +98,7 @@
                         </div>
                         <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Security</h3>
                         <p class="text-gray-600 dark:text-gray-400">
-                            Your financial data deserves the highest protection. We employ enterprise-grade security measures to keep your data safe.
+                            Your records travel over an encrypted connection, two-step sign-in is available to every user, and each person sees only what their role allows.
                         </p>
                     </div>
                     <div class="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-sm">
@@ -142,7 +142,7 @@
                         </div>
                         <div>
                             <h3 class="font-semibold text-gray-900 dark:text-white mb-1">Easy to Use</h3>
-                            <p class="text-gray-600 dark:text-gray-400">Intuitive interface that requires no accounting expertise.</p>
+                            <p class="text-gray-600 dark:text-gray-400">Plain words and clear screens, so daily work does not need an accountant.</p>
                         </div>
                     </div>
                     <div class="flex items-start space-x-4">
@@ -152,8 +152,8 @@
                             </svg>
                         </div>
                         <div>
-                            <h3 class="font-semibold text-gray-900 dark:text-white mb-1">Affordable Pricing</h3>
-                            <p class="text-gray-600 dark:text-gray-400">Professional features at a fraction of the cost of enterprise solutions.</p>
+                            <h3 class="font-semibold text-gray-900 dark:text-white mb-1">Prices in naira</h3>
+                            <p class="text-gray-600 dark:text-gray-400">Plans in naira, priced for Nigerian businesses.</p>
                         </div>
                     </div>
                     <div class="flex items-start space-x-4">
@@ -163,8 +163,8 @@
                             </svg>
                         </div>
                         <div>
-                            <h3 class="font-semibold text-gray-900 dark:text-white mb-1">Excellent Support</h3>
-                            <p class="text-gray-600 dark:text-gray-400">Dedicated customer support team ready to help you succeed.</p>
+                            <h3 class="font-semibold text-gray-900 dark:text-white mb-1">Help when you need it</h3>
+                            <p class="text-gray-600 dark:text-gray-400">Reach us by email or phone when you need help.</p>
                         </div>
                     </div>
                 </div>
@@ -175,17 +175,15 @@
         <section class="py-20 px-4 sm:px-6 lg:px-8 bg-brand-900">
             <div class="max-w-4xl mx-auto text-center">
                 <h2 class="text-3xl lg:text-4xl font-bold text-white mb-6">
-                    Ready to Transform Your Business?
+                    Ready to put your books in order?
                 </h2>
                 <p class="text-brand-100 text-lg mb-8">
-                    Join thousands of businesses that trust MyBooks for their accounting needs.
+                    See how MyBooks fits the way your business works.
                 </p>
                 <div class="flex flex-col sm:flex-row justify-center gap-4">
-                    @if (Route::has('register'))
-                        <a href="{{ route('register') }}" class="px-8 py-4 bg-white text-brand-600 rounded-lg hover:bg-gray-100 transition font-semibold shadow-lg">
-                            Get Started Free
-                        </a>
-                    @endif
+                    <a href="{{ route('home') }}#pricing" class="px-8 py-4 bg-white text-brand-600 rounded-lg hover:bg-gray-100 transition font-semibold shadow-lg">
+                        Choose a plan
+                    </a>
                     <a href="{{ route('home') }}#features" class="px-8 py-4 bg-transparent text-white border-2 border-white rounded-lg hover:bg-white/10 transition font-semibold">
                         Explore Features
                     </a>
