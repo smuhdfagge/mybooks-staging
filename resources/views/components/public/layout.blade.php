@@ -24,8 +24,9 @@
         <title>{{ $title ? $title.' · MyBooks' : 'MyBooks' }}</title>
         <meta name="description" content="{{ $description }}">
         @include('partials.pwa-head')
-        @isset($head){{ $head }}@endisset
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        {{-- Page extras after the main stylesheet, so they win a tie. --}}
+        @isset($head){{ $head }}@endisset
         <style>[x-cloak] { display: none !important; }</style>
     </head>
     <body class="bg-white text-gray-900 antialiased dark:bg-gray-900 dark:text-gray-100" x-data="{ mobileMenuOpen: false }" @keydown.escape.window="mobileMenuOpen = false">

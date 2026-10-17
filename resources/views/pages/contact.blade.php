@@ -115,7 +115,7 @@
                             </div>
                         @endif
 
-                        <form action="{{ route('contact.submit') }}" method="POST" class="space-y-6">
+                        <form id="contact-form" action="{{ route('contact.submit') }}" method="POST" class="space-y-6 scroll-mt-24">
                             @csrf
                             <input type="hidden" name="_form_loaded_at" value="{{ now()->timestamp }}">
 
@@ -176,14 +176,16 @@
                                 <label for="subject" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Subject</label>
                                 <select name="subject" id="subject" required
                                     class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent transition" @error('subject') aria-invalid="true" aria-describedby="subject-error" @enderror>
+                                    @php($pickedSubject = old('subject', request()->query('subject')))
                                     <option value="">Select a subject</option>
-                                    <option value="general">General Inquiry</option>
-                                    <option value="support">Technical Support</option>
-                                    <option value="sales">Sales Question</option>
-                                    <option value="billing">Billing Issue</option>
-                                    <option value="feedback">Feedback</option>
-                                    <option value="partnership">Partnership Opportunity</option>
-                                    <option value="other">Other</option>
+                                    <option value="demo" @selected($pickedSubject === 'demo')>Book a demo</option>
+                                    <option value="general" @selected($pickedSubject === 'general')>General Inquiry</option>
+                                    <option value="support" @selected($pickedSubject === 'support')>Technical Support</option>
+                                    <option value="sales" @selected($pickedSubject === 'sales')>Sales Question</option>
+                                    <option value="billing" @selected($pickedSubject === 'billing')>Billing Issue</option>
+                                    <option value="feedback" @selected($pickedSubject === 'feedback')>Feedback</option>
+                                    <option value="partnership" @selected($pickedSubject === 'partnership')>Partnership Opportunity</option>
+                                    <option value="other" @selected($pickedSubject === 'other')>Other</option>
                                 </select>
                                 @error('subject')
                                     <p id="subject-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
