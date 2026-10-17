@@ -159,7 +159,7 @@
 
                             <h3 id="sub-processors" class="mt-6 text-lg font-semibold text-gray-900 dark:text-white">Sub-processors</h3>
                             <p>These companies process personal data on our behalf:</p>
-                            <x-table caption="Sub-processors">
+                            <x-table caption="Sub-processors" :focusable="true">
 <x-slot name="head">
                                             <x-table.th>Sub-processor</x-table.th>
                                             <x-table.th>What for</x-table.th>

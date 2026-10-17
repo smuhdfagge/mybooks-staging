@@ -184,7 +184,7 @@
 
                             <p class="text-sm text-gray-500 dark:text-gray-400 text-center">
                                 By submitting this form, you agree to our 
-                                <a href="{{ route('privacy-policy') }}" class="text-brand-600 dark:text-brand-300 hover:underline">privacy policy</a>.
+                                <a href="{{ route('privacy-policy') }}" class="text-brand-600 dark:text-brand-300 underline">privacy policy</a>.
                             </p>
                         </form>
                     </div>

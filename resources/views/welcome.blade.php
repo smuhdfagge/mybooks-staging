@@ -132,8 +132,8 @@
                 <p class="hero-note"><strong>Prices in naira.</strong> Pay through Paystack.@if ($maxUsers > 1) Up to {{ $maxUsers }} people on one account.@endif</p>
             </div>
 
-            <div class="scene" data-scene data-cash-from="4218400" data-amount="1531875" data-paid-text="+₦1,531,875.00 from Danjuma Foods"
-                role="img" aria-label="Example: an invoice is sent, the customer is reminded {{ $remindVia }}, and the payment arrives in the bank.">
+            <div class="scene" data-scene data-cash-from="4218400" data-amount="1531875" data-paid-text="+₦1,531,875.00 from Danjuma Foods">
+                <p class="sr-only">Example: an invoice is sent, the customer is reminded {{ $remindVia }}, and the payment arrives in the bank.</p>
                 <div class="panel inv" aria-hidden="true">
                     <div class="inv-top">
                         <div><div class="inv-no">Invoice INV-0142</div><div class="inv-to">Danjuma Foods, due 14 Oct 2026</div></div>

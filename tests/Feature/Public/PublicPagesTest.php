@@ -53,4 +53,16 @@ class PublicPagesTest extends TestCase
             ->assertSee(route('contact', ['subject' => 'demo']).'#contact-form', false)
             ->assertSee('<option value="demo"', false);
     }
+
+    public function test_accessibility_fixes_from_the_go_live_check_stay_in(): void
+    {
+        // The opening scene holds a button, so it must not be one picture (role="img").
+        $this->get(route('home'))->assertOk()
+            ->assertDontSee('role="img" aria-label="Example: an invoice', false)
+            ->assertSee('<p class="sr-only">Example: an invoice is sent', false);
+
+        // The privacy policy's wide table can be scrolled from the keyboard.
+        $this->get(route('privacy-policy'))->assertOk()
+            ->assertSee('tabindex="0" role="region" aria-label="Sub-processors"', false);
+    }
 }
