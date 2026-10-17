@@ -184,7 +184,7 @@
 
                             <p class="text-sm text-gray-500 dark:text-gray-400 text-center">
                                 By submitting this form, you agree to our 
-                                <a href="{{ route('privacy-policy') }}" class="text-brand-600 dark:text-brand-300 hover:underline">privacy policy</a>.
+                                <a href="{{ route('privacy-policy') }}" class="text-brand-600 dark:text-brand-300 underline">privacy policy</a>.
                             </p>
                         </form>
                     </div>
@@ -197,61 +197,38 @@
             <div class="max-w-4xl mx-auto">
                 <div class="text-center mb-12">
                     <h2 class="font-serif text-3xl font-semibold text-gray-900 dark:text-white mb-4">Questions people ask</h2>
-                    <p class="text-gray-600 dark:text-gray-300">Can't find what you're looking for? Contact our support team.</p>
+                    <p class="text-gray-600 dark:text-gray-300">Not here? Send us a message above.</p>
                 </div>
 
-                <div class="space-y-4" x-data="{ openFaq: null }">
-                    <!-- FAQ 1 -->
-                    <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm">
-                        <button @click="openFaq = openFaq === 1 ? null : 1" class="w-full px-6 py-4 text-left flex items-center justify-between">
-                            <span class="font-semibold text-gray-900 dark:text-white">How do I get started with MyBooks?</span>
-                            <svg class="w-5 h-5 text-gray-500 transition-transform" :class="{ 'rotate-180': openFaq === 1 }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </button>
-                        <div x-show="openFaq === 1" x-collapse class="px-6 pb-4">
-                            <p class="text-gray-600 dark:text-gray-400">Choose a plan, create your account and pay through Paystack. A getting-started list on your dashboard then shows the first steps: your business details, bank accounts, and your first customers and items.</p>
-                        </div>
-                    </div>
-
-                    <!-- FAQ 2 -->
-                    <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm">
-                        <button @click="openFaq = openFaq === 2 ? null : 2" class="w-full px-6 py-4 text-left flex items-center justify-between">
-                            <span class="font-semibold text-gray-900 dark:text-white">Is my data secure with MyBooks?</span>
-                            <svg class="w-5 h-5 text-gray-500 transition-transform" :class="{ 'rotate-180': openFaq === 2 }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </button>
-                        <div x-show="openFaq === 2" x-collapse class="px-6 pb-4">
-                            <p class="text-gray-600 dark:text-gray-400">Yes. Your records travel over an encrypted connection (HTTPS), each business's records are kept apart, and every user can turn on two-step sign-in. We do not sell your data; the few outside services MyBooks uses to run (such as payments and email) are listed in our Privacy Policy for more details.</p>
-                        </div>
-                    </div>
-
-                    <!-- FAQ 3 -->
-                    <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm">
-                        <button @click="openFaq = openFaq === 3 ? null : 3" class="w-full px-6 py-4 text-left flex items-center justify-between">
-                            <span class="font-semibold text-gray-900 dark:text-white">Can I import data from other accounting software?</span>
-                            <svg class="w-5 h-5 text-gray-500 transition-transform" :class="{ 'rotate-180': openFaq === 3 }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </button>
-                        <div x-show="openFaq === 3" x-collapse class="px-6 pb-4">
-                            <p class="text-gray-600 dark:text-gray-400">Yes! MyBooks supports importing data from various formats including CSV and Excel. You can easily migrate your customers, vendors, items, and historical transactions from other accounting systems.</p>
-                        </div>
-                    </div>
-
-                    <!-- FAQ 4 -->
-                    <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm">
-                        <button @click="openFaq = openFaq === 4 ? null : 4" class="w-full px-6 py-4 text-left flex items-center justify-between">
-                            <span class="font-semibold text-gray-900 dark:text-white">What support options are available?</span>
-                            <svg class="w-5 h-5 text-gray-500 transition-transform" :class="{ 'rotate-180': openFaq === 4 }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </button>
-                        <div x-show="openFaq === 4" x-collapse class="px-6 pb-4">
-                            <p class="text-gray-600 dark:text-gray-400">We offer email support and phone support during business hours. Premium plans also include priority support with faster response times.</p>
-                        </div>
-                    </div>
+                <div class="space-y-4">
+                    <details class="group rounded-xl bg-white shadow-sm dark:bg-gray-900">
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 rounded-xl px-6 py-4 font-semibold text-gray-900 focus-ring dark:text-white [&::-webkit-details-marker]:hidden">
+                            <span>How do I get started with MyBooks?</span>
+                            <svg class="h-5 w-5 flex-shrink-0 text-gray-500 transition-transform group-open:rotate-180 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <p class="px-6 pb-5 text-gray-600 dark:text-gray-300">Choose a plan, create your account and pay through Paystack. A getting-started list on your dashboard then shows the first steps: your business details, bank accounts, and your first customers and items.</p>
+                    </details>
+                    <details class="group rounded-xl bg-white shadow-sm dark:bg-gray-900">
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 rounded-xl px-6 py-4 font-semibold text-gray-900 focus-ring dark:text-white [&::-webkit-details-marker]:hidden">
+                            <span>Is my data secure with MyBooks?</span>
+                            <svg class="h-5 w-5 flex-shrink-0 text-gray-500 transition-transform group-open:rotate-180 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <p class="px-6 pb-5 text-gray-600 dark:text-gray-300">Your records travel over an encrypted connection (HTTPS), each business's records are kept apart, and every user can turn on two-step sign-in. We do not sell your data. The few outside services MyBooks uses to run, such as payments and email, are listed in our <a href="{{ route('privacy-policy') }}" class="font-medium text-brand-600 underline dark:text-brand-300">privacy policy</a>.</p>
+                    </details>
+                    <details class="group rounded-xl bg-white shadow-sm dark:bg-gray-900">
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 rounded-xl px-6 py-4 font-semibold text-gray-900 focus-ring dark:text-white [&::-webkit-details-marker]:hidden">
+                            <span>Can I bring in data from other accounting software?</span>
+                            <svg class="h-5 w-5 flex-shrink-0 text-gray-500 transition-transform group-open:rotate-180 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <p class="px-6 pb-5 text-gray-600 dark:text-gray-300">Yes. Upload a spreadsheet of your customers, suppliers, items, chart of accounts, opening balances, invoices, bills, expenses, employees, journals or budgets. MyBooks shows you each column before it saves.</p>
+                    </details>
+                    <details class="group rounded-xl bg-white shadow-sm dark:bg-gray-900">
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 rounded-xl px-6 py-4 font-semibold text-gray-900 focus-ring dark:text-white [&::-webkit-details-marker]:hidden">
+                            <span>How can I get help?</span>
+                            <svg class="h-5 w-5 flex-shrink-0 text-gray-500 transition-transform group-open:rotate-180 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <p class="px-6 pb-5 text-gray-600 dark:text-gray-300">By email or phone, Monday to Friday from 8am to 5pm. The details are at the top of this page.</p>
+                    </details>
                 </div>
             </div>
         </section>

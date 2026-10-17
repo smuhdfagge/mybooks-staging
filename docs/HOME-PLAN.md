@@ -48,8 +48,8 @@ from H2 onwards goes live before H6.
 | H2 | Foundations | 7, 9 | `home/h2-foundations` | Done, PR #68 | `x-public.layout`, `x-public.nav`, `x-public.footer` (not used by a page until H3/H4); IBM Plex Serif bundled for headings; `x-public.pricing` with a monthly/yearly switch, read from the plans table by `PublicPlans`; `LiveFeatures` says if SMS, WhatsApp, bank feeds and e-invoicing are really live. The guard test that the home page's prices match the table comes with H3, when the home page starts using the block. |
 | H3 | The new home page | 1, 3, 4, 8, 10, 11, 12 | `home/h3-home` | Done, PR #70 | All ten sections, on the shared layout. Scene and tour in `resources/js/home.js` (plays once when seen, reduced motion respected, arrow keys on the tabs); styles in `resources/css/home.css`. SMS, WhatsApp, bank feeds and e-invoicing wording follow `LiveFeatures`; with nothing live the page says "by email" and shows e-invoicing as "Being prepared". "Book a demo" opens the contact form with a new "Book a demo" subject picked. |
 | H4 | Matching pages and the demo | 2, 5, 6 | `home/h4-pages` | Done, PR #71 | About, Contact, Support, Privacy and Terms on the shared layout (old `partials/public-nav` and `public-footer` removed). About rewritten in plain words, user limit from the plans table. Contact: "Book a demo" box, dead social links and the "within 24 hours" promise removed. Support: sentence case, no reply-time promise. Privacy and Terms: layout only, legal wording unchanged (decisions 5 and 6 left as the defaults). |
-| H5 | Search, sharing and speed | none | `home/h5-search` | To do | Page titles and descriptions, share picture for WhatsApp and Facebook, structured data (product, prices in naira, questions), sitemap and robots, image sizes, speed check on a phone. |
-| H6 | Checks and go-live | none | `home/h6-golive` | To do | Readability, phone, keyboard and speed checks on every public page; merge `home/main` into `main`; front-end build zip. |
+| H5 | Search, sharing and speed | none | `home/h5-search` | Done, PR #72 | Canonical address and share tags on every public page; share picture `public/images/share/mybooks-share.png` (1200 x 630, rebuilt with `scripts/share-image/build.mjs`); structured data on the home page (organisation, product with prices in naira from the plans table, the questions on the page); `/sitemap.xml` and `/robots.txt` generated (static robots.txt removed). Public pages load `public.js` (Alpine only, 44 KB) instead of the app script (350 KB): home page on a slow phone 742 KB to 441 KB, first paint 2.4 s to 1.6 s. Contact questions now open without a script. |
+| H6 | Checks and go-live | none | `home/h6-golive` | Done, PR #74 | Accessibility check (axe, WCAG 2.1 A and AA) on all public pages, light, dark and phone: 3 findings fixed, now 0. Keyboard: every stop shows a focus ring. Plans click through to sign-up with the plan and cycle picked. Every public page 350 to 440 KB and first paint 1.4 to 1.7 s on a slow phone. Brings H5 into `main` (PR #73 went in before #72). Front-end build zip sent. |
 | H7 | Measure (4 weeks) | none | none | To do | Clicks on "Choose a plan" and "Book a demo", payments finished, phone scrolling, tour tabs opened; a short report. |
 
 ## Decisions (from section 11 of the plan)
@@ -70,3 +70,21 @@ Unanswered decisions use the default shown, and the session report says so.
 | 10 | Tour pictures | Drawn tables |
 | 11 | Help moving data in | Not offered on the page |
 | 12 | SMS, WhatsApp, bank feeds live with real keys | Shown only when switched on and keys set |
+
+## Go-live (H6)
+
+1. Merge the H6 pull request into `main`.
+2. On the server: `bash scripts/deploy.sh` (it pulls `main`, which also
+   removes the old static `public/robots.txt`).
+3. Upload the front-end build zip and unzip it over `public/build`. The
+   new pages need it: `public.js`, `home.js` and `home.css` are new files.
+4. In the server's `.env`, `APP_URL` must be the address people use
+   (`https://staging.mybooks.cloud` for now), then run
+   `php artisan config:cache`. Page addresses, the sitemap and the share
+   pictures are built from it.
+5. Check: the home page, `/robots.txt`, `/sitemap.xml`, and a link pasted
+   into WhatsApp shows the share picture. (WhatsApp keeps old previews for
+   a while; Facebook's Sharing Debugger refreshes them.)
+6. If the staging address should not appear in Google, say so: robots.txt
+   currently lets search engines in.
+

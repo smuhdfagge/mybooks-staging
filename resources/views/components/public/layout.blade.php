@@ -7,13 +7,18 @@
     </x-public.layout>
 
     A title of null gives just "MyBooks". Pass :nav="false" / :footer="false"
-    to leave either out.
+    to leave either out. Every page gets a canonical address and share tags
+    (H5); pass :schema="[...]" for structured data.
 --}}
 @props([
     'title' => null,
     'description' => 'MyBooks is accounting software for Nigerian businesses: invoices, VAT, WHT, PAYE, payroll, stock and reports, with prices in naira.',
     'nav' => true,
     'footer' => true,
+    // Share picture for WhatsApp, Facebook, X and LinkedIn (1200 x 630).
+    'image' => 'images/share/mybooks-share.png',
+    // Structured data for search engines (an array, written as JSON-LD).
+    'schema' => null,
 ])
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
@@ -21,10 +26,34 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         @include('partials.theme-init')
-        <title>{{ $title ? $title.' · MyBooks' : 'MyBooks' }}</title>
+        @php
+            $fullTitle = $title ? $title.' · MyBooks' : 'MyBooks';
+            $canonical = url()->current();
+            $shareImage = str_starts_with($image, 'http') ? $image : asset($image);
+        @endphp
+        <title>{{ $fullTitle }}</title>
         <meta name="description" content="{{ $description }}">
+        <link rel="canonical" href="{{ $canonical }}">
+        <meta property="og:type" content="website">
+        <meta property="og:site_name" content="MyBooks">
+        <meta property="og:locale" content="en_NG">
+        <meta property="og:title" content="{{ $fullTitle }}">
+        <meta property="og:description" content="{{ $description }}">
+        <meta property="og:url" content="{{ $canonical }}">
+        <meta property="og:image" content="{{ $shareImage }}">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:alt" content="MyBooks: invoices out, money in, tax worked out.">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="{{ $fullTitle }}">
+        <meta name="twitter:description" content="{{ $description }}">
+        <meta name="twitter:image" content="{{ $shareImage }}">
+        @if ($schema)
+            <script type="application/ld+json" nonce="{{ app('csp-nonce') }}">{!! json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
+        @endif
         @include('partials.pwa-head')
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        {{-- public.js is Alpine only; the app's own script is not needed here (H5). --}}
+        @vite(['resources/css/app.css', 'resources/js/public.js'])
         {{-- Page extras after the main stylesheet, so they win a tie. --}}
         @isset($head){{ $head }}@endisset
         <style>[x-cloak] { display: none !important; }</style>

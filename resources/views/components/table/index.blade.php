@@ -10,10 +10,13 @@
     On a list, add class="hidden md:block" and give phones <x-table.card>s.
     A line-item editor passes table-class="line-items": on a phone each row
     becomes a card (see app.css).
+    A table that may scroll sideways where it has no links or buttons to
+    reach it by (a public page) passes :focusable="true", so keyboard users
+    can scroll it too.
 --}}
-@props(['caption' => null, 'tableClass' => null])
+@props(['caption' => null, 'tableClass' => null, 'focusable' => false])
 <div {{ $attributes->merge(['class' => 'tbl-wrap']) }}>
-    <div class="tbl-scroll">
+    <div class="tbl-scroll" @if ($focusable) tabindex="0" role="region" aria-label="{{ $caption ?? 'Table' }}" @endif>
         <table class="{{ trim('tbl '.$tableClass) }}">
             @if ($caption)<caption class="sr-only">{{ $caption }}</caption>@endif
             <thead><tr>{{ $head }}</tr></thead>
