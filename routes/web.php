@@ -50,6 +50,7 @@ use App\Http\Controllers\PaymentReceivedController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\PayrollLiabilityController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicSiteController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\RecurrentBillController;
@@ -93,6 +94,10 @@ use Illuminate\Support\Str;
 Route::get('/', function () {
     return view('welcome');
 })->name('home');
+
+// Search-engine files for the public pages (home page plan H5).
+Route::get('/sitemap.xml', [PublicSiteController::class, 'sitemap'])->name('sitemap');
+Route::get('/robots.txt', [PublicSiteController::class, 'robots'])->name('robots');
 
 Route::get('/about', function () {
     return view('pages.about');

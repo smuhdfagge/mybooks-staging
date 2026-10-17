@@ -1,0 +1,48 @@
+<!doctype html>
+<!--
+  The picture shown when a MyBooks link is shared on WhatsApp, Facebook,
+  X or LinkedIn (home page plan H5). 1200 x 630. Rebuild with:
+    node scripts/share-image/build.mjs
+  which writes public/images/share/mybooks-share.png.
+-->
+<html><head><meta charset="utf-8"><style>
+@font-face { font-family: "Plex Serif"; font-weight: 600; src: url(../../node_modules/@fontsource/ibm-plex-serif/files/ibm-plex-serif-latin-600-normal.woff2); }
+@font-face { font-family: "Plex Sans"; font-weight: 400; src: url(../../node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff2); }
+@font-face { font-family: "Plex Sans"; font-weight: 600; src: url(../../node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-600-normal.woff2); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1200px; height: 630px; background: #102A43; color: #fff; font-family: "Plex Sans", sans-serif; position: relative; overflow: hidden; }
+.left { position: absolute; left: 72px; top: 64px; width: 640px; }
+.brand { display: flex; align-items: center; gap: 16px; font: 600 40px "Plex Sans"; }
+h1 { font: 600 64px/1.08 "Plex Serif"; margin-top: 56px; letter-spacing: -.5px; }
+p { font-size: 26px; line-height: 1.45; color: #B4C8DD; margin-top: 28px; }
+.rule { position: absolute; left: 72px; bottom: 64px; width: 640px; height: 9px; border-top: 3px solid #D79E36; border-bottom: 3px solid #D79E36; }
+.card { position: absolute; right: 64px; top: 120px; width: 380px; background: #fff; color: #13202E; border-radius: 18px; padding: 28px; box-shadow: 0 24px 48px -16px rgba(0,0,0,.5); font-size: 20px; }
+.row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #D6DEE8; }
+.top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.no { font-weight: 600; font-size: 22px; }
+.pill { background: #DDF1E6; color: #1E7A4F; font-weight: 600; font-size: 17px; padding: 4px 14px; border-radius: 99px; }
+.total { display: flex; justify-content: space-between; padding-top: 14px; margin-top: 4px; border-top: 2px solid #C0841A; font-weight: 600; }
+.muted { color: #4A5A6B; }
+.cash { position: absolute; right: 120px; top: 430px; width: 300px; background: #EEF3F8; color: #13202E; border-radius: 16px; padding: 20px 24px; box-shadow: 0 24px 48px -16px rgba(0,0,0,.5); }
+.cash small { color: #4A5A6B; font-size: 17px; }
+.cash b { display: block; font-size: 30px; font-weight: 600; margin-top: 2px; }
+.cash i { font-style: normal; color: #1E7A4F; font-weight: 600; font-size: 17px; }
+</style></head><body>
+<div class="left">
+  <div class="brand">
+    <svg width="56" height="56" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#1F4E79"/><g fill="none" stroke-linecap="round"><path d="M17 17H47M17 26H39M17 35H43" stroke="#fff" stroke-width="5"/><path d="M17 45H47M17 51H47" stroke="#D79E36" stroke-width="3"/></g></svg>
+    MyBooks
+  </div>
+  <h1>Invoices out, money in, tax worked out.</h1>
+  <p>Accounting software for Nigerian businesses. VAT, WHT, PAYE and payroll. Prices in naira.</p>
+</div>
+<div class="rule"></div>
+<div class="card">
+  <div class="top"><span class="no">Invoice INV-0142</span><span class="pill">Paid</span></div>
+  <div class="row"><span>Rice 50kg</span><span>1,040,000.00</span></div>
+  <div class="row"><span>Groundnut oil 25L</span><span>385,000.00</span></div>
+  <div class="row muted"><span>VAT 7.5%</span><span>106,875.00</span></div>
+  <div class="total"><span>Total</span><span>₦1,531,875.00</span></div>
+</div>
+<div class="cash"><small>Cash in bank</small><b>₦5,750,275.00</b><i>+₦1,531,875.00</i></div>
+</body></html>
