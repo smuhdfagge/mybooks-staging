@@ -1,537 +1,359 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{{ config('app.name', 'MyBooks') }} - Complete Accounting & Bookkeeping Solution</title>
-        <meta name="description" content="Transform your business operations with MyBooks - a comprehensive accounting system for invoicing, inventory, payroll, expenses, and financial reporting.">
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <style>
-            [x-cloak] { display: none !important; }
-            .gradient-text { color: #1F4E79; }
-        .dark .gradient-text { color: #8AA9CB; }
-        </style>
-    </head>
-    <body class="bg-white dark:bg-gray-900 antialiased" x-data="{ mobileMenuOpen: false }">
-        
-        @include('partials.public-nav')
+{{--
+    The home page (home page plan H3), built from the sample design.
 
-        <!-- Hero Section -->
-        <section class="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-brand-50 dark:bg-gray-900">
-            <div class="max-w-7xl mx-auto">
-                <div class="grid lg:grid-cols-2 gap-12 items-center">
-                    <div class="space-y-8">
-                        <div class="inline-flex items-center px-4 py-2 bg-brand-100 dark:bg-brand-900/30 rounded-full">
-                            <span class="text-sm font-semibold text-brand-600 dark:text-brand-300">Complete Accounting Solution</span>
-                        </div>
-                        <h1 class="text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white leading-tight">
-                            Manage Your Business <span class="gradient-text">Finances</span> Effortlessly
-                        </h1>
-                        <p class="text-xl text-gray-600 dark:text-gray-300">
-                            MyBooks is a comprehensive accounting and bookkeeping system designed to streamline your day-to-day operations. From invoicing to payroll, inventory to financial reporting - we've got you covered.
-                        </p>
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            @if (Route::has('register'))
-                                <a href="{{ route('register') }}" class="px-8 py-4 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition font-semibold text-center shadow-lg hover:shadow-xl">
-                                    Get Started
-                                </a>
-                            @endif
-                            <a href="#how-it-works" class="px-8 py-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-2 border-gray-300 dark:border-gray-700 rounded-lg hover:border-brand-600 dark:hover:border-brand-400 transition font-semibold text-center">
-                                See How It Works
-                            </a>
-                        </div>
-                       
-                    </div>
-                    <div class="relative">
-                        <div class="bg-brand-900 rounded-2xl shadow-2xl p-8">
-                            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
-                                <div class="space-y-4">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">Revenue This Month</span>
-                                        <span class="text-green-700 text-sm font-semibold">+12.5%</span>
-                                    </div>
-                                    <div class="text-3xl font-bold text-gray-900 dark:text-white">₦5,239,343</div>
-                                    <div class="h-32 flex items-end gap-2 border-b border-gray-200" aria-hidden="true"><div class="flex-1 rounded-t bg-brand-200" style="height: 35%"></div><div class="flex-1 rounded-t bg-brand-200" style="height: 50%"></div><div class="flex-1 rounded-t bg-brand-200" style="height: 42%"></div><div class="flex-1 rounded-t bg-brand-300" style="height: 64%"></div><div class="flex-1 rounded-t bg-brand-300" style="height: 58%"></div><div class="flex-1 rounded-t bg-brand-500" style="height: 78%"></div><div class="flex-1 rounded-t bg-brand-600" style="height: 92%"></div></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+    Every claim here was checked in the code. Optional features (SMS,
+    WhatsApp, bank feeds, e-invoicing) are mentioned only while they are
+    really live (LiveFeatures), and prices and limits come from the plans
+    table (PublicPlans). The figures in the drawn tables are examples and are
+    labelled so.
+--}}
+@php
+    $live = app(\App\Support\PublicSite\LiveFeatures::class);
+    $plans = app(\App\Support\PublicSite\PublicPlans::class)->all();
+
+    $wa = $live->whatsapp();
+    $sms = $live->sms();
+    $feeds = $live->bankFeeds();
+    $nrs = $live->eInvoicing();
+
+    // How customers get reminded, in words, from what is really switched on.
+    $remindVia = match (true) {
+        $wa && $sms => 'on WhatsApp or by SMS',
+        $wa => 'on WhatsApp',
+        $sms => 'by SMS',
+        default => 'by email',
+    };
+    $channels = array_merge(['email'], $sms ? ['SMS'] : [], $wa ? ['WhatsApp'] : []);
+    $channelList = count($channels) > 1
+        ? implode(', ', array_slice($channels, 0, -1)).' and '.end($channels)
+        : $channels[0];
+    $reminder = $wa
+        ? ['dot' => 'W', 'head' => 'WhatsApp reminder, sent by MyBooks']
+        : ($sms ? ['dot' => 'S', 'head' => 'SMS reminder, sent by MyBooks'] : ['dot' => '@', 'head' => 'Email reminder, sent by MyBooks']);
+
+    $maxUsers = (int) $plans->max('users');
+
+    // "Yearly costs the same as ten months", only when that is true of every
+    // plan that offers both.
+    $both = $plans->filter(fn ($p) => $p['monthly'] !== null && $p['annual'] !== null);
+    $months = $both->map(fn ($p) => round($p['annual'] / $p['monthly'], 2))->unique();
+    $yearlyNote = $both->isNotEmpty() && $months->count() === 1 && fmod((float) $months->first(), 1.0) === 0.0 && $months->first() < 12
+        ? 'Yearly costs the same as '.\Illuminate\Support\Number::spell((int) $months->first()).' months.'
+        : null;
+    $cycleNote = match (true) {
+        $plans->isNotEmpty() && $plans->every(fn ($p) => $p['annual_only']) => 'Paid yearly.',
+        $plans->isNotEmpty() && $plans->every(fn ($p) => $p['monthly_only']) => 'Paid monthly.',
+        default => 'Pay monthly or yearly.',
+    };
+
+    $demoUrl = route('contact', ['subject' => 'demo']).'#contact-form';
+    $check = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+@endphp
+
+<x-public.layout
+    title="Accounting software for Nigerian businesses"
+    description="Invoices, VAT, WHT, PAYE, payroll, stock and reports for Nigerian businesses, in one place. Prices in naira, paid through Paystack."
+    class="mb-home">
+    <x-slot:head>
+        @vite(['resources/css/home.css', 'resources/js/home.js'])
+    </x-slot:head>
+
+    {{-- 1. Opening scene --}}
+    <section class="hero" aria-labelledby="home-title">
+        <div class="wrap">
+            <div>
+                <h1 id="home-title">Invoices out, money in, tax worked out.</h1>
+                <p class="lede">MyBooks is accounting software for Nigerian businesses. Send invoices, remind customers {{ $remindVia }}, keep your stock right and pay your staff. Your VAT, WHT, PAYE and pension figures are ready when they fall due.</p>
+                <div class="hero-cta">
+                    <a class="btn btn-main" href="#pricing">Choose a plan</a>
+                    <a class="btn btn-quiet" href="{{ $demoUrl }}">Book a demo</a>
                 </div>
+                <p class="hero-note"><strong>Prices in naira.</strong> Pay through Paystack.@if ($maxUsers > 1) Up to {{ $maxUsers }} people on one account.@endif</p>
             </div>
-        </section>
 
-        <!-- Features Overview -->
-        <section id="features" class="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-900">
-            <div class="max-w-7xl mx-auto">
-                <div class="text-center mb-16">
-                    <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">Everything You Need to Run Your Business</h2>
-                    <p class="text-xl text-gray-600 dark:text-gray-300">Powerful features designed for modern businesses</p>
+            <div class="scene" data-scene data-cash-from="4218400" data-amount="1531875" data-paid-text="+₦1,531,875.00 from Danjuma Foods"
+                role="img" aria-label="Example: an invoice is sent, the customer is reminded {{ $remindVia }}, and the payment arrives in the bank.">
+                <div class="panel inv" aria-hidden="true">
+                    <div class="inv-top">
+                        <div><div class="inv-no">Invoice INV-0142</div><div class="inv-to">Danjuma Foods, due 14 Oct 2026</div></div>
+                        <span class="pill paid" data-scene-pill>Paid</span>
+                    </div>
+                    <table>
+                        <thead><tr><th>Item</th><th class="n">Qty</th><th class="n">Amount</th></tr></thead>
+                        <tbody>
+                            <tr><td>Rice 50kg</td><td class="n">20</td><td class="n">1,040,000.00</td></tr>
+                            <tr><td>Groundnut oil 25L</td><td class="n">10</td><td class="n">385,000.00</td></tr>
+                            <tr><td>VAT 7.5%</td><td class="n"></td><td class="n">106,875.00</td></tr>
+                        </tbody>
+                        <tfoot><tr><td>Total</td><td></td><td class="n">₦1,531,875.00</td></tr></tfoot>
+                    </table>
                 </div>
-                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <!-- Feature Cards -->
-                    <div class="group p-6 bg-gray-50 dark:bg-gray-800 rounded-xl hover:shadow-xl transition duration-300 border border-gray-200 dark:border-gray-700 hover:border-brand-500 dark:hover:border-brand-400">
-                        <div class="w-12 h-12 bg-brand-100 dark:bg-brand-900/40 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition">
-                            <svg class="w-6 h-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        </div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Invoicing & Billing</h3>
-                        <p class="text-gray-600 dark:text-gray-300">Create professional invoices, track payments, and manage customer billing with ease. Send invoices via email and generate PDFs instantly.</p>
-                    </div>
 
-                    <div class="group p-6 bg-gray-50 dark:bg-gray-800 rounded-xl hover:shadow-xl transition duration-300 border border-gray-200 dark:border-gray-700 hover:border-brand-500 dark:hover:border-brand-400">
-                        <div class="w-12 h-12 bg-brand-100 dark:bg-brand-900/40 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition">
-                            <svg class="w-6 h-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                        </div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Inventory Management</h3>
-                        <p class="text-gray-600 dark:text-gray-300">Track stock levels, manage items and categories, view inventory history, and get low-stock alerts to prevent shortages.</p>
-                    </div>
-
-                    <div class="group p-6 bg-gray-50 dark:bg-gray-800 rounded-xl hover:shadow-xl transition duration-300 border border-gray-200 dark:border-gray-700 hover:border-brand-500 dark:hover:border-brand-400">
-                        <div class="w-12 h-12 bg-brand-100 dark:bg-brand-900/40 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition">
-                            <svg class="w-6 h-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                        </div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Expense Tracking</h3>
-                        <p class="text-gray-600 dark:text-gray-300">Record and categorize expenses, manage vendor bills, and set up recurring expenses for automated tracking.</p>
-                    </div>
-
-                    <div class="group p-6 bg-gray-50 dark:bg-gray-800 rounded-xl hover:shadow-xl transition duration-300 border border-gray-200 dark:border-gray-700 hover:border-brand-500 dark:hover:border-brand-400">
-                        <div class="w-12 h-12 bg-brand-100 dark:bg-brand-900/40 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition">
-                            <svg class="w-6 h-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                        </div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Payroll Management</h3>
-                        <p class="text-gray-600 dark:text-gray-300">Manage employee records, departments, designations, process payroll, and track leave requests all in one place.</p>
-                    </div>
-
-                    <div class="group p-6 bg-gray-50 dark:bg-gray-800 rounded-xl hover:shadow-xl transition duration-300 border border-gray-200 dark:border-gray-700 hover:border-brand-500 dark:hover:border-brand-400">
-                        <div class="w-12 h-12 bg-brand-100 dark:bg-brand-900/40 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition">
-                            <svg class="w-6 h-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                        </div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Financial Reporting</h3>
-                        <p class="text-gray-600 dark:text-gray-300">Generate comprehensive financial reports, track journal entries, manage chart of accounts, and gain insights into your business performance.</p>
-                    </div>
-
-                    <div class="group p-6 bg-gray-50 dark:bg-gray-800 rounded-xl hover:shadow-xl transition duration-300 border border-gray-200 dark:border-gray-700 hover:border-brand-500 dark:hover:border-brand-400">
-                        <div class="w-12 h-12 bg-brand-100 dark:bg-brand-900/40 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition">
-                            <svg class="w-6 h-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
-                        </div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Sales Management</h3>
-                        <p class="text-gray-600 dark:text-gray-300">Create sales orders, receipts, track payments received, manage customers, and convert orders to invoices seamlessly.</p>
-                    </div>
+                <div class="panel remind" aria-hidden="true">
+                    <div class="remind-head"><span class="remind-dot">{{ $reminder['dot'] }}</span>{{ $reminder['head'] }}</div>
+                    <div class="bubble">Good morning Danjuma Foods. Invoice <b>INV-0142</b> for <b>₦1,531,875.00</b> was due on 14 Oct. You can pay to Access Bank 0123456789. Thank you, Kano Traders.<small>09:02</small></div>
                 </div>
+
+                <div class="panel cash" aria-hidden="true">
+                    <div class="cash-label">Cash in bank</div>
+                    <div class="cash-fig" data-scene-cash>₦5,750,275.00</div>
+                    <div class="cash-in" data-scene-cash-in>+₦1,531,875.00 from Danjuma Foods</div>
+                    <div class="spark"><i class="h40"></i><i class="h52"></i><i class="h46"></i><i class="h61"></i><i class="h55"></i><i class="h58 h92" data-scene-bar></i></div>
+                </div>
+                <button class="replay" type="button" data-scene-replay hidden>Play again</button>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- How It Works -->
-        <section id="how-it-works" class="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-800">
-            <div class="max-w-7xl mx-auto">
-                <div class="text-center mb-16">
-                    <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">How MyBooks Supports Your Daily Operations</h2>
-                    <p class="text-xl text-gray-600 dark:text-gray-300">From setup to success in 4 simple steps</p>
-                </div>
-                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    <div class="text-center">
-                        <div class="w-16 h-16 bg-brand-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">1</div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Create Account</h3>
-                        <p class="text-gray-600 dark:text-gray-300">Sign up in seconds and set up your company profile with tenant-based multi-company support.</p>
-                    </div>
-                    <div class="text-center">
-                        <div class="w-16 h-16 bg-brand-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">2</div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Configure Settings</h3>
-                        <p class="text-gray-600 dark:text-gray-300">Set up your chart of accounts, add items, customers, vendors, and employees to get started.</p>
-                    </div>
-                    <div class="text-center">
-                        <div class="w-16 h-16 bg-brand-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">3</div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Daily Operations</h3>
-                        <p class="text-gray-600 dark:text-gray-300">Create invoices, track expenses, manage inventory, process payroll, and record transactions daily.</p>
-                    </div>
-                    <div class="text-center">
-                        <div class="w-16 h-16 bg-brand-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">4</div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Generate Reports</h3>
-                        <p class="text-gray-600 dark:text-gray-300">Get real-time insights with comprehensive financial reports and analytics to make informed decisions.</p>
-                    </div>
-                </div>
+    {{-- 2. Four facts --}}
+    <div class="facts">
+        <ul>
+            <li><strong>Built for Nigeria</strong>VAT, WHT, PAYE and pension rules</li>
+            <li><strong>Everything in one place</strong>Sales, purchases, stock, payroll, reports</li>
+            <li><strong>Works on your phone</strong>Check money owed from anywhere</li>
+            <li><strong>Your data is yours</strong>Download a full copy any time</li>
+        </ul>
+    </div>
+
+    {{-- 3. Product tour --}}
+    <section class="section" id="tour" aria-labelledby="tour-title">
+        <div class="wrap">
+            <div class="section-head">
+                <h2 id="tour-title">The day-to-day work, done in one place</h2>
+                <p>Pick a part of your business to see what MyBooks does for it.</p>
             </div>
-        </section>
-
-        <!-- Modules Breakdown -->
-        <section id="modules" class="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-900">
-            <div class="max-w-7xl mx-auto">
-                <div class="text-center mb-16">
-                    <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">Comprehensive Business Modules</h2>
-                    <p class="text-xl text-gray-600 dark:text-gray-300">All the tools you need in one integrated platform</p>
+            <div class="tour">
+                <div class="tabs" role="tablist" aria-label="Parts of the business" data-tour-tabs>
+                    <button type="button" class="tab" role="tab" aria-selected="true" aria-controls="p-sell" id="t-sell"><strong>Selling and getting paid</strong><span>Quotes, invoices, receipts, reminders</span></button>
+                    <button type="button" class="tab" role="tab" aria-selected="false" aria-controls="p-buy" id="t-buy" tabindex="-1"><strong>Buying and bills</strong><span>Purchase orders, bills, supplier payments</span></button>
+                    <button type="button" class="tab" role="tab" aria-selected="false" aria-controls="p-stock" id="t-stock" tabindex="-1"><strong>Stock and warehouses</strong><span>Every bag and carton, in every store</span></button>
+                    <button type="button" class="tab" role="tab" aria-selected="false" aria-controls="p-pay" id="t-pay" tabindex="-1"><strong>Staff and payroll</strong><span>Payslips, PAYE, pension, leave</span></button>
+                    <button type="button" class="tab" role="tab" aria-selected="false" aria-controls="p-rep" id="t-rep" tabindex="-1"><strong>Reports</strong><span>Profit, cash, what you owe and are owed</span></button>
                 </div>
-                
-                <div class="space-y-12">
-                    <!-- Sales Module -->
-                    <div class="grid lg:grid-cols-2 gap-8 items-center">
-                        <div class="space-y-4">
-                            <div class="inline-block px-4 py-2 bg-brand-100 dark:bg-brand-900/30 rounded-full">
-                                <span class="text-sm font-semibold text-brand-600 dark:text-brand-300">Sales Module</span>
-                            </div>
-                            <h3 class="text-3xl font-bold text-gray-900 dark:text-white">Complete Sales Cycle Management</h3>
-                            <p class="text-lg text-gray-600 dark:text-gray-300">Manage your entire sales process from quotes to payment collection.</p>
-                            <ul class="space-y-3">
-                                <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                    <div><strong class="text-gray-900 dark:text-white">Customer Management:</strong> <span class="text-gray-600 dark:text-gray-300">Track customer information, purchase history, and outstanding balances</span></div>
-                                </li>
-                                <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                    <div><strong class="text-gray-900 dark:text-white">Sales Orders:</strong> <span class="text-gray-600 dark:text-gray-300">Create, confirm, and convert sales orders to invoices automatically</span></div>
-                                </li>
-                                <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                    <div><strong class="text-gray-900 dark:text-white">Invoicing:</strong> <span class="text-gray-600 dark:text-gray-300">Generate professional invoices, send via email, download PDFs, and track payment status</span></div>
-                                </li>
-                                <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                    <div><strong class="text-gray-900 dark:text-white">Payment Tracking:</strong> <span class="text-gray-600 dark:text-gray-300">Record payments received, manage partial payments, and reconcile accounts</span></div>
-                                </li>
-                            </ul>
-                        </div>
-                        <div class="bg-brand-900 rounded-2xl p-8 shadow-2xl">
-                            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 space-y-4">
-                                <div class="flex justify-between items-center pb-4 border-b border-gray-200 dark:border-gray-700">
-                                    <span class="font-semibold text-gray-900 dark:text-white">Invoice #INV-2024-001</span>
-                                    <span class="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm">Paid</span>
-                                </div>
-                                <div class="space-y-2 text-sm">
-                                    <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Customer:</span><span class="text-gray-900 dark:text-white font-medium">Muhammad Abdullahi</span></div>
-                                    <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Date:</span><span class="text-gray-900 dark:text-white">Dec 13, 2025</span></div>
-                                    <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Amount:</span><span class="text-gray-900 dark:text-white font-semibold">₦249,450.00</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- Purchases Module -->
-                    <div class="grid lg:grid-cols-2 gap-8 items-center">
-                        <div class="bg-brand-900 rounded-2xl p-8 shadow-2xl lg:order-1 order-2">
-                            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 space-y-4">
-                                <div class="flex justify-between items-center pb-4 border-b border-gray-200 dark:border-gray-700">
-                                    <span class="font-semibold text-gray-900 dark:text-white">Bill #BILL-2024-089</span>
-                                    <span class="px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-full text-sm">Pending</span>
-                                </div>
-                                <div class="space-y-2 text-sm">
-                                    <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Vendor:</span><span class="text-gray-900 dark:text-white font-medium">Onyx Investment Advisory Ltd</span></div>
-                                    <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Due Date:</span><span class="text-gray-900 dark:text-white">Dec 20, 2025</span></div>
-                                    <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Amount:</span><span class="text-gray-900 dark:text-white font-semibold">₦100,230.00</span></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="space-y-4 lg:order-2 order-1">
-                            <div class="inline-block px-4 py-2 bg-accent-100 dark:bg-accent-900/30 rounded-full">
-                                <span class="text-sm font-semibold text-accent-700 dark:text-accent-300">Purchases Module</span>
-                            </div>
-                            <h3 class="text-3xl font-bold text-gray-900 dark:text-white">Streamlined Purchase Management</h3>
-                            <p class="text-lg text-gray-600 dark:text-gray-300">Control your spending and manage vendor relationships effectively.</p>
-                            <ul class="space-y-3">
-                                <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                    <div><strong class="text-gray-900 dark:text-white">Vendor Management:</strong> <span class="text-gray-600 dark:text-gray-300">Maintain vendor database with contact info and payment terms</span></div>
-                                </li>
-                                <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                    <div><strong class="text-gray-900 dark:text-white">Bills & Expenses:</strong> <span class="text-gray-600 dark:text-gray-300">Record vendor bills, one-time expenses, and recurring expenses automatically</span></div>
-                                </li>
-                                <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                    <div><strong class="text-gray-900 dark:text-white">Payment Processing:</strong> <span class="text-gray-600 dark:text-gray-300">Track payments made to vendors and reconcile accounts payable</span></div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <!-- Inventory Module -->
-                    <div class="grid lg:grid-cols-2 gap-8 items-center">
-                        <div class="space-y-4">
-                            <div class="inline-block px-4 py-2 bg-green-100 dark:bg-green-900/30 rounded-full">
-                                <span class="text-sm font-semibold text-green-700 dark:text-green-400">Inventory Module</span>
-                            </div>
-                            <h3 class="text-3xl font-bold text-gray-900 dark:text-white">Real-Time Inventory Control</h3>
-                            <p class="text-lg text-gray-600 dark:text-gray-300">Never run out of stock or overstock with intelligent inventory tracking.</p>
-                            <ul class="space-y-3">
-                                <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                    <div><strong class="text-gray-900 dark:text-white">Item Management:</strong> <span class="text-gray-600 dark:text-gray-300">Manage products, SKUs, categories, pricing, and tax rates</span></div>
-                                </li>
-                                <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                    <div><strong class="text-gray-900 dark:text-white">Stock Tracking:</strong> <span class="text-gray-600 dark:text-gray-300">Monitor current stock levels, view inventory value, and track movement</span></div>
-                                </li>
-                                <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                    <div><strong class="text-gray-900 dark:text-white">Inventory Adjustments:</strong> <span class="text-gray-600 dark:text-gray-300">Adjust stock levels for damages, returns, or inventory counts with full audit trail</span></div>
-                                </li>
-                            </ul>
-                        </div>
-                        <div class="bg-brand-900 rounded-2xl p-8 shadow-2xl">
-                            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 space-y-4">
-                                <div class="pb-4 border-b border-gray-200 dark:border-gray-700">
-                                    <span class="font-semibold text-gray-900 dark:text-white">Laptop - Dell XPS 15</span>
-                                </div>
-                                <div class="space-y-2 text-sm">
-                                    <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">SKU:</span><span class="text-gray-900 dark:text-white font-medium">DXPS-15-001</span></div>
-                                    <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">In Stock:</span><span class="text-green-700 dark:text-green-400 font-semibold">11 units</span></div>
-                                    <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Reorder Level:</span><span class="text-gray-900 dark:text-white">20 units</span></div>
-                                    <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Value:</span><span class="text-gray-900 dark:text-white font-semibold">₦10,615,000</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- HR & Payroll Module -->
-                    <div class="grid lg:grid-cols-2 gap-8 items-center">
-                        <div class="bg-brand-900 rounded-2xl p-8 shadow-2xl lg:order-1 order-2">
-                            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 space-y-4">
-                                <div class="pb-4 border-b border-gray-200 dark:border-gray-700">
-                                    <span class="font-semibold text-gray-900 dark:text-white">Payroll - December 2025</span>
-                                </div>
-                                <div class="space-y-2 text-sm">
-                                    <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Total Employees:</span><span class="text-gray-900 dark:text-white font-medium">15</span></div>
-                                    <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Gross Payroll:</span><span class="text-gray-900 dark:text-white">₦484,500</span></div>
-                                    <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Deductions:</span><span class="text-gray-900 dark:text-white">₦85,675</span></div>
-                                    <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Net Payroll:</span><span class="text-gray-900 dark:text-white font-semibold">₦398,825</span></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="space-y-4 lg:order-2 order-1">
-                            <div class="inline-block px-4 py-2 bg-orange-100 dark:bg-orange-900/30 rounded-full">
-                                <span class="text-sm font-semibold text-orange-700 dark:text-orange-400">HR & Payroll Module</span>
-                            </div>
-                            <h3 class="text-3xl font-bold text-gray-900 dark:text-white">Comprehensive Employee Management</h3>
-                            <p class="text-lg text-gray-600 dark:text-gray-300">Manage your workforce and payroll with ease and accuracy.</p>
-                            <ul class="space-y-3">
-                                <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                    <div><strong class="text-gray-900 dark:text-white">Employee Records:</strong> <span class="text-gray-600 dark:text-gray-300">Store employee details, departments, designations, and employment history</span></div>
-                                </li>
-                                <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                    <div><strong class="text-gray-900 dark:text-white">Payroll Processing:</strong> <span class="text-gray-600 dark:text-gray-300">Calculate salaries, deductions, bonuses, and generate payslips automatically</span></div>
-                                </li>
-                                <li class="flex items-start gap-3">
-                                    <svg class="w-6 h-6 text-green-700 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                    <div><strong class="text-gray-900 dark:text-white">Leave Management:</strong> <span class="text-gray-600 dark:text-gray-300">Track leave types, requests, approvals, and employee leave balances</span></div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Financial Accounting Section -->
-        <section class="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-800">
-            <div class="max-w-7xl mx-auto">
-                <div class="text-center mb-16">
-                    <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">Advanced Financial Accounting</h2>
-                    <p class="text-xl text-gray-600 dark:text-gray-300">Professional-grade accounting features for complete financial control</p>
-                </div>
-                <div class="grid md:grid-cols-3 gap-8">
-                    <div class="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-lg">
-                        <div class="w-12 h-12 bg-brand-100 dark:bg-brand-900/40 rounded-lg flex items-center justify-center mb-4">
-                            <svg class="w-6 h-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                        </div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Chart of Accounts</h3>
-                        <p class="text-gray-600 dark:text-gray-300">Customizable chart of accounts with account types: assets, liabilities, equity, income, and expenses. Track every financial transaction accurately.</p>
-                    </div>
-                    <div class="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-lg">
-                        <div class="w-12 h-12 bg-brand-100 dark:bg-brand-900/40 rounded-lg flex items-center justify-center mb-4">
-                            <svg class="w-6 h-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-                        </div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Journal Entries</h3>
-                        <p class="text-gray-600 dark:text-gray-300">Record manual journal entries with debit and credit entries. Maintain complete audit trail of all financial transactions with date stamps and descriptions.</p>
-                    </div>
-                    <div class="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-lg">
-                        <div class="w-12 h-12 bg-brand-100 dark:bg-brand-900/40 rounded-lg flex items-center justify-center mb-4">
-                            <svg class="w-6 h-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        </div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Financial Reports</h3>
-                        <p class="text-gray-600 dark:text-gray-300">Generate profit & loss statements, balance sheets, cash flow reports, aged receivables, aged payables, and custom financial reports on demand.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Pricing Section -->
-        <section id="pricing" class="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-800">
-            <div class="max-w-7xl mx-auto">
-                <div class="text-center mb-16">
-                    <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">Simple, Transparent Pricing</h2>
-                    <p class="text-xl text-gray-600 dark:text-gray-300">Choose the perfect plan for your business needs</p>
-                </div>
-                <div class="grid md:grid-cols-3 gap-8">
-                    <!-- Starter Plan -->
-                    <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 hover:shadow-2xl transition">
-                        <div class="text-center">
-                            <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Starter</h3>
-                            <p class="text-gray-600 dark:text-gray-400 mb-6">Perfect for small businesses</p>
-                            <div class="mb-2">
-                                <span class="text-5xl font-bold text-gray-900 dark:text-white">₦25,000</span>
-                                <span class="text-gray-600 dark:text-gray-400">/month</span>
-                            </div>
-                            <p class="text-sm text-green-700 dark:text-green-400 mb-6">or ₦250,000/year (Save 17%)</p>
-                            <a href="{{ route('register', ['plan' => 'starter']) }}" class="block w-full px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition font-semibold">Get Started</a>
-                        </div>
-                        <ul class="mt-8 space-y-4">
-                            <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                <span class="text-gray-600 dark:text-gray-300">Up to 5 users</span>
-                            </li>
-                            <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                <span class="text-gray-600 dark:text-gray-300">All core features</span>
-                            </li>
-                            <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                <span class="text-gray-600 dark:text-gray-300">Invoicing & expenses</span>
-                            </li>
-                            <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                <span class="text-gray-600 dark:text-gray-300">Financial reports</span>
-                            </li>
-                            <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                <span class="text-gray-600 dark:text-gray-300">Email support</span>
-                            </li>
+                <div class="panel stage">
+                    <div role="tabpanel" id="p-sell" aria-labelledby="t-sell" tabindex="0">
+                        <h3>Know who owes you, and get it in</h3>
+                        <ul class="points">
+                            <li>Quote, sales order, delivery note, invoice: one record follows the sale.</li>
+                            <li>Payment reminders by {{ $channelList }}, and customer statements by email.</li>
+                            <li>Part payments, deposits, credit notes and refunds, all kept straight.</li>
                         </ul>
+                        <table class="mini">
+                            <thead><tr><th>Invoice</th><th class="hide-xs">Customer</th><th class="hide-sm">Due</th><th>Status</th><th class="n">Balance due</th></tr></thead>
+                            <tbody>
+                                <tr><td class="doc">INV-0142</td><td class="hide-xs">Danjuma Foods</td><td class="hide-sm">14 Oct 2026</td><td><span class="pill late">Overdue</span></td><td class="n">1,531,875.00</td></tr>
+                                <tr><td class="doc">INV-0141</td><td class="hide-xs">Hauwa Traders</td><td class="hide-sm">30 Oct 2026</td><td><span class="pill sent">Sent</span></td><td class="n">212,500.00</td></tr>
+                                <tr><td class="doc">INV-0139</td><td class="hide-xs">Bala Stores</td><td class="hide-sm">2 Oct 2026</td><td><span class="pill paid">Paid</span></td><td class="n">—</td></tr>
+                            </tbody>
+                        </table>
                     </div>
-
-                    <!-- Professional Plan -->
-                    <div class="bg-brand-900 rounded-2xl shadow-2xl p-8 transform md:scale-105 relative">
-                        <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-yellow-400 text-gray-900 px-4 py-1 rounded-full text-sm font-semibold">Most Popular</div>
-                        <div class="text-center">
-                            <h3 class="text-2xl font-bold text-white mb-2">Professional</h3>
-                            <p class="text-brand-100 mb-6">For growing businesses</p>
-                            <div class="mb-2">
-                                <span class="text-5xl font-bold text-white">₦50,000</span>
-                                <span class="text-brand-100">/month</span>
-                            </div>
-                            <p class="text-sm text-yellow-300 mb-6">Billed annually at ₦500,000/year</p>
-                            <a href="{{ route('register', ['plan' => 'professional']) }}" class="block w-full px-6 py-3 bg-white text-brand-600 rounded-lg hover:bg-gray-100 transition font-semibold">Get Started</a>
-                        </div>
-                        <ul class="mt-8 space-y-4">
-                            <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-yellow-300 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                <span class="text-white">Up to 15 users</span>
-                            </li>
-                            <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-yellow-300 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                <span class="text-white">All Starter features</span>
-                            </li>
-                            <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-yellow-300 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                <span class="text-white">HR & Payroll management</span>
-                            </li>
-                            <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-yellow-300 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                <span class="text-white">Advanced reporting & analytics</span>
-                            </li>
-                            <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-yellow-300 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                <span class="text-white">Priority support</span>
-                            </li>
+                    <div role="tabpanel" id="p-buy" aria-labelledby="t-buy" tabindex="0" hidden>
+                        <h3>Pay suppliers on time, and no more than you owe</h3>
+                        <ul class="points">
+                            <li>Purchase orders become bills when the goods arrive.</li>
+                            <li>WHT is worked out when you pay a supplier, and shown on the payment.</li>
+                            <li>Repeat bills like rent and internet are made for you on schedule.</li>
                         </ul>
+                        <table class="mini">
+                            <thead><tr><th>Bill</th><th class="hide-xs">Supplier</th><th class="hide-sm">Due</th><th>Status</th><th class="n">To pay</th></tr></thead>
+                            <tbody>
+                                <tr><td class="doc">BILL-0360</td><td class="hide-xs">Olam Nigeria</td><td class="hide-sm">24 Oct 2026</td><td><span class="pill sent">Unpaid</span></td><td class="n">298,635.00</td></tr>
+                                <tr><td class="doc">BILL-0359</td><td class="hide-xs">KEDCO</td><td class="hide-sm">23 Oct 2026</td><td><span class="pill sent">Unpaid</span></td><td class="n">100,190.00</td></tr>
+                                <tr><td class="doc">BILL-0342</td><td class="hide-xs">Flour Mills</td><td class="hide-sm">12 Sep 2026</td><td><span class="pill paid">Paid</span></td><td class="n">—</td></tr>
+                            </tbody>
+                        </table>
                     </div>
-
-                    <!-- Enterprise Plan -->
-                    <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 hover:shadow-2xl transition">
-                        <div class="text-center">
-                            <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Enterprise</h3>
-                            <p class="text-gray-600 dark:text-gray-400 mb-6">For large organizations</p>
-                            <div class="mb-2">
-                                <span class="text-5xl font-bold text-gray-900 dark:text-white">₦150,000</span>
-                                <span class="text-gray-600 dark:text-gray-400">/month</span>
-                            </div>
-                            <p class="text-sm text-green-700 dark:text-green-400 mb-6">or ₦1,500,000/year (Save 17%)</p>
-                            <a href="{{ route('register', ['plan' => 'enterprise']) }}" class="block w-full px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition font-semibold">Get Started</a>
-                        </div>
-                        <ul class="mt-8 space-y-4">
-                            <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                <span class="text-gray-600 dark:text-gray-300">Up to 50 users</span>
-                            </li>
-                            <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                <span class="text-gray-600 dark:text-gray-300">All Professional features</span>
-                            </li>
-                            <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                <span class="text-gray-600 dark:text-gray-300">Multi-branch support</span>
-                            </li>
-                            <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                <span class="text-gray-600 dark:text-gray-300">Custom integrations & API</span>
-                            </li>
-                            <li class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                <span class="text-gray-600 dark:text-gray-300">24/7 phone support</span>
-                            </li>
+                    <div role="tabpanel" id="p-stock" aria-labelledby="t-stock" tabindex="0" hidden>
+                        <h3>Stock that matches the shelf</h3>
+                        <ul class="points">
+                            <li>Stock goes down when you sell and up when goods arrive, in each warehouse.</li>
+                            <li>Move goods between stores with a stock transfer.</li>
+                            <li>Make products from parts with a bill of materials.</li>
                         </ul>
+                        <table class="mini">
+                            <thead><tr><th>Item</th><th class="n hide-xs">Kano</th><th class="n hide-sm">Kaduna</th><th class="n">In stock</th><th>Status</th></tr></thead>
+                            <tbody>
+                                <tr><td>Rice 50kg</td><td class="n hide-xs">80</td><td class="n hide-sm">40</td><td class="n">120</td><td><span class="pill paid">In stock</span></td></tr>
+                                <tr><td>Groundnut oil 25L</td><td class="n hide-xs">6</td><td class="n hide-sm">—</td><td class="n">6</td><td><span class="pill late">Running low</span></td></tr>
+                                <tr><td>Semovita 10kg</td><td class="n hide-xs">45</td><td class="n hide-sm">15</td><td class="n">60</td><td><span class="pill paid">In stock</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div role="tabpanel" id="p-pay" aria-labelledby="t-pay" tabindex="0" hidden>
+                        <h3>Payroll without the spreadsheet</h3>
+                        <ul class="points">
+                            <li>PAYE and pension worked out for each person from the current tax bands.</li>
+                            <li>Payslips for everyone in one download, and a bank file to pay salaries.</li>
+                            <li>Leave requests and approvals in the same place.</li>
+                        </ul>
+                        <table class="mini">
+                            <thead><tr><th>Employee</th><th class="n hide-sm">Gross</th><th class="n">PAYE</th><th class="n hide-sm">Pension</th><th class="n">Net pay</th></tr></thead>
+                            <tbody>
+                                <tr><td>Aisha Bello</td><td class="n hide-sm">195,000.00</td><td class="n">22,950.00</td><td class="n hide-sm">15,600.00</td><td class="n">156,450.00</td></tr>
+                                <tr><td>Chinedu Okafor</td><td class="n hide-sm">87,000.00</td><td class="n">4,550.00</td><td class="n hide-sm">6,960.00</td><td class="n">75,490.00</td></tr>
+                                <tr><td>Yusuf Ahmed</td><td class="n hide-sm">435,000.00</td><td class="n">63,000.00</td><td class="n hide-sm">34,800.00</td><td class="n">337,200.00</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div role="tabpanel" id="p-rep" aria-labelledby="t-rep" tabindex="0" hidden>
+                        <h3>See the business clearly, any day of the month</h3>
+                        <ul class="points">
+                            <li>Profit and loss, balance sheet, cash flow and trial balance, at any date.</li>
+                            <li>Who owes you and whom you owe, by how late it is.</li>
+                            <li>Print, or download as PDF or CSV for your accountant.</li>
+                        </ul>
+                        <table class="mini">
+                            <thead><tr><th>Profit and loss, Oct 2026</th><th class="n">This month</th><th class="n hide-sm">Last month</th></tr></thead>
+                            <tbody>
+                                <tr><td>Sales</td><td class="n">5,239,343.00</td><td class="n hide-sm">4,880,120.00</td></tr>
+                                <tr><td>Cost of goods sold</td><td class="n">(3,410,000.00)</td><td class="n hide-sm">(3,190,500.00)</td></tr>
+                                <tr><td>Running costs</td><td class="n">(1,102,700.00)</td><td class="n hide-sm">(1,045,300.00)</td></tr>
+                                <tr><td><b>Profit</b></td><td class="n"><b>726,643.00</b></td><td class="n hide-sm"><b>644,320.00</b></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="example">Example figures for a sample business.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {{-- 4. Nigerian tax --}}
+    <section class="section rules" id="rules" aria-labelledby="rules-title">
+        <div class="wrap">
+            <div class="section-head">
+                <h2 id="rules-title">Nigerian tax, already set up</h2>
+                <p>The rules are in MyBooks from day one, so the figures are there when your accountant or the tax office asks.</p>
+            </div>
+            <table class="ledger">
+                <thead><tr><th scope="col">Tax</th><th scope="col">What MyBooks does</th><th scope="col">Where you see it</th></tr></thead>
+                <tbody>
+                    <tr><td>VAT<small>7.5% on sales and purchases</small></td><td>Adds VAT to invoices and bills, and fills in your monthly VAT return from them.</td><td>VAT return (Form 002), ready to print</td></tr>
+                    <tr><td>Withholding tax<small>On supplier payments</small></td><td>Takes WHT off when you pay a supplier, groups it by tax authority, and tracks the WHT your customers take off you until you get the credit note.</td><td>WHT payable schedule and WHT credit notes</td></tr>
+                    <tr><td>PAYE and pension<small>Nigeria Tax Act 2025 bands</small></td><td>Works out each person's tax and pension every payroll run, and what the business pays on top.</td><td>Payslips, and the tax and pension to pay each month</td></tr>
+                    <tr><td>E-invoicing<small>NRS Merchant Buyer Solution</small></td>
+                        <td>@if ($nrs) Sends your invoices to the tax office's system once your business is set up for it. @else Sends your invoices to the tax office's system when your business is required to join.<br><span class="soon">Being prepared</span> @endif</td>
+                        <td>Settings, E-invoicing</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    {{-- 5. Owner and accountant --}}
+    <section class="section" id="accountants" aria-labelledby="acc-title">
+        <div class="wrap">
+            <div class="section-head">
+                <h2 id="acc-title">One set of books for you and your accountant</h2>
+            </div>
+            <div class="split">
+                <div>
+                    <h3>For the owner</h3>
+                    <p>Open MyBooks on your phone and see what needs you today.</p>
+                    <ul class="checks">
+                        <li>{!! $check !!}<span>Money in, money out and profit for the month at a glance</span></li>
+                        <li>{!! $check !!}<span>Overdue invoices, bills due this week, stock running low</span></li>
+                        <li>{!! $check !!}<span>Give each staff member only the parts they need</span></li>
+                    </ul>
+                    <div class="panel attn" role="img" aria-label="Example of the dashboard's Needs your attention list: overdue invoices, the VAT return due, and items low on stock.">
+                        <div class="attn-row" aria-hidden="true"><i class="bad"></i><div><b>24 invoices overdue</b><span>₦1,716,646.00 waiting.@if ($sms || $wa) Send reminders {{ $wa && $sms ? 'by SMS or WhatsApp' : $remindVia }}.@endif</span></div></div>
+                        <div class="attn-row" aria-hidden="true"><i></i><div><b>VAT return for September due 21 Oct</b><span>Review it and mark it filed once submitted.</span></div></div>
+                        <div class="attn-row" aria-hidden="true"><i></i><div><b>7 items low on stock</b><span>Groundnut oil 25L, Semovita 10kg and more.</span></div></div>
                     </div>
                 </div>
-                
-            </div>
-        </section>
-
-        <!-- Trust & Security Section -->
-        <section class="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-900">
-            <div class="max-w-7xl mx-auto text-center">
-                <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">Your books stay safe and private</h2>
-                <p class="text-xl text-gray-600 dark:text-gray-300 mb-12">Plain facts about how MyBooks protects your records</p>
-                <div class="grid md:grid-cols-4 gap-8">
-                    <div class="flex flex-col items-center">
-                        <div class="w-16 h-16 bg-brand-100 dark:bg-brand-900/40 rounded-full flex items-center justify-center mb-4">
-                            <svg class="w-8 h-8 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                        </div>
-                        <h3 class="font-semibold text-gray-900 dark:text-white">Encrypted connection</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">Everything travels over HTTPS</p>
-                    </div>
-                    <div class="flex flex-col items-center">
-                        <div class="w-16 h-16 bg-brand-100 dark:bg-brand-900/40 rounded-full flex items-center justify-center mb-4">
-                            <svg class="w-8 h-8 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                        </div>
-                        <h3 class="font-semibold text-gray-900 dark:text-white">Two-step sign-in</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">A code from your phone at sign-in</p>
-                    </div>
-                    <div class="flex flex-col items-center">
-                        <div class="w-16 h-16 bg-brand-100 dark:bg-brand-900/40 rounded-full flex items-center justify-center mb-4">
-                            <svg class="w-8 h-8 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
-                        </div>
-                        <h3 class="font-semibold text-gray-900 dark:text-white">Full backup</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">Download all your books any time</p>
-                    </div>
-                    <div class="flex flex-col items-center">
-                        <div class="w-16 h-16 bg-brand-100 dark:bg-brand-900/40 rounded-full flex items-center justify-center mb-4">
-                            <svg class="w-8 h-8 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                        </div>
-                        <h3 class="font-semibold text-gray-900 dark:text-white">Roles for every person</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">Each person sees only what they need</p>
-                    </div>
+                <div>
+                    <h3>For the accountant</h3>
+                    <p>Proper double-entry books, so month-end is a check, not a rebuild.</p>
+                    <ul class="checks">
+                        <li>{!! $check !!}<span>Every sale, bill and payment posts its own journal, so the trial balance always balances</span></li>
+                        <li>{!! $check !!}<span>A general ledger that links each figure to its document</span></li>
+                        <li>{!! $check !!}<span>Lock a month once it is closed, so nobody changes it by mistake</span></li>
+                        <li>{!! $check !!}<span>Bank reconciliation{{ $feeds ? ' with bank feeds' : '' }}, fixed assets and depreciation, prepaid and deferred schedules</span></li>
+                        <li>{!! $check !!}<span>Budgets, on the Professional and Enterprise plans</span></li>
+                        <li>{!! $check !!}<span>An activity log of who changed what, and when</span></li>
+                    </ul>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- CTA Section -->
-        <section class="py-20 px-4 sm:px-6 lg:px-8 bg-brand-900">
-            <div class="max-w-4xl mx-auto text-center">
-                <h2 class="text-4xl font-bold text-white mb-4">Ready to put your books in order?</h2>
-                <p class="text-xl text-brand-100 mb-8">Invoices, stock, payroll and Nigerian tax in one place.</p>
-                <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <a href="#pricing" class="px-8 py-4 bg-white text-brand-600 rounded-lg hover:bg-gray-100 transition font-semibold shadow-lg hover:shadow-xl">
-                        Choose a plan
-                    </a>
-                    @if (Route::has('login'))
-                        <a href="{{ route('login') }}" class="px-8 py-4 bg-transparent text-white border-2 border-white rounded-lg hover:bg-white hover:text-brand-600 transition font-semibold">
-                            Sign in
-                        </a>
-                    @endif
+    {{-- 6. Moving in --}}
+    <section class="section band" aria-labelledby="move-title">
+        <div class="wrap move">
+            <div>
+                <div class="section-head">
+                    <h2 id="move-title">Moving from Excel or another system</h2>
+                    <p>Bring what you already have, from a spreadsheet.</p>
                 </div>
-                <p class="text-brand-100 mt-6 text-sm">Prices in naira. Pay through Paystack.</p>
+                <ol class="steps">
+                    <li><div><b>Choose a plan and set up your business</b><span>Name, logo, VAT number, bank accounts.</span></div></li>
+                    <li><div><b>Import your lists and opening balances</b><span>Upload a spreadsheet; MyBooks shows you each column before it saves.</span></div></li>
+                    <li><div><b>Send your first invoice</b><span>From your laptop or your phone.</span></div></li>
+                </ol>
             </div>
-        </section>
+            <div class="panel imports">
+                <h3>What you can import from a spreadsheet</h3>
+                <ul class="chips">
+                    @foreach (['Customers', 'Suppliers', 'Items', 'Chart of accounts', 'Opening balances', 'Invoices', 'Bills', 'Expenses', 'Employees', 'Journals', 'Budgets'] as $chip)
+                        <li>{{ $chip }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    </section>
 
-        @include('partials.public-footer')
+    {{-- 7. Safety --}}
+    <section class="section" aria-labelledby="safe-title">
+        <div class="wrap">
+            <div class="section-head"><h2 id="safe-title">Your books stay safe and private</h2></div>
+            <div class="trust">
+                <div><b>Encrypted connection</b><span>Everything between your browser and MyBooks travels over HTTPS.</span></div>
+                <div><b>Two-step sign-in</b><span>Add a code from your phone to every sign-in.</span></div>
+                <div><b>Each business kept apart</b><span>Your records are only shown to your own team.</span></div>
+                <div><b>Roles for every person</b><span>Sales staff see sales; payroll stays with the people you choose.</span></div>
+                <div><b>Activity log</b><span>Every change is recorded with who made it.</span></div>
+                <div><b>Full backup</b><span>Download all your books whenever you like.</span></div>
+            </div>
+        </div>
+    </section>
 
-    </body>
-</html>
+    {{-- 8. Plans --}}
+    <section class="section band" id="pricing" aria-labelledby="price-title">
+        <div class="wrap">
+            <div class="section-head price-top">
+                <h2 id="price-title">Plans in naira</h2>
+                <p>{{ $cycleNote }}@if ($yearlyNote) {{ $yearlyNote }}@endif</p>
+            </div>
+            <x-public.pricing highlight="professional" highlight-label="Best for a growing business" />
+        </div>
+    </section>
+
+    {{-- 9. Questions --}}
+    <section class="section" id="faq" aria-labelledby="faq-title">
+        <div class="wrap">
+            <div class="section-head"><h2 id="faq-title">Questions people ask</h2></div>
+            <div class="faq">
+                <details open><summary>Can I try MyBooks before I pay?</summary><p>Book a demo and we will walk you through MyBooks and answer your questions before you choose a plan.</p></details>
+                <details><summary>Does it work for VAT and WHT in Nigeria?</summary><p>Yes. VAT at 7.5% is added on invoices and bills, and your monthly VAT return is filled in from them. WHT is taken off supplier payments and grouped by tax authority.</p></details>
+                <details><summary>Can my accountant use it too?</summary><p>Yes. Add your accountant as a user with the accountant role. They get the ledger, the reports and the month-end tools.</p></details>
+                <details><summary>Can I use it on my phone?</summary><p>Yes. MyBooks works in your phone's browser, and lists turn into easy-to-read cards on a small screen.</p></details>
+                <details><summary>What happens to my data if I stop?</summary><p>Download a full backup of your books before you go. Your records are shared only with the services listed in our <a href="{{ route('privacy-policy') }}">privacy policy</a>.</p></details>
+                <details><summary>How do I pay for MyBooks?</summary><p>Through Paystack.@if (config('mybooks.features.auto_renewal')) You can save a card so your plan renews by itself, or pay each time.@endif</p></details>
+            </div>
+        </div>
+    </section>
+
+    {{-- 10. Closing --}}
+    <section class="section close" aria-labelledby="close-title">
+        <div class="wrap">
+            <h2 id="close-title">Ready to put your books in order?</h2>
+            <div>
+                <div class="hero-cta">
+                    <a class="btn btn-main" href="#pricing">Choose a plan</a>
+                    <a class="btn btn-quiet" href="{{ $demoUrl }}">Book a demo</a>
+                </div>
+                <p class="hero-note">Prices in naira. Pay through Paystack.</p>
+            </div>
+        </div>
+    </section>
+</x-public.layout>

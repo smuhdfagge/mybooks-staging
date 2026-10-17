@@ -123,7 +123,7 @@ Route::post('/contact', function (Request $request) {
         'last_name' => 'required|string|max:255',
         'email' => 'required|email|max:255',
         'phone' => 'nullable|string|max:50',
-        'subject' => 'required|string|in:general,support,sales,billing,feedback,partnership,other',
+        'subject' => 'required|string|in:demo,general,support,sales,billing,feedback,partnership,other',
         'message' => 'required|string|max:5000',
     ]);
 

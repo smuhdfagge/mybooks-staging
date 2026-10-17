@@ -61,8 +61,12 @@ class TableDesignTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** Printed documents (and their shared layout and the invoice template preview), PDFs and emails have their own layout. */
-    private const NOT_SCREENS = '#(^vendor/|pdf|print|mail|statements/document|waybill|payslip|components/table/|^documents/|templates/preview)#';
+    /**
+     * Printed documents (and their shared layout and the invoice template
+     * preview), PDFs and emails have their own layout. The home page's tables
+     * are drawn examples of the app, not screens (home page plan H3).
+     */
+    private const NOT_SCREENS = '#(^vendor/|pdf|print|mail|statements/document|waybill|payslip|components/table/|^documents/|templates/preview|^welcome\.blade\.php$)#';
 
     /** @return list<string> */
     private function todo(): array
