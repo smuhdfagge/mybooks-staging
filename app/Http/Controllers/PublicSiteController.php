@@ -7,7 +7,8 @@ use Illuminate\Http\Response;
 /**
  * Search-engine files for the public site (home page plan H5): the sitemap
  * lists the public pages, and robots.txt points to it and keeps crawlers
- * out of the signed-in app.
+ * out of the signed-in app. With mybooks.search_indexing off (staging and
+ * test copies) there is no sitemap, and every page says "noindex" instead.
  */
 class PublicSiteController extends Controller
 {
@@ -16,6 +17,8 @@ class PublicSiteController extends Controller
 
     public function sitemap(): Response
     {
+        abort_unless(config('mybooks.search_indexing'), 404);
+
         $urls = collect(self::PAGES)->map(fn (string $name) => route($name));
 
         return response()
@@ -33,9 +36,13 @@ class PublicSiteController extends Controller
             'Disallow: /register',
             'Disallow: /forgot-password',
             'Disallow: /reset-password',
-            '',
-            'Sitemap: '.route('sitemap'),
         ];
+        // Crawlers may still read the public pages, so they see each page's
+        // "noindex" and drop it; blocking them here would hide that.
+        if (config('mybooks.search_indexing')) {
+            $lines[] = '';
+            $lines[] = 'Sitemap: '.route('sitemap');
+        }
 
         return response(implode("\n", $lines)."\n")->header('Content-Type', 'text/plain; charset=UTF-8');
     }

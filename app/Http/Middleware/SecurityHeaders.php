@@ -45,6 +45,13 @@ class SecurityHeaders
         $response->headers->set('Cross-Origin-Opener-Policy', 'same-origin');
         $response->headers->set('Cross-Origin-Resource-Policy', 'same-origin');
 
+        // ── Search engines ──────────────────────────────────────
+        // Keep the whole site out of search results unless it is the real
+        // public address (config mybooks.search_indexing).
+        if (! config('mybooks.search_indexing')) {
+            $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
+        }
+
         // ── Transport Security ──────────────────────────────────
         if ($request->secure() || config('app.env') === 'production') {
             // includeSubDomains and preload are opt-in (L10): once a domain is

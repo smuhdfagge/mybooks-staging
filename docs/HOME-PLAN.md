@@ -82,9 +82,11 @@ Unanswered decisions use the default shown, and the session report says so.
    (`https://staging.mybooks.cloud` for now), then run
    `php artisan config:cache`. Page addresses, the sitemap and the share
    pictures are built from it.
-5. Check: the home page, `/robots.txt`, `/sitemap.xml`, and a link pasted
-   into WhatsApp shows the share picture. (WhatsApp keeps old previews for
-   a while; Facebook's Sharing Debugger refreshes them.)
-6. If the staging address should not appear in Google, say so: robots.txt
-   currently lets search engines in.
-
+5. Check: the home page, `/robots.txt`, and a link pasted into WhatsApp
+   shows the share picture. (WhatsApp keeps old previews for a while;
+   Facebook's Sharing Debugger refreshes them.)
+6. Search engines are kept out by default (`MYBOOKS_SEARCH_INDEXING=false`):
+   every page sends "noindex", robots.txt lists no sitemap and
+   `/sitemap.xml` is not served. Staging stays that way. On the real public
+   address, set `MYBOOKS_SEARCH_INDEXING=true`, run `config:cache`, then
+   check `/sitemap.xml` and add it in Google Search Console.

@@ -34,6 +34,9 @@
         <title>{{ $fullTitle }}</title>
         <meta name="description" content="{{ $description }}">
         <link rel="canonical" href="{{ $canonical }}">
+        @unless (config('mybooks.search_indexing'))
+            <meta name="robots" content="noindex, nofollow">
+        @endunless
         <meta property="og:type" content="website">
         <meta property="og:site_name" content="MyBooks">
         <meta property="og:locale" content="en_NG">

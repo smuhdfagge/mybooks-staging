@@ -10,6 +10,12 @@ return [
 
     'support_email' => env('MYBOOKS_SUPPORT_EMAIL', 'support@my-books.cloud'),
 
+    // Search engines (home page plan, after H6). Off: every page says
+    // "noindex" (header and meta tag), robots.txt lists no sitemap and the
+    // sitemap is not served, so the site stays out of Google. Turn on only
+    // on the real public address.
+    'search_indexing' => (bool) env('MYBOOKS_SEARCH_INDEXING', false),
+
     /*
     |--------------------------------------------------------------------------
     | HSTS (finding L10)
