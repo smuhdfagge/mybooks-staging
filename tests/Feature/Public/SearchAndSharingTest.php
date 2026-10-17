@@ -66,6 +66,7 @@ class SearchAndSharingTest extends TestCase
 
     public function test_sitemap_lists_the_public_pages(): void
     {
+        config(['mybooks.search_indexing' => true]);
         $response = $this->get('/sitemap.xml')->assertOk()->assertHeader('Content-Type', 'application/xml; charset=UTF-8');
 
         $xml = simplexml_load_string($response->getContent());
@@ -78,6 +79,7 @@ class SearchAndSharingTest extends TestCase
     public function test_robots_points_to_the_sitemap_and_keeps_out_of_the_app(): void
     {
         $this->assertFileDoesNotExist(public_path('robots.txt'), 'A static robots.txt would hide the generated one.');
+        config(['mybooks.search_indexing' => true]);
 
         $this->get('/robots.txt')->assertOk()
             ->assertSee('Sitemap: '.route('sitemap'))
@@ -91,5 +93,25 @@ class SearchAndSharingTest extends TestCase
 
         $this->assertStringContainsString("'resources/js/public.js'", $layout);
         $this->assertStringNotContainsString("'resources/js/app.js'", $layout);
+    }
+
+    public function test_search_engines_are_kept_out_unless_switched_on(): void
+    {
+        config(['mybooks.search_indexing' => false]);
+
+        $this->get(route('home'))->assertOk()
+            ->assertHeader('X-Robots-Tag', 'noindex, nofollow')
+            ->assertSee('<meta name="robots" content="noindex, nofollow">', false);
+        $this->get(route('login'))->assertHeader('X-Robots-Tag', 'noindex, nofollow');
+        $this->get('/sitemap.xml')->assertNotFound();
+        $this->get('/robots.txt')->assertOk()->assertDontSee('Sitemap:')->assertSee('Disallow: /dashboard');
+
+        config(['mybooks.search_indexing' => true]);
+
+        $this->get(route('home'))->assertOk()
+            ->assertHeaderMissing('X-Robots-Tag')
+            ->assertDontSee('<meta name="robots"', false);
+        $this->get('/sitemap.xml')->assertOk();
+        $this->get('/robots.txt')->assertSee('Sitemap: '.route('sitemap'));
     }
 }
