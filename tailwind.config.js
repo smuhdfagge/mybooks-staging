@@ -47,6 +47,8 @@ export default {
             colors: { brand, accent },
             fontFamily: {
                 sans: ['"IBM Plex Sans"', ...defaultTheme.fontFamily.sans],
+                // Public-page headings (home page plan H2).
+                serif: ['"IBM Plex Serif"', ...defaultTheme.fontFamily.serif],
             },
         },
     },

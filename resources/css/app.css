@@ -9,6 +9,12 @@
 @import '@fontsource/ibm-plex-sans/latin-ext-600.css';
 @import '@fontsource/ibm-plex-sans/latin-700.css';
 @import '@fontsource/ibm-plex-sans/latin-ext-700.css';
+/* IBM Plex Serif for public-page headings only (home page plan H2). The
+   browser downloads it only on pages that use font-serif. */
+@import '@fontsource/ibm-plex-serif/latin-500.css';
+@import '@fontsource/ibm-plex-serif/latin-ext-500.css';
+@import '@fontsource/ibm-plex-serif/latin-600.css';
+@import '@fontsource/ibm-plex-serif/latin-ext-600.css';
 
 @tailwind base;
 @tailwind components;
