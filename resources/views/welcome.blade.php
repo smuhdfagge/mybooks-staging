@@ -47,12 +47,73 @@
     };
 
     $demoUrl = route('contact', ['subject' => 'demo']).'#contact-form';
+
+    // Questions: shown on the page and given to search engines, from one list.
+    $privacyLink = '<a href="'.e(route('privacy-policy')).'">privacy policy</a>';
+    $faq = [
+        ['Can I try MyBooks before I pay?', 'Book a demo and we will walk you through MyBooks and answer your questions before you choose a plan.'],
+        ['Does it work for VAT and WHT in Nigeria?', 'Yes. VAT at 7.5% is added on invoices and bills, and your monthly VAT return is filled in from them. WHT is taken off supplier payments and grouped by tax authority.'],
+        ['Can my accountant use it too?', 'Yes. Add your accountant as a user with the accountant role. They get the ledger, the reports and the month-end tools.'],
+        ['Can I use it on my phone?', "Yes. MyBooks works in your phone's browser, and lists turn into easy-to-read cards on a small screen."],
+        ['What happens to my data if I stop?', 'Download a full backup of your books before you go. Your records are shared only with the services listed in our '.$privacyLink.'.'],
+        ['How do I pay for MyBooks?', 'Through Paystack.'.(config('mybooks.features.auto_renewal') ? ' You can save a card so your plan renews by itself, or pay each time.' : '')],
+    ];
+
+    // Structured data (H5): who we are, the product with its prices in
+    // naira straight from the plans table, and the questions above.
+    $offers = [];
+    foreach ($plans as $p) {
+        foreach (['monthly' => 'month', 'annual' => 'year'] as $cycle => $unit) {
+            if ($p[$cycle] !== null) {
+                $offers[] = [
+                    '@type' => 'Offer',
+                    'name' => $p['name'].', paid every '.$unit,
+                    'price' => number_format($p[$cycle], 2, '.', ''),
+                    'priceCurrency' => 'NGN',
+                    'url' => $p[$cycle.'_url'],
+                ];
+            }
+        }
+    }
+    $schema = [
+        '@context' => 'https://schema.org',
+        '@graph' => array_values(array_filter([
+            [
+                '@type' => 'Organization',
+                '@id' => route('home').'#org',
+                'name' => 'MyBooks',
+                'url' => route('home'),
+                'logo' => asset('images/brand/mybooks-logo-email-300.png'),
+                'email' => config('mybooks.support_email'),
+            ],
+            [
+                '@type' => 'SoftwareApplication',
+                'name' => 'MyBooks',
+                'applicationCategory' => 'BusinessApplication',
+                'operatingSystem' => 'Web browser',
+                'description' => 'Accounting software for Nigerian businesses: invoices, VAT, WHT, PAYE, payroll, stock and reports.',
+                'url' => route('home'),
+                'publisher' => ['@id' => route('home').'#org'],
+                'offers' => $offers ?: null,
+            ],
+            [
+                '@type' => 'FAQPage',
+                'mainEntity' => array_map(fn ($q) => [
+                    '@type' => 'Question',
+                    'name' => $q[0],
+                    'acceptedAnswer' => ['@type' => 'Answer', 'text' => strip_tags($q[1])],
+                ], $faq),
+            ],
+        ])),
+    ];
+    $schema['@graph'][1] = array_filter($schema['@graph'][1], fn ($v) => $v !== null);
     $check = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
 @endphp
 
 <x-public.layout
     title="Accounting software for Nigerian businesses"
     description="Invoices, VAT, WHT, PAYE, payroll, stock and reports for Nigerian businesses, in one place. Prices in naira, paid through Paystack."
+    :schema="$schema"
     class="mb-home">
     <x-slot:head>
         @vite(['resources/css/home.css', 'resources/js/home.js'])
@@ -333,12 +394,9 @@
         <div class="wrap">
             <div class="section-head"><h2 id="faq-title">Questions people ask</h2></div>
             <div class="faq">
-                <details open><summary>Can I try MyBooks before I pay?</summary><p>Book a demo and we will walk you through MyBooks and answer your questions before you choose a plan.</p></details>
-                <details><summary>Does it work for VAT and WHT in Nigeria?</summary><p>Yes. VAT at 7.5% is added on invoices and bills, and your monthly VAT return is filled in from them. WHT is taken off supplier payments and grouped by tax authority.</p></details>
-                <details><summary>Can my accountant use it too?</summary><p>Yes. Add your accountant as a user with the accountant role. They get the ledger, the reports and the month-end tools.</p></details>
-                <details><summary>Can I use it on my phone?</summary><p>Yes. MyBooks works in your phone's browser, and lists turn into easy-to-read cards on a small screen.</p></details>
-                <details><summary>What happens to my data if I stop?</summary><p>Download a full backup of your books before you go. Your records are shared only with the services listed in our <a href="{{ route('privacy-policy') }}">privacy policy</a>.</p></details>
-                <details><summary>How do I pay for MyBooks?</summary><p>Through Paystack.@if (config('mybooks.features.auto_renewal')) You can save a card so your plan renews by itself, or pay each time.@endif</p></details>
+                @foreach ($faq as [$question, $answer])
+                    <details @if ($loop->first) open @endif><summary>{{ $question }}</summary><p>{!! $answer !!}</p></details>
+                @endforeach
             </div>
         </div>
     </section>
