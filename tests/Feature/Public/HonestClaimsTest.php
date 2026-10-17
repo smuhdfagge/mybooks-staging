@@ -10,7 +10,8 @@ use Tests\TestCase;
  * Home page plan, session H1: the public pages only say what is true.
  * Sign-up asks for payment first (no trial), there are no confirmed
  * customer numbers or quotes, and MyBooks makes no GDPR, uptime or
- * daily-backup promise, and no live status or help videos exist yet. Add
+ * daily-backup promise, no live status or help videos exist yet, and no
+ * reply time is promised (H4). Add
  * a phrase back only once it is true.
  */
 class HonestClaimsTest extends TestCase
@@ -22,6 +23,7 @@ class HonestClaimsTest extends TestCase
         'gdpr', 'bank-level', 'daily backups', 'uptime', '10k+', 'active users',
         'trusted by businesses', 'enterprise-grade', 'fraction of the cost',
         'all systems operational', 'video tutorials', 'never share your data', 'onboarding wizard',
+        'within 24 hours', 'follow us', 'knowledge base',
     ];
 
     public static function pages(): array

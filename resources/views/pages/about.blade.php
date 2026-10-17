@@ -1,195 +1,102 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>About Us - {{ config('app.name', 'MyBooks') }}</title>
-        <meta name="description" content="Learn more about MyBooks - our mission, values, and the team behind the complete accounting and bookkeeping solution.">
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <style>
-            .gradient-text { color: #1F4E79; }
-        .dark .gradient-text { color: #8AA9CB; }
-        </style>
-    </head>
-    <body class="bg-white dark:bg-gray-900 antialiased" x-data="{ mobileMenuOpen: false }">
-        
-        @include('partials.public-nav', ['active' => 'about'])
+{{-- About MyBooks (home page plan H4). Plain, checked claims only; the user limit comes from the plans table. --}}
+@php
+    $maxUsers = (int) app(\App\Support\PublicSite\PublicPlans::class)->all()->max('users');
+    $tick = '<svg class="h-5 w-5 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
+@endphp
+<x-public.layout title="About MyBooks" description="MyBooks is accounting software for Nigerian businesses: invoices, stock, payroll, VAT, WHT and PAYE, with prices in naira.">
 
-        <!-- Hero Section -->
-        <section class="pt-32 pb-16 px-4 sm:px-6 lg:px-8 bg-brand-50 dark:bg-gray-900">
-            <div class="max-w-7xl mx-auto text-center">
-                <h1 class="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-6">
-                    About <span class="gradient-text">MyBooks</span>
-                </h1>
-                <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-                    We're on a mission to simplify accounting and bookkeeping for businesses of all sizes.
-                </p>
-            </div>
-        </section>
+    <section class="bg-brand-50 px-4 pb-14 pt-14 dark:bg-gray-900 sm:px-6 lg:px-8 lg:pt-20">
+        <div class="mx-auto max-w-6xl">
+            <h1 class="font-serif text-4xl font-semibold text-gray-900 dark:text-white lg:text-5xl">About MyBooks</h1>
+            <p class="mt-4 max-w-2xl text-xl text-gray-600 dark:text-gray-300">Accounting software for Nigerian businesses, run from our office in Kano.</p>
+        </div>
+    </section>
 
-        <!-- Our Story Section -->
-        <section class="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-900">
-            <div class="max-w-7xl mx-auto">
-                <div class="grid lg:grid-cols-2 gap-12 items-center">
-                    <div>
-                        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Our Story</h2>
-                        <div class="space-y-4 text-gray-600 dark:text-gray-300">
-                            <p>
-                                MyBooks was born out of a simple observation: small and medium businesses struggle with complex, expensive accounting software that doesn't fit their needs.
-                            </p>
-                            <p>
-                                We set out to create a solution that combines powerful features with an intuitive interface, making professional-grade accounting accessible to everyone.
-                            </p>
-                            <p>
-                                Today, MyBooks covers the whole job: invoicing and stock, purchases and payroll, Nigerian VAT, WHT, PAYE and pension, and the financial reports your accountant needs.
-                            </p>
-                        </div>
-                    </div>
-                    <div class="bg-brand-100 dark:bg-brand-900/30 rounded-2xl p-8">
-                        <div class="grid grid-cols-2 gap-6">
-                            <div class="text-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-                                <div class="text-3xl font-bold text-brand-600 dark:text-brand-300">₦</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Prices and figures in naira</div>
-                            </div>
-                            <div class="text-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-                                <div class="text-3xl font-bold text-brand-600 dark:text-brand-300">VAT, WHT, PAYE</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Nigerian tax built in</div>
-                            </div>
-                            <div class="text-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-                                <div class="text-3xl font-bold text-brand-600 dark:text-brand-300">28</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Financial and payroll reports</div>
-                            </div>
-                            <div class="text-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-                                <div class="text-3xl font-bold text-brand-600 dark:text-brand-300">Up to 50</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">People on one account</div>
-                            </div>
-                        </div>
-                    </div>
+    <section class="bg-white px-4 py-16 dark:bg-gray-900 sm:px-6 lg:px-8 lg:py-20">
+        <div class="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2">
+            <div>
+                <h2 class="font-serif text-3xl font-semibold text-gray-900 dark:text-white">What MyBooks is for</h2>
+                <div class="mt-6 space-y-4 text-lg leading-relaxed text-gray-600 dark:text-gray-300">
+                    <p>A lot of accounting software is made for other countries. It is priced in dollars and leaves Nigerian tax for you to work out by hand.</p>
+                    <p>MyBooks keeps the whole job in one place: invoices and stock, purchases and payroll, Nigerian VAT, WHT, PAYE and pension, and the reports your accountant needs.</p>
+                    <p>It works in the browser on a computer or a phone, so you can check what you are owed wherever you are.</p>
                 </div>
             </div>
-        </section>
-
-        <!-- Our Mission Section -->
-        <section class="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-800">
-            <div class="max-w-7xl mx-auto">
-                <div class="text-center mb-16">
-                    <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Our Mission & Values</h2>
-                    <p class="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-                        We believe every business deserves access to powerful financial tools without the complexity.
-                    </p>
+            <dl class="grid grid-cols-2 gap-4 rounded-2xl bg-brand-100 p-6 dark:bg-brand-900/30 sm:gap-6 sm:p-8">
+                <div class="flex flex-col-reverse rounded-xl bg-white p-5 text-center shadow-sm dark:bg-gray-800">
+                    <dt class="mt-1 text-sm text-gray-600 dark:text-gray-300">Prices and figures in naira</dt>
+                    <dd class="text-3xl font-semibold text-brand-600 dark:text-brand-300">₦</dd>
                 </div>
-                <div class="grid md:grid-cols-3 gap-8">
-                    <div class="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-sm">
-                        <div class="w-14 h-14 bg-brand-100 dark:bg-brand-900/40 rounded-xl flex items-center justify-center mb-6">
-                            <svg class="w-7 h-7 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Simplicity</h3>
-                        <p class="text-gray-600 dark:text-gray-400">
-                            We believe powerful software doesn't have to be complicated. Our intuitive design makes complex tasks simple.
-                        </p>
+                <div class="flex flex-col-reverse rounded-xl bg-white p-5 text-center shadow-sm dark:bg-gray-800">
+                    <dt class="mt-1 text-sm text-gray-600 dark:text-gray-300">Nigerian tax built in</dt>
+                    <dd class="text-2xl font-semibold text-brand-600 dark:text-brand-300">VAT, WHT, PAYE</dd>
+                </div>
+                <div class="flex flex-col-reverse rounded-xl bg-white p-5 text-center shadow-sm dark:bg-gray-800">
+                    <dt class="mt-1 text-sm text-gray-600 dark:text-gray-300">Financial and payroll reports</dt>
+                    <dd class="text-3xl font-semibold text-brand-600 dark:text-brand-300">28</dd>
+                </div>
+                @if ($maxUsers > 1)
+                    <div class="flex flex-col-reverse rounded-xl bg-white p-5 text-center shadow-sm dark:bg-gray-800">
+                        <dt class="mt-1 text-sm text-gray-600 dark:text-gray-300">People on one account</dt>
+                        <dd class="text-3xl font-semibold text-brand-600 dark:text-brand-300">Up to {{ $maxUsers }}</dd>
                     </div>
-                    <div class="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-sm">
-                        <div class="w-14 h-14 bg-brand-100 dark:bg-brand-900/40 rounded-xl flex items-center justify-center mb-6">
-                            <svg class="w-7 h-7 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Security</h3>
-                        <p class="text-gray-600 dark:text-gray-400">
-                            Your records travel over an encrypted connection, two-step sign-in is available to every user, and each person sees only what their role allows.
-                        </p>
-                    </div>
-                    <div class="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-sm">
-                        <div class="w-14 h-14 bg-brand-100 dark:bg-brand-900/40 rounded-xl flex items-center justify-center mb-6">
-                            <svg class="w-7 h-7 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Customer Focus</h3>
-                        <p class="text-gray-600 dark:text-gray-400">
-                            We listen to our users and continuously improve based on your feedback. Your success is our success.
-                        </p>
-                    </div>
+                @endif
+            </dl>
+        </div>
+    </section>
+
+    <section class="bg-gray-50 px-4 py-16 dark:bg-gray-800 sm:px-6 lg:px-8 lg:py-20">
+        <div class="mx-auto max-w-6xl">
+            <h2 class="font-serif text-3xl font-semibold text-gray-900 dark:text-white">How we build it</h2>
+            <div class="mt-10 grid gap-6 md:grid-cols-3">
+                <div class="rounded-2xl bg-white p-7 shadow-sm dark:bg-gray-900">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Plain words</h3>
+                    <p class="mt-2 text-gray-600 dark:text-gray-300">Screens say what they do, so daily work does not need an accountant at your side.</p>
+                </div>
+                <div class="rounded-2xl bg-white p-7 shadow-sm dark:bg-gray-900">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Nigerian rules first</h3>
+                    <p class="mt-2 text-gray-600 dark:text-gray-300">VAT, withholding tax, PAYE and pension are set up from day one, not added on later.</p>
+                </div>
+                <div class="rounded-2xl bg-white p-7 shadow-sm dark:bg-gray-900">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Your books stay yours</h3>
+                    <p class="mt-2 text-gray-600 dark:text-gray-300">Records travel over an encrypted connection, each person sees only what their role allows, and you can download a full backup any time.</p>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- Why Choose Us Section -->
-        <section class="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-800">
-            <div class="max-w-7xl mx-auto">
-                <div class="text-center mb-16">
-                    <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Why Choose MyBooks?</h2>
-                </div>
-                <div class="grid md:grid-cols-2 gap-8">
-                    <div class="flex items-start space-x-4">
-                        <div class="flex-shrink-0 w-10 h-10 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="font-semibold text-gray-900 dark:text-white mb-1">All-in-One Solution</h3>
-                            <p class="text-gray-600 dark:text-gray-400">Everything you need to manage your business finances in one place.</p>
-                        </div>
-                    </div>
-                    <div class="flex items-start space-x-4">
-                        <div class="flex-shrink-0 w-10 h-10 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="font-semibold text-gray-900 dark:text-white mb-1">Easy to Use</h3>
-                            <p class="text-gray-600 dark:text-gray-400">Plain words and clear screens, so daily work does not need an accountant.</p>
-                        </div>
-                    </div>
-                    <div class="flex items-start space-x-4">
-                        <div class="flex-shrink-0 w-10 h-10 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="font-semibold text-gray-900 dark:text-white mb-1">Prices in naira</h3>
-                            <p class="text-gray-600 dark:text-gray-400">Plans in naira, priced for Nigerian businesses.</p>
-                        </div>
-                    </div>
-                    <div class="flex items-start space-x-4">
-                        <div class="flex-shrink-0 w-10 h-10 bg-brand-100 dark:bg-brand-900/30 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="font-semibold text-gray-900 dark:text-white mb-1">Help when you need it</h3>
-                            <p class="text-gray-600 dark:text-gray-400">Reach us by email or phone when you need help.</p>
-                        </div>
-                    </div>
-                </div>
+    <section class="bg-white px-4 py-16 dark:bg-gray-900 sm:px-6 lg:px-8 lg:py-20">
+        <div class="mx-auto max-w-6xl">
+            <h2 class="font-serif text-3xl font-semibold text-gray-900 dark:text-white">Why businesses choose MyBooks</h2>
+            <ul class="mt-10 grid gap-8 md:grid-cols-2">
+                <li class="flex items-start gap-4">
+                    <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900/30">{!! $tick !!}</span>
+                    <div><h3 class="font-semibold text-gray-900 dark:text-white">Everything in one place</h3><p class="mt-1 text-gray-600 dark:text-gray-300">Sales, purchases, stock, payroll and reports share one set of books.</p></div>
+                </li>
+                <li class="flex items-start gap-4">
+                    <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900/30">{!! $tick !!}</span>
+                    <div><h3 class="font-semibold text-gray-900 dark:text-white">Easy to use</h3><p class="mt-1 text-gray-600 dark:text-gray-300">Plain words and clear screens, on a computer or a phone.</p></div>
+                </li>
+                <li class="flex items-start gap-4">
+                    <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900/30">{!! $tick !!}</span>
+                    <div><h3 class="font-semibold text-gray-900 dark:text-white">Prices in naira</h3><p class="mt-1 text-gray-600 dark:text-gray-300">Plans priced in naira and paid through Paystack.</p></div>
+                </li>
+                <li class="flex items-start gap-4">
+                    <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900/30">{!! $tick !!}</span>
+                    <div><h3 class="font-semibold text-gray-900 dark:text-white">Help when you need it</h3><p class="mt-1 text-gray-600 dark:text-gray-300">Reach us by email or phone, or <a href="{{ route('contact', ['subject' => 'demo']) }}#contact-form" class="font-medium text-brand-600 underline dark:text-brand-300">book a demo</a>.</p></div>
+                </li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="bg-brand-900 px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+        <div class="mx-auto max-w-3xl text-center">
+            <h2 class="font-serif text-3xl font-semibold text-white lg:text-4xl">Ready to put your books in order?</h2>
+            <p class="mt-4 text-lg text-brand-100">Prices in naira. Pay through Paystack.</p>
+            <div class="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
+                <a href="{{ route('home') }}#pricing" class="rounded-lg bg-white px-8 py-4 font-semibold text-brand-700 shadow-lg hover:bg-gray-100 focus-ring">Choose a plan</a>
+                <a href="{{ route('contact', ['subject' => 'demo']) }}#contact-form" class="rounded-lg border-2 border-white px-8 py-4 font-semibold text-white hover:bg-white/10 focus-ring">Book a demo</a>
             </div>
-        </section>
-
-        <!-- CTA Section -->
-        <section class="py-20 px-4 sm:px-6 lg:px-8 bg-brand-900">
-            <div class="max-w-4xl mx-auto text-center">
-                <h2 class="text-3xl lg:text-4xl font-bold text-white mb-6">
-                    Ready to put your books in order?
-                </h2>
-                <p class="text-brand-100 text-lg mb-8">
-                    See how MyBooks fits the way your business works.
-                </p>
-                <div class="flex flex-col sm:flex-row justify-center gap-4">
-                    <a href="{{ route('home') }}#pricing" class="px-8 py-4 bg-white text-brand-600 rounded-lg hover:bg-gray-100 transition font-semibold shadow-lg">
-                        Choose a plan
-                    </a>
-                    <a href="{{ route('home') }}#features" class="px-8 py-4 bg-transparent text-white border-2 border-white rounded-lg hover:bg-white/10 transition font-semibold">
-                        Explore Features
-                    </a>
-                </div>
-            </div>
-        </section>
-
-        @include('partials.public-footer', ['active' => 'about'])
-</html>
+        </div>
+    </section>
+</x-public.layout>
