@@ -162,7 +162,7 @@
 
                             <!-- Phone -->
                             <div>
-                                <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone Number <span class="text-gray-400">(optional)</span></label>
+                                <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone Number <span class="text-gray-600 dark:text-gray-400">(optional)</span></label>
                                 <input type="tel" name="phone" id="phone"
                                     class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                                     placeholder="+1 (234) 567-890" @error('phone') aria-invalid="true" aria-describedby="phone-error" @enderror>
@@ -235,7 +235,7 @@
                             </svg>
                         </button>
                         <div x-show="openFaq === 1" x-collapse class="px-6 pb-4">
-                            <p class="text-gray-600 dark:text-gray-400">Getting started is easy! Simply create an account, choose your subscription plan, and you can start managing your finances right away. Our onboarding wizard will guide you through the initial setup.</p>
+                            <p class="text-gray-600 dark:text-gray-400">Choose a plan, create your account and pay through Paystack. A getting-started list on your dashboard then shows the first steps: your business details, bank accounts, and your first customers and items.</p>
                         </div>
                     </div>
 
@@ -248,7 +248,7 @@
                             </svg>
                         </button>
                         <div x-show="openFaq === 2" x-collapse class="px-6 pb-4">
-                            <p class="text-gray-600 dark:text-gray-400">Absolutely! We use enterprise-grade encryption and security measures to protect your data. All information is stored securely and we never share your data with third parties. Read our Privacy Policy for more details.</p>
+                            <p class="text-gray-600 dark:text-gray-400">Yes. Your records travel over an encrypted connection (HTTPS), each business's records are kept apart, and every user can turn on two-step sign-in. We do not sell your data; the few outside services MyBooks uses to run (such as payments and email) are listed in our Privacy Policy for more details.</p>
                         </div>
                     </div>
 

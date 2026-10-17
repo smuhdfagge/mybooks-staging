@@ -22,61 +22,8 @@
                     How Can We <span class="gradient-text">Help?</span>
                 </h1>
                 <p class="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-8">
-                    Find answers, learn best practices, and get the support you need to succeed with MyBooks.
+                    Ask us about any part of MyBooks by email or phone. These are the things people ask about most.
                 </p>
-                
-                <!-- Search Box -->
-                <div class="max-w-xl mx-auto">
-                    <div class="relative">
-                        <input type="text" placeholder="Search for help articles..." 
-                            class="w-full px-6 py-4 pl-14 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent transition shadow-lg">
-                        <svg class="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Quick Links Section -->
-        <section class="py-16 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-900">
-            <div class="max-w-7xl mx-auto">
-                <div class="grid md:grid-cols-3 gap-8">
-                    
-                    <!-- Getting Started -->
-                    <a href="#getting-started" class="group bg-brand-50 dark:bg-brand-900/20 rounded-2xl p-8 hover:shadow-lg transition">
-                        <div class="w-14 h-14 bg-brand-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition">
-                            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Getting Started</h3>
-                        <p class="text-gray-600 dark:text-gray-400">New to MyBooks? Learn the basics and set up your account.</p>
-                    </a>
-
-                    <!-- Documentation -->
-                    <a href="#documentation" class="group bg-brand-50 dark:bg-brand-900/20 rounded-2xl p-8 hover:shadow-lg transition">
-                        <div class="w-14 h-14 bg-brand-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition">
-                            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Documentation</h3>
-                        <p class="text-gray-600 dark:text-gray-400">Detailed guides and references for all features.</p>
-                    </a>
-
-                    <!-- Video Tutorials -->
-                    <a href="#tutorials" class="group bg-brand-50 dark:bg-brand-900/20 rounded-2xl p-8 hover:shadow-lg transition">
-                        <div class="w-14 h-14 bg-brand-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition">
-                            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Video Tutorials</h3>
-                        <p class="text-gray-600 dark:text-gray-400">Watch step-by-step video guides for visual learning.</p>
-                    </a>
-                </div>
             </div>
         </section>
 
@@ -84,8 +31,8 @@
         <section id="getting-started" class="py-16 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-800">
             <div class="max-w-7xl mx-auto">
                 <div class="text-center mb-12">
-                    <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Knowledge Base</h2>
-                    <p class="text-gray-600 dark:text-gray-300">Browse our most popular help topics</p>
+                    <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">What we can help with</h2>
+                    <p class="text-gray-600 dark:text-gray-300">Contact us about any of these, or anything else.</p>
                 </div>
 
                 <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -100,10 +47,10 @@
                             <h3 class="font-semibold text-gray-900 dark:text-white">Account & Setup</h3>
                         </div>
                         <ul class="space-y-3">
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Creating your account</a></li>
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Setting up your company profile</a></li>
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Managing user permissions</a></li>
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Two-factor authentication</a></li>
+                            <li class="text-gray-600 dark:text-gray-400">Creating your account</li>
+                            <li class="text-gray-600 dark:text-gray-400">Setting up your company profile</li>
+                            <li class="text-gray-600 dark:text-gray-400">Managing user permissions</li>
+                            <li class="text-gray-600 dark:text-gray-400">Two-factor authentication</li>
                         </ul>
                     </div>
 
@@ -118,10 +65,10 @@
                             <h3 class="font-semibold text-gray-900 dark:text-white">Invoicing</h3>
                         </div>
                         <ul class="space-y-3">
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Creating your first invoice</a></li>
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Customizing invoice templates</a></li>
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Setting up recurring invoices</a></li>
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Sending invoice reminders</a></li>
+                            <li class="text-gray-600 dark:text-gray-400">Creating your first invoice</li>
+                            <li class="text-gray-600 dark:text-gray-400">Customizing invoice templates</li>
+                            <li class="text-gray-600 dark:text-gray-400">Setting up recurring invoices</li>
+                            <li class="text-gray-600 dark:text-gray-400">Sending invoice reminders</li>
                         </ul>
                     </div>
 
@@ -136,10 +83,10 @@
                             <h3 class="font-semibold text-gray-900 dark:text-white">Expenses & Bills</h3>
                         </div>
                         <ul class="space-y-3">
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Recording expenses</a></li>
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Managing vendor bills</a></li>
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Recurring expenses setup</a></li>
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Expense categories</a></li>
+                            <li class="text-gray-600 dark:text-gray-400">Recording expenses</li>
+                            <li class="text-gray-600 dark:text-gray-400">Managing vendor bills</li>
+                            <li class="text-gray-600 dark:text-gray-400">Recurring expenses setup</li>
+                            <li class="text-gray-600 dark:text-gray-400">Expense categories</li>
                         </ul>
                     </div>
 
@@ -154,10 +101,10 @@
                             <h3 class="font-semibold text-gray-900 dark:text-white">Inventory</h3>
                         </div>
                         <ul class="space-y-3">
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Adding products and services</a></li>
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Stock tracking</a></li>
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Low stock alerts</a></li>
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Inventory reports</a></li>
+                            <li class="text-gray-600 dark:text-gray-400">Adding products and services</li>
+                            <li class="text-gray-600 dark:text-gray-400">Stock tracking</li>
+                            <li class="text-gray-600 dark:text-gray-400">Low stock alerts</li>
+                            <li class="text-gray-600 dark:text-gray-400">Inventory reports</li>
                         </ul>
                     </div>
 
@@ -172,10 +119,10 @@
                             <h3 class="font-semibold text-gray-900 dark:text-white">Payroll</h3>
                         </div>
                         <ul class="space-y-3">
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Setting up employees</a></li>
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Running payroll</a></li>
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Tax deductions</a></li>
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Payslip generation</a></li>
+                            <li class="text-gray-600 dark:text-gray-400">Setting up employees</li>
+                            <li class="text-gray-600 dark:text-gray-400">Running payroll</li>
+                            <li class="text-gray-600 dark:text-gray-400">Tax deductions</li>
+                            <li class="text-gray-600 dark:text-gray-400">Payslip generation</li>
                         </ul>
                     </div>
 
@@ -190,10 +137,10 @@
                             <h3 class="font-semibold text-gray-900 dark:text-white">Reports</h3>
                         </div>
                         <ul class="space-y-3">
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Profit & Loss reports</a></li>
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Balance sheet</a></li>
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Cash flow statements</a></li>
-                            <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 transition flex items-center"><span class="mr-2">→</span> Custom reports</a></li>
+                            <li class="text-gray-600 dark:text-gray-400">Profit & Loss reports</li>
+                            <li class="text-gray-600 dark:text-gray-400">Balance sheet</li>
+                            <li class="text-gray-600 dark:text-gray-400">Cash flow statements</li>
+                            <li class="text-gray-600 dark:text-gray-400">Custom reports</li>
                         </ul>
                     </div>
                 </div>
@@ -205,7 +152,7 @@
             <div class="max-w-7xl mx-auto">
                 <div class="text-center mb-12">
                     <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Still Need Help?</h2>
-                    <p class="text-gray-600 dark:text-gray-300">Our support team is ready to assist you</p>
+                    <p class="text-gray-600 dark:text-gray-300">Email or call us</p>
                 </div>
 
                 <div class="grid md:grid-cols-3 gap-8">
@@ -236,52 +183,11 @@
             </div>
         </section>
 
-        <!-- System Status Section -->
-        <section class="py-16 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-800">
-            <div class="max-w-4xl mx-auto">
-                <div class="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">System Status</h2>
-                        <span class="inline-flex items-center px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm font-medium">
-                            <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                            All Systems Operational
-                        </span>
-                    </div>
-                    
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800">
-                            <span class="text-gray-700 dark:text-gray-300">Web Application</span>
-                            <span class="text-green-700 dark:text-green-400 font-medium">Operational</span>
-                        </div>
-                        <div class="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800">
-                            <span class="text-gray-700 dark:text-gray-300">API Services</span>
-                            <span class="text-green-700 dark:text-green-400 font-medium">Operational</span>
-                        </div>
-                        <div class="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800">
-                            <span class="text-gray-700 dark:text-gray-300">Database</span>
-                            <span class="text-green-700 dark:text-green-400 font-medium">Operational</span>
-                        </div>
-                        <div class="flex items-center justify-between py-3">
-                            <span class="text-gray-700 dark:text-gray-300">Email Services</span>
-                            <span class="text-green-700 dark:text-green-400 font-medium">Operational</span>
-                        </div>
-                    </div>
-
-                    <div class="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800">
-                        <p class="text-sm text-gray-500 dark:text-gray-400">
-                            Last updated: {{ now()->format('F j, Y, g:i a') }} • 
-                            <a href="#" class="text-brand-600 dark:text-brand-300 hover:underline">View incident history</a>
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
         <!-- CTA Section -->
         <section class="py-16 px-4 sm:px-6 lg:px-8 bg-brand-900">
             <div class="max-w-4xl mx-auto text-center">
-                <h2 class="text-3xl font-bold text-white mb-4">Can't Find What You're Looking For?</h2>
-                <p class="text-brand-100 mb-8">Our support team is just a message away. We're happy to help!</p>
+                <h2 class="text-3xl font-bold text-white mb-4">Have a question?</h2>
+                <p class="text-brand-100 mb-8">Send us a message and we will get back to you.</p>
                 <a href="{{ route('contact') }}" class="inline-block px-8 py-4 bg-white text-brand-600 font-semibold rounded-lg hover:bg-gray-100 transition shadow-lg">
                     Contact Us
                 </a>
