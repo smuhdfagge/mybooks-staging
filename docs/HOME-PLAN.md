@@ -44,7 +44,7 @@ from H2 onwards goes live before H6.
 
 | # | Session | Needs decisions | Branch | Status | Notes |
 |---|---|---|---|---|---|
-| H1 | Honest claims on the current public pages | none | `home/h1-honest-claims` | In progress | Take off the free-trial wording, the testimonials, "thousands of companies", "GDPR compliant", "daily backups", "bank-level encryption", and the About page's user, invoice, country and uptime figures. Into `main`, so it can be deployed on its own. |
+| H1 | Honest claims on the current public pages | none | `home/h1-honest-claims` | Done, PR #67 | Take off the free-trial wording, the testimonials, "thousands of companies", "GDPR compliant", "daily backups", "bank-level encryption", and the About page's user, invoice, country and uptime figures. Into `main`, so it can be deployed on its own. |
 | H2 | Foundations | 7, 9 | `home/h2-foundations` | To do | Shared public layout (top bar, footer), bundled fonts, page tokens; pricing read from the plans table; a helper that says which optional features are live; guard tests for prices and banned claims. |
 | H3 | The new home page | 1, 3, 4, 8, 10, 11, 12 | `home/h3-home` | To do | The ten sections from the plan: top bar, opening scene, four facts, product tour, Nigerian tax, owner and accountant, moving in, safety, plans, questions and closing. Phone and dark mode. |
 | H4 | Matching pages and the demo | 2, 5, 6 | `home/h4-pages` | To do | About, Contact, Support, Terms and Privacy on the shared layout; the demo booking; data-protection and backup wording once confirmed. |
