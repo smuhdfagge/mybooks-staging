@@ -16,33 +16,22 @@
                             <!-- Company Name -->
                             <div>
                                 <x-field name="name" label="Company Name" :value="old('name', $tenant->name)" required />
-                                @error('name')
-                                    <p id="name-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
                             </div>
 
                             <!-- Email -->
                             <div>
                                 <x-field name="email" label="Email" type="email" :value="old('email', $tenant->email)" required />
-                                @error('email')
-                                    <p id="email-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
                             </div>
 
                             <!-- Phone -->
                             <div>
                                 <x-field name="phone" label="Phone" :value="old('phone', $tenant->phone)" />
-                                @error('phone')
-                                    <p id="phone-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
                             </div>
 
                             <!-- Website -->
                             <div>
-                                <x-field name="website" label="Website" type="url" :value="old('website', $tenant->website)" placeholder="https://example.com" />
-                                @error('website')
-                                    <p id="website-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
+                                {{-- Optional. "www.example.com" is enough: https:// is added when saved. --}}
+                                <x-field name="website" label="Website (optional)" type="text" inputmode="url" autocomplete="url" spellcheck="false" :value="old('website', $tenant->website)" placeholder="www.yourbusiness.com" help="Leave empty if you have none. It is shown at the foot of your invoices." />
                             </div>
                         </div>
                     </div>
@@ -54,17 +43,11 @@
                             <!-- Address -->
                             <div class="md:col-span-2">
                                 <x-field name="address" label="Street Address" type="textarea" :value="old('address', $tenant->address)" rows="2" />
-                                @error('address')
-                                    <p id="address-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
                             </div>
 
                             <!-- City -->
                             <div>
                                 <x-field name="city" label="City" :value="old('city', $tenant->city)" />
-                                @error('city')
-                                    <p id="city-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
                             </div>
 
                             <!-- State -->
@@ -100,9 +83,6 @@
                             <!-- Postal Code -->
                             <div>
                                 <x-field name="postal_code" label="Postal Code" :value="old('postal_code', $tenant->postal_code)" />
-                                @error('postal_code')
-                                    <p id="postal_code-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
                             </div>
                         </div>
                     </div>
@@ -114,9 +94,6 @@
                             <!-- Tax Number -->
                             <div>
                                 <x-field name="tax_number" label="TIN (Tax Identification Number)" help="Printed on your invoices and sent to NRS with e-invoices. Digits, hyphens allowed." :value="old('tax_number', $tenant->tax_number)" />
-                                @error('tax_number')
-                                    <p id="tax_number-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
                             </div>
 
                             <!-- Currency -->
@@ -142,9 +119,6 @@
                             <!-- Fiscal Year Start -->
                             <div>
                                 <x-field name="fiscal_year_start" label="Fiscal Year Start" type="date" :value="old('fiscal_year_start', $tenant->fiscal_year_start?->format('Y-m-d'))" />
-                                @error('fiscal_year_start')
-                                    <p id="fiscal_year_start-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
                             </div>
                         </div>
                     </div>

@@ -58,6 +58,14 @@ class SettingsController extends Controller
 
     public function updateCompany(Request $request)
     {
+        // The website is optional, and "www.example.com" is enough: add the
+        // https:// people usually leave out.
+        $website = trim((string) $request->input('website'));
+        if ($website !== '' && ! preg_match('#^https?://#i', $website)) {
+            $website = 'https://'.$website;
+        }
+        $request->merge(['website' => $website !== '' ? $website : null]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
