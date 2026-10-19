@@ -138,4 +138,21 @@ class InvoiceDocumentTest extends TestCase
         $this->assertStringContainsString('Danjuma Foods', $html);
         $this->assertStringContainsString('1,531,875.00', $html);
     }
+
+    public function test_printing_keeps_its_own_margins_and_a_paid_invoice_says_so(): void
+    {
+        $invoice = $this->invoice(['status' => 'paid', 'amount_paid' => 107500, 'balance_due' => 0]);
+
+        $html = $this->get(route('invoices.show', $invoice))->assertOk()
+            ->assertSee('Paid in full')
+            ->assertSee('Thank you for your payment.')
+            ->getContent();
+
+        // The sheet carries the margins (repeated on every page), so the print
+        // dialog's margin setting cannot push the invoice off the paper.
+        $this->assertStringContainsString('@page { size: A4; margin: 0; }', $html);
+        $this->assertStringContainsString('box-decoration-break: clone', $html);
+        $this->assertStringNotContainsString('Amount due</p>
+                        <p class="amount">₦0.00', $html);
+    }
 }
