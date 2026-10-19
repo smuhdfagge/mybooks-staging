@@ -125,10 +125,37 @@
     @endunless
 
     /* On paper the page margins do the spacing. */
+    @unless ($forPdf)
+    /*
+     * Printing from the browser. The page itself has no margin (see
+     * partials/invoice-print-page) and the sheet carries its own, repeated on
+     * every page, so the invoice prints the same whatever margins are picked
+     * in the print dialog, nothing is cut at the paper's edge, and the
+     * browser adds no date or address lines. Spacing is tighter than on
+     * screen so an ordinary invoice fits on one A4 page.
+     */
     @media print {
-        {{ $sc }} .sheet { padding: 0; }
-        {{ $sc }} .head-wrap { margin: 0 !important; }
+        {{ $sc }} { font-size: {{ $base - 1 }}px; }
+        {{ $sc }} .sheet { padding: 13mm 14mm 12mm; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+        {{ $sc }} .head-wrap { margin: 0 !important; padding-bottom: 14px; }
+        @if ($layout === 'modern')
+            {{ $sc }} .head-wrap { padding: 14px 16px; }
+        @endif
+        {{ $sc }} .logo { max-height: 46px; margin-bottom: 6px; }
+        {{ $sc }} .parties { margin-top: 16px; }
+        {{ $sc }} .due { margin-top: 16px; }
+        {{ $sc }} .due td { padding: 9px 14px; }
+        {{ $sc }} .due .amount { font-size: {{ $base + 5 }}px; }
+        {{ $sc }} .lines { margin-top: 16px; }
+        {{ $sc }} .lines th { padding: 6px 8px; }
+        {{ $sc }} .lines td { padding: 6px 8px; }
+        {{ $sc }} .totals { margin-top: 8px; }
+        {{ $sc }} .totals td { padding: 3px 8px; }
+        {{ $sc }} .totals .grand td { padding-top: 7px; padding-bottom: 6px; }
+        {{ $sc }} .notes { margin-top: 18px; }
+        {{ $sc }} .foot { margin-top: 20px; padding-top: 10px; }
     }
+    @endunless
 </style>
 
 <div class="mbdoc {{ ltrim($sc, '.') }}" data-invoice-document>
@@ -176,8 +203,8 @@
             <tr>
                 <td>
                     @if ($state['key'] === 'paid')
-                        <p class="label" style="padding-bottom: 2px;">Amount due</p>
-                        <p class="amount">{{ $money(0) }}</p>
+                        <p class="label" style="padding-bottom: 2px;">Paid in full</p>
+                        <p class="amount">{{ $money($invoice->total) }}</p>
                     @else
                         <p class="label" style="padding-bottom: 2px;">Amount due</p>
                         <p class="amount">{{ $money($state['key'] === 'draft' ? $invoice->total : $balance) }}</p>
@@ -185,7 +212,7 @@
                 </td>
                 <td class="when">
                     @if ($state['key'] === 'paid')
-                        Paid in full. Thank you.
+                        Thank you for your payment.
                     @elseif ($state['key'] === 'cancelled')
                         This invoice was cancelled.
                     @else

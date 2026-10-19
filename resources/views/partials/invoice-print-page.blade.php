@@ -5,7 +5,8 @@
     tidied so a refresh does not print again.
 --}}
 <style>
-    @page { size: A4; margin: 14mm 12mm 16mm; }
+    /* No page margin: the invoice sheet carries its own (invoices/document). */
+    @page { size: A4; margin: 0; }
     @media print {
         html, body { background: #fff !important; }
         .mbdoc { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
