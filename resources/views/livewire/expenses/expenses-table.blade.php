@@ -69,6 +69,9 @@
                         <td class="tbl-menu">
                             <x-table.dropdown :sr-label="'Actions for '.$expense->expense_number">
                                 <x-table.menu-item :href="route('expenses.show', $expense)">View</x-table.menu-item>
+                                {{-- Opens the expense and prints the voucher from there, in the same tab. --}}
+                                <x-table.menu-item :href="route('expenses.show', ['expense' => $expense, 'print' => 1])">Print voucher</x-table.menu-item>
+                                <x-table.menu-item :href="route('expenses.pdf', $expense)">Download PDF</x-table.menu-item>
                                 @if ($expense->canBeEdited() && $user->can('edit expenses'))
                                     <x-table.menu-item :href="route('expenses.edit', $expense)">Edit</x-table.menu-item>
                                 @endif
