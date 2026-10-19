@@ -155,14 +155,14 @@
                         <div class="flex items-start gap-6">
                             @if($tenant->logo)
                                 <div class="flex-shrink-0">
-                                    <img src="{{ asset('storage/' . $tenant->logo) }}" alt="Company Logo" class="h-24 w-24 object-contain rounded-lg border border-gray-200 dark:border-gray-700">
+                                    <img src="{{ \App\Support\TenantLogo::dataUri($tenant) ?? asset('storage/' . $tenant->logo) }}" alt="Company Logo" class="h-24 w-24 object-contain rounded-lg border border-gray-200 dark:border-gray-700">
                                 </div>
                             @endif
                             <div class="flex-1">
                                 <label for="logo" class="form-label">Upload New Logo</label>
-                                <input type="file" name="logo" id="logo" accept="image/*"
+                                <input type="file" name="logo" id="logo" accept="image/png,image/jpeg,image/gif,image/webp"
                                     class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-50 dark:file:bg-brand-900 file:text-brand-700 dark:file:text-brand-300 hover:file:bg-brand-100 dark:hover:file:bg-brand-800" @error('logo') aria-invalid="true" aria-describedby="logo-error" @enderror>
-                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">PNG, JPG, GIF up to 2MB</p>
+                                <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">PNG, JPG, GIF or WebP, up to 2 MB. It appears at the top of your invoices and statements. A wide logo on a white or clear background prints best.</p>
                                 @error('logo')
                                     <p id="logo-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror

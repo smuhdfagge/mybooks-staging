@@ -5,7 +5,6 @@ namespace App\Support;
 use App\Models\Invoice;
 use App\Models\InvoiceTemplate;
 use App\Models\Tenant;
-use App\Services\Statements\StatementPdf;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 /**
@@ -53,7 +52,9 @@ class InvoiceDocument
             's' => $s,
             'font' => $forPdf ? 'DejaVu Sans, sans-serif' : $font,
             'forPdf' => $forPdf,
-            'logo' => $s['show_logo'] ? StatementPdf::logo($tenant) : null,
+            // The business's own logo (Settings > Company); its initials when it has none.
+            'logo' => $s['show_logo'] ? self::logoFor($tenant, $forPdf) : null,
+            'initials' => TenantLogo::initials((string) $tenant->name),
             'state' => self::state($invoice),
             'paid' => round($paidByMoney, 2),
             'credited' => round($credited, 2),
@@ -87,6 +88,14 @@ class InvoiceDocument
         $s['footer_text'] = (string) ($s['footer_text'] ?? '');
 
         return $s;
+    }
+
+    private static function logoFor(Tenant $tenant, bool $forPdf): ?string
+    {
+        $uri = $tenant->exists ? TenantLogo::dataUri($tenant) : null;
+
+        // DomPDF cannot always draw SVG; the initials stand in on the PDF.
+        return $forPdf && $uri !== null && str_starts_with($uri, 'data:image/svg') ? null : $uri;
     }
 
     /** The business's chosen template settings (its own, else its default one, else the built-in look). */
