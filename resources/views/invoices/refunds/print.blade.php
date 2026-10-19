@@ -236,13 +236,27 @@
             font-size: 14px;
         }
         
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 9px 18px;
+            background: #fff;
+            color: #1f2937;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            text-decoration: none;
+        }
+
         .print-button:hover {
             background: #b91c1c;
         }
     </style>
 </head>
 <body>
-    <button class="print-button no-print" data-print>Print Refund</button>
+    <a href="{{ route('invoices.refunds.show', $refund) }}" class="back-button no-print">Back to refund</a>
+    <button class="print-button no-print" data-print>Print refund</button>
     
     <div class="container">
         <!-- Header -->

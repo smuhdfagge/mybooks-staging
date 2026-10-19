@@ -6,7 +6,7 @@
                 For invoice <a href="{{ route('invoices.show', $refund->invoice) }}" class="link">{{ $refund->invoice->invoice_number }}</a> · {{ $refund->customer->name }}
             </x-slot>
             <x-slot name="more">
-                <x-table.menu-item :href="route('invoices.refunds.print', $refund)" new-tab>Print</x-table.menu-item>
+                <x-table.menu-item :href="route('invoices.refunds.print', $refund)">Print</x-table.menu-item>
                 @if ($refund->status !== 'cancelled')
                     <x-table.menu-item danger :post="route('invoices.refunds.cancel', $refund)" method="PATCH" confirm="Cancel this refund? The amount goes back onto the invoice.">Cancel refund</x-table.menu-item>
                 @endif

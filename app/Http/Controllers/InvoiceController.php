@@ -10,9 +10,9 @@ use App\Models\ActivityLog;
 use App\Models\Customer;
 use App\Models\EInvoiceSubmission;
 use App\Models\Invoice;
-use App\Models\InvoiceTemplate;
 use App\Models\Warehouse;
 use App\Services\NotificationService;
+use App\Support\InvoiceDocument;
 use Illuminate\Support\Facades\DB;
 
 class InvoiceController extends Controller
@@ -49,38 +49,28 @@ class InvoiceController extends Controller
         $invoice->load(['customer', 'items.item', 'payments.createdBy', 'createdBy', 'journal.entries.account', 'refunds',
             'creditNotes' => fn ($q) => $q->latest('credit_note_date')->latest('id'), 'creditNoteApplications.creditNote']);
 
-        return view('invoices.show', compact('invoice'));
+        // The invoice page shows the document itself, exactly as it prints
+        // (invoice rebuild).
+        $document = InvoiceDocument::data($invoice);
+
+        return view('invoices.show', compact('invoice', 'document'));
     }
 
+    /** The document on its own page, in the same tab (old links and emails). */
     public function print(Invoice $invoice)
     {
-        $invoice->load(['customer', 'items.item', 'tenant']);
-        $tenant = $invoice->tenant ?? auth()->user()->tenant;
+        $invoice->load(['customer', 'items.item']);
 
-        // Load the active invoice template settings
-        $template = $tenant->invoiceTemplate;
-        if (! $template) {
-            $template = InvoiceTemplate::where('tenant_id', $tenant->id)
-                ->where('is_default', true)
-                ->first();
-        }
-
-        if ($template) {
-            $templateSettings = array_merge(
-                InvoiceTemplate::getDefaultSettings(),
-                $template->settings ?? []
-            );
-
-            return view('invoices.templates.print-templated', compact('invoice', 'tenant', 'templateSettings'));
-        }
-
-        return view('invoices.print', compact('invoice', 'tenant'));
+        return view('invoices.print', InvoiceDocument::data($invoice));
     }
 
+    /** A real A4 PDF of the same document, to save or send. */
     public function pdf(Invoice $invoice)
     {
-        // Redirect to print view for now - can be enhanced with PDF generation later
-        return $this->print($invoice);
+        return response(InvoiceDocument::pdf($invoice), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.addslashes(InvoiceDocument::fileName($invoice)).'"',
+        ]);
     }
 
     public function edit(Invoice $invoice)

@@ -96,7 +96,7 @@
                         <td class="tbl-menu">
                             <x-table.dropdown :sr-label="'Actions for '.$invoice->invoice_number">
                                 <x-table.menu-item :href="route('invoices.show', $invoice)">View</x-table.menu-item>
-                                <x-table.menu-item :href="route('invoices.print', $invoice)" new-tab>Print</x-table.menu-item>
+                                <x-table.menu-item :href="route('invoices.show', ['invoice' => $invoice, 'print' => 1])">Print</x-table.menu-item>
                                 @if ($invoice->status === 'draft' && $user->can('send invoices'))
                                     <x-table.menu-item :post="route('invoices.send', $invoice)">Send</x-table.menu-item>
                                 @endif
@@ -110,7 +110,7 @@
                                     <x-table.menu-item :post="route('invoices.release', $invoice)" confirm="Release this invoice and take the items out of stock?">Release and deduct stock</x-table.menu-item>
                                 @endif
                                 @if ($invoice->released_at)
-                                    <x-table.menu-item :href="route('invoices.waybill', $invoice)" new-tab>Waybill</x-table.menu-item>
+                                    <x-table.menu-item :href="route('invoices.waybill', $invoice)">Waybill</x-table.menu-item>
                                 @endif
                                 @can('delete invoices')
                                     <x-table.menu-item wire="deleteOne({{ $invoice->id }})" :confirm="'Delete '.$invoice->invoice_number.'? This can\'t be undone.'" danger>Delete</x-table.menu-item>
