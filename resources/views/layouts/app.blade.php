@@ -52,6 +52,13 @@
 
         /* Print styles */
         @media print {
+            /* The screen rule above makes the body a scroll box, which cuts a
+               printout to its first page. Let the page run on. */
+            html, body {
+                overflow: visible !important;
+                height: auto !important;
+            }
+
             /* Hide non-essential elements */
             .sidebar,
             .no-print,
@@ -77,11 +84,12 @@
             }
 
             /* Ensure tables print properly */
-            table {
+            /* Report tables get ruled cells; the invoice document keeps its own look. */
+            table:not(.mbdoc table) {
                 border-collapse: collapse !important;
             }
 
-            th, td {
+            th:not(.mbdoc th), td:not(.mbdoc td) {
                 border: 1px solid #d1d5db !important;
                 padding: 8px !important;
             }
@@ -128,7 +136,7 @@
     </a>
 
     {{-- Toast notification system --}}
-    <x-toast />
+    <div class="print:hidden"><x-toast /></div>
 
     <div class="min-h-screen flex flex-col">
         <!-- Mobile sidebar backdrop -->
@@ -148,26 +156,26 @@
         @include('components.sidebar')
 
         <!-- Main content wrapper -->
-        <div class="flex flex-col flex-1 lg:pl-64 min-h-screen">
+        <div class="flex flex-col flex-1 lg:pl-64 min-h-screen print:pl-0 print:min-h-0">
             <!-- Top header -->
             @include('components.header')
 
             <!-- Page content -->
-            <main id="main-content" class="flex-1 py-4 sm:py-6">
-                <div class="mx-auto max-w-7xl px-3 sm:px-4 lg:px-6">
+            <main id="main-content" class="flex-1 py-4 sm:py-6 print:p-0">
+                <div class="mx-auto max-w-7xl px-3 sm:px-4 lg:px-6 print:max-w-none print:px-0">
                     <!-- Auto-breadcrumbs (route-driven) -->
-                    <x-breadcrumbs />
+                    <div class="print:hidden"><x-breadcrumbs /></div>
 
                     <!-- Page heading -->
                     @if(isset($header))
-                    <div class="mb-4 sm:mb-6">
+                    <div class="mb-4 sm:mb-6 print:hidden">
                         {{ $header }}
                     </div>
                     @endif
 
                     <!-- Flash messages -->
                     @if (session('success'))
-                    <div class="mb-4 rounded-lg bg-green-50 p-4 dark:bg-green-900/50" x-data="{ show: true }" x-show="show" x-transition role="alert" aria-live="polite">
+                    <div class="mb-4 rounded-lg bg-green-50 p-4 dark:bg-green-900/50 print:hidden" x-data="{ show: true }" x-show="show" x-transition role="alert" aria-live="polite">
                         <div class="flex">
                             <div class="flex-shrink-0">
                                 <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
@@ -187,7 +195,7 @@
                     @endif
 
                     @if (session('error'))
-                    <div class="mb-4 rounded-lg bg-red-50 p-4 dark:bg-red-900/50" x-data="{ show: true }" x-show="show" x-transition role="alert" aria-live="assertive">
+                    <div class="mb-4 rounded-lg bg-red-50 p-4 dark:bg-red-900/50 print:hidden" x-data="{ show: true }" x-show="show" x-transition role="alert" aria-live="assertive">
                         <div class="flex">
                             <div class="flex-shrink-0">
                                 <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -217,7 +225,7 @@
             </main>
 
             <!-- Footer -->
-            <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-4 mt-auto">
+            <footer class="print:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-4 mt-auto">
                 <div class="mx-auto max-w-7xl px-3 sm:px-4 lg:px-6">
                     <p class="text-center text-sm text-gray-500 dark:text-gray-400">
                         &copy; {{ date('Y') }} {{ config('app.name', 'MyBooks') }}. All rights reserved.

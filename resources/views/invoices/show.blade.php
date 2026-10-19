@@ -1,33 +1,50 @@
+{{--
+    The invoice page (invoice rebuild). The invoice itself, exactly as the
+    customer gets it, sits on the left; what the business needs to act on
+    (balance, payments, credit, activity) sits on the right. Print prints
+    just the invoice from this page; nothing opens in a new tab.
+--}}
 <x-app-layout>
     @php
+        $state = $document['state'];
+        $currency = $document['currency'];
+        $money = fn ($v) => \App\Support\Money::format($v, $currency);
         $maxRefundable = $invoice->amount_paid - ($invoice->total_refunded ?? 0);
-        $open = in_array($invoice->status, ['sent', 'unpaid', 'partial', 'overdue', 'viewed'], true) && $invoice->balance_due > 0;
-        $late = $open && $invoice->due_date && $invoice->due_date->lt(now()->startOfDay());
+        $open = ! in_array($state['key'], ['draft', 'cancelled', 'paid'], true);
         $locked = \App\Models\EInvoiceSubmission::isLocked($invoice);
+        $total = (float) $invoice->total;
+        $settled = max(0, min($total, $total - (float) $invoice->balance_due));
+        $percent = $total > 0 ? (int) floor($settled / $total * 100) : 0;
+        $badge = ['open' => 'unpaid', 'partial' => 'partial'][$state['key']] ?? $state['key'];
+        $canPay = $open && (float) $invoice->balance_due > 0 && auth()->user()->can('create payments-received');
+        $creditFeature = \App\Http\Middleware\EnsureFeatureEnabled::enabled('credit_notes') && ! in_array($invoice->status, ['draft', 'cancelled'], true);
+        $printIcon = '<svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9V3h12v6M6 18H4a1 1 0 0 1-1-1v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1h-2M6 14h12v7H6z"/></svg>';
     @endphp
+
     <x-slot name="header">
         <x-table.page-header :title="'Invoice '.$invoice->invoice_number">
-            <x-slot name="badge"><x-status-badge :status="$late ? 'overdue' : $invoice->status" /></x-slot>
+            <x-slot name="badge"><x-status-badge :status="$badge" :label="$state['label']" /></x-slot>
             <x-slot name="description">
-                <a href="{{ route('customers.show', $invoice->customer) }}" class="link">{{ $invoice->customer->name }}</a>
-                · {{ $invoice->invoice_date->format('j M Y') }}
-                @if ($invoice->balance_due > 0 && $invoice->status !== 'cancelled')
-                    · <span class="{{ $late ? 'tbl-late' : 'font-medium text-gray-900 dark:text-white' }}">Balance due @money($invoice->balance_due)</span>{{ $late ? ', due '.$invoice->due_date->format('j M Y') : '' }}
-                @elseif ($invoice->status === 'paid')
-                    · Paid in full
-                @endif
+                <a href="{{ route('customers.show', $invoice->customer) }}" class="link underline">{{ $invoice->customer->name }}</a>
+                · Issued {{ $invoice->invoice_date->format('j M Y') }}
+                · Due {{ $invoice->due_date->format('j M Y') }}@if ($state['daysLate'] > 0), <span class="tbl-late">{{ $state['daysLate'] }} {{ \Illuminate\Support\Str::plural('day', $state['daysLate']) }} late</span>@endif
             </x-slot>
             <x-slot name="more">
-                <x-table.menu-item :href="route('invoices.print', $invoice)" new-tab>Print</x-table.menu-item>
                 <x-table.menu-item :href="route('invoices.pdf', $invoice)">Download PDF</x-table.menu-item>
                 @if ($invoice->released_at)
-                    <x-table.menu-item :href="route('invoices.waybill', $invoice)" new-tab>Print waybill</x-table.menu-item>
+                    <x-table.menu-item :href="route('invoices.waybill', $invoice)">Waybill</x-table.menu-item>
                 @endif
                 @if ($maxRefundable > 0 && ! in_array($invoice->status, ['draft', 'cancelled']))
                     <x-table.menu-item :href="route('invoices.refunds.create', $invoice)">Refund the customer</x-table.menu-item>
                 @endif
+                @if ($creditFeature)
+                    @can('create invoices')
+                        <x-table.menu-item :href="route('credit-notes.create', ['invoice_id' => $invoice->id])">Create credit note</x-table.menu-item>
+                    @endcan
+                @endif
             </x-slot>
             <x-slot name="actions">
+                <button type="button" class="btn-secondary gap-2" data-print data-testid="print-invoice">{!! $printIcon !!}<span>Print</span></button>
                 @unless ($locked)
                     <a href="{{ route('invoices.edit', $invoice) }}" class="btn-secondary">Edit</a>
                 @endunless
@@ -38,506 +55,275 @@
                             <button type="submit" class="btn-primary">Send</button>
                         </form>
                     @endcan
-                @elseif ($open)
-                    @can('create payments-received')
-                        <a href="#record-payment" class="btn-primary">Record payment</a>
-                    @endcan
+                @elseif ($canPay)
+                    <button type="button" class="btn-primary" data-open-modal="record-payment">Record payment</button>
                 @endif
             </x-slot>
         </x-table.page-header>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
-            <!-- Invoice Document -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 lg:p-8">
-                    <!-- Header -->
-                    <div class="flex flex-col lg:flex-row lg:justify-between gap-6 mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
-                        <div>
-                            <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">INVOICE</h1>
-                            <p class="text-lg text-gray-600 dark:text-gray-400 mt-1"># {{ $invoice->invoice_number }}</p>
-                            @if($invoice->reference)
-                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Ref: {{ $invoice->reference }}</p>
-                            @endif
-                        </div>
-                        <div class="text-left lg:text-right">
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Invoice Date</p>
-                            <p class="font-medium text-gray-900 dark:text-gray-100">{{ $invoice->invoice_date->format('j F Y') }}</p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Due Date</p>
-                            <p class="font-medium {{ $invoice->due_date->isPast() && $invoice->balance_due > 0 ? 'text-red-600 dark:text-red-300' : 'text-gray-900 dark:text-gray-100' }}">
-                                {{ $invoice->due_date->format('j F Y') }}
-                            </p>
-                            @if($warehouseName = \App\Models\Warehouse::nameIfMany($invoice->warehouse_id))
-                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Warehouse</p>
-                                <p class="font-medium text-gray-900 dark:text-gray-100">{{ $warehouseName }}</p>
-                            @endif
-                        </div>
-                    </div>
-
-                    <!-- Bill To -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Bill to</h3>
-                            <p class="font-medium text-gray-900 dark:text-gray-100">{{ $invoice->customer->name }}</p>
-                            @if($invoice->customer->company_name)
-                                <p class="text-gray-600 dark:text-gray-400">{{ $invoice->customer->company_name }}</p>
-                            @endif
-                            @if($invoice->customer->billing_address)
-                                <p class="text-gray-600 dark:text-gray-400 mt-1">{{ $invoice->customer->billing_address }}</p>
-                            @endif
-                            @if($invoice->customer->city || $invoice->customer->state)
-                                <p class="text-gray-600 dark:text-gray-400">
-                                    {{ $invoice->customer->city }}{{ $invoice->customer->city && $invoice->customer->state ? ', ' : '' }}{{ $invoice->customer->state }} {{ $invoice->customer->postal_code }}
-                                </p>
-                            @endif
-                            @if($invoice->customer->email)
-                                <p class="text-gray-600 dark:text-gray-400 mt-2">{{ $invoice->customer->email }}</p>
-                            @endif
-                        </div>
-                    </div>
-
-                    <!-- Line Items -->
-                    <x-table caption="Items on this invoice">
-<x-slot name="head">
-                                    <x-table.th>Description</x-table.th>
-                                    <x-table.th num class="w-24">Qty</x-table.th>
-                                    <x-table.th num class="w-32">Price</x-table.th>
-                                    <x-table.th num class="w-24">Tax</x-table.th>
-                                    <x-table.th num class="w-32">Total</x-table.th>
-</x-slot>
-
-                                @foreach($invoice->items as $item)
-                                <tr>
-                                    <td>
-                                        <p class="font-medium text-gray-900 dark:text-gray-100">{{ $item->description }}</p>
-                                        @if($item->item)
-                                            <p class="text-sm text-gray-500 dark:text-gray-400">SKU: {{ $item->item->sku }}</p>
-                                        @endif
-                                    </td>
-                                    <td class="num">{{ \App\Support\Figure::qty($item->quantity) }}</td>
-                                    <td class="num">@fig($item->unit_price, false)</td>
-                                    <td class="num">{{ \App\Support\Figure::rate($item->tax_rate) }}</td>
-                                    <td class="num font-medium">@fig($item->total, false)</td>
-                                </tr>
-                                @endforeach
-</x-table>
-
-                    <!-- Totals -->
-                    <div class="flex justify-end">
-                        <div class="w-full md:w-72 space-y-2">
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-600 dark:text-gray-400">Subtotal</span>
-                                <span class="font-medium text-gray-900 dark:text-gray-100">{{ number_format($invoice->subtotal, 2) }}</span>
-                            </div>
-                            @if($invoice->discount_amount > 0)
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-600 dark:text-gray-400">Discount</span>
-                                <span class="font-medium text-red-600 dark:text-red-300">-{{ number_format($invoice->discount_amount, 2) }}</span>
-                            </div>
-                            @endif
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-600 dark:text-gray-400">Tax</span>
-                                <span class="font-medium text-gray-900 dark:text-gray-100">{{ number_format($invoice->tax_amount, 2) }}</span>
-                            </div>
-                            <div class="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
-                                <span class="text-lg font-bold text-gray-900 dark:text-gray-100">Total</span>
-                                <span class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ number_format($invoice->total, 2) }}</span>
-                            </div>
-                            @if($invoice->balance_due != $invoice->total)
-                            <div class="flex justify-between text-sm text-green-700 dark:text-green-400">
-                                <span>Amount Paid</span>
-                                <span class="font-medium">{{ number_format($invoice->total - $invoice->balance_due, 2) }}</span>
-                            </div>
-                            <div class="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
-                                <span class="font-bold text-gray-900 dark:text-gray-100">Balance Due</span>
-                                <span class="font-bold text-brand-600 dark:text-brand-300">{{ number_format($invoice->balance_due, 2) }}</span>
-                            </div>
-                            @endif
-                        </div>
-                    </div>
-
-                    <!-- Notes & Terms -->
-                    @if($invoice->notes || $invoice->terms)
-                    <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-6">
-                        @if($invoice->notes)
-                        <div>
-                            <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Notes</h4>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ $invoice->notes }}</p>
-                        </div>
-                        @endif
-                        @if($invoice->terms)
-                        <div>
-                            <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Terms and conditions</h4>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ $invoice->terms }}</p>
-                        </div>
-                        @endif
-                    </div>
-                    @endif
+    <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_19rem] xl:grid-cols-[minmax(0,1fr)_21rem] print:block">
+        {{-- The invoice, on its sheet of paper --}}
+        <div class="min-w-0 space-y-6 print:space-y-0">
+            <section aria-label="The invoice as your customer sees it" class="rounded-xl bg-gray-100 px-0 py-3 sm:p-6 dark:bg-gray-950/60 print:rounded-none print:bg-white print:p-0">
+                <div class="mx-auto max-w-[820px] overflow-hidden bg-white shadow-[0_1px_2px_rgba(16,42,67,0.08),0_16px_36px_-16px_rgba(16,42,67,0.35)] ring-1 ring-gray-900/5 sm:rounded-md print:max-w-none print:rounded-none print:shadow-none print:ring-0">
+                    @include('invoices.document', $document)
                 </div>
-            </div>
+                <p class="mt-3 px-3 text-center text-xs text-gray-600 dark:text-gray-400 print:hidden">
+                    This is what your customer receives.
+                    @can('view settings')<a href="{{ route('settings.invoice-templates.index') }}" class="link underline">Change its look</a>@endcan
+                </p>
+            </section>
 
-            <!-- Payments History -->
-            @if($invoice->payments && $invoice->payments->count() > 0)
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
-                <div class="p-6">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Payment History</h3>
-                    <x-table caption="Payments">
-<x-slot name="head">
-                                    <x-table.th>Date</x-table.th>
-                                    <x-table.th>Method</x-table.th>
-                                    <x-table.th>Reference</x-table.th>
-                                    <x-table.th num>Amount</x-table.th>
-                                    <x-table.th num>WHT deducted</x-table.th>
-</x-slot>
+            <div class="space-y-6 print:hidden">
+                @if (\App\Http\Middleware\EnsureFeatureEnabled::enabled('sms_whatsapp') && $invoice->status !== 'draft' && $invoice->customer)
+                    @include('invoices._messages')
+                @endif
 
-                                @foreach($invoice->payments as $payment)
-                                <tr>
-                                    <td>{{ $payment->payment_date?->format('j M Y') ?? '—' }}</td>
-                                    <td>{{ ucfirst($payment->payment_method) }}</td>
-                                    <td>{{ $payment->reference ?? '—' }}</td>
-                                    <td class="text-green-700 dark:text-green-400 num font-medium">@fig($payment->amount, false)</td>
-                                    <td class="num">{{ (float) $payment->wht_amount > 0 ? number_format($payment->wht_amount, 2) : '-' }}</td>
-                                </tr>
-                                @endforeach
-</x-table>
-                </div>
-            </div>
-            @endif
+                @include('e-invoices._panel', ['document' => $invoice])
 
-            @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('sms_whatsapp') && $invoice->status !== 'draft' && $invoice->customer)
-                @include('invoices._messages')
-            @endif
-
-            @include('e-invoices._panel', ['document' => $invoice])
-
-            <!-- Credit notes: raised against this invoice, and credit applied to it -->
-            @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('credit_notes') && ! in_array($invoice->status, ['draft', 'cancelled']))
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
-                <div class="p-6 space-y-3">
-                    <div class="flex flex-wrap items-center justify-between gap-2">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Credit notes</h3>
-                        @can('create invoices')
-                            <a href="{{ route('credit-notes.create', ['invoice_id' => $invoice->id]) }}" class="btn-primary">Create credit note</a>
-                        @endcan
-                    </div>
-                    @forelse($invoice->creditNotes as $note)
-                        <p class="text-sm text-gray-700 dark:text-gray-300 flex flex-wrap justify-between gap-3">
+                @if ($invoice->journal)
+                    <details class="group rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-5 py-4 focus-ring [&::-webkit-details-marker]:hidden">
                             <span>
-                                <a href="{{ route('credit-notes.show', $note) }}" class="text-brand-600 dark:text-brand-300">{{ $note->credit_note_number }}</a>
-                                · {{ $note->credit_note_date->format('j M Y') }}
-                                · <x-status-badge :status="$note->status" :label="$note->status === 'closed' ? 'Used up' : null" />
-                                @if($note->restock) · goods returned @endif
+                                <span class="font-medium text-gray-900 dark:text-white">Accounting entries</span>
+                                <span class="block text-sm text-gray-600 dark:text-gray-400">How this invoice was posted to the ledger, journal {{ $invoice->journal->journal_number }}</span>
                             </span>
-                            <span class="font-medium">@money($note->total)</span>
-                        </p>
-                    @empty
-                        <p class="text-sm text-gray-500 dark:text-gray-400">No credit note has been raised against this invoice.</p>
-                    @endforelse
-                    @if($invoice->creditNoteApplications->isNotEmpty())
-                        <h4 class="pt-2 text-sm font-medium text-gray-900 dark:text-gray-100">Credit applied to this invoice</h4>
-                        @foreach($invoice->creditNoteApplications as $application)
-                            <p class="text-sm text-gray-700 dark:text-gray-300 flex justify-between gap-3">
-                                <span>{{ $application->applied_date->format('j M Y') }} · from credit note <a href="{{ route('credit-notes.show', $application->creditNote) }}" class="text-brand-600 dark:text-brand-300">{{ $application->creditNote->credit_note_number }}</a></span>
-                                <span class="font-medium">-@money($application->amount)</span>
-                            </p>
-                        @endforeach
-                    @endif
-                </div>
-            </div>
-            @endif
-
-            <!-- Refund History -->
-            @if($invoice->refunds && $invoice->refunds->count() > 0)
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
-                <div class="p-6">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
-                        </svg>
-                        Refund History
-                    </h3>
-                    <x-table caption="Refunds">
-<x-slot name="head">
-                                    <x-table.th>Refund #</x-table.th>
-                                    <x-table.th>Date</x-table.th>
-                                    <x-table.th>Method</x-table.th>
-                                    <x-table.th>Reason</x-table.th>
-                                    <x-table.th class="text-center">Status</x-table.th>
-                                    <x-table.th num>Amount</x-table.th>
-</x-slot>
-
-                                @foreach($invoice->refunds as $refund)
-                                <tr>
-                                    <td>
-                                        <a href="{{ route('invoices.refunds.show', $refund) }}" class="tbl-link">
-                                            {{ $refund->refund_number }}
-                                        </a>
-                                    </td>
-                                    <td>{{ $refund->refund_date->format('j M Y') }}</td>
-                                    <td>
-                                        {{ \App\Models\InvoiceRefund::METHODS[$refund->refund_method] ?? ucfirst($refund->refund_method) }}
-                                    </td>
-                                    <td>
-                                        {{ $refund->reason ? (\App\Models\InvoiceRefund::REASONS[$refund->reason] ?? $refund->reason) : '-' }}
-                                    </td>
-                                    <td class="text-center">
-                                        @php
-                                            $refundStatusColors = [
-                                                'pending' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
-                                                'completed' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
-                                                'cancelled' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
-                                            ];
-                                        @endphp
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $refundStatusColors[$refund->status] ?? 'bg-gray-100 text-gray-800' }}">
-                                            {{ ucfirst($refund->status) }}
-                                        </span>
-                                    </td>
-                                    <td class="text-red-600 dark:text-red-300 num font-medium">
-                                        -@fig($refund->amount, false)
-                                    </td>
-                                </tr>
-                                @endforeach
-<x-slot name="foot">
-                                <tr>
-                                    <td colspan="5" class="font-semibold num">
-                                        Total Refunded:
-                                    </td>
-                                    <td class="font-bold text-red-600 dark:text-red-300 num">
-                                        -@fig($invoice->total_refunded ?? 0, false)
-                                    </td>
-                                </tr>
-</x-slot>
-</x-table>
-                </div>
-            </div>
-            @endif
-
-            <!-- Record Payment -->
-            @if($invoice->balance_due > 0 && !in_array($invoice->status, ['draft', 'cancelled']))
-            <div id="record-payment" class="scroll-mt-20 bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
-                <div class="p-6">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Record Payment</h3>
-                    <form action="{{ route('payments-received.store') }}" method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        @csrf
-                        <input type="hidden" name="invoice_id" value="{{ $invoice->id }}">
-                        <input type="hidden" name="customer_id" value="{{ $invoice->customer_id }}">
-                        
-                        <div>
-                            <label for="amount" class="form-label">Amount</label>
-                            <input id="amount" type="number" name="amount" value="{{ $invoice->balance_due }}" min="0.01" max="{{ $invoice->balance_due }}" step="0.01" required
-                                class="form-control">
-                        </div>
-                        
-                        <div>
-                            <label for="payment_date" class="form-label">Date</label>
-                            <input id="payment_date" type="date" name="payment_date" value="{{ date('Y-m-d') }}" required
-                                class="form-control">
-                        </div>
-                        
-                        <div>
-                            <label for="payment_method" class="form-label">Method</label>
-                            <x-searchable-select
-                                name="payment_method"
-                                :options="['cash' => 'Cash', 'bank_transfer' => 'Bank Transfer', 'check' => 'Check', 'credit_card' => 'Credit Card', 'other' => 'Other']"
-                                value="cash"
-                                placeholder="Select Method"
-                                search-placeholder="Search..."
-                                :has-error="false" />
-                        </div>
-                        
-                        <div class="flex items-end">
-                            <button type="submit" class="btn-primary w-full">
-                                Record Payment
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            @endif
-
-            <!-- Invoice History / Audit Trail -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
-                <div class="p-6">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        Invoice History
-                    </h3>
-                    <div class="flow-root">
-                        <ul role="list" class="-mb-8">
-                            <!-- Created -->
-                            <li>
-                                <div class="relative pb-8">
-                                    <span class="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>
-                                    <div class="relative flex space-x-3">
-                                        <div>
-                                            <span class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
-                                                <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                                                </svg>
-                                            </span>
-                                        </div>
-                                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                                            <div>
-                                                <p class="text-sm text-gray-900 dark:text-gray-100">Invoice created</p>
-                                                <p class="text-xs text-gray-500 dark:text-gray-400">by {{ $invoice->createdBy?->name ?? 'System' }}</p>
-                                            </div>
-                                            <div class="whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
-                                                <time datetime="{{ $invoice->created_at }}">{{ $invoice->created_at->format('j M Y') }}</time>
-                                                <p class="text-xs">{{ $invoice->created_at->format('g:i A') }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
-
-                            <!-- Updated (if different from created) -->
-                            @if($invoice->updated_at->gt($invoice->created_at->addMinutes(1)))
-                            <li>
-                                <div class="relative pb-8">
-                                    <span class="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>
-                                    <div class="relative flex space-x-3">
-                                        <div>
-                                            <span class="h-8 w-8 rounded-full bg-brand-500 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
-                                                <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                                </svg>
-                                            </span>
-                                        </div>
-                                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                                            <div>
-                                                <p class="text-sm text-gray-900 dark:text-gray-100">Invoice updated</p>
-                                            </div>
-                                            <div class="whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
-                                                <time datetime="{{ $invoice->updated_at }}">{{ $invoice->updated_at->format('j M Y') }}</time>
-                                                <p class="text-xs">{{ $invoice->updated_at->format('g:i A') }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
-                            @endif
-
-                            <!-- Payments -->
-                            @foreach($invoice->payments as $payment)
-                            <li>
-                                <div class="relative pb-8">
-                                    @if(!$loop->last || $invoice->released_at)
-                                    <span class="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>
-                                    @endif
-                                    <div class="relative flex space-x-3">
-                                        <div>
-                                            <span class="h-8 w-8 rounded-full bg-green-600 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
-                                                <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                </svg>
-                                            </span>
-                                        </div>
-                                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                                            <div>
-                                                <p class="text-sm text-gray-900 dark:text-gray-100">
-                                                    Payment received: <span class="font-semibold text-green-700 dark:text-green-400">{{ number_format($payment->amount, 2) }}</span>
-                                                </p>
-                                                <p class="text-xs text-gray-500 dark:text-gray-400">
-                                                    via {{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}
-                                                    @if($payment->createdBy) • by {{ $payment->createdBy->name }} @endif
-                                                </p>
-                                            </div>
-                                            <div class="whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
-                                                <time datetime="{{ $payment->payment_date }}">{{ $payment->payment_date->format('j M Y') }}</time>
-                                                <p class="text-xs">{{ $payment->created_at->format('g:i A') }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
-                            @endforeach
-
-                            <!-- Released -->
-                            @if($invoice->released_at)
-                            <li>
-                                <div class="relative pb-8">
-                                    <div class="relative flex space-x-3">
-                                        <div>
-                                            <span class="h-8 w-8 rounded-full bg-gray-500 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
-                                                <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                                </svg>
-                                            </span>
-                                        </div>
-                                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                                            <div>
-                                                <p class="text-sm text-gray-900 dark:text-gray-100">Invoice released</p>
-                                                @if($invoice->waybill_number)
-                                                <p class="text-xs text-gray-500 dark:text-gray-400">Waybill: {{ $invoice->waybill_number }}</p>
-                                                @endif
-                                            </div>
-                                            <div class="whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
-                                                <time datetime="{{ $invoice->released_at }}">{{ $invoice->released_at->format('j M Y') }}</time>
-                                                <p class="text-xs">{{ $invoice->released_at->format('g:i A') }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
-                            @endif
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Journal Entry / Double-Entry -->
-            @if($invoice->journal)
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center justify-between">
-                        <span class="flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                            </svg>
-                            Journal Entry
-                        </span>
-                        <a href="{{ route('journals.show', $invoice->journal) }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">
-                            {{ $invoice->journal->journal_number }}
-                        </a>
-                    </h3>
-                    <x-table caption="Ledger postings">
-<x-slot name="head">
+                            <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19 9-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="border-t border-gray-100 px-5 pb-5 pt-4 dark:border-gray-700">
+                            <x-table caption="Ledger postings">
+                                <x-slot name="head">
                                     <x-table.th>Account</x-table.th>
                                     <x-table.th num>Debit</x-table.th>
                                     <x-table.th num>Credit</x-table.th>
-</x-slot>
-
-                                @foreach($invoice->journal->entries as $entry)
-                                <tr>
-                                    <td>
-                                        <span class="font-mono text-xs text-gray-500 dark:text-gray-400 mr-2">{{ $entry->account->account_code }}</span>
-                                        {{ $entry->account->name }}
-                                    </td>
-                                    <td class="num {{ $entry->debit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
-                                        {{ $entry->debit > 0 ? number_format($entry->debit, 2) : '-' }}
-                                    </td>
-                                    <td class="num {{ $entry->credit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
-                                        {{ $entry->credit > 0 ? number_format($entry->credit, 2) : '-' }}
-                                    </td>
-                                </tr>
+                                </x-slot>
+                                @foreach ($invoice->journal->entries as $entry)
+                                    <tr>
+                                        <td><span class="mr-2 text-xs text-gray-500 dark:text-gray-400">{{ $entry->account->account_code }}</span>{{ $entry->account->name }}</td>
+                                        <td class="num {{ \App\Support\Figure::tone($entry->debit) }}">@fig($entry->debit, false)</td>
+                                        <td class="num {{ \App\Support\Figure::tone($entry->credit) }}">@fig($entry->credit, false)</td>
+                                    </tr>
                                 @endforeach
-<x-slot name="foot">
-                                <tr class="font-semibold">
-                                    <td>Total</td>
-                                    <td class="num">@fig($invoice->journal->total_debit, false)</td>
-                                    <td class="num">@fig($invoice->journal->total_credit, false)</td>
-                                </tr>
-</x-slot>
-</x-table>
-                    <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                        Posted on {{ $invoice->journal->posted_at?->format('j M Y, H:i') ?? 'Not posted' }}
-                    </p>
-                </div>
+                                <x-slot name="foot">
+                                    <tr>
+                                        <td>Total</td>
+                                        <td class="num">@fig($invoice->journal->total_debit, false)</td>
+                                        <td class="num">@fig($invoice->journal->total_credit, false)</td>
+                                    </tr>
+                                </x-slot>
+                            </x-table>
+                            <p class="mt-3 text-xs text-gray-600 dark:text-gray-400">
+                                Posted {{ $invoice->journal->posted_at?->format('j M Y, H:i') ?? 'not yet' }}.
+                                <a href="{{ route('journals.show', $invoice->journal) }}" class="link">Open the journal</a>
+                            </p>
+                        </div>
+                    </details>
+                @endif
             </div>
-            @endif
         </div>
+
+        {{-- What to act on --}}
+        <aside class="space-y-4 lg:sticky lg:top-20 print:hidden" aria-label="Payment and history">
+            {{-- Balance --}}
+            <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10" data-testid="invoice-balance">
+                @if ($state['key'] === 'paid')
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Paid in full</p>
+                    <p class="mt-1 text-3xl font-semibold tabular-nums text-gray-900 dark:text-white">{{ $money($total) }}</p>
+                @elseif ($state['key'] === 'draft')
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Draft total</p>
+                    <p class="mt-1 text-3xl font-semibold tabular-nums text-gray-900 dark:text-white">{{ $money($total) }}</p>
+                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Not sent yet. Nothing is owed until you send it.</p>
+                @elseif ($state['key'] === 'cancelled')
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Cancelled</p>
+                    <p class="mt-1 text-3xl font-semibold tabular-nums text-gray-500 line-through dark:text-gray-400">{{ $money($total) }}</p>
+                @else
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Balance due</p>
+                    <p class="mt-1 text-3xl font-semibold tabular-nums {{ $state['daysLate'] > 0 ? 'text-red-700 dark:text-red-300' : 'text-gray-900 dark:text-white' }}">{{ $money($invoice->balance_due) }}</p>
+                @endif
+
+                @if (in_array($state['key'], ['open', 'partial', 'overdue', 'paid'], true) && $total > 0)
+                    <div class="mt-4" role="img" aria-label="{{ $percent }}% paid">
+                        <div class="h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
+                            <div class="h-full rounded-full {{ $state['key'] === 'paid' ? 'bg-green-600 dark:bg-green-500' : 'bg-brand-600 dark:bg-brand-400' }}" style="width: {{ $percent }}%"></div>
+                        </div>
+                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">{{ $money($settled) }} of {{ $money($total) }} paid</p>
+                    </div>
+                @endif
+
+                @if ($open)
+                    <p class="mt-3 text-sm {{ $state['daysLate'] > 0 ? 'font-medium text-red-700 dark:text-red-300' : 'text-gray-700 dark:text-gray-300' }}">
+                        @if ($state['daysLate'] > 0)
+                            Was due {{ $invoice->due_date->format('j M Y') }}, {{ $state['daysLate'] }} {{ \Illuminate\Support\Str::plural('day', $state['daysLate']) }} ago
+                        @elseif ($invoice->due_date->isToday())
+                            Due today
+                        @else
+                            Due {{ $invoice->due_date->format('j M Y') }}, in {{ (int) now()->startOfDay()->diffInDays($invoice->due_date) }} {{ \Illuminate\Support\Str::plural('day', (int) now()->startOfDay()->diffInDays($invoice->due_date)) }}
+                        @endif
+                    </p>
+                @endif
+
+                @if ($canPay)
+                    <button type="button" class="btn-primary mt-4 w-full justify-center" data-open-modal="record-payment">Record payment</button>
+                @endif
+                @if ($open && \App\Http\Middleware\EnsureFeatureEnabled::enabled('sms_whatsapp'))
+                    <a href="#text-messages" class="mt-2 block text-center text-sm font-medium text-brand-700 hover:underline dark:text-brand-300">Send a reminder</a>
+                @endif
+            </section>
+
+            {{-- Payments --}}
+            <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
+                <h3 class="font-medium text-gray-900 dark:text-white">Payments</h3>
+                @forelse ($invoice->payments as $payment)
+                    <div class="mt-3 flex items-start justify-between gap-3 border-t border-gray-100 pt-3 text-sm first-of-type:border-0 first-of-type:pt-0 dark:border-gray-700">
+                        <div class="min-w-0">
+                            <p class="text-gray-900 dark:text-gray-100">{{ $payment->payment_date?->format('j M Y') ?? '—' }}</p>
+                            <p class="truncate text-gray-600 dark:text-gray-400">
+                                {{ ucfirst(str_replace('_', ' ', (string) $payment->payment_method)) }}@if ($payment->reference), {{ $payment->reference }}@endif
+                            </p>
+                            @if ((float) $payment->wht_amount > 0)
+                                <p class="text-gray-600 dark:text-gray-400">WHT deducted {{ $money($payment->wht_amount) }}</p>
+                            @endif
+                        </div>
+                        <p class="shrink-0 font-medium tabular-nums text-green-700 dark:text-green-400">{{ $money($payment->amount) }}</p>
+                    </div>
+                @empty
+                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">No payments yet.</p>
+                @endforelse
+            </section>
+
+            {{-- Credit notes --}}
+            @if ($creditFeature && ($invoice->creditNotes->isNotEmpty() || $invoice->creditNoteApplications->isNotEmpty()))
+                <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
+                    <h3 class="font-medium text-gray-900 dark:text-white">Credit notes</h3>
+                    @foreach ($invoice->creditNotes as $note)
+                        <div class="mt-3 flex items-start justify-between gap-3 text-sm">
+                            <div>
+                                <a href="{{ route('credit-notes.show', $note) }}" class="link">{{ $note->credit_note_number }}</a>
+                                <p class="text-gray-600 dark:text-gray-400">{{ $note->credit_note_date->format('j M Y') }}@if ($note->restock), goods returned @endif</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-medium tabular-nums text-gray-900 dark:text-gray-100">{{ $money($note->total) }}</p>
+                                <x-status-badge :status="$note->status" :label="$note->status === 'closed' ? 'Used up' : null" />
+                            </div>
+                        </div>
+                    @endforeach
+                    @foreach ($invoice->creditNoteApplications as $application)
+                        <div class="mt-3 flex items-start justify-between gap-3 border-t border-gray-100 pt-3 text-sm dark:border-gray-700">
+                            <p class="text-gray-700 dark:text-gray-300">Credit applied {{ $application->applied_date->format('j M Y') }}, from <a href="{{ route('credit-notes.show', $application->creditNote) }}" class="link">{{ $application->creditNote->credit_note_number }}</a></p>
+                            <p class="shrink-0 font-medium tabular-nums text-gray-900 dark:text-gray-100">-{{ $money($application->amount) }}</p>
+                        </div>
+                    @endforeach
+                </section>
+            @endif
+
+            {{-- Refunds --}}
+            @if ($invoice->refunds->isNotEmpty())
+                <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
+                    <h3 class="font-medium text-gray-900 dark:text-white">Refunds</h3>
+                    @foreach ($invoice->refunds as $refund)
+                        <div class="mt-3 flex items-start justify-between gap-3 text-sm">
+                            <div class="min-w-0">
+                                <a href="{{ route('invoices.refunds.show', $refund) }}" class="link">{{ $refund->refund_number }}</a>
+                                <p class="text-gray-600 dark:text-gray-400">{{ $refund->refund_date->format('j M Y') }}, {{ \App\Models\InvoiceRefund::METHODS[$refund->refund_method] ?? ucfirst((string) $refund->refund_method) }}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-medium tabular-nums text-red-700 dark:text-red-300">-{{ $money($refund->amount) }}</p>
+                                <x-status-badge :status="$refund->status === 'completed' ? 'paid' : ($refund->status === 'pending' ? 'unpaid' : 'cancelled')" :label="ucfirst($refund->status)" />
+                            </div>
+                        </div>
+                    @endforeach
+                    <p class="mt-3 flex justify-between border-t border-gray-100 pt-3 text-sm font-medium text-gray-900 dark:border-gray-700 dark:text-white">
+                        <span>Refunded</span><span class="tabular-nums">-{{ $money($invoice->total_refunded ?? 0) }}</span>
+                    </p>
+                </section>
+            @endif
+
+            {{-- Activity --}}
+            @php
+                $events = collect([['when' => $invoice->created_at, 'text' => 'Created', 'who' => $invoice->createdBy?->name]]);
+                if ($invoice->updated_at->gt($invoice->created_at->copy()->addMinute())) {
+                    $events->push(['when' => $invoice->updated_at, 'text' => 'Last changed', 'who' => null]);
+                }
+                foreach ($invoice->payments as $p) {
+                    $events->push(['when' => $p->payment_date ?? $p->created_at, 'text' => 'Payment of '.$money($p->amount), 'who' => $p->createdBy?->name]);
+                }
+                if ($invoice->released_at) {
+                    $events->push(['when' => $invoice->released_at, 'text' => 'Goods released'.($invoice->waybill_number ? ', waybill '.$invoice->waybill_number : ''), 'who' => null]);
+                }
+                $events = $events->sortBy(fn ($e) => $e['when'])->values();
+            @endphp
+            <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
+                <h3 class="font-medium text-gray-900 dark:text-white">Activity</h3>
+                <ol class="mt-3 space-y-3 border-l border-gray-200 pl-4 dark:border-gray-700">
+                    @foreach ($events as $event)
+                        <li class="relative text-sm">
+                            <span class="absolute -left-[1.3rem] top-1.5 h-2 w-2 rounded-full bg-gray-400 ring-4 ring-white dark:bg-gray-500 dark:ring-gray-800" aria-hidden="true"></span>
+                            <p class="text-gray-900 dark:text-gray-100">{{ $event['text'] }}</p>
+                            <p class="text-gray-600 dark:text-gray-400">
+                                <time datetime="{{ $event['when']?->toIso8601String() }}">{{ $event['when']?->format('j M Y') }}</time>@if ($event['who']), {{ $event['who'] }}@endif
+                            </p>
+                        </li>
+                    @endforeach
+                </ol>
+            </section>
+        </aside>
     </div>
+
+    {{-- Record a payment without leaving the invoice --}}
+    @if ($canPay)
+        <x-modal name="record-payment" title="Record payment" maxWidth="md" :show="$errors->any() && old('invoice_id') == $invoice->id">
+            <form action="{{ route('payments-received.store') }}" method="POST" class="space-y-4 px-6 pb-6 pt-2">
+                @csrf
+                <input type="hidden" name="invoice_id" value="{{ $invoice->id }}">
+                <input type="hidden" name="customer_id" value="{{ $invoice->customer_id }}">
+                <input type="hidden" name="back_to_invoice" value="1">
+                <p class="text-sm text-gray-600 dark:text-gray-400">{{ $invoice->customer->name }} owes {{ $money($invoice->balance_due) }} on {{ $invoice->invoice_number }}.</p>
+                <div>
+                    <label for="pay-amount" class="form-label">Amount</label>
+                    <input id="pay-amount" type="number" name="amount" value="{{ old('amount', $invoice->balance_due) }}" min="0.01" max="{{ $invoice->balance_due }}" step="0.01" required class="form-control" inputmode="decimal">
+                    <x-input-error :messages="$errors->get('amount')" class="mt-1" />
+                </div>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <label for="pay-date" class="form-label">Date received</label>
+                        <input id="pay-date" type="date" name="payment_date" value="{{ old('payment_date', date('Y-m-d')) }}" required class="form-control">
+                        <x-input-error :messages="$errors->get('payment_date')" class="mt-1" />
+                    </div>
+                    <div>
+                        <label for="pay-method" class="form-label">Method</label>
+                        <select id="pay-method" name="payment_method" class="form-control">
+                            @foreach (['bank_transfer' => 'Bank transfer', 'cash' => 'Cash', 'credit_card' => 'Card or POS', 'check' => 'Cheque', 'other' => 'Other'] as $value => $label)
+                                <option value="{{ $value }}" @selected(old('payment_method', 'bank_transfer') === $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        <x-input-error :messages="$errors->get('payment_method')" class="mt-1" />
+                    </div>
+                </div>
+                @php $payBanks = \App\Models\Bank::where('is_active', true)->orderBy('name')->get(['id', 'name', 'bank_name']); @endphp
+                @if ($payBanks->isNotEmpty())
+                    <div>
+                        <label for="pay-bank" class="form-label">Paid into <span class="font-normal text-gray-600 dark:text-gray-400">(optional)</span></label>
+                        <select id="pay-bank" name="bank_id" class="form-control">
+                            <option value="">Choose an account</option>
+                            @foreach ($payBanks as $bank)
+                                <option value="{{ $bank->id }}" @selected((string) old('bank_id') === (string) $bank->id)>{{ $bank->name }}@if ($bank->bank_name && $bank->bank_name !== $bank->name) ({{ $bank->bank_name }})@endif</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+                <div>
+                    <label for="pay-ref" class="form-label">Reference <span class="font-normal text-gray-600 dark:text-gray-400">(optional)</span></label>
+                    <input id="pay-ref" type="text" name="reference" value="{{ old('reference') }}" maxlength="100" class="form-control" placeholder="Transfer or teller number">
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Did the customer take off WHT, or pay from a deposit? <a href="{{ route('payments-received.create', ['invoice_id' => $invoice->id]) }}" class="link underline">Use the full payment form</a>.</p>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" class="btn-secondary" data-close-modal="record-payment">Cancel</button>
+                    <button type="submit" class="btn-primary">Record payment</button>
+                </div>
+            </form>
+        </x-modal>
+    @endif
+
+    @include('partials.invoice-print-page')
 </x-app-layout>

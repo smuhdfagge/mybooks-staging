@@ -64,9 +64,10 @@ class TableDesignTest extends TestCase
     /**
      * Printed documents (and their shared layout and the invoice template
      * preview), PDFs and emails have their own layout. The home page's tables
-     * are drawn examples of the app, not screens (home page plan H3).
+     * are drawn examples of the app, not screens (home page plan H3), and
+     * the invoice document is the printed invoice (invoice rebuild).
      */
-    private const NOT_SCREENS = '#(^vendor/|pdf|print|mail|statements/document|waybill|payslip|components/table/|^documents/|templates/preview|^welcome\.blade\.php$)#';
+    private const NOT_SCREENS = '#(^vendor/|pdf|print|mail|statements/document|waybill|payslip|components/table/|^documents/|templates/preview|^welcome\.blade\.php$|^invoices/document\.blade\.php$)#';
 
     /** @return list<string> */
     private function todo(): array

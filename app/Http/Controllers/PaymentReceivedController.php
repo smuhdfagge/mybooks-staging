@@ -68,6 +68,11 @@ class PaymentReceivedController extends Controller
             default => 'Payment recorded.',
         };
 
+        // Recorded from the invoice page's dialog: stay on the invoice (invoice rebuild).
+        if ($request->boolean('back_to_invoice') && $payment->invoice_id) {
+            return redirect()->route('invoices.show', $payment->invoice_id)->with('success', $message);
+        }
+
         return redirect()->route('payments-received.show', $payment)->with('success', $message);
     }
 

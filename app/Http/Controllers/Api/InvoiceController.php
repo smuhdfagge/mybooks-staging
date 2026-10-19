@@ -13,7 +13,7 @@ use App\Models\ActivityLog;
 use App\Models\Inventory;
 use App\Models\Invoice;
 use App\Services\NotificationService;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Support\InvoiceDocument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -224,13 +224,11 @@ class InvoiceController extends BaseApiController
      */
     public function pdf(Invoice $invoice): Response
     {
-        $invoice->load(['customer', 'items.item', 'tenant']);
-        $tenant = $invoice->tenant ?? auth()->user()->tenant;
-
-        // Same layout as the web print page ('invoices.pdf' never existed, N9)
-        $pdf = Pdf::loadView('invoices.print', compact('invoice', 'tenant'));
-
-        return $pdf->download("invoice-{$invoice->invoice_number}.pdf");
+        // The same document as the web page, print and PDF (invoice rebuild).
+        return response(InvoiceDocument::pdf($invoice), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="invoice-'.$invoice->invoice_number.'.pdf"',
+        ]);
     }
 
     /**

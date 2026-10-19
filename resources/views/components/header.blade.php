@@ -1,5 +1,5 @@
 <!-- Top Header -->
-<header class="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+<header class="sticky top-0 z-30 print:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
     <div class="flex h-16 items-center justify-between px-3 sm:px-4 lg:px-6 gap-3">
         <!-- Mobile menu button -->
         <button @click="sidebarOpen = true" 

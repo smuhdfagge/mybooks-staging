@@ -1,5 +1,5 @@
 <!-- Fixed Sidebar -->
-<aside class="fixed inset-y-0 left-0 z-50 w-64 flex flex-col bg-brand-900 sidebar-transition"
+<aside class="fixed inset-y-0 left-0 z-50 print:hidden w-64 flex flex-col bg-brand-900 sidebar-transition"
        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
        x-cloak>
     
