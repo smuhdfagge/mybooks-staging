@@ -10,6 +10,7 @@ use App\Models\ChartOfAccount;
 use App\Models\Expense;
 use App\Models\Vendor;
 use App\Services\BankService;
+use App\Support\ExpenseDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -51,8 +52,26 @@ class ExpenseController extends Controller
     public function show(Expense $expense)
     {
         $expense->load(['vendor', 'expenseAccount', 'paidThroughAccount', 'journal.entries.account', 'approvedByUser', 'rejectedByUser', 'createdBy']);
+        $document = ExpenseDocument::data($expense);
 
-        return view('expenses.show', compact('expense'));
+        return view('expenses.show', compact('expense', 'document'));
+    }
+
+    /** The voucher on its own page, for an old bookmark or a link from an email. */
+    public function print(Expense $expense)
+    {
+        $expense->load(['vendor', 'expenseAccount', 'paidThroughAccount', 'approvedByUser', 'createdBy']);
+
+        return view('expenses.print', ExpenseDocument::data($expense));
+    }
+
+    /** The voucher as a PDF, to file or to send. */
+    public function pdf(Expense $expense)
+    {
+        return response(ExpenseDocument::pdf($expense), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.addslashes(ExpenseDocument::fileName($expense)).'"',
+        ]);
     }
 
     public function edit(Expense $expense)

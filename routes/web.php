@@ -631,6 +631,9 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     });
     Route::middleware('permission:view expenses')->group(function () {
         Route::get('expenses', [ExpenseController::class, 'index'])->name('expenses.index');
+        // Before the {expense} route, so "print" and "pdf" are not read as an id.
+        Route::get('expenses/{expense}/print', [ExpenseController::class, 'print'])->name('expenses.print');
+        Route::get('expenses/{expense}/pdf', [ExpenseController::class, 'pdf'])->name('expenses.pdf');
         Route::get('expenses/{expense}', [ExpenseController::class, 'show'])->name('expenses.show');
     });
     Route::middleware('permission:edit expenses')->group(function () {

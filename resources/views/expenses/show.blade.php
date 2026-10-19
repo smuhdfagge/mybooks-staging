@@ -1,369 +1,267 @@
+{{--
+    The expense page. The payment voucher itself, exactly as it will be
+    filed and signed, sits on the left; what the business needs to act on
+    (approval, posting, vendor, activity) sits on the right. Print prints
+    just the voucher from this page; nothing opens in a new tab.
+--}}
 <x-app-layout>
+    @php
+        $state = $document['state'];
+        $currency = $document['currency'];
+        $money = fn ($value) => \App\Support\Money::format($value, $currency);
+        $user = auth()->user();
+        $canApprove = $user->hasRole('admin') || $user->isSuperAdmin();
+        $printIcon = '<svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9V3h12v6M6 18H4a1 1 0 0 1-1-1v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1h-2M6 14h12v7H6z"/></svg>';
+    @endphp
+
     <x-slot name="header">
         <x-table.page-header :title="'Expense '.$expense->expense_number">
-            <x-slot name="badge"><x-status-badge :status="$expense->status" :label="$expense->status_label" /></x-slot>
-            <x-slot name="description">{{ $expense->name }} · {{ $expense->expense_date->format('j M Y') }} · @money($expense->amount)</x-slot>
-            @if ($expense->canBeEdited())
-                @can('delete expenses')
-                    <x-slot name="more">
+            <x-slot name="badge"><x-status-badge :status="$state['tone']" :label="$state['label']" /></x-slot>
+            <x-slot name="description">
+                @if ($expense->vendor)
+                    <a href="{{ route('vendors.show', $expense->vendor) }}" class="link underline">{{ $expense->vendor->name }}</a> ·
+                @endif
+                {{ $expense->expense_date->format('j M Y') }} · {{ $money($expense->total) }}
+            </x-slot>
+            <x-slot name="more">
+                <x-table.menu-item :href="route('expenses.pdf', $expense)">Download PDF</x-table.menu-item>
+                @if ($expense->canBeEdited())
+                    @can('delete expenses')
                         <x-table.menu-item danger :post="route('expenses.destroy', $expense)" method="DELETE" confirm="Delete this expense?">Delete</x-table.menu-item>
-                    </x-slot>
-                @endcan
-            @endif
+                    @endcan
+                @endif
+            </x-slot>
             <x-slot name="actions">
+                <button type="button" class="btn-secondary gap-2" data-print data-testid="print-expense">{!! $printIcon !!}<span>Print</span></button>
                 @if ($expense->canBeEdited())
                     @can('edit expenses')
                         <a href="{{ route('expenses.edit', $expense) }}" class="btn-secondary">Edit</a>
                     @endcan
                 @endif
+                @if ($expense->canBeSubmitted())
+                    <form action="{{ route('expenses.submit', $expense) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn-primary">Submit for approval</button>
+                    </form>
+                @elseif ($canApprove && $expense->canBeApproved())
+                    <form action="{{ route('expenses.approve', $expense) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn-primary">Approve</button>
+                    </form>
+                @elseif ($canApprove && $expense->canBeMarkedAsPaid())
+                    <form action="{{ route('expenses.mark-paid', $expense) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn-primary">Mark as paid</button>
+                    </form>
+                @endif
             </x-slot>
         </x-table.page-header>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+    <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_19rem] xl:grid-cols-[minmax(0,1fr)_21rem] print:block">
+        {{-- The voucher, on its sheet of paper --}}
+        <div class="min-w-0 space-y-6 print:space-y-0">
+            @if ($expense->isRejected() && $expense->rejection_reason)
+                <div class="rounded-lg border-l-4 border-red-500 bg-red-50 p-4 dark:border-red-600 dark:bg-red-900/20 print:hidden">
+                    <h2 class="text-sm font-medium text-red-800 dark:text-red-300">This expense was rejected</h2>
+                    <p class="mt-1 text-sm text-red-700 dark:text-red-300">{{ $expense->rejection_reason }}</p>
+                    @if ($expense->rejectedByUser)
+                        <p class="mt-1 text-xs text-red-600 dark:text-red-400">
+                            Rejected by {{ $expense->rejectedByUser->name }} on {{ $expense->rejected_at?->format('j M Y, H:i') }}
+                        </p>
+                    @endif
+                </div>
+            @endif
 
-            <!-- Status and Amount Card -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                <div class="p-6">
-                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0 bg-red-100 dark:bg-red-900/50 rounded-full p-4">
-                                <svg class="w-8 h-8 text-red-600 dark:text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-                                </svg>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Amount</p>
-                                <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ number_format($expense->amount, 2) }}</p>
-                            </div>
-                        </div>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <!-- Status Badge -->
-                            @php
-                                $statusColors = [
-                                    'draft' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-                                    'pending_approval' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400',
-                                    'approved' => 'bg-brand-100 text-brand-800 dark:bg-brand-900/50 dark:text-brand-300',
-                                    'rejected' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
-                                    'paid' => 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400',
-                                ];
-                            @endphp
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $statusColors[$expense->status] ?? $statusColors['draft'] }}">
-                                {{ $expense->status_label }}
+            <section aria-label="The payment voucher as it will be filed" class="rounded-xl bg-gray-100 px-0 py-3 sm:p-6 dark:bg-gray-950/60 print:rounded-none print:bg-white print:p-0">
+                <div class="mx-auto max-w-[820px] overflow-hidden bg-white shadow-[0_1px_2px_rgba(16,42,67,0.08),0_16px_36px_-16px_rgba(16,42,67,0.35)] ring-1 ring-gray-900/5 sm:rounded-md print:max-w-none print:rounded-none print:shadow-none print:ring-0">
+                    @include('expenses.document', $document)
+                </div>
+                <p class="mt-3 px-3 text-center text-xs text-gray-600 dark:text-gray-400 print:hidden">
+                    Print this voucher, sign it, and file it with the receipt.
+                    @can('view settings')<a href="{{ route('settings.invoice-templates.index') }}" class="link underline">Change its look</a>@endcan
+                    @if (! $document['logo'] && $document['s']['show_logo'])
+                        @can('edit settings')
+                            <span class="mt-1 block" data-testid="add-logo-hint">Your logo is not on it yet. <a href="{{ route('settings.company') }}" class="link underline">Add your logo</a> and it will appear on every document.</span>
+                        @endcan
+                    @endif
+                </p>
+            </section>
+
+            <div class="space-y-6 print:hidden">
+                @if ($expense->journal)
+                    <details class="group rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-5 py-4 focus-ring [&::-webkit-details-marker]:hidden">
+                            <span>
+                                <span class="font-medium text-gray-900 dark:text-white">Accounting entries</span>
+                                <span class="block text-sm text-gray-600 dark:text-gray-400">How this expense was posted to the ledger, journal {{ $expense->journal->journal_number }}</span>
                             </span>
-                            @if($expense->is_billable)
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-400">
-                                    Billable
-                                </span>
-                            @endif
-                        </div>
-                    </div>
-
-                    <!-- Approval Workflow Actions -->
-                    <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                        <div class="flex flex-wrap gap-3">
-                            <!-- Submit for Approval -->
-                            @if($expense->canBeSubmitted())
-                                <form action="{{ route('expenses.submit', $expense) }}" method="POST" class="inline">
-                                    @csrf
-                                    <button type="submit" class="btn-primary">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                        </svg>
-                                        Submit for approval
-                                    </button>
-                                </form>
-                            @endif
-
-                            <!-- Admin Actions -->
-                            @if(auth()->user()->hasRole('admin') || auth()->user()->isSuperAdmin())
-                                @if($expense->canBeApproved())
-                                    <form action="{{ route('expenses.approve', $expense) }}" method="POST" class="inline">
-                                        @csrf
-                                        <button type="submit" class="btn-primary">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                            </svg>
-                                            Approve
-                                        </button>
-                                    </form>
-                                @endif
-
-                                @if($expense->canBeRejected())
-                                    <button type="button" data-open-modal="reject-expense" class="btn-danger">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                        </svg>
-                                        Reject
-                                    </button>
-                                @endif
-
-                                @if($expense->canBeMarkedAsPaid())
-                                    <form action="{{ route('expenses.mark-paid', $expense) }}" method="POST" class="inline">
-                                        @csrf
-                                        <button type="submit" class="btn-primary">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                            </svg>
-                                            Mark as paid
-                                        </button>
-                                    </form>
-                                @endif
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Rejection Reason Alert -->
-            @if($expense->isRejected() && $expense->rejection_reason)
-                <div class="mb-6 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 dark:border-red-600 p-4">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <h3 class="text-sm font-medium text-red-800 dark:text-red-300">Expense Rejected</h3>
-                            <p class="mt-1 text-sm text-red-700 dark:text-red-300">{{ $expense->rejection_reason }}</p>
-                            @if($expense->rejectedByUser)
-                                <p class="mt-1 text-xs text-red-600 dark:text-red-300">
-                                    Rejected by {{ $expense->rejectedByUser->name }} on {{ $expense->rejected_at->format('j M Y, H:i') }}
-                                </p>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Expense Details -->
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Expense Details</h3>
-                        <dl class="space-y-4">
-                            <div class="flex justify-between">
-                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Expense Number</dt>
-                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $expense->expense_number }}</dd>
-                            </div>
-
-                            @if($expense->name)
-                            <div class="flex justify-between">
-                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Expense Name</dt>
-                                <dd class="text-sm text-gray-900 dark:text-gray-100 font-medium">{{ $expense->name }}</dd>
-                            </div>
-                            @endif
-
-                            <div class="flex justify-between">
-                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Date</dt>
-                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $expense->expense_date->format('j M Y') }}</dd>
-                            </div>
-
-                            @if($expense->expenseAccount)
-                            <div class="flex justify-between">
-                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Expense Account</dt>
-                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $expense->expenseAccount->name }}</dd>
-                            </div>
-                            @endif
-
-                            @if($expense->paidThroughAccount)
-                            <div class="flex justify-between">
-                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Paid Through</dt>
-                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $expense->paidThroughAccount->name }}</dd>
-                            </div>
-                            @endif
-
-                            @if($expense->reference)
-                            <div class="flex justify-between">
-                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Reference</dt>
-                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $expense->reference }}</dd>
-                            </div>
-                            @endif
-
-                            @if($expense->createdBy)
-                            <div class="flex justify-between">
-                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Created By</dt>
-                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $expense->createdBy->name }}</dd>
-                            </div>
-                            @endif
-                        </dl>
-                    </div>
-                </div>
-
-                <!-- Vendor & Approval Details -->
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Vendor Information</h3>
-                        @if($expense->vendor)
-                            <dl class="space-y-4">
-                                <div class="flex justify-between">
-                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Name</dt>
-                                    <dd class="text-sm text-gray-900 dark:text-gray-100">
-                                        <a href="{{ route('vendors.show', $expense->vendor) }}" class="text-brand-600 dark:text-brand-300 hover:text-brand-900">
-                                            {{ $expense->vendor->name }}
-                                        </a>
-                                    </dd>
-                                </div>
-                                @if($expense->vendor->company_name)
-                                <div class="flex justify-between">
-                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Company</dt>
-                                    <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $expense->vendor->company_name }}</dd>
-                                </div>
-                                @endif
-                                @if($expense->vendor->email)
-                                <div class="flex justify-between">
-                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Email</dt>
-                                    <dd class="text-sm text-gray-900 dark:text-gray-100">
-                                        <a href="mailto:{{ $expense->vendor->email }}" class="text-brand-600 dark:text-brand-300">{{ $expense->vendor->email }}</a>
-                                    </dd>
-                                </div>
-                                @endif
-                            </dl>
-                        @else
-                            <p class="text-sm text-gray-500 dark:text-gray-400">No vendor associated with this expense.</p>
-                        @endif
-
-                        <!-- Approval Information -->
-                        @if($expense->isApproved() || $expense->isPaid())
-                            <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                                <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Approval Information</h4>
-                                <dl class="space-y-3">
-                                    @if($expense->approvedByUser)
-                                    <div class="flex justify-between">
-                                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Approved By</dt>
-                                        <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $expense->approvedByUser->name }}</dd>
-                                    </div>
-                                    @endif
-                                    @if($expense->approved_at)
-                                    <div class="flex justify-between">
-                                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Approved At</dt>
-                                        <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $expense->approved_at->format('j M Y, H:i') }}</dd>
-                                    </div>
-                                    @endif
-                                </dl>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            </div>
-
-            <!-- Description -->
-            @if($expense->description)
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
-                <div class="p-6">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Description</h3>
-                    <p class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-line">{{ $expense->description }}</p>
-                </div>
-            </div>
-            @endif
-
-            <!-- Journal Entry / Double-Entry (only shown for paid expenses) -->
-            @if($expense->journal)
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
-                <div class="p-6">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center justify-between">
-                        <span class="flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                            </svg>
-                            Journal Entry
-                        </span>
-                        <a href="{{ route('journals.show', $expense->journal) }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">
-                            {{ $expense->journal->journal_number }}
-                        </a>
-                    </h3>
-                    <x-table caption="Ledger postings">
-<x-slot name="head">
+                            <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19 9-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="border-t border-gray-100 px-5 pb-5 pt-4 dark:border-gray-700">
+                            <x-table caption="Ledger postings">
+                                <x-slot name="head">
                                     <x-table.th>Account</x-table.th>
                                     <x-table.th num>Debit</x-table.th>
                                     <x-table.th num>Credit</x-table.th>
-</x-slot>
-
-                                @foreach($expense->journal->entries as $entry)
-                                <tr>
-                                    <td>
-                                        <span class="font-mono text-xs text-gray-500 dark:text-gray-400 mr-2">{{ $entry->account->account_code }}</span>
-                                        {{ $entry->account->name }}
-                                    </td>
-                                    <td class="num {{ $entry->debit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
-                                        {{ $entry->debit > 0 ? number_format($entry->debit, 2) : '-' }}
-                                    </td>
-                                    <td class="num {{ $entry->credit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
-                                        {{ $entry->credit > 0 ? number_format($entry->credit, 2) : '-' }}
-                                    </td>
-                                </tr>
+                                </x-slot>
+                                @foreach ($expense->journal->entries as $entry)
+                                    <tr>
+                                        <td><span class="mr-2 text-xs text-gray-500 dark:text-gray-400">{{ $entry->account->account_code }}</span>{{ $entry->account->name }}</td>
+                                        <td class="num {{ \App\Support\Figure::tone($entry->debit) }}">@fig($entry->debit, false)</td>
+                                        <td class="num {{ \App\Support\Figure::tone($entry->credit) }}">@fig($entry->credit, false)</td>
+                                    </tr>
                                 @endforeach
-<x-slot name="foot">
-                                <tr class="font-semibold">
-                                    <td>Total</td>
-                                    <td class="num">@fig($expense->journal->total_debit, false)</td>
-                                    <td class="num">@fig($expense->journal->total_credit, false)</td>
-                                </tr>
-</x-slot>
-</x-table>
-                    <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                        Posted on {{ $expense->journal->posted_at?->format('j M Y, H:i') ?? 'Not posted' }}
-                    </p>
-                </div>
-            </div>
-            @elseif(!$expense->isPaid())
-            <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 overflow-hidden shadow-sm sm:rounded-lg mt-6">
-                <div class="p-6">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 text-yellow-700 dark:text-yellow-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        <span class="text-sm text-yellow-800 dark:text-yellow-300">
-                            Journal entries will be created once this expense is approved and marked as paid.
-                        </span>
+                                <x-slot name="foot">
+                                    <tr>
+                                        <td>Total</td>
+                                        <td class="num">@fig($expense->journal->total_debit, false)</td>
+                                        <td class="num">@fig($expense->journal->total_credit, false)</td>
+                                    </tr>
+                                </x-slot>
+                            </x-table>
+                            <p class="mt-3 text-xs text-gray-600 dark:text-gray-400">
+                                Posted {{ $expense->journal->posted_at?->format('j M Y, H:i') ?? 'not yet' }}.
+                                <a href="{{ route('journals.show', $expense->journal) }}" class="link">Open the journal</a>
+                            </p>
+                        </div>
+                    </details>
+                @elseif (! $expense->isPaid())
+                    <div class="rounded-lg bg-white p-5 text-sm text-gray-700 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:text-gray-300 dark:ring-white/10">
+                        Nothing has been posted to the ledger yet. That happens once this expense is approved and marked as paid.
                     </div>
-                </div>
+                @endif
             </div>
+        </div>
+
+        {{-- What to act on --}}
+        <aside class="space-y-4 lg:sticky lg:top-20 print:hidden" aria-label="Approval and history">
+            {{-- Where it stands --}}
+            <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10" data-testid="expense-amount">
+                <p class="text-sm text-gray-600 dark:text-gray-400">{{ $state['key'] === 'paid' ? 'Paid' : 'Amount payable' }}</p>
+                <p class="mt-1 text-3xl font-semibold tabular-nums {{ $state['key'] === 'rejected' ? 'text-gray-500 line-through dark:text-gray-400' : 'text-gray-900 dark:text-white' }}">{{ $money($expense->total) }}</p>
+                @if ($expense->is_billable)
+                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">{{ $expense->customer ? 'Billable to '.$expense->customer->name.'.' : 'Billable.' }}</p>
+                @endif
+
+                {{-- The approval steps, in the order they happen --}}
+                @php
+                    $steps = [
+                        ['label' => 'Recorded', 'done' => true],
+                        ['label' => 'Submitted', 'done' => (bool) $expense->submitted_at || in_array($state['key'], ['approved', 'paid'], true)],
+                        ['label' => 'Approved', 'done' => in_array($state['key'], ['approved', 'paid'], true)],
+                        ['label' => 'Paid', 'done' => $state['key'] === 'paid'],
+                    ];
+                @endphp
+                @unless ($state['key'] === 'rejected')
+                    <ol class="mt-4 space-y-2" aria-label="Approval progress">
+                        @foreach ($steps as $step)
+                            <li class="flex items-center gap-2 text-sm">
+                                @if ($step['done'])
+                                    <svg class="h-4 w-4 shrink-0 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                    <span class="text-gray-900 dark:text-gray-100">{{ $step['label'] }}</span>
+                                @else
+                                    <span class="h-4 w-4 shrink-0 rounded-full border border-gray-300 dark:border-gray-600" aria-hidden="true"></span>
+                                    <span class="text-gray-500 dark:text-gray-400">{{ $step['label'] }}</span>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ol>
+                @endunless
+
+                @if ($expense->canBeSubmitted())
+                    <form action="{{ route('expenses.submit', $expense) }}" method="POST" class="mt-4">
+                        @csrf
+                        <button type="submit" class="btn-primary w-full justify-center">Submit for approval</button>
+                    </form>
+                @endif
+                @if ($canApprove && $expense->canBeApproved())
+                    <form action="{{ route('expenses.approve', $expense) }}" method="POST" class="mt-4">
+                        @csrf
+                        <button type="submit" class="btn-primary w-full justify-center">Approve</button>
+                    </form>
+                @endif
+                @if ($canApprove && $expense->canBeRejected())
+                    <button type="button" data-open-modal="reject-expense" class="btn-secondary mt-2 w-full justify-center">Reject</button>
+                @endif
+                @if ($canApprove && $expense->canBeMarkedAsPaid())
+                    <form action="{{ route('expenses.mark-paid', $expense) }}" method="POST" class="mt-2">
+                        @csrf
+                        <button type="submit" class="btn-primary w-full justify-center">Mark as paid</button>
+                    </form>
+                @endif
+            </section>
+
+            {{-- Vendor --}}
+            @if ($expense->vendor)
+                <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
+                    <h3 class="font-medium text-gray-900 dark:text-white">Paid to</h3>
+                    <p class="mt-2 text-sm">
+                        <a href="{{ route('vendors.show', $expense->vendor) }}" class="link">{{ $expense->vendor->name }}</a>
+                    </p>
+                    @if ($expense->vendor->company_name && $expense->vendor->company_name !== $expense->vendor->name)
+                        <p class="text-sm text-gray-600 dark:text-gray-400">{{ $expense->vendor->company_name }}</p>
+                    @endif
+                    @if ($expense->vendor->email)
+                        <p class="truncate text-sm"><a href="mailto:{{ $expense->vendor->email }}" class="link">{{ $expense->vendor->email }}</a></p>
+                    @endif
+                    @if ($expense->vendor->phone)
+                        <p class="text-sm text-gray-600 dark:text-gray-400">{{ $expense->vendor->phone }}</p>
+                    @endif
+                </section>
             @endif
 
-        </div>
+            {{-- Activity --}}
+            @php
+                $events = collect([['when' => $expense->created_at, 'text' => 'Recorded', 'who' => $expense->createdBy?->name]]);
+                if ($expense->submitted_at) {
+                    $events->push(['when' => $expense->submitted_at, 'text' => 'Submitted for approval', 'who' => null]);
+                }
+                if ($expense->approved_at) {
+                    $events->push(['when' => $expense->approved_at, 'text' => 'Approved', 'who' => $expense->approvedByUser?->name]);
+                }
+                if ($expense->rejected_at) {
+                    $events->push(['when' => $expense->rejected_at, 'text' => 'Rejected', 'who' => $expense->rejectedByUser?->name]);
+                }
+                if ($expense->journal?->posted_at) {
+                    $events->push(['when' => $expense->journal->posted_at, 'text' => 'Posted to the ledger', 'who' => null]);
+                }
+                $events = $events->sortBy(fn ($event) => $event['when'])->values();
+            @endphp
+            <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
+                <h3 class="font-medium text-gray-900 dark:text-white">Activity</h3>
+                <ol class="mt-3 space-y-3 border-l border-gray-200 pl-4 dark:border-gray-700">
+                    @foreach ($events as $event)
+                        <li class="relative text-sm">
+                            <span class="absolute -left-[1.3rem] top-1.5 h-2 w-2 rounded-full bg-gray-400 ring-4 ring-white dark:bg-gray-500 dark:ring-gray-800" aria-hidden="true"></span>
+                            <p class="text-gray-900 dark:text-gray-100">{{ $event['text'] }}</p>
+                            <p class="text-gray-600 dark:text-gray-400">
+                                <time datetime="{{ $event['when']?->toIso8601String() }}">{{ $event['when']?->format('j M Y') }}</time>@if ($event['who']), {{ $event['who'] }}@endif
+                            </p>
+                        </li>
+                    @endforeach
+                </ol>
+            </section>
+        </aside>
     </div>
 
-    <!-- Rejection Modal -->
-    <x-modal name="reject-expense" maxWidth="lg" aria-labelledby="modal-title">
-                <form action="{{ route('expenses.reject', $expense) }}" method="POST">
-                    @csrf
-                    <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start">
-                            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 dark:bg-yellow-900/50 sm:mx-0 sm:h-10 sm:w-10">
-                                <svg class="h-6 w-6 text-yellow-700 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                                </svg>
-                            </div>
-                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100" id="modal-title">
-                                    Reject Expense
-                                </h3>
-                                <div class="mt-4">
-                                    <label for="rejection_reason" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        Reason for Rejection (Optional)
-                                    </label>
-                                    <textarea
-                                        id="rejection_reason"
-                                        name="rejection_reason"
-                                        rows="3"
-                                        class="form-control"
-                                        placeholder="Enter reason for rejection..."
-                                    ></textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
-                        <button type="submit" class="btn-danger w-full sm:w-auto sm:text-sm">
-                            Reject Expense
-                        </button>
-                        <button type="button" data-close-modal="reject-expense" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 sm:mt-0 sm:w-auto sm:text-sm">
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-    </x-modal>
+    {{-- Reject without leaving the page --}}
+    @if ($canApprove && $expense->canBeRejected())
+        <x-modal name="reject-expense" title="Reject this expense" maxWidth="md">
+            <form action="{{ route('expenses.reject', $expense) }}" method="POST" class="space-y-4 px-6 pb-6 pt-2">
+                @csrf
+                <p class="text-sm text-gray-600 dark:text-gray-400">{{ $expense->expense_number }}, {{ $money($expense->total) }}@if ($expense->vendor) to {{ $expense->vendor->name }}@endif.</p>
+                <div>
+                    <label for="rejection_reason" class="form-label">Why <span class="font-normal text-gray-600 dark:text-gray-400">(optional)</span></label>
+                    <textarea id="rejection_reason" name="rejection_reason" rows="3" class="form-control" placeholder="Tell whoever recorded it what to fix"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" class="btn-secondary" data-close-modal="reject-expense">Cancel</button>
+                    <button type="submit" class="btn-danger">Reject expense</button>
+                </div>
+            </form>
+        </x-modal>
+    @endif
+
+    @include('partials.invoice-print-page')
 </x-app-layout>
