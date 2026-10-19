@@ -28,7 +28,20 @@ if [ -z "$COMPOSER_BIN" ]; then
 fi
 
 echo "==> Getting the latest code"
-git pull --ff-only origin main
+# Never stop at a username/password prompt: GitHub no longer accepts
+# account passwords, so a prompt here can only fail. Fail with a clear
+# message instead (see "Server access to GitHub" in the README).
+export GIT_TERMINAL_PROMPT=0
+if ! git pull --ff-only origin main; then
+    echo "" >&2
+    echo "Could not get the latest code from GitHub." >&2
+    echo "  - If it said 'could not read Username' or asked for a password, the" >&2
+    echo "    server has no access key: add a deploy key (README, 'Server access" >&2
+    echo "    to GitHub') and run: git remote set-url origin git@github.com:$(git remote get-url origin | sed -E 's#(https://github.com/|git@github.com:)##')" >&2
+    echo "  - If it said 'Not possible to fast-forward', files were changed on the" >&2
+    echo "    server: run 'git status' to see them." >&2
+    exit 1
+fi
 
 echo "==> Installing PHP packages"
 "$PHP" "$COMPOSER_BIN" install --no-dev --optimize-autoloader --no-interaction

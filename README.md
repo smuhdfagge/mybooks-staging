@@ -81,6 +81,29 @@ composer analyse           # PHPStan; new code must not add to phpstan-baseline.
 
 Take a database backup before every deploy (`php artisan mybooks:backup`). Deploy one phase of changes at a time.
 
+### Updating the server
+
+`bash scripts/deploy.sh` pulls `main`, installs packages, migrates and refreshes the caches. The front-end files (`public/build`) are uploaded separately as a zip, because the server has no Node.
+
+### Server access to GitHub
+
+The repository is private, and GitHub does not accept account passwords, so the server needs its own read-only key (a deploy key). Once, on the server:
+
+```bash
+ssh-keygen -t ed25519 -C "mybooks-server" -f ~/.ssh/mybooks_deploy -N ""
+cat ~/.ssh/mybooks_deploy.pub
+```
+
+On GitHub: the repository, **Settings > Deploy keys > Add deploy key**. Paste the line printed above, leave "Allow write access" off, and save. Then, on the server:
+
+```bash
+printf 'Host github.com\n  IdentityFile ~/.ssh/mybooks_deploy\n  IdentitiesOnly yes\n' >> ~/.ssh/config
+chmod 600 ~/.ssh/config ~/.ssh/mybooks_deploy
+ssh -T git@github.com            # answer "yes" once; it should greet the repository
+git remote set-url origin git@github.com:smuhdfagge/mybooks-staging.git
+bash scripts/deploy.sh
+```
+
 ## Backups
 
 `php artisan mybooks:backup` runs every night at 01:30 from the scheduler. It makes one zip with a database dump (`mysqldump`, or a copy for SQLite) and the uploaded files, writes it to every disk in `BACKUP_DISKS`, and removes copies older than `BACKUP_KEEP_DAYS` (the newest one is always kept). If it fails, it emails `BACKUP_NOTIFY_EMAIL` (default: the support email).
