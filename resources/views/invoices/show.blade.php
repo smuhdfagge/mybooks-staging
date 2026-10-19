@@ -72,6 +72,11 @@
                 <p class="mt-3 px-3 text-center text-xs text-gray-600 dark:text-gray-400 print:hidden">
                     This is what your customer receives.
                     @can('view settings')<a href="{{ route('settings.invoice-templates.index') }}" class="link underline">Change its look</a>@endcan
+                    @if (! $document['logo'] && $document['s']['show_logo'])
+                        @can('edit settings')
+                            <span class="mt-1 block" data-testid="add-logo-hint">Your logo is not on it yet. <a href="{{ route('settings.company') }}" class="link underline">Add your logo</a> and it will appear on every invoice.</span>
+                        @endcan
+                    @endif
                 </p>
             </section>
 

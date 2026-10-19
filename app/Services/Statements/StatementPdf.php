@@ -3,8 +3,8 @@
 namespace App\Services\Statements;
 
 use App\Models\Tenant;
+use App\Support\TenantLogo;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Statement as an A4 PDF, with DomPDF like quotations and payslips
@@ -31,15 +31,8 @@ class StatementPdf
     /** The business logo as a data URI (works on screen and in DomPDF), or null. */
     public static function logo(Tenant $tenant): ?string
     {
-        $path = (string) $tenant->logo;
-        if ($path === '' || ! Storage::disk('public')->exists($path)) {
-            return null;
-        }
-        $mime = Storage::disk('public')->mimeType($path) ?: 'image/png';
-        if (! str_starts_with($mime, 'image/')) {
-            return null;
-        }
+        $uri = TenantLogo::dataUri($tenant);
 
-        return 'data:'.$mime.';base64,'.base64_encode((string) Storage::disk('public')->get($path));
+        return $uri !== null && str_starts_with($uri, 'data:image/svg') ? null : $uri;
     }
 }

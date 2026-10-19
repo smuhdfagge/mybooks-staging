@@ -6,8 +6,12 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoiceTemplate;
+use App\Models\Tenant;
 use App\Support\InvoiceDocument;
+use App\Support\TenantLogo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 /**
@@ -154,5 +158,64 @@ class InvoiceDocumentTest extends TestCase
         $this->assertStringContainsString('box-decoration-break: clone', $html);
         $this->assertStringNotContainsString('Amount due</p>
                         <p class="amount">₦0.00', $html);
+    }
+
+    /** A small picture in the given format, made with GD. */
+    private function picture(string $format, int $width = 300, int $height = 100): string
+    {
+        $img = imagecreatetruecolor($width, $height);
+        imagefill($img, 0, 0, (int) imagecolorallocate($img, 31, 78, 121));
+        ob_start();
+        match ($format) {
+            'webp' => imagewebp($img),
+            'jpeg' => imagejpeg($img),
+            default => imagepng($img),
+        };
+        imagedestroy($img);
+
+        return (string) ob_get_clean();
+    }
+
+    public function test_each_business_gets_its_own_logo_on_its_invoices(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('logos/kano.webp', $this->picture('webp', 1600, 400));
+        $this->tenant->update(['logo' => 'logos/kano.webp']);
+        $invoice = $this->invoice();
+
+        // On the page and in print: the logo, as PNG (WebP turned into PNG, scaled down).
+        $html = $this->get(route('invoices.show', $invoice))->assertOk()
+            ->assertSee('data-testid="invoice-logo"', false)
+            ->assertDontSee('data-testid="add-logo-hint"', false)
+            ->getContent();
+        $this->assertStringContainsString('src="data:image/png;base64,', $html);
+
+        $uri = TenantLogo::dataUri($this->tenant->fresh());
+        $size = getimagesizefromstring(base64_decode(substr($uri, strlen('data:image/png;base64,'))));
+        $this->assertSame(640, $size[0], 'A large logo is scaled down for the page and the PDF.');
+
+        // In the PDF too.
+        $this->assertStringStartsWith('%PDF', $this->get(route('invoices.pdf', $invoice))->assertOk()->getContent());
+
+        // Another business never sees this logo.
+        // The logo comes from each business's own record: another business's
+        // record points to its own file (here, none uploaded yet).
+        $other = (new Tenant)->forceFill(['name' => 'Bala Stores', 'logo' => 'logos/bala.png']);
+        $this->assertNull(TenantLogo::dataUri($other));
+    }
+
+    public function test_without_a_logo_the_invoice_shows_initials_and_the_owner_is_told_how_to_add_one(): void
+    {
+        $this->user->givePermissionTo(Permission::findOrCreate('edit settings', 'web'));
+        $invoice = $this->invoice();
+
+        $this->get(route('invoices.show', $invoice))->assertOk()
+            ->assertDontSee('data-testid="invoice-logo"', false)
+            ->assertSee('<span class="mark" aria-hidden="true">KT</span>', false)
+            ->assertSee('data-testid="add-logo-hint"', false)
+            ->assertSee(route('settings.company'), false);
+
+        $this->assertSame('OF', TenantLogo::initials('Our Family Farm Ltd'));
+        $this->assertSame('MA', TenantLogo::initials('MSF Agro Allied Nig Ltd'));
     }
 }

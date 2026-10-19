@@ -4,7 +4,7 @@
     turned into the PDF, and previewed in Settings > Invoice templates.
 
     Data from App\Support\InvoiceDocument::data(): $invoice, $tenant, $s
-    (template settings), $font, $forPdf, $logo, $state, $paid, $credited,
+    (template settings), $font, $forPdf, $logo, $initials, $state, $paid, $credited,
     $currency.
 
     Plain tables and class selectors only, scoped to .mbdoc, so DomPDF draws
@@ -54,7 +54,10 @@
 
     /* Head: who it is from, and what it is */
     {{ $sc }} .head td { vertical-align: top; }
-    {{ $sc }} .logo { max-height: {{ $compact ? 40 : 56 }}px; max-width: 180px; margin-bottom: 10px; }
+    {{ $sc }} .brand { width: auto; }
+    {{ $sc }} .brand-mark { padding-right: 14px; vertical-align: top; }
+    {{ $sc }} .logo { display: block; max-height: {{ $compact ? 44 : 64 }}px; max-width: 170px; }
+    {{ $sc }} .mark { display: inline-block; width: {{ $compact ? 40 : 52 }}px; height: {{ $compact ? 40 : 52 }}px; line-height: {{ $compact ? 40 : 52 }}px; border-radius: 10px; background: {{ $primary }}; color: #fff; text-align: center; font-weight: bold; font-size: {{ $compact ? $base + 2 : $base + 6 }}px; letter-spacing: 0.5px; }
     {{ $sc }} .from-name { font-size: {{ $base + 4 }}px; font-weight: bold; color: {{ $layout === 'modern' ? $s['header_text_color'] : '#111827' }}; }
     {{ $sc }} .from-line { font-size: {{ $base - 1 }}px; color: {{ $layout === 'modern' ? $s['header_text_color'] : '#5B6B7B' }}; }
     {{ $sc }} .title { font-size: {{ $compact ? $base + 8 : $base + 14 }}px; font-weight: bold; color: {{ $layout === 'modern' ? $s['header_text_color'] : $primary }}; text-align: right; line-height: 1.1; letter-spacing: -0.2px; }
@@ -114,6 +117,8 @@
         {{ $sc }} .sheet { padding: 22px 16px 24px; }
         {{ $sc }} .head-wrap { margin-left: {{ $layout === 'modern' ? '-16px' : '0' }} !important; margin-right: {{ $layout === 'modern' ? '-16px' : '0' }} !important; margin-top: {{ $layout === 'modern' ? '-22px' : '0' }} !important; }
         {{ $sc }} .title { font-size: {{ $base + 8 }}px; }
+        {{ $sc }} .logo { max-width: 84px; max-height: 44px; }
+        {{ $sc }} .brand-mark { padding-right: 10px; }
         {{ $sc }} .parties > tbody > tr > td, {{ $sc }} .notes td { display: block; width: auto !important; padding-right: 0 !important; }
         {{ $sc }} .parties > tbody > tr > td + td { margin-top: 14px; }
         {{ $sc }} .due td { display: block; text-align: left; }
@@ -125,37 +130,62 @@
     @endunless
 
     /* On paper the page margins do the spacing. */
-    @unless ($forPdf)
+    @php
+        // Paper spacing: tighter than on screen so an ordinary invoice fits on
+        // one A4 page. Used when printing from the browser and in the PDF.
+        $paperRules = [
+            '' => 'font-size: '.($base - 1).'px;',
+            '.head-wrap' => 'margin: 0 !important; padding-bottom: 14px;',
+            '.logo' => 'max-height: 56px; max-width: 150px;',
+            '.mark' => 'width: 44px; height: 44px; line-height: 44px;',
+            '.parties' => 'margin-top: 16px;',
+            '.due' => 'margin-top: 16px;',
+            '.due td' => 'padding: 9px 14px;',
+            '.due .amount' => 'font-size: '.($base + 5).'px;',
+            '.lines' => 'margin-top: 16px;',
+            '.lines th' => 'padding: 6px 8px;',
+            '.lines td' => 'padding: 6px 8px;',
+            '.totals' => 'margin-top: 8px;',
+            '.totals td' => 'padding: 3px 8px;',
+            '.totals .grand td' => 'padding-top: 7px; padding-bottom: 6px;',
+            '.notes' => 'margin-top: 18px;',
+            '.foot' => 'margin-top: 20px; padding-top: 10px;',
+        ];
+        if ($layout === 'modern') {
+            $paperRules['.head-wrap'] = 'margin: 0 !important; padding: 14px 16px;';
+        }
+    @endphp
+    @if ($forPdf)
+        {{-- The PDF page margins come from invoices/pdf (@page). --}}
+        {{ $sc }} .sheet { padding: 0; }
+        @foreach ($paperRules as $sel => $rule)
+            {{ $sc }} {{ $sel }} { {!! $rule !!} }
+        @endforeach
+        {{-- DejaVu, the PDF font, runs larger than the screen lettering. --}}
+        {{ $sc }} { font-size: {{ $base - 2 }}px; line-height: 1.4; }
+        {{ $sc }} .from-name { font-size: {{ $base + 2 }}px; }
+        {{ $sc }} .title { font-size: {{ $compact ? $base + 6 : $base + 10 }}px; }
+        {{ $sc }} .due .amount { font-size: {{ $base + 3 }}px; }
+        {{ $sc }} .lines td, {{ $sc }} .lines th { padding: 5px 7px; }
+        {{-- DomPDF moves a "keep together" block to a new page even when it fits. --}}
+        {{ $sc }} .foot, {{ $sc }} .notes { page-break-inside: auto; }
+        {{ $sc }} .notes { margin-top: 14px; }
+        {{ $sc }} .foot { margin-top: 14px; padding-top: 8px; }
+    @else
     /*
      * Printing from the browser. The page itself has no margin (see
      * partials/invoice-print-page) and the sheet carries its own, repeated on
      * every page, so the invoice prints the same whatever margins are picked
      * in the print dialog, nothing is cut at the paper's edge, and the
-     * browser adds no date or address lines. Spacing is tighter than on
-     * screen so an ordinary invoice fits on one A4 page.
+     * browser adds no date or address lines.
      */
     @media print {
-        {{ $sc }} { font-size: {{ $base - 1 }}px; }
         {{ $sc }} .sheet { padding: 13mm 14mm 12mm; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
-        {{ $sc }} .head-wrap { margin: 0 !important; padding-bottom: 14px; }
-        @if ($layout === 'modern')
-            {{ $sc }} .head-wrap { padding: 14px 16px; }
-        @endif
-        {{ $sc }} .logo { max-height: 46px; margin-bottom: 6px; }
-        {{ $sc }} .parties { margin-top: 16px; }
-        {{ $sc }} .due { margin-top: 16px; }
-        {{ $sc }} .due td { padding: 9px 14px; }
-        {{ $sc }} .due .amount { font-size: {{ $base + 5 }}px; }
-        {{ $sc }} .lines { margin-top: 16px; }
-        {{ $sc }} .lines th { padding: 6px 8px; }
-        {{ $sc }} .lines td { padding: 6px 8px; }
-        {{ $sc }} .totals { margin-top: 8px; }
-        {{ $sc }} .totals td { padding: 3px 8px; }
-        {{ $sc }} .totals .grand td { padding-top: 7px; padding-bottom: 6px; }
-        {{ $sc }} .notes { margin-top: 18px; }
-        {{ $sc }} .foot { margin-top: 20px; padding-top: 10px; }
+        @foreach ($paperRules as $sel => $rule)
+            {{ $sc }} {{ $sel }} { {!! $rule !!} }
+        @endforeach
     }
-    @endunless
+    @endif
 </style>
 
 <div class="mbdoc {{ ltrim($sc, '.') }}" data-invoice-document>
@@ -163,13 +193,24 @@
         <div class="head-wrap">
             <table class="head">
                 <tr>
-                    <td style="width: 60%;">
-                        @if ($logo)<img src="{{ $logo }}" alt="{{ $tenant->name }}" class="logo"><br>@endif
-                        <p class="from-name">{{ $tenant->name }}</p>
-                        @foreach ($tenantLines as $line)<p class="from-line">{{ $line }}</p>@endforeach
-                        @if ($tenant->tax_number)<p class="from-line">TIN: {{ $tenant->tax_number }}</p>@endif
+                    <td style="width: 62%;">
+                        {{-- The business's logo (or initials) beside its name and address. --}}
+                        <table class="brand">
+                            <tr>
+                                @if ($logo)
+                                    <td class="brand-mark"><img src="{{ $logo }}" alt="{{ $tenant->name }}" class="logo" data-testid="invoice-logo"></td>
+                                @elseif ($s['show_logo'])
+                                    <td class="brand-mark"><span class="mark" aria-hidden="true">{{ $initials }}</span></td>
+                                @endif
+                                <td>
+                                    <p class="from-name">{{ $tenant->name }}</p>
+                                    @foreach ($tenantLines as $line)<p class="from-line">{{ $line }}</p>@endforeach
+                                    @if ($tenant->tax_number)<p class="from-line">TIN: {{ $tenant->tax_number }}</p>@endif
+                                </td>
+                            </tr>
+                        </table>
                     </td>
-                    <td style="width: 40%; text-align: right;">
+                    <td style="width: 38%; text-align: right;">
                         <p class="title">Invoice</p>
                         <p class="number">{{ $invoice->invoice_number }}</p>
                         @if ($s['show_status_badge'] && $state['key'] !== 'open')

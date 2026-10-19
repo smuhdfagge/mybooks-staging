@@ -5,9 +5,11 @@
     <meta charset="UTF-8">
     <title>Invoice {{ $invoice->invoice_number }} - {{ $tenant->name }}</title>
     <style>
+        /* The same margins as a browser printout; the page number sits in the
+           bottom one. DomPDF takes page margins from html, not @page. */
         @page { margin: 0; }
-        html, body { margin: 0; padding: 0; }
-        body { padding: 26px 20px 46px; }
+        html { margin: 12mm 14mm 12mm; }
+        body { margin: 0; padding: 0; }
     </style>
 </head>
 <body>
