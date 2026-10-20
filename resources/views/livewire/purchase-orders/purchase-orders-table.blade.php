@@ -72,6 +72,9 @@
                         <td class="tbl-menu">
                             <x-table.dropdown :sr-label="'Actions for '.$order->order_number">
                                 <x-table.menu-item :href="route('purchase-orders.show', $order)">View</x-table.menu-item>
+                                {{-- Opens the order and prints it from there, in the same tab. --}}
+                                <x-table.menu-item :href="route('purchase-orders.show', ['purchaseOrder' => $order, 'print' => 1])">Print</x-table.menu-item>
+                                <x-table.menu-item :href="route('purchase-orders.pdf', $order)">Download PDF</x-table.menu-item>
                                 @can('edit purchase-orders')
                                     @if ($st($order) === 'draft')
                                         <x-table.menu-item :post="route('purchase-orders.confirm', $order)">Confirm</x-table.menu-item>

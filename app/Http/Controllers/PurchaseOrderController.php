@@ -6,6 +6,7 @@ use App\Models\Item;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\Vendor;
+use App\Support\PurchaseOrderDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -102,9 +103,27 @@ class PurchaseOrderController extends Controller
 
     public function show(PurchaseOrder $purchaseOrder)
     {
+        $purchaseOrder->load(['vendor', 'items.item', 'createdBy', 'bills']);
+        $document = PurchaseOrderDocument::data($purchaseOrder);
+
+        return view('purchase-orders.show', compact('purchaseOrder', 'document'));
+    }
+
+    /** The order on its own page, for an old bookmark or a link from an email. */
+    public function print(PurchaseOrder $purchaseOrder)
+    {
         $purchaseOrder->load(['vendor', 'items.item', 'createdBy']);
 
-        return view('purchase-orders.show', compact('purchaseOrder'));
+        return view('purchase-orders.print', PurchaseOrderDocument::data($purchaseOrder));
+    }
+
+    /** The order as a PDF, to email to the supplier. */
+    public function pdf(PurchaseOrder $purchaseOrder)
+    {
+        return response(PurchaseOrderDocument::pdf($purchaseOrder), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.addslashes(PurchaseOrderDocument::fileName($purchaseOrder)).'"',
+        ]);
     }
 
     public function edit(PurchaseOrder $purchaseOrder)
