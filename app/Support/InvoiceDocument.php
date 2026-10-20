@@ -116,24 +116,13 @@ class InvoiceDocument
      */
     public static function state(Invoice $invoice): array
     {
-        $balance = round((float) $invoice->balance_due, 2);
-        $open = ! in_array($invoice->status, ['draft', 'cancelled', 'paid'], true) && $balance > 0;
-        $daysLate = $open && $invoice->due_date->lt(now()->startOfDay())
-            ? (int) $invoice->due_date->diffInDays(now()->startOfDay())
-            : 0;
-
-        $key = match (true) {
-            $invoice->status === 'draft' => 'draft',
-            $invoice->status === 'cancelled' => 'cancelled',
-            $balance <= 0 && (float) $invoice->total > 0 => 'paid',
-            $daysLate > 0 => 'overdue',
-            (float) $invoice->amount_paid > 0 => 'partial',
-            default => 'open',
-        };
-
-        $label = ['draft' => 'Draft', 'cancelled' => 'Cancelled', 'paid' => 'Paid', 'overdue' => 'Overdue', 'partial' => 'Part paid', 'open' => 'Awaiting payment'][$key];
-
-        return ['key' => $key, 'label' => $label, 'daysLate' => $daysLate];
+        return DocumentState::of(
+            $invoice->status,
+            (float) $invoice->balance_due,
+            (float) $invoice->total,
+            (float) $invoice->amount_paid,
+            $invoice->due_date,
+        );
     }
 
     /** The invoice as an A4 PDF, with page numbers. */

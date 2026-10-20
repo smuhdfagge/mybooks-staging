@@ -10,6 +10,7 @@ use App\Models\Bill;
 use App\Models\PurchaseOrder;
 use App\Models\Vendor;
 use App\Models\Warehouse;
+use App\Support\BillDocument;
 use Illuminate\Http\Request;
 
 class BillController extends Controller
@@ -70,9 +71,27 @@ class BillController extends Controller
 
     public function show(Bill $bill)
     {
-        $bill->load(['vendor', 'items.item', 'payments.createdBy', 'createdBy', 'journal.entries.account', 'vendorCreditApplications.vendorCredit']);
+        $bill->load(['vendor', 'items.item', 'payments.createdBy', 'createdBy', 'journal.entries.account', 'vendorCreditApplications.vendorCredit', 'purchaseOrder']);
+        $document = BillDocument::data($bill);
 
-        return view('bills.show', compact('bill'));
+        return view('bills.show', compact('bill', 'document'));
+    }
+
+    /** The bill on its own page, for an old bookmark or a link from an email. */
+    public function print(Bill $bill)
+    {
+        $bill->load(['vendor', 'items.item', 'createdBy', 'purchaseOrder']);
+
+        return view('bills.print', BillDocument::data($bill));
+    }
+
+    /** The bill as a PDF, to file or to send on for approval. */
+    public function pdf(Bill $bill)
+    {
+        return response(BillDocument::pdf($bill), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.addslashes(BillDocument::fileName($bill)).'"',
+        ]);
     }
 
     public function edit(Bill $bill)

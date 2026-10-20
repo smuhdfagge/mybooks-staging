@@ -71,6 +71,9 @@
                         <td class="tbl-menu">
                             <x-table.dropdown :sr-label="'Actions for '.$bill->bill_number">
                                 <x-table.menu-item :href="route('bills.show', $bill)">View</x-table.menu-item>
+                                {{-- Opens the bill and prints it from there, in the same tab. --}}
+                                <x-table.menu-item :href="route('bills.show', ['bill' => $bill, 'print' => 1])">Print</x-table.menu-item>
+                                <x-table.menu-item :href="route('bills.pdf', $bill)">Download PDF</x-table.menu-item>
                                 @if ($open($bill) && $user->can('create payments-made'))
                                     <x-table.menu-item :href="route('payments-made.create', ['bill_id' => $bill->id])">Record payment</x-table.menu-item>
                                 @endif
