@@ -12,6 +12,7 @@ use App\Models\Vendor;
 use App\Services\BankService;
 use App\Services\PaymentValidation;
 use App\Support\Money;
+use App\Support\PaymentDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -49,9 +50,10 @@ class PaymentMadeController extends Controller
 
     public function show(PaymentMade $paymentMade)
     {
-        $paymentMade->load(['vendor', 'bill', 'journal.entries.account']);
+        $paymentMade->load(['vendor', 'bill', 'journal.entries.account', 'bank', 'whtCategory', 'createdBy']);
+        $document = PaymentDocument::made($paymentMade);
 
-        return view('payments-made.show', compact('paymentMade'));
+        return view('payments-made.show', compact('paymentMade', 'document'));
     }
 
     public function edit(PaymentMade $paymentMade)
@@ -126,5 +128,22 @@ class PaymentMadeController extends Controller
         $delete->handle($paymentMade);
 
         return redirect()->route('payments-made.index')->with('success', 'Payment deleted.');
+    }
+
+    /** The document on its own page, for an old bookmark or a link from an email. */
+    public function print(PaymentMade $paymentMade)
+    {
+        $paymentMade->load(['vendor', 'bill', 'bank', 'whtCategory', 'createdBy']);
+
+        return view('payments.print', PaymentDocument::made($paymentMade));
+    }
+
+    /** The document as a PDF, to send or to file. */
+    public function pdf(PaymentMade $paymentMade)
+    {
+        return response(PaymentDocument::pdf($paymentMade), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.addslashes(PaymentDocument::fileName($paymentMade)).'"',
+        ]);
     }
 }

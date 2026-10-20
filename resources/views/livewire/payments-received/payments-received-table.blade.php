@@ -78,6 +78,9 @@
                         <td class="tbl-menu">
                             <x-table.dropdown :sr-label="'Actions for '.$payment->payment_number">
                                 <x-table.menu-item :href="route('payments-received.show', $payment)">View</x-table.menu-item>
+                                {{-- Opens the payment and prints it from there, in the same tab. --}}
+                                <x-table.menu-item :href="route('payments-received.show', ['paymentReceived' => $payment, 'print' => 1])">Print receipt</x-table.menu-item>
+                                <x-table.menu-item :href="route('payments-received.pdf', $payment)">Download PDF</x-table.menu-item>
                                 @if ($unused($payment) && $user->can('edit payments-received'))
                                     <x-table.menu-item :href="route('payments-received.apply-deposit', $payment)">Apply to an invoice</x-table.menu-item>
                                 @endif

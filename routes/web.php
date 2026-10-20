@@ -490,6 +490,9 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     });
     Route::middleware('permission:view payments-received')->group(function () {
         Route::get('payments-received', [PaymentReceivedController::class, 'index'])->name('payments-received.index');
+        // Before the {paymentReceived} route, so "print" and "pdf" are not read as an id.
+        Route::get('payments-received/{paymentReceived}/print', [PaymentReceivedController::class, 'print'])->name('payments-received.print');
+        Route::get('payments-received/{paymentReceived}/pdf', [PaymentReceivedController::class, 'pdf'])->name('payments-received.pdf');
         Route::get('payments-received/{paymentReceived}', [PaymentReceivedController::class, 'show'])->name('payments-received.show');
     });
     Route::middleware('permission:edit payments-received')->group(function () {
@@ -742,6 +745,9 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     });
     Route::middleware('permission:view payments-made')->group(function () {
         Route::get('payments-made', [PaymentMadeController::class, 'index'])->name('payments-made.index');
+        // Before the {paymentMade} route, so "print" and "pdf" are not read as an id.
+        Route::get('payments-made/{paymentMade}/print', [PaymentMadeController::class, 'print'])->name('payments-made.print');
+        Route::get('payments-made/{paymentMade}/pdf', [PaymentMadeController::class, 'pdf'])->name('payments-made.pdf');
         Route::get('payments-made/{paymentMade}', [PaymentMadeController::class, 'show'])->name('payments-made.show');
     });
     Route::middleware('permission:edit payments-made')->group(function () {
