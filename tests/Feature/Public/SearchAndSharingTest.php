@@ -4,6 +4,7 @@ namespace Tests\Feature\Public;
 
 use App\Http\Controllers\PublicSiteController;
 use App\Models\Plan;
+use App\Support\PublicSite\Guides;
 use Illuminate\Support\Facades\File;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -70,9 +71,14 @@ class SearchAndSharingTest extends TestCase
         $response = $this->get('/sitemap.xml')->assertOk()->assertHeader('Content-Type', 'application/xml; charset=UTF-8');
 
         $xml = simplexml_load_string($response->getContent());
-        $this->assertCount(6, $xml->url);
+        // Every fixed page, plus one entry for each guide (SEO plan).
+        $guides = app(Guides::class)->all();
+        $this->assertCount(count(PublicSiteController::PAGES) + $guides->count(), $xml->url);
         foreach (PublicSiteController::PAGES as $page) {
             $this->assertStringContainsString('<loc>'.route($page).'</loc>', $response->getContent());
+        }
+        foreach ($guides as $guide) {
+            $this->assertStringContainsString('<loc>'.route('guides.show', $guide['slug']).'</loc>', $response->getContent());
         }
     }
 

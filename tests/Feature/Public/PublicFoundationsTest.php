@@ -137,7 +137,9 @@ class PublicFoundationsTest extends TestCase
             ->assertSee('Sign in')
             ->assertSee('Privacy policy')
             ->assertSee('Terms of service')
-            ->assertSee(route('home').'#pricing', false)
+            // Pricing and the guides are pages of their own now (SEO plan).
+            ->assertSee(route('pricing'), false)
+            ->assertSee(route('guides.index'), false)
             ->assertDontSee('Get Started');
     }
 
