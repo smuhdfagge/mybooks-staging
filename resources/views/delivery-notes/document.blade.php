@@ -38,10 +38,6 @@
     {{-- "Delivery Note" is a long title, so it sits smaller than "Invoice". --}}
     @php $titleStep = $compact ? 6 : 11; $titlePdfStep = $compact ? 4 : 8; @endphp
     @include('partials.document-styles')
-    {{-- Short deliveries are called out, because that is what gets disputed. --}}
-    {{ $sc }} .short { color: #B42318; font-weight: bold; }
-    {{ $sc }} .note-strip { margin-top: {{ $compact ? 16 : 22 }}px; border: 1px solid {{ $s['table_border_color'] }}; page-break-inside: avoid; }
-    {{ $sc }} .note-strip td { padding: {{ $compact ? '9px 12px' : '11px 14px' }}; }
 </style>
 
 <div class="mbdoc {{ ltrim($sc, '.') }}" data-delivery-note-document>
@@ -125,7 +121,7 @@
         @if ($short)
             <table class="note-strip">
                 <tr>
-                    <td><p class="short">Some items are going out short of what was ordered. Please check the delivered column before signing.</p></td>
+                    <td><p class="warn">Some items are going out short of what was ordered. Please check the delivered column before signing.</p></td>
                 </tr>
             </table>
         @endif

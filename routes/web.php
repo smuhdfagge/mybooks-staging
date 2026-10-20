@@ -680,6 +680,9 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     });
     Route::middleware('permission:view purchase-orders')->group(function () {
         Route::get('purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
+        // Before the {purchaseOrder} route, so "print" and "pdf" are not read as an id.
+        Route::get('purchase-orders/{purchaseOrder}/print', [PurchaseOrderController::class, 'print'])->name('purchase-orders.print');
+        Route::get('purchase-orders/{purchaseOrder}/pdf', [PurchaseOrderController::class, 'pdf'])->name('purchase-orders.pdf');
         Route::get('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show'])->name('purchase-orders.show');
     });
     Route::middleware('permission:edit purchase-orders')->group(function () {

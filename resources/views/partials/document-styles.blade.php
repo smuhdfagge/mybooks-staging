@@ -77,6 +77,11 @@
     {{ $sc }} .lines tr { page-break-inside: avoid; }
     {{ $sc }} .lines thead { display: table-header-group; }
     {{ $sc }} .item { font-weight: bold; color: #111827; }
+    {{-- Short against what was ordered: that is what gets disputed. --}}
+    {{ $sc }} .lines td.short { color: #B42318; font-weight: bold; }
+    {{ $sc }} .warn { color: #B42318; font-weight: bold; }
+    {{ $sc }} .note-strip { margin-top: {{ $compact ? 16 : 22 }}px; border: 1px solid {{ $s['table_border_color'] }}; page-break-inside: avoid; }
+    {{ $sc }} .note-strip td { padding: {{ $compact ? '9px 12px' : '11px 14px' }}; }
     {{ $sc }} .sku { font-size: {{ $base - 2 }}px; color: #5B6B7B; }
 
     /* Totals, closed with the accountant's double rule */
