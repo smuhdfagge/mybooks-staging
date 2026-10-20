@@ -8,6 +8,7 @@ use App\Enums\DeliveryNoteStatus;
 use App\Models\DeliveryNote;
 use App\Models\SalesOrder;
 use App\Models\Warehouse;
+use App\Support\DeliveryNoteDocument;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -75,9 +76,11 @@ class DeliveryNoteController extends Controller
 
     public function show(DeliveryNote $deliveryNote)
     {
-        $deliveryNote->load(['customer', 'salesOrder.invoices', 'items.item', 'createdBy']);
+        $deliveryNote->load(['customer', 'salesOrder.invoices', 'invoice', 'items.item', 'createdBy']);
 
-        return view('delivery-notes.show', compact('deliveryNote'));
+        $document = DeliveryNoteDocument::data($deliveryNote);
+
+        return view('delivery-notes.show', compact('deliveryNote', 'document'));
     }
 
     public function dispatch(DeliveryNote $deliveryNote)
@@ -127,20 +130,20 @@ class DeliveryNoteController extends Controller
         return redirect()->route('delivery-notes.index')->with('success', 'Delivery note deleted.');
     }
 
+    /** The delivery note on its own page, for an old bookmark or a link from an email. */
     public function print(DeliveryNote $deliveryNote)
     {
-        $deliveryNote->load(['customer', 'items.item', 'salesOrder']);
-        $tenant = auth()->user()->tenant;
+        $deliveryNote->load(['customer', 'items.item', 'salesOrder', 'invoice']);
 
-        return view('delivery-notes.print', compact('deliveryNote', 'tenant'));
+        return view('delivery-notes.print', DeliveryNoteDocument::data($deliveryNote));
     }
 
+    /** The delivery note as a PDF, to send ahead or to re-print for the driver. */
     public function pdf(DeliveryNote $deliveryNote)
     {
-        $deliveryNote->load(['customer', 'items.item', 'salesOrder']);
-        $tenant = auth()->user()->tenant;
-
-        return Pdf::loadView('delivery-notes.print', ['deliveryNote' => $deliveryNote, 'tenant' => $tenant, 'forPdf' => true])
-            ->download("delivery-note-{$deliveryNote->delivery_number}.pdf");
+        return response(DeliveryNoteDocument::pdf($deliveryNote), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.addslashes(DeliveryNoteDocument::fileName($deliveryNote)).'"',
+        ]);
     }
 }

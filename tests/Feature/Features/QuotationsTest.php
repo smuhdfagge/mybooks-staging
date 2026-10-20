@@ -70,7 +70,7 @@ class QuotationsTest extends TestCase
         $this->get(route('quotations.create'))->assertOk()->assertSee('New quotation');
         $this->get(route('quotations.show', $quotation))->assertOk()->assertSee('QTN-000001')->assertSee('Convert to invoice');
         $this->get(route('quotations.edit', $quotation))->assertOk()->assertSee('Bags of cement');
-        $this->get(route('quotations.print', $quotation))->assertOk()->assertSee('QUOTATION')->assertSee('96,750.00');
+        $this->get(route('quotations.print', $quotation))->assertOk()->assertSee('Quotation')->assertSee('96,750.00');
         $this->get(route('quotations.pdf', $quotation))->assertOk()->assertHeader('content-type', 'application/pdf');
     }
 

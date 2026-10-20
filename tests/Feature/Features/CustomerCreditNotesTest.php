@@ -480,7 +480,7 @@ class CustomerCreditNotesTest extends TestCase
         $this->get(route('credit-notes.edit', $draft))->assertOk()->assertSee('Consulting');
         $this->get(route('credit-notes.edit', $note))->assertRedirect(route('credit-notes.show', $note));
         $this->get(route('credit-notes.create'))->assertOk()->assertSee('Save and post');
-        $this->get(route('credit-notes.print', $note))->assertOk()->assertSee('CREDIT NOTE')->assertSee($invoice->invoice_number);
+        $this->get(route('credit-notes.print', $note))->assertOk()->assertSee('Credit Note')->assertSee($invoice->invoice_number);
         $pdf = $this->get(route('credit-notes.pdf', $note))->assertOk();
         $this->assertStringStartsWith('%PDF', $pdf->getContent());
 

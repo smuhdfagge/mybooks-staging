@@ -183,7 +183,7 @@ class DeliveryNotesTest extends TestCase
         $note = DeliveryNote::firstOrFail();
         $this->get(route('delivery-notes.index'))->assertOk()->assertSee($note->delivery_number);
         $this->get(route('delivery-notes.show', $note))->assertOk()->assertSee('Dispatch');
-        $this->get(route('delivery-notes.print', $note))->assertOk()->assertSee('DELIVERY NOTE')->assertSee('Received in good condition');
+        $this->get(route('delivery-notes.print', $note))->assertOk()->assertSee('Delivery Note')->assertSee('Goods received in good order unless noted above.');
         $this->get(route('delivery-notes.pdf', $note))->assertOk()->assertHeader('content-type', 'application/pdf');
         $this->get(route('sales-orders.show', $order))->assertSee($note->delivery_number);
     }
