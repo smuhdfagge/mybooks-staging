@@ -1,48 +1,33 @@
-@extends('documents.layout', ['title' => 'QUOTATION', 'number' => $quotation->quotation_number])
-
-@php($symbol = $tenant->currency_symbol ?? '')
-@section('content')
-    <table class="meta">
-        <tr>
-            <td>
-                <div class="label">Prepared for</div>
-                <strong>{{ $quotation->customer->name }}</strong><br>
-                @if($quotation->customer->company_name){{ $quotation->customer->company_name }}<br>@endif
-                @if($quotation->customer->address){{ $quotation->customer->address }}<br>@endif
-                @if($quotation->customer->email){{ $quotation->customer->email }}<br>@endif
-                @if($quotation->customer->phone){{ $quotation->customer->phone }}@endif
-            </td>
-            <td class="num">
-                <div class="label">Quotation number</div>
-                <strong>{{ $quotation->quotation_number }}</strong><br>
-                <div class="label" style="margin-top:6px">Date</div>
-                {{ $quotation->quotation_date->format('M d, Y') }}<br>
-                @if($quotation->expiry_date)
-                    <div class="label" style="margin-top:6px">Valid until</div>
-                    {{ $quotation->expiry_date->format('M d, Y') }}<br>
-                @endif
-                @if($quotation->reference)Ref: {{ $quotation->reference }}@endif
-            </td>
-        </tr>
-    </table>
-
-    @include('documents.priced-lines', ['document' => $quotation])
-
-    <table class="totals">
-        <tr><td>Subtotal</td><td class="num">{{ $symbol }}{{ number_format((float) $quotation->subtotal, 2) }}</td></tr>
-        @if((float) $quotation->discount_amount > 0)
-            <tr><td>Discount</td><td class="num">−{{ $symbol }}{{ number_format((float) $quotation->discount_amount, 2) }}</td></tr>
-        @endif
-        <tr><td>VAT</td><td class="num">{{ $symbol }}{{ number_format((float) $quotation->tax_amount, 2) }}</td></tr>
-        <tr class="grand"><td>Total</td><td class="num">{{ $symbol }}{{ number_format((float) $quotation->total, 2) }}</td></tr>
-    </table>
-
-    @if($quotation->notes)
-        <div class="notes"><div class="label">Notes</div>{!! nl2br(e($quotation->notes)) !!}</div>
-    @endif
-    @if($quotation->terms)
-        <div class="notes"><div class="label">Terms</div>{!! nl2br(e($quotation->terms)) !!}</div>
-    @endif
-
-    <div class="box">This is a quotation, not a bill. Prices are valid{{ $quotation->expiry_date ? ' until '.$quotation->expiry_date->format('M d, Y') : '' }}.</div>
-@endsection
+{{--
+    The quotation on its own page: for an old bookmark or a link from an
+    email. Opens in the same tab, with a way back and Print. The quotation
+    page itself prints the same document.
+--}}
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Quotation {{ $quotation->quotation_number }} · {{ $tenant->name }}</title>
+    @vite(['resources/css/app.css'])
+</head>
+<body class="min-h-screen bg-gray-100 antialiased print:bg-white">
+    <div class="sticky top-0 z-10 border-b border-gray-200 bg-white/95 backdrop-blur print:hidden">
+        <div class="mx-auto flex max-w-[860px] flex-wrap items-center justify-between gap-2 px-4 py-3">
+            <a href="{{ route('quotations.show', $quotation) }}" class="btn-secondary">Back to the quotation</a>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('quotations.pdf', $quotation) }}" class="btn-secondary">Download PDF</a>
+                <button type="button" class="btn-primary" data-print>Print</button>
+            </div>
+        </div>
+    </div>
+    <main class="mx-auto max-w-[860px] px-0 py-6 sm:px-4 print:max-w-none print:p-0">
+        <div class="overflow-hidden border border-gray-200 bg-white shadow-sm sm:rounded-lg print:border-0 print:shadow-none">
+            @include('quotations.document')
+        </div>
+    </main>
+    @include('partials.invoice-print-page')
+    @include('partials.dom-actions')
+</body>
+</html>

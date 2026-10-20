@@ -3,7 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Quotation;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Support\QuotationDocument;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -49,14 +49,9 @@ class QuotationSentNotification extends Notification implements ShouldQueue
             ->attachData($this->pdf(), "quotation-{$quotation->quotation_number}.pdf", ['mime' => 'application/pdf']);
     }
 
+    /** The same quotation the customer sees on screen and in print. */
     public function pdf(): string
     {
-        $quotation = $this->quotation->loadMissing(['customer', 'items.item', 'tenant']);
-
-        return Pdf::loadView('quotations.print', [
-            'quotation' => $quotation,
-            'tenant' => $quotation->tenant,
-            'forPdf' => true,
-        ])->output();
+        return QuotationDocument::pdf($this->quotation);
     }
 }

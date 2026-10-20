@@ -16,6 +16,7 @@ use App\Models\CreditNoteItem;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Support\CreditNoteDocument;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -85,7 +86,9 @@ class CreditNoteController extends Controller
             : collect();
         $banks = Bank::where('is_active', true)->orderBy('name')->get(['id', 'name']);
 
-        return view('credit-notes.show', compact('creditNote', 'invoices', 'banks'));
+        $document = CreditNoteDocument::data($creditNote);
+
+        return view('credit-notes.show', compact('creditNote', 'invoices', 'banks', 'document'));
     }
 
     public function edit(CreditNote $creditNote)
@@ -177,21 +180,21 @@ class CreditNoteController extends Controller
             ->with('success', 'Refund of '.number_format((float) $validated['amount'], 2).' to the customer recorded.');
     }
 
+    /** The credit note on its own page, for an old bookmark or a link from an email. */
     public function print(CreditNote $creditNote)
     {
         $creditNote->load(['customer', 'items.item', 'invoice']);
-        $tenant = auth()->user()->tenant;
 
-        return view('credit-notes.print', compact('creditNote', 'tenant'));
+        return view('credit-notes.print', CreditNoteDocument::data($creditNote));
     }
 
+    /** The credit note as a PDF, to send to the customer. */
     public function pdf(CreditNote $creditNote)
     {
-        $creditNote->load(['customer', 'items.item', 'invoice']);
-        $tenant = auth()->user()->tenant;
-
-        return Pdf::loadView('credit-notes.print', ['creditNote' => $creditNote, 'tenant' => $tenant, 'forPdf' => true])
-            ->download("credit-note-{$creditNote->credit_note_number}.pdf");
+        return response(CreditNoteDocument::pdf($creditNote), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.addslashes(CreditNoteDocument::fileName($creditNote)).'"',
+        ]);
     }
 
     public function destroy(CreditNote $creditNote, DeleteCreditNote $delete)

@@ -1,44 +1,33 @@
-@extends('documents.layout', ['title' => 'CREDIT NOTE', 'number' => $creditNote->credit_note_number])
-
-@php($symbol = $tenant->currency_symbol ?? '')
-@section('content')
-    <table class="meta">
-        <tr>
-            <td>
-                <div class="label">Credit to</div>
-                <strong>{{ $creditNote->customer->name }}</strong><br>
-                @if($creditNote->customer->company_name){{ $creditNote->customer->company_name }}<br>@endif
-                @if($creditNote->customer->address){{ $creditNote->customer->address }}<br>@endif
-                @if($creditNote->customer->email){{ $creditNote->customer->email }}<br>@endif
-                @if($creditNote->customer->tax_number)TIN: {{ $creditNote->customer->tax_number }}@endif
-            </td>
-            <td class="num">
-                <div class="label">Credit note number</div>
-                <strong>{{ $creditNote->credit_note_number }}</strong><br>
-                <div class="label" style="margin-top:6px">Date</div>
-                {{ $creditNote->credit_note_date->format('M d, Y') }}<br>
-                @if($creditNote->invoice)
-                    <div class="label" style="margin-top:6px">Against invoice</div>
-                    {{ $creditNote->invoice->invoice_number }}<br>
-                @endif
-                @if($creditNote->reason)Reason: {{ \App\Models\CreditNote::REASONS[$creditNote->reason] ?? $creditNote->reason }}@endif
-            </td>
-        </tr>
-    </table>
-
-    @include('documents.priced-lines', ['document' => $creditNote])
-
-    <table class="totals">
-        <tr><td>Subtotal</td><td class="num">{{ $symbol }}{{ number_format((float) $creditNote->subtotal, 2) }}</td></tr>
-        <tr><td>VAT</td><td class="num">{{ $symbol }}{{ number_format((float) $creditNote->tax_amount, 2) }}</td></tr>
-        <tr class="grand"><td>Total credit</td><td class="num">{{ $symbol }}{{ number_format((float) $creditNote->total, 2) }}</td></tr>
-    </table>
-
-    @if($creditNote->notes)
-        <div class="notes"><div class="label">Notes</div>{!! nl2br(e($creditNote->notes)) !!}</div>
-    @endif
-    @if($creditNote->restock)
-        <div class="box">The goods listed were returned by the customer.</div>
-    @endif
-    @include('e-invoices._print', ['document' => $creditNote])
-@endsection
+{{--
+    The credit note on its own page: for an old bookmark or a link from an
+    email. Opens in the same tab, with a way back and Print. The credit note
+    page itself prints the same document.
+--}}
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Credit note {{ $note->credit_note_number }} · {{ $tenant->name }}</title>
+    @vite(['resources/css/app.css'])
+</head>
+<body class="min-h-screen bg-gray-100 antialiased print:bg-white">
+    <div class="sticky top-0 z-10 border-b border-gray-200 bg-white/95 backdrop-blur print:hidden">
+        <div class="mx-auto flex max-w-[860px] flex-wrap items-center justify-between gap-2 px-4 py-3">
+            <a href="{{ route('credit-notes.show', $note) }}" class="btn-secondary">Back to the credit note</a>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('credit-notes.pdf', $note) }}" class="btn-secondary">Download PDF</a>
+                <button type="button" class="btn-primary" data-print>Print</button>
+            </div>
+        </div>
+    </div>
+    <main class="mx-auto max-w-[860px] px-0 py-6 sm:px-4 print:max-w-none print:p-0">
+        <div class="overflow-hidden border border-gray-200 bg-white shadow-sm sm:rounded-lg print:border-0 print:shadow-none">
+            @include('credit-notes.document')
+        </div>
+    </main>
+    @include('partials.invoice-print-page')
+    @include('partials.dom-actions')
+</body>
+</html>

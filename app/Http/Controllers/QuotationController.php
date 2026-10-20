@@ -11,6 +11,7 @@ use App\Models\ActivityLog;
 use App\Models\Customer;
 use App\Models\Quotation;
 use App\Notifications\QuotationSentNotification;
+use App\Support\QuotationDocument;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -44,7 +45,9 @@ class QuotationController extends Controller
     {
         $quotation->load(['customer', 'items.item', 'createdBy', 'salesOrder', 'invoice']);
 
-        return view('quotations.show', compact('quotation'));
+        $document = QuotationDocument::data($quotation);
+
+        return view('quotations.show', compact('quotation', 'document'));
     }
 
     public function edit(Quotation $quotation)
@@ -152,21 +155,21 @@ class QuotationController extends Controller
             ->with('success', "Quotation converted to draft invoice {$invoice->invoice_number}.");
     }
 
+    /** The quotation on its own page, for an old bookmark or a link from an email. */
     public function print(Quotation $quotation)
     {
         $quotation->load(['customer', 'items.item']);
-        $tenant = auth()->user()->tenant;
 
-        return view('quotations.print', compact('quotation', 'tenant'));
+        return view('quotations.print', QuotationDocument::data($quotation));
     }
 
+    /** The quotation as a PDF, to send or to file. */
     public function pdf(Quotation $quotation)
     {
-        $quotation->load(['customer', 'items.item']);
-        $tenant = auth()->user()->tenant;
-
-        return Pdf::loadView('quotations.print', ['quotation' => $quotation, 'tenant' => $tenant, 'forPdf' => true])
-            ->download("quotation-{$quotation->quotation_number}.pdf");
+        return response(QuotationDocument::pdf($quotation), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.addslashes(QuotationDocument::fileName($quotation)).'"',
+        ]);
     }
 
     private function answer(Quotation $quotation, QuotationStatus $to, string $message)

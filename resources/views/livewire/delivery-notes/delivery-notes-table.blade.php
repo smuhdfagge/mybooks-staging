@@ -52,7 +52,8 @@
                         <td class="tbl-menu">
                             <x-table.dropdown :sr-label="'Actions for '.$note->delivery_number">
                                 <x-table.menu-item :href="route('delivery-notes.show', $note)">View</x-table.menu-item>
-                                <x-table.menu-item :href="route('delivery-notes.print', $note)" new-tab>Print</x-table.menu-item>
+                                {{-- Opens the record and prints it from there, in the same tab. --}}
+                                <x-table.menu-item :href="route('delivery-notes.show', ['deliveryNote' => $note, 'print' => 1])">Print</x-table.menu-item>
                                 <x-table.menu-item :href="route('delivery-notes.pdf', $note)">Download PDF</x-table.menu-item>
                             </x-table.dropdown>
                         </td>

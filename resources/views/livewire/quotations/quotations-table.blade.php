@@ -53,7 +53,8 @@
                         <td class="tbl-menu">
                             <x-table.dropdown :sr-label="'Actions for '.$q->quotation_number">
                                 <x-table.menu-item :href="route('quotations.show', $q)">View</x-table.menu-item>
-                                <x-table.menu-item :href="route('quotations.print', $q)" new-tab>Print</x-table.menu-item>
+                                {{-- Opens the record and prints it from there, in the same tab. --}}
+                                <x-table.menu-item :href="route('quotations.show', ['quotation' => $q, 'print' => 1])">Print</x-table.menu-item>
                                 <x-table.menu-item :href="route('quotations.pdf', $q)">Download PDF</x-table.menu-item>
                                 @if (in_array($q->status, ['draft', 'sent'], true) && $user->can('edit invoices'))
                                     <x-table.menu-item :href="route('quotations.edit', $q)">Edit</x-table.menu-item>

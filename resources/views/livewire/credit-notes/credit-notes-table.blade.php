@@ -58,7 +58,8 @@
                         <td class="tbl-menu">
                             <x-table.dropdown :sr-label="'Actions for '.$note->credit_note_number">
                                 <x-table.menu-item :href="route('credit-notes.show', $note)">View</x-table.menu-item>
-                                <x-table.menu-item :href="route('credit-notes.print', $note)" new-tab>Print</x-table.menu-item>
+                                {{-- Opens the record and prints it from there, in the same tab. --}}
+                                <x-table.menu-item :href="route('credit-notes.show', ['creditNote' => $note, 'print' => 1])">Print</x-table.menu-item>
                                 <x-table.menu-item :href="route('credit-notes.pdf', $note)">Download PDF</x-table.menu-item>
                                 @if ($st($note) === 'open' && $note->balance > 0 && $user->can('edit invoices'))
                                     <x-table.menu-item :href="route('credit-notes.apply', $note)">Apply to an invoice</x-table.menu-item>

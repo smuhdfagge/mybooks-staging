@@ -1,54 +1,33 @@
-@extends('documents.layout', ['title' => 'DELIVERY NOTE', 'number' => $deliveryNote->delivery_number])
-
-@section('content')
-    <table class="meta">
-        <tr>
-            <td>
-                <div class="label">Deliver to</div>
-                <strong>{{ $deliveryNote->customer->name }}</strong><br>
-                @if($deliveryNote->customer->company_name){{ $deliveryNote->customer->company_name }}<br>@endif
-                {!! nl2br(e($deliveryNote->shipping_address ?: $deliveryNote->customer->address)) !!}<br>
-                @if($deliveryNote->customer->phone){{ $deliveryNote->customer->phone }}@endif
-            </td>
-            <td class="num">
-                <div class="label">Delivery note number</div>
-                <strong>{{ $deliveryNote->delivery_number }}</strong><br>
-                <div class="label" style="margin-top:6px">Date</div>
-                {{ $deliveryNote->delivery_date->format('M d, Y') }}<br>
-                @if($deliveryNote->salesOrder)
-                    <div class="label" style="margin-top:6px">Sales order</div>
-                    {{ $deliveryNote->salesOrder->order_number }}<br>
-                @endif
-                @if($deliveryNote->shipping_method)Delivered by: {{ $deliveryNote->shipping_method }}<br>@endif
-                @if($deliveryNote->tracking_number)Vehicle / tracking: {{ $deliveryNote->tracking_number }}@endif
-                @if($warehouseName = \App\Models\Warehouse::nameIfMany($deliveryNote->warehouse_id))<br>Sent from: {{ $warehouseName }}@endif
-            </td>
-        </tr>
-    </table>
-
-    <table class="lines">
-        <thead>
-            <tr><th>Description</th><th class="num">Ordered</th><th class="num">Delivered</th></tr>
-        </thead>
-        <tbody>
-            @foreach($deliveryNote->items as $line)
-                <tr>
-                    <td>{{ $line->description ?: $line->item?->name }}</td>
-                    <td class="num">{{ rtrim(rtrim(number_format((float) $line->quantity_ordered, 2), '0'), '.') }}</td>
-                    <td class="num"><strong>{{ rtrim(rtrim(number_format((float) $line->quantity_delivered, 2), '0'), '.') }}</strong></td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
-
-    @if($deliveryNote->notes)
-        <div class="notes"><div class="label">Notes</div>{!! nl2br(e($deliveryNote->notes)) !!}</div>
-    @endif
-
-    <table class="signatures">
-        <tr>
-            <td><div class="sign-line">Delivered by (name, signature, date)</div></td>
-            <td><div class="sign-line">Received in good condition by (name, signature, date){{ $deliveryNote->received_by ? ': '.$deliveryNote->received_by : '' }}</div></td>
-        </tr>
-    </table>
-@endsection
+{{--
+    The delivery note on its own page: for an old bookmark or a link from an
+    email. Opens in the same tab, with a way back and Print. The delivery note
+    page itself prints the same document.
+--}}
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Delivery note {{ $note->delivery_number }} · {{ $tenant->name }}</title>
+    @vite(['resources/css/app.css'])
+</head>
+<body class="min-h-screen bg-gray-100 antialiased print:bg-white">
+    <div class="sticky top-0 z-10 border-b border-gray-200 bg-white/95 backdrop-blur print:hidden">
+        <div class="mx-auto flex max-w-[860px] flex-wrap items-center justify-between gap-2 px-4 py-3">
+            <a href="{{ route('delivery-notes.show', $note) }}" class="btn-secondary">Back to the delivery note</a>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('delivery-notes.pdf', $note) }}" class="btn-secondary">Download PDF</a>
+                <button type="button" class="btn-primary" data-print>Print</button>
+            </div>
+        </div>
+    </div>
+    <main class="mx-auto max-w-[860px] px-0 py-6 sm:px-4 print:max-w-none print:p-0">
+        <div class="overflow-hidden border border-gray-200 bg-white shadow-sm sm:rounded-lg print:border-0 print:shadow-none">
+            @include('delivery-notes.document')
+        </div>
+    </main>
+    @include('partials.invoice-print-page')
+    @include('partials.dom-actions')
+</body>
+</html>
