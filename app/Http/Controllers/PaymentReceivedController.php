@@ -14,6 +14,7 @@ use App\Services\Accounting\WithholdingTax;
 use App\Services\BankService;
 use App\Services\NotificationService;
 use App\Services\PaymentValidation;
+use App\Support\PaymentDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -78,14 +79,15 @@ class PaymentReceivedController extends Controller
 
     public function show(PaymentReceived $paymentReceived)
     {
-        $paymentReceived->load(['customer', 'invoice', 'journal.entries.account', 'depositApplications.invoice']);
+        $paymentReceived->load(['customer', 'invoice', 'journal.entries.account', 'depositApplications.invoice', 'bank', 'whtCategory', 'createdBy']);
+        $document = PaymentDocument::received($paymentReceived);
 
         // If this is a deposit, also load the customer's deposit balance
         if ($paymentReceived->is_deposit) {
             $paymentReceived->load('customer');
         }
 
-        return view('payments-received.show', compact('paymentReceived'));
+        return view('payments-received.show', compact('paymentReceived', 'document'));
     }
 
     public function edit(PaymentReceived $paymentReceived)
@@ -216,5 +218,22 @@ class PaymentReceivedController extends Controller
             ->get();
 
         return view('payments-received.apply-deposit', compact('paymentReceived', 'unpaidInvoices'));
+    }
+
+    /** The document on its own page, for an old bookmark or a link from an email. */
+    public function print(PaymentReceived $paymentReceived)
+    {
+        $paymentReceived->load(['customer', 'invoice', 'bank', 'whtCategory', 'createdBy']);
+
+        return view('payments.print', PaymentDocument::received($paymentReceived));
+    }
+
+    /** The document as a PDF, to send or to file. */
+    public function pdf(PaymentReceived $paymentReceived)
+    {
+        return response(PaymentDocument::pdf($paymentReceived), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.addslashes(PaymentDocument::fileName($paymentReceived)).'"',
+        ]);
     }
 }

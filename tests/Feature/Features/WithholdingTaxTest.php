@@ -270,7 +270,8 @@ class WithholdingTaxTest extends TestCase
         $this->assertEqualsWithDelta(20000, $this->balance('wht_payable'), 0.001);
         $this->assertEqualsWithDelta(0, $this->balance('accounts_payable'), 0.001);
 
-        $this->get(route('payments-made.show', $payment))->assertOk()->assertSee('WHT withheld')->assertSee('Nigeria Revenue Service');
+        $this->get(route('payments-made.show', $payment))->assertOk()
+            ->assertSee('Less WHT withheld')->assertSee('Nigeria Revenue Service');
         $this->createUserForTenant($this->tenant, ['view bills']);
         $this->actingAs(User::where('tenant_id', $this->tenant->id)->latest('id')->firstOrFail())
             ->get(route('bills.show', $bill))->assertOk()->assertSee('WHT withheld');
@@ -497,7 +498,11 @@ class WithholdingTaxTest extends TestCase
         $this->assertEqualsWithDelta(-1075000, $lines[AccountCodeService::resolve($this->tenant->id, 'accounts_receivable')], 0.001);
         $this->assertEqualsWithDelta(20000, $this->balance('wht_receivable'), 0.001);
 
-        $this->get(route('payments-received.show', $payment))->assertOk()->assertSee('WHT deducted by customer')->assertSee('Not received yet');
+        // The receipt is addressed to the customer, so it says "deducted by
+        // you"; the page beside it chases the credit note we are owed.
+        $this->get(route('payments-received.show', $payment))->assertOk()
+            ->assertSee('Less WHT deducted by you')
+            ->assertSee('Still waiting for the credit note. Without it you cannot claim this back.');
     }
 
     public function test_api_customer_payments_take_wht_and_refuse_it_on_deposits(): void

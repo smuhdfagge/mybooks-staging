@@ -78,6 +78,9 @@
                         <td class="tbl-menu">
                             <x-table.dropdown :sr-label="'Actions for '.$payment->payment_number">
                                 <x-table.menu-item :href="route('payments-made.show', $payment)">View</x-table.menu-item>
+                                {{-- Opens the payment and prints it from there, in the same tab. --}}
+                                <x-table.menu-item :href="route('payments-made.show', ['paymentMade' => $payment, 'print' => 1])">Print advice</x-table.menu-item>
+                                <x-table.menu-item :href="route('payments-made.pdf', $payment)">Download PDF</x-table.menu-item>
                                 @if ($payment->is_advance)
                                     <x-table.menu-item :href="route('supplier-advances.show', $payment)">{{ $unused($payment) ? 'Use against a bill' : 'Where it was used' }}</x-table.menu-item>
                                 @endif
