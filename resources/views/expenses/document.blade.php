@@ -167,12 +167,8 @@
             $paperRules['.head-wrap'] = 'margin: 0 !important; padding: 14px 16px;';
         }
     @endphp
+    @include('partials.document-paper')
     @if ($forPdf)
-        {{-- The PDF page margins come from expenses/pdf (@page). --}}
-        {{ $sc }} .sheet { padding: 0; }
-        @foreach ($paperRules as $sel => $rule)
-            {{ $sc }} {{ $sel }} { {!! $rule !!} }
-        @endforeach
         {{-- DejaVu, the PDF font, runs larger than the screen lettering. --}}
         {{ $sc }} { font-size: {{ $base - 2 }}px; line-height: 1.4; }
         {{ $sc }} .from-name { font-size: {{ $base + 2 }}px; }
@@ -183,19 +179,6 @@
         {{ $sc }} .foot, {{ $sc }} .notes, {{ $sc }} .signs, {{ $sc }} .words { page-break-inside: auto; }
         {{ $sc }} .signs { margin-top: 22px; }
         {{ $sc }} .foot { margin-top: 14px; padding-top: 8px; }
-    @else
-    /*
-     * Printing from the browser. The page itself has no margin (see
-     * partials/invoice-print-page) and the sheet carries its own, repeated
-     * on every page, so the voucher prints the same whatever margins are
-     * picked in the print dialog and nothing is cut at the paper's edge.
-     */
-    @media print {
-        {{ $sc }} .sheet { padding: 13mm 14mm 12mm; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
-        @foreach ($paperRules as $sel => $rule)
-            {{ $sc }} {{ $sel }} { {!! $rule !!} }
-        @endforeach
-    }
     @endif
 </style>
 

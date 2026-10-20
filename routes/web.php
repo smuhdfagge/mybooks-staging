@@ -659,6 +659,9 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     });
     Route::middleware('permission:view bills')->group(function () {
         Route::get('bills', [BillController::class, 'index'])->name('bills.index');
+        // Before the {bill} route, so "print" and "pdf" are not read as an id.
+        Route::get('bills/{bill}/print', [BillController::class, 'print'])->name('bills.print');
+        Route::get('bills/{bill}/pdf', [BillController::class, 'pdf'])->name('bills.pdf');
         Route::get('bills/{bill}', [BillController::class, 'show'])->name('bills.show');
     });
     Route::middleware('permission:edit bills')->group(function () {

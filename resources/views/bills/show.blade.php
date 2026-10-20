@@ -1,530 +1,230 @@
+{{--
+    The bill page. The bill itself, exactly as it will be filed and passed
+    round for approval, sits on the left; what the business needs to act on
+    (balance, payments, supplier credits, activity) sits on the right.
+    Print prints just the bill from this page; nothing opens in a new tab.
+--}}
 <x-app-layout>
+    @php
+        $state = $document['state'];
+        $currency = $document['currency'];
+        $money = fn ($value) => \App\Support\Money::format($value, $currency);
+        $open = ! in_array($state['key'], ['draft', 'cancelled', 'paid'], true);
+        $total = (float) $bill->total;
+        $settled = max(0, min($total, $total - (float) $bill->balance_due));
+        $percent = $total > 0 ? (int) floor($settled / $total * 100) : 0;
+        $badge = ['open' => 'unpaid', 'partial' => 'partial'][$state['key']] ?? $state['key'];
+        $canPay = $open && (float) $bill->balance_due > 0 && auth()->user()->can('create payments-made');
+        $printIcon = '<svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9V3h12v6M6 18H4a1 1 0 0 1-1-1v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1h-2M6 14h12v7H6z"/></svg>';
+    @endphp
+
     <x-slot name="header">
-        @php
-            $billLate = $bill->balance_due > 0 && $bill->due_date && $bill->due_date->lt(now()->startOfDay()) && $bill->status !== 'draft';
-        @endphp
         <x-table.page-header :title="'Bill '.$bill->bill_number">
-            <x-slot name="badge"><x-status-badge :status="$billLate ? 'overdue' : $bill->status" /></x-slot>
+            <x-slot name="badge"><x-status-badge :status="$badge" :label="$state['label']" /></x-slot>
             <x-slot name="description">
-                <a href="{{ route('vendors.show', $bill->vendor) }}" class="link">{{ $bill->vendor->name }}</a> · {{ $bill->bill_date->format('j M Y') }}
-                @if ($bill->balance_due > 0)
-                    · <span class="{{ $billLate ? 'tbl-late' : 'font-medium text-gray-900 dark:text-white' }}">To pay @money($bill->balance_due)</span>{{ $bill->due_date ? ', due '.$bill->due_date->format('j M Y') : '' }}
-                @else
-                    · Paid in full
+                @if ($bill->vendor)
+                    <a href="{{ route('vendors.show', $bill->vendor) }}" class="link underline">{{ $bill->vendor->name }}</a> ·
+                @endif
+                Billed {{ $bill->bill_date->format('j M Y') }}
+                @if ($bill->due_date)
+                    · Due {{ $bill->due_date->format('j M Y') }}@if ($state['daysLate'] > 0), <span class="tbl-late">{{ $state['daysLate'] }} {{ \Illuminate\Support\Str::plural('day', $state['daysLate']) }} late</span>@endif
                 @endif
             </x-slot>
-            @can('create bills')
-                <x-slot name="more">
+            <x-slot name="more">
+                <x-table.menu-item :href="route('bills.pdf', $bill)">Download PDF</x-table.menu-item>
+                @can('create bills')
                     <x-table.menu-item :href="route('vendor-credits.create', ['bill_id' => $bill->id])">Return goods or record a credit note</x-table.menu-item>
-                </x-slot>
-            @endcan
+                @endcan
+            </x-slot>
             <x-slot name="actions">
+                <button type="button" class="btn-secondary gap-2" data-print data-testid="print-bill">{!! $printIcon !!}<span>Print</span></button>
                 @can('edit bills')
                     <a href="{{ route('bills.edit', $bill) }}" class="btn-secondary">Edit</a>
                 @endcan
-                @if ($bill->balance_due > 0)
-                    @can('create payments-made')
-                        <a href="{{ route('payments-made.create', ['bill_id' => $bill->id]) }}" class="btn-primary">Record payment</a>
-                    @endcan
+                @if ($canPay)
+                    <a href="{{ route('payments-made.create', ['bill_id' => $bill->id]) }}" class="btn-primary">Record payment</a>
                 @endif
             </x-slot>
         </x-table.page-header>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <!-- Status & Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <!-- Status -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</p>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1
-                            @if($bill->status === 'paid') bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
-                            @elseif($bill->status === 'partial') bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
-                            @elseif($bill->status === 'overdue') bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
-                            @elseif($bill->status === 'draft') bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200
-                            @else bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200
-                            @endif">
-                            {{ ucfirst($bill->status) }}
-                        </span>
-                    </div>
-                    <div class="p-3 rounded-full 
-                        @if($bill->status === 'paid') bg-green-100 dark:bg-green-900
-                        @elseif($bill->status === 'partial') bg-yellow-100 dark:bg-yellow-900
-                        @elseif($bill->status === 'overdue') bg-red-100 dark:bg-red-900
-                        @else bg-brand-100 dark:bg-brand-900
-                        @endif">
-                        <svg class="w-6 h-6 
-                            @if($bill->status === 'paid') text-green-700 dark:text-green-400
-                            @elseif($bill->status === 'partial') text-yellow-700 dark:text-yellow-400
-                            @elseif($bill->status === 'overdue') text-red-600 dark:text-red-300
-                            @else text-brand-600 dark:text-brand-300
-                            @endif" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                    </div>
+    <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_19rem] xl:grid-cols-[minmax(0,1fr)_21rem] print:block">
+        {{-- The bill, on its sheet of paper --}}
+        <div class="min-w-0 space-y-6 print:space-y-0">
+            <section aria-label="The bill as it will be filed" class="rounded-xl bg-gray-100 px-0 py-3 sm:p-6 dark:bg-gray-950/60 print:rounded-none print:bg-white print:p-0">
+                <div class="mx-auto max-w-[820px] overflow-hidden bg-white shadow-[0_1px_2px_rgba(16,42,67,0.08),0_16px_36px_-16px_rgba(16,42,67,0.35)] ring-1 ring-gray-900/5 sm:rounded-md print:max-w-none print:rounded-none print:shadow-none print:ring-0">
+                    @include('bills.document', $document)
                 </div>
-
-                <!-- Total -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Amount</p>
-                        <p class="text-xl font-bold text-gray-900 dark:text-white">{{ number_format($bill->total, 2) }}</p>
-                    </div>
-                    <div class="p-3 rounded-full bg-brand-100 dark:bg-brand-900">
-                        <svg class="w-6 h-6 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                    </div>
-                </div>
-
-                <!-- Amount Paid -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Amount Paid</p>
-                        <p class="text-xl font-bold text-green-700 dark:text-green-400">{{ number_format($bill->amount_paid, 2) }}</p>
-                    </div>
-                    <div class="p-3 rounded-full bg-green-100 dark:bg-green-900">
-                        <svg class="w-6 h-6 text-green-700 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                        </svg>
-                    </div>
-                </div>
-
-                <!-- Balance Due -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Balance Due</p>
-                        <p class="text-xl font-bold {{ $bill->balance_due > 0 ? 'text-red-600 dark:text-red-300' : 'text-gray-900 dark:text-white' }}">{{ number_format($bill->balance_due, 2) }}</p>
-                    </div>
-                    <div class="p-3 rounded-full {{ $bill->balance_due > 0 ? 'bg-red-100 dark:bg-red-900' : 'bg-gray-100 dark:bg-gray-700' }}">
-                        <svg class="w-6 h-6 {{ $bill->balance_due > 0 ? 'text-red-600 dark:text-red-300' : 'text-gray-600 dark:text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Bill Details & Vendor Info -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Bill Info -->
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-brand-500 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                            Bill Information
-                        </h3>
-                        <dl class="space-y-3">
-                            <div class="flex justify-between">
-                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Bill Number</dt>
-                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $bill->bill_number }}</dd>
-                            </div>
-                            @if($bill->vendor_bill_number)
-                            <div class="flex justify-between">
-                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Vendor Bill #</dt>
-                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $bill->vendor_bill_number }}</dd>
-                            </div>
-                            @endif
-                            @if($warehouseName = \App\Models\Warehouse::nameIfMany($bill->warehouse_id))
-                            <div class="flex justify-between">
-                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Warehouse</dt>
-                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $warehouseName }}</dd>
-                            </div>
-                            @endif
-                            <div class="flex justify-between">
-                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Bill Date</dt>
-                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $bill->bill_date->format('j M Y') }}</dd>
-                            </div>
-                            <div class="flex justify-between">
-                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Due Date</dt>
-                                <dd class="text-sm {{ $bill->due_date->isPast() && $bill->balance_due > 0 ? 'text-red-600 dark:text-red-300 font-semibold' : 'text-gray-900 dark:text-gray-100' }}">
-                                    {{ $bill->due_date->format('j M Y') }}
-                                    @if($bill->due_date->isPast() && $bill->balance_due > 0)
-                                        <span class="text-xs ml-1">(Overdue)</span>
-                                    @endif
-                                </dd>
-                            </div>
-                        </dl>
-                    </div>
-                </div>
-
-                <!-- Vendor Info -->
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-brand-500 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                            </svg>
-                            Vendor Information
-                        </h3>
-                        <dl class="space-y-3">
-                            <div class="flex justify-between">
-                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Name</dt>
-                                <dd class="text-sm text-gray-900 dark:text-gray-100">
-                                    <a href="{{ route('vendors.show', $bill->vendor) }}" class="text-brand-600 dark:text-brand-300 hover:underline">
-                                        {{ $bill->vendor->name }}
-                                    </a>
-                                </dd>
-                            </div>
-                            @if($bill->vendor->company_name)
-                            <div class="flex justify-between">
-                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Company</dt>
-                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $bill->vendor->company_name }}</dd>
-                            </div>
-                            @endif
-                            @if($bill->vendor->email)
-                            <div class="flex justify-between">
-                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Email</dt>
-                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $bill->vendor->email }}</dd>
-                            </div>
-                            @endif
-                            @if($bill->vendor->phone)
-                            <div class="flex justify-between">
-                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Phone</dt>
-                                <dd class="text-sm text-gray-900 dark:text-gray-100">{{ $bill->vendor->phone }}</dd>
-                            </div>
-                            @endif
-                        </dl>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Bill Items -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
-                        </svg>
-                        Bill Items
-                    </h3>
-                    
-                    <x-table caption="Items on this bill">
-<x-slot name="head">
-                                    <x-table.th>Description</x-table.th>
-                                    <x-table.th num>Qty</x-table.th>
-                                    <x-table.th num>Price</x-table.th>
-                                    <x-table.th num>Tax</x-table.th>
-                                    <x-table.th num>Total</x-table.th>
-</x-slot>
-
-                                @foreach($bill->items as $item)
-                                <tr>
-                                    <td>
-                                        <div class="font-medium">{{ $item->description }}</div>
-                                        @if($item->item)
-                                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ $item->item->name }}</div>
-                                        @endif
-                                    </td>
-                                    <td class="num">{{ \App\Support\Figure::qty($item->quantity) }}</td>
-                                    <td class="num">@fig($item->unit_price, false)</td>
-                                    <td class="num">@fig($item->tax_amount, false)</td>
-                                    <td class="font-medium num">@fig($item->total, false)</td>
-                                </tr>
-                                @endforeach
-<x-slot name="foot">
-                                <tr>
-                                    <td colspan="4" class="num">Subtotal</td>
-                                    <td class="num font-medium">@fig($bill->subtotal, false)</td>
-                                </tr>
-                                @if($bill->tax_amount > 0)
-                                <tr>
-                                    <td colspan="4" class="num">Tax</td>
-                                    <td class="num font-medium">@fig($bill->tax_amount, false)</td>
-                                </tr>
-                                @endif
-                                @if($bill->discount_amount > 0)
-                                <tr>
-                                    <td colspan="4" class="num">Discount</td>
-                                    <td class="num font-medium text-red-600 dark:text-red-300">-@fig($bill->discount_amount, false)</td>
-                                </tr>
-                                @endif
-                                <tr class="border-t-2">
-                                    <td colspan="4" class="num text-lg font-bold">Total</td>
-                                    <td class="num text-lg font-bold text-brand-600 dark:text-brand-300">@fig($bill->total, false)</td>
-                                </tr>
-</x-slot>
-</x-table>
-                </div>
-            </div>
-
-            <!-- Payments -->
-            @if($bill->payments->count() > 0)
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-brand-500 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-                        </svg>
-                        Payments Made
-                    </h3>
-                    
-                    <x-table caption="Payments">
-<x-slot name="head">
-                                    <x-table.th>Date</x-table.th>
-                                    <x-table.th>Payment #</x-table.th>
-                                    <x-table.th>Method</x-table.th>
-                                    <x-table.th>Reference</x-table.th>
-                                    <x-table.th num>Amount</x-table.th>
-                                    <x-table.th num>WHT withheld</x-table.th>
-</x-slot>
-
-                                @foreach($bill->payments as $payment)
-                                <tr>
-                                    <td>{{ $payment->payment_date->format('j M Y') }}</td>
-                                    <td>{{ $payment->payment_number ?? '—' }}</td>
-                                    <td>{{ ucfirst($payment->payment_method ?? '—') }}</td>
-                                    <td>{{ $payment->reference ?? '—' }}</td>
-                                    <td class="font-medium text-green-700 dark:text-green-400 num">@fig($payment->amount, false)</td>
-                                    <td class="num">{{ (float) $payment->wht_amount > 0 ? number_format($payment->wht_amount, 2) : '-' }}</td>
-                                </tr>
-                                @endforeach
-</x-table>
-                </div>
-            </div>
-            @endif
-
-            <!-- Notes -->
-            @if($bill->notes)
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                        </svg>
-                        Notes
-                    </h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line">{{ $bill->notes }}</p>
-                </div>
-            </div>
-            @endif
-
-            <!-- Actions -->
-            @if($bill->balance_due > 0)
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">Balance remaining on this bill</p>
-                        <p class="text-2xl font-bold text-red-600 dark:text-red-300">{{ number_format($bill->balance_due, 2) }}</p>
-                    </div>
-                    <a href="{{ route('payments-made.create', ['bill_id' => $bill->id]) }}" class="btn-primary">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-                        </svg>
-                        Record payment
-                    </a>
-                </div>
-            </div>
-            @endif
-
-            <!-- Supplier credits: used against this bill, and goods sent back -->
-            @if(! in_array($bill->status, ['draft', 'cancelled']))
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 space-y-3">
-                    <div class="flex flex-wrap items-center justify-between gap-2">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Supplier credits</h3>
-                        @can('create bills')
-                            <a href="{{ route('vendor-credits.create', ['bill_id' => $bill->id]) }}" class="text-sm text-brand-600 dark:text-brand-300">Return goods or record a credit note</a>
+                <p class="mt-3 px-3 text-center text-xs text-gray-600 dark:text-gray-400 print:hidden">
+                    Print this, sign it, and file it with the supplier's original.
+                    @can('view settings')<a href="{{ route('settings.invoice-templates.index') }}" class="link underline">Change its look</a>@endcan
+                    @if (! $document['logo'] && $document['s']['show_logo'])
+                        @can('edit settings')
+                            <span class="mt-1 block" data-testid="add-logo-hint">Your logo is not on it yet. <a href="{{ route('settings.company') }}" class="link underline">Add your logo</a> and it will appear on every document.</span>
                         @endcan
-                    </div>
-                    @forelse($bill->vendorCreditApplications as $application)
-                        <p class="text-sm text-gray-700 dark:text-gray-300 flex justify-between gap-3">
-                            <span>{{ $application->applied_date->format('j M Y') }} · credit <a href="{{ route('vendor-credits.show', $application->vendorCredit) }}" class="text-brand-600 dark:text-brand-300">{{ $application->vendorCredit->vendor_credit_number }}</a> used</span>
-                            <span class="font-medium">@money($application->amount)</span>
-                        </p>
-                    @empty
-                        <p class="text-sm text-gray-500 dark:text-gray-400">No supplier credit has been used against this bill.</p>
-                    @endforelse
-                </div>
-            </div>
-            @endif
+                    @endif
+                </p>
+            </section>
 
-            <!-- Bill History / Audit Trail -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        Bill History
-                    </h3>
-                    <div class="flow-root">
-                        <ul role="list" class="-mb-8">
-                            <!-- Created -->
-                            <li>
-                                <div class="relative pb-8">
-                                    <span class="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>
-                                    <div class="relative flex space-x-3">
-                                        <div>
-                                            <span class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
-                                                <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                                                </svg>
-                                            </span>
-                                        </div>
-                                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                                            <div>
-                                                <p class="text-sm text-gray-900 dark:text-gray-100">Bill created</p>
-                                                <p class="text-xs text-gray-500 dark:text-gray-400">by {{ $bill->createdBy?->name ?? 'System' }}</p>
-                                            </div>
-                                            <div class="whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
-                                                <time datetime="{{ $bill->created_at }}">{{ $bill->created_at->format('j M Y') }}</time>
-                                                <p class="text-xs">{{ $bill->created_at->format('g:i A') }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
-
-                            <!-- Updated (if different from created) -->
-                            @if($bill->updated_at->gt($bill->created_at->addMinutes(1)))
-                            <li>
-                                <div class="relative pb-8">
-                                    <span class="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>
-                                    <div class="relative flex space-x-3">
-                                        <div>
-                                            <span class="h-8 w-8 rounded-full bg-brand-500 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
-                                                <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                                </svg>
-                                            </span>
-                                        </div>
-                                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                                            <div>
-                                                <p class="text-sm text-gray-900 dark:text-gray-100">Bill updated</p>
-                                            </div>
-                                            <div class="whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
-                                                <time datetime="{{ $bill->updated_at }}">{{ $bill->updated_at->format('j M Y') }}</time>
-                                                <p class="text-xs">{{ $bill->updated_at->format('g:i A') }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
-                            @endif
-
-                            <!-- Payments -->
-                            @foreach($bill->payments as $payment)
-                            <li>
-                                <div class="relative pb-8">
-                                    @if(!$loop->last || $bill->inventory_updated_at)
-                                    <span class="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>
-                                    @endif
-                                    <div class="relative flex space-x-3">
-                                        <div>
-                                            <span class="h-8 w-8 rounded-full bg-green-600 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
-                                                <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                </svg>
-                                            </span>
-                                        </div>
-                                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                                            <div>
-                                                <p class="text-sm text-gray-900 dark:text-gray-100">
-                                                    Payment made: <span class="font-semibold text-green-700 dark:text-green-400">{{ number_format($payment->amount, 2) }}</span>
-                                                    @if((float) $payment->wht_amount > 0)
-                                                        <span class="text-gray-500 dark:text-gray-400">+ WHT withheld {{ number_format($payment->wht_amount, 2) }}</span>
-                                                    @endif
-                                                </p>
-                                                <p class="text-xs text-gray-500 dark:text-gray-400">
-                                                    via {{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}
-                                                    @if($payment->createdBy) • by {{ $payment->createdBy->name }} @endif
-                                                </p>
-                                            </div>
-                                            <div class="whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
-                                                <time datetime="{{ $payment->payment_date }}">{{ $payment->payment_date->format('j M Y') }}</time>
-                                                <p class="text-xs">{{ $payment->created_at->format('g:i A') }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
-                            @endforeach
-
-                            <!-- Inventory Updated -->
-                            @if($bill->inventory_updated_at)
-                            <li>
-                                <div class="relative pb-8">
-                                    <div class="relative flex space-x-3">
-                                        <div>
-                                            <span class="h-8 w-8 rounded-full bg-gray-500 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
-                                                <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                                                </svg>
-                                            </span>
-                                        </div>
-                                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                                            <div>
-                                                <p class="text-sm text-gray-900 dark:text-gray-100">Inventory updated</p>
-                                                <p class="text-xs text-gray-500 dark:text-gray-400">Stock added to inventory</p>
-                                            </div>
-                                            <div class="whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
-                                                <time datetime="{{ $bill->inventory_updated_at }}">{{ $bill->inventory_updated_at->format('j M Y') }}</time>
-                                                <p class="text-xs">{{ $bill->inventory_updated_at->format('g:i A') }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
-                            @endif
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Journal Entry / Double-Entry -->
-            @if($bill->journal)
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center justify-between">
-                        <span class="flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                            </svg>
-                            Journal Entry
-                        </span>
-                        <a href="{{ route('journals.show', $bill->journal) }}" class="text-sm text-brand-600 dark:text-brand-300 hover:underline">
-                            {{ $bill->journal->journal_number }}
-                        </a>
-                    </h3>
-                    <x-table caption="Ledger postings">
-<x-slot name="head">
+            <div class="space-y-6 print:hidden">
+                @if ($bill->journal)
+                    <details class="group rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-5 py-4 focus-ring [&::-webkit-details-marker]:hidden">
+                            <span>
+                                <span class="font-medium text-gray-900 dark:text-white">Accounting entries</span>
+                                <span class="block text-sm text-gray-600 dark:text-gray-400">How this bill was posted to the ledger, journal {{ $bill->journal->journal_number }}</span>
+                            </span>
+                            <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19 9-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="border-t border-gray-100 px-5 pb-5 pt-4 dark:border-gray-700">
+                            <x-table caption="Ledger postings">
+                                <x-slot name="head">
                                     <x-table.th>Account</x-table.th>
                                     <x-table.th num>Debit</x-table.th>
                                     <x-table.th num>Credit</x-table.th>
-</x-slot>
-
-                                @foreach($bill->journal->entries as $entry)
-                                <tr>
-                                    <td>
-                                        <span class="font-mono text-xs text-gray-500 dark:text-gray-400 mr-2">{{ $entry->account->account_code }}</span>
-                                        {{ $entry->account->name }}
-                                    </td>
-                                    <td class="num {{ $entry->debit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
-                                        {{ $entry->debit > 0 ? number_format($entry->debit, 2) : '-' }}
-                                    </td>
-                                    <td class="num {{ $entry->credit > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
-                                        {{ $entry->credit > 0 ? number_format($entry->credit, 2) : '-' }}
-                                    </td>
-                                </tr>
+                                </x-slot>
+                                @foreach ($bill->journal->entries as $entry)
+                                    <tr>
+                                        <td><span class="mr-2 text-xs text-gray-500 dark:text-gray-400">{{ $entry->account->account_code }}</span>{{ $entry->account->name }}</td>
+                                        <td class="num {{ \App\Support\Figure::tone($entry->debit) }}">@fig($entry->debit, false)</td>
+                                        <td class="num {{ \App\Support\Figure::tone($entry->credit) }}">@fig($entry->credit, false)</td>
+                                    </tr>
                                 @endforeach
-<x-slot name="foot">
-                                <tr class="font-semibold">
-                                    <td>Total</td>
-                                    <td class="num">@fig($bill->journal->total_debit, false)</td>
-                                    <td class="num">@fig($bill->journal->total_credit, false)</td>
-                                </tr>
-</x-slot>
-</x-table>
-                    <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                        Posted on {{ $bill->journal->posted_at?->format('j M Y, H:i') ?? 'Not posted' }}
-                    </p>
-                </div>
+                                <x-slot name="foot">
+                                    <tr>
+                                        <td>Total</td>
+                                        <td class="num">@fig($bill->journal->total_debit, false)</td>
+                                        <td class="num">@fig($bill->journal->total_credit, false)</td>
+                                    </tr>
+                                </x-slot>
+                            </x-table>
+                            <p class="mt-3 text-xs text-gray-600 dark:text-gray-400">
+                                Posted {{ $bill->journal->posted_at?->format('j M Y, H:i') ?? 'not yet' }}.
+                                <a href="{{ route('journals.show', $bill->journal) }}" class="link">Open the journal</a>
+                            </p>
+                        </div>
+                    </details>
+                @endif
             </div>
-            @endif
         </div>
+
+        {{-- What to act on --}}
+        <aside class="space-y-4 lg:sticky lg:top-20 print:hidden" aria-label="Payment and history">
+            {{-- Balance --}}
+            <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10" data-testid="bill-balance">
+                @if ($state['key'] === 'paid')
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Paid in full</p>
+                    <p class="mt-1 text-3xl font-semibold tabular-nums text-gray-900 dark:text-white">{{ $money($total) }}</p>
+                @elseif ($state['key'] === 'draft')
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Draft total</p>
+                    <p class="mt-1 text-3xl font-semibold tabular-nums text-gray-900 dark:text-white">{{ $money($total) }}</p>
+                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Still a draft. Nothing is owed and nothing is posted until you approve it.</p>
+                @elseif ($state['key'] === 'cancelled')
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Cancelled</p>
+                    <p class="mt-1 text-3xl font-semibold tabular-nums text-gray-500 line-through dark:text-gray-400">{{ $money($total) }}</p>
+                @else
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Balance payable</p>
+                    <p class="mt-1 text-3xl font-semibold tabular-nums {{ $state['daysLate'] > 0 ? 'text-red-700 dark:text-red-300' : 'text-gray-900 dark:text-white' }}">{{ $money($bill->balance_due) }}</p>
+                @endif
+
+                @if (in_array($state['key'], ['open', 'partial', 'overdue', 'paid'], true) && $total > 0)
+                    <div class="mt-4" role="img" aria-label="{{ $percent }}% paid">
+                        <div class="h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
+                            <div class="h-full rounded-full {{ $state['key'] === 'paid' ? 'bg-green-600 dark:bg-green-500' : 'bg-brand-600 dark:bg-brand-400' }}" style="width: {{ $percent }}%"></div>
+                        </div>
+                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">{{ $money($settled) }} of {{ $money($total) }} paid</p>
+                    </div>
+                @endif
+
+                @if ($open && $bill->due_date)
+                    <p class="mt-3 text-sm {{ $state['daysLate'] > 0 ? 'font-medium text-red-700 dark:text-red-300' : 'text-gray-700 dark:text-gray-300' }}">
+                        @if ($state['daysLate'] > 0)
+                            Was due {{ $bill->due_date->format('j M Y') }}, {{ $state['daysLate'] }} {{ \Illuminate\Support\Str::plural('day', $state['daysLate']) }} ago
+                        @elseif ($bill->due_date->isToday())
+                            Due today
+                        @else
+                            Due {{ $bill->due_date->format('j M Y') }}, in {{ (int) now()->startOfDay()->diffInDays($bill->due_date) }} {{ \Illuminate\Support\Str::plural('day', (int) now()->startOfDay()->diffInDays($bill->due_date)) }}
+                        @endif
+                    </p>
+                @endif
+
+                @if ($canPay)
+                    <a href="{{ route('payments-made.create', ['bill_id' => $bill->id]) }}" class="btn-primary mt-4 w-full justify-center">Record payment</a>
+                @endif
+            </section>
+
+            {{-- Payments --}}
+            <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
+                <h3 class="font-medium text-gray-900 dark:text-white">Payments</h3>
+                @forelse ($bill->payments as $payment)
+                    <div class="mt-3 flex items-start justify-between gap-3 border-t border-gray-100 pt-3 text-sm first-of-type:border-0 first-of-type:pt-0 dark:border-gray-700">
+                        <div class="min-w-0">
+                            <p class="text-gray-900 dark:text-gray-100">{{ $payment->payment_date?->format('j M Y') ?? '—' }}</p>
+                            <p class="truncate text-gray-600 dark:text-gray-400">
+                                {{ ucfirst(str_replace('_', ' ', (string) $payment->payment_method)) }}@if ($payment->reference), {{ $payment->reference }}@endif
+                            </p>
+                            @if ((float) $payment->wht_amount > 0)
+                                <p class="text-gray-600 dark:text-gray-400">WHT withheld {{ $money($payment->wht_amount) }}</p>
+                            @endif
+                        </div>
+                        <p class="shrink-0 font-medium tabular-nums text-green-700 dark:text-green-400">{{ $money($payment->amount) }}</p>
+                    </div>
+                @empty
+                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">No payments yet.</p>
+                @endforelse
+            </section>
+
+            {{-- Supplier credits --}}
+            @unless (in_array($bill->status, ['draft', 'cancelled'], true))
+                <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
+                    <h3 class="font-medium text-gray-900 dark:text-white">Supplier credits</h3>
+                    @forelse ($bill->vendorCreditApplications as $application)
+                        <div class="mt-3 flex items-start justify-between gap-3 text-sm">
+                            <p class="text-gray-700 dark:text-gray-300">
+                                Credit applied {{ $application->applied_date->format('j M Y') }}, from
+                                <a href="{{ route('vendor-credits.show', $application->vendorCredit) }}" class="link">{{ $application->vendorCredit->vendor_credit_number }}</a>
+                            </p>
+                            <p class="shrink-0 font-medium tabular-nums text-gray-900 dark:text-gray-100">-{{ $money($application->amount) }}</p>
+                        </div>
+                    @empty
+                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">No supplier credit has been used against this bill.</p>
+                    @endforelse
+                    @can('create bills')
+                        <a href="{{ route('vendor-credits.create', ['bill_id' => $bill->id]) }}" class="mt-3 block text-sm font-medium text-brand-700 hover:underline dark:text-brand-300">Return goods or record a credit note</a>
+                    @endcan
+                </section>
+            @endunless
+
+            {{-- Activity --}}
+            @php
+                $events = collect([['when' => $bill->created_at, 'text' => 'Recorded', 'who' => $bill->createdBy?->name]]);
+                if ($bill->updated_at->gt($bill->created_at->copy()->addMinute())) {
+                    $events->push(['when' => $bill->updated_at, 'text' => 'Last changed', 'who' => null]);
+                }
+                foreach ($bill->payments as $payment) {
+                    $events->push(['when' => $payment->payment_date ?? $payment->created_at, 'text' => 'Payment of '.$money($payment->amount), 'who' => $payment->createdBy?->name]);
+                }
+                if ($bill->inventory_updated_at) {
+                    $events->push(['when' => $bill->inventory_updated_at, 'text' => 'Stock taken in', 'who' => null]);
+                }
+                $events = $events->sortBy(fn ($event) => $event['when'])->values();
+            @endphp
+            <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
+                <h3 class="font-medium text-gray-900 dark:text-white">Activity</h3>
+                <ol class="mt-3 space-y-3 border-l border-gray-200 pl-4 dark:border-gray-700">
+                    @foreach ($events as $event)
+                        <li class="relative text-sm">
+                            <span class="absolute -left-[1.3rem] top-1.5 h-2 w-2 rounded-full bg-gray-400 ring-4 ring-white dark:bg-gray-500 dark:ring-gray-800" aria-hidden="true"></span>
+                            <p class="text-gray-900 dark:text-gray-100">{{ $event['text'] }}</p>
+                            <p class="text-gray-600 dark:text-gray-400">
+                                <time datetime="{{ $event['when']?->toIso8601String() }}">{{ $event['when']?->format('j M Y') }}</time>@if ($event['who']), {{ $event['who'] }}@endif
+                            </p>
+                        </li>
+                    @endforeach
+                </ol>
+            </section>
+        </aside>
     </div>
+
+    @include('partials.invoice-print-page')
 </x-app-layout>
