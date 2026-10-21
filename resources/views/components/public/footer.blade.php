@@ -3,7 +3,12 @@
     $home = route('home');
     $cols = [
         'Product' => [['What it does', $home.'#tour'], ['Nigerian tax', $home.'#rules'], ['Pricing', route('pricing')]],
-        'Learn' => [['Guides', route('guides.index')], ['VAT returns in Nigeria', route('guides.show', 'vat-returns-nigeria')]],
+        // Linked from every page, because internal links are how a search
+        // engine finds an article at all (SEO plan).
+        'Learn' => collect([['Guides', route('guides.index')]])
+            ->concat(app(\App\Support\PublicSite\Guides::class)->all()->take(3)
+                ->map(fn (array $guide) => [$guide['title'], route('guides.show', $guide['slug'])]))
+            ->all(),
         'Company' => [['About', route('about')], ['Contact', route('contact')], ['Support', route('support')]],
         'Legal' => [['Privacy policy', route('privacy-policy')], ['Terms of service', route('terms-of-service')]],
     ];

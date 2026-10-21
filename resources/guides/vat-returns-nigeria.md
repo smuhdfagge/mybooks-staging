@@ -130,9 +130,20 @@ changes that matter to an ordinary business are:
 - The list of zero-rated items was widened, particularly around food, health
   and education
 - Electronic invoicing is being brought in, with invoices reported to the tax
-  authority rather than just issued to the customer
+  authority rather than just issued to the customer. Which year that reaches you
+  depends on your turnover, and our guide to
+  [Nigeria's e-invoicing rules](/guides/e-invoicing-nigeria) sets out the dates
 
 The rate itself did not move. It is still 7.5%.
+
+## VAT is not the only deduction
+
+If you pay suppliers, you are probably also meant to be deducting withholding
+tax from what you pay them, and that lands on the same 21st of the month. The
+two get muddled constantly, not least because WHT is worked out on the amount
+*before* VAT. Our guide to
+[withholding tax in Nigeria](/guides/withholding-tax-nigeria) goes through the
+rates and the arithmetic.
 
 ## Keeping it simple
 
