@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Public;
 
-use App\Http\Controllers\PublicSiteController;
 use App\Models\User;
+use App\Support\PublicSite\SearchFiles;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -28,7 +28,7 @@ class AnalyticsTest extends TestCase
 
     public static function publicPages(): array
     {
-        return array_map(fn ($p) => [$p], PublicSiteController::PAGES);
+        return array_map(fn ($p) => [$p], SearchFiles::PAGES);
     }
 
     #[DataProvider('publicPages')]
