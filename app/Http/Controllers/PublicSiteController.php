@@ -2,8 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Support\PublicSite\FeaturePages;
-use App\Support\PublicSite\Guides;
+use App\Support\PublicSite\SearchFiles;
 use Illuminate\Http\Response;
 
 /**
@@ -11,45 +10,24 @@ use Illuminate\Http\Response;
  * lists the public pages, and robots.txt points to it and keeps crawlers
  * out of the signed-in app. With mybooks.search_indexing off (staging and
  * test copies) there is no sitemap, and every page says "noindex" instead.
+ *
+ * What goes in them is SearchFiles' business, because the deploy writes
+ * the same two files into public/ for a web server that will not pass a
+ * .xml or .txt address to Laravel at all.
  */
 class PublicSiteController extends Controller
 {
-    /** The public pages, most important first. */
-    public const PAGES = ['home', 'pricing', 'about', 'contact', 'support', 'guides.index', 'privacy-policy', 'terms-of-service'];
-
-    public function sitemap(Guides $guides, FeaturePages $features): Response
+    public function sitemap(SearchFiles $files): Response
     {
-        abort_unless(config('mybooks.search_indexing'), 404);
+        abort_unless($files->indexing(), 404);
 
-        // The guides are added here rather than listed by hand, so an
-        // article is never written and then left out of the sitemap.
-        $urls = collect(self::PAGES)->map(fn (string $name) => route($name))
-            ->concat($features->all()->map(fn (array $page) => route('features.show', $page['slug'])))
-            ->concat($guides->all()->map(fn (array $guide) => route('guides.show', $guide['slug'])));
-
-        return response()
-            ->view('public-site.sitemap', ['urls' => $urls])
+        return response($files->sitemapXml())
             ->header('Content-Type', 'application/xml; charset=UTF-8');
     }
 
-    public function robots(): Response
+    public function robots(SearchFiles $files): Response
     {
-        $lines = [
-            'User-agent: *',
-            // Everything behind sign-in, and the sign-up and password pages.
-            'Disallow: /admin',
-            'Disallow: /dashboard',
-            'Disallow: /register',
-            'Disallow: /forgot-password',
-            'Disallow: /reset-password',
-        ];
-        // Crawlers may still read the public pages, so they see each page's
-        // "noindex" and drop it; blocking them here would hide that.
-        if (config('mybooks.search_indexing')) {
-            $lines[] = '';
-            $lines[] = 'Sitemap: '.route('sitemap');
-        }
-
-        return response(implode("\n", $lines)."\n")->header('Content-Type', 'text/plain; charset=UTF-8');
+        return response($files->robotsTxt())
+            ->header('Content-Type', 'text/plain; charset=UTF-8');
     }
 }
