@@ -4,6 +4,7 @@ namespace Tests\Feature\Public;
 
 use App\Support\PublicSite\Guides;
 use Illuminate\Support\Facades\File;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -64,6 +65,67 @@ class GuidesAndPricingTest extends TestCase
         // The markdown is rendered, not shown as markdown.
         $this->assertStringContainsString('<h2>', $html);
         $this->assertStringNotContainsString('## When it is due', $html);
+    }
+
+    /**
+     * The guides written so far, with a fact from each that would be wrong
+     * if the file were mangled or the markdown stopped rendering.
+     *
+     * @return array<string, array{0: string, 1: string, 2: string}>
+     */
+    public static function articles(): array
+    {
+        return [
+            'vat' => ['vat-returns-nigeria', 'How to file VAT returns in Nigeria (2026)', 'The 21st of the following month'],
+            'e-invoicing' => ['e-invoicing-nigeria', "Nigeria's e-invoicing rules: when it reaches you (2026)", 'Merchant Buyer Solution'],
+            'wht' => ['withholding-tax-nigeria', 'Withholding tax in Nigeria: rates, who deducts, and when (2026)', 'Deduction of Tax at Source'],
+        ];
+    }
+
+    #[DataProvider('articles')]
+    public function test_every_article_is_published_and_findable(string $slug, string $heading, string $fact): void
+    {
+        $html = $this->get(route('guides.show', $slug))->assertOk()
+            ->assertSee($heading)
+            ->assertSee($fact)
+            ->assertSee('Last checked')
+            ->getContent();
+
+        $this->assertSame(1, substr_count($html, '<h1'), $slug.' has exactly one h1');
+        $this->assertStringContainsString('<link rel="canonical" href="'.route('guides.show', $slug).'">', $html);
+        $this->assertStringContainsString('"@type":"Article"', $html);
+        // Rendered, not shown as markdown.
+        $this->assertStringNotContainsString('## ', $html);
+
+        $this->get(route('guides.index'))->assertOk()->assertSee($heading);
+        $this->assertStringContainsString('<loc>'.route('guides.show', $slug).'</loc>', $this->get(route('sitemap'))->getContent());
+    }
+
+    public function test_the_guides_point_at_each_other(): void
+    {
+        // A reader on one guide should find the next, and a search engine
+        // follows the same links (SEO plan).
+        $this->get(route('guides.show', 'vat-returns-nigeria'))->assertOk()
+            ->assertSee('/guides/e-invoicing-nigeria', false)
+            ->assertSee('/guides/withholding-tax-nigeria', false);
+
+        $this->get(route('guides.show', 'withholding-tax-nigeria'))->assertOk()
+            ->assertSee('/guides/vat-returns-nigeria', false);
+
+        $this->get(route('guides.show', 'e-invoicing-nigeria'))->assertOk()
+            ->assertSee('/guides/vat-returns-nigeria', false);
+    }
+
+    public function test_every_article_says_it_is_not_tax_advice(): void
+    {
+        // These are tax pages. Readers must not take them as advice, and
+        // each one must say when it was last reviewed.
+        foreach (array_keys(self::articles()) as $key) {
+            [$slug] = self::articles()[$key];
+            $this->get(route('guides.show', $slug))->assertOk()
+                ->assertSee('not tax advice')
+                ->assertSee('Nigeria Revenue Service');
+        }
     }
 
     public function test_an_article_sends_the_reader_on_to_the_product(): void
