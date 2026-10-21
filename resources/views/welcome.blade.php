@@ -85,6 +85,15 @@
                 'url' => route('home'),
                 'logo' => asset('images/brand/mybooks-logo-email-300.png'),
                 'email' => config('mybooks.support_email'),
+                // Where the business actually is. Google uses this to place
+                // MyBooks in Nigeria rather than guessing from the text.
+                'address' => [
+                    '@type' => 'PostalAddress',
+                    'streetAddress' => config('mybooks.office.street'),
+                    'addressLocality' => config('mybooks.office.locality'),
+                    'addressRegion' => config('mybooks.office.region'),
+                    'addressCountry' => config('mybooks.office.country'),
+                ],
             ],
             [
                 '@type' => 'SoftwareApplication',

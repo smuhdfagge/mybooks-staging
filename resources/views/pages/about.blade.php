@@ -8,7 +8,7 @@
     <section class="bg-brand-50 px-4 pb-14 pt-14 dark:bg-gray-900 sm:px-6 lg:px-8 lg:pt-20">
         <div class="mx-auto max-w-6xl">
             <h1 class="font-serif text-4xl font-semibold text-gray-900 dark:text-white lg:text-5xl">About MyBooks</h1>
-            <p class="mt-4 max-w-2xl text-xl text-gray-600 dark:text-gray-300">Accounting software for Nigerian businesses, run from our office in Kano.</p>
+            <p class="mt-4 max-w-2xl text-xl text-gray-600 dark:text-gray-300">Accounting software for Nigerian businesses, run from our office in {{ config('mybooks.office.region') }}.</p>
         </div>
     </section>
 
