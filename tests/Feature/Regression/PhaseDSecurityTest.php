@@ -15,12 +15,12 @@ use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\EmailAddressChangedNotification;
+use App\Notifications\VerifyEmailNotification;
 use App\Services\BankFileExporters\CsvBankExporter;
 use App\Services\ExportService;
 use App\Services\ReportExportService;
 use App\Services\TwoFactorService;
 use App\Support\Csv;
-use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
@@ -565,7 +565,7 @@ class PhaseDSecurityTest extends TestCase
 
         $this->assertSame(3, User::where('email', 'like', '%@bots.test')->count());
         $this->assertFalse(Tenant::where('email', 'co4@bots.test')->exists());
-        Notification::assertSentTimes(VerifyEmail::class, 3);
+        Notification::assertSentTimes(VerifyEmailNotification::class, 3);
     }
 
     public function test_s8_resending_the_verification_email_is_capped(): void
@@ -577,6 +577,6 @@ class PhaseDSecurityTest extends TestCase
         $this->post(route('verification.send'))->assertRedirect();
         $this->post(route('verification.send'))->assertStatus(429);
 
-        Notification::assertSentTimes(VerifyEmail::class, 2);
+        Notification::assertSentTimes(VerifyEmailNotification::class, 2);
     }
 }

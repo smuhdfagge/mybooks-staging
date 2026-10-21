@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class PasswordResetLinkController extends Controller
 {
@@ -30,13 +32,20 @@ class PasswordResetLinkController extends Controller
             'email' => ['required', 'email'],
         ]);
 
-        // We will send the password reset link to this user. Once we have attempted
-        // to send the link, we will examine the response then see the message we
-        // need to show to the user. Finally, we'll send out a proper response.
-        // Send reset link (ignore status to prevent user enumeration)
-        Password::sendResetLink(
-            $request->only('email')
-        );
+        // The email itself is queued (ResetPasswordNotification), so this
+        // only puts it on the queue. Should it still be sent here — a queue
+        // set to 'sync', say — a mail server that will not take it must not
+        // become a 500 page for someone who has merely forgotten their
+        // password. Logged, so it is not lost, and the same answer either
+        // way: telling one person the mail failed and another that it was
+        // sent would also say which addresses have an account.
+        try {
+            Password::sendResetLink(
+                $request->only('email')
+            );
+        } catch (TransportExceptionInterface $e) {
+            Log::error('Could not send a password reset email.', ['exception' => $e]);
+        }
 
         // Always return the same response regardless of whether the email exists
         return back()->with('status', __('passwords.sent'));
