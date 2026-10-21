@@ -59,6 +59,31 @@ echo "==> Refreshing cached routes, config and views"
 "$PHP" artisan optimize:clear
 "$PHP" artisan optimize
 
+# The front-end files are built elsewhere (no Node here), so they can be
+# left behind by an update that changed a stylesheet or a view. When that
+# happens the site still works but looks wrong, which is hard to spot and
+# easy to blame on the page itself. Say so instead.
+echo "==> Checking the front-end files"
+BUILT_FROM="$(cat public/build/BUILD_COMMIT 2>/dev/null || true)"
+HEAD_COMMIT="$(git rev-parse HEAD)"
+if [ ! -d public/build ]; then
+    echo "    public/build is missing: the site will have no styling." >&2
+    echo "    Run 'bash scripts/package-assets.sh' on your machine and upload the zip." >&2
+elif [ -z "$BUILT_FROM" ]; then
+    echo "    Cannot tell which commit these files were built from." >&2
+    echo "    If anything looks unstyled, upload a fresh build (scripts/package-assets.sh)." >&2
+elif [ "$BUILT_FROM" != "$HEAD_COMMIT" ]; then
+    echo "    These were built from ${BUILT_FROM:0:7}, but the code is now $(git rev-parse --short HEAD)." >&2
+    if ! git diff --quiet "$BUILT_FROM" HEAD -- resources package.json package-lock.json tailwind.config.js vite.config.js 2>/dev/null; then
+        echo "    Styles or scripts changed since then, so the site WILL look wrong." >&2
+        echo "    Run 'bash scripts/package-assets.sh' on your machine and upload the zip." >&2
+    else
+        echo "    Nothing that affects them changed, so this is fine." >&2
+    fi
+else
+    echo "    Up to date."
+fi
+
 echo "==> Restarting queue workers"
 "$PHP" artisan queue:restart || true
 
