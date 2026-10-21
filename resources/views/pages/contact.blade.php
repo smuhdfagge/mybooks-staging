@@ -41,7 +41,7 @@
                                 <div>
                                     <h3 class="font-semibold text-gray-900 dark:text-white">Email</h3>
                                     <p class="text-gray-600 dark:text-gray-400">For questions and help with your account.</p>
-                                    <a href="mailto:support@my-books.cloud" class="text-brand-600 dark:text-brand-300 hover:underline">support@my-books.cloud</a>
+                                    <a href="mailto:{{ config('mybooks.support_email') }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ config('mybooks.support_email') }}</a>
                                 </div>
                             </div>
 
