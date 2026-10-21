@@ -19,15 +19,27 @@ class FeaturePages
 {
     /** @var array<string, array{title: string, short: string, description: string}> */
     private const PAGES = [
+        // In the order a business meets them: money in, tax, money out,
+        // then what it all adds up to.
+        'invoicing' => [
+            'title' => 'Invoicing for Nigerian businesses',
+            'short' => 'Invoicing',
+            'description' => 'Send invoices in naira with your own logo, record what customers pay, and see what is still owed. Works in your phone\'s browser.',
+        ],
         'vat-returns' => [
             'title' => 'VAT returns for Nigeria',
             'short' => 'VAT returns',
             'description' => 'MyBooks adds 7.5% VAT to your invoices and bills, then lays out your monthly return as NRS Form 002, with the schedules to upload.',
         ],
-        'invoicing' => [
-            'title' => 'Invoicing for Nigerian businesses',
-            'short' => 'Invoicing',
-            'description' => 'Send invoices in naira with your own logo, record what customers pay, and see what is still owed. Works in your phone\'s browser.',
+        'expenses' => [
+            'title' => 'Expense tracking for Nigerian businesses',
+            'short' => 'Expenses',
+            'description' => 'Record what you spend, send it for approval, and see where the money goes each month. Expenses feed your reports and your VAT return.',
+        ],
+        'reports' => [
+            'title' => 'Financial reports for Nigerian businesses',
+            'short' => 'Reports',
+            'description' => 'Profit and loss, balance sheet, trial balance and cash flow from your own records, any time. Download any of them as a PDF or a CSV.',
         ],
     ];
 

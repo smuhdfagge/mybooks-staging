@@ -79,6 +79,7 @@ class GuidesAndPricingTest extends TestCase
             'vat' => ['vat-returns-nigeria', 'How to file VAT returns in Nigeria (2026)', 'The 21st of the following month'],
             'e-invoicing' => ['e-invoicing-nigeria', "Nigeria's e-invoicing rules: when it reaches you (2026)", 'Merchant Buyer Solution'],
             'wht' => ['withholding-tax-nigeria', 'Withholding tax in Nigeria: rates, who deducts, and when (2026)', 'Deduction of Tax at Source'],
+            'small business' => ['small-business-accounting-nigeria', 'Small business accounting in Nigeria: a plain guide (2026)', 'Separate the business from yourself'],
         ];
     }
 
@@ -109,6 +110,8 @@ class GuidesAndPricingTest extends TestCase
         return [
             'vat returns' => ['vat-returns', 'VAT returns for Nigeria', 'Laid out like Form 002'],
             'invoicing' => ['invoicing', 'Invoicing for Nigerian businesses', 'What goes on the invoice'],
+            'expenses' => ['expenses', 'Expense tracking for Nigerian businesses', 'A payment voucher you can file'],
+            'reports' => ['reports', 'Financial reports for Nigerian businesses', 'Built from your records'],
         ];
     }
 
@@ -140,6 +143,18 @@ class GuidesAndPricingTest extends TestCase
 
         $this->get(route('guides.show', 'withholding-tax-nigeria'))->assertOk()
             ->assertSee('/features/invoicing', false);
+    }
+
+    public function test_the_broad_guide_points_at_the_narrower_ones(): void
+    {
+        // The accounting guide is the wide net; its job is partly to send
+        // people to the pages that answer one thing (SEO plan).
+        $this->get(route('guides.show', 'small-business-accounting-nigeria'))->assertOk()
+            ->assertSee('/guides/vat-returns-nigeria', false)
+            ->assertSee('/guides/withholding-tax-nigeria', false)
+            ->assertSee('/features/vat-returns', false)
+            ->assertSee('/features/invoicing', false)
+            ->assertSee('/features/reports', false);
     }
 
     public function test_an_unknown_feature_page_is_not_found(): void
