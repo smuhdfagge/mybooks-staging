@@ -85,6 +85,10 @@ Take a database backup before every deploy (`php artisan mybooks:backup`). Deplo
 
 `bash scripts/deploy.sh` pulls `main`, installs packages, migrates and refreshes the caches. The front-end files (`public/build`) are uploaded separately as a zip, because the server has no Node.
 
+Build that zip on your own machine with `bash scripts/package-assets.sh`. It runs the build, records the commit it was built from, and writes `build-<commit>.zip`. Upload it and unzip it over the project folder (`unzip -o build-<commit>.zip`).
+
+The recorded commit is what lets `deploy.sh` tell you when the server's front-end files are older than its code. It says so at the end of a deploy, and only calls it a problem when something under `resources/` actually changed. Without that warning a stale build is easy to miss: the site still works, it just looks wrong, and the page gets blamed instead of the deploy.
+
 ### Server access to GitHub
 
 The repository is private, and GitHub does not accept account passwords, so the server needs its own read-only key (a deploy key). Once, on the server:
