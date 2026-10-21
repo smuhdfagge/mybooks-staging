@@ -87,6 +87,10 @@ Take a database backup before every deploy (`php artisan mybooks:backup`). Deplo
 
 Build that zip on your own machine with `bash scripts/package-assets.sh`. It runs the build, records the commit it was built from, and writes `build-<commit>.zip`. Upload it and unzip it over the project folder (`unzip -o build-<commit>.zip`).
 
+`deploy.sh` also runs `php artisan site:search-files`, which writes `public/robots.txt` and `public/sitemap.xml` as real files. Those two addresses end in `.txt` and `.xml`, and the server answers them itself with the file rather than passing them to Laravel, so the routes for them are never reached in production. Writing them on every deploy is what keeps the sitemap honest: publish a guide and it is listed, with nothing to remember.
+
+They are not in git, for the same reason. A copy committed today would still be served a year later, listing whatever pages existed when it was written — which is exactly how the live sitemap got stuck at six pages. The command needs `APP_URL` set to the site's own address, and refuses to write anything if it would produce `localhost` addresses.
+
 The recorded commit is what lets `deploy.sh` tell you when the server's front-end files are older than its code. It says so at the end of a deploy, and only calls it a problem when something under `resources/` actually changed. Without that warning a stale build is easy to miss: the site still works, it just looks wrong, and the page gets blamed instead of the deploy.
 
 ### Server access to GitHub

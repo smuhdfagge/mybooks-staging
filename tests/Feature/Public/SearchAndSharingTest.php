@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\Public;
 
-use App\Http\Controllers\PublicSiteController;
 use App\Models\Plan;
 use App\Support\PublicSite\FeaturePages;
 use App\Support\PublicSite\Guides;
+use App\Support\PublicSite\SearchFiles;
 use Illuminate\Support\Facades\File;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -26,7 +26,7 @@ class SearchAndSharingTest extends TestCase
 
     public static function pages(): array
     {
-        return array_map(fn ($p) => [$p], PublicSiteController::PAGES);
+        return array_map(fn ($p) => [$p], SearchFiles::PAGES);
     }
 
     #[DataProvider('pages')]
@@ -76,8 +76,8 @@ class SearchAndSharingTest extends TestCase
         // guide, so a new one is never written and then left out (SEO plan).
         $guides = app(Guides::class)->all();
         $features = app(FeaturePages::class)->all();
-        $this->assertCount(count(PublicSiteController::PAGES) + $features->count() + $guides->count(), $xml->url);
-        foreach (PublicSiteController::PAGES as $page) {
+        $this->assertCount(count(SearchFiles::PAGES) + $features->count() + $guides->count(), $xml->url);
+        foreach (SearchFiles::PAGES as $page) {
             $this->assertStringContainsString('<loc>'.route($page).'</loc>', $response->getContent());
         }
         foreach ($features as $page) {
@@ -90,7 +90,14 @@ class SearchAndSharingTest extends TestCase
 
     public function test_robots_points_to_the_sitemap_and_keeps_out_of_the_app(): void
     {
-        $this->assertFileDoesNotExist(public_path('robots.txt'), 'A static robots.txt would hide the generated one.');
+        // The deploy writes a real public/robots.txt, because the server
+        // does not pass a .txt address to Laravel. It must not be in git
+        // too: a committed copy would be served for ever, whatever the
+        // pages later became.
+        $ignored = File::get(base_path('.gitignore'));
+        $this->assertStringContainsString('/public/robots.txt', $ignored);
+        $this->assertStringContainsString('/public/sitemap.xml', $ignored);
+
         config(['mybooks.search_indexing' => true]);
 
         $this->get('/robots.txt')->assertOk()

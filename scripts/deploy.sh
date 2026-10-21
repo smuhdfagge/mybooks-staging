@@ -59,6 +59,15 @@ echo "==> Refreshing cached routes, config and views"
 "$PHP" artisan optimize:clear
 "$PHP" artisan optimize
 
+# robots.txt and sitemap.xml are written out as real files, because this
+# server hands back index.php as plain text for a .txt or .xml address
+# instead of running it, so the routes for them are never reached. Written
+# on every deploy, so a new guide is in the sitemap as soon as it is live.
+echo "==> Writing robots.txt and sitemap.xml"
+# Said plainly and carried on rather than stopping the deploy here: the
+# site works either way, it is only search engines that see a stale file.
+"$PHP" artisan site:search-files || echo "    Could not write them, so the old files are still being served." >&2
+
 # The front-end files are built elsewhere (no Node here), so they can be
 # left behind by an update that changed a stylesheet or a view. When that
 # happens the site still works but looks wrong, which is hard to spot and
@@ -74,12 +83,28 @@ elif [ -z "$BUILT_FROM" ]; then
     echo "    If anything looks unstyled, upload a fresh build (scripts/package-assets.sh)." >&2
 elif [ "$BUILT_FROM" != "$HEAD_COMMIT" ]; then
     echo "    These were built from ${BUILT_FROM:0:7}, but the code is now $(git rev-parse --short HEAD)." >&2
-    if ! git diff --quiet "$BUILT_FROM" HEAD -- resources package.json package-lock.json tailwind.config.js vite.config.js 2>/dev/null; then
-        echo "    Styles or scripts changed since then, so the site WILL look wrong." >&2
-        echo "    Run 'bash scripts/package-assets.sh' on your machine and upload the zip." >&2
-    else
-        echo "    Nothing that affects them changed, so this is fine." >&2
-    fi
+    # 'git diff --quiet' says "no difference" with 0 and "there is one"
+    # with 1, but it also fails with 128 when it cannot find a commit at
+    # all, which is what happens on a shallow clone. Treating that as a
+    # difference cried wolf about styles that had not changed, so the three
+    # answers are kept apart here.
+    # Asked this way so that a non-zero answer is read, not treated as the
+    # script itself failing (set -e).
+    DIFFED=0
+    git diff --quiet "$BUILT_FROM" HEAD -- resources package.json package-lock.json tailwind.config.js vite.config.js 2>/dev/null || DIFFED=$?
+    case $DIFFED in
+        0)
+            echo "    Nothing that affects them changed, so this is fine." >&2
+            ;;
+        1)
+            echo "    Styles or scripts changed since then, so the site WILL look wrong." >&2
+            echo "    Run 'bash scripts/package-assets.sh' on your machine and upload the zip." >&2
+            ;;
+        *)
+            echo "    Cannot compare the two: this copy does not have ${BUILT_FROM:0:7}." >&2
+            echo "    Run 'git fetch --unshallow' here if you want this check to work." >&2
+            ;;
+    esac
 else
     echo "    Up to date."
 fi
