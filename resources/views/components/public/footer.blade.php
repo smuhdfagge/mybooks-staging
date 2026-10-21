@@ -2,7 +2,11 @@
 @php
     $home = route('home');
     $cols = [
-        'Product' => [['What it does', $home.'#tour'], ['Nigerian tax', $home.'#rules'], ['Pricing', route('pricing')]],
+        'Product' => collect([['What it does', $home.'#tour']])
+            ->concat(app(\App\Support\PublicSite\FeaturePages::class)->all()
+                ->map(fn (array $page) => [$page['short'], route('features.show', $page['slug'])]))
+            ->concat([['Pricing', route('pricing')]])
+            ->all(),
         // Linked from every page, because internal links are how a search
         // engine finds an article at all (SEO plan).
         'Learn' => collect([['Guides', route('guides.index')]])

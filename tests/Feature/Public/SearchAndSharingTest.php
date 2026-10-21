@@ -4,6 +4,7 @@ namespace Tests\Feature\Public;
 
 use App\Http\Controllers\PublicSiteController;
 use App\Models\Plan;
+use App\Support\PublicSite\FeaturePages;
 use App\Support\PublicSite\Guides;
 use Illuminate\Support\Facades\File;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -71,11 +72,16 @@ class SearchAndSharingTest extends TestCase
         $response = $this->get('/sitemap.xml')->assertOk()->assertHeader('Content-Type', 'application/xml; charset=UTF-8');
 
         $xml = simplexml_load_string($response->getContent());
-        // Every fixed page, plus one entry for each guide (SEO plan).
+        // Every fixed page, plus one entry for each feature page and each
+        // guide, so a new one is never written and then left out (SEO plan).
         $guides = app(Guides::class)->all();
-        $this->assertCount(count(PublicSiteController::PAGES) + $guides->count(), $xml->url);
+        $features = app(FeaturePages::class)->all();
+        $this->assertCount(count(PublicSiteController::PAGES) + $features->count() + $guides->count(), $xml->url);
         foreach (PublicSiteController::PAGES as $page) {
             $this->assertStringContainsString('<loc>'.route($page).'</loc>', $response->getContent());
+        }
+        foreach ($features as $page) {
+            $this->assertStringContainsString('<loc>'.route('features.show', $page['slug']).'</loc>', $response->getContent());
         }
         foreach ($guides as $guide) {
             $this->assertStringContainsString('<loc>'.route('guides.show', $guide['slug']).'</loc>', $response->getContent());

@@ -153,9 +153,9 @@ drawer of paper.
 
 If your invoices and your bills are recorded as they happen, with the VAT on
 each one, the monthly figure is already there. That is what accounting software
-is for, and it is what MyBooks does: VAT at 7.5% goes on invoices and bills as
-you raise them, and your monthly figure is built from those records rather than
-worked out again from scratch.
+is for, and it is what [MyBooks does with VAT](/features/vat-returns): 7.5% goes
+on invoices and bills as you raise them, and your monthly return is laid out as
+Form 002 from those records rather than worked out again from scratch.
 
 ---
 

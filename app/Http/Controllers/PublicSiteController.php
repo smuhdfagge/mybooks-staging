@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\PublicSite\FeaturePages;
 use App\Support\PublicSite\Guides;
 use Illuminate\Http\Response;
 
@@ -16,13 +17,14 @@ class PublicSiteController extends Controller
     /** The public pages, most important first. */
     public const PAGES = ['home', 'pricing', 'about', 'contact', 'support', 'guides.index', 'privacy-policy', 'terms-of-service'];
 
-    public function sitemap(Guides $guides): Response
+    public function sitemap(Guides $guides, FeaturePages $features): Response
     {
         abort_unless(config('mybooks.search_indexing'), 404);
 
         // The guides are added here rather than listed by hand, so an
         // article is never written and then left out of the sitemap.
         $urls = collect(self::PAGES)->map(fn (string $name) => route($name))
+            ->concat($features->all()->map(fn (array $page) => route('features.show', $page['slug'])))
             ->concat($guides->all()->map(fn (array $guide) => route('guides.show', $guide['slug'])));
 
         return response()
