@@ -55,6 +55,7 @@
             <script type="application/ld+json" nonce="{{ app('csp-nonce') }}">{!! json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
         @endif
         @include('partials.pwa-head')
+        @include('partials.analytics')
         {{-- public.js is Alpine only; the app's own script is not needed here (H5). --}}
         @vite(['resources/css/app.css', 'resources/js/public.js'])
         {{-- Page extras after the main stylesheet, so they win a tie. --}}
