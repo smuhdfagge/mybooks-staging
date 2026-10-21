@@ -94,13 +94,24 @@ class SecurityHeaders
      */
     protected function buildCsp(string $nonce): string
     {
+        // Google Analytics, when it is switched on (partials/analytics).
+        // gtag.js itself needs nothing here: it carries the nonce, and
+        // 'strict-dynamic' then trusts what it loads. What does need saying
+        // is where it may SEND to, because connect-src 'self' blocks that
+        // silently — the page looks fine and no figures ever arrive.
+        // Listed only when there is an id, so a copy without analytics keeps
+        // the tighter policy.
+        $analytics = config('mybooks.google_analytics_id')
+            ? ' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com'
+            : '';
+
         $directives = [
             "default-src 'self'",
             "script-src 'nonce-{$nonce}' 'strict-dynamic' 'unsafe-eval' 'unsafe-inline' https:",
             "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
             "font-src 'self' data:", // IBM Plex Sans is bundled (rebrand R1/R11)
-            "img-src 'self' data: blob:",
-            "connect-src 'self'",
+            "img-src 'self' data: blob:".$analytics,
+            "connect-src 'self'".$analytics,
             "frame-src 'self'",
             "frame-ancestors 'self'",
             "base-uri 'self'",

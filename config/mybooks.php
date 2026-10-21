@@ -16,6 +16,12 @@ return [
     // on the real public address.
     'search_indexing' => (bool) env('MYBOOKS_SEARCH_INDEXING', false),
 
+    // Google Analytics on the public pages only (never the signed-in app).
+    // Empty means no analytics at all: no script, and the Content-Security-
+    // Policy stays as tight as it is without it. Leave it unset on staging
+    // and test copies so their traffic does not land in the real figures.
+    'google_analytics_id' => env('MYBOOKS_GA_MEASUREMENT_ID', ''),
+
     /*
     |--------------------------------------------------------------------------
     | HSTS (finding L10)
