@@ -31,6 +31,7 @@ use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\FixedAssetCategoryController;
 use App\Http\Controllers\FixedAssetController;
+use App\Http\Controllers\GuideController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\InvoiceController;
@@ -49,6 +50,7 @@ use App\Http\Controllers\PaymentMadeController;
 use App\Http\Controllers\PaymentReceivedController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\PayrollLiabilityController;
+use App\Http\Controllers\PricingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicSiteController;
 use App\Http\Controllers\PurchaseOrderController;
@@ -98,6 +100,15 @@ Route::get('/', function () {
 // Search-engine files for the public pages (home page plan H5).
 Route::get('/sitemap.xml', [PublicSiteController::class, 'sitemap'])->name('sitemap');
 Route::get('/robots.txt', [PublicSiteController::class, 'robots'])->name('robots');
+
+// What MyBooks costs, as its own page: people search for it by name
+// and the home page's section cannot be found on its own (SEO plan).
+Route::get('/pricing', [PricingController::class, 'index'])->name('pricing');
+
+// The guides: plain-English articles that bring people in while they are
+// still looking for an answer rather than for software (SEO plan).
+Route::get('/guides', [GuideController::class, 'index'])->name('guides.index');
+Route::get('/guides/{slug}', [GuideController::class, 'show'])->name('guides.show');
 
 Route::get('/about', function () {
     return view('pages.about');

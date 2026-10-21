@@ -7,9 +7,10 @@
     $links = [
         ['What it does', $home.'#tour'],
         ['Nigerian tax', $home.'#rules'],
-        ['Pricing', $home.'#pricing'],
+        // Pages of their own, so a search engine can find them (SEO plan).
+        ['Pricing', route('pricing')],
+        ['Guides', route('guides.index')],
         ['For accountants', $home.'#accountants'],
-        ['Questions', $home.'#faq'],
     ];
     $link = 'rounded text-[0.95rem] font-medium text-gray-600 hover:text-gray-900 focus-ring dark:text-gray-300 dark:hover:text-white';
 @endphp
@@ -33,7 +34,7 @@
                 @if (Route::has('login'))
                     <a href="{{ route('login') }}" class="hidden rounded px-2.5 py-2 font-medium text-gray-900 focus-ring hover:text-brand-600 dark:text-white dark:hover:text-brand-300 sm:inline-block">Sign in</a>
                 @endif
-                <a href="{{ $home }}#pricing" class="inline-flex h-10 items-center whitespace-nowrap rounded-lg bg-brand-600 px-4 text-[0.95rem] font-semibold text-white hover:bg-brand-700 focus-ring">Choose a plan</a>
+                <a href="{{ route('pricing') }}" class="inline-flex h-10 items-center whitespace-nowrap rounded-lg bg-brand-600 px-4 text-[0.95rem] font-semibold text-white hover:bg-brand-700 focus-ring">Choose a plan</a>
             @endauth
 
             <button type="button" class="inline-grid h-10 w-10 place-items-center rounded-lg text-gray-700 hover:bg-gray-100 focus-ring dark:text-gray-200 dark:hover:bg-gray-800 lg:hidden"

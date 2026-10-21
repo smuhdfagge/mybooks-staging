@@ -2,7 +2,8 @@
 @php
     $home = route('home');
     $cols = [
-        'Product' => [['What it does', $home.'#tour'], ['Nigerian tax', $home.'#rules'], ['Pricing', $home.'#pricing']],
+        'Product' => [['What it does', $home.'#tour'], ['Nigerian tax', $home.'#rules'], ['Pricing', route('pricing')]],
+        'Learn' => [['Guides', route('guides.index')], ['VAT returns in Nigeria', route('guides.show', 'vat-returns-nigeria')]],
         'Company' => [['About', route('about')], ['Contact', route('contact')], ['Support', route('support')]],
         'Legal' => [['Privacy policy', route('privacy-policy')], ['Terms of service', route('terms-of-service')]],
     ];
