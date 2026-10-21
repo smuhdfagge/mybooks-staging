@@ -5,12 +5,12 @@ namespace Tests\Feature\Public;
 use Tests\TestCase;
 
 /**
- * The support address on the public pages.
+ * How the public pages name MyBooks: the support address, and the domain
+ * the privacy policy and the terms say the service runs on.
  *
- * It shows on four of them, including the privacy policy and the terms,
- * which are the pages a customer reaches for when something has gone
- * wrong. They all read config('mybooks.support_email') now, so there is
- * one place to change it and no page can be left behind.
+ * Both were written with a hyphen, my-books.cloud, which is not a domain
+ * MyBooks has. The address bounced, and the two documents that say what
+ * MyBooks promises its customers named a website it does not own.
  */
 class SupportEmailTest extends TestCase
 {
@@ -53,5 +53,34 @@ class SupportEmailTest extends TestCase
             $this->get(route($page))->assertOk()
                 ->assertDontSee('support@my-books.cloud');
         }
+    }
+
+    public function test_no_page_names_a_domain_mybooks_does_not_own(): void
+    {
+        // Set here rather than left to .env, because the home page's
+        // structured data publishes the support address and would
+        // otherwise fail this on whatever a given machine happens to have
+        // configured. That is the views being tested, not the server.
+        config(['mybooks.support_email' => 'support@mybooks.cloud']);
+
+        // The privacy policy and the terms each name the website four
+        // times, in the parts that say who the document binds and where
+        // changes to it will appear. Naming the wrong one there is worse
+        // than a broken link.
+        foreach (['home', 'about', 'contact', 'support', 'privacy-policy', 'terms-of-service'] as $page) {
+            $this->get(route($page))->assertOk()
+                ->assertDontSee('my-books.cloud');
+        }
+    }
+
+    public function test_the_legal_pages_say_where_the_service_runs(): void
+    {
+        $this->get(route('privacy-policy'))->assertOk()
+            ->assertSee('provided through the website mybooks.cloud')
+            ->assertSee('https://mybooks.cloud');
+
+        $this->get(route('terms-of-service'))->assertOk()
+            ->assertSee('accessible at mybooks.cloud')
+            ->assertSee('https://mybooks.cloud');
     }
 }

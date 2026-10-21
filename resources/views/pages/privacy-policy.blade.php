@@ -7,7 +7,7 @@
                     Privacy policy
                 </h1>
                 <p class="text-gray-600 dark:text-gray-400">
-                    <strong>MyBooks</strong> (my-books.cloud)<br>
+                    <strong>MyBooks</strong> (mybooks.cloud)<br>
                     <span class="text-sm">Effective Date: 22 December, 2025</span>
                 </p>
             </div>
@@ -25,7 +25,7 @@
                             Introduction
                         </h2>
                         <div class="text-gray-600 dark:text-gray-300 space-y-4 pl-11">
-                            <p>MyBooks is an accounting and financial management solution provided through the website my-books.cloud ("MyBooks"). We are committed to protecting the privacy, confidentiality, and integrity of all information entrusted to us by our users.</p>
+                            <p>MyBooks is an accounting and financial management solution provided through the website mybooks.cloud ("MyBooks"). We are committed to protecting the privacy, confidentiality, and integrity of all information entrusted to us by our users.</p>
                             <p>This Privacy Policy explains how we collect, use, store, disclose, and protect personal and business data when you use MyBooks.</p>
                             <p class="font-medium">By accessing or using MyBooks, you agree to the practices described in this Policy.</p>
                         </div>
@@ -278,7 +278,7 @@
                         </h2>
                         <div class="text-gray-600 dark:text-gray-300 space-y-4 pl-11">
                             <p>We may update this Privacy Policy from time to time to reflect system improvements, legal requirements, or operational changes.</p>
-                            <p>Updated versions will be published on my-books.cloud, and continued use of the platform constitutes acceptance of the revised Policy.</p>
+                            <p>Updated versions will be published on mybooks.cloud, and continued use of the platform constitutes acceptance of the revised Policy.</p>
                         </div>
                     </div>
 
@@ -292,7 +292,7 @@
                             <p>For general inquiries about privacy or data protection:</p>
                             <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
                                 <h3 class="font-bold text-gray-900 dark:text-white text-lg mb-3">MyBooks</h3>
-                                <p class="mb-2"><strong>Website:</strong> <a href="https://my-books.cloud" class="text-brand-600 dark:text-brand-300 hover:underline">https://my-books.cloud</a></p>
+                                <p class="mb-2"><strong>Website:</strong> <a href="https://mybooks.cloud" class="text-brand-600 dark:text-brand-300 hover:underline">https://mybooks.cloud</a></p>
                                 <p><strong>Email:</strong> <a href="mailto:{{ config('mybooks.support_email') }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ config('mybooks.support_email') }}</a></p>
                             </div>
                         </div>
