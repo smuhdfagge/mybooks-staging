@@ -10,6 +10,17 @@ return [
 
     'support_email' => env('MYBOOKS_SUPPORT_EMAIL', 'support@my-books.cloud'),
 
+    // Where MyBooks is, as the public pages show it. Kept here rather than
+    // typed into each page: it appears on the contact page, on the about
+    // page and in the home page's structured data, and an address that
+    // lives in three views is an address that moves in two of them.
+    'office' => [
+        'street' => 'Block B House B2, Sani Zangon Daura Estate',
+        'locality' => 'Kado',
+        'region' => 'Abuja',
+        'country' => 'NG',
+    ],
+
     // Search engines (home page plan, after H6). Off: every page says
     // "noindex" (header and meta tag), robots.txt lists no sitemap and the
     // sitemap is not served, so the site stays out of Google. Turn on only

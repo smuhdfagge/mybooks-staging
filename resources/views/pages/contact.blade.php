@@ -69,8 +69,8 @@
                                 </div>
                                 <div>
                                     <h3 class="font-semibold text-gray-900 dark:text-white">Office</h3>
-                                    <p class="text-gray-600 dark:text-gray-400">Our office in Kano.</p>
-                                    <p class="text-gray-700 dark:text-gray-300">No 580 ando House, Wapa Fagge<br>Kano State 700213</p>
+                                    <p class="text-gray-600 dark:text-gray-400">Our office in {{ config('mybooks.office.region') }}.</p>
+                                    <p class="text-gray-700 dark:text-gray-300">{{ config('mybooks.office.street') }}<br>{{ config('mybooks.office.locality') }}, {{ config('mybooks.office.region') }}</p>
                                 </div>
                             </div>
 
