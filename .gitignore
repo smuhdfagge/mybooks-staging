@@ -14,6 +14,9 @@
 /auth.json
 /node_modules
 /public/build
+# The zip scripts/package-assets.sh writes for the server. It is the built
+# front-end files in another shape, so it does not belong in git either.
+/build-*.zip
 /public/hot
 /public/storage
 /storage/*.key
