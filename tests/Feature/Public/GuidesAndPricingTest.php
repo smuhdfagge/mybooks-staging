@@ -101,6 +101,55 @@ class GuidesAndPricingTest extends TestCase
         $this->assertStringContainsString('<loc>'.route('guides.show', $slug).'</loc>', $this->get(route('sitemap'))->getContent());
     }
 
+    /**
+     * @return array<string, array{0: string, 1: string, 2: string}>
+     */
+    public static function featurePages(): array
+    {
+        return [
+            'vat returns' => ['vat-returns', 'VAT returns for Nigeria', 'Laid out like Form 002'],
+            'invoicing' => ['invoicing', 'Invoicing for Nigerian businesses', 'What goes on the invoice'],
+        ];
+    }
+
+    #[DataProvider('featurePages')]
+    public function test_every_feature_page_can_be_found_on_its_own(string $slug, string $title, string $fact): void
+    {
+        $html = $this->get(route('features.show', $slug))->assertOk()
+            ->assertSee($fact)
+            ->assertSee('Book a demo')
+            ->getContent();
+
+        $this->assertStringContainsString('<title>'.$title.' · MyBooks</title>', $html);
+        $this->assertStringContainsString('<link rel="canonical" href="'.route('features.show', $slug).'">', $html);
+        $this->assertSame(1, substr_count($html, '<h1'), $slug.' has exactly one h1');
+        $this->assertStringContainsString('"@type":"WebPage"', $html);
+
+        $this->assertStringContainsString('<loc>'.route('features.show', $slug).'</loc>', $this->get(route('sitemap'))->getContent());
+    }
+
+    public function test_a_feature_page_and_its_guide_point_at_each_other(): void
+    {
+        // The guide brings the reader in; the feature page is where they
+        // go next, and the link back keeps both findable (SEO plan).
+        $this->get(route('features.show', 'vat-returns'))->assertOk()
+            ->assertSee(route('guides.show', 'vat-returns-nigeria'), false);
+
+        $this->get(route('guides.show', 'vat-returns-nigeria'))->assertOk()
+            ->assertSee('/features/vat-returns', false);
+
+        $this->get(route('guides.show', 'withholding-tax-nigeria'))->assertOk()
+            ->assertSee('/features/invoicing', false);
+    }
+
+    public function test_an_unknown_feature_page_is_not_found(): void
+    {
+        // Only the pages on the list exist, so a half-written view cannot
+        // be reached by guessing its address.
+        $this->get('/features/not-a-feature')->assertNotFound();
+        $this->get('/features/'.urlencode('../../.env'))->assertNotFound();
+    }
+
     public function test_the_guides_point_at_each_other(): void
     {
         // A reader on one guide should find the next, and a search engine

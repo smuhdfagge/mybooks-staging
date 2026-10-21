@@ -138,6 +138,9 @@ credit note for every supplier.
 That is what MyBooks does with it. WHT comes off supplier payments at the rate
 for the transaction, grouped by authority so you can see what is owed to whom
 and when, with the deduction shown on the payment advice the supplier receives.
+On the money coming in, [invoicing](/features/invoicing) records what a customer
+actually paid and what they withheld, so the invoice clears properly instead of
+looking short.
 
 ---
 
