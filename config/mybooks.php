@@ -8,7 +8,7 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'support_email' => env('MYBOOKS_SUPPORT_EMAIL', 'support@my-books.cloud'),
+    'support_email' => env('MYBOOKS_SUPPORT_EMAIL', 'support@mybooks.cloud'),
 
     // Where MyBooks is, as the public pages show it. Kept here rather than
     // typed into each page: it appears on the contact page, on the about

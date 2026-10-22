@@ -45,7 +45,7 @@ return [
     | Useful for allowing multiple subdomains.
     */
     'allowed_origins_patterns' => [
-        // Example: Allow all subdomains of my-books.cloud
+        // Example: Allow all subdomains of mybooks.cloud
         // '#^https://.*\.my-books\.cloud$#',
     ],
 

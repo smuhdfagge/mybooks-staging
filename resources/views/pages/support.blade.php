@@ -150,7 +150,7 @@
                         </div>
                         <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Email</h3>
                         <p class="text-gray-600 dark:text-gray-400 mb-4">Write to us about anything in MyBooks.</p>
-                        <a href="mailto:support@my-books.cloud" class="text-brand-600 dark:text-brand-300 font-medium hover:underline">support@my-books.cloud</a>
+                        <a href="mailto:{{ config('mybooks.support_email') }}" class="text-brand-600 dark:text-brand-300 font-medium hover:underline">{{ config('mybooks.support_email') }}</a>
                     </div>
 
                     <!-- Phone Support -->

@@ -1631,5 +1631,5 @@ class MyBooksApi {
 
 For API support or to report issues, please contact:
 
--   Email: support@my-books.cloud
--   Documentation: https://my-books.cloud/docs
+-   Email: support@mybooks.cloud
+-   Documentation: https://mybooks.cloud/docs

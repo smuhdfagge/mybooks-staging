@@ -7,7 +7,7 @@
                     Terms of service
                 </h1>
                 <p class="text-gray-600 dark:text-gray-400">
-                    <strong>MyBooks</strong> (my-books.cloud)<br>
+                    <strong>MyBooks</strong> (mybooks.cloud)<br>
                     <span class="text-sm">Effective Date: 22 December, 2025</span>
                 </p>
             </div>
@@ -25,7 +25,7 @@
                             Introduction
                         </h2>
                         <div class="text-gray-600 dark:text-gray-300 space-y-4 pl-11">
-                            <p>Welcome to MyBooks, an online accounting and financial management solution accessible at my-books.cloud ("MyBooks", "we", "our", or "us").</p>
+                            <p>Welcome to MyBooks, an online accounting and financial management solution accessible at mybooks.cloud ("MyBooks", "we", "our", or "us").</p>
                             <p>These Terms of Service ("Terms") govern your access to and use of the MyBooks platform. By creating an account or using the service, you agree to comply with these Terms. If you do not agree, you must not use MyBooks.</p>
                         </div>
                     </div>
@@ -206,7 +206,7 @@
                                 <li class="flex items-start"><svg class="w-5 h-5 text-brand-500 mr-2 mt-0.5 flex-shrink-0 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Employee conduct</li>
                             </ul>
                             <div class="bg-brand-50 dark:bg-brand-900/20 rounded-xl p-6 mt-4">
-                                <p class="mb-2"><strong class="text-gray-900 dark:text-white">Email:</strong> <a href="mailto:support@my-books.cloud" class="text-brand-600 dark:text-brand-300 hover:underline">support@my-books.cloud</a></p>
+                                <p class="mb-2"><strong class="text-gray-900 dark:text-white">Email:</strong> <a href="mailto:{{ config('mybooks.support_email') }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ config('mybooks.support_email') }}</a></p>
                                 <p><strong class="text-gray-900 dark:text-white">Subject:</strong> Complaint or Service Issue</p>
                             </div>
                             <p class="mt-4">All complaints will be reviewed and addressed in a professional manner.</p>
@@ -253,7 +253,7 @@
                         </h2>
                         <div class="text-gray-600 dark:text-gray-300 space-y-4 pl-11">
                             <p>We may update these Terms periodically.</p>
-                            <p>Updated versions will be published on my-books.cloud. Continued use of the platform indicates acceptance of the revised Terms.</p>
+                            <p>Updated versions will be published on mybooks.cloud. Continued use of the platform indicates acceptance of the revised Terms.</p>
                         </div>
                     </div>
 
@@ -278,8 +278,8 @@
                             <p>For questions about these Terms:</p>
                             <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
                                 <h3 class="font-bold text-gray-900 dark:text-white text-lg mb-3">MyBooks</h3>
-                                <p class="mb-2"><strong>Website:</strong> <a href="https://my-books.cloud" class="text-brand-600 dark:text-brand-300 hover:underline">https://my-books.cloud</a></p>
-                                <p><strong>Email:</strong> <a href="mailto:support@my-books.cloud" class="text-brand-600 dark:text-brand-300 hover:underline">support@my-books.cloud</a></p>
+                                <p class="mb-2"><strong>Website:</strong> <a href="https://mybooks.cloud" class="text-brand-600 dark:text-brand-300 hover:underline">https://mybooks.cloud</a></p>
+                                <p><strong>Email:</strong> <a href="mailto:{{ config('mybooks.support_email') }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ config('mybooks.support_email') }}</a></p>
                             </div>
                         </div>
                     </div>
