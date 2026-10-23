@@ -15,6 +15,7 @@ use App\Livewire\Invoices\InvoicesTable;
 use App\Livewire\Items\ItemCategoriesTable;
 use App\Livewire\Items\ItemsTable;
 use App\Livewire\Leaves\LeavesTable;
+use App\Livewire\Notifications\NotificationBell;
 use App\Livewire\SalaryStructures\SalaryStructuresTable;
 use App\Livewire\TaxGroups\TaxGroupsTable;
 use App\Livewire\TaxRates\TaxRatesTable;
@@ -59,8 +60,20 @@ class LivewirePermissionTest extends TestCase
         'previousPage', 'setPage', 'resetPage', 'queryString', 'boot', 'hydrate', 'dehydrate',
     ];
 
-    /** Components that take no part in the check (registration happens before login). */
-    private const SKIP_COMPONENTS = [RegisterWizard::class];
+    /**
+     * Components that take no part in the check.
+     *
+     * RegisterWizard: registration happens before login, so there is no
+     * user to hold a permission.
+     *
+     * NotificationBell: every action reads or marks the signed-in user's
+     * own notifications, reached through their own relation. There is no
+     * permission that would govern that, and nothing belonging to anyone
+     * else is reachable — the scoping is the check. NotificationBellTest
+     * holds that line, including that one person's notifications stay
+     * theirs.
+     */
+    private const SKIP_COMPONENTS = [RegisterWizard::class, NotificationBell::class];
 
     /** @return array<class-string<Component>> */
     private function components(): array
