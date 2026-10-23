@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\SafeEncrypted;
 use App\Traits\BelongsToTenant;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
@@ -25,8 +26,8 @@ class BillingCard extends Model
     protected $hidden = ['authorization_code', 'customer_code', 'signature'];
 
     protected $casts = [
-        'authorization_code' => 'encrypted',
-        'customer_code' => 'encrypted',
+        'authorization_code' => SafeEncrypted::class,
+        'customer_code' => SafeEncrypted::class,
         'auto_renew' => 'boolean',
     ];
 

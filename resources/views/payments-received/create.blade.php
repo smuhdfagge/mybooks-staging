@@ -172,7 +172,7 @@
                                     <option value="">Select Bank Account</option>
                                     @foreach($banks as $bank)
                                         <option value="{{ $bank->id }}" {{ old('bank_id') == $bank->id ? 'selected' : '' }}>
-                                            {{ $bank->name }} ({{ $bank->account_number }})
+                                            {{ $bank->name }}@if ($bank->account_number) ({{ $bank->account_number }})@endif
                                         </option>
                                     @endforeach
                                 </select>

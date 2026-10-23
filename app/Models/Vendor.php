@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\SafeEncrypted;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -37,7 +38,7 @@ class Vendor extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
-        'tax_number' => 'encrypted',
+        'tax_number' => SafeEncrypted::class,
         'wht_exempt' => 'boolean',
     ];
 

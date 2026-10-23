@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\SafeEncrypted;
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 
@@ -29,12 +30,12 @@ class EInvoiceSetting extends Model
 
     protected $casts = [
         'enabled' => 'boolean',
-        'api_key' => 'encrypted',
-        'api_secret' => 'encrypted',
-        'service_id' => 'encrypted',
-        'business_id' => 'encrypted',
-        'public_key' => 'encrypted',
-        'certificate' => 'encrypted',
+        'api_key' => SafeEncrypted::class,
+        'api_secret' => SafeEncrypted::class,
+        'service_id' => SafeEncrypted::class,
+        'business_id' => SafeEncrypted::class,
+        'public_key' => SafeEncrypted::class,
+        'certificate' => SafeEncrypted::class,
         'last_tested_at' => 'datetime',
         'last_test_ok' => 'boolean',
     ];

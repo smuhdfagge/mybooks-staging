@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\SafeEncrypted;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -41,10 +42,10 @@ class Bank extends Model
         'opening_balance_date' => 'date',
         'is_primary' => 'boolean',
         'is_active' => 'boolean',
-        'account_number' => 'encrypted',
-        'routing_number' => 'encrypted',
-        'swift_code' => 'encrypted',
-        'iban' => 'encrypted',
+        'account_number' => SafeEncrypted::class,
+        'routing_number' => SafeEncrypted::class,
+        'swift_code' => SafeEncrypted::class,
+        'iban' => SafeEncrypted::class,
     ];
 
     // Account Types
