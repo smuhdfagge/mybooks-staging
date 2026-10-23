@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\SafeEncrypted;
 use App\Support\DocumentNumber;
 use App\Traits\AuditsSensitiveFields;
 use App\Traits\BelongsToTenant;
@@ -72,12 +73,12 @@ class Employee extends Model
         'date_of_birth' => 'date',
         'hire_date' => 'date',
         'termination_date' => 'date',
-        'salary' => 'encrypted',
-        'bank_account_number' => 'encrypted',
-        'bank_routing_number' => 'encrypted',
-        'tax_id' => 'encrypted',
-        'rsa_pin' => 'encrypted',
-        'nhf_number' => 'encrypted',
+        'salary' => SafeEncrypted::class,
+        'bank_account_number' => SafeEncrypted::class,
+        'bank_routing_number' => SafeEncrypted::class,
+        'tax_id' => SafeEncrypted::class,
+        'rsa_pin' => SafeEncrypted::class,
+        'nhf_number' => SafeEncrypted::class,
         'nhf_registered' => 'boolean',
     ];
 
