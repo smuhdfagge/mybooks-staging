@@ -532,7 +532,7 @@ class DashboardService
             ->toBase()->selectRaw('SUM(CASE WHEN due_date < ? THEN 1 ELSE 0 END) as overdue, SUM(CASE WHEN due_date >= ? THEN 1 ELSE 0 END) as week, SUM(balance_due) as amount', [$t, $t])->first();
 
         $low = Item::where('tenant_id', $tenantId)
-            ->where('track_inventory', true)
+            ->stockTracked()
             ->whereHas('inventories')
             ->whereRaw(Item::onHandSql().' <= items.reorder_level')
             ->orderBy('name');

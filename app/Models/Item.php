@@ -57,6 +57,12 @@ class Item extends Model
         'reorder_level' => 'integer',
     ];
 
+    /** Something the business holds and counts. */
+    public const TYPE_PRODUCT = 'product';
+
+    /** Something the business does. There is no stock of it. */
+    public const TYPE_SERVICE = 'service';
+
     /** @return BelongsTo<ItemCategory, $this> */
     public function category(): BelongsTo
     {
@@ -240,5 +246,36 @@ class Item extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    /** A service has no stock, whatever its tracking box was left saying. */
+    public function isService(): bool
+    {
+        return $this->type === self::TYPE_SERVICE;
+    }
+
+    /**
+     * Items that actually hold stock.
+     *
+     * Use this rather than track_inventory on its own. Consulting hours
+     * cannot run low, and a service that slipped through with tracking on
+     * would otherwise show up in the low stock list and send reminders
+     * nobody can act on.
+     */
+    public function scopeStockTracked($query)
+    {
+        return $query->where('track_inventory', true)->where('type', '!=', self::TYPE_SERVICE);
+    }
+
+    protected static function booted(): void
+    {
+        // The rule, in the one place nothing can go around: a form, an
+        // import, the API or a future screen. Turning an item into a
+        // service turns its stock tracking off with it.
+        static::saving(function (self $item) {
+            if ($item->type === self::TYPE_SERVICE) {
+                $item->track_inventory = false;
+            }
+        });
     }
 }

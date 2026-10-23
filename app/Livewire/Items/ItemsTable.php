@@ -58,12 +58,16 @@ class ItemsTable extends Component
         return $query;
     }
 
+    /**
+     * @param  Builder<Item>  $query
+     * @return Builder<Item>
+     */
     protected function applyTab(Builder $query, string $tab): Builder
     {
         return match ($tab) {
             'products' => $query->where('type', 'product'),
             'services' => $query->where('type', 'service'),
-            'low' => $query->where('track_inventory', true)->where('reorder_level', '>', 0)->whereRaw(Item::onHandSql().' <= items.reorder_level'),
+            'low' => $query->stockTracked()->where('reorder_level', '>', 0)->whereRaw(Item::onHandSql().' <= items.reorder_level'),
             'inactive' => $query->where('is_active', false),
             default => $query,
         };
@@ -77,7 +81,7 @@ class ItemsTable extends Component
             "COUNT(*) as all_rows,
              SUM(CASE WHEN type = 'product' THEN 1 ELSE 0 END) as products,
              SUM(CASE WHEN type = 'service' THEN 1 ELSE 0 END) as services,
-             SUM(CASE WHEN track_inventory = 1 AND reorder_level > 0 AND {$onHand} <= reorder_level THEN 1 ELSE 0 END) as low,
+             SUM(CASE WHEN track_inventory = 1 AND type != 'service' AND reorder_level > 0 AND {$onHand} <= reorder_level THEN 1 ELSE 0 END) as low,
              SUM(CASE WHEN is_active = 0 THEN 1 ELSE 0 END) as inactive"
         )->first();
 
