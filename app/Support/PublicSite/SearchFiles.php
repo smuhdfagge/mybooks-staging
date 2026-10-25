@@ -45,11 +45,13 @@ class SearchFiles
     {
         // The guides and feature pages are added from their own lists
         // rather than named here, so an article is never written and then
-        // left out of the sitemap.
+        // left out of the sitemap. Addresses are on the canonical host, so
+        // the sitemap cannot name one address while the page it points at
+        // claims another.
         return collect(self::PAGES)
-            ->map(fn (string $name) => route($name))
-            ->concat($this->features->all()->map(fn (array $page) => route('features.show', $page['slug'])))
-            ->concat($this->guides->all()->map(fn (array $guide) => route('guides.show', $guide['slug'])));
+            ->map(fn (string $name) => CanonicalUrl::route($name))
+            ->concat($this->features->all()->map(fn (array $page) => CanonicalUrl::route('features.show', $page['slug'])))
+            ->concat($this->guides->all()->map(fn (array $guide) => CanonicalUrl::route('guides.show', $guide['slug'])));
     }
 
     public function sitemapXml(): string
@@ -73,7 +75,7 @@ class SearchFiles
         // "noindex" and drop it; blocking them here would hide that.
         if ($this->indexing()) {
             $lines[] = '';
-            $lines[] = 'Sitemap: '.route('sitemap');
+            $lines[] = 'Sitemap: '.CanonicalUrl::route('sitemap');
         }
 
         return implode("\n", $lines)."\n";

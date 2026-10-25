@@ -3,6 +3,7 @@
 namespace Tests\Feature\Public;
 
 use App\Models\Plan;
+use App\Support\PublicSite\CanonicalUrl;
 use App\Support\PublicSite\FeaturePages;
 use App\Support\PublicSite\Guides;
 use App\Support\PublicSite\SearchFiles;
@@ -33,7 +34,7 @@ class SearchAndSharingTest extends TestCase
     public function test_page_has_share_tags_and_a_canonical_address(string $route): void
     {
         $this->get(route($route))->assertOk()
-            ->assertSee('<link rel="canonical" href="'.route($route).'">', false)
+            ->assertSee('<link rel="canonical" href="'.CanonicalUrl::route($route).'">', false)
             ->assertSee('<meta property="og:image" content="'.asset('images/share/mybooks-share.png').'">', false)
             ->assertSee('<meta name="twitter:card" content="summary_large_image">', false)
             ->assertSee('<meta property="og:locale" content="en_NG">', false);
@@ -78,13 +79,13 @@ class SearchAndSharingTest extends TestCase
         $features = app(FeaturePages::class)->all();
         $this->assertCount(count(SearchFiles::PAGES) + $features->count() + $guides->count(), $xml->url);
         foreach (SearchFiles::PAGES as $page) {
-            $this->assertStringContainsString('<loc>'.route($page).'</loc>', $response->getContent());
+            $this->assertStringContainsString('<loc>'.CanonicalUrl::route($page).'</loc>', $response->getContent());
         }
         foreach ($features as $page) {
-            $this->assertStringContainsString('<loc>'.route('features.show', $page['slug']).'</loc>', $response->getContent());
+            $this->assertStringContainsString('<loc>'.CanonicalUrl::route('features.show', $page['slug']).'</loc>', $response->getContent());
         }
         foreach ($guides as $guide) {
-            $this->assertStringContainsString('<loc>'.route('guides.show', $guide['slug']).'</loc>', $response->getContent());
+            $this->assertStringContainsString('<loc>'.CanonicalUrl::route('guides.show', $guide['slug']).'</loc>', $response->getContent());
         }
     }
 
@@ -101,7 +102,7 @@ class SearchAndSharingTest extends TestCase
         config(['mybooks.search_indexing' => true]);
 
         $this->get('/robots.txt')->assertOk()
-            ->assertSee('Sitemap: '.route('sitemap'))
+            ->assertSee('Sitemap: '.CanonicalUrl::route('sitemap'))
             ->assertSee('Disallow: /dashboard')
             ->assertSee('Disallow: /admin');
     }
@@ -131,6 +132,6 @@ class SearchAndSharingTest extends TestCase
             ->assertHeaderMissing('X-Robots-Tag')
             ->assertDontSee('<meta name="robots"', false);
         $this->get('/sitemap.xml')->assertOk();
-        $this->get('/robots.txt')->assertSee('Sitemap: '.route('sitemap'));
+        $this->get('/robots.txt')->assertSee('Sitemap: '.CanonicalUrl::route('sitemap'));
     }
 }

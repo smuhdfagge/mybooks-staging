@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Public;
 
+use App\Support\PublicSite\CanonicalUrl;
 use App\Support\PublicSite\FeaturePages;
 use App\Support\PublicSite\Guides;
 use App\Support\PublicSite\SearchFiles;
@@ -51,6 +52,7 @@ class SearchFilesCommandTest extends TestCase
     {
         config(['mybooks.search_indexing' => true]);
         URL::forceRootUrl('https://mybooks.cloud');
+        config(['app.url' => 'https://mybooks.cloud']);
         File::delete([$this->sitemap, $this->robots]);
 
         $this->artisan('site:search-files')->assertSuccessful();
@@ -69,19 +71,20 @@ class SearchFilesCommandTest extends TestCase
             substr_count($xml, '<loc>')
         );
         foreach ($guides as $guide) {
-            $this->assertStringContainsString(route('guides.show', $guide['slug']), $xml);
+            $this->assertStringContainsString(CanonicalUrl::route('guides.show', $guide['slug']), $xml);
         }
         foreach ($features as $page) {
-            $this->assertStringContainsString(route('features.show', $page['slug']), $xml);
+            $this->assertStringContainsString(CanonicalUrl::route('features.show', $page['slug']), $xml);
         }
 
-        $this->assertStringContainsString('Sitemap: '.route('sitemap'), File::get($this->robots));
+        $this->assertStringContainsString('Sitemap: '.CanonicalUrl::route('sitemap'), File::get($this->robots));
     }
 
     public function test_the_written_files_say_the_same_as_the_application_does(): void
     {
         config(['mybooks.search_indexing' => true]);
         URL::forceRootUrl('https://mybooks.cloud');
+        config(['app.url' => 'https://mybooks.cloud']);
 
         $this->artisan('site:search-files')->assertSuccessful();
 
@@ -111,6 +114,7 @@ class SearchFilesCommandTest extends TestCase
     {
         config(['mybooks.search_indexing' => true]);
         URL::forceRootUrl('http://localhost');
+        config(['app.url' => 'http://localhost']);
         File::delete($this->sitemap);
 
         $this->artisan('site:search-files')->assertFailed();
@@ -124,6 +128,7 @@ class SearchFilesCommandTest extends TestCase
     {
         config(['mybooks.search_indexing' => true]);
         URL::forceRootUrl('https://mybooks.cloud');
+        config(['app.url' => 'https://mybooks.cloud']);
 
         $this->artisan('site:search-files')->assertSuccessful();
         $once = [File::get($this->sitemap), File::get($this->robots)];

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Public;
 
+use App\Support\PublicSite\CanonicalUrl;
 use App\Support\PublicSite\Guides;
 use Illuminate\Support\Facades\File;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -205,7 +206,7 @@ class GuidesAndPricingTest extends TestCase
             ->assertHeader('Content-Type', 'application/xml; charset=UTF-8')
             ->getContent();
 
-        foreach ([route('home'), route('pricing'), route('guides.index'), route('guides.show', 'vat-returns-nigeria')] as $url) {
+        foreach ([CanonicalUrl::route('home'), CanonicalUrl::route('pricing'), CanonicalUrl::route('guides.index'), CanonicalUrl::route('guides.show', 'vat-returns-nigeria')] as $url) {
             $this->assertStringContainsString('<loc>'.$url.'</loc>', $xml);
         }
     }
