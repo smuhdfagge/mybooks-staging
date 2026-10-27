@@ -106,7 +106,41 @@ class Import extends Model
     }
 
     /**
-     * Get available import types with labels
+     * The types the import screen offers.
+     *
+     * Not the same as the list below, which is labels for every type an
+     * import row might hold, including older ones.
+     *
+     * Invoices, bills and journal entries were offered here, had sample
+     * templates to download, and then failed at the end of the job with
+     * "Unsupported import type": ImportService has no reader for them. A
+     * person could choose one, download the template, fill it in, upload
+     * it, map every column and only then be told. Budget lines belong to
+     * a budget and are imported from the budget's own page; chosen here
+     * they always failed with "Budget not found".
+     *
+     * Offered again as soon as ImportService can read them.
+     *
+     * @return array<string, string>
+     */
+    public static function getSupportedImportTypes(): array
+    {
+        return array_intersect_key(self::getImportTypes(), array_flip([
+            self::TYPE_CUSTOMERS,
+            self::TYPE_VENDORS,
+            self::TYPE_ITEMS,
+            self::TYPE_CHART_OF_ACCOUNTS,
+            self::TYPE_EXPENSES,
+            self::TYPE_EMPLOYEES,
+            self::TYPE_OPENING_BALANCES,
+        ]));
+    }
+
+    /**
+     * Labels for every import type, including the ones not offered.
+     *
+     * Kept whole so an import recorded before a type was withdrawn still
+     * shows its name rather than a bare slug.
      */
     public static function getImportTypes(): array
     {
