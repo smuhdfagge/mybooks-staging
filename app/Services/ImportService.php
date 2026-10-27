@@ -1519,16 +1519,16 @@ class ImportService
     {
         return match ($type) {
             Import::TYPE_CUSTOMERS => [
-                ['name' => 'John Doe', 'email' => 'john@example.com', 'phone' => '555-0100', 'company_name' => 'Acme Corp', 'billing_address' => '123 Main St', 'billing_city' => 'New York', 'billing_state' => 'NY', 'billing_postal_code' => '10001'],
-                ['name' => 'Jane Smith', 'email' => 'jane@example.com', 'phone' => '555-0101', 'company_name' => 'Tech Inc', 'billing_address' => '456 Oak Ave', 'billing_city' => 'Los Angeles', 'billing_state' => 'CA', 'billing_postal_code' => '90001'],
+                ['name' => 'Danjuma Foods', 'email' => 'accounts@danjumafoods.ng', 'phone' => '08031234567', 'company_name' => 'Danjuma Foods Ltd', 'billing_address' => '12 Bompai Road', 'billing_city' => 'Kano', 'billing_state' => 'Kano', 'billing_postal_code' => '700213'],
+                ['name' => 'Adaeze Nwosu', 'email' => 'adaeze@example.ng', 'phone' => '08099887766', 'company_name' => '', 'billing_address' => '5 Awolowo Way', 'billing_city' => 'Ikeja', 'billing_state' => 'Lagos', 'billing_postal_code' => '100271'],
             ],
             Import::TYPE_VENDORS => [
-                ['name' => 'Supply Co', 'email' => 'info@supplyco.com', 'phone' => '555-0200', 'address' => '789 Elm St', 'city' => 'Chicago', 'state' => 'IL', 'postal_code' => '60601'],
-                ['name' => 'Parts Plus', 'email' => 'sales@partsplus.com', 'phone' => '555-0201', 'address' => '321 Pine Rd', 'city' => 'Houston', 'state' => 'TX', 'postal_code' => '77001'],
+                ['name' => 'Dangote Supplies Ltd', 'email' => 'sales@dangotesupplies.ng', 'phone' => '08021112233', 'address' => '3 Sharada Industrial Estate', 'city' => 'Kano', 'state' => 'Kano', 'postal_code' => '700231'],
+                ['name' => 'Zenith Stationery', 'email' => 'info@zenithstationery.ng', 'phone' => '07045556677', 'address' => '18 Ahmadu Bello Way', 'city' => 'Abuja', 'state' => 'FCT', 'postal_code' => '900211'],
             ],
             Import::TYPE_ITEMS => [
-                ['name' => 'Widget A', 'type' => 'product', 'sku' => 'WGT-001', 'sale_price' => '29.99', 'purchase_price' => '15.00', 'category' => 'Widgets', 'track_inventory' => 'yes', 'initial_stock' => '100'],
-                ['name' => 'Consulting Service', 'type' => 'service', 'sku' => 'SVC-001', 'sale_price' => '150.00', 'description' => 'Professional consulting per hour'],
+                ['name' => 'Bag of Rice 50kg', 'type' => 'product', 'sku' => 'RCE-050', 'sale_price' => '95000.00', 'purchase_price' => '82000.00', 'category' => 'Foodstuff', 'track_inventory' => 'yes', 'initial_stock' => '100', 'description' => 'Write amounts plainly: 95000.00'],
+                ['name' => 'Monthly bookkeeping', 'type' => 'service', 'sku' => 'SVC-001', 'sale_price' => '150000.00', 'purchase_price' => '', 'category' => 'Services', 'track_inventory' => '', 'initial_stock' => '', 'description' => 'A service holds no stock, so leave those columns empty'],
             ],
             Import::TYPE_CHART_OF_ACCOUNTS => [
                 ['code' => '1000', 'name' => 'Cash', 'type' => 'asset', 'description' => 'Cash on hand'],
@@ -1538,12 +1538,12 @@ class ImportService
                 ['code' => '5000', 'name' => 'Cost of Goods Sold', 'type' => 'expense', 'description' => 'Direct costs'],
             ],
             Import::TYPE_EMPLOYEES => [
-                ['name' => 'Alice Johnson', 'email' => 'alice@company.com', 'employee_id' => 'EMP001', 'department' => 'Sales', 'designation' => 'Sales Manager', 'hire_date' => '2024-01-15', 'salary' => '5000'],
-                ['name' => 'Bob Williams', 'email' => 'bob@company.com', 'employee_id' => 'EMP002', 'department' => 'Engineering', 'designation' => 'Developer', 'hire_date' => '2024-03-01', 'salary' => '4500'],
+                ['first_name' => 'Aisha', 'last_name' => 'Bello', 'email' => 'aisha@example.ng', 'employee_id' => 'EMP001', 'department' => 'Sales', 'designation' => 'Sales Manager', 'hire_date' => '2026-01-15', 'salary' => '450000'],
+                ['first_name' => 'Chidi', 'last_name' => 'Okafor', 'email' => 'chidi@example.ng', 'employee_id' => 'EMP002', 'department' => 'Operations', 'designation' => 'Storekeeper', 'hire_date' => '2026-03-01', 'salary' => '220000'],
             ],
             Import::TYPE_EXPENSES => [
-                ['date' => '2025-01-05', 'account' => 'Office Supplies', 'amount' => '150.00', 'vendor' => 'Supply Co', 'reference' => 'INV-001', 'description' => 'Printer paper and ink', 'payment_account' => '1000'],
-                ['date' => '2025-01-10', 'account' => 'Utilities', 'amount' => '250.00', 'vendor' => 'City Power', 'reference' => 'BILL-2025-01', 'description' => 'Monthly electricity bill', 'payment_account' => '1000'],
+                ['date' => '2026-01-05', 'account' => 'Office Supplies', 'amount' => '45000.00', 'vendor' => 'Zenith Stationery', 'reference' => 'INV-001', 'description' => 'Dates as 2026-01-05 or 05/01/2026 (day first)', 'payment_account' => '1000'],
+                ['date' => '2026-01-10', 'account' => 'Utilities', 'amount' => '128500.00', 'vendor' => 'Kano Electricity', 'reference' => 'BILL-2026-01', 'description' => 'Write amounts plainly: 128500.00', 'payment_account' => '1000'],
             ],
             Import::TYPE_INVOICES => [
                 ['invoice_number' => 'INV-001', 'customer' => 'John Doe', 'date' => '2025-01-15', 'due_date' => '2025-02-14', 'item' => 'Widget A', 'quantity' => '5', 'unit_price' => '29.99', 'description' => 'Widget order', 'tax_rate' => '10'],
