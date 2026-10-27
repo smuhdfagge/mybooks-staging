@@ -23,7 +23,7 @@
 
                         <!-- Email -->
                         <div>
-                            <x-field name="email" label="Email" type="email" :value="old('email', $user->email)" required />
+                            <x-field name="email" label="Email" type="email" :value="old('email', $user->email)" required :readonly="! $canChangeCredentials" />
                             @error('email')
                                 <p id="email-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -47,6 +47,7 @@
                             </select>
                         </div>
 
+                        @if ($canChangeCredentials)
                         <!-- Password -->
                         <div>
                             <x-field name="password" label="New Password" type="password" />
@@ -60,6 +61,9 @@
                         <div>
                             <x-field name="password_confirmation" label="Confirm Password" type="password" />
                         </div>
+                        @else
+                        <p class="md:col-span-2 text-sm text-gray-600 dark:text-gray-400">Only an admin can change another user's email or password.</p>
+                        @endif
                     </div>
 
                     <!-- Roles -->

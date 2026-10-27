@@ -22,14 +22,14 @@ class Phase7RegressionTest extends TestCase
         Permission::findOrCreate('view payroll', 'web');
 
         // Organisation A
-        $a = $this->createAuthenticatedUser(['create roles']);
+        $a = $this->createAuthenticatedUser(['create roles', 'view invoices']);
         $tenantA = $this->tenant;
         $this->post(route('settings.roles.store'), ['name' => 'Accountant', 'permissions' => ['view invoices']])
             ->assertSessionHasNoErrors();
 
         // Organisation B, same name, different permissions
         auth()->logout();
-        $b = $this->createAuthenticatedUser(['create roles']);
+        $b = $this->createAuthenticatedUser(['create roles', 'view payroll']);
         $tenantB = $this->tenant;
         $this->post(route('settings.roles.store'), ['name' => 'Accountant', 'permissions' => ['view payroll']])
             ->assertSessionHasNoErrors();

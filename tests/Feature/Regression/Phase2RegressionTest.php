@@ -190,6 +190,8 @@ class Phase2RegressionTest extends TestCase
     {
         $this->createAuthenticatedUser(['edit users']);
         [$global, $own, , $super] = $this->makeRoles();
+        // Only an admin may edit someone who holds an admin role (audit MB-05).
+        $this->user->assignRole(Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => null]));
         $other = User::factory()->create(['tenant_id' => $this->tenant->id]);
         $other->assignRole($super);
 

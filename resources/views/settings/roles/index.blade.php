@@ -1,4 +1,8 @@
 {{-- Roles (tables plan T5): what each kind of user can do. --}}
+@php
+    // Only roles within your own access, and not your own, can be changed (audit MB-05).
+    $manages = fn ($role) => \App\Support\Privileges::canManageRole(auth()->user(), $role);
+@endphp
 <x-app-layout>
     <x-slot name="header">
         <x-table.page-header title="Roles" description="What each kind of user can see and do. MyBooks' own roles can be copied and changed.">
@@ -37,6 +41,7 @@
                         <td class="num {{ $role->permissions_count ? '' : 'tbl-zero' }}">{{ $role->permissions_count ?: '—' }}</td>
                         <td class="num {{ $role->users_count ? '' : 'tbl-zero' }}">{{ $role->users_count ?: '—' }}</td>
                         <td class="tbl-menu">
+                            @if ($manages($role))
                             @canany(['edit roles', 'delete roles'])
                                 <x-table.dropdown :sr-label="'Actions for '.$role->name">
                                     @can('edit roles')<x-table.menu-item :href="route('settings.roles.edit', $role)">{{ $role->isGlobal() ? 'Copy and change' : 'Edit' }}</x-table.menu-item>@endcan
@@ -45,6 +50,7 @@
                                     @endif
                                 </x-table.dropdown>
                             @endcanany
+                            @endif
                         </td>
                     </tr>
                 @endforeach
@@ -52,7 +58,7 @@
             <ul class="space-y-2 md:hidden" aria-label="Roles">
                 @foreach ($roles as $role)
                     <li>
-                        <x-table.card :href="route('settings.roles.edit', $role)" :title="ucfirst($role->name)" :meta="$role->permissions_count.' permissions · '.$role->users_count.' '.\Illuminate\Support\Str::plural('user', $role->users_count)">
+                        <x-table.card :href="auth()->user()->can('edit roles') && $manages($role) ? route('settings.roles.edit', $role) : null" :title="ucfirst($role->name)" :meta="$role->permissions_count.' permissions · '.$role->users_count.' '.\Illuminate\Support\Str::plural('user', $role->users_count)">
                             <x-slot name="badge"><span class="text-xs tbl-muted">{{ $role->isGlobal() ? 'MyBooks' : 'Yours' }}</span></x-slot>
                         </x-table.card>
                     </li>
