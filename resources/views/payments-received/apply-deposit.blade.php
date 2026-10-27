@@ -152,12 +152,12 @@
     <script nonce="{{ app('csp-nonce') }}">
         function applyDepositForm() {
             return {
-                selectedInvoice: '{{ old('invoice_id') }}',
+                selectedInvoice: @jsText(old('invoice_id')),
                 amount: {{ old('amount', 0) }},
                 maxAmount: {{ $paymentReceived->unused_amount }},
                 invoiceBalances: {
                     @foreach($unpaidInvoices as $invoice)
-                    '{{ $invoice->id }}': {{ $invoice->balance_due }},
+                    @jsText($invoice->id): {{ $invoice->balance_due }},
                     @endforeach
                 },
                 availableDeposit: {{ $paymentReceived->unused_amount }},

@@ -25,7 +25,7 @@
                             <div x-data="searchableSelect({
                                 items: @js($customerOptions),
                                 url: @js(route('lookup.customers')),
-                                selected: '{{ old('customer_id', $invoice->customer_id) }}',
+                                selected: @jsText(old('customer_id', $invoice->customer_id)),
                                 placeholder: 'Select Customer'
                             })">
                                 <label for="customer_id" class="form-label">Customer <span class="text-red-600 dark:text-red-300">*</span></label>
@@ -340,7 +340,7 @@
             return {
                 productsUrl: @js(route('lookup.items')),
                 items: @json($invoiceItemsData),
-                discountType: '{{ $invoice->discount_type ?? '' }}',
+                discountType: @jsText($invoice->discount_type ?? ''),
                 discountValue: {{ $invoice->discount_type === 'percentage' ? ($invoice->subtotal > 0 ? ($invoice->discount_amount / $invoice->subtotal * 100) : 0) : ($invoice->discount_amount ?? 0) }},
                 subtotal: 0,
                 totalTax: 0,

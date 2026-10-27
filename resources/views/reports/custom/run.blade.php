@@ -146,7 +146,7 @@
             const url = URL.createObjectURL(blob);
             
             link.setAttribute('href', url);
-            link.setAttribute('download', '{{ Str::slug($customReport->name) }}_{{ date('Y-m-d') }}.csv');
+            link.setAttribute('download', @jsText(Str::slug($customReport->name).'_'.date('Y-m-d').'.csv'));
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();

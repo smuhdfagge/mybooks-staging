@@ -29,8 +29,8 @@ $titleId = 'modal-'.\Illuminate\Support\Str::slug($name).'-title';
 
 <div
     x-data="{ show: @js($show) }"
-    x-on:open-modal.window="$event.detail == '{{ $name }}' ? show = true : null"
-    x-on:close-modal.window="$event.detail == '{{ $name }}' ? show = false : null"
+    x-on:open-modal.window="$event.detail == @jsText($name) ? show = true : null"
+    x-on:close-modal.window="$event.detail == @jsText($name) ? show = false : null"
     x-on:close.stop="show = false"
     x-on:keydown.escape.window="show && (show = false)"
     x-show="show"

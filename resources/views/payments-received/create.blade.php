@@ -30,7 +30,7 @@
                         <!-- Customer -->
                         <div x-data="searchableSelect({
                             items: @js($customers->map(fn ($customer) => ['id' => (string) $customer->id, 'name' => (string) $customer->name])->values()),
-                            selectedId: '{{ old('customer_id', $invoice?->customer_id) }}',
+                            selectedId: @jsText(old('customer_id', $invoice?->customer_id)),
                             onSelect: (id) => { selectedCustomer = id; filterInvoices(); filterDeposits(); }
                         })" class="relative">
                             <label for="customer_search" class="form-label">Customer <span class="text-red-600 dark:text-red-300">*</span></label>
@@ -149,7 +149,7 @@
                         </div>
 
                         <!-- Payment Method -->
-                        <div x-data="{ paymentMethod: '{{ old('payment_method', '') }}' }">
+                        <div x-data="{ paymentMethod: @jsText(old('payment_method', '')) }">
                             <label for="payment_method" class="form-label">Payment Method <span class="text-red-600 dark:text-red-300">*</span></label>
                             <select name="payment_method" id="payment_method" required x-model="paymentMethod"
                                 class="form-control @error('payment_method') border-red-500 @enderror" @error('payment_method') aria-invalid="true" aria-describedby="payment_method-error" @enderror>
@@ -325,8 +325,8 @@
 
         function paymentForm() {
             return {
-                selectedCustomer: '{{ old('customer_id', $invoice?->customer_id ?? '') }}',
-                selectedInvoice: '{{ old('invoice_id', $invoice?->id ?? '') }}',
+                selectedCustomer: @jsText(old('customer_id', $invoice?->customer_id ?? '')),
+                selectedInvoice: @jsText(old('invoice_id', $invoice?->id ?? '')),
                 allInvoices: @json($unpaidInvoices),
                 allDeposits: @json($customerDeposits ?? []),
                 filteredInvoices: [],
@@ -336,12 +336,12 @@
                 selectedDepositId: '',
                 depositAmountToApply: 0,
                 maxDepositAmount: 0,
-                amount: '{{ old('amount', $invoice?->balance_due) }}',
+                amount: @jsText(old('amount', $invoice?->balance_due)),
                 // Withholding tax deducted by the customer (on the amount before VAT).
                 whtRates: @json($whtCategories->mapWithKeys(fn ($c) => [$c->id => (float) ($whtBusinessType === 'individual' ? $c->rate_individual : $c->rate_company)])),
                 hasWht: {{ old('wht_amount') || old('wht_category_id') ? 'true' : 'false' }},
-                whtCategoryId: '{{ old('wht_category_id') }}',
-                whtAmount: '{{ old('wht_amount') }}',
+                whtCategoryId: @jsText(old('wht_category_id')),
+                whtAmount: @jsText(old('wht_amount')),
                 customerWhtTypes: @json($customers->filter(fn ($c) => $c->wht_category_id && ! $c->wht_exempt)->mapWithKeys(fn ($c) => [$c->id => $c->wht_category_id])),
 
                 recalculateWht() {

@@ -32,7 +32,7 @@
                 @if ($links)
                     <a href="{{ $page > 1 ? $rows->url($page - 1) : '#' }}" @if ($page <= 1) aria-disabled="true" @endif class="{{ $btn }} {{ $off }} {{ $page <= 1 ? 'pointer-events-none opacity-40' : '' }}" aria-label="Previous page">‹</a>
                 @else
-                <button type="button" wire:click="previousPage('{{ $rows->getPageName() }}')" @disabled($page <= 1) class="{{ $btn }} {{ $off }}" aria-label="Previous page">‹</button>
+                <button type="button" wire:click="previousPage(@jsText($rows->getPageName()))" @disabled($page <= 1) class="{{ $btn }} {{ $off }}" aria-label="Previous page">‹</button>
                 @endif
                 @php $prev = 0; @endphp
                 @foreach ($window as $p)
@@ -41,14 +41,14 @@
                     @if ($links)
                         <a href="{{ $rows->url($p) }}" @if ($p === $page) aria-current="page" @endif class="{{ $cls }}">{{ number_format($p) }}</a>
                     @else
-                    <button type="button" wire:click="gotoPage({{ $p }}, '{{ $rows->getPageName() }}')" @if ($p === $page) aria-current="page" @endif class="{{ $cls }}">{{ number_format($p) }}</button>
+                    <button type="button" wire:click="gotoPage({{ $p }}, @jsText($rows->getPageName()))" @if ($p === $page) aria-current="page" @endif class="{{ $cls }}">{{ number_format($p) }}</button>
                     @endif
                     @php $prev = $p; @endphp
                 @endforeach
                 @if ($links)
                     <a href="{{ $page < $lastPage ? $rows->url($page + 1) : '#' }}" @if ($page >= $lastPage) aria-disabled="true" @endif class="{{ $btn }} {{ $off }} {{ $page >= $lastPage ? 'pointer-events-none opacity-40' : '' }}" aria-label="Next page">›</a>
                 @else
-                <button type="button" wire:click="nextPage('{{ $rows->getPageName() }}')" @disabled($page >= $lastPage) class="{{ $btn }} {{ $off }}" aria-label="Next page">›</button>
+                <button type="button" wire:click="nextPage(@jsText($rows->getPageName()))" @disabled($page >= $lastPage) class="{{ $btn }} {{ $off }}" aria-label="Next page">›</button>
                 @endif
             </div>
         @endif

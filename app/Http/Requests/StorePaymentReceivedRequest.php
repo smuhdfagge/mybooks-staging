@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Support\PaymentMethods;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -21,7 +22,7 @@ class StorePaymentReceivedRequest extends FormRequest
             'invoice_id' => ['nullable', Rule::exists('invoices', 'id')->where('tenant_id', $tenantId)],
             'payment_date' => ['required', 'date'],
             'amount' => ['required', 'numeric', 'min:0.01'],
-            'payment_method' => ['required', 'string', 'max:50'],
+            'payment_method' => ['required', PaymentMethods::rule()],
             'bank_id' => ['nullable', Rule::exists('banks', 'id')->where('tenant_id', $tenantId)],
             'reference' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string'],

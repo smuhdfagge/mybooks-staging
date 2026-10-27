@@ -31,7 +31,7 @@
                             <div x-data="searchableSelect({
                                 items: @js($vendorOptions),
                                 url: @js(route('lookup.vendors')),
-                                selected: '{{ old('vendor_id', $bill->vendor_id) }}',
+                                selected: @jsText(old('vendor_id', $bill->vendor_id)),
                                 placeholder: 'Select Vendor'
                             })">
                                 <label for="vendor_id" class="form-label">Vendor <span class="text-red-600 dark:text-red-300">*</span></label>

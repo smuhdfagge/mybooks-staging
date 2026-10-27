@@ -36,7 +36,7 @@
             <ul class="max-h-80 divide-y divide-gray-100 overflow-y-auto dark:divide-gray-700">
                 @forelse ($items as $item)
                     <li>
-                        <button type="button" wire:click="openNotification('{{ $item['id'] }}')"
+                        <button type="button" wire:click="openNotification(@jsText($item['id']))"
                                 @class([
                                     'flex w-full items-start gap-2.5 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 focus-ring',
                                     'bg-brand-50/60 dark:bg-brand-900/10' => $item['unread'],

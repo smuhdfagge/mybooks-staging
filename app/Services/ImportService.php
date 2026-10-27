@@ -21,6 +21,7 @@ use App\Models\Journal;
 use App\Models\JournalEntry;
 use App\Models\Vendor;
 use App\Support\Csv;
+use App\Support\PaymentMethods;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -881,7 +882,7 @@ class ImportService
                     'total' => $amount,
                     'description' => $mapped['description'] ?? null,
                     'reference' => $mapped['reference'] ?? null,
-                    'payment_method' => $mapped['payment_method'] ?? null,
+                    'payment_method' => PaymentMethods::normalise($mapped['payment_method'] ?? null),
                     'status' => Expense::STATUS_DRAFT,
                     'created_by' => $import->user_id,
                 ]);

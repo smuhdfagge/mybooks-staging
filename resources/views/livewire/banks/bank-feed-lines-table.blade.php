@@ -91,7 +91,7 @@
                                     <x-table.dropdown :sr-label="'More for '.($line->narration ?: 'this line')">
                                         @if ($line->status === 'new')
                                             @if ($s)
-                                                <x-table.menu-item wire="reject({{ $line->id }}, '{{ addslashes($s->candidate->record::class) }}', {{ $s->candidate->record->getKey() }})">Not this one</x-table.menu-item>
+                                                <x-table.menu-item wire="reject({{ $line->id }}, @jsText(addslashes($s->candidate->record::class)), {{ $s->candidate->record->getKey() }})">Not this one</x-table.menu-item>
                                             @endif
                                             <x-table.menu-item :href="route('bank-feeds.lines.show', $line)">Record it</x-table.menu-item>
                                             <x-table.menu-item wire="ignore({{ $line->id }})">Ignore</x-table.menu-item>

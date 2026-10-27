@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Models\PaymentMade;
+use App\Support\PaymentMethods;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -21,7 +23,8 @@ class StorePaymentMadeRequest extends FormRequest
             'bill_id' => ['nullable', Rule::exists('bills', 'id')->where('tenant_id', $tenantId)],
             'payment_date' => ['required', 'date'],
             'amount' => ['required', 'numeric', 'min:0.01'],
-            'payment_method' => ['required', 'string', 'max:50'],
+            // "advance" is let through so RecordPaymentMade can say where to apply one.
+            'payment_method' => ['required', PaymentMethods::rule(PaymentMade::METHOD_ADVANCE)],
             'bank_id' => ['nullable', Rule::exists('banks', 'id')->where('tenant_id', $tenantId)],
             'reference' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string'],

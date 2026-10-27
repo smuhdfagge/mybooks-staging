@@ -239,7 +239,7 @@
                 componentsTotal() { return this.lines.reduce((sum, l) => sum + this.lineCost(l), 0); },
                 extraTotal() { return this.costs.reduce((sum, c) => sum + (Number(c.amount) || 0), 0); },
                 perUnit() { const out = Number(this.output) || 0; return out > 0 ? (this.componentsTotal() + this.extraTotal()) / out : 0; },
-                money(value) { return '{{ \App\Support\Money::symbol() }}' + Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
+                money(value) { return @jsText(\App\Support\Money::symbol()) + Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
             };
         }
     </script>

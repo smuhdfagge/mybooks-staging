@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Warehouse;
+use App\Support\PaymentMethods;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -26,7 +27,7 @@ class StoreSalesReceiptRequest extends FormRequest
         return [
             'customer_id' => ['nullable', Rule::exists('customers', 'id')->where('tenant_id', $tenantId)],
             'receipt_date' => ['required', 'date'],
-            'payment_method' => ['required', 'string', 'max:50'],
+            'payment_method' => ['required', PaymentMethods::rule()],
             'reference' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string'],
             // Which warehouse the goods leave from (session 12).
