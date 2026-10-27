@@ -74,7 +74,7 @@ class InventoryTable extends Component
 
     protected function baseQuery(): Builder
     {
-        $query = Item::query()->where('track_inventory', true);
+        $query = Item::query()->stockTracked();
         if (($term = trim($this->search)) !== '') {
             $query->where(fn ($q) => $q->where('name', 'like', "%{$term}%")->orWhere('sku', 'like', "%{$term}%"));
         }

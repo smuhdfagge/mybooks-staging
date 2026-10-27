@@ -8,7 +8,7 @@
     <div class="py-6">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <x-card>
-                <form action="{{ route('items.update', $item) }}" method="POST" class="p-6" enctype="multipart/form-data">
+                <form action="{{ route('items.update', $item) }}" method="POST" x-data="{ itemType: @js(old('type', $item->type)) }" class="p-6" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
 
@@ -69,7 +69,7 @@
 
                             <div>
                                 <label for="type" class="form-label">Type <span class="text-red-600 dark:text-red-300">*</span></label>
-                                <select name="type" id="type" required
+                                <select name="type" id="type" x-model="itemType" required
                                     class="form-control @error('type') border-red-500 @enderror" @error('type') aria-invalid="true" aria-describedby="type-error" @enderror>
                                     <option value="product" {{ old('type', $item->type) == 'product' ? 'selected' : '' }}>Product</option>
                                     <option value="service" {{ old('type', $item->type) == 'service' ? 'selected' : '' }}>Service</option>
@@ -135,8 +135,12 @@
                     <div class="mb-8">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">Inventory Settings</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="flex items-center">
-                                <input type="checkbox" name="track_inventory" id="track_inventory" value="1" {{ old('track_inventory', $item->track_inventory) ? 'checked' : '' }}
+                                                        <div x-show="itemType === 'service'" x-cloak class="md:col-span-2">
+                                <p class="text-sm text-gray-500 dark:text-gray-400">A service is not held in stock, so there is nothing to track or reorder.</p>
+                            </div>
+
+                            <div class="flex items-center" x-show="itemType !== 'service'" x-cloak>
+                                <input type="checkbox" :disabled="itemType === 'service'" name="track_inventory" id="track_inventory" value="1" {{ old('track_inventory', $item->track_inventory) ? 'checked' : '' }}
                                     class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:checked:bg-brand-600 dark:text-brand-300">
                                 <label for="track_inventory" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Track inventory for this item</label>
                             </div>
@@ -147,7 +151,7 @@
                                 <label for="is_taxable" class="ml-2 text-sm text-gray-700 dark:text-gray-300">This item is taxable</label>
                             </div>
 
-                            <div>
+                            <div x-show="itemType !== 'service'" x-cloak>
                                 <x-field name="reorder_level" label="Reorder Level" type="number" :value="old('reorder_level', $item->reorder_level)" min="0" />
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Alert when stock falls below this level</p>
                                 @error('reorder_level')

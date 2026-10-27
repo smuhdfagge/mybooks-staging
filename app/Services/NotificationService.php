@@ -230,7 +230,7 @@ class NotificationService
     {
         $lowStockItems = Item::where('tenant_id', $tenantId)
             ->where('is_active', true)
-            ->where('track_inventory', true)
+            ->stockTracked()
             ->whereHas('inventories')
             ->whereRaw(Item::onHandSql().' <= items.reorder_level')
             ->with('inventory')
