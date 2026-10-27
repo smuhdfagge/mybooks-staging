@@ -106,9 +106,6 @@ class Import extends Model
     }
 
     /**
-     * Get available import types with labels. Invoices, bills and journals
-     * are left out until ImportService can process them (audit MB-19):
-     * every such import used to fail after upload.
      * The types the import screen offers.
      *
      * Not the same as the list below, which is labels for every type an
@@ -155,8 +152,11 @@ class Import extends Model
             self::TYPE_VENDORS => 'Vendors',
             self::TYPE_ITEMS => 'Items & Products',
             self::TYPE_CHART_OF_ACCOUNTS => 'Chart of Accounts',
+            self::TYPE_INVOICES => 'Invoices',
+            self::TYPE_BILLS => 'Bills',
             self::TYPE_EXPENSES => 'Expenses',
             self::TYPE_EMPLOYEES => 'Employees',
+            self::TYPE_JOURNALS => 'Journal Entries',
             self::TYPE_OPENING_BALANCES => 'Opening Balances',
             self::TYPE_BUDGET_LINES => 'Budget Line Items',
         ];

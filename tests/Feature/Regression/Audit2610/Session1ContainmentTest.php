@@ -6,7 +6,6 @@ use App\Models\AccrualSchedule;
 use App\Models\Bank;
 use App\Models\Bill;
 use App\Models\ChartOfAccount;
-use App\Models\Import;
 use App\Models\Journal;
 use App\Models\Role;
 use App\Models\Vendor;
@@ -16,7 +15,9 @@ use Tests\TestCase;
 /**
  * October 2026 audit, fix session 1: containment. The dangerous paths are
  * switched off until the real fixes land (sessions 8, 10 and 16), and a
- * read-only command lists data that may already be affected.
+ * read-only command lists data that may already be affected. MB-19 (import
+ * types without a reader) is fixed on main by the new importers; see
+ * tests/Feature/Imports/ImportTypesOnOfferTest.
  */
 class Session1ContainmentTest extends TestCase
 {
@@ -95,16 +96,6 @@ class Session1ContainmentTest extends TestCase
     {
         $this->get('/bulk-update')->assertNotFound();
         $this->get(route('journals.index'))->assertOk()->assertDontSee('/bulk-update', false)->assertDontSee('Bulk Update');
-    }
-
-    // MB-19 stopgap
-    public function test_import_types_without_a_handler_are_not_offered(): void
-    {
-        $types = Import::getImportTypes();
-        foreach ([Import::TYPE_INVOICES, Import::TYPE_BILLS, Import::TYPE_JOURNALS] as $type) {
-            $this->assertArrayNotHasKey($type, $types);
-        }
-        $this->assertArrayHasKey(Import::TYPE_CUSTOMERS, $types);
     }
 
     public function test_audit_command_lists_affected_data_and_changes_nothing(): void
