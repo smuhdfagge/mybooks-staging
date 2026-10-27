@@ -24,7 +24,7 @@
             'name' => 'MyBooks',
             'logo' => ['@type' => 'ImageObject', 'url' => asset('images/brand/mybooks-logo-email-300.png')],
         ],
-        'mainEntityOfPage' => route('guides.show', $guide['slug']),
+        'mainEntityOfPage' => \App\Support\PublicSite\CanonicalUrl::route('guides.show', $guide['slug']),
     ], fn ($value) => $value !== null);
 @endphp
 

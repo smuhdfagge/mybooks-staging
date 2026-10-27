@@ -22,8 +22,8 @@
         '@type' => 'WebPage',
         'name' => $page['title'],
         'description' => $page['description'],
-        'url' => route('features.show', $page['slug']),
-        'isPartOf' => ['@type' => 'WebSite', 'name' => 'MyBooks', 'url' => route('home')],
+        'url' => \App\Support\PublicSite\CanonicalUrl::route('features.show', $page['slug']),
+        'isPartOf' => ['@type' => 'WebSite', 'name' => 'MyBooks', 'url' => \App\Support\PublicSite\CanonicalUrl::route('home')],
     ];
 @endphp
 

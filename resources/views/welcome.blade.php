@@ -80,9 +80,9 @@
         '@graph' => array_values(array_filter([
             [
                 '@type' => 'Organization',
-                '@id' => route('home').'#org',
+                '@id' => \App\Support\PublicSite\CanonicalUrl::route('home').'#org',
                 'name' => 'MyBooks',
-                'url' => route('home'),
+                'url' => \App\Support\PublicSite\CanonicalUrl::route('home'),
                 'logo' => asset('images/brand/mybooks-logo-email-300.png'),
                 'email' => config('mybooks.support_email'),
                 // Where the business actually is. Google uses this to place
@@ -101,8 +101,8 @@
                 'applicationCategory' => 'BusinessApplication',
                 'operatingSystem' => 'Web browser',
                 'description' => 'Accounting software for Nigerian businesses: invoices, VAT, WHT, PAYE, payroll, stock and reports.',
-                'url' => route('home'),
-                'publisher' => ['@id' => route('home').'#org'],
+                'url' => \App\Support\PublicSite\CanonicalUrl::route('home'),
+                'publisher' => ['@id' => \App\Support\PublicSite\CanonicalUrl::route('home').'#org'],
                 'offers' => $offers ?: null,
             ],
             [

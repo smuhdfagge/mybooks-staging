@@ -28,7 +28,9 @@
         @include('partials.theme-init')
         @php
             $fullTitle = $title ? $title.' · MyBooks' : 'MyBooks';
-            $canonical = url()->current();
+            // Built from APP_URL, not from the request, so the same page
+            // reached at www or over http still names one address (H5).
+            $canonical = \App\Support\PublicSite\CanonicalUrl::for();
             $shareImage = str_starts_with($image, 'http') ? $image : asset($image);
         @endphp
         <title>{{ $fullTitle }}</title>
