@@ -265,11 +265,16 @@ class ImportService
                 }
 
                 // Check for existing customer
+                // Matched on the email only when the row has one. It used
+                // to be passed through either way, and where('email', null)
+                // becomes "email is null" — so a row with no email matched
+                // any customer who had none, and with "update existing" on
+                // it overwrote whichever came back first.
                 $existing = Customer::where('tenant_id', $this->tenantId)
                     ->where(function ($q) use ($mapped) {
-                        $q->where('email', $mapped['email'] ?? null);
-                        if (! empty($mapped['name'])) {
-                            $q->orWhere('name', $mapped['name']);
+                        $q->where('name', $mapped['name']);
+                        if (! empty($mapped['email'])) {
+                            $q->orWhere('email', $mapped['email']);
                         }
                     })
                     ->first();
@@ -335,7 +340,7 @@ class ImportService
             'tax_number' => $data['tax_number'] ?? null,
             'website' => $data['website'] ?? null,
             'notes' => $data['notes'] ?? null,
-            'credit_limit' => isset($data['credit_limit']) && $data['credit_limit'] !== '' ? (float) $data['credit_limit'] : 0,
+            'credit_limit' => $this->parseAmount($data['credit_limit'] ?? null) ?? 0,
             'payment_terms' => isset($data['payment_terms']) && $data['payment_terms'] !== '' ? (int) $data['payment_terms'] : 30,
         ];
     }
@@ -556,7 +561,7 @@ class ImportService
      */
     protected function openingStock(Item $item, array $mapped): void
     {
-        $quantity = isset($mapped['initial_stock']) && $mapped['initial_stock'] !== '' ? round((float) $mapped['initial_stock'], 4) : 0.0;
+        $quantity = round($this->parseAmount($mapped['initial_stock'] ?? null) ?? 0.0, 4);
         $valuation = app(StockValuationService::class);
         $row = $valuation->stockRow($this->tenantId, $item->id);
         if ($row->wasRecentlyCreated) {
@@ -567,7 +572,13 @@ class ImportService
             return;
         }
 
-        $date = ! empty($mapped['opening_stock_date']) ? $this->parseDate((string) $mapped['opening_stock_date']) : now()->toDateString();
+        $date = $this->parseDate((string) ($mapped['opening_stock_date'] ?? ''));
+        if ($date === null) {
+            if (! $this->blank($mapped['opening_stock_date'] ?? null)) {
+                $this->warnings[] = "Opening stock for '{$item->name}': '{$mapped['opening_stock_date']}' is not a date I can read, so today was used.";
+            }
+            $date = now()->toDateString();
+        }
         app(AdjustStock::class)->handle($item, AdjustStock::IN, $quantity,
             unitCost: (float) ($item->cost_price ?? 0),
             reason: 'Initial stock from import',
@@ -595,10 +606,10 @@ class ImportService
             'type' => $type,
             'sku' => $data['sku'] ?? null,
             'description' => $data['description'] ?? null,
-            'selling_price' => isset($data['sale_price']) && $data['sale_price'] !== '' ? (float) $data['sale_price'] : (isset($data['selling_price']) && $data['selling_price'] !== '' ? (float) $data['selling_price'] : 0),
-            'cost_price' => isset($data['purchase_price']) && $data['purchase_price'] !== '' ? (float) $data['purchase_price'] : (isset($data['cost_price']) && $data['cost_price'] !== '' ? (float) $data['cost_price'] : 0),
+            'selling_price' => $this->parseAmount($data['sale_price'] ?? null) ?? $this->parseAmount($data['selling_price'] ?? null) ?? 0,
+            'cost_price' => $this->parseAmount($data['purchase_price'] ?? null) ?? $this->parseAmount($data['cost_price'] ?? null) ?? 0,
             'unit' => $data['unit'] ?? 'pcs',
-            'tax_rate' => isset($data['tax_rate']) ? (float) $data['tax_rate'] : 0,
+            'tax_rate' => $this->parseAmount($data['tax_rate'] ?? null) ?? 0,
             'is_taxable' => $isTaxable,
             'track_inventory' => $trackInventory,
             'reorder_level' => isset($data['reorder_level']) ? (int) $data['reorder_level'] : 0,
@@ -789,7 +800,25 @@ class ImportService
                 // approve-and-pay flow, like ones entered on the form. The old
                 // call used columns expenses doesn't have and no expense
                 // number, so every row failed.
-                $amount = round((float) $mapped['amount'], 2);
+                $amount = $this->parseAmount($mapped['amount'] ?? null);
+                if ($amount === null) {
+                    $this->errors[] = "Row {$rowNum}: '{$mapped['amount']}' is not an amount I can read.";
+                    $failed++;
+
+                    continue;
+                }
+                $amount = round($amount, 2);
+
+                $expenseDate = $this->parseDate((string) ($mapped['date'] ?? ''));
+                if ($expenseDate === null) {
+                    // Guessing here would put the expense in the wrong month,
+                    // and nobody would see it happen.
+                    $this->errors[] = "Row {$rowNum}: '{$mapped['date']}' is not a date I can read. Use d/m/Y or Y-m-d.";
+                    $failed++;
+
+                    continue;
+                }
+
                 Expense::create([
                     'tenant_id' => $this->tenantId,
                     'expense_number' => Expense::generateNumber($this->tenantId),
@@ -797,7 +826,7 @@ class ImportService
                     'expense_account_id' => $expenseAccount->id,
                     'vendor_id' => $vendorId,
                     'paid_through_id' => $paymentAccountId,
-                    'expense_date' => $this->parseDate($mapped['date']),
+                    'expense_date' => $expenseDate,
                     'amount' => $amount,
                     'tax_amount' => 0,
                     'total' => $amount,
@@ -957,9 +986,9 @@ class ImportService
             'city' => $data['city'] ?? null,
             'state' => $data['state'] ?? null,
             'postal_code' => $data['postal_code'] ?? null,
-            'date_of_birth' => ! empty($data['date_of_birth']) ? $this->parseDate($data['date_of_birth']) : null,
-            'hire_date' => ! empty($data['hire_date']) ? $this->parseDate($data['hire_date']) : null,
-            'basic_salary' => isset($data['salary']) ? (float) $data['salary'] : 0,
+            'date_of_birth' => $this->parseDate((string) ($data['date_of_birth'] ?? '')),
+            'hire_date' => $this->parseDate((string) ($data['hire_date'] ?? '')),
+            'basic_salary' => $this->parseAmount($data['salary'] ?? null) ?? 0,
             'pay_frequency' => $data['pay_frequency'] ?? 'monthly',
             'bank_name' => $data['bank_name'] ?? null,
             'bank_account_number' => $data['bank_account'] ?? null,
@@ -985,6 +1014,9 @@ class ImportService
 
         $asOfDate = null;
         $journalEntries = [];
+        // Set by any row whose figures or date could not be read. An
+        // opening balance journal missing rows is worse than none at all.
+        $unreadable = false;
         $totalDebit = 0;
         $totalCredit = 0;
 
@@ -1009,8 +1041,21 @@ class ImportService
                     continue;
                 }
 
-                $debit = (float) ($mapped['debit'] ?? 0);
-                $credit = (float) ($mapped['credit'] ?? 0);
+                // A figure that cannot be read must stop the row, not count
+                // as nothing. Read as zero it would drop out of the totals,
+                // the file would still balance, and a journal missing that
+                // line would post looking perfectly correct.
+                $debit = $this->parseAmount($mapped['debit'] ?? null) ?? ($this->blank($mapped['debit'] ?? null) ? 0.0 : null);
+                $credit = $this->parseAmount($mapped['credit'] ?? null) ?? ($this->blank($mapped['credit'] ?? null) ? 0.0 : null);
+
+                if ($debit === null || $credit === null) {
+                    $bad = $debit === null ? ($mapped['debit'] ?? '') : ($mapped['credit'] ?? '');
+                    $this->errors[] = "Row {$rowNum}: '{$bad}' is not an amount I can read. Nothing was imported.";
+                    $failed++;
+                    $unreadable = true;
+
+                    continue;
+                }
 
                 if ($debit == 0 && $credit == 0) {
                     $skipped++;
@@ -1019,7 +1064,11 @@ class ImportService
                 }
 
                 if (! $asOfDate && ! empty($mapped['as_of_date'])) {
-                    $asOfDate = $this->parseDate($mapped['as_of_date']);
+                    $asOfDate = $this->parseDate((string) $mapped['as_of_date']);
+                    if ($asOfDate === null) {
+                        $this->errors[] = "Row {$rowNum}: '{$mapped['as_of_date']}' is not a date I can read. Use d/m/Y or Y-m-d.";
+                        $unreadable = true;
+                    }
                 }
 
                 $journalEntries[] = [
@@ -1046,6 +1095,14 @@ class ImportService
         // number and the account balances were never updated.
         $totalDebit = round($totalDebit, 2);
         $totalCredit = round($totalCredit, 2);
+
+        if ($unreadable && ! empty($journalEntries)) {
+            $this->errors[] = 'Some rows could not be read, so nothing was imported. '
+                .'Correct them and import the file again.';
+            $failed += $successful;
+            $successful = 0;
+            $journalEntries = [];
+        }
 
         if (! empty($journalEntries) && abs($totalDebit - $totalCredit) >= 0.005) {
             $this->errors[] = 'Total debits ('.number_format($totalDebit, 2).') do not equal total credits ('
@@ -1165,7 +1222,7 @@ class ImportService
                 // Prepare line data
                 $lineData = ['account_id' => $account->id];
                 foreach ($months as $month) {
-                    $lineData[$month] = isset($mapped[$month]) && $mapped[$month] !== '' ? (float) $mapped[$month] : 0;
+                    $lineData[$month] = $this->parseAmount($mapped[$month] ?? null) ?? 0;
                 }
                 $lineData['notes'] = $mapped['notes'] ?? null;
 
@@ -1212,25 +1269,112 @@ class ImportService
     /**
      * Parse date from various formats
      */
-    protected function parseDate(string $date): string
+    /**
+     * A date from a spreadsheet, as Y-m-d, or null when it cannot be read.
+     *
+     * Two things were wrong here, and both were silent.
+     *
+     * m/d/Y was tried before d/m/Y, so 05/11/2026 — the fifth of November
+     * to everyone in Nigeria — was read as the eleventh of May. And
+     * createFromFormat accepts a month of 25 and rolls it into the
+     * following year rather than failing, so 31/12/2026 came back as
+     * 2028-07-12: the wrong financial year, the wrong VAT period, no
+     * error shown. getLastErrors() is what makes it say no.
+     *
+     * Day first now, because that is how dates are written here and how
+     * the rest of MyBooks shows them. A file written month-first is still
+     * read correctly whenever the day is past the twelfth, and ISO dates
+     * are tried first because they cannot be mistaken either way.
+     */
+    protected function parseDate(string $date): ?string
     {
-        // Try common formats
-        $formats = ['Y-m-d', 'm/d/Y', 'd/m/Y', 'Y/m/d', 'd-m-Y', 'm-d-Y'];
+        $date = trim($date);
 
-        foreach ($formats as $format) {
+        if ($date === '') {
+            return null;
+        }
+
+        foreach (['Y-m-d', 'd/m/Y', 'd-m-Y', 'Y/m/d', 'm/d/Y', 'm-d-Y', 'd/m/y', 'd-M-Y', 'j M Y'] as $format) {
             $parsed = \DateTime::createFromFormat($format, $date);
-            if ($parsed !== false) {
+            $errors = \DateTime::getLastErrors();
+
+            // False is an outright refusal; the warning count catches the
+            // rollover, where it accepted nonsense and quietly moved on.
+            if ($parsed !== false && empty($errors['warning_count']) && empty($errors['error_count'])) {
                 return $parsed->format('Y-m-d');
             }
         }
 
-        // Try strtotime as fallback
+        // Anything else written in words ("5 November 2026"). Not reached
+        // for the slash and dash forms above, so it cannot reintroduce the
+        // month-first reading.
         $timestamp = strtotime($date);
-        if ($timestamp !== false) {
-            return date('Y-m-d', $timestamp);
+
+        return $timestamp === false ? null : date('Y-m-d', $timestamp);
+    }
+
+    /**
+     * A number from a spreadsheet, or null when it is not one.
+     *
+     * Amounts were read with a plain (float) cast, which stops at the
+     * first character it does not understand: "1,500.00" became 1.0 and
+     * "₦1,500.00" became 0.0. Excel formats currency with separators by
+     * default, so that was the ordinary case rather than an edge one, and
+     * nothing was reported — the import said it had succeeded.
+     *
+     * The comma is read as a thousands separator, which is the convention
+     * here. A file written the European way round (1.250,00) is not
+     * understood and is refused rather than guessed at.
+     */
+    /** Empty in the spreadsheet sense: absent, or nothing but spaces. */
+    protected function blank(mixed $value): bool
+    {
+        return $value === null || trim((string) $value) === '';
+    }
+
+    protected function parseAmount(mixed $value): ?float
+    {
+        if ($value === null || $value === '') {
+            return null;
         }
 
-        return $date;
+        if (is_int($value) || is_float($value)) {
+            return (float) $value;
+        }
+
+        $clean = trim((string) $value);
+
+        // Accountants write a negative in brackets.
+        $negative = (bool) preg_match('/^\((.*)\)$/', $clean, $m);
+        if ($negative) {
+            $clean = trim($m[1]);
+        }
+
+        // Currency and spaces, but not the separators: their placement is
+        // what says whether this was written the way we read numbers.
+        $clean = str_replace(["\u{20A6}", '₦', 'NGN', 'ngn', ' ', "\u{00A0}"], '', $clean);
+        $clean = ltrim($clean, '+');
+
+        if (str_starts_with($clean, '-')) {
+            $negative = true;
+            $clean = substr($clean, 1);
+        }
+
+        // Either no grouping at all, or commas grouping exactly three
+        // digits. "1.250,00" fails both, and that is the point: it means
+        // one thousand two hundred and fifty where it was written and one
+        // and a quarter here, so reading it either way would be the same
+        // quiet mistake this is meant to end.
+        $grouped = (bool) preg_match('/^\d{1,3}(,\d{3})+(\.\d+)?$/', $clean);
+        $plain = (bool) preg_match('/^(\d+(\.\d+)?|\.\d+)$/', $clean);
+
+        if (! $grouped && ! $plain) {
+            return null;
+        }
+
+        $clean = str_replace(',', '', $clean);
+
+        return $negative ? -(float) $clean : (float) $clean;
     }
 
     /**
