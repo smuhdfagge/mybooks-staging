@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Imports;
 
+use App\Models\ChartOfAccount;
 use App\Models\Department;
 use App\Models\Designation;
 use App\Models\Employee;
@@ -78,6 +79,45 @@ class ImportRowHandlingTest extends TestCase
         // Spaces and capitals are the way a person types, not an error.
         $this->assertSame('service', $items['Consulting'] ?? null);
         $this->assertSame('product', $items['Stapler'] ?? null);
+    }
+
+    public function test_an_income_account_can_be_imported(): void
+    {
+        $user = $this->createAuthenticatedUser();
+
+        $import = $this->runImport(
+            'chart_of_accounts',
+            "code,name,type\n4500,Haulage Income,income\n4600,Rental Income,revenue\n",
+            ['code' => 'code', 'name' => 'name', 'type' => 'type'],
+        );
+
+        // Neither spelling worked: "income" was refused by the importer's own
+        // list of types, and "revenue" — which the template told people to
+        // write — was refused by the column. So the Sales Revenue row in the
+        // downloadable template could never be imported.
+        $this->assertSame(0, $import->failed_rows, implode(' | ', $import->errors ?? []));
+
+        $types = ChartOfAccount::where('tenant_id', $user->tenant_id)
+            ->whereIn('account_code', ['4500', '4600'])
+            ->pluck('type', 'account_code');
+
+        $this->assertSame('income', $types['4500'] ?? null);
+        // Written the way other software writes it, and still an income account.
+        $this->assertSame('income', $types['4600'] ?? null);
+    }
+
+    public function test_an_account_type_that_is_not_a_type_is_still_refused(): void
+    {
+        $this->createAuthenticatedUser();
+
+        $import = $this->runImport(
+            'chart_of_accounts',
+            "code,name,type\n4700,Something,turnover\n",
+            ['code' => 'code', 'name' => 'name', 'type' => 'type'],
+        );
+
+        $this->assertSame(1, $import->failed_rows);
+        $this->assertStringContainsString('Invalid account type', implode(' ', $import->errors ?? []));
     }
 
     public function test_a_failed_employee_row_leaves_no_department_behind(): void
