@@ -42,7 +42,7 @@ class CustomerCreditNotesTest extends TestCase
         Carbon::setTestNow('2026-10-20 10:00:00');
         $this->createAuthenticatedUser([
             'view invoices', 'create invoices', 'edit invoices', 'delete invoices', 'view customers',
-            'create payments-received', 'create bills', 'view bills', 'view reports',
+            'create payments-received', 'create bills', 'view bills', 'view reports', 'view vat-returns',
         ]);
         $this->customer = Customer::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Aminu Stores']);
     }

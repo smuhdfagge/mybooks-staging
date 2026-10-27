@@ -40,7 +40,7 @@ class VatReturnFormTest extends TestCase
 
     public function test_worked_september_example_fills_every_box(): void
     {
-        $this->createAuthenticatedUser(['view reports']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns']);
         $this->september();
 
         $r = $this->get(route('reports.vat-return', ['month' => '2026-09']))->assertOk();
@@ -77,7 +77,7 @@ class VatReturnFormTest extends TestCase
 
     public function test_schedules_list_each_line_with_party_tin_number_and_vat(): void
     {
-        $this->createAuthenticatedUser(['view reports']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns']);
         $this->september();
 
         $form = app(VatReturnForm::class)->build($this->tenant->id, '2026-09');
@@ -110,7 +110,7 @@ class VatReturnFormTest extends TestCase
 
     public function test_credit_note_reduces_output_vat_in_the_month_it_is_issued(): void
     {
-        $this->createAuthenticatedUser(['view reports']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns']);
         $this->september();
         $t = $this->tenant->id;
 
@@ -140,7 +140,7 @@ class VatReturnFormTest extends TestCase
 
     public function test_cancelling_an_earlier_month_sale_is_an_adjustment_in_the_month_cancelled(): void
     {
-        $this->createAuthenticatedUser(['view reports']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns']);
         $this->september();
 
         Carbon::setTestNow('2026-10-03 09:00:00');
@@ -154,7 +154,7 @@ class VatReturnFormTest extends TestCase
 
     public function test_vat_posted_by_journal_is_shown_in_the_reconciliation(): void
     {
-        $this->createAuthenticatedUser(['view reports']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns']);
         $this->september();
 
         $service = app(JournalService::class);
@@ -178,7 +178,7 @@ class VatReturnFormTest extends TestCase
 
     public function test_unclassified_zero_vat_sales_are_flagged_and_can_be_classified(): void
     {
-        $this->createAuthenticatedUser(['view reports', 'file vat-returns']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns', 'file vat-returns']);
         Carbon::setTestNow('2026-09-28 10:00:00');
         $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         app(SaveInvoice::class)->create($this->tenant->id, [
@@ -210,12 +210,12 @@ class VatReturnFormTest extends TestCase
     public function test_another_business_cannot_see_or_classify_the_lines(): void
     {
         [$other] = $this->createTenantWithSubscription();
-        $this->createAuthenticatedUser(['view reports', 'file vat-returns']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns', 'file vat-returns']);
         $this->september();
         $theirs = InvoiceItem::where('description', 'Consulting')->first();
         $theirs->forceFill(['tax_rate' => 0, 'vat_treatment' => null])->saveQuietly();
 
-        $intruder = $this->createUserForTenant($other, ['view reports', 'file vat-returns']);
+        $intruder = $this->createUserForTenant($other, ['view reports', 'view vat-returns', 'file vat-returns']);
         $this->actingAs($intruder);
 
         $r = $this->get(route('reports.vat-return', ['month' => '2026-09']))->assertOk();
@@ -234,7 +234,11 @@ class VatReturnFormTest extends TestCase
         $this->createAuthenticatedUser([]);
         $this->get(route('reports.vat-return'))->assertForbidden();
 
+        // "view reports" alone (the Sales role) doesn't open VAT returns.
         $this->actingAs($this->createUserForTenant($this->tenant, ['view reports']));
+        $this->get(route('reports.vat-return'))->assertForbidden();
+
+        $this->actingAs($this->createUserForTenant($this->tenant, ['view reports', 'view vat-returns']));
         $this->get(route('reports.vat-return'))->assertOk();
         $this->post(route('reports.vat-return.classify'), ['month' => '2026-09', 'lines' => []])->assertForbidden();
     }

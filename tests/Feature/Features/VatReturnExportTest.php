@@ -31,7 +31,7 @@ class VatReturnExportTest extends TestCase
 
     public function test_pdf_is_laid_out_like_form_002(): void
     {
-        $this->createAuthenticatedUser(['view reports']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns']);
         $this->tenant->update(['tax_number' => '99887766-0001']);
         $this->september();
 
@@ -50,7 +50,7 @@ class VatReturnExportTest extends TestCase
 
     public function test_taxpromax_sales_upload_has_the_template_columns(): void
     {
-        $this->createAuthenticatedUser(['view reports']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns']);
         $this->september();
         // A walk-in cash sale has no TIN: the template wants 0.
         $rows = $this->csv(['schedule' => 'sales-upload']);
@@ -72,7 +72,7 @@ class VatReturnExportTest extends TestCase
 
     public function test_detailed_schedules_and_form_lines(): void
     {
-        $this->createAuthenticatedUser(['view reports']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns']);
         $this->september();
 
         $purchases = $this->csv(['schedule' => 'purchases']);
@@ -91,7 +91,7 @@ class VatReturnExportTest extends TestCase
 
     public function test_formula_like_names_are_neutralised(): void
     {
-        $this->createAuthenticatedUser(['view reports']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns']);
         $this->september();
         Customer::first()->update(['name' => '=HYPERLINK("x")']);
 
@@ -102,10 +102,10 @@ class VatReturnExportTest extends TestCase
     public function test_exports_are_for_the_signed_in_business_only(): void
     {
         [$other] = $this->createTenantWithSubscription();
-        $this->createAuthenticatedUser(['view reports']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns']);
         $this->september();
 
-        $this->actingAs($this->createUserForTenant($other, ['view reports']));
+        $this->actingAs($this->createUserForTenant($other, ['view reports', 'view vat-returns']));
         $rows = $this->csv(['schedule' => 'sales']);
         $this->assertCount(1, $rows, 'headers only');
         $this->assertStringNotContainsString('Dangote', implode(',', $this->csv(['schedule' => 'sales-upload'])[0]));

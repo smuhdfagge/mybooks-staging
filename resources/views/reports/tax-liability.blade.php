@@ -9,8 +9,10 @@
     <x-slot name="header">
         <x-report.header title="Tax owed by period" :description="'Tax on your invoices less tax on your bills, '.$from.' to '.$to.'. Credits in brackets. Amounts in ₦.'">
             <x-slot name="more">
+                @can('view vat-returns')
                 <x-table.menu-item :href="route('reports.vat-gst-return', ['start_date' => $startDate, 'end_date' => $endDate])">VAT/GST return (from the ledger)</x-table.menu-item>
                 <x-table.menu-item :href="route('reports.vat-return')">VAT return to file (Form 002)</x-table.menu-item>
+                @endcan
             </x-slot>
         </x-report.header>
     </x-slot>

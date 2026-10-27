@@ -2,7 +2,7 @@
 @php
     $tone = ['pending' => 'pending', 'processing' => 'processing', 'completed' => 'completed', 'failed' => 'failed'];
     $label = ['pending' => 'Waiting', 'processing' => 'Preparing', 'completed' => 'Ready', 'failed' => 'Failed'];
-    $quick = ['customers' => 'Customers', 'vendors' => 'Vendors', 'items' => 'Items', 'invoices' => 'Invoices', 'expenses' => 'Expenses'];
+    $quick = array_intersect_key(['customers' => 'Customers', 'vendors' => 'Vendors', 'items' => 'Items', 'invoices' => 'Invoices', 'expenses' => 'Expenses'], $allowedTypes);
     $busy = $exports->whereIn('status', ['pending', 'processing'])->isNotEmpty();
     $expired = $exports->filter(fn ($e) => $e->isExpired())->isNotEmpty();
     $kind = fn ($e) => $exportTypes[$e->type] ?? \Illuminate\Support\Str::headline($e->type);
@@ -11,7 +11,7 @@
     <x-slot name="header">
         <x-table.page-header title="Exports" description="Download your records as a file, or make a full backup. Files are kept for a few days.">
             <x-slot name="more">
-                <x-table.menu-item :href="route('exports.backup')">Full backup</x-table.menu-item>
+                @can(\App\Models\Export::BACKUP_PERMISSION)<x-table.menu-item :href="route('exports.backup')">Full backup</x-table.menu-item>@endcan
                 @if ($expired)
                     <x-table.menu-item :post="route('exports.cleanup')">Remove expired files</x-table.menu-item>
                 @endif
@@ -27,6 +27,7 @@
     </x-slot>
 
     <div class="space-y-3">
+        @if ($quick)
         <div class="flex flex-wrap items-center gap-2">
             <span class="text-sm text-gray-600 dark:text-gray-400">Quick CSV:</span>
             @foreach ($quick as $type => $name)
@@ -38,6 +39,7 @@
                 </form>
             @endforeach
         </div>
+        @endif
 
         @if ($busy)
             {{-- Built on the queue (P3): reload until ready. --}}

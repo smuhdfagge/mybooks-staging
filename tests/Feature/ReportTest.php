@@ -247,7 +247,7 @@ class ReportTest extends TestCase
 
     public function test_payroll_summary_report_loads(): void
     {
-        $this->createAuthenticatedUser(['view reports']);
+        $this->createAuthenticatedUser(['view reports', 'view payroll']);
         $response = $this->get(route('reports.payroll-summary'));
         $response->assertOk();
     }
@@ -283,7 +283,7 @@ class ReportTest extends TestCase
 
     public function test_vat_gst_return_loads(): void
     {
-        $this->createAuthenticatedUser(['view reports']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns']);
         $response = $this->get(route('reports.vat-gst-return'));
         $response->assertOk();
     }

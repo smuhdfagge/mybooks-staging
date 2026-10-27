@@ -284,7 +284,7 @@ class ReportApiTest extends TestCase
 
     public function test_payroll_summary_returns_json(): void
     {
-        $this->setUpReportUser();
+        $this->token = $this->createApiUser(['view reports', 'view payroll']);
 
         $employee = Employee::withoutEvents(fn () => Employee::create([
             'tenant_id' => $this->tenant->id,

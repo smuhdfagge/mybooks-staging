@@ -189,7 +189,7 @@ class PhaseDPerformanceTest extends TestCase
     {
         Queue::fake();
         Storage::fake('imports');
-        $this->createAuthenticatedUser(['import data']);
+        $this->createAuthenticatedUser(['import data', 'create customers']);
 
         $csv = "name,email\n";
         for ($i = 1; $i <= 1200; $i++) {
@@ -240,7 +240,7 @@ class PhaseDPerformanceTest extends TestCase
         Storage::fake('exports');
         [$other] = $this->createTenantWithSubscription();
         Customer::factory()->create(['tenant_id' => $other->id]);
-        $this->createAuthenticatedUser(['export reports']);
+        $this->createAuthenticatedUser(['export reports', 'export data', 'view customers', 'view vendors']);
         Customer::factory()->count(3)->create(['tenant_id' => $this->tenant->id]);
 
         $this->post(route('exports.store'), ['type' => Export::TYPE_CUSTOMERS, 'format' => 'json'])

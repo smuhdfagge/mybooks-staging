@@ -73,7 +73,7 @@ class Phase7RegressionTest extends TestCase
 
     public function test_m7_custom_report_rejects_columns_outside_the_data_source(): void
     {
-        $this->createAuthenticatedUser(['view reports']);
+        $this->createAuthenticatedUser(['view reports', 'view invoices']);
         $base = ['name' => 'Test', 'data_source' => 'invoices', 'columns' => ['invoice_number', 'total']];
 
         $this->post(route('reports.custom.store'), array_merge($base, ['columns' => ['invoice_number', 'tenant_id']]))
@@ -97,7 +97,7 @@ class Phase7RegressionTest extends TestCase
 
     public function test_m7_old_reports_with_unknown_columns_still_run(): void
     {
-        $this->createAuthenticatedUser(['view reports']);
+        $this->createAuthenticatedUser(['view reports', 'view invoices']);
         $report = CustomReport::create([
             'tenant_id' => $this->tenant->id, 'created_by' => $this->user->id, 'name' => 'Old', 'data_source' => 'invoices',
             'columns' => ['invoice_number'],

@@ -24,11 +24,14 @@ class ImportController extends Controller
      */
     public function index()
     {
+        // Only imports of records this person may create (audit MB-12).
+        $allowed = array_keys(array_filter(Import::PERMISSIONS, fn ($permission) => auth()->user()->can($permission)));
         $imports = Import::where('tenant_id', auth()->user()->tenant_id)
+            ->whereIn('type', $allowed)
             ->orderByDesc('created_at')
             ->paginate(25);
 
-        $importTypes = Import::getSupportedImportTypes();
+        $importTypes = Import::getSupportedImportTypesFor(auth()->user());
 
         return view('imports.index', compact('imports', 'importTypes'));
     }
@@ -38,7 +41,7 @@ class ImportController extends Controller
      */
     public function create(Request $request)
     {
-        $importTypes = Import::getSupportedImportTypes();
+        $importTypes = Import::getSupportedImportTypesFor(auth()->user());
         // Only a type on offer is preselected (audit MB-04).
         $type = $request->query('type');
         $type = is_string($type) && array_key_exists($type, $importTypes) ? $type : null;
@@ -67,6 +70,7 @@ class ImportController extends Controller
                 'max:'.config('mybooks.import_max_file_size', 10240),
             ],
         ]);
+        $this->authorizeType($validated['type']);
 
         $file = $request->file('file');
         $format = $this->detectFormat($file);
@@ -162,9 +166,10 @@ class ImportController extends Controller
         $type = $request->get('type');
         $format = $request->get('format', 'csv');
 
-        if (! $type || ! isset(Import::getSupportedImportTypes()[$type])) {
+        if (! is_string($type) || ! isset(Import::getSupportedImportTypes()[$type])) {
             return back()->with('error', 'Invalid import type');
         }
+        $this->authorizeType($type);
 
         $sampleData = ImportService::getSampleData($type);
 
@@ -348,5 +353,15 @@ class ImportController extends Controller
         if ($import->tenant_id !== auth()->user()->tenant_id) {
             abort(403);
         }
+        $this->authorizeType($import->type);
+    }
+
+    /**
+     * Each type needs the module's own permission; "import data" alone only
+     * opens this screen (audit MB-12).
+     */
+    protected function authorizeType(string $type): void
+    {
+        abort_unless(Import::allowedFor(auth()->user(), $type), 403, 'You do not have permission to import these records.');
     }
 }
