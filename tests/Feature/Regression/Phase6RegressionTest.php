@@ -154,7 +154,7 @@ class Phase6RegressionTest extends TestCase
 
     public function test_n9_export_details_page_works(): void
     {
-        $this->createAuthenticatedUser(['export reports']);
+        $this->createAuthenticatedUser(['export reports', 'view customers']);
         $export = Export::create([
             'tenant_id' => $this->tenant->id, 'user_id' => $this->user->id, 'type' => 'customers', 'format' => 'csv',
             'status' => 'failed', 'error_message' => 'Disk full', 'expires_at' => now()->addDays(7),
@@ -211,7 +211,7 @@ class Phase6RegressionTest extends TestCase
 
     public function test_n9_web_payroll_reports_still_render(): void
     {
-        $this->createAuthenticatedUser(['view reports']);
+        $this->createAuthenticatedUser(['view reports', 'view payroll']);
         $this->payrollFixture();
 
         foreach (['payroll-register', 'ytd-earnings', 'tax-liability-payroll', 'employer-contributions', 'bank-disbursement', 'salary-revision-history'] as $report) {

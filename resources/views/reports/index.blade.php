@@ -147,6 +147,7 @@
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Tax Reports</h3>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">VAT/GST returns and tax liability tracking.</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    @can('view vat-returns')
                     <!-- VAT/GST Return -->
                     <a href="{{ route('reports.vat-gst-return') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
@@ -161,7 +162,9 @@
                             </div>
                         </div>
                     </a>
+                    @endcan
 
+                    @can('view vat-returns')
                     <!-- Monthly VAT return (NRS Form 002) -->
                     <a href="{{ route('reports.vat-return') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
                         <div class="flex items-center">
@@ -176,6 +179,7 @@
                             </div>
                         </div>
                     </a>
+                    @endcan
 
                     <!-- Tax Liability -->
                     <a href="{{ route('reports.tax-liability') }}" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-white hover:ring-1 hover:ring-brand-200 dark:hover:bg-gray-800 dark:hover:ring-gray-600 transition">
@@ -365,6 +369,7 @@
             </div>
         </div>
 
+        @can('view payroll')
         <!-- Payroll Reports -->
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
             <div class="p-6">
@@ -508,6 +513,7 @@
                 </div>
             </div>
         </div>
+        @endcan
 
         <!-- Custom Report Builder -->
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">

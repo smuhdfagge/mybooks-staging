@@ -49,7 +49,7 @@ class VatReturnSupplierCreditsTest extends TestCase
 
     private function setUpBusiness(): void
     {
-        $this->createAuthenticatedUser(['view reports', 'edit invoices', 'view invoices', 'create bills', 'view bills']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns', 'edit invoices', 'view invoices', 'create bills', 'view bills']);
         $this->vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Kano Office Supplies', 'tax_number' => '11112222-0001']);
     }
 
@@ -317,7 +317,7 @@ class VatReturnSupplierCreditsTest extends TestCase
         $this->supplierCredit([['description' => 'Toner', 'quantity' => 1, 'unit_price' => 4000, 'tax_rate' => 7.5]], null, '2026-10-15');
 
         $this->app['auth']->forgetGuards();
-        $this->createAuthenticatedUser(['view reports']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns']);
         $this->assertNotSame($mine->id, $this->tenant->id);
         $r = $this->get(route('reports.vat-return', ['month' => '2026-10']))->assertOk();
         $this->assertEqualsWithDelta(0, $r->viewData('lines')[75], 0.001);

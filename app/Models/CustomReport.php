@@ -40,6 +40,34 @@ class CustomReport extends Model
     ];
 
     /**
+     * The permission each data source needs on top of "view reports"
+     * (audit MB-07: a payroll report showed every salary to anyone who
+     * could see reports).
+     */
+    public const SOURCE_PERMISSIONS = [
+        'invoices' => 'view invoices',
+        'bills' => 'view bills',
+        'expenses' => 'view expenses',
+        'customers' => 'view customers',
+        'vendors' => 'view vendors',
+        'items' => 'view items',
+        'payments_received' => 'view payments-received',
+        'payments_made' => 'view payments-made',
+        'payroll' => 'view payroll',
+    ];
+
+    public static function sourceAllowedFor(User $user, ?string $source): bool
+    {
+        return isset(self::SOURCE_PERMISSIONS[$source]) && $user->can(self::SOURCE_PERMISSIONS[$source]);
+    }
+
+    /** The data sources $user may report on. */
+    public static function getDataSourcesFor(User $user): array
+    {
+        return array_filter(static::getDataSources(), fn ($source) => self::sourceAllowedFor($user, $source), ARRAY_FILTER_USE_KEY);
+    }
+
+    /**
      * Data source configurations with available columns and filters
      */
     public static function getDataSources(): array

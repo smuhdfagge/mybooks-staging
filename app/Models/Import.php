@@ -140,6 +140,40 @@ class Import extends Model
     }
 
     /**
+     * The permission each import type needs (audit MB-12). "import data"
+     * only opens the Imports screen; without this map it let anyone with it
+     * create employees, invoices, journals or opening balances.
+     */
+    public const PERMISSIONS = [
+        self::TYPE_CUSTOMERS => 'create customers',
+        self::TYPE_VENDORS => 'create vendors',
+        self::TYPE_ITEMS => 'create items',
+        self::TYPE_CHART_OF_ACCOUNTS => 'create chart-of-accounts',
+        self::TYPE_INVOICES => 'create invoices',
+        self::TYPE_BILLS => 'create bills',
+        self::TYPE_JOURNALS => 'create journals',
+        self::TYPE_EXPENSES => 'create expenses',
+        self::TYPE_EMPLOYEES => 'create employees',
+        self::TYPE_OPENING_BALANCES => 'edit chart-of-accounts',
+        self::TYPE_BUDGET_LINES => 'edit budgets',
+    ];
+
+    public static function allowedFor(User $user, string $type): bool
+    {
+        return isset(self::PERMISSIONS[$type]) && $user->can(self::PERMISSIONS[$type]);
+    }
+
+    /**
+     * The types on offer that $user may import.
+     *
+     * @return array<string, string>
+     */
+    public static function getSupportedImportTypesFor(User $user): array
+    {
+        return array_filter(self::getSupportedImportTypes(), fn ($type) => self::allowedFor($user, $type), ARRAY_FILTER_USE_KEY);
+    }
+
+    /**
      * Labels for every import type, including the ones not offered.
      *
      * Kept whole so an import recorded before a type was withdrawn still

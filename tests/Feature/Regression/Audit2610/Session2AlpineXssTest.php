@@ -30,7 +30,7 @@ class Session2AlpineXssTest extends TestCase
             'view payments-received', 'create payments-received', 'edit payments-received',
             'view payments-made', 'create payments-made', 'edit payments-made',
             'view invoices', 'create invoices', 'view bills', 'create bills',
-            'view expenses', 'create expenses', 'import data',
+            'view expenses', 'create expenses', 'import data', 'create customers',
         ]);
     }
 

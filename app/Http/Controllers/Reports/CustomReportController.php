@@ -24,13 +24,17 @@ class CustomReportController extends ReportController
         $tenantId = auth()->user()->tenant_id;
         $userId = auth()->id();
 
+        // Only reports on data this person may see (audit MB-07).
+        $sources = array_keys(CustomReport::getDataSourcesFor(auth()->user()));
         $myReports = CustomReport::where('tenant_id', $tenantId)
+            ->whereIn('data_source', $sources)
             ->where('created_by', $userId)
             ->orderBy('is_favorite', 'desc')
             ->orderBy('updated_at', 'desc')
             ->get();
 
         $sharedReports = CustomReport::where('tenant_id', $tenantId)
+            ->whereIn('data_source', $sources)
             ->where('is_public', true)
             ->where('created_by', '!=', $userId)
             ->orderBy('updated_at', 'desc')
@@ -44,7 +48,7 @@ class CustomReportController extends ReportController
      */
     public function customReportCreate()
     {
-        $dataSources = CustomReport::getDataSources();
+        $dataSources = CustomReport::getDataSourcesFor(auth()->user());
         $aggregations = CustomReport::getAggregations();
         $operators = CustomReport::getFilterOperators();
 
@@ -57,6 +61,7 @@ class CustomReportController extends ReportController
     public function customReportStore(Request $request)
     {
         $request->validate(CustomReport::validationRules($request->input('data_source')));
+        $this->authorizeSource($request->input('data_source'));
 
         $customReport = CustomReport::create([
             'tenant_id' => auth()->user()->tenant_id,
@@ -84,7 +89,7 @@ class CustomReportController extends ReportController
     {
         $this->authorizeReport($customReport);
 
-        $dataSources = CustomReport::getDataSources();
+        $dataSources = CustomReport::getDataSourcesFor(auth()->user());
         $aggregations = CustomReport::getAggregations();
         $operators = CustomReport::getFilterOperators();
 
@@ -99,6 +104,7 @@ class CustomReportController extends ReportController
         $this->authorizeReport($customReport);
 
         $request->validate(CustomReport::validationRules($request->input('data_source')));
+        $this->authorizeSource($request->input('data_source'));
 
         $customReport->update([
             'name' => $request->name,
@@ -252,15 +258,22 @@ class CustomReportController extends ReportController
         $dataSource = $request->get('data_source');
         $dataSources = CustomReport::getDataSources();
 
-        if (! isset($dataSources[$dataSource])) {
+        if (! is_string($dataSource) || ! isset($dataSources[$dataSource])) {
             return response()->json(['error' => 'Invalid data source'], 400);
         }
+        $this->authorizeSource($dataSource);
 
         return response()->json([
             'columns' => $dataSources[$dataSource]['columns'],
             'date_fields' => $dataSources[$dataSource]['date_fields'],
             'group_fields' => $dataSources[$dataSource]['group_fields'],
         ]);
+    }
+
+    /** Each data source needs its module's view permission (audit MB-07). */
+    protected function authorizeSource(?string $source): void
+    {
+        abort_unless(CustomReport::sourceAllowedFor(auth()->user(), $source), 403, 'You do not have permission to report on these records.');
     }
 
     /**
@@ -282,6 +295,8 @@ class CustomReportController extends ReportController
         if ($allowShared && $customReport->created_by !== $userId && ! $customReport->is_public) {
             abort(403);
         }
+
+        $this->authorizeSource($customReport->data_source);
     }
 
     /**

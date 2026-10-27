@@ -118,6 +118,83 @@ class Export extends Model
     }
 
     /**
+     * The permission each kind of record needs to be exported (audit MB-06).
+     * "export reports" only opens the Exports screen; without this map it
+     * let anyone with it download employees (with salaries), payroll, the
+     * activity log or a full backup.
+     */
+    public const PERMISSIONS = [
+        self::TYPE_CUSTOMERS => 'view customers',
+        self::TYPE_VENDORS => 'view vendors',
+        self::TYPE_ITEMS => 'view items',
+        self::TYPE_INVOICES => 'view invoices',
+        self::TYPE_BILLS => 'view bills',
+        self::TYPE_EXPENSES => 'view expenses',
+        self::TYPE_EMPLOYEES => 'view employees',
+        self::TYPE_PAYROLL => 'view payroll',
+        self::TYPE_JOURNALS => 'view journals',
+        self::TYPE_CHART_OF_ACCOUNTS => 'view chart-of-accounts',
+        self::TYPE_ACTIVITY_LOGS => 'view activity-logs',
+    ];
+
+    /** A full backup also needs this, on top of a permission for each part. */
+    public const BACKUP_PERMISSION = 'export data';
+
+    /**
+     * Every permission an export of $type needs. A full backup needs each
+     * included part's permission; with nothing chosen it includes them all.
+     *
+     * @param  array<int, string>|null  $included
+     * @return array<int, string>
+     */
+    public static function permissionsFor(string $type, ?array $included = null): array
+    {
+        if ($type === self::TYPE_FULL_BACKUP) {
+            $parts = $included ?: array_keys(self::PERMISSIONS);
+
+            return array_values(array_unique([self::BACKUP_PERMISSION, ...array_map(
+                fn ($part) => self::PERMISSIONS[$part] ?? self::BACKUP_PERMISSION.' '.$part, // unknown part: a permission nobody holds
+                $parts,
+            )]));
+        }
+
+        return [self::PERMISSIONS[$type] ?? self::BACKUP_PERMISSION.' '.$type];
+    }
+
+    /** @param  array<int, string>|null  $included */
+    public static function allowedFor(User $user, string $type, ?array $included = null): bool
+    {
+        foreach (self::permissionsFor($type, $included) as $permission) {
+            if (! $user->can($permission)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * The export types $user may choose. Full backup is listed when they
+     * hold "export data"; the parts they may include are checked separately.
+     *
+     * @return array<string, string>
+     */
+    public static function getExportTypesFor(User $user): array
+    {
+        return array_filter(
+            self::getExportTypes(),
+            fn ($type) => $type === self::TYPE_FULL_BACKUP ? $user->can(self::BACKUP_PERMISSION) : self::allowedFor($user, $type),
+            ARRAY_FILTER_USE_KEY,
+        );
+    }
+
+    /** Whether $user may see, download or delete this export. */
+    public function isAllowedFor(User $user): bool
+    {
+        return $this->tenant_id === $user->tenant_id && self::allowedFor($user, $this->type, $this->included_data);
+    }
+
+    /**
      * Excel files need the phpoffice/phpspreadsheet package, the same as
      * importing them does. Without it the export quietly fell back to
      * CSV: the file was named .csv and was perfectly good, but somebody

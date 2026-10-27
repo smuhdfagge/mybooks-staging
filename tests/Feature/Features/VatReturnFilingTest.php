@@ -54,7 +54,7 @@ class VatReturnFilingTest extends TestCase
 
     public function test_filing_a_month_keeps_the_hand_entered_lines_and_settles_its_vat(): void
     {
-        $this->createAuthenticatedUser(['view reports', 'file vat-returns']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns', 'file vat-returns']);
         $this->september();
         Carbon::setTestNow('2026-10-10 09:00:00');
 
@@ -101,7 +101,7 @@ class VatReturnFilingTest extends TestCase
 
     public function test_a_credit_is_carried_forward_and_relieved_the_next_month(): void
     {
-        $this->createAuthenticatedUser(['view reports', 'file vat-returns']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns', 'file vat-returns']);
         Carbon::setTestNow('2026-08-15 09:00:00');
         $this->bill('2026-08-10', 10000); // input VAT 750, no sales
         Carbon::setTestNow('2026-09-15 09:00:00');
@@ -130,7 +130,7 @@ class VatReturnFilingTest extends TestCase
 
     public function test_a_month_already_settled_from_the_vat_report_or_with_no_vat_files_without_a_second_journal(): void
     {
-        $this->createAuthenticatedUser(['view reports', 'file vat-returns']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns', 'file vat-returns']);
         Carbon::setTestNow('2026-09-15 09:00:00');
         $this->invoice('2026-09-05', 20000);
         Carbon::setTestNow('2026-10-05 09:00:00');
@@ -149,7 +149,7 @@ class VatReturnFilingTest extends TestCase
 
     public function test_a_month_can_only_be_filed_once_it_has_ended(): void
     {
-        $this->createAuthenticatedUser(['view reports', 'file vat-returns']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns', 'file vat-returns']);
         Carbon::setTestNow('2026-10-20 09:00:00');
 
         $this->expectException(ValidationException::class);
@@ -158,7 +158,7 @@ class VatReturnFilingTest extends TestCase
 
     public function test_a_document_changed_after_filing_is_flagged(): void
     {
-        $this->createAuthenticatedUser(['view reports', 'file vat-returns']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns', 'file vat-returns']);
         Carbon::setTestNow('2026-09-15 09:00:00');
         $this->invoice('2026-09-05', 20000);
         Carbon::setTestNow('2026-10-05 09:00:00');
@@ -172,7 +172,7 @@ class VatReturnFilingTest extends TestCase
 
     public function test_filing_needs_the_permission_and_stays_within_the_business(): void
     {
-        $this->createAuthenticatedUser(['view reports']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns']);
         Carbon::setTestNow('2026-10-05 09:00:00');
         $this->get(route('reports.vat-return', ['month' => '2026-09']))->assertOk()->assertDontSee('Mark as filed and settle VAT');
         $this->post(route('reports.vat-return.file'), ['month' => '2026-09'])->assertForbidden();
@@ -180,7 +180,7 @@ class VatReturnFilingTest extends TestCase
 
         // Another business's filing and credit don't show here.
         $this->app['auth']->forgetGuards();
-        $this->createAuthenticatedUser(['view reports', 'file vat-returns']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns', 'file vat-returns']);
         $other = $this->tenant;
         Carbon::setTestNow('2026-08-15 09:00:00');
         $this->bill('2026-08-10', 10000);
@@ -189,7 +189,7 @@ class VatReturnFilingTest extends TestCase
         $this->assertSame($other->id, VatReturnFiling::sole()->tenant_id);
 
         $this->app['auth']->forgetGuards();
-        $this->createAuthenticatedUser(['view reports', 'file vat-returns']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns', 'file vat-returns']);
         $r = $this->get(route('reports.vat-return', ['month' => '2026-08']))->assertOk();
         $this->assertNull($r->viewData('filing'));
         $this->assertEqualsWithDelta(0, $this->get(route('reports.vat-return', ['month' => '2026-09']))->viewData('lines')[100], 0.001);
@@ -199,7 +199,7 @@ class VatReturnFilingTest extends TestCase
 
     public function test_draft_documents_in_the_month_are_pointed_out(): void
     {
-        $this->createAuthenticatedUser(['view reports']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns']);
         Carbon::setTestNow('2026-10-05 09:00:00');
         $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         foreach (['2026-09-01', '2026-09-30', '2026-10-01'] as $date) {

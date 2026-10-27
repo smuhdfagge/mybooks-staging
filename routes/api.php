@@ -113,13 +113,16 @@ Route::prefix('v1')->group(function () {
             Route::get('sales-by-item', [ReportController::class, 'salesByItem']);
             Route::get('purchase-by-vendor', [ReportController::class, 'purchaseByVendor']);
             Route::get('inventory-summary', [ReportController::class, 'inventorySummary']);
-            Route::get('payroll-summary', [ReportController::class, 'payrollSummary']);
-            Route::get('payroll-register', [ReportController::class, 'payrollRegister']);
-            Route::get('ytd-earnings', [ReportController::class, 'ytdEarnings']);
-            Route::get('tax-liability-payroll', [ReportController::class, 'taxLiabilityPayroll']);
-            Route::get('employer-contributions', [ReportController::class, 'employerContributions']);
-            Route::get('bank-disbursement', [ReportController::class, 'bankDisbursement']);
-            Route::get('salary-revision-history', [ReportController::class, 'salaryRevisionHistory']);
+            // Payroll figures need payroll access, not just reports (audit MB-07).
+            Route::middleware('permission:view payroll')->group(function () {
+                Route::get('payroll-summary', [ReportController::class, 'payrollSummary']);
+                Route::get('payroll-register', [ReportController::class, 'payrollRegister']);
+                Route::get('ytd-earnings', [ReportController::class, 'ytdEarnings']);
+                Route::get('tax-liability-payroll', [ReportController::class, 'taxLiabilityPayroll']);
+                Route::get('employer-contributions', [ReportController::class, 'employerContributions']);
+                Route::get('bank-disbursement', [ReportController::class, 'bankDisbursement']);
+                Route::get('salary-revision-history', [ReportController::class, 'salaryRevisionHistory']);
+            });
             Route::get('customer-statement', [ReportController::class, 'customerStatement']);
         });
 

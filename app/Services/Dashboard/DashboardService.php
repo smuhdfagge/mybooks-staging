@@ -475,7 +475,7 @@ class DashboardService
             ];
         }
 
-        if ($facts['vat'] && $user->can('view reports')) {
+        if ($facts['vat'] && $user->can('view vat-returns')) {
             $due = Carbon::parse($facts['vat']['due']);
             $late = $due->lt($today);
             $out[] = [

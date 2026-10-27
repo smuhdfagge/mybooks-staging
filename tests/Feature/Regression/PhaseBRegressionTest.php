@@ -399,7 +399,7 @@ class PhaseBRegressionTest extends TestCase
 
     public function test_a5_vat_return_counts_every_posted_document_from_the_ledger(): void
     {
-        $this->createAuthenticatedUser(['view reports']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns']);
         $this->vatScenario();
 
         $r = $this->get(route('reports.vat-gst-return', ['start_date' => now()->startOfMonth()->toDateString(), 'end_date' => now()->endOfMonth()->toDateString()]))->assertOk();
@@ -415,7 +415,7 @@ class PhaseBRegressionTest extends TestCase
 
     public function test_a5_settling_moves_the_net_into_vat_payable_once(): void
     {
-        $this->createAuthenticatedUser(['view reports', 'create journals']);
+        $this->createAuthenticatedUser(['view reports', 'view vat-returns', 'create journals']);
         $this->vatScenario();
         $period = ['start_date' => now()->startOfMonth()->toDateString(), 'end_date' => now()->endOfMonth()->toDateString()];
 

@@ -1199,15 +1199,18 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
             Route::get('/control-reconciliation', [ControlReconciliationController::class, 'show'])->name('control-reconciliation');
         });
         Route::get('/inventory-summary', [PurchaseReportController::class, 'inventorySummary'])->name('inventory-summary');
-        Route::get('/payroll-summary', [PayrollReportController::class, 'payrollSummary'])->name('payroll-summary');
-        Route::get('/payroll-by-department', [PayrollReportController::class, 'payrollByDepartment'])->name('payroll-by-department');
-        Route::get('/employee-earnings', [PayrollReportController::class, 'employeeEarnings'])->name('employee-earnings');
-        Route::get('/payroll-register', [PayrollReportController::class, 'payrollRegister'])->name('payroll-register');
-        Route::get('/ytd-earnings', [PayrollReportController::class, 'ytdEarnings'])->name('ytd-earnings');
-        Route::get('/tax-liability-payroll', [PayrollReportController::class, 'taxLiabilityPayroll'])->name('tax-liability-payroll');
-        Route::get('/employer-contributions', [PayrollReportController::class, 'employerContributions'])->name('employer-contributions');
-        Route::get('/bank-disbursement', [PayrollReportController::class, 'bankDisbursement'])->name('bank-disbursement');
-        Route::get('/salary-revision-history', [PayrollReportController::class, 'salaryRevisionHistory'])->name('salary-revision-history');
+        // Payroll figures need payroll access, not just reports (audit MB-07).
+        Route::middleware('permission:view payroll')->group(function () {
+            Route::get('/payroll-summary', [PayrollReportController::class, 'payrollSummary'])->name('payroll-summary');
+            Route::get('/payroll-by-department', [PayrollReportController::class, 'payrollByDepartment'])->name('payroll-by-department');
+            Route::get('/employee-earnings', [PayrollReportController::class, 'employeeEarnings'])->name('employee-earnings');
+            Route::get('/payroll-register', [PayrollReportController::class, 'payrollRegister'])->name('payroll-register');
+            Route::get('/ytd-earnings', [PayrollReportController::class, 'ytdEarnings'])->name('ytd-earnings');
+            Route::get('/tax-liability-payroll', [PayrollReportController::class, 'taxLiabilityPayroll'])->name('tax-liability-payroll');
+            Route::get('/employer-contributions', [PayrollReportController::class, 'employerContributions'])->name('employer-contributions');
+            Route::get('/bank-disbursement', [PayrollReportController::class, 'bankDisbursement'])->name('bank-disbursement');
+            Route::get('/salary-revision-history', [PayrollReportController::class, 'salaryRevisionHistory'])->name('salary-revision-history');
+        });
 
         // Comparative Reports
         Route::get('/comparative/profit-loss', [ComparativeReportController::class, 'comparativeProfitLoss'])->name('comparative.profit-loss');
@@ -1215,16 +1218,19 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::get('/comparative/cash-flow', [ComparativeReportController::class, 'comparativeCashFlow'])->name('comparative.cash-flow');
 
         // Tax Reports
-        Route::get('/vat-gst-return', [TaxReportController::class, 'vatGstReturn'])->name('vat-gst-return');
-        Route::post('/vat-gst-return/settle', [TaxReportController::class, 'settleVatReturn'])->name('vat-gst-return.settle')->middleware('permission:create journals');
         Route::get('/tax-liability', [TaxReportController::class, 'taxLiability'])->name('tax-liability');
 
-        // Monthly VAT return in the NRS VAT Form 002 layout
-        Route::get('/vat-return', [VatReturnController::class, 'show'])->name('vat-return');
-        Route::get('/vat-return/export', [VatReturnController::class, 'export'])->name('vat-return.export');
-        Route::post('/vat-return/classify', [VatReturnController::class, 'classify'])->name('vat-return.classify')->middleware('permission:file vat-returns');
-        Route::post('/vat-return/file', [VatReturnController::class, 'file'])->name('vat-return.file')->middleware('permission:file vat-returns');
-        Route::post('/vat-return/reopen', [VatReturnController::class, 'reopen'])->name('vat-return.reopen')->middleware(['permission:file vat-returns', 'feature:lock_dates']);
+        // VAT returns need their own permission; Sales has "view reports" only (audit).
+        Route::middleware('permission:view vat-returns')->group(function () {
+            Route::get('/vat-gst-return', [TaxReportController::class, 'vatGstReturn'])->name('vat-gst-return');
+            Route::post('/vat-gst-return/settle', [TaxReportController::class, 'settleVatReturn'])->name('vat-gst-return.settle')->middleware('permission:create journals');
+            // Monthly VAT return in the NRS VAT Form 002 layout
+            Route::get('/vat-return', [VatReturnController::class, 'show'])->name('vat-return');
+            Route::get('/vat-return/export', [VatReturnController::class, 'export'])->name('vat-return.export');
+            Route::post('/vat-return/classify', [VatReturnController::class, 'classify'])->name('vat-return.classify')->middleware('permission:file vat-returns');
+            Route::post('/vat-return/file', [VatReturnController::class, 'file'])->name('vat-return.file')->middleware('permission:file vat-returns');
+            Route::post('/vat-return/reopen', [VatReturnController::class, 'reopen'])->name('vat-return.reopen')->middleware(['permission:file vat-returns', 'feature:lock_dates']);
+        });
 
         // Custom Report Builder
         Route::get('/custom', [CustomReportController::class, 'customReportIndex'])->name('custom.index');
@@ -1249,15 +1255,18 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::get('/export/sales-by-item', [SalesReportController::class, 'exportSalesByItem'])->name('export.sales-by-item');
         Route::get('/export/purchase-by-vendor', [PurchaseReportController::class, 'exportPurchaseByVendor'])->name('export.purchase-by-vendor');
         Route::get('/export/inventory-summary', [PurchaseReportController::class, 'exportInventorySummary'])->name('export.inventory-summary');
-        Route::get('/export/payroll-summary', [PayrollReportController::class, 'exportPayrollSummary'])->name('export.payroll-summary');
-        Route::get('/export/payroll-by-department', [PayrollReportController::class, 'exportPayrollByDepartment'])->name('export.payroll-by-department');
-        Route::get('/export/employee-earnings', [PayrollReportController::class, 'exportEmployeeEarnings'])->name('export.employee-earnings');
-        Route::get('/export/payroll-register', [PayrollReportController::class, 'exportPayrollRegister'])->name('export.payroll-register');
-        Route::get('/export/ytd-earnings', [PayrollReportController::class, 'exportYtdEarnings'])->name('export.ytd-earnings');
-        Route::get('/export/tax-liability-payroll', [PayrollReportController::class, 'exportTaxLiabilityPayroll'])->name('export.tax-liability-payroll');
-        Route::get('/export/employer-contributions', [PayrollReportController::class, 'exportEmployerContributions'])->name('export.employer-contributions');
-        Route::get('/export/bank-disbursement', [PayrollReportController::class, 'exportBankDisbursement'])->name('export.bank-disbursement');
-        Route::get('/export/salary-revision-history', [PayrollReportController::class, 'exportSalaryRevisionHistory'])->name('export.salary-revision-history');
+        // Payroll figures need payroll access, not just reports (audit MB-07).
+        Route::middleware('permission:view payroll')->group(function () {
+            Route::get('/export/payroll-summary', [PayrollReportController::class, 'exportPayrollSummary'])->name('export.payroll-summary');
+            Route::get('/export/payroll-by-department', [PayrollReportController::class, 'exportPayrollByDepartment'])->name('export.payroll-by-department');
+            Route::get('/export/employee-earnings', [PayrollReportController::class, 'exportEmployeeEarnings'])->name('export.employee-earnings');
+            Route::get('/export/payroll-register', [PayrollReportController::class, 'exportPayrollRegister'])->name('export.payroll-register');
+            Route::get('/export/ytd-earnings', [PayrollReportController::class, 'exportYtdEarnings'])->name('export.ytd-earnings');
+            Route::get('/export/tax-liability-payroll', [PayrollReportController::class, 'exportTaxLiabilityPayroll'])->name('export.tax-liability-payroll');
+            Route::get('/export/employer-contributions', [PayrollReportController::class, 'exportEmployerContributions'])->name('export.employer-contributions');
+            Route::get('/export/bank-disbursement', [PayrollReportController::class, 'exportBankDisbursement'])->name('export.bank-disbursement');
+            Route::get('/export/salary-revision-history', [PayrollReportController::class, 'exportSalaryRevisionHistory'])->name('export.salary-revision-history');
+        });
     });
 
     /*

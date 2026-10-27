@@ -341,7 +341,7 @@
         @endcan
 
         <!-- Monthly VAT return -->
-        @can('view reports')
+        @can('view vat-returns')
         <a href="{{ route('reports.vat-return') }}"
            class="group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors {{ request()->routeIs('reports.vat-return*') ? 'nav-active' : 'text-gray-300 hover:bg-brand-800 hover:text-white' }}">
             <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

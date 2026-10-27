@@ -366,7 +366,7 @@ class Phase1RegressionTest extends TestCase
 
     public function test_h5_csv_upload_still_works(): void
     {
-        $this->createAuthenticatedUser(['import data']);
+        $this->createAuthenticatedUser(['import data', 'create customers']);
         $file = UploadedFile::fake()->createWithContent('customers.csv', "name,email\nAda,ada@example.com\n");
 
         $this->post(route('imports.upload'), ['type' => 'customers', 'file' => $file])->assertSessionHasNoErrors();

@@ -472,7 +472,7 @@ class LockDatesTest extends TestCase
 
     public function test_a_filed_vat_return_can_be_reopened_with_a_reason_and_filed_again(): void
     {
-        $this->user->givePermissionTo(Permission::findOrCreate('file vat-returns', 'web'), Permission::findOrCreate('view reports', 'web'));
+        $this->user->givePermissionTo(Permission::findOrCreate('file vat-returns', 'web'), Permission::findOrCreate('view reports', 'web'), Permission::findOrCreate('view vat-returns', 'web'));
         $filing = $this->filedAugust();
         $settlement = $filing->settlementJournal;
         $this->assertEqualsWithDelta(1500, $this->vatPayable(), 0.001);
@@ -502,7 +502,7 @@ class LockDatesTest extends TestCase
 
     public function test_a_vat_return_behind_a_lock_date_cannot_be_reopened_except_by_an_admin_behind_the_staff_lock(): void
     {
-        $this->user->givePermissionTo(Permission::findOrCreate('file vat-returns', 'web'), Permission::findOrCreate('view reports', 'web'));
+        $this->user->givePermissionTo(Permission::findOrCreate('file vat-returns', 'web'), Permission::findOrCreate('view reports', 'web'), Permission::findOrCreate('view vat-returns', 'web'));
         $this->filedAugust();
         $reopen = ['month' => '2026-08', 'reason' => 'Amended return needed'];
 
@@ -510,7 +510,7 @@ class LockDatesTest extends TestCase
         $this->post(route('reports.vat-return.reopen'), $reopen)->assertSessionHasErrors(['month' => 'The books are locked up to 31 Aug 2026. Ask an admin to change the lock date if you need to change this.']);
 
         $admin = $this->admin();
-        $admin->givePermissionTo('file vat-returns', 'view reports');
+        $admin->givePermissionTo('file vat-returns', 'view reports', Permission::findOrCreate('view vat-returns', 'web'));
         $this->actingAs($admin);
         $this->lock('2026-08-31', '2026-08-31');
         $this->post(route('reports.vat-return.reopen'), $reopen)->assertSessionHasErrors('month');
@@ -523,7 +523,7 @@ class LockDatesTest extends TestCase
 
     public function test_a_vat_return_cannot_be_reopened_while_a_later_month_is_filed_or_by_another_business(): void
     {
-        $this->user->givePermissionTo(Permission::findOrCreate('file vat-returns', 'web'), Permission::findOrCreate('view reports', 'web'));
+        $this->user->givePermissionTo(Permission::findOrCreate('file vat-returns', 'web'), Permission::findOrCreate('view reports', 'web'), Permission::findOrCreate('view vat-returns', 'web'));
         $this->filedAugust();
         app(FileVatReturn::class)->handle($this->tenant->id, '2026-09', [], $this->user->id);
 
@@ -533,7 +533,7 @@ class LockDatesTest extends TestCase
 
         auth()->logout();
         [$other] = $this->createTenantWithSubscription();
-        $this->actingAs($this->createUserForTenant($other, ['file vat-returns', 'view reports']));
+        $this->actingAs($this->createUserForTenant($other, ['file vat-returns', 'view reports', 'view vat-returns']));
         $this->post(route('reports.vat-return.reopen'), ['month' => '2026-09', 'reason' => 'Not my return at all'])
             ->assertSessionHasErrors(['month' => 'The VAT return for this month hasn\'t been filed.']);
         $this->assertSame(2, VatReturnFiling::withoutGlobalScopes()->count());

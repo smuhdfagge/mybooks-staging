@@ -276,8 +276,15 @@ class DashboardTest extends TestCase
             'status' => 'unpaid', 'subtotal' => 1000, 'tax_amount' => 75, 'total' => 1075, 'balance_due' => 1075,
         ]));
 
+        // "view reports" alone (the Sales role) doesn't bring the VAT return to-do.
         $titles = array_column($this->dashboard()->attention($user), 'title');
         $this->assertContains('1 invoice overdue', $titles);
+        $this->assertNotContains('VAT return for September due 21 Oct', $titles);
+
+        $user->givePermissionTo(Permission::findOrCreate('view vat-returns', 'web'));
+        $user->forgetCachedPermissions();
+        $user = $user->fresh();
+        $titles = array_column($this->dashboard()->attention($user), 'title');
         $this->assertContains('VAT return for September due 21 Oct', $titles);
 
         // Filing September's return takes it off the list.

@@ -116,7 +116,7 @@ class DatabaseSeeder extends Seeder
             'view fixed-asset-categories', 'create fixed-asset-categories', 'edit fixed-asset-categories', 'delete fixed-asset-categories',
 
             // Reports
-            'view reports', 'export reports', 'file vat-returns',
+            'view reports', 'export reports', 'view vat-returns', 'file vat-returns',
 
             // Settings
             'view settings', 'edit settings',
@@ -178,7 +178,7 @@ class DatabaseSeeder extends Seeder
             'view withholding-tax', 'manage withholding-tax', 'remit withholding-tax',
             'view accrual-schedules', 'create accrual-schedules', 'edit accrual-schedules',
             'view fixed-assets', 'create fixed-assets', 'edit fixed-assets', 'depreciate fixed-assets',
-            'view reports', 'export reports', 'file vat-returns',
+            'view reports', 'export reports', 'view vat-returns', 'file vat-returns',
             'export data', 'import data',
             'override lock-date',
             'view e-invoices', 'submit e-invoices',
@@ -230,7 +230,7 @@ class DatabaseSeeder extends Seeder
             'view employees', 'view departments', 'view designations', 'view leaves', 'view payroll',
             'view chart-of-accounts', 'view journals',
             'view banks', 'view withholding-tax', 'view accrual-schedules',
-            'view reports',
+            'view reports', 'view vat-returns',
         ]);
     }
 

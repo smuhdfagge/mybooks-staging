@@ -7,6 +7,7 @@ use App\Models\Export;
 use App\Services\ExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class ExportController extends Controller
 {
@@ -22,15 +23,18 @@ class ExportController extends Controller
      */
     public function index()
     {
+        // Only exports of records this person may see (audit MB-06).
         $exports = Export::where('tenant_id', auth()->user()->tenant_id)
+            ->whereIn('type', array_keys(Export::getExportTypesFor(auth()->user())))
             ->orderByDesc('created_at')
             ->paginate(25);
 
         $exportTypes = Export::getExportTypes();
+        $allowedTypes = Export::getExportTypesFor(auth()->user());
         $formats = Export::getFormats();
         $backupFormats = Export::getBackupFormats();
 
-        return view('exports.index', compact('exports', 'exportTypes', 'formats', 'backupFormats'));
+        return view('exports.index', compact('exports', 'exportTypes', 'allowedTypes', 'formats', 'backupFormats'));
     }
 
     /**
@@ -38,8 +42,8 @@ class ExportController extends Controller
      */
     public function create(Request $request)
     {
-        $type = $request->get('type', Export::TYPE_CUSTOMERS);
-        $exportTypes = Export::getExportTypes();
+        $exportTypes = Export::getExportTypesFor(auth()->user());
+        $type = $request->get('type', array_key_first($exportTypes));
         $formats = $type === Export::TYPE_FULL_BACKUP
             ? Export::getBackupFormats()
             : Export::getFormats();
@@ -58,8 +62,9 @@ class ExportController extends Controller
             'date_from' => 'nullable|date',
             'date_to' => 'nullable|date|after_or_equal:date_from',
             'included_data' => 'nullable|array',
-            'included_data.*' => 'string',
+            'included_data.*' => ['string', Rule::in(array_keys(Export::PERMISSIONS))],
         ]);
+        $this->authorizeType($validated['type'], $validated['included_data'] ?? null);
 
         // Validate format based on type
         $allowedFormats = $validated['type'] === Export::TYPE_FULL_BACKUP
@@ -104,6 +109,7 @@ class ExportController extends Controller
             'type' => 'required|string|in:'.implode(',', array_keys(Export::getExportTypes())),
             'format' => 'required|string|in:csv,json',
         ]);
+        $this->authorizeType($validated['type']);
 
         $export = Export::create([
             'tenant_id' => auth()->user()->tenant_id,
@@ -124,10 +130,8 @@ class ExportController extends Controller
      */
     public function download(Export $export)
     {
-        // Ensure user can only download their tenant's exports
-        if ($export->tenant_id !== auth()->user()->tenant_id) {
-            abort(403);
-        }
+        // This business's export, of records this person may see.
+        abort_unless($export->isAllowedFor(auth()->user()), 403);
 
         if (! $export->isDownloadable()) {
             return back()->with('error', 'Export is not available for download.');
@@ -158,9 +162,7 @@ class ExportController extends Controller
      */
     public function show(Export $export)
     {
-        if ($export->tenant_id !== auth()->user()->tenant_id) {
-            abort(403);
-        }
+        abort_unless($export->isAllowedFor(auth()->user()), 403);
 
         return view('exports.show', compact('export'));
     }
@@ -170,9 +172,7 @@ class ExportController extends Controller
      */
     public function destroy(Export $export)
     {
-        if ($export->tenant_id !== auth()->user()->tenant_id) {
-            abort(403);
-        }
+        abort_unless($export->isAllowedFor(auth()->user()), 403);
 
         // Delete the file if it exists
         if ($export->file_path && Storage::disk('exports')->exists($export->file_path)) {
@@ -201,8 +201,9 @@ class ExportController extends Controller
      */
     public function backup()
     {
+        abort_unless(auth()->user()->can(Export::BACKUP_PERMISSION), 403);
         $backupFormats = Export::getBackupFormats();
-        $dataTypes = [
+        $dataTypes = array_filter([
             'customers' => 'Customers',
             'vendors' => 'Vendors',
             'items' => 'Items & Inventory',
@@ -214,7 +215,7 @@ class ExportController extends Controller
             'journals' => 'Journal Entries',
             'chart_of_accounts' => 'Chart of Accounts',
             'activity_logs' => 'Activity Logs',
-        ];
+        ], fn ($part) => Export::allowedFor(auth()->user(), $part), ARRAY_FILTER_USE_KEY);
 
         return view('exports.backup', compact('backupFormats', 'dataTypes'));
     }
@@ -227,8 +228,9 @@ class ExportController extends Controller
         $validated = $request->validate([
             'format' => 'required|string|in:'.implode(',', array_keys(Export::getBackupFormats())),
             'included_data' => 'required|array|min:1',
-            'included_data.*' => 'string',
+            'included_data.*' => ['string', Rule::in(array_keys(Export::PERMISSIONS))],
         ]);
+        $this->authorizeType(Export::TYPE_FULL_BACKUP, $validated['included_data']);
 
         $export = Export::create([
             'tenant_id' => auth()->user()->tenant_id,
@@ -243,5 +245,16 @@ class ExportController extends Controller
 
         return redirect()->route('exports.index')
             ->with('success', 'Your backup is being prepared. It will be ready to download below when it finishes.');
+    }
+
+    /**
+     * Each kind of record needs its own view permission; "export reports"
+     * alone only opens this screen (audit MB-06).
+     *
+     * @param  array<int, string>|null  $included
+     */
+    protected function authorizeType(string $type, ?array $included = null): void
+    {
+        abort_unless(Export::allowedFor(auth()->user(), $type, $included), 403, 'You do not have permission to export these records.');
     }
 }
