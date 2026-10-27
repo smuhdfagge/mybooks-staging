@@ -30,7 +30,7 @@
 
                             <div x-data="searchableSelect({
                                 items: {{ json_encode($customers->map(fn($c) => ['id' => $c->id, 'name' => $c->name . ($c->company_name ? " ({$c->company_name})" : '')])) }},
-                                selected: '{{ old('customer_id', $salesReceipt->customer_id) }}',
+                                selected: @jsText(old('customer_id', $salesReceipt->customer_id)),
                                 placeholder: 'Walk-in Customer'
                             })">
                                 <label for="customer_id" class="form-label">Customer</label>

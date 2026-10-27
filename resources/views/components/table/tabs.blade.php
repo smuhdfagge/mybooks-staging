@@ -11,7 +11,7 @@
         @foreach ($tabs as $key => $tab)
             @php $on = (string) $active === (string) $key; @endphp
             @php $tag = isset($tab['href']) ? 'a' : 'button'; @endphp
-            <{{ $tag }} @if (isset($tab['href'])) href="{{ $tab['href'] }}" @else type="button" wire:click="$set('{{ $model }}', '{{ $key }}')" @endif @if ($on) aria-current="true" @endif
+            <{{ $tag }} @if (isset($tab['href'])) href="{{ $tab['href'] }}" @else type="button" wire:click="$set(@jsText($model), @jsText($key))" @endif @if ($on) aria-current="true" @endif
                 class="-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 {{ $on ? 'border-brand-600 font-semibold text-gray-900 dark:border-brand-300 dark:text-white' : 'border-transparent font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white' }}">
                 {{ $tab['label'] }}
                 @isset($tab['count'])
@@ -24,7 +24,7 @@
         @foreach ($tabs as $key => $tab)
             @php $on = (string) $active === (string) $key; @endphp
             @php $tag = isset($tab['href']) ? 'a' : 'button'; @endphp
-            <{{ $tag }} @if (isset($tab['href'])) href="{{ $tab['href'] }}" @else type="button" wire:click="$set('{{ $model }}', '{{ $key }}')" @endif @if ($on) aria-current="true" @endif
+            <{{ $tag }} @if (isset($tab['href'])) href="{{ $tab['href'] }}" @else type="button" wire:click="$set(@jsText($model), @jsText($key))" @endif @if ($on) aria-current="true" @endif
                 class="whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-medium {{ $on ? 'border-brand-900 bg-brand-900 text-white dark:border-brand-300 dark:bg-brand-300 dark:text-brand-950' : 'border-gray-300 bg-white text-gray-800 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200' }}">
                 {{ $tab['label'] }}@if (isset($tab['count']) && $key !== '') <span class="tabular-nums">{{ number_format($tab['count']) }}</span>@endif
             </{{ $tag }}>

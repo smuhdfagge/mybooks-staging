@@ -13,7 +13,7 @@
                     Only naira accounts can be linked. {{ $limitSummary }}
                 </p>
 
-                <form method="POST" action="{{ route('bank-feeds.start') }}" class="mt-6 space-y-5" x-data="{ mode: '{{ $selected || $banks->isNotEmpty() ? 'existing' : 'new' }}' }">
+                <form method="POST" action="{{ route('bank-feeds.start') }}" class="mt-6 space-y-5" x-data="{ mode: @jsText($selected || $banks->isNotEmpty() ? 'existing' : 'new') }">
                     @csrf
                     <fieldset>
                         <legend class="form-label">Which MyBooks account should it fill?</legend>

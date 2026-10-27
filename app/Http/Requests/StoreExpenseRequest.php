@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Expense;
+use App\Support\PaymentMethods;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -33,7 +34,7 @@ class StoreExpenseRequest extends FormRequest
             'paid_through_id' => ['nullable', Rule::exists('chart_of_accounts', 'id')->where('tenant_id', $tenantId)],
             'bank_id' => ['nullable', Rule::exists('banks', 'id')->where('tenant_id', $tenantId)],
             'customer_id' => ['nullable', Rule::exists('customers', 'id')->where('tenant_id', $tenantId)],
-            'payment_method' => ['nullable', 'string', 'max:50'],
+            'payment_method' => ['nullable', PaymentMethods::rule()],
             'reference' => ['nullable', 'string', 'max:100'],
             'description' => ['nullable', 'string'],
             'notes' => ['nullable', 'string'],

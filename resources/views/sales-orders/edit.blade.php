@@ -29,7 +29,7 @@
 
                             <div x-data="searchableSelect({
                                 items: {{ json_encode($customers->map(fn($c) => ['id' => $c->id, 'name' => $c->name . ($c->company_name ? " ({$c->company_name})" : '')])) }},
-                                selected: '{{ old('customer_id', $salesOrder->customer_id) }}',
+                                selected: @jsText(old('customer_id', $salesOrder->customer_id)),
                                 placeholder: 'Select Customer'
                             })">
                                 <label for="customer_id" class="form-label">Customer <span class="text-red-600 dark:text-red-300">*</span></label>

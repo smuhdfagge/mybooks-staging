@@ -15,7 +15,7 @@
 @endphp
 
 <th scope="col" aria-sort="{{ $ariaSort }}" {{ $attributes }}>
-    <button type="button" wire:click="{{ $action }}('{{ $field }}')"
+    <button type="button" wire:click="{{ $action }}(@jsText($field))"
         class="btn-secondary">
         <span>{{ $slot }}</span>
         <svg aria-hidden="true" class="w-4 h-4 {{ $active ? '' : 'invisible' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -55,7 +55,7 @@
 
                             <div x-data="searchableSelect({
                                 items: {{ json_encode($vendors->map(fn($v) => ['id' => $v->id, 'name' => $v->name . ($v->company_name ? " ({$v->company_name})" : '')])) }},
-                                selected: '{{ old('vendor_id', $recurrentExpense->vendor_id) }}',
+                                selected: @jsText(old('vendor_id', $recurrentExpense->vendor_id)),
                                 placeholder: 'Select Vendor (Optional)'
                             })">
                                 <label for="vendor_id" class="form-label">Vendor</label>

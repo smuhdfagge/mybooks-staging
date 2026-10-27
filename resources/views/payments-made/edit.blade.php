@@ -58,7 +58,7 @@
                         </div>
 
                         <!-- Payment Method -->
-                        <div x-data="{ paymentMethod: '{{ old('payment_method', $paymentMade->payment_method) }}' }">
+                        <div x-data="{ paymentMethod: @jsText(old('payment_method', $paymentMade->payment_method)) }">
                             <label for="payment_method" class="form-label">Payment Method <span class="text-red-600 dark:text-red-300">*</span></label>
                             <select name="payment_method" id="payment_method" required x-model="paymentMethod"
                                 class="form-control @error('payment_method') border-red-500 @enderror" @error('payment_method') aria-invalid="true" aria-describedby="payment_method-error" @enderror>

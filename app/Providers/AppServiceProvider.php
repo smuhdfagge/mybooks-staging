@@ -88,6 +88,11 @@ class AppServiceProvider extends ServiceProvider
         Blade::directive('fig', fn (string $expression) => "<?php echo e(\\App\\Support\\Figure::show({$expression})); ?>");
         Blade::directive('moneyWhole', fn (string $expression) => "<?php echo e(\\App\\Support\\Money::whole({$expression})); ?>");
         Blade::directive('currencySymbol', fn () => '<?php echo e(\\App\\Support\\Money::symbol()); ?>');
+        // A value as a JavaScript string inside an Alpine/Livewire attribute or a
+        // script: @jsText($value). Never '{{ $value }}': the browser decodes
+        // &#039; before Alpine runs the expression, so a quote breaks out (audit
+        // MB-03/MB-04). Null and arrays become ''.
+        Blade::directive('jsText', fn (string $expression) => "<?php echo \\Illuminate\\Support\\Js::from(\\App\\Support\\JsText::of({$expression})); ?>");
 
         // Configure password strength defaults (NIST 800-63B compliant)
         Password::defaults(function () {

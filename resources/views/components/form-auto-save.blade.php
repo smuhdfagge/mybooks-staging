@@ -3,7 +3,7 @@
 {{-- The component saves all form inputs to localStorage on change and restores them on load --}}
 @props(['formKey'])
 
-<div x-data="formAutoSave('{{ $formKey }}')" x-init="restore()" @input.debounce.1000ms="save()" class="relative">
+<div x-data="formAutoSave(@jsText($formKey))" x-init="restore()" @input.debounce.1000ms="save()" class="relative">
     {{-- Auto-save indicator --}}
     <div x-show="showSaved" 
          x-transition:enter="transition ease-out duration-300"

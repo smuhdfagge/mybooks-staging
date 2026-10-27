@@ -51,7 +51,7 @@
 
                             <div x-data="searchableSelect({
                                 items: @js($vendors->map(fn ($vendor) => ['id' => (string) $vendor->id, 'name' => $vendor->name . ($vendor->company_name ? " (" . ($vendor->company_name) . ")" : "")])->values()),
-                                selectedId: '{{ old('vendor_id') }}'
+                                selectedId: @jsText(old('vendor_id'))
                             })" class="relative">
                                 <label for="vendor_search" class="form-label">Vendor</label>
                                 <input type="hidden" name="vendor_id" :value="selectedId" @error('vendor_id') aria-invalid="true" aria-describedby="vendor_id-error" @enderror>

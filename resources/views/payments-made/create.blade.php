@@ -30,7 +30,7 @@
                         <!-- Vendor -->
                         <div x-data="searchableSelect({
                             items: @js($vendors->map(fn ($vendor) => ['id' => (string) $vendor->id, 'name' => (string) $vendor->name])->values()),
-                            selectedId: '{{ old('vendor_id', $bill?->vendor_id) }}',
+                            selectedId: @jsText(old('vendor_id', $bill?->vendor_id)),
                             onSelect: (id) => { selectedVendor = id; filterBills(); whtCategoryId = ''; deductWht = !!(vendors[id] && vendors[id].wht_category_id && !vendors[id].wht_exempt); recalculate(); }
                         })" class="relative">
                             <label for="vendor_search" class="form-label">Vendor <span class="text-red-600 dark:text-red-300">*</span></label>
@@ -149,7 +149,7 @@
                         </div>
 
                         <!-- Payment Method -->
-                        <div x-data="{ paymentMethod: '{{ old('payment_method', '') }}' }">
+                        <div x-data="{ paymentMethod: @jsText(old('payment_method', '')) }">
                             <label for="payment_method" class="form-label">Payment Method <span class="text-red-600 dark:text-red-300">*</span></label>
                             <select name="payment_method" id="payment_method" required x-model="paymentMethod"
                                 class="form-control @error('payment_method') border-red-500 @enderror" @error('payment_method') aria-invalid="true" aria-describedby="payment_method-error" @enderror>
@@ -278,17 +278,17 @@
         @endphp
         function paymentForm() {
             return {
-                selectedVendor: '{{ old('vendor_id', $bill?->vendor_id ?? '') }}',
-                selectedBill: '{{ old('bill_id', $bill?->id ?? '') }}',
+                selectedVendor: @jsText(old('vendor_id', $bill?->vendor_id ?? '')),
+                selectedBill: @jsText(old('bill_id', $bill?->id ?? '')),
                 allBills: @json($unpaidBills),
                 filteredBills: [],
-                amount: '{{ old('amount', $bill?->balance_due) }}',
+                amount: @jsText(old('amount', $bill?->balance_due)),
                 // Withholding tax (worked out on the amount before VAT).
                 vendors: @json($whtVendors),
                 categories: @json($whtCategories),
                 deductWht: {{ old('wht_category_id') || old('wht_amount') ? 'true' : 'false' }},
-                whtCategoryId: '{{ old('wht_category_id') }}',
-                whtAmount: '{{ old('wht_amount') }}',
+                whtCategoryId: @jsText(old('wht_category_id')),
+                whtAmount: @jsText(old('wht_amount')),
 
                 init() {
                     this.filterBills();

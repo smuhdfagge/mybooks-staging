@@ -128,7 +128,7 @@
                     return 'You can make up to ' + this.qty(this.info.max) + ' now';
                 },
                 qty(value) { return Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 4 }); },
-                money(value) { return '{{ \App\Support\Money::symbol() }}' + Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
+                money(value) { return @jsText(\App\Support\Money::symbol()) + Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
             };
         }
     </script>

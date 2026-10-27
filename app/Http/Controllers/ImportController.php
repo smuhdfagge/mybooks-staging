@@ -38,8 +38,10 @@ class ImportController extends Controller
      */
     public function create(Request $request)
     {
-        $type = $request->get('type');
         $importTypes = Import::getSupportedImportTypes();
+        // Only a type on offer is preselected (audit MB-04).
+        $type = $request->query('type');
+        $type = is_string($type) && array_key_exists($type, $importTypes) ? $type : null;
         $formats = Import::getFormats();
 
         return view('imports.create', compact('type', 'importTypes', 'formats'));

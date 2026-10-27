@@ -9,8 +9,10 @@ use App\Models\Role;
 use App\Models\Tenant;
 use App\Services\AccountCodeService;
 use App\Services\Accounting\FinancialStatements;
+use App\Support\PaymentMethods;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Read-only report of data the October 2026 audit says may already be
@@ -20,7 +22,9 @@ use Illuminate\Support\Collection;
  *   the amount was counted twice);
  * - Prepaid Expenses or Deferred Revenue below zero (the same cause);
  * - custom roles holding user, role or report permissions (MB-05, MB-06);
- * - banks whose balance differs from their ledger account (MB-08).
+ * - banks whose balance differs from their ledger account (MB-08);
+ * - payments, receipts and expenses whose payment method is not on the
+ *   list (MB-03: it was free text and could hold script).
  *
  * Nothing is changed.
  */
@@ -54,7 +58,8 @@ class AuditAffectedData extends Command
             $flagged += $this->linkedSchedules($tenant->id)
                 + $this->negativeBalances($tenant->id, $ledger)
                 + $this->sensitiveRoles($tenant->id)
-                + $this->bankDifferences($tenant->id, $ledger);
+                + $this->bankDifferences($tenant->id, $ledger)
+                + $this->unknownPaymentMethods($tenant->id);
         }
 
         $this->newLine();
@@ -120,6 +125,28 @@ class AuditAffectedData extends Command
             ->map(fn ($row) => [...array_slice($row, 0, 4), $row[4] === null ? 'no ledger account' : number_format($row[4], 2)]);
 
         return $this->section('Banks whose balance differs from the ledger', ['Bank', 'Account', 'Bank balance', 'Ledger balance', 'Difference'], $rows->values()->all());
+    }
+
+    protected function unknownPaymentMethods(int $tenantId): int
+    {
+        $allowed = [...PaymentMethods::selectable(), ...PaymentMethods::INTERNAL];
+        $rows = [];
+        foreach (['payments_received', 'payments_made', 'sales_receipts', 'expenses'] as $table) {
+            DB::table($table)
+                ->where('tenant_id', $tenantId)
+                ->whereNotNull('payment_method')
+                ->whereNotIn('payment_method', $allowed)
+                ->selectRaw('payment_method, count(*) as n')
+                ->groupBy('payment_method')
+                ->orderBy('payment_method')
+                ->get()
+                // The value itself may be hostile; show it as JSON so it can't do anything in a terminal.
+                ->each(function ($row) use ($table, &$rows) {
+                    $rows[] = [$table, json_encode(mb_strimwidth($row->payment_method, 0, 60, '…')), $row->n];
+                });
+        }
+
+        return $this->section('Payment methods not on the list', ['Table', 'Value', 'Rows'], $rows);
     }
 
     /** @param array<int, array<int, mixed>> $rows */

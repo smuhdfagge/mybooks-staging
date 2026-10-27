@@ -13,6 +13,7 @@ use App\Services\BankService;
 use App\Services\PaymentValidation;
 use App\Support\Money;
 use App\Support\PaymentDocument;
+use App\Support\PaymentMethods;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -74,7 +75,7 @@ class PaymentMadeController extends Controller
         $validated = $request->validate([
             'payment_date' => 'required|date',
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|string|max:50',
+            'payment_method' => ['required', PaymentMethods::ruleKeeping($paymentMade->payment_method)],
             'bank_id' => ['nullable', Rule::exists('banks', 'id')->where('tenant_id', $tenantId)],
             'reference' => 'nullable|string|max:100',
             'notes' => 'nullable|string',

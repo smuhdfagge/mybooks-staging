@@ -35,7 +35,7 @@
                             <div x-data="searchableSelect({
                                 items: @js($vendorOptions),
                                 url: @js(route('lookup.vendors')),
-                                selectedId: '{{ old('vendor_id', request('vendor_id', $purchaseOrder?->vendor_id)) }}'
+                                selectedId: @jsText(old('vendor_id', request()->integer('vendor_id') ?: $purchaseOrder?->vendor_id))
                             })" class="relative">
                                 <label for="vendor_search" class="form-label">Vendor <span class="text-red-600 dark:text-red-300">*</span></label>
                                 <input type="hidden" name="vendor_id" :value="selectedId" required @error('vendor_id') aria-invalid="true" aria-describedby="vendor_id-error" @enderror>
