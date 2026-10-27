@@ -1021,7 +1021,6 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::get('journals/{journal}/edit', [JournalController::class, 'edit'])->name('journals.edit');
         Route::put('journals/{journal}', [JournalController::class, 'update'])->name('journals.update');
         Route::patch('journals/{journal}', [JournalController::class, 'update']);
-        Route::get('bulk-update', [JournalController::class, 'bulkUpdate'])->name('journals.bulk-update');
     });
     Route::delete('journals/{journal}', [JournalController::class, 'destroy'])
         ->middleware('permission:delete journals')

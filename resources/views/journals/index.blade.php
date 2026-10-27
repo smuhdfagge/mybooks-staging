@@ -2,7 +2,6 @@
     <x-slot name="header">
         <x-table.page-header title="Journals" :description="'Every entry in your books: the ones you make by hand and the ones invoices, bills and payments make. Amounts in '.\App\Support\Money::symbol().'.'">
             <x-slot name="more">
-                @can('edit journals')<x-table.menu-item :href="route('journals.bulk-update')">Post, export or import in bulk</x-table.menu-item>@endcan
                 @can('view reports')<x-table.menu-item :href="route('reports.general-ledger')">General ledger</x-table.menu-item>@endcan
             </x-slot>
             <x-slot name="actions">
