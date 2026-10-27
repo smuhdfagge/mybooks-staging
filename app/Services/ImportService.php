@@ -2,7 +2,10 @@
 
 namespace App\Services;
 
+use App\Actions\Bills\SaveBill;
 use App\Actions\Inventory\AdjustStock;
+use App\Actions\Invoices\SaveInvoice;
+use App\Enums\BillStatus;
 use App\Models\Budget;
 use App\Models\BudgetLine;
 use App\Models\ChartOfAccount;
@@ -23,6 +26,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\LazyCollection;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ImportService
@@ -82,6 +86,9 @@ class ImportService
                 Import::TYPE_VENDORS => $this->importVendors($import, $data),
                 Import::TYPE_ITEMS => $this->importItems($import, $data),
                 Import::TYPE_CHART_OF_ACCOUNTS => $this->importChartOfAccounts($import, $data),
+                Import::TYPE_INVOICES => $this->importInvoices($import, $data),
+                Import::TYPE_BILLS => $this->importBills($import, $data),
+                Import::TYPE_JOURNALS => $this->importJournals($import, $data),
                 Import::TYPE_EXPENSES => $this->importExpenses($import, $data),
                 Import::TYPE_EMPLOYEES => $this->importEmployees($import, $data),
                 Import::TYPE_OPENING_BALANCES => $this->importOpeningBalances($import, $data),
@@ -652,8 +659,19 @@ class ImportService
         $failed = 0;
         $skipped = 0;
 
-        // Valid account types
-        $validTypes = ['asset', 'liability', 'equity', 'revenue', 'expense'];
+        // The five types the accounts themselves use. This list said
+        // "revenue" where the system says "income", so an income account
+        // could not be imported at all: writing "income" was refused here,
+        // and writing "revenue" was refused by the column. The template
+        // told people to write "revenue", so the Sales Revenue row in it
+        // could never import.
+        $validTypes = [
+            ChartOfAccount::TYPE_ASSET,
+            ChartOfAccount::TYPE_LIABILITY,
+            ChartOfAccount::TYPE_EQUITY,
+            ChartOfAccount::TYPE_INCOME,
+            ChartOfAccount::TYPE_EXPENSE,
+        ];
 
         // First pass: create all accounts without parents
         $createdAccounts = [];
@@ -670,8 +688,19 @@ class ImportService
                     continue;
                 }
 
-                $type = strtolower($mapped['type']);
-                if (! in_array($type, $validTypes)) {
+                // What other software calls the same thing. A file exported
+                // from elsewhere says "revenue" or "sales" far more often
+                // than "income".
+                $type = match (strtolower(trim((string) $mapped['type']))) {
+                    'revenue', 'sales', 'income' => ChartOfAccount::TYPE_INCOME,
+                    'liabilities', 'liability' => ChartOfAccount::TYPE_LIABILITY,
+                    'assets', 'asset' => ChartOfAccount::TYPE_ASSET,
+                    'expenses', 'expense' => ChartOfAccount::TYPE_EXPENSE,
+                    'capital', 'equity' => ChartOfAccount::TYPE_EQUITY,
+                    default => strtolower(trim((string) $mapped['type'])),
+                };
+
+                if (! in_array($type, $validTypes, true)) {
                     $this->errors[] = "Row {$rowNum}: Invalid account type '{$mapped['type']}'. Must be one of: ".implode(', ', $validTypes);
                     $failed++;
 
@@ -1223,6 +1252,651 @@ class ImportService
     }
 
     /**
+     * The rows that belong to each document, in the order they appear.
+     *
+     * Invoices, bills and journals take several rows each, one per line,
+     * tied together by a document number in a column. The rows of one
+     * document do not have to sit next to each other, because files come
+     * out of other software sorted every which way.
+     *
+     * @param  array<string, string>  $mapping
+     * @return array{groups: array<string, array<int, array<string, mixed>>>, missing: array<int, int>}
+     */
+    protected function groupDocuments(iterable $data, array $mapping, string $key, Import $import): array
+    {
+        $groups = [];
+        $missing = [];
+
+        foreach ($data as $index => $row) {
+            $rowNum = $index + 2;
+            $mapped = ! empty($mapping) ? $this->mapRow($row, $mapping) : $row;
+
+            $number = trim((string) ($mapped[$key] ?? ''));
+            if ($number === '') {
+                $missing[] = $rowNum;
+            } else {
+                // Carried on the row so every message can name the line in
+                // the file the person is looking at.
+                $mapped['__row'] = $rowNum;
+                $groups[$number][] = $mapped;
+            }
+
+            $this->reportProgress($import, $index + 1);
+        }
+
+        return ['groups' => $groups, 'missing' => $missing];
+    }
+
+    /**
+     * An amount that may be left blank.
+     *
+     * Blank is nothing, so zero. Something that cannot be read has to stop
+     * the row instead: read as zero it would quietly drop out of the
+     * totals and the document would look perfectly correct.
+     */
+    protected function amountOrZero(mixed $value): ?float
+    {
+        return $this->parseAmount($value) ?? ($this->blank($value) ? 0.0 : null);
+    }
+
+    /**
+     * Every item, by name and by SKU, for matching what a file calls things.
+     *
+     * @return array<string, Item>
+     */
+    protected function itemsByNameAndSku(): array
+    {
+        $items = [];
+        $all = Item::where('tenant_id', $this->tenantId)->get();
+
+        foreach ($all as $item) {
+            $items[mb_strtolower(trim((string) $item->name))] = $item;
+        }
+        // A name wins over an SKU that happens to read the same.
+        foreach ($all as $item) {
+            if (! $this->blank($item->sku)) {
+                $items[mb_strtolower(trim((string) $item->sku))] ??= $item;
+            }
+        }
+
+        return $items;
+    }
+
+    /**
+     * The state a document is imported in, taken from its own column.
+     *
+     * A document can only start in a state the form itself offers. "Paid"
+     * is not one of them: what makes a document paid is a payment, with a
+     * date and an account behind it, and inventing one would put money
+     * through an account nobody chose. So a paid document comes in unpaid
+     * and its payment is recorded afterwards — said plainly here, rather
+     * than quietly changed.
+     *
+     * @param  array<int, string>  $allowed  the states the form offers, the usual one first
+     */
+    protected function documentStatus(mixed $value, array $allowed, int $rowNum, string $what): ?string
+    {
+        $status = mb_strtolower(trim((string) $value));
+
+        if ($status === '') {
+            return $allowed[0];
+        }
+
+        // The words other software writes for the same thing.
+        $status = match ($status) {
+            'open', 'pending', 'awaiting payment', 'outstanding', 'approved' => 'unpaid',
+            'issued' => 'sent',
+            default => $status,
+        };
+
+        if (in_array($status, $allowed, true)) {
+            return $status;
+        }
+
+        if (in_array($status, ['paid', 'partial', 'partially paid', 'part paid', 'overdue', 'cancelled'], true)) {
+            $this->errors[] = "Row {$rowNum}: a {$what} cannot be imported as '{$status}'. Import it as unpaid, then record the "
+                .'payment, so the money goes through an account you choose.';
+
+            return null;
+        }
+
+        $this->errors[] = "Row {$rowNum}: '{$status}' is not a status I know. Use ".implode(' or ', $allowed).'.';
+
+        return null;
+    }
+
+    /**
+     * The lines of one invoice or bill, read from its rows.
+     *
+     * A line naming an item the business does not have is still a line:
+     * the same as typing one straight onto the form. It carries no item,
+     * so it moves no stock, and nothing is counted that is not there.
+     *
+     * @param  array<int, array<string, mixed>>  $rows
+     * @param  array<string, Item>  $items
+     * @param  array<string, ChartOfAccount>  $accounts  bills only: a line can name an account instead of an item
+     * @return array{lines: array<int, array<string, mixed>>, ok: bool}
+     */
+    protected function documentLines(array $rows, array $items, array $accounts = []): array
+    {
+        $lines = [];
+        $ok = true;
+
+        foreach ($rows as $row) {
+            $rowNum = (int) ($row['__row'] ?? 0);
+            $name = trim((string) ($row['item'] ?? ''));
+            $description = trim((string) ($row['description'] ?? ''));
+
+            if ($name === '' && $description === '') {
+                $this->errors[] = "Row {$rowNum}: the line needs an item or a description.";
+                $ok = false;
+
+                continue;
+            }
+
+            $item = $name === '' ? null : ($items[mb_strtolower($name)] ?? null);
+            if ($name !== '' && ! $item) {
+                $this->warnings[] = "Row {$rowNum}: '{$name}' is not on your item list, so the line was written out in words. "
+                    .'It holds no stock.';
+            }
+
+            $accountId = null;
+            $accountName = trim((string) ($row['account'] ?? ''));
+            if ($accountName !== '') {
+                $account = $accounts[mb_strtolower($accountName)] ?? null;
+                if (! $account) {
+                    $this->errors[] = "Row {$rowNum}: account '{$accountName}' not found.";
+                    $ok = false;
+
+                    continue;
+                }
+                $accountId = $account->id;
+            }
+
+            $quantity = $this->parseAmount($row['quantity'] ?? null);
+            if ($quantity === null || $quantity <= 0) {
+                $given = (string) ($row['quantity'] ?? '');
+                $this->errors[] = "Row {$rowNum}: '{$given}' is not a quantity I can read.";
+                $ok = false;
+
+                continue;
+            }
+
+            $price = $this->amountOrZero($row['unit_price'] ?? null);
+            if ($price === null || $price < 0) {
+                $given = (string) ($row['unit_price'] ?? '');
+                $this->errors[] = "Row {$rowNum}: '{$given}' is not a price I can read.";
+                $ok = false;
+
+                continue;
+            }
+
+            $taxRate = $this->amountOrZero($row['tax_rate'] ?? null);
+            if ($taxRate === null || $taxRate < 0) {
+                $given = (string) ($row['tax_rate'] ?? '');
+                $this->errors[] = "Row {$rowNum}: '{$given}' is not a VAT rate I can read. Write 7.5 for 7.5%.";
+                $ok = false;
+
+                continue;
+            }
+
+            $discount = $this->amountOrZero($row['discount'] ?? null);
+            if ($discount === null || $discount < 0) {
+                $given = (string) ($row['discount'] ?? '');
+                $this->errors[] = "Row {$rowNum}: '{$given}' is not a discount I can read.";
+                $ok = false;
+
+                continue;
+            }
+
+            $lines[] = [
+                'item_id' => $item?->id,
+                'account_id' => $accountId,
+                'description' => $description !== '' ? $description : ($item->name ?? $name),
+                'quantity' => $quantity,
+                'unit_price' => $price,
+                'discount' => $discount,
+                'tax_rate' => $taxRate,
+            ];
+        }
+
+        return ['lines' => $lines, 'ok' => $ok];
+    }
+
+    /**
+     * Import invoices, several rows to an invoice.
+     *
+     * Through the same action the invoice form uses, so an imported
+     * invoice is an invoice: VAT worked out the same way, stock reserved,
+     * the journal posted. The invoice number in the file is kept as the
+     * reference — MyBooks gives the invoice its own number from the
+     * business's sequence, so an imported invoice cannot take a number
+     * that is already spoken for.
+     */
+    protected function importInvoices(Import $import, iterable $data): bool
+    {
+        $mapping = $import->column_mapping ?? [];
+
+        $customers = [];
+        foreach (Customer::where('tenant_id', $this->tenantId)->get(['id', 'name']) as $customer) {
+            $customers[mb_strtolower(trim((string) $customer->name))] = $customer->id;
+        }
+
+        $items = $this->itemsByNameAndSku();
+        $grouped = $this->groupDocuments($data, $mapping, 'invoice_number', $import);
+
+        $successful = 0;
+        $failed = count($grouped['missing']);
+        foreach ($grouped['missing'] as $rowNum) {
+            $this->errors[] = "Row {$rowNum}: Invoice Number is required. It is what ties the lines of one invoice together.";
+        }
+
+        $action = app(SaveInvoice::class);
+
+        foreach ($grouped['groups'] as $number => $rows) {
+            $head = $rows[0];
+            $rowNum = (int) ($head['__row'] ?? 0);
+            $rowCount = count($rows);
+
+            try {
+                $name = trim((string) ($head['customer'] ?? ''));
+                if ($name === '') {
+                    $this->errors[] = "Row {$rowNum}: Customer is required for invoice {$number}.";
+                    $failed += $rowCount;
+
+                    continue;
+                }
+
+                $customerId = $customers[mb_strtolower($name)] ?? null;
+                if (! $customerId) {
+                    $customerId = Customer::create(['tenant_id' => $this->tenantId, 'name' => $name])->id;
+                    $customers[mb_strtolower($name)] = $customerId;
+                    $this->warnings[] = "Row {$rowNum}: '{$name}' was not on your customer list, so it was added.";
+                }
+
+                $date = $this->parseDate((string) ($head['date'] ?? ''));
+                if ($date === null) {
+                    $given = (string) ($head['date'] ?? '');
+                    $this->errors[] = "Row {$rowNum}: '{$given}' is not a date I can read. Use d/m/Y or Y-m-d.";
+                    $failed += $rowCount;
+
+                    continue;
+                }
+
+                $dueDate = $this->blank($head['due_date'] ?? null)
+                    ? $date
+                    : $this->parseDate((string) $head['due_date']);
+                if ($dueDate === null) {
+                    $given = (string) ($head['due_date'] ?? '');
+                    $this->errors[] = "Row {$rowNum}: '{$given}' is not a due date I can read. Use d/m/Y or Y-m-d.";
+                    $failed += $rowCount;
+
+                    continue;
+                }
+
+                $status = $this->documentStatus($head['status'] ?? null, SaveInvoice::START_STATUSES, $rowNum, 'invoice');
+                if ($status === null) {
+                    $failed += $rowCount;
+
+                    continue;
+                }
+
+                $read = $this->documentLines($rows, $items);
+                if (! $read['ok'] || $read['lines'] === []) {
+                    $this->errors[] = $read['lines'] === [] && $read['ok']
+                        ? "Row {$rowNum}: invoice {$number} has no lines."
+                        : "Invoice {$number} was not imported: some of its lines could not be read.";
+                    $failed += $rowCount;
+
+                    continue;
+                }
+
+                $action->create($this->tenantId, [
+                    'customer_id' => $customerId,
+                    'invoice_date' => $date,
+                    'due_date' => $dueDate,
+                    'reference' => $number,
+                    'notes' => $this->blank($head['notes'] ?? null) ? null : (string) $head['notes'],
+                    'status' => $status,
+                    'items' => $read['lines'],
+                ], $import->user_id);
+
+                $successful += $rowCount;
+            } catch (ValidationException $e) {
+                $this->recordValidationErrors($e, "Invoice {$number}");
+                $failed += $rowCount;
+            } catch (\Exception $e) {
+                $this->errors[] = "Invoice {$number}: ".$e->getMessage();
+                $failed += $rowCount;
+            }
+        }
+
+        $import->update([
+            'successful_rows' => $successful,
+            'failed_rows' => $failed,
+            'skipped_rows' => 0,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Import bills, several rows to a bill.
+     *
+     * Through the same action the bill form uses, so the goods go into
+     * stock and the journal is posted line by line. A line can name an
+     * account instead of an item, the way a bill for rent or diesel is
+     * entered. The vendor's own bill number is kept as the reference.
+     */
+    protected function importBills(Import $import, iterable $data): bool
+    {
+        $mapping = $import->column_mapping ?? [];
+
+        $vendors = [];
+        foreach (Vendor::where('tenant_id', $this->tenantId)->get(['id', 'name']) as $vendor) {
+            $vendors[mb_strtolower(trim((string) $vendor->name))] = $vendor->id;
+        }
+
+        $accounts = [];
+        foreach (ChartOfAccount::where('tenant_id', $this->tenantId)->get() as $account) {
+            $accounts[mb_strtolower(trim((string) $account->name))] = $account;
+            $accounts[mb_strtolower(trim((string) $account->account_code))] ??= $account;
+        }
+
+        $items = $this->itemsByNameAndSku();
+        $grouped = $this->groupDocuments($data, $mapping, 'bill_number', $import);
+
+        $successful = 0;
+        $failed = count($grouped['missing']);
+        foreach ($grouped['missing'] as $rowNum) {
+            $this->errors[] = "Row {$rowNum}: Bill Number is required. It is what ties the lines of one bill together.";
+        }
+
+        $action = app(SaveBill::class);
+
+        foreach ($grouped['groups'] as $number => $rows) {
+            $head = $rows[0];
+            $rowNum = (int) ($head['__row'] ?? 0);
+            $rowCount = count($rows);
+
+            try {
+                $name = trim((string) ($head['vendor'] ?? ''));
+                if ($name === '') {
+                    $this->errors[] = "Row {$rowNum}: Vendor is required for bill {$number}.";
+                    $failed += $rowCount;
+
+                    continue;
+                }
+
+                $vendorId = $vendors[mb_strtolower($name)] ?? null;
+                if (! $vendorId) {
+                    $vendorId = Vendor::create(['tenant_id' => $this->tenantId, 'name' => $name])->id;
+                    $vendors[mb_strtolower($name)] = $vendorId;
+                    $this->warnings[] = "Row {$rowNum}: '{$name}' was not on your vendor list, so it was added.";
+                }
+
+                $date = $this->parseDate((string) ($head['date'] ?? ''));
+                if ($date === null) {
+                    $given = (string) ($head['date'] ?? '');
+                    $this->errors[] = "Row {$rowNum}: '{$given}' is not a date I can read. Use d/m/Y or Y-m-d.";
+                    $failed += $rowCount;
+
+                    continue;
+                }
+
+                $dueDate = $this->blank($head['due_date'] ?? null)
+                    ? $date
+                    : $this->parseDate((string) $head['due_date']);
+                if ($dueDate === null) {
+                    $given = (string) ($head['due_date'] ?? '');
+                    $this->errors[] = "Row {$rowNum}: '{$given}' is not a due date I can read. Use d/m/Y or Y-m-d.";
+                    $failed += $rowCount;
+
+                    continue;
+                }
+
+                $status = $this->documentStatus($head['status'] ?? null, [BillStatus::Unpaid->value, BillStatus::Draft->value], $rowNum, 'bill');
+                if ($status === null) {
+                    $failed += $rowCount;
+
+                    continue;
+                }
+
+                $read = $this->documentLines($rows, $items, $accounts);
+                if (! $read['ok'] || $read['lines'] === []) {
+                    $this->errors[] = $read['lines'] === [] && $read['ok']
+                        ? "Row {$rowNum}: bill {$number} has no lines."
+                        : "Bill {$number} was not imported: some of its lines could not be read.";
+                    $failed += $rowCount;
+
+                    continue;
+                }
+
+                $action->create($this->tenantId, [
+                    'vendor_id' => $vendorId,
+                    'bill_date' => $date,
+                    'due_date' => $dueDate,
+                    'reference' => $number,
+                    'notes' => $this->blank($head['notes'] ?? null) ? null : (string) $head['notes'],
+                    'status' => $status,
+                    'items' => $read['lines'],
+                ], $import->user_id);
+
+                $successful += $rowCount;
+            } catch (ValidationException $e) {
+                $this->recordValidationErrors($e, "Bill {$number}");
+                $failed += $rowCount;
+            } catch (\Exception $e) {
+                $this->errors[] = "Bill {$number}: ".$e->getMessage();
+                $failed += $rowCount;
+            }
+        }
+
+        $import->update([
+            'successful_rows' => $successful,
+            'failed_rows' => $failed,
+            'skipped_rows' => 0,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Import journal entries, several rows to a journal.
+     *
+     * Each journal has to balance on its own: one journal out of balance
+     * is not imported, and the rest of the file still is. Journals arrive
+     * as drafts, the way the journal form leaves them, and are posted from
+     * the journal itself — unless the file says posted, which posts it
+     * through the same path as the button.
+     */
+    protected function importJournals(Import $import, iterable $data): bool
+    {
+        $mapping = $import->column_mapping ?? [];
+
+        $accounts = [];
+        foreach (ChartOfAccount::where('tenant_id', $this->tenantId)->get() as $account) {
+            $accounts[mb_strtolower(trim((string) $account->account_code))] = $account;
+            $accounts[mb_strtolower(trim((string) $account->name))] ??= $account;
+        }
+
+        $grouped = $this->groupDocuments($data, $mapping, 'reference', $import);
+
+        $successful = 0;
+        $failed = count($grouped['missing']);
+        foreach ($grouped['missing'] as $rowNum) {
+            $this->errors[] = "Row {$rowNum}: Reference is required. It is what ties the lines of one journal together.";
+        }
+
+        foreach ($grouped['groups'] as $reference => $rows) {
+            $head = $rows[0];
+            $rowNum = (int) ($head['__row'] ?? 0);
+            $rowCount = count($rows);
+
+            try {
+                $date = $this->parseDate((string) ($head['date'] ?? ''));
+                if ($date === null) {
+                    $given = (string) ($head['date'] ?? '');
+                    $this->errors[] = "Row {$rowNum}: '{$given}' is not a date I can read. Use d/m/Y or Y-m-d.";
+                    $failed += $rowCount;
+
+                    continue;
+                }
+
+                $wanted = mb_strtolower(trim((string) ($head['status'] ?? '')));
+                if (! in_array($wanted, ['', 'draft', 'posted'], true)) {
+                    $this->errors[] = "Row {$rowNum}: '{$wanted}' is not a status I know. Use draft or posted.";
+                    $failed += $rowCount;
+
+                    continue;
+                }
+
+                $entries = [];
+                $ok = true;
+                $totalDebit = 0.0;
+                $totalCredit = 0.0;
+
+                foreach ($rows as $row) {
+                    $lineRow = (int) ($row['__row'] ?? 0);
+                    $code = trim((string) ($row['account_code'] ?? $row['account'] ?? ''));
+
+                    if ($code === '') {
+                        $this->errors[] = "Row {$lineRow}: Account Code is required.";
+                        $ok = false;
+
+                        continue;
+                    }
+
+                    $account = $accounts[mb_strtolower($code)] ?? null;
+                    if (! $account) {
+                        $this->errors[] = "Row {$lineRow}: Account '{$code}' not found.";
+                        $ok = false;
+
+                        continue;
+                    }
+
+                    $debit = $this->amountOrZero($row['debit'] ?? null);
+                    $credit = $this->amountOrZero($row['credit'] ?? null);
+
+                    if ($debit === null || $credit === null) {
+                        $given = (string) ($debit === null ? ($row['debit'] ?? '') : ($row['credit'] ?? ''));
+                        $this->errors[] = "Row {$lineRow}: '{$given}' is not an amount I can read.";
+                        $ok = false;
+
+                        continue;
+                    }
+
+                    if ($debit == 0.0 && $credit == 0.0) {
+                        continue;
+                    }
+
+                    if ($debit != 0.0 && $credit != 0.0) {
+                        // Both on one line hides which way the entry goes, and
+                        // the two would net off into a journal that balances
+                        // while saying something else.
+                        $this->errors[] = "Row {$lineRow}: a line has either a debit or a credit, not both.";
+                        $ok = false;
+
+                        continue;
+                    }
+
+                    $entries[] = [
+                        'account_id' => $account->id,
+                        'debit' => round($debit, 2),
+                        'credit' => round($credit, 2),
+                        'description' => $this->blank($row['description'] ?? null)
+                            ? null
+                            : (string) $row['description'],
+                    ];
+
+                    $totalDebit += $debit;
+                    $totalCredit += $credit;
+                }
+
+                if (! $ok) {
+                    $this->errors[] = "Journal {$reference} was not imported: some of its lines could not be read.";
+                    $failed += $rowCount;
+
+                    continue;
+                }
+
+                if (count($entries) < 2) {
+                    $this->errors[] = "Journal {$reference} needs at least two lines, a debit and a credit.";
+                    $failed += $rowCount;
+
+                    continue;
+                }
+
+                $totalDebit = round($totalDebit, 2);
+                $totalCredit = round($totalCredit, 2);
+
+                if (abs($totalDebit - $totalCredit) >= 0.005) {
+                    $this->errors[] = "Journal {$reference} does not balance: debits "
+                        .number_format($totalDebit, 2).' against credits '.number_format($totalCredit, 2)
+                        .', a difference of '.number_format(abs($totalDebit - $totalCredit), 2)
+                        .'. It was not imported; the rest of the file still was.';
+                    $failed += $rowCount;
+
+                    continue;
+                }
+
+                DB::transaction(function () use ($reference, $date, $head, $entries, $import, $wanted) {
+                    $journal = Journal::create([
+                        'tenant_id' => $this->tenantId,
+                        'journal_number' => Journal::generateNumber($this->tenantId),
+                        'journal_date' => $date,
+                        'reference' => $reference,
+                        'description' => $this->blank($head['description'] ?? null)
+                            ? null
+                            : (string) $head['description'],
+                        'status' => 'draft',
+                        'created_by' => $import->user_id,
+                    ]);
+
+                    foreach ($entries as $entry) {
+                        JournalEntry::create(['journal_id' => $journal->id] + $entry);
+                    }
+
+                    $journal->updateTotals();
+
+                    if ($wanted === 'posted') {
+                        $journal->refresh()->post();
+                    }
+                });
+
+                $successful += $rowCount;
+            } catch (ValidationException $e) {
+                $this->recordValidationErrors($e, "Journal {$reference}");
+                $failed += $rowCount;
+            } catch (\Exception $e) {
+                $this->errors[] = "Journal {$reference}: ".$e->getMessage();
+                $failed += $rowCount;
+            }
+        }
+
+        $import->update([
+            'successful_rows' => $successful,
+            'failed_rows' => $failed,
+            'skipped_rows' => 0,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * What the action refused, said once per message rather than as one
+     * run-together line.
+     */
+    protected function recordValidationErrors(ValidationException $e, string $what): void
+    {
+        foreach ($e->errors() as $messages) {
+            foreach ((array) $messages as $message) {
+                $this->errors[] = "{$what}: {$message}";
+            }
+        }
+    }
+
+    /**
      * Import budget line items into an existing budget
      */
     public function importBudgetLines(Import $import, iterable $data, ?Budget $budget = null): bool
@@ -1534,7 +2208,7 @@ class ImportService
                 ['code' => '1000', 'name' => 'Cash', 'type' => 'asset', 'description' => 'Cash on hand'],
                 ['code' => '1100', 'name' => 'Accounts Receivable', 'type' => 'asset', 'description' => 'Money owed by customers'],
                 ['code' => '2000', 'name' => 'Accounts Payable', 'type' => 'liability', 'description' => 'Money owed to vendors'],
-                ['code' => '4000', 'name' => 'Sales Revenue', 'type' => 'revenue', 'description' => 'Income from sales'],
+                ['code' => '4000', 'name' => 'Sales Revenue', 'type' => 'income', 'description' => 'Income from sales'],
                 ['code' => '5000', 'name' => 'Cost of Goods Sold', 'type' => 'expense', 'description' => 'Direct costs'],
             ],
             Import::TYPE_EMPLOYEES => [
@@ -1545,20 +2219,29 @@ class ImportService
                 ['date' => '2026-01-05', 'account' => 'Office Supplies', 'amount' => '45000.00', 'vendor' => 'Zenith Stationery', 'reference' => 'INV-001', 'description' => 'Dates as 2026-01-05 or 05/01/2026 (day first)', 'payment_account' => '1000'],
                 ['date' => '2026-01-10', 'account' => 'Utilities', 'amount' => '128500.00', 'vendor' => 'Kano Electricity', 'reference' => 'BILL-2026-01', 'description' => 'Write amounts plainly: 128500.00', 'payment_account' => '1000'],
             ],
+            // One row per line, with the invoice number repeated: the rows
+            // sharing a number become one invoice. MyBooks gives each one
+            // its own number and keeps yours as the reference.
             Import::TYPE_INVOICES => [
-                ['invoice_number' => 'INV-001', 'customer' => 'John Doe', 'date' => '2025-01-15', 'due_date' => '2025-02-14', 'item' => 'Widget A', 'quantity' => '5', 'unit_price' => '29.99', 'description' => 'Widget order', 'tax_rate' => '10'],
-                ['invoice_number' => 'INV-001', 'customer' => 'John Doe', 'date' => '2025-01-15', 'due_date' => '2025-02-14', 'item' => 'Consulting Service', 'quantity' => '2', 'unit_price' => '150.00', 'description' => 'Setup assistance', 'tax_rate' => '0'],
-                ['invoice_number' => 'INV-002', 'customer' => 'Jane Smith', 'date' => '2025-01-20', 'due_date' => '2025-02-19', 'item' => 'Widget A', 'quantity' => '10', 'unit_price' => '29.99', 'description' => 'Bulk widget order', 'tax_rate' => '10'],
+                ['invoice_number' => 'INV-001', 'customer' => 'Danjuma Foods', 'date' => '2026-01-15', 'due_date' => '2026-02-14', 'status' => 'unpaid', 'item' => 'Bag of Rice 50kg', 'description' => 'Repeat the invoice number on every line of the same invoice', 'quantity' => '10', 'unit_price' => '95000.00', 'discount' => '', 'tax_rate' => '7.5'],
+                ['invoice_number' => 'INV-001', 'customer' => 'Danjuma Foods', 'date' => '2026-01-15', 'due_date' => '2026-02-14', 'status' => 'unpaid', 'item' => 'Monthly bookkeeping', 'description' => 'Write amounts plainly: 95000.00', 'quantity' => '1', 'unit_price' => '150000.00', 'discount' => '', 'tax_rate' => '7.5'],
+                ['invoice_number' => 'INV-002', 'customer' => 'Adaeze Nwosu', 'date' => '2026-01-20', 'due_date' => '2026-02-19', 'status' => 'draft', 'item' => '', 'description' => 'A line with no item is written out in words, and holds no stock', 'quantity' => '2', 'unit_price' => '35000.00', 'discount' => '5000.00', 'tax_rate' => '0'],
             ],
+            // One row per line, with the bill number repeated. A line can
+            // name an account instead of an item, for rent or diesel.
             Import::TYPE_BILLS => [
-                ['bill_number' => 'BILL-001', 'vendor' => 'Supply Co', 'date' => '2025-01-10', 'due_date' => '2025-02-09', 'item' => 'Raw Materials', 'quantity' => '100', 'unit_price' => '5.00', 'description' => 'Monthly supplies', 'tax_rate' => '0'],
-                ['bill_number' => 'BILL-002', 'vendor' => 'Parts Plus', 'date' => '2025-01-12', 'due_date' => '2025-02-11', 'item' => 'Equipment Parts', 'quantity' => '25', 'unit_price' => '12.50', 'description' => 'Replacement parts', 'tax_rate' => '5'],
+                ['bill_number' => 'DSL-4471', 'vendor' => 'Dangote Supplies Ltd', 'date' => '2026-01-10', 'due_date' => '2026-02-09', 'status' => 'unpaid', 'item' => 'Bag of Rice 50kg', 'account' => '', 'description' => 'Repeat the bill number on every line of the same bill', 'quantity' => '50', 'unit_price' => '82000.00', 'discount' => '', 'tax_rate' => '7.5'],
+                ['bill_number' => 'DSL-4471', 'vendor' => 'Dangote Supplies Ltd', 'date' => '2026-01-10', 'due_date' => '2026-02-09', 'status' => 'unpaid', 'item' => '', 'account' => 'Utilities', 'description' => 'Diesel for the generator', 'quantity' => '1', 'unit_price' => '128500.00', 'discount' => '', 'tax_rate' => '0'],
+                ['bill_number' => 'ZS-0092', 'vendor' => 'Zenith Stationery', 'date' => '2026-01-12', 'due_date' => '2026-02-11', 'status' => 'draft', 'item' => '', 'account' => 'Office Supplies', 'description' => 'Write amounts plainly: 45000.00', 'quantity' => '1', 'unit_price' => '45000.00', 'discount' => '', 'tax_rate' => '7.5'],
             ],
+            // One row per line, with the reference repeated: the rows
+            // sharing a reference become one journal, and each journal has
+            // to balance on its own. A line has a debit or a credit, not both.
             Import::TYPE_JOURNALS => [
-                ['date' => '2025-01-01', 'reference' => 'JE-001', 'description' => 'Owner investment', 'account_code' => '1000', 'account_name' => 'Cash', 'debit' => '10000.00', 'credit' => '0.00'],
-                ['date' => '2025-01-01', 'reference' => 'JE-001', 'description' => 'Owner investment', 'account_code' => '3000', 'account_name' => 'Owner Equity', 'debit' => '0.00', 'credit' => '10000.00'],
-                ['date' => '2025-01-05', 'reference' => 'JE-002', 'description' => 'Purchase equipment', 'account_code' => '1500', 'account_name' => 'Equipment', 'debit' => '2000.00', 'credit' => '0.00'],
-                ['date' => '2025-01-05', 'reference' => 'JE-002', 'description' => 'Purchase equipment', 'account_code' => '1000', 'account_name' => 'Cash', 'debit' => '0.00', 'credit' => '2000.00'],
+                ['reference' => 'JE-001', 'date' => '2026-01-01', 'status' => 'posted', 'description' => 'Owner investment', 'account_code' => '1000', 'debit' => '10000000.00', 'credit' => ''],
+                ['reference' => 'JE-001', 'date' => '2026-01-01', 'status' => 'posted', 'description' => 'Owner investment', 'account_code' => '3000', 'debit' => '', 'credit' => '10000000.00'],
+                ['reference' => 'JE-002', 'date' => '2026-01-05', 'status' => 'draft', 'description' => 'Generator bought for the shop', 'account_code' => '1500', 'debit' => '2400000.00', 'credit' => ''],
+                ['reference' => 'JE-002', 'date' => '2026-01-05', 'status' => 'draft', 'description' => 'Write amounts plainly: 2400000.00', 'account_code' => '1000', 'debit' => '', 'credit' => '2400000.00'],
             ],
             Import::TYPE_BUDGET_LINES => [
                 ['account_code' => '4000', 'account_name' => 'Sales Revenue', 'jan' => '5000.00', 'feb' => '5500.00', 'mar' => '6000.00', 'apr' => '5000.00', 'may' => '5500.00', 'jun' => '6000.00', 'jul' => '5000.00', 'aug' => '5500.00', 'sep' => '6000.00', 'oct' => '5500.00', 'nov' => '6000.00', 'dec' => '7000.00', 'notes' => 'Projected sales revenue'],

@@ -65,8 +65,14 @@ class ImportTypesOnOfferTest extends TestCase
     {
         $offered = Import::getSupportedImportTypes();
 
-        foreach ([Import::TYPE_INVOICES, Import::TYPE_BILLS, Import::TYPE_JOURNALS, Import::TYPE_BUDGET_LINES] as $type) {
-            $this->assertArrayNotHasKey($type, $offered);
+        // Budget lines belong to a budget and are imported from its own
+        // page, so they are not on this menu. Invoices, bills and journals
+        // were withdrawn for the same reason and now have readers, so they
+        // are back.
+        $this->assertArrayNotHasKey(Import::TYPE_BUDGET_LINES, $offered);
+
+        foreach ([Import::TYPE_INVOICES, Import::TYPE_BILLS, Import::TYPE_JOURNALS] as $type) {
+            $this->assertArrayHasKey($type, $offered);
         }
     }
 
@@ -75,7 +81,7 @@ class ImportTypesOnOfferTest extends TestCase
         $this->createAuthenticatedUser(['import data']);
 
         // Not merely hidden from the form.
-        $this->post(route('imports.upload'), ['type' => Import::TYPE_INVOICES])
+        $this->post(route('imports.upload'), ['type' => Import::TYPE_BUDGET_LINES])
             ->assertSessionHasErrors('type');
     }
 
