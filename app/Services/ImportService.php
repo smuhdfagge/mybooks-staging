@@ -178,28 +178,39 @@ class ImportService
             throw new \RuntimeException('Excel import is not available: the phpoffice/phpspreadsheet package is not installed.');
         }
 
-        $spreadsheet = IOFactory::load($path);
-        $worksheet = $spreadsheet->getActiveSheet();
-        $rows = $worksheet->toArray();
+        // Values only. Without this the reader builds every cell's fonts,
+        // borders and colours as well, which is most of the memory a large
+        // spreadsheet costs and none of what an import reads.
+        $reader = IOFactory::createReaderForFile($path);
+        $reader->setReadDataOnly(true);
+        $rows = $reader->load($path)->getActiveSheet()->toArray();
 
         if (empty($rows)) {
             return LazyCollection::empty();
         }
 
-        $headers = array_map(fn ($h) => Str::snake(trim($h ?? '')), array_shift($rows));
-        $data = [];
+        $headers = array_map(fn ($h) => Str::snake(trim((string) ($h ?? ''))), array_shift($rows));
+        $width = count($headers);
 
-        foreach ($rows as $row) {
-            if (count($row) === count($headers)) {
+        // Yielded rather than copied into a second array, so the sheet is
+        // held once instead of twice.
+        return LazyCollection::make(function () use ($rows, $headers, $width) {
+            foreach ($rows as $row) {
+                // A row used to be dropped without a word when its length
+                // did not match the header's. Spreadsheets routinely hand
+                // back a trailing empty cell, so whole rows disappeared
+                // from the import and nothing said so. Short rows are
+                // padded and long ones trimmed; only the columns named in
+                // the header are read either way.
+                $row = array_slice(array_pad($row, $width, null), 0, $width);
                 $rowData = array_combine($headers, $row);
-                // Skip completely empty rows
-                if (array_filter($rowData)) {
-                    $data[] = $rowData;
+
+                // Still skip rows that are genuinely empty.
+                if (array_filter($rowData, fn ($v) => $v !== null && trim((string) $v) !== '')) {
+                    yield $rowData;
                 }
             }
-        }
-
-        return LazyCollection::make($data);
+        });
     }
 
     /**
@@ -466,9 +477,18 @@ class ImportService
                 }
 
                 // Determine item type
-                $type = strtolower($mapped['type'] ?? 'product');
-                if (! in_array($type, ['product', 'service'])) {
-                    $type = 'product';
+                // A type we do not recognise used to become a product
+                // quietly, so "Servce" or "consultancy" was imported as
+                // something the business holds in stock and counts.
+                $type = $this->blank($mapped['type'] ?? null)
+                    ? 'product'
+                    : strtolower(trim((string) $mapped['type']));
+
+                if (! in_array($type, ['product', 'service'], true)) {
+                    $this->errors[] = "Row {$rowNum}: '{$mapped['type']}' is not a type I know. Use product or service.";
+                    $failed++;
+
+                    continue;
                 }
 
                 $existing = Item::where('tenant_id', $this->tenantId)
@@ -878,8 +898,25 @@ class ImportService
             try {
                 $mapped = ! empty($mapping) ? $this->mapRow($row, $mapping) : $row;
 
-                if (empty($mapped['name']) || empty($mapped['email'])) {
+                if ((empty($mapped['name']) && empty($mapped['first_name'])) || empty($mapped['email'])) {
                     $this->errors[] = "Row {$rowNum}: Name and Email are required";
+                    $failed++;
+
+                    continue;
+                }
+
+                // The column cannot be null, and a hire date is not ours to
+                // invent: it decides leave, service length and pay. Said
+                // here rather than left to fail as a database error.
+                if ($this->blank($mapped['hire_date'] ?? null)) {
+                    $this->errors[] = "Row {$rowNum}: Hire Date is required.";
+                    $failed++;
+
+                    continue;
+                }
+
+                if ($this->parseDate((string) $mapped['hire_date']) === null) {
+                    $this->errors[] = "Row {$rowNum}: '{$mapped['hire_date']}' is not a date I can read. Use d/m/Y or Y-m-d.";
                     $failed++;
 
                     continue;
@@ -907,52 +944,75 @@ class ImportService
                     continue;
                 }
 
-                // Create or get department
-                $departmentId = null;
-                if (! empty($mapped['department'])) {
-                    $departmentId = $departments[$mapped['department']] ?? null;
-                    if (! $departmentId) {
-                        $dept = Department::create([
-                            'tenant_id' => $this->tenantId,
-                            'name' => $mapped['department'],
-                        ]);
-                        $departmentId = $dept->id;
-                        $departments[$mapped['department']] = $departmentId;
-                    }
-                }
-
-                // Create or get designation
-                $designationId = null;
-                if (! empty($mapped['designation'])) {
-                    $designationId = $designations[$mapped['designation']] ?? null;
-                    if (! $designationId) {
-                        $desig = Designation::create([
-                            'tenant_id' => $this->tenantId,
-                            'name' => $mapped['designation'],
-                        ]);
-                        $designationId = $desig->id;
-                        $designations[$mapped['designation']] = $designationId;
-                    }
-                }
-
+                // Checked before anything is written. It used to come last,
+                // after the row's department and designation had already
+                // been created, so a duplicate employee ID left both behind
+                // and the row failed anyway.
                 $employeeData = $this->prepareEmployeeData($mapped, $departments, $designations);
-                if (empty($employeeData['employee_id'])) {
-                    $employeeData['employee_id'] = Employee::generateEmployeeId($this->tenantId);
-                } elseif (Employee::withoutGlobalScopes()->where('tenant_id', $this->tenantId)->where('employee_id', $employeeData['employee_id'])->exists()) {
+                if (! empty($employeeData['employee_id'])
+                    && Employee::withoutGlobalScopes()->where('tenant_id', $this->tenantId)->where('employee_id', $employeeData['employee_id'])->exists()) {
                     $this->errors[] = "Row {$rowNum}: employee ID {$employeeData['employee_id']} already exists";
                     $failed++;
 
                     continue;
                 }
 
-                Employee::create(array_merge(
-                    [
-                        'tenant_id' => $this->tenantId,
-                        'department_id' => $departmentId,
-                        'designation_id' => $designationId,
-                    ],
-                    $employeeData
-                ));
+                // One row, one transaction: a row that fails halfway leaves
+                // nothing behind rather than a department nobody asked for.
+                // The caches are updated from what the transaction returns,
+                // not inside it: a rollback would otherwise leave them
+                // holding the id of a department that no longer exists, and
+                // every later row would point at it.
+                [$newDepartment, $newDesignation] = DB::transaction(function () use ($mapped, $departments, $designations) {
+                    $newDepartment = null;
+                    $departmentId = null;
+                    if (! empty($mapped['department'])) {
+                        $departmentId = $departments[$mapped['department']] ?? null;
+                        if (! $departmentId) {
+                            $departmentId = Department::create([
+                                'tenant_id' => $this->tenantId,
+                                'name' => $mapped['department'],
+                            ])->id;
+                            $newDepartment = [$mapped['department'], $departmentId];
+                        }
+                    }
+
+                    $newDesignation = null;
+                    $designationId = null;
+                    if (! empty($mapped['designation'])) {
+                        $designationId = $designations[$mapped['designation']] ?? null;
+                        if (! $designationId) {
+                            $designationId = Designation::create([
+                                'tenant_id' => $this->tenantId,
+                                'name' => $mapped['designation'],
+                            ])->id;
+                            $newDesignation = [$mapped['designation'], $designationId];
+                        }
+                    }
+
+                    $data = $this->prepareEmployeeData($mapped, $departments, $designations);
+                    if (empty($data['employee_id'])) {
+                        $data['employee_id'] = Employee::generateEmployeeId($this->tenantId);
+                    }
+
+                    Employee::create(array_merge(
+                        [
+                            'tenant_id' => $this->tenantId,
+                            'department_id' => $departmentId,
+                            'designation_id' => $designationId,
+                        ],
+                        $data
+                    ));
+
+                    return [$newDepartment, $newDesignation];
+                });
+
+                if ($newDepartment !== null) {
+                    $departments[$newDepartment[0]] = $newDepartment[1];
+                }
+                if ($newDesignation !== null) {
+                    $designations[$newDesignation[0]] = $newDesignation[1];
+                }
                 $successful++;
 
             } catch (\Exception $e) {
@@ -977,8 +1037,17 @@ class ImportService
      */
     protected function prepareEmployeeData(array $data, $departments, $designations): array
     {
+        // The employees table has first_name and last_name, and no name.
+        // This used to return 'name', which is not fillable, so it was
+        // dropped on the way to the insert and first_name — which cannot
+        // be null — was never set. Every employee row failed on a raw
+        // database error, and the template MyBooks hands out has a name
+        // column, so nobody could import employees at all.
+        [$firstName, $lastName] = $this->splitName($data);
+
         return [
-            'name' => $data['name'] ?? null,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
             'email' => $data['email'] ?? null,
             'employee_id' => $data['employee_id'] ?? null,
             'phone' => $data['phone'] ?? null,
@@ -1326,6 +1395,39 @@ class ImportService
      * here. A file written the European way round (1.250,00) is not
      * understood and is refused rather than guessed at.
      */
+    /**
+     * A person's name as first and last.
+     *
+     * Either column may be given on its own, or a single name column
+     * split at the last space — so "Aisha Bello" and "Ngozi Chidi Okafor"
+     * both land sensibly, and a one-word name keeps an empty surname
+     * rather than failing.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{0: string|null, 1: string|null}
+     */
+    protected function splitName(array $data): array
+    {
+        $first = trim((string) ($data['first_name'] ?? ''));
+        $last = trim((string) ($data['last_name'] ?? ''));
+
+        if ($first !== '' || $last !== '') {
+            return [$first !== '' ? $first : null, $last !== '' ? $last : null];
+        }
+
+        $whole = trim((string) ($data['name'] ?? ''));
+
+        if ($whole === '') {
+            return [null, null];
+        }
+
+        $cut = strrpos($whole, ' ');
+
+        return $cut === false
+            ? [$whole, null]
+            : [trim(substr($whole, 0, $cut)), trim(substr($whole, $cut + 1))];
+    }
+
     /** Empty in the spreadsheet sense: absent, or nothing but spaces. */
     protected function blank(mixed $value): bool
     {

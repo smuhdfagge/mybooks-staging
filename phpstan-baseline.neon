@@ -1105,7 +1105,7 @@ parameters:
 			path: app/Services/ExportService.php
 
 		-
-			message: '#^Call to static method load\(\) on an unknown class PhpOffice\\PhpSpreadsheet\\IOFactory\.$#'
+			message: '#^Call to static method createReaderForFile\(\) on an unknown class PhpOffice\\PhpSpreadsheet\\IOFactory\.$#'
 			identifier: class.notFound
 			count: 1
 			path: app/Services/ImportService.php
