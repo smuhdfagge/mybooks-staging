@@ -92,6 +92,24 @@ class ReportExportService
     /**
      * Export to CSV
      */
+    /**
+     * A money value for a CSV cell.
+     *
+     * These builders feed the CSV export only — the PDFs render from
+     * Blade views with the raw figures — and they used number_format, so
+     * every cell went out as "1,234.56". A spreadsheet reads that as
+     * text, which is why a column of them could not be totalled: an
+     * accounting export nobody can add up.
+     *
+     * Plain decimals now, and the accounting brackets that meant a
+     * negative are written as one, so the column sums to what the report
+     * says.
+     */
+    protected function money(float|int|string|null $value, int $decimals = 2): string
+    {
+        return number_format((float) $value, $decimals, '.', '');
+    }
+
     public function exportToCsv(array $rows, array $headers = [])
     {
         $filename = str_replace(' ', '_', strtolower($this->reportTitle ?? 'report')).'_'.now()->format('Y-m-d').'.csv';
@@ -129,13 +147,13 @@ class ReportExportService
         return [
             'headers' => ['Category', 'Amount'],
             'rows' => [
-                ['Revenue', number_format($data['revenue'], 2)],
-                ['Less: Cost of Goods Sold', '('.number_format($data['costOfGoodsSold'], 2).')'],
-                ['Gross Profit', number_format($data['grossProfit'], 2)],
-                ['Less: Operating Expenses', '('.number_format($data['operatingExpenses'], 2).')'],
-                ['Less: Salaries & Wages', '('.number_format($data['payroll'], 2).')'],
-                ['Total Expenses', '('.number_format($data['totalExpenses'], 2).')'],
-                ['Net '.($data['netProfit'] >= 0 ? 'Profit' : 'Loss'), number_format($data['netProfit'], 2)],
+                ['Revenue', $this->money($data['revenue'], 2)],
+                ['Less: Cost of Goods Sold', $this->money(-$data['costOfGoodsSold'])],
+                ['Gross Profit', $this->money($data['grossProfit'], 2)],
+                ['Less: Operating Expenses', $this->money(-$data['operatingExpenses'])],
+                ['Less: Salaries & Wages', $this->money(-$data['payroll'])],
+                ['Total Expenses', $this->money(-$data['totalExpenses'])],
+                ['Net '.($data['netProfit'] >= 0 ? 'Profit' : 'Loss'), $this->money($data['netProfit'], 2)],
             ],
         ];
     }
@@ -150,11 +168,11 @@ class ReportExportService
         return [
             'headers' => ['Category', 'Item', 'Amount'],
             'rows' => [
-                ['Assets', 'Accounts Receivable', number_format($data['accountsReceivable'], 2)],
-                ['Assets', 'Total Assets', number_format($data['accountsReceivable'], 2)],
-                ['Liabilities', 'Accounts Payable', number_format($data['accountsPayable'], 2)],
-                ['Equity', 'Retained Earnings', number_format($equity, 2)],
-                ['', 'Total Liabilities & Equity', number_format($data['accountsPayable'] + $equity, 2)],
+                ['Assets', 'Accounts Receivable', $this->money($data['accountsReceivable'], 2)],
+                ['Assets', 'Total Assets', $this->money($data['accountsReceivable'], 2)],
+                ['Liabilities', 'Accounts Payable', $this->money($data['accountsPayable'], 2)],
+                ['Equity', 'Retained Earnings', $this->money($equity, 2)],
+                ['', 'Total Liabilities & Equity', $this->money($data['accountsPayable'] + $equity, 2)],
             ],
         ];
     }
@@ -168,16 +186,16 @@ class ReportExportService
             'headers' => ['Category', 'Amount'],
             'rows' => [
                 ['Cash Inflows', ''],
-                ['Payments Received', number_format($data['paymentsReceived'], 2)],
-                ['Total Cash Inflows', number_format($data['totalInflows'], 2)],
+                ['Payments Received', $this->money($data['paymentsReceived'], 2)],
+                ['Total Cash Inflows', $this->money($data['totalInflows'], 2)],
                 ['', ''],
                 ['Cash Outflows', ''],
-                ['Payments Made', number_format($data['paymentsMade'], 2)],
-                ['Expenses Paid', number_format($data['expensesPaid'], 2)],
-                ['Payroll Paid', number_format($data['payrollPaid'], 2)],
-                ['Total Cash Outflows', number_format($data['totalOutflows'], 2)],
+                ['Payments Made', $this->money($data['paymentsMade'], 2)],
+                ['Expenses Paid', $this->money($data['expensesPaid'], 2)],
+                ['Payroll Paid', $this->money($data['payrollPaid'], 2)],
+                ['Total Cash Outflows', $this->money($data['totalOutflows'], 2)],
                 ['', ''],
-                ['Net Cash Flow', number_format($data['netCashFlow'], 2)],
+                ['Net Cash Flow', $this->money($data['netCashFlow'], 2)],
             ],
         ];
     }
@@ -195,12 +213,12 @@ class ReportExportService
                 $account->account_code,
                 $account->name,
                 $account->type,
-                $account->balance_debit > 0 ? number_format($account->balance_debit, 2) : '',
-                $account->balance_credit > 0 ? number_format($account->balance_credit, 2) : '',
+                $account->balance_debit > 0 ? $this->money($account->balance_debit, 2) : '',
+                $account->balance_credit > 0 ? $this->money($account->balance_credit, 2) : '',
             ];
         }
 
-        $rows[] = ['', 'Totals', '', number_format($totalDebits, 2), number_format($totalCredits, 2)];
+        $rows[] = ['', 'Totals', '', $this->money($totalDebits, 2), $this->money($totalCredits, 2)];
 
         return [
             'headers' => array_shift($rows),
@@ -220,8 +238,8 @@ class ReportExportService
                 $entry->journal->journal_date?->format('Y-m-d'),
                 $entry->journal->journal_number,
                 $entry->description ?? $entry->journal->description,
-                $entry->debit > 0 ? number_format($entry->debit, 2) : '',
-                $entry->credit > 0 ? number_format($entry->credit, 2) : '',
+                $entry->debit > 0 ? $this->money($entry->debit, 2) : '',
+                $entry->credit > 0 ? $this->money($entry->credit, 2) : '',
             ];
         }
 
@@ -244,8 +262,8 @@ class ReportExportService
                 $invoice->customer->name ?? 'N/A',
                 $invoice->invoice_date?->format('Y-m-d'),
                 $invoice->due_date?->format('Y-m-d'),
-                number_format($invoice->total, 2),
-                number_format($invoice->balance_due, 2),
+                $this->money($invoice->total, 2),
+                $this->money($invoice->balance_due, 2),
                 $invoice->status,
             ];
         }
@@ -254,13 +272,13 @@ class ReportExportService
             'headers' => ['Invoice #', 'Customer', 'Invoice Date', 'Due Date', 'Total', 'Balance Due', 'Status'],
             'rows' => $rows,
             'summary' => [
-                'Current' => number_format($agingData['current'], 2),
-                '1-30 Days' => number_format($agingData['days30'], 2),
-                '31-60 Days' => number_format($agingData['days60'], 2),
-                '61-90 Days' => number_format($agingData['days90'], 2),
-                '91-120 Days' => number_format($agingData['days120'], 2),
-                'Over 120 Days' => number_format($agingData['over120'], 2),
-                'Total' => number_format($agingData['total'], 2),
+                'Current' => $this->money($agingData['current'], 2),
+                '1-30 Days' => $this->money($agingData['days30'], 2),
+                '31-60 Days' => $this->money($agingData['days60'], 2),
+                '61-90 Days' => $this->money($agingData['days90'], 2),
+                '91-120 Days' => $this->money($agingData['days120'], 2),
+                'Over 120 Days' => $this->money($agingData['over120'], 2),
+                'Total' => $this->money($agingData['total'], 2),
             ],
         ];
     }
@@ -278,8 +296,8 @@ class ReportExportService
                 $bill->vendor->name ?? 'N/A',
                 $bill->bill_date?->format('Y-m-d'),
                 $bill->due_date?->format('Y-m-d'),
-                number_format($bill->total, 2),
-                number_format($bill->balance_due, 2),
+                $this->money($bill->total, 2),
+                $this->money($bill->balance_due, 2),
                 $bill->status,
             ];
         }
@@ -288,13 +306,13 @@ class ReportExportService
             'headers' => ['Bill #', 'Vendor', 'Bill Date', 'Due Date', 'Total', 'Balance Due', 'Status'],
             'rows' => $rows,
             'summary' => [
-                'Current' => number_format($agingData['current'], 2),
-                '1-30 Days' => number_format($agingData['days30'], 2),
-                '31-60 Days' => number_format($agingData['days60'], 2),
-                '61-90 Days' => number_format($agingData['days90'], 2),
-                '91-120 Days' => number_format($agingData['days120'], 2),
-                'Over 120 Days' => number_format($agingData['over120'], 2),
-                'Total' => number_format($agingData['total'], 2),
+                'Current' => $this->money($agingData['current'], 2),
+                '1-30 Days' => $this->money($agingData['days30'], 2),
+                '31-60 Days' => $this->money($agingData['days60'], 2),
+                '61-90 Days' => $this->money($agingData['days90'], 2),
+                '91-120 Days' => $this->money($agingData['days120'], 2),
+                'Over 120 Days' => $this->money($agingData['over120'], 2),
+                'Total' => $this->money($agingData['total'], 2),
             ],
         ];
     }
@@ -311,9 +329,9 @@ class ReportExportService
                 $customer->name,
                 $customer->company_name ?? '',
                 $customer->invoices_count,
-                number_format($customer->invoices_sum_total ?? 0, 2),
-                number_format($customer->invoices_sum_amount_paid ?? 0, 2),
-                number_format(($customer->invoices_sum_total ?? 0) - ($customer->invoices_sum_amount_paid ?? 0), 2),
+                $this->money($customer->invoices_sum_total ?? 0, 2),
+                $this->money($customer->invoices_sum_amount_paid ?? 0, 2),
+                $this->money(($customer->invoices_sum_total ?? 0) - ($customer->invoices_sum_amount_paid ?? 0), 2),
             ];
         }
 
@@ -335,8 +353,8 @@ class ReportExportService
                 $item->name,
                 $item->sku ?? '',
                 $item->quantity_sold,
-                number_format($item->selling_price, 2),
-                number_format($item->total_sales, 2),
+                $this->money($item->selling_price, 2),
+                $this->money($item->total_sales, 2),
             ];
         }
 
@@ -358,9 +376,9 @@ class ReportExportService
                 $vendor->name,
                 $vendor->company_name ?? '',
                 $vendor->bills_count,
-                number_format($vendor->bills_sum_total ?? 0, 2),
-                number_format($vendor->bills_sum_amount_paid ?? 0, 2),
-                number_format(($vendor->bills_sum_total ?? 0) - ($vendor->bills_sum_amount_paid ?? 0), 2),
+                $this->money($vendor->bills_sum_total ?? 0, 2),
+                $this->money($vendor->bills_sum_amount_paid ?? 0, 2),
+                $this->money(($vendor->bills_sum_total ?? 0) - ($vendor->bills_sum_amount_paid ?? 0), 2),
             ];
         }
 
@@ -383,8 +401,8 @@ class ReportExportService
                 $item->sku ?? '',
                 $item->stock_quantity,
                 $item->reorder_level,
-                number_format($item->cost_price, 2),
-                number_format($item->stock_value, 2),
+                $this->money($item->cost_price, 2),
+                $this->money($item->stock_value, 2),
                 $item->is_low_stock ? 'Yes' : 'No',
             ];
         }
@@ -407,9 +425,9 @@ class ReportExportService
                 $record['employee']->first_name.' '.$record['employee']->last_name,
                 $record['employee']->employee_id ?? '',
                 $record['count'],
-                number_format($record['gross'], 2),
-                number_format($record['deductions'], 2),
-                number_format($record['net'], 2),
+                $this->money($record['gross'], 2),
+                $this->money($record['deductions'], 2),
+                $this->money($record['net'], 2),
             ];
         }
 
@@ -430,12 +448,12 @@ class ReportExportService
             $rows[] = [
                 $record['department_name'],
                 $record['employee_count'],
-                number_format($record['gross'], 2),
-                number_format($record['allowances'], 2),
-                number_format($record['overtime'], 2),
-                number_format($record['tax'], 2),
-                number_format($record['deductions'], 2),
-                number_format($record['net'], 2),
+                $this->money($record['gross'], 2),
+                $this->money($record['allowances'], 2),
+                $this->money($record['overtime'], 2),
+                $this->money($record['tax'], 2),
+                $this->money($record['deductions'], 2),
+                $this->money($record['net'], 2),
             ];
         }
 
@@ -457,13 +475,13 @@ class ReportExportService
                 ($payroll->employee->first_name ?? '').' '.($payroll->employee->last_name ?? ''),
                 $payroll->employee->department->name ?? 'N/A',
                 $payroll->pay_date->format('Y-m-d'),
-                number_format($payroll->basic_salary, 2),
-                number_format($payroll->allowances, 2),
-                number_format($payroll->overtime_amount, 2),
-                number_format($payroll->gross_salary, 2),
-                number_format($payroll->tax_deduction, 2),
-                number_format($payroll->total_deductions, 2),
-                number_format($payroll->net_salary, 2),
+                $this->money($payroll->basic_salary, 2),
+                $this->money($payroll->allowances, 2),
+                $this->money($payroll->overtime_amount, 2),
+                $this->money($payroll->gross_salary, 2),
+                $this->money($payroll->tax_deduction, 2),
+                $this->money($payroll->total_deductions, 2),
+                $this->money($payroll->net_salary, 2),
             ];
         }
 
@@ -485,15 +503,15 @@ class ReportExportService
                 $payroll->payroll_number,
                 ($payroll->employee->first_name ?? '').' '.($payroll->employee->last_name ?? ''),
                 $payroll->employee->department->name ?? 'N/A',
-                number_format($payroll->basic_salary, 2),
-                number_format($payroll->allowances, 2),
-                number_format($payroll->overtime_amount, 2),
-                number_format($payroll->gross_salary, 2),
-                number_format($payroll->tax_deduction, 2),
-                number_format($payroll->other_deductions, 2),
-                number_format($payroll->total_deductions, 2),
-                number_format($payroll->net_salary, 2),
-                number_format($payroll->employer_contributions, 2),
+                $this->money($payroll->basic_salary, 2),
+                $this->money($payroll->allowances, 2),
+                $this->money($payroll->overtime_amount, 2),
+                $this->money($payroll->gross_salary, 2),
+                $this->money($payroll->tax_deduction, 2),
+                $this->money($payroll->other_deductions, 2),
+                $this->money($payroll->total_deductions, 2),
+                $this->money($payroll->net_salary, 2),
+                $this->money($payroll->employer_contributions, 2),
                 ucfirst($payroll->status),
             ];
         }
@@ -516,14 +534,14 @@ class ReportExportService
                 $record['employee']->first_name.' '.$record['employee']->last_name,
                 $record['employee']->department->name ?? 'N/A',
                 $record['pay_periods'],
-                number_format($record['ytd_basic'], 2),
-                number_format($record['ytd_allowances'], 2),
-                number_format($record['ytd_overtime'], 2),
-                number_format($record['ytd_gross'], 2),
-                number_format($record['ytd_tax'], 2),
-                number_format($record['ytd_total_deductions'], 2),
-                number_format($record['ytd_net'], 2),
-                number_format($record['ytd_employer_contributions'], 2),
+                $this->money($record['ytd_basic'], 2),
+                $this->money($record['ytd_allowances'], 2),
+                $this->money($record['ytd_overtime'], 2),
+                $this->money($record['ytd_gross'], 2),
+                $this->money($record['ytd_tax'], 2),
+                $this->money($record['ytd_total_deductions'], 2),
+                $this->money($record['ytd_net'], 2),
+                $this->money($record['ytd_employer_contributions'], 2),
             ];
         }
 
@@ -545,8 +563,8 @@ class ReportExportService
                 $record['employee']->first_name.' '.$record['employee']->last_name,
                 $record['employee']->department->name ?? 'N/A',
                 $record['pay_periods'],
-                number_format($record['taxable_income'], 2),
-                number_format($record['tax_deducted'], 2),
+                $this->money($record['taxable_income'], 2),
+                $this->money($record['tax_deducted'], 2),
                 $record['effective_rate'].'%',
             ];
         }
@@ -568,8 +586,8 @@ class ReportExportService
             $rows[] = [
                 $record['employee']->first_name.' '.$record['employee']->last_name,
                 $record['employee']->department->name ?? 'N/A',
-                number_format($record['gross_salary'], 2),
-                number_format($record['employer_contributions'], 2),
+                $this->money($record['gross_salary'], 2),
+                $this->money($record['employer_contributions'], 2),
                 ($record['cost_ratio'] ?? 0).'%',
             ];
         }
@@ -595,7 +613,7 @@ class ReportExportService
                 '****'.substr($payroll->employee->bank_account_number ?? '0000', -4),
                 $payroll->employee->bank_name ?? 'N/A',
                 ucfirst(str_replace('_', ' ', $payroll->payment_method ?? 'N/A')),
-                number_format($payroll->net_salary, 2),
+                $this->money($payroll->net_salary, 2),
                 ucfirst($payroll->status),
             ];
         }
