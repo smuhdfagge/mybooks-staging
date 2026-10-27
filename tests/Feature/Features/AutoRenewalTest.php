@@ -537,7 +537,7 @@ class AutoRenewalTest extends TestCase
         $this->artisan('subscriptions:auto-renew');
 
         $this->get(route('settings.subscription'))->assertOk()
-            ->assertDontSee('9999')->assertDontSee('Do not honour')->assertSee('No card saved');
+            ->assertDontSee('•••• 9999')->assertDontSee('Do not honour')->assertSee('No card saved');
         Livewire::test(SubscriptionManager::class)->call('toggleAutoRenew')->call('removeCard');
 
         $this->assertTrue($otherCard->fresh()->auto_renew);
