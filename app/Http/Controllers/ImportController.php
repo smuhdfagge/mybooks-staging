@@ -28,7 +28,7 @@ class ImportController extends Controller
             ->orderByDesc('created_at')
             ->paginate(25);
 
-        $importTypes = Import::getImportTypes();
+        $importTypes = Import::getSupportedImportTypes();
 
         return view('imports.index', compact('imports', 'importTypes'));
     }
@@ -39,7 +39,7 @@ class ImportController extends Controller
     public function create(Request $request)
     {
         $type = $request->get('type');
-        $importTypes = Import::getImportTypes();
+        $importTypes = Import::getSupportedImportTypes();
         $formats = Import::getFormats();
 
         return view('imports.create', compact('type', 'importTypes', 'formats'));
@@ -51,7 +51,7 @@ class ImportController extends Controller
     public function upload(Request $request)
     {
         $validated = $request->validate([
-            'type' => 'required|string|in:'.implode(',', array_keys(Import::getImportTypes())),
+            'type' => 'required|string|in:'.implode(',', array_keys(Import::getSupportedImportTypes())),
             'file' => [
                 'required',
                 'file',
@@ -160,7 +160,7 @@ class ImportController extends Controller
         $type = $request->get('type');
         $format = $request->get('format', 'csv');
 
-        if (! $type || ! isset(Import::getImportTypes()[$type])) {
+        if (! $type || ! isset(Import::getSupportedImportTypes()[$type])) {
             return back()->with('error', 'Invalid import type');
         }
 
