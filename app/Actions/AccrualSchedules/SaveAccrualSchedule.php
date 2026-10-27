@@ -22,7 +22,9 @@ use Illuminate\Validation\ValidationException;
  *
  * $data keys: type, description, total_amount, start_month (YYYY-MM or a
  * date), months, balance_account_id (empty = the default account),
- * pl_account_id, source_type, source_id, reference, notes.
+ * pl_account_id, source_type, source_id, reference, notes. The form no
+ * longer sends source_type/source_id (audit MB-53); a schedule already
+ * linked keeps its link when changed.
  */
 class SaveAccrualSchedule
 {
@@ -55,7 +57,9 @@ class SaveAccrualSchedule
             if (! $pl || $pl->type !== ($prepaid ? 'expense' : 'income')) {
                 $errors['pl_account_id'] = $prepaid ? 'Choose the expense account each month goes to.' : 'Choose the income account each month goes to.';
             }
-            [$sourceType, $sourceId] = $this->source($tenantId, $data, $prepaid, $errors);
+            [$sourceType, $sourceId] = $schedule && ! array_key_exists('source_type', $data)
+                ? [$schedule->source_type, $schedule->source_id]
+                : $this->source($tenantId, $data, $prepaid, $errors);
             // Tiny totals over many months could leave a month at nothing (or
             // the last one below nothing after rounding).
             if (min(AccrualSchedule::split($data['total_amount'], (int) $data['months'])) <= 0) {

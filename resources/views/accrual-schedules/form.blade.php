@@ -3,7 +3,6 @@
         $editing = $schedule->exists;
         $type = old('type', $schedule->type);
         $startMonth = old('start_month', $schedule->start_date?->format('Y-m'));
-        $source = old('source', $schedule->source_type ? $schedule->source_type.':'.$schedule->source_id : '');
         $back = $editing ? route('accrual-schedules.show', $schedule) : route('accrual-schedules.index');
     @endphp
     <x-slot name="header">
@@ -15,7 +14,7 @@
     <div class="py-6">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <x-error-summary />
-            <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">The schedule doesn't record the payment itself: record that as usual (a bill, expense, invoice or journal) into the prepaid or deferred revenue account. The schedule then moves an equal share to the expense or income account at the end of each month. Months already over are released as soon as you save.</p>
+            <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">The schedule doesn't record the payment itself. Record the payment with a journal into the prepaid or deferred revenue account first (a bill, expense or invoice posts to its own expense or sales account, so it can't be spread here). The schedule then moves an equal share to the expense or income account at the end of each month. Months already over are released as soon as you save.</p>
 
             <form method="POST" action="{{ $editing ? route('accrual-schedules.update', $schedule) : route('accrual-schedules.store') }}" class="space-y-6"
                   x-data="{
@@ -107,17 +106,6 @@
                     @endforeach
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        @foreach($sources as $t => $opts)
-                            <template x-if="type === @js($t)">
-                                <div>
-                                    <x-searchable-select name="source" id="source_{{ $t }}"
-                                        :label="$t === \App\Models\AccrualSchedule::TYPE_PREPAID ? 'Bill or expense it was paid with (optional)' : 'Invoice it was billed on (optional)'"
-                                        :options="$opts" :value="$type === $t ? (string) $source : ''"
-                                        placeholder="None" :has-error="$errors->has('source')" />
-                                    @error('source')<p id="source_{{ $t }}-error" class="form-error">{{ $message }}</p>@enderror
-                                </div>
-                            </template>
-                        @endforeach
                         <div>
                             <x-field name="reference" label="Reference (optional)" :value="old('reference', $schedule->reference)" maxlength="100" placeholder="e.g. lease agreement, receipt number" />
                         </div>

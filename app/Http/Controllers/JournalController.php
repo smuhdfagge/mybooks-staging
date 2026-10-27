@@ -184,11 +184,6 @@ class JournalController extends Controller
         }
     }
 
-    public function bulkUpdate()
-    {
-        return view('journals.bulk-update');
-    }
-
     /**
      * Receivables / payables accounts, so the form can warn that a manual
      * journal to them won't show on any statement (session 10).

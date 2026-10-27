@@ -8,10 +8,7 @@ use App\Actions\AccrualSchedules\ReleaseAccrualSchedule;
 use App\Actions\AccrualSchedules\SaveAccrualSchedule;
 use App\Http\Requests\SaveAccrualScheduleRequest;
 use App\Models\AccrualSchedule;
-use App\Models\Bill;
 use App\Models\ChartOfAccount;
-use App\Models\Expense;
-use App\Models\Invoice;
 use App\Services\AccountCodeService;
 use App\Support\Money;
 use Illuminate\Http\Request;
@@ -29,7 +26,10 @@ class AccrualScheduleController extends Controller
         return view('accrual-schedules.index');
     }
 
-    /** New schedule. ?source=bill:12 (or expense:/invoice:) fills it in from that document. */
+    /**
+     * New schedule. Filling it in from a bill, expense or invoice
+     * (?source=bill:12) is switched off: see SaveAccrualScheduleRequest.
+     */
     public function create(Request $request)
     {
         $schedule = new AccrualSchedule([
@@ -37,15 +37,6 @@ class AccrualScheduleController extends Controller
             'start_date' => today()->startOfMonth(),
             'months' => 12,
         ]);
-        if ($source = $this->sourceFromQuery((string) $request->get('source'))) {
-            $schedule->fill([
-                'type' => $source[0] === 'invoice' ? AccrualSchedule::TYPE_DEFERRED : AccrualSchedule::TYPE_PREPAID,
-                'source_type' => $source[0],
-                'source_id' => $source[1]->id,
-                'total_amount' => $source[1]->total,
-                'reference' => $source[1]->{AccrualSchedule::SOURCES[$source[0]][1]},
-            ]);
-        }
 
         return view('accrual-schedules.form', $this->formData($schedule));
     }
@@ -139,16 +130,6 @@ class AccrualScheduleController extends Controller
         return $message;
     }
 
-    /** @return array{0: string, 1: Bill|Expense|Invoice}|null */
-    protected function sourceFromQuery(string $value): ?array
-    {
-        [$type, $id] = str_contains($value, ':') ? explode(':', $value, 2) : [null, null];
-        $model = AccrualSchedule::SOURCES[$type][0] ?? null;
-        $doc = $model ? $model::find((int) $id) : null;
-
-        return $doc ? [$type, $doc] : null;
-    }
-
     /** @return array<string, mixed> */
     protected function formData(AccrualSchedule $schedule): array
     {
@@ -161,16 +142,6 @@ class AccrualScheduleController extends Controller
         $options = fn (string $type) => $accounts->where('type', $type)->mapWithKeys(fn ($a) => [(string) $a->id => $label($a)])->all();
         $default = fn (string $key) => $accounts->firstWhere('account_code', AccountCodeService::resolve($tenantId, $key))?->id;
 
-        // Recent documents to link to (the 200 latest of each).
-        $doc = fn (string $type, $rows) => $rows->mapWithKeys(fn ($d) => [
-            "{$type}:{$d->id}" => $d->{AccrualSchedule::SOURCES[$type][1]}.' · '.($d->vendor->name ?? $d->customer->name ?? '').' · '.Money::format($d->total),
-        ])->all();
-        $sources = [
-            AccrualSchedule::TYPE_PREPAID => $doc('bill', Bill::with('vendor')->latest('id')->limit(200)->get())
-                + $doc('expense', Expense::with('vendor')->latest('id')->limit(200)->get()),
-            AccrualSchedule::TYPE_DEFERRED => $doc('invoice', Invoice::with('customer')->latest('id')->limit(200)->get()),
-        ];
-
         return [
             'schedule' => $schedule,
             'accountOptions' => [
@@ -181,7 +152,6 @@ class AccrualScheduleController extends Controller
                 AccrualSchedule::TYPE_PREPAID => $default('prepaid_expenses'),
                 AccrualSchedule::TYPE_DEFERRED => $default('deferred_revenue'),
             ],
-            'sources' => $sources,
         ];
     }
 }

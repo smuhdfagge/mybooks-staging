@@ -397,18 +397,18 @@ class PrepaidDeferredSchedulesTest extends TestCase
         $this->post(route('accrual-schedules.store'), $this->rent(['start_month' => 'May']))->assertSessionHasErrors('start_month');
         $this->assertSame(0, AccrualSchedule::count());
 
-        // Linked to the bill that paid the rent.
+        // Linking a bill, expense or invoice is switched off (audit MB-53):
+        // the bill already posted to its own expense line.
         $bill = Bill::factory()->create(['tenant_id' => $this->tenant->id, 'vendor_id' => Vendor::factory()->create(['tenant_id' => $this->tenant->id])->id, 'total' => 1200000]);
         $this->get(route('accrual-schedules.create', ['source' => "bill:{$bill->id}"]))->assertOk()
-            ->assertSee($bill->bill_number)->assertSee('1200000');
-        $schedule = $this->createSchedule($this->rent(['source' => "bill:{$bill->id}"]));
-        $this->assertSame(['bill', $bill->id], [$schedule->source_type, $schedule->source_id]);
+            ->assertDontSee($bill->bill_number);
+        $this->post(route('accrual-schedules.store'), $this->rent(['source' => "bill:{$bill->id}"]))->assertSessionHasErrors('source');
+        $this->assertSame(0, AccrualSchedule::count());
+
+        // A schedule linked before then keeps its link.
+        $schedule = $this->createSchedule($this->rent());
+        $schedule->update(['source_type' => 'bill', 'source_id' => $bill->id]);
         $this->get(route('accrual-schedules.show', $schedule))->assertSee(route('bills.show', $bill))->assertSee('Lease 2026');
-        // A bill can't be the source of deferred revenue.
-        $this->post(route('accrual-schedules.store'), [
-            'type' => AccrualSchedule::TYPE_DEFERRED, 'description' => 'Support', 'total_amount' => 600, 'start_month' => '2026-05', 'months' => 6,
-            'pl_account_id' => $this->account('4100')->id, 'source' => "bill:{$bill->id}",
-        ])->assertSessionHasErrors('source');
     }
 
     public function test_the_default_account_is_used_and_added_when_missing(): void

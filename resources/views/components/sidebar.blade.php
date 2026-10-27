@@ -269,9 +269,6 @@
                 <a href="{{ route('accrual-schedules.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('accrual-schedules.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Prepaid &amp; Deferred</a>
                 @endcan
                 @endif
-                @can('edit journals')
-                <a href="{{ route('journals.bulk-update') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('journals.bulk-update') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Bulk Update</a>
-                @endcan
                 @can('view chart-of-accounts')
                 <a href="{{ route('chart-of-accounts.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('chart-of-accounts.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Chart of Accounts</a>
                 <a href="{{ route('accounting-periods.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('accounting-periods.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Accounting Periods</a>

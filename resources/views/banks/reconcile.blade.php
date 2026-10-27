@@ -43,6 +43,9 @@
             <div class="tbl-wrap">
                 @if ($filtered)
                     <x-table.empty filtered title="Nothing to reconcile in these dates" :clear="route('banks.reconcile', $bank)" />
+                @elseif (abs($summary['difference']) >= 0.005)
+                    {{-- Audit MB-08: with nothing to tick, a difference can't be cleared here. --}}
+                    <x-table.empty title="No bank lines to reconcile" text="Lines come from a bank feed. The difference above can't be cleared on this screen yet; manual reconciliation is coming." />
                 @else
                     <x-table.empty title="All caught up" text="Every bank line has been reconciled." />
                 @endif
