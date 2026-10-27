@@ -593,7 +593,10 @@ class ExportService
             return $this->exportToXlsxWithSpreadsheet($export, $data, $filename, $path);
         }
 
-        // Fallback to CSV with .xlsx extension note
+        // A safety net for an export queued before the format list
+        // dropped Excel. The file is written and named .csv, so nothing
+        // is mislabelled; Export::getFormats() is what stops anyone
+        // choosing Excel when it cannot be produced.
         return $this->exportToCsv($export, $data, $filename, $path);
     }
 

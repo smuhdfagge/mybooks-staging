@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 class Export extends Model
 {
@@ -117,16 +118,34 @@ class Export extends Model
     }
 
     /**
+     * Excel files need the phpoffice/phpspreadsheet package, the same as
+     * importing them does. Without it the export quietly fell back to
+     * CSV: the file was named .csv and was perfectly good, but somebody
+     * who chose Excel was handed something else and never told. Offered
+     * only when it can actually be produced.
+     */
+    public static function excelSupported(): bool
+    {
+        return class_exists(Spreadsheet::class);
+    }
+
+    /**
      * Get available formats with labels
      */
     public static function getFormats(): array
     {
-        return [
+        $formats = [
             self::FORMAT_CSV => 'CSV (Comma Separated Values)',
             self::FORMAT_XLSX => 'Excel Spreadsheet',
             self::FORMAT_JSON => 'JSON (JavaScript Object Notation)',
             self::FORMAT_PDF => 'PDF Document',
         ];
+
+        if (! self::excelSupported()) {
+            unset($formats[self::FORMAT_XLSX]);
+        }
+
+        return $formats;
     }
 
     /**
