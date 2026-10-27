@@ -118,7 +118,7 @@ class AuditAffectedData extends Command
                 $account = $ledger->get($bank->chart_of_account_id);
                 $balance = $account ? (float) $account->balance : null;
 
-                return [$bank->name, $account?->account_code ?? 'none', number_format((float) $bank->current_balance, 2),
+                return [$bank->name, $account->account_code ?? 'none', number_format((float) $bank->current_balance, 2),
                     $balance === null ? 'n/a' : number_format($balance, 2), $balance === null ? null : round((float) $bank->current_balance - $balance, 2)];
             })
             ->filter(fn ($row) => $row[4] === null || abs($row[4]) >= 0.005)
