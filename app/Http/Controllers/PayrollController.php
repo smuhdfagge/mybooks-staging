@@ -721,7 +721,7 @@ class PayrollController extends Controller
             // What the payroll should have been with the current structure,
             // worked out exactly as a payroll run does: statutory pension and
             // NHF, rent relief and PAYE included (audit MB-17).
-            $new = $taxService->payslipFigures($employee, $tenantId, (float) ($payroll->payrollBatch?->tax_rate ?? 0), [], $payroll->pay_period_end->toDateString());
+            $new = $taxService->payslipFigures($employee, $tenantId, (float) ($payroll->payrollBatch->tax_rate ?? 0), [], $payroll->pay_period_end->toDateString());
 
             // What changed, part by part, so the adjustment books the extra
             // (or reduced) salary as cost and the PAYE and each deduction as

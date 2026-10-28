@@ -1465,7 +1465,7 @@ class JournalService implements JournalServiceInterface
 
         return DB::transaction(function () use ($payroll, $net) {
             $t = $payroll->tenant_id;
-            $paid = $payroll->pay_date && $payroll->pay_date->lte(today()) ? $payroll->pay_date->copy() : today();
+            $paid = $payroll->pay_date->lte(today()) ? $payroll->pay_date->copy() : today(); // pay_date is required
             $on = $this->firstOpenDate($t, $paid);
             $moved = $on->toDateString() !== $paid->toDateString() ? ' (paid '.$paid->format('j M Y').', a locked period)' : '';
             $journal = Journal::create([
