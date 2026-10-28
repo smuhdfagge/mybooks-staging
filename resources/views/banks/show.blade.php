@@ -31,7 +31,7 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-report.stats :cols="4" class="mb-6">
-                <x-report.stat label="Balance" :value="\App\Support\Figure::show($bank->current_balance, false)" />
+                <x-report.stat label="Balance" :value="\App\Support\Figure::show($bank->ledgerBalance(), false)" />
                 <x-report.stat label="Opening balance" :value="\App\Support\Figure::show($bank->opening_balance, false)" :hint="$bank->opening_balance_date?->format('j M Y')" />
                 <x-report.stat label="Account type" :value="\App\Models\Bank::getAccountTypes()[$bank->account_type] ?? \Illuminate\Support\Str::headline((string) $bank->account_type)" />
                 <x-report.stat label="Status" :value="$bank->is_active ? 'In use' : 'Not in use'" :tone="$bank->is_active ? null : 'bad'" />

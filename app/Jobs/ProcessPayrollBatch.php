@@ -41,7 +41,7 @@ class ProcessPayrollBatch implements ShouldQueue
         DB::transaction(function () use ($batch) {
             $batch->payrolls()
                 ->where('status', 'approved')
-                ->each(fn ($payroll) => $payroll->markAsPaid());
+                ->each(fn ($payroll) => $payroll->markAsPaid($batch->bank_id));
 
             $batch->update([
                 'status' => PayrollBatch::STATUS_PAID,

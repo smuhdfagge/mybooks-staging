@@ -60,6 +60,7 @@ class Payroll extends Model
         'status',
         'payment_method',
         'payment_reference',
+        'bank_id',
         'notes',
         'created_by',
         'approved_by',
@@ -87,6 +88,16 @@ class Payroll extends Model
         'net_salary' => 'decimal:2',
         'statutory' => 'encrypted:array', // PAYE state, PFA, RSA PIN, NHF number at the time
     ];
+
+    /**
+     * The bank it was paid from (audit MB-08).
+     *
+     * @return BelongsTo<Bank, $this>
+     */
+    public function bank(): BelongsTo
+    {
+        return $this->belongsTo(Bank::class);
+    }
 
     /** @return BelongsTo<Employee, $this> */
     public function employee(): BelongsTo
@@ -177,15 +188,16 @@ class Payroll extends Model
 
     /**
      * Mark payroll as paid: the listener posts the net pay payment (A10)
-     * and records loan repayments (A9).
+     * and records loan repayments (A9), from $bankId's ledger account when
+     * a bank is given (audit MB-08).
      */
-    public function markAsPaid(): bool
+    public function markAsPaid(?int $bankId = null): bool
     {
         if ($this->status !== self::STATUS_APPROVED) {
             return false;
         }
 
-        $this->withoutPeriodValidation()->update(['status' => self::STATUS_PAID]);
+        $this->withoutPeriodValidation()->update(['status' => self::STATUS_PAID, 'bank_id' => $bankId ?? $this->bank_id]);
 
         PayrollPaid::dispatch($this);
 

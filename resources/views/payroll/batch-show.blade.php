@@ -23,8 +23,9 @@
                         <button type="submit" class="btn-new">Approve all</button>
                     </form>
                 @elseif (in_array($b->status, ['approved', 'failed'], true))
-                    <form action="{{ route('payroll-batches.mark-paid', $b) }}" method="POST" data-confirm="Mark all payroll records as paid?">
+                    <form action="{{ route('payroll-batches.mark-paid', $b) }}" method="POST" data-confirm="Mark all payroll records as paid?" class="flex items-center gap-2">
                         @csrf
+                        @include('payroll._paid-from', ['selected' => $b->bank_id])
                         <button type="submit" class="btn-new">{{ $b->status === 'failed' ? 'Try again' : 'Mark all as paid' }}</button>
                     </form>
                 @endif

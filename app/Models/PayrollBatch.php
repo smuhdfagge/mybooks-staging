@@ -44,6 +44,7 @@ class PayrollBatch extends Model
         'approved_by',
         'approved_at',
         'paid_at',
+        'bank_id',
     ];
 
     protected $casts = [
@@ -56,6 +57,16 @@ class PayrollBatch extends Model
         'approved_at' => 'datetime',
         'paid_at' => 'datetime',
     ];
+
+    /**
+     * The bank it was paid from (audit MB-08).
+     *
+     * @return BelongsTo<Bank, $this>
+     */
+    public function bank(): BelongsTo
+    {
+        return $this->belongsTo(Bank::class);
+    }
 
     /** @return HasMany<Payroll, $this> */
     public function payrolls(): HasMany

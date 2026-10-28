@@ -46,7 +46,7 @@
                     <x-table.th field="name" :sort="[$sortField, $sortDirection]">Account</x-table.th>
                     <x-table.th>Bank</x-table.th>
                     <x-table.th>Type</x-table.th>
-                    <x-table.th field="current_balance" :sort="[$sortField, $sortDirection]" num>Balance</x-table.th>
+                    <x-table.th field="ledger_balance" :sort="[$sortField, $sortDirection]" num>Balance</x-table.th>
                     <x-table.th>Status</x-table.th>
                     <th scope="col" class="tbl-menu"><span class="sr-only">Actions</span></th>
                 </x-slot>
@@ -60,7 +60,7 @@
                         </td>
                         <td class="{{ $bank->bank_name ? '' : 'tbl-zero' }}">{{ $bank->bank_name ?: '—' }}</td>
                         <td class="tbl-muted">{{ $types[$bank->account_type] ?? ucfirst((string) $bank->account_type) }}</td>
-                        <td class="num">{{ $money($bank->current_balance) }}@if ($bank->currency && $bank->currency !== $home) <span class="tbl-muted">{{ $bank->currency }}</span>@endif</td>
+                        <td class="num">{{ $money($bank->ledger_balance) }}@if ($bank->currency && $bank->currency !== $home) <span class="tbl-muted">{{ $bank->currency }}</span>@endif</td>
                         <td><x-status-badge :status="$bank->is_active ? 'active' : 'inactive'" :label="$bank->is_active ? 'In use' : 'Not in use'" /></td>
                         <td class="tbl-menu">
                             <x-table.dropdown :sr-label="'Actions for '.$bank->name">
@@ -87,7 +87,7 @@
             <ul class="space-y-2 md:hidden" aria-label="Bank accounts">
                 @foreach ($banks as $bank)
                     <li wire:key="bk-card-{{ $bank->id }}">
-                        <x-table.card :href="route('banks.show', $bank)" :title="$bank->name" :amount="\App\Support\Money::format($bank->current_balance)"
+                        <x-table.card :href="route('banks.show', $bank)" :title="$bank->name" :amount="\App\Support\Money::format($bank->ledger_balance)"
                             :meta="collect([$bank->bank_name, $bank->account_number ? $bank->masked_account_number : null, $types[$bank->account_type] ?? null])->filter()->implode(' · ')">
                             @if (! $bank->is_active)
                                 <x-slot name="badge"><x-status-badge status="inactive" label="Not in use" /></x-slot>

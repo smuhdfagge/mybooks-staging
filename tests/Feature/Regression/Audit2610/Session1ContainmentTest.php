@@ -7,6 +7,7 @@ use App\Models\Bank;
 use App\Models\ChartOfAccount;
 use App\Models\Journal;
 use App\Models\Role;
+use App\Services\JournalService;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
@@ -50,15 +51,18 @@ class Session1ContainmentTest extends TestCase
     // MB-08 stopgap
     public function test_reconcile_screen_never_says_all_caught_up_while_a_difference_remains(): void
     {
-        $bank = Bank::factory()->create(['tenant_id' => $this->tenant->id, 'chart_of_account_id' => $this->account('1000')->id, 'opening_balance' => 1000, 'current_balance' => 4000]);
+        $bank = Bank::factory()->create(['tenant_id' => $this->tenant->id, 'chart_of_account_id' => $this->account('1000')->id, 'opening_balance' => 1000, 'current_balance' => 1000]);
+        $this->get(route('banks.reconcile', $bank))->assertOk()->assertSee('All caught up');
+
+        // Money in through the ledger (session 9: the book balance is the ledger's).
+        app(JournalService::class)->postLines($bank, 'DEP-1', now()->toDateString(), 'Deposit', [
+            ['1000', 3000.0, 0.0, 'Deposit'], ['4000', 0.0, 3000.0, 'Deposit'],
+        ], $this->user->id);
 
         $this->get(route('banks.reconcile', $bank))->assertOk()
             ->assertDontSee('All caught up')
             ->assertSee('No bank lines to reconcile')
             ->assertSee('Lines come from a bank feed');
-
-        $bank->update(['current_balance' => 1000]);
-        $this->get(route('banks.reconcile', $bank))->assertOk()->assertSee('All caught up');
     }
 
     // MB-18 stopgap
