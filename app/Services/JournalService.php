@@ -2246,7 +2246,7 @@ class JournalService implements JournalServiceInterface
             if ($item->item && $item->item->track_inventory) {
                 $inventory += $net;
             } else {
-                $code = $item->account?->account_code ?? $this->acct($t, 'miscellaneous_expense');
+                $code = $item->account->account_code ?? $this->acct($t, 'miscellaneous_expense');
                 $expenses[$code] = ($expenses[$code] ?? 0) + $net;
             }
         }
