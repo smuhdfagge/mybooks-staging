@@ -25,7 +25,8 @@ class TaxChoices
     public static function options(string $type, ?int $tenantId = null): array
     {
         $tenantId ??= (int) auth()->user()?->tenant_id;
-        $rates = TaxRate::withoutGlobalScopes()->where('tenant_id', $tenantId)->where('is_active', true)
+        // Not withoutGlobalScopes(): that would bring back deleted rates too.
+        $rates = TaxRate::withoutGlobalScope('tenant')->where('tenant_id', $tenantId)->where('is_active', true)
             ->when($type === 'purchases', fn ($q) => $q->forPurchases(), fn ($q) => $q->forSales())
             ->orderBy('rate')->orderBy('sort_order')->orderBy('name')
             ->get(['name', 'rate']);
@@ -51,7 +52,10 @@ class TaxChoices
     {
         $tenant = Tenant::find($tenantId);
         $id = $type === 'purchases' ? $tenant?->default_purchase_tax_id : $tenant?->default_sales_tax_id;
-        $chosen = $id ? TaxRate::withoutGlobalScopes()->where('tenant_id', $tenantId)->where('is_active', true)->find($id) : null;
+        // Only an active, not deleted rate that applies to this kind of line.
+        $chosen = $id ? TaxRate::withoutGlobalScope('tenant')->where('tenant_id', $tenantId)->where('is_active', true)
+            ->when($type === 'purchases', fn ($q) => $q->forPurchases(), fn ($q) => $q->forSales())
+            ->find($id) : null;
 
         return $chosen ?? TaxRate::getDefault($tenantId, $type === 'purchases' ? 'purchases' : 'sales');
     }

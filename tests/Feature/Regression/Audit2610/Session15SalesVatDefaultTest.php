@@ -18,7 +18,7 @@ class Session15SalesVatDefaultTest extends TestCase
 {
     private const PERMISSIONS = [
         'view settings', 'edit settings', 'view invoices', 'create invoices', 'view bills', 'create bills',
-        'view quotations', 'create quotations', 'view sales-receipts', 'create sales-receipts',
+        'view quotations', 'create quotations', 'view sales-receipts', 'create sales-receipts', 'view vendor-credits', 'create vendor-credits',
     ];
 
     protected function setUp(): void
@@ -98,5 +98,38 @@ class Session15SalesVatDefaultTest extends TestCase
 
         $this->assertSame(['7.50', '0.00'], $invoice->items()->orderBy('id')->pluck('tax_rate')->all());
         $this->assertEqualsWithDelta(750, (float) $invoice->tax_amount, 0.001);
+    }
+
+    public function test_a_deleted_rate_is_neither_offered_nor_the_default(): void
+    {
+        $five = TaxRate::create(['tenant_id' => $this->tenant->id, 'name' => 'VAT 5%', 'code' => 'VAT-5', 'rate' => 5, 'type' => 'exclusive', 'applies_to' => 'both', 'is_active' => true]);
+        $this->tenant->update(['default_sales_tax_id' => $five->id]);
+        $this->assertSame(5.0, TaxChoices::defaultRate('sales'));
+        $this->assertContains(5.0, array_column(TaxChoices::options('sales'), 'rate'));
+
+        $five->delete(); // soft delete: is_active stays true, the tenant's link stays
+        $this->assertSame(0.0, TaxChoices::defaultRate('sales'));
+        $this->assertNotContains(5.0, array_column(TaxChoices::options('sales'), 'rate'));
+    }
+
+    public function test_the_first_line_of_a_new_bill_and_supplier_credit_starts_at_the_purchase_rate(): void
+    {
+        $this->tenant->update(['default_purchase_tax_id' => $this->vat()->id]);
+        // @js output: quotes may be escaped (\u0022) inside an attribute.
+        $this->assertMatchesRegularExpression('/tax_rate\W{1,8}7\.5/', $this->get(route('bills.create'))->assertOk()->getContent());
+
+        $this->assertMatchesRegularExpression('/tax_rate\W{1,8}7\.5/', $this->get(route('vendor-credits.create'))->assertOk()->getContent());
+    }
+
+    public function test_a_sales_only_rate_cant_be_the_purchase_default(): void
+    {
+        $salesOnly = TaxRate::create(['tenant_id' => $this->tenant->id, 'name' => 'Sales levy', 'code' => 'LEVY', 'rate' => 2, 'type' => 'exclusive', 'applies_to' => 'sales', 'is_active' => true]);
+
+        $this->saveSettings(['default_purchase_tax_id' => $salesOnly->id])->assertSessionHasErrors('default_purchase_tax_id');
+        $this->saveSettings(['default_sales_tax_id' => $salesOnly->id])->assertSessionHasNoErrors();
+
+        // Set some other way (the API), it still isn't used for purchases.
+        $this->tenant->update(['default_purchase_tax_id' => $salesOnly->id]);
+        $this->assertSame(0.0, TaxChoices::defaultRate('purchases'));
     }
 }

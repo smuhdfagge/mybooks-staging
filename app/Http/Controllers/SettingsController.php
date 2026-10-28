@@ -89,8 +89,10 @@ class SettingsController extends Controller
             'currency' => 'nullable|string|size:3',
             'fiscal_year_start' => 'nullable|date',
             // The VAT rate new sales and purchase lines start with (audit MB-20).
-            'default_sales_tax_id' => ['nullable', Rule::exists('tax_rates', 'id')->where('tenant_id', auth()->user()->tenant_id)->where('is_active', true)->whereNull('deleted_at')],
-            'default_purchase_tax_id' => ['nullable', Rule::exists('tax_rates', 'id')->where('tenant_id', auth()->user()->tenant_id)->where('is_active', true)->whereNull('deleted_at')],
+            'default_sales_tax_id' => ['nullable', Rule::exists('tax_rates', 'id')->where('tenant_id', auth()->user()->tenant_id)->where('is_active', true)->whereNull('deleted_at')
+                ->whereIn('applies_to', [TaxRate::APPLIES_TO_SALES, TaxRate::APPLIES_TO_BOTH])],
+            'default_purchase_tax_id' => ['nullable', Rule::exists('tax_rates', 'id')->where('tenant_id', auth()->user()->tenant_id)->where('is_active', true)->whereNull('deleted_at')
+                ->whereIn('applies_to', [TaxRate::APPLIES_TO_PURCHASES, TaxRate::APPLIES_TO_BOTH])],
             'logo' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:2048',
         ]);
 

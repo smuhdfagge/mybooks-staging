@@ -4,7 +4,7 @@
     </x-slot>
 
     @php
-        $oldLines = old('items', $lines ?: [['item_id' => '', 'account_id' => '', 'description' => '', 'quantity' => 1, 'unit_price' => 0, 'tax_rate' => 0]]);
+        $oldLines = old('items', $lines ?: [['item_id' => '', 'account_id' => '', 'description' => '', 'quantity' => 1, 'unit_price' => 0, 'tax_rate' => \App\Support\TaxChoices::defaultRate('purchases')]]);
     @endphp
 
     <div class="py-6">

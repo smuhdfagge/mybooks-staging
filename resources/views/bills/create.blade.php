@@ -377,7 +377,7 @@
 
         function billForm() {
             return {
-                items: @js($prefillItems ?: [['item_id' => '', 'account_id' => '', 'description' => '', 'quantity' => 1, 'unit_price' => 0, 'tax_rate' => 0, 'itemSearch' => '', 'itemDropdownOpen' => false, 'itemHighlightedIndex' => 0]]),
+                items: @js($prefillItems ?: [['item_id' => '', 'account_id' => '', 'description' => '', 'quantity' => 1, 'unit_price' => 0, 'tax_rate' => \App\Support\TaxChoices::defaultRate('purchases'), 'itemSearch' => '', 'itemDropdownOpen' => false, 'itemHighlightedIndex' => 0]]),
                 productsUrl: @js(route('lookup.items')),
                 subtotal: 0,
                 totalTax: 0,
