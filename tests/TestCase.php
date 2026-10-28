@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Http;
 use Spatie\Permission\Models\Permission;
 
 abstract class TestCase extends BaseTestCase
@@ -24,6 +25,26 @@ abstract class TestCase extends BaseTestCase
     protected Plan $plan;
 
     protected Subscription $subscription;
+
+    /**
+     * What the fake Have I Been Pwned range API answers. Empty means no
+     * password counts as breached; a test can put "SUFFIX:COUNT" lines here
+     * to make a password count as leaked.
+     */
+    protected string $pwnedPasswordsBody = '';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Password::defaults() checks ->uncompromised() against the real Have
+        // I Been Pwned API. Answer it here so no test calls it over the
+        // network. This stub is registered first, so it wins over a later
+        // Http::fake() for the same host: set $pwnedPasswordsBody instead.
+        Http::fake([
+            'api.pwnedpasswords.com/*' => fn () => Http::response($this->pwnedPasswordsBody),
+        ]);
+    }
 
     /**
      * Create a full tenant context: tenant + plan + active subscription.
