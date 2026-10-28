@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Exceptions\BusinessRuleException;
+use App\Services\Accounting\LockDates;
 use App\Services\JournalService;
 use App\Traits\BelongsToTenant;
 use App\Traits\HasDocumentNumber;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class Journal extends Model
 {
@@ -166,31 +168,49 @@ class Journal extends Model
         $this->withoutPeriodValidation()->save();
     }
 
+    /**
+     * Apply the lines to the account balances and mark the journal posted.
+     *
+     * Under a row lock, and only once (audit MB-16: four "Post" clicks at the
+     * same moment applied a journal three extra times), and never into a
+     * closed period or behind a lock date (MB-02: a draft dated in a closed
+     * month could be posted).
+     */
     public function post()
     {
-        if (! $this->entries()->exists()) {
-            throw new BusinessRuleException('Journal has no lines to post.');
-        }
-
-        if (! $this->isBalanced()) {
-            throw new BusinessRuleException('Journal entries must be balanced before posting.');
-        }
-
-        foreach ($this->entries as $entry) {
-            $account = $entry->account;
-            if ($account->isDebitBalance()) {
-                $delta = (float) ($entry->debit - $entry->credit);
-            } else {
-                $delta = (float) ($entry->credit - $entry->debit);
+        DB::transaction(function () {
+            $current = static::query()->lockForUpdate()->find($this->id);
+            if (! $current || $current->is_posted) {
+                throw new BusinessRuleException("Journal {$this->journal_number} is already posted.");
             }
-            ChartOfAccount::where('id', $account->id)
-                ->update(['current_balance' => \DB::raw('current_balance + ('.(float) $delta.')')]);
-        }
+            if ($reason = LockDates::instance()->blockReason($current->journal_date, (int) $current->tenant_id, auth()->user())) {
+                throw new BusinessRuleException($reason);
+            }
 
-        $this->is_posted = true;
-        $this->posted_at = now();
-        $this->status = 'posted';
-        $this->withoutPeriodValidation()->save();
+            if (! $this->entries()->exists()) {
+                throw new BusinessRuleException('Journal has no lines to post.');
+            }
+
+            if (! $this->isBalanced()) {
+                throw new BusinessRuleException('Journal entries must be balanced before posting.');
+            }
+
+            foreach ($this->entries()->with('account')->get() as $entry) {
+                $account = $entry->account;
+                if ($account->isDebitBalance()) {
+                    $delta = (float) ($entry->debit - $entry->credit);
+                } else {
+                    $delta = (float) ($entry->credit - $entry->debit);
+                }
+                ChartOfAccount::where('id', $account->id)
+                    ->update(['current_balance' => DB::raw('current_balance + ('.(float) $delta.')')]);
+            }
+
+            $this->is_posted = true;
+            $this->posted_at = now();
+            $this->status = 'posted';
+            $this->withoutPeriodValidation()->save();
+        });
 
         // Log the posting activity
         $this->logCustomActivity(ActivityLog::ACTION_POSTED, "Journal '{$this->journal_number}' was posted");
