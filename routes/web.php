@@ -11,6 +11,7 @@ use App\Http\Controllers\BankController;
 use App\Http\Controllers\BankFeedController;
 use App\Http\Controllers\BankFeedLineController;
 use App\Http\Controllers\BankFeedWebhookController;
+use App\Http\Controllers\BankStatementController;
 use App\Http\Controllers\BillController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BillOfMaterialController;
@@ -1077,6 +1078,10 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
         Route::get('banks/{bank}/reconcile', [BankController::class, 'reconcile'])->name('banks.reconcile');
         Route::post('banks/{bank}/reconcile', [BankController::class, 'processReconciliation'])->name('banks.reconcile.process');
         Route::post('banks/{bank}/unreconcile', [BankController::class, 'unreconcile'])->name('banks.unreconcile');
+        // Statement import for reconciling without a bank feed (audit MB-08)
+        Route::post('banks/{bank}/statement/preview', [BankStatementController::class, 'preview'])->middleware('throttle:20,1')->name('banks.statement.preview');
+        Route::post('banks/{bank}/statement', [BankStatementController::class, 'store'])->name('banks.statement.store');
+        Route::delete('banks/{bank}/statement', [BankStatementController::class, 'destroy'])->name('banks.statement.destroy');
     });
 
     /*
