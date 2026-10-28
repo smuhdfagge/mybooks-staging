@@ -56,7 +56,9 @@ class CheckPaystack extends Command
         if ($secret !== '' && ! $this->option('offline')) {
             $ping = $gateway->ping();
             $rows[] = ['Connection to Paystack', $ping['message'], $ping['ok'] ? 'OK' : 'FAIL'];
-            $failed = $failed || ! $ping['ok'];
+            if (! $ping['ok']) {
+                $failed = true;
+            }
         }
 
         $this->table(['Check', 'Result', ''], $rows);
