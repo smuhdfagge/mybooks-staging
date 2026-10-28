@@ -6,6 +6,7 @@ use App\Contracts\JournalServiceInterface;
 use App\Events;
 use App\Http\Middleware\CheckSubscription;
 use App\Http\Middleware\EnsureAccountActive;
+use App\Http\Middleware\EnsureTwoFactorVerified;
 use App\Listeners;
 use App\Models\Bank;
 use App\Models\BankFeedLine;
@@ -35,6 +36,7 @@ use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -161,9 +163,13 @@ class AppServiceProvider extends ServiceProvider
         // Livewire component actions are sent to /livewire/update, not to the
         // page's route, so page middleware does not run on them unless it is
         // marked persistent. Keep deactivated users (H1) and tenants whose
-        // subscription has ended (C1) out of pages they already have open.
+        // subscription has ended (C1) out of pages they already have open,
+        // and sessions that haven't finished two-factor sign-in (a
+        // remember-me cookie alone) or email verification (audit MB-10).
         Livewire::addPersistentMiddleware([
             EnsureAccountActive::class,
+            EnsureEmailIsVerified::class,
+            EnsureTwoFactorVerified::class,
             CheckSubscription::class,
         ]);
 
