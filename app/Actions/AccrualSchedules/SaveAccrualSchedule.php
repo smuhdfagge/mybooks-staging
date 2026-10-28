@@ -5,6 +5,7 @@ namespace App\Actions\AccrualSchedules;
 use App\Models\AccrualSchedule;
 use App\Models\ChartOfAccount;
 use App\Services\AccountCodeService;
+use App\Services\Accounting\FinancialStatements;
 use App\Support\Money;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -12,23 +13,30 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Create or change a prepaid expense / deferred revenue schedule (S9).
- * Posts nothing itself: the money is already in the balance-sheet account
- * (from a bill, expense, invoice or journal). Months whose end has
- * already passed (a start month in the past) are released straight away,
- * so the books don't wait for the daily run.
+ *
+ * Linked to a bill, expense or invoice: a setup journal moves the amount
+ * from the account that document used into the balance account (see
+ * ScheduleSetup). Not linked: the money must already be in the balance
+ * account (a journal, or a bill or expense line posted to it), enough for
+ * every active schedule on it; otherwise each release took out money that
+ * was never put in (audit MB-53). Months whose end has already passed (a
+ * start month in the past) are released straight away, so the books don't
+ * wait for the daily run.
  *
  * A schedule can only be changed while nothing has been released; after
  * that, cancel it and set up a new one.
  *
  * $data keys: type, description, total_amount, start_month (YYYY-MM or a
  * date), months, balance_account_id (empty = the default account),
- * pl_account_id, source_type, source_id, reference, notes. The form no
- * longer sends source_type/source_id (audit MB-53); a schedule already
- * linked keeps its link when changed.
+ * pl_account_id, source_type, source_id, reference, notes.
  */
 class SaveAccrualSchedule
 {
-    public function __construct(protected ReleaseAccrualSchedule $release) {}
+    public function __construct(
+        protected ReleaseAccrualSchedule $release,
+        protected ScheduleSetup $setup,
+        protected FinancialStatements $statements,
+    ) {}
 
     /** @param array<string, mixed> $data */
     public function handle(int $tenantId, array $data, ?AccrualSchedule $schedule = null, ?int $userId = null): AccrualSchedule
@@ -57,9 +65,7 @@ class SaveAccrualSchedule
             if (! $pl || $pl->type !== ($prepaid ? 'expense' : 'income')) {
                 $errors['pl_account_id'] = $prepaid ? 'Choose the expense account each month goes to.' : 'Choose the income account each month goes to.';
             }
-            [$sourceType, $sourceId] = $schedule && ! array_key_exists('source_type', $data)
-                ? [$schedule->source_type, $schedule->source_id]
-                : $this->source($tenantId, $data, $prepaid, $errors);
+            [$sourceType, $sourceId] = $this->source($tenantId, $data, $prepaid, $errors);
             // Tiny totals over many months could leave a month at nothing (or
             // the last one below nothing after rounding).
             if (min(AccrualSchedule::split($data['total_amount'], (int) $data['months'])) <= 0) {
@@ -84,18 +90,26 @@ class SaveAccrualSchedule
             ];
 
             if ($schedule) {
-                $schedule->update($values);
-
-                return $schedule;
+                // Undo the old setup; the new one (if still linked) follows.
+                $this->setup->undo($schedule, (float) $schedule->total_amount, 'Schedule changed');
+                $schedule->update($values + ['setup_journal_id' => null]);
+            } else {
+                $schedule = AccrualSchedule::create($values + [
+                    'tenant_id' => $tenantId,
+                    'schedule_number' => AccrualSchedule::generateNumber($tenantId),
+                    'status' => AccrualSchedule::STATUS_ACTIVE,
+                    'released_amount' => 0,
+                    'created_by' => $userId,
+                ]);
             }
 
-            return AccrualSchedule::create($values + [
-                'tenant_id' => $tenantId,
-                'schedule_number' => AccrualSchedule::generateNumber($tenantId),
-                'status' => AccrualSchedule::STATUS_ACTIVE,
-                'released_amount' => 0,
-                'created_by' => $userId,
-            ]);
+            if ($sourceType) {
+                $this->setup->post($schedule);
+            } else {
+                $this->assertCovered($schedule, $balance);
+            }
+
+            return $schedule;
         });
 
         // Catch up on months already past. After the save, so a problem
@@ -107,6 +121,31 @@ class SaveAccrualSchedule
         }
 
         return $saved->fresh();
+    }
+
+    /**
+     * An unlinked schedule takes its months out of the balance account, so
+     * the account must already hold what every active schedule on it still
+     * has to release, this one included.
+     */
+    protected function assertCovered(AccrualSchedule $schedule, ChartOfAccount $balance): void
+    {
+        $held = (float) ($this->statements->accountBalances($schedule->tenant_id, null, '2999-12-31')->firstWhere('id', $balance->id)?->balance ?? 0);
+        $needed = AccrualSchedule::withoutGlobalScope('tenant')
+            ->where('tenant_id', $schedule->tenant_id)
+            ->where('balance_account_id', $balance->id)
+            ->where('status', AccrualSchedule::STATUS_ACTIVE)
+            ->get()
+            ->sum(fn (AccrualSchedule $s) => $s->remaining());
+
+        if ($held + 0.005 < $needed) {
+            throw ValidationException::withMessages(['balance_account_id' => sprintf(
+                '%s holds %s, but its active schedules still need %s, this one included. Record the payment into %s first (%s), or link the %s it was %s on.',
+                $balance->name, Money::format($held), Money::format($needed), $balance->name,
+                $schedule->isPrepaid() ? 'a journal, or a bill or expense line posted to it' : 'for example with a journal',
+                $schedule->isPrepaid() ? 'bill or expense' : 'invoice', $schedule->isPrepaid() ? 'paid' : 'billed',
+            )]);
+        }
     }
 
     /** Prepaid Expenses or Deferred Revenue, added to the chart if the business doesn't have it. */

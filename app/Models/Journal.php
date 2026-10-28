@@ -31,6 +31,9 @@ class Journal extends Model
     /** One month released from a prepaid expense or deferred revenue schedule (S9). */
     public const TYPE_SCHEDULE_RELEASE = 'schedule_release';
 
+    /** Moves a linked schedule's amount into Prepaid Expenses / Deferred Revenue, or back on cancelling (MB-53). */
+    public const TYPE_SCHEDULE_SETUP = 'schedule_setup';
+
     protected $fillable = [
         'tenant_id',
         'journal_number',
@@ -95,6 +98,11 @@ class Journal extends Model
         return $this->journal_type === self::TYPE_SCHEDULE_RELEASE;
     }
 
+    public function isScheduleSetup(): bool
+    {
+        return $this->journal_type === self::TYPE_SCHEDULE_SETUP;
+    }
+
     /** Has a "reverse on" date whose reversal isn't posted yet (and wasn't cancelled). */
     public function hasPendingReversal(): bool
     {
@@ -115,6 +123,9 @@ class Journal extends Model
         }
         // A month released from a schedule (S9): the schedule tracks it as
         // released, so undoing the journal alone would leave the two apart.
+        if ($this->isScheduleSetup()) {
+            return "{$this->journal_number} moves a prepaid or deferred revenue schedule's amount and can't be reversed or voided by itself. Cancel or delete the schedule instead.";
+        }
         if ($this->isScheduleRelease()) {
             return "{$this->journal_number} is a monthly release from a prepaid or deferred revenue schedule and can't be reversed or voided by itself. Cancel the schedule instead to stop the months still to come.";
         }

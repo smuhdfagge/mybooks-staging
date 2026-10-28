@@ -3,12 +3,15 @@
 namespace Tests\Feature\Features;
 
 use App\Actions\AccrualSchedules\ReleaseAccrualSchedule;
+use App\Actions\Bills\SaveBill;
+use App\Actions\Invoices\SaveInvoice;
 use App\Exceptions\BusinessRuleException;
 use App\Models\AccountingPeriod;
 use App\Models\AccrualSchedule;
 use App\Models\AccrualScheduleRelease;
 use App\Models\Bill;
 use App\Models\ChartOfAccount;
+use App\Models\Customer;
 use App\Models\Journal;
 use App\Models\Tenant;
 use App\Models\Vendor;
@@ -71,6 +74,40 @@ class PrepaidDeferredSchedulesTest extends TestCase
         $this->post(route('journals.post', Journal::latest('id')->firstOrFail()))->assertSessionHasNoErrors();
     }
 
+    /**
+     * An unlinked schedule needs the money already in its balance account
+     * (audit MB-53), so put in whatever its active schedules still lack,
+     * from cash, as a business would before setting one up.
+     */
+    private function cover(array $data): void
+    {
+        $tenantId = auth()->user()->tenant_id;
+        $prepaid = ($data['type'] ?? AccrualSchedule::TYPE_PREPAID) === AccrualSchedule::TYPE_PREPAID;
+        $balance = ! empty($data['balance_account_id'])
+            ? ChartOfAccount::withoutGlobalScopes()->find($data['balance_account_id'])
+            : ChartOfAccount::withoutGlobalScopes()->where('tenant_id', $tenantId)->where('account_code', $prepaid ? '1400' : '2440')->first();
+        if (! $balance) {
+            return; // added on save; the test funds it afterwards if it needs to
+        }
+        $held = (float) (app(FinancialStatements::class)->accountBalances($tenantId, null, '2999-12-31')->firstWhere('id', $balance->id)?->balance ?? 0);
+        $needed = AccrualSchedule::withoutGlobalScopes()->where('balance_account_id', $balance->id)->where('status', AccrualSchedule::STATUS_ACTIVE)->get()
+            ->sum(fn ($s) => $s->remaining()) + (float) $data['total_amount'];
+        $shortfall = round($needed - $held, 2);
+        if ($shortfall <= 0) {
+            return;
+        }
+        $cash = ChartOfAccount::withoutGlobalScopes()->where('tenant_id', $tenantId)->where('account_code', '1000')->firstOrFail();
+        [$debit, $credit] = $prepaid ? [$balance, $cash] : [$cash, $balance];
+        $this->post(route('journals.store'), [
+            'journal_date' => today()->toDateString(), 'description' => 'Paid or received in advance',
+            'entries' => [
+                ['account_id' => $debit->id, 'debit' => $shortfall, 'credit' => 0],
+                ['account_id' => $credit->id, 'debit' => 0, 'credit' => $shortfall],
+            ],
+        ])->assertSessionHasNoErrors();
+        $this->post(route('journals.post', Journal::latest('id')->firstOrFail()))->assertSessionHasNoErrors();
+    }
+
     /** @return array<string, mixed> A year's shop rent, ₦1,200,000, from May 2026. */
     private function rent(array $overrides = []): array
     {
@@ -88,6 +125,9 @@ class PrepaidDeferredSchedulesTest extends TestCase
 
     private function createSchedule(array $data): AccrualSchedule
     {
+        if (empty($data['source'])) {
+            $this->cover($data);
+        }
         $this->post(route('accrual-schedules.store'), $data)->assertSessionHasNoErrors()->assertRedirect();
 
         return AccrualSchedule::latest('id')->firstOrFail();
@@ -354,8 +394,9 @@ class PrepaidDeferredSchedulesTest extends TestCase
         $theirJournal = Journal::withoutGlobalScopes()->find(AccrualScheduleRelease::withoutGlobalScopes()->where('accrual_schedule_id', $theirs->id)->value('journal_id'));
         $this->assertSame($other->id, $theirJournal->tenant_id);
         $this->assertSame([$other->id], $theirJournal->entries()->with(['account' => fn ($q) => $q->withoutGlobalScopes()])->get()->pluck('account.tenant_id')->unique()->values()->all());
-        $this->assertSame(-100000.0, $this->balance('1400', $other));
-        $this->assertSame(-100000.0, $this->balance('1400'));
+        // Each funded 1,200,000 and released one month of 100,000 (never below zero: MB-53).
+        $this->assertSame(1100000.0, $this->balance('1400', $other));
+        $this->assertSame(1100000.0, $this->balance('1400'));
         $this->assertBooksBalance($other);
 
         $this->actingAs($me);
@@ -397,28 +438,38 @@ class PrepaidDeferredSchedulesTest extends TestCase
         $this->post(route('accrual-schedules.store'), $this->rent(['start_month' => 'May']))->assertSessionHasErrors('start_month');
         $this->assertSame(0, AccrualSchedule::count());
 
-        // Linking a bill, expense or invoice is switched off (audit MB-53):
-        // the bill already posted to its own expense line.
-        $bill = Bill::factory()->create(['tenant_id' => $this->tenant->id, 'vendor_id' => Vendor::factory()->create(['tenant_id' => $this->tenant->id])->id, 'total' => 1200000]);
+        // Linked to the bill that paid the rent: saving moves the amount from
+        // the bill's expense account into Prepaid Expenses (audit MB-53).
+        $bill = app(SaveBill::class)->create($this->tenant->id, [
+            'vendor_id' => Vendor::factory()->create(['tenant_id' => $this->tenant->id])->id, 'bill_date' => '2026-04-02', 'due_date' => '2026-05-02',
+            'items' => [['description' => 'Rent 2026', 'quantity' => 1, 'unit_price' => 1200000, 'tax_rate' => 0, 'account_id' => $this->account('6100')->id]],
+        ], $this->user->id);
         $this->get(route('accrual-schedules.create', ['source' => "bill:{$bill->id}"]))->assertOk()
-            ->assertDontSee($bill->bill_number);
-        $this->post(route('accrual-schedules.store'), $this->rent(['source' => "bill:{$bill->id}"]))->assertSessionHasErrors('source');
-        $this->assertSame(0, AccrualSchedule::count());
-
-        // A schedule linked before then keeps its link.
-        $schedule = $this->createSchedule($this->rent());
-        $schedule->update(['source_type' => 'bill', 'source_id' => $bill->id]);
-        $this->get(route('accrual-schedules.show', $schedule))->assertSee(route('bills.show', $bill))->assertSee('Lease 2026');
+            ->assertSee($bill->bill_number)->assertSee('1200000');
+        $schedule = $this->createSchedule($this->rent(['source' => "bill:{$bill->id}"]));
+        $this->assertSame(['bill', $bill->id], [$schedule->source_type, $schedule->source_id]);
+        $this->assertNotNull($schedule->setup_journal_id);
+        $this->assertSame(1200000.0, $this->balance('1400'));
+        $this->assertSame(0.0, $this->balance('6100'));
+        $this->get(route('accrual-schedules.show', $schedule))->assertSee(route('bills.show', $bill))->assertSee('Lease 2026')
+            ->assertSee($schedule->setupJournal->journal_number);
     }
 
     public function test_the_default_account_is_used_and_added_when_missing(): void
     {
         $this->account('2440')->delete();
+        // Linked to the invoice, so its setup journal puts the money in (MB-53).
+        $invoice = app(SaveInvoice::class)->create($this->tenant->id, [
+            'customer_id' => Customer::factory()->create(['tenant_id' => $this->tenant->id])->id, 'invoice_date' => '2026-04-02', 'due_date' => '2026-05-02', 'status' => 'sent',
+            'items' => [['description' => 'Maintenance contract', 'quantity' => 1, 'unit_price' => 600000, 'tax_rate' => 0]],
+        ], $this->user->id);
         $schedule = $this->createSchedule([
             'type' => AccrualSchedule::TYPE_DEFERRED, 'description' => 'Annual maintenance contract', 'total_amount' => 600000,
             'start_month' => '2026-05', 'months' => 6, 'balance_account_id' => '', 'pl_account_id' => $this->account('4100')->id,
+            'source' => "invoice:{$invoice->id}",
         ]);
         $account = $this->account('2440');
+        $this->assertSame(600000.0, $this->balance('2440'));
         $this->assertSame('Deferred Revenue', $account->name);
         $this->assertSame('liability', $account->type);
         $this->assertSame($account->id, $schedule->balance_account_id);

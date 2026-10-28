@@ -4,11 +4,9 @@ namespace Tests\Feature\Regression\Audit2610;
 
 use App\Models\AccrualSchedule;
 use App\Models\Bank;
-use App\Models\Bill;
 use App\Models\ChartOfAccount;
 use App\Models\Journal;
 use App\Models\Role;
-use App\Models\Vendor;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
@@ -46,36 +44,8 @@ class Session1ContainmentTest extends TestCase
         ];
     }
 
-    // MB-53 stopgap
-    public function test_a_new_schedule_cannot_be_linked_to_a_bill_expense_or_invoice(): void
-    {
-        $bill = Bill::factory()->create(['tenant_id' => $this->tenant->id, 'vendor_id' => Vendor::factory()->create(['tenant_id' => $this->tenant->id])->id]);
-
-        $this->post(route('accrual-schedules.store'), $this->schedule(['source' => "bill:{$bill->id}"]))
-            ->assertSessionHasErrors(['source' => 'A schedule can\'t be linked to a bill, expense or invoice. Record the payment with a journal into the prepaid or deferred revenue account first.']);
-        $this->post(route('accrual-schedules.store'), $this->schedule(['source_type' => 'bill', 'source_id' => $bill->id]))
-            ->assertSessionHasErrors(['source_type', 'source_id']);
-        $this->assertSame(0, AccrualSchedule::count());
-
-        $this->get(route('accrual-schedules.create'))->assertOk()
-            ->assertDontSee('name="source"', false)
-            ->assertSee('Record the payment with a journal into the prepaid or deferred revenue account first');
-
-        $this->post(route('accrual-schedules.store'), $this->schedule())->assertSessionHasNoErrors();
-        $this->assertNull(AccrualSchedule::firstOrFail()->source_type);
-    }
-
-    public function test_changing_a_schedule_linked_before_the_fix_keeps_its_link(): void
-    {
-        $this->post(route('accrual-schedules.store'), $this->schedule())->assertSessionHasNoErrors();
-        $schedule = AccrualSchedule::firstOrFail();
-        $schedule->update(['source_type' => 'expense', 'source_id' => 7]);
-
-        $this->put(route('accrual-schedules.update', $schedule), $this->schedule(['description' => 'Shop rent, renamed']))->assertSessionHasNoErrors();
-
-        $schedule->refresh();
-        $this->assertSame(['Shop rent, renamed', 'expense', 7], [$schedule->description, $schedule->source_type, (int) $schedule->source_id]);
-    }
+    // MB-53: the stopgap (no linking) is replaced by the setup journal in
+    // session 8; see Session8ScheduleSetupTest.
 
     // MB-08 stopgap
     public function test_reconcile_screen_never_says_all_caught_up_while_a_difference_remains(): void
@@ -110,8 +80,12 @@ class Session1ContainmentTest extends TestCase
         ])->assertSessionHasNoErrors();
         $this->post(route('journals.post', Journal::latest('id')->firstOrFail()))->assertSessionHasNoErrors();
 
-        $this->post(route('accrual-schedules.store'), $this->schedule())->assertSessionHasNoErrors();
-        AccrualSchedule::firstOrFail()->update(['source_type' => 'bill', 'source_id' => 7]);
+        // A schedule linked before session 8: no setup journal.
+        AccrualSchedule::create([
+            'tenant_id' => $this->tenant->id, 'schedule_number' => 'PDS-000001', 'start_date' => now()->addMonth()->startOfMonth()->toDateString(),
+            'balance_account_id' => $this->account('1400')->id, 'status' => AccrualSchedule::STATUS_ACTIVE, 'released_amount' => 0,
+            'source_type' => 'bill', 'source_id' => 7,
+        ] + $this->schedule());
 
         Permission::findOrCreate('edit users', 'web');
         Role::create(['name' => 'Clerk', 'guard_name' => 'web', 'tenant_id' => $this->tenant->id])->givePermissionTo('edit users');
@@ -123,7 +97,7 @@ class Session1ContainmentTest extends TestCase
 
         $this->artisan('mybooks:audit-affected-data')
             ->expectsOutputToContain("Tenant {$this->tenant->id}")
-            ->expectsOutputToContain('Schedules linked to a document: 1')
+            ->expectsOutputToContain('Schedules linked to a document without a setup journal: 1')
             ->expectsOutputToContain('Prepaid Expenses / Deferred Revenue below zero: 1')
             ->expectsOutputToContain('Custom roles with user, role or report permissions: 1')
             ->expectsOutputToContain('Banks whose balance differs from the ledger: 1')
