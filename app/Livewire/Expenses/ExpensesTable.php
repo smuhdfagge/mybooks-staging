@@ -139,6 +139,12 @@ class ExpensesTable extends Component
 
             return;
         }
+        // Segregation of duties, as on the expense page and the API (audit MB-11).
+        if (! $expense->canBeApprovedBy(auth()->user())) {
+            $this->errorMessage = "You can't approve {$expense->expense_number}: you recorded it. Another admin must approve it.";
+
+            return;
+        }
         $expense->approve(auth()->id());
         $this->successMessage = "{$expense->expense_number} approved.";
     }
@@ -250,15 +256,23 @@ class ExpensesTable extends Component
                 break;
 
             case 'approve':
-                DB::transaction(function () use ($expenses, &$n) {
+                $own = 0;
+                DB::transaction(function () use ($expenses, &$n, &$own) {
                     foreach ($expenses() as $expense) {
-                        if ($expense->canBeApproved()) {
-                            $expense->approve(auth()->id());
-                            $n++;
+                        if (! $expense->canBeApproved()) {
+                            continue;
                         }
+                        // Not one's own expenses (audit MB-11).
+                        if (! $expense->canBeApprovedBy(auth()->user())) {
+                            $own++;
+
+                            continue;
+                        }
+                        $expense->approve(auth()->id());
+                        $n++;
                     }
                 });
-                $this->successMessage = "Approved {$n} expense(s).";
+                $this->successMessage = "Approved {$n} expense(s).".($own ? " Skipped {$own} you recorded yourself: another admin must approve those." : '');
                 break;
 
             case 'mark_paid':
