@@ -503,7 +503,7 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     // Payments Received - Create routes MUST come before wildcard routes
     Route::middleware('permission:create payments-received')->group(function () {
         Route::get('payments-received/create', [PaymentReceivedController::class, 'create'])->name('payments-received.create');
-        Route::post('payments-received', [PaymentReceivedController::class, 'store'])->name('payments-received.store');
+        Route::post('payments-received', [PaymentReceivedController::class, 'store'])->middleware('form.once')->name('payments-received.store');
     });
     Route::middleware('permission:view payments-received')->group(function () {
         Route::get('payments-received', [PaymentReceivedController::class, 'index'])->name('payments-received.index');
@@ -758,7 +758,7 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     // Payments Made - Create routes MUST come before wildcard routes
     Route::middleware('permission:create payments-made')->group(function () {
         Route::get('payments-made/create', [PaymentMadeController::class, 'create'])->name('payments-made.create');
-        Route::post('payments-made', [PaymentMadeController::class, 'store'])->name('payments-made.store');
+        Route::post('payments-made', [PaymentMadeController::class, 'store'])->middleware('form.once')->name('payments-made.store');
     });
     Route::middleware('permission:view payments-made')->group(function () {
         Route::get('payments-made', [PaymentMadeController::class, 'index'])->name('payments-made.index');

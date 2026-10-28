@@ -47,12 +47,15 @@ class RecordPaymentMade
         $vendor = Vendor::where('tenant_id', $tenantId)->findOrFail($data['vendor_id']);
         $wht = $this->wht->forPurchase($tenantId, $data, $vendor, $bill);
 
-        // Money paid plus WHT is what settles the bill.
-        if ($errors = PaymentValidation::forBill($bill, $data['vendor_id'], (float) $data['amount'] + $wht['wht_amount'])) {
-            throw ValidationException::withMessages($errors);
-        }
+        return DB::transaction(function () use ($tenantId, $data, $userId, $isAdvance, $wht, $bill) {
+            // Checked on the bill as it is now, locked until this payment is
+            // saved, so two payments sent at once can't both take the same
+            // balance (audit MB-09). Money paid plus WHT settles the bill.
+            $bill = $bill ? Bill::lockForUpdate()->find($bill->id) : null;
+            if ($errors = PaymentValidation::forBill($bill, $data['vendor_id'], (float) $data['amount'] + $wht['wht_amount'])) {
+                throw ValidationException::withMessages($errors);
+            }
 
-        return DB::transaction(function () use ($tenantId, $data, $userId, $isAdvance, $wht) {
             $payment = PaymentMade::create([
                 'tenant_id' => $tenantId,
                 'vendor_id' => $data['vendor_id'],

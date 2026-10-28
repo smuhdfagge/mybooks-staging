@@ -280,6 +280,7 @@
         <x-modal name="record-payment" title="Record payment" maxWidth="md" :show="$errors->any() && old('invoice_id') == $invoice->id">
             <form action="{{ route('payments-received.store') }}" method="POST" class="space-y-4 px-6 pb-6 pt-2">
                 @csrf
+                <x-form-token />
                 <input type="hidden" name="invoice_id" value="{{ $invoice->id }}">
                 <input type="hidden" name="customer_id" value="{{ $invoice->customer_id }}">
                 <input type="hidden" name="back_to_invoice" value="1">

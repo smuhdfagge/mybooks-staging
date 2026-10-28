@@ -20,7 +20,8 @@ use Illuminate\Validation\ValidationException;
  * balance, couldn't apply a deposit, and sent no payment confirmation.
  *
  * Checks (M5): right customer, payable invoice, not more than is owed, and
- * a deposit being applied has enough left. Then, in one transaction: the
+ * a deposit being applied has enough left, made on the invoice and deposit
+ * locked inside the transaction (MB-09). Then, in that transaction: the
  * payment (the Created event updates the invoice or deposit balance and
  * posts the journal), the bank balance, and the confirmation email.
  *
@@ -54,27 +55,26 @@ class RecordPaymentReceived
             throw ValidationException::withMessages(['wht_amount' => 'WHT can only be recorded on a payment against an invoice or a general payment, not with a deposit.']);
         }
 
-        if ($applyDepositId && $depositAmount > 0) {
-            $errors = PaymentValidation::forDepositApplication(
-                PaymentReceived::find($applyDepositId), $invoice, $data['customer_id'],
-                $depositAmount, (float) $data['amount'] - $depositAmount
-            );
-        } elseif (! $isDeposit) {
-            // Money received plus WHT is what settles the invoice.
-            $errors = PaymentValidation::forInvoice($invoice, $data['customer_id'], (float) $data['amount'] + $wht['wht_amount']);
-        }
-        if (! empty($errors)) {
-            throw ValidationException::withMessages($errors);
-        }
-
         return DB::transaction(function () use ($tenantId, $data, $userId, $isDeposit, $applyDepositId, $depositAmount, $invoice, $wht) {
             $amount = (float) $data['amount'];
 
-            if ($applyDepositId && $depositAmount > 0 && $invoice) {
-                $deposit = PaymentReceived::lockForUpdate()->findOrFail($applyDepositId);
-                if (! $deposit->is_deposit || (float) $deposit->unused_amount + 0.005 < $depositAmount) {
-                    throw ValidationException::withMessages(['deposit_amount' => 'The deposit does not have that much left.']);
-                }
+            // Checked on the invoice (and deposit) as they are now, locked
+            // until this payment is saved, so two payments sent at once
+            // can't both take the same balance (audit MB-09).
+            $invoice = $invoice ? Invoice::lockForUpdate()->find($invoice->id) : null;
+            $deposit = $applyDepositId && $depositAmount > 0 ? PaymentReceived::lockForUpdate()->find($applyDepositId) : null;
+            $errors = [];
+            if ($applyDepositId && $depositAmount > 0) {
+                $errors = PaymentValidation::forDepositApplication($deposit, $invoice, $data['customer_id'], $depositAmount, $amount - $depositAmount);
+            } elseif (! $isDeposit) {
+                // Money received plus WHT is what settles the invoice.
+                $errors = PaymentValidation::forInvoice($invoice, $data['customer_id'], $amount + $wht['wht_amount']);
+            }
+            if ($errors) {
+                throw ValidationException::withMessages($errors);
+            }
+
+            if ($deposit && $invoice) {
                 $application = $deposit->applyToInvoice($invoice, $depositAmount, $data['notes'] ?? null);
                 $amount = round($amount - $depositAmount, 2);
 
