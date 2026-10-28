@@ -7,6 +7,7 @@ use App\Actions\Bills\SaveBill;
 use App\Http\Requests\StoreBillRequest;
 use App\Http\Requests\UpdateBillRequest;
 use App\Models\Bill;
+use App\Models\BillItem;
 use App\Models\PurchaseOrder;
 use App\Models\Vendor;
 use App\Models\Warehouse;
@@ -45,6 +46,7 @@ class BillController extends Controller
                 // The order's line discount, for the share being billed.
                 'discount' => (float) $line->quantity > 0 ? round((float) $line->discount * ($line->quantity_received > 0 ? $line->quantity_received : $line->quantity) / (float) $line->quantity, 2) : 0,
                 'tax_rate' => (float) $line->tax_rate,
+                'account_id' => '',
                 'itemSearch' => $line->item?->name ?? '',
                 'itemDropdownOpen' => false,
                 'itemHighlightedIndex' => 0,
@@ -56,7 +58,9 @@ class BillController extends Controller
         $vendorId = old('vendor_id', $request->input('vendor_id', $purchaseOrder?->vendor_id));
         $vendorOptions = $this->vendorOptions($vendorId ? Vendor::whereKey($vendorId)->get() : collect());
 
-        return view('bills.create', compact('vendorOptions', 'billNumber', 'purchaseOrder', 'prefillItems'));
+        $lineAccounts = $this->lineAccounts();
+
+        return view('bills.create', compact('vendorOptions', 'billNumber', 'purchaseOrder', 'prefillItems', 'lineAccounts'));
     }
 
     public function store(StoreBillRequest $request, SaveBill $save)
@@ -104,7 +108,9 @@ class BillController extends Controller
         $bill->load(['vendor', 'items.item']);
         $vendorOptions = $this->vendorOptions(collect([$bill->vendor])->filter());
 
-        return view('bills.edit', compact('bill', 'vendorOptions'));
+        $lineAccounts = $this->lineAccounts();
+
+        return view('bills.edit', compact('bill', 'vendorOptions', 'lineAccounts'));
     }
 
     public function update(UpdateBillRequest $request, Bill $bill, SaveBill $save)
@@ -139,5 +145,12 @@ class BillController extends Controller
             'id' => (string) $v->id,
             'name' => $v->name.($v->company_name ? " ({$v->company_name})" : ''),
         ])->values()->all();
+    }
+
+    /** @return array<string, string> account id => "code - name", for the line Account select */
+    protected function lineAccounts(): array
+    {
+        return BillItem::postableAccounts(auth()->user()->tenant_id)->get(['id', 'account_code', 'name'])
+            ->mapWithKeys(fn ($a) => [(string) $a->id => "{$a->account_code} - {$a->name}"])->all();
     }
 }

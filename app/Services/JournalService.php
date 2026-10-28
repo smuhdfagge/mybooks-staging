@@ -397,22 +397,12 @@ class JournalService implements JournalServiceInterface
                 'created_by' => $bill->created_by ?? auth()->id(),
             ]);
 
-            // Debit: Inventory (for items that track inventory) or General Expense
-            [$inventoryAmount, $expenseAmount] = $this->billDebitSplit($bill);
-
-            if ($inventoryAmount > 0) {
-                $this->createEntry($journal, $this->acct($t, 'inventory'), $inventoryAmount, 0,
-                    "Inventory Purchase - Bill {$bill->bill_number}");
-            }
-
-            if ($expenseAmount > 0) {
-                // Use a general expense account or could be more specific based on item categories
-                $this->createEntry($journal, $this->acct($t, 'miscellaneous_expense'), $expenseAmount, 0,
-                    "Expense - Bill {$bill->bill_number}");
-            }
+            // Debit: Inventory for stocked items, and each other line's own account (MB-14)
+            [$inventoryAmount, $expenses] = $this->billDebitSplit($bill);
+            $this->postBillDebits($journal, $bill, $inventoryAmount, $expenses);
 
             // If no items or all have zero totals, debit inventory by default
-            if ($inventoryAmount == 0 && $expenseAmount == 0 && $bill->subtotal > 0) {
+            if ($inventoryAmount == 0 && ! $expenses && $bill->subtotal > 0) {
                 $this->createEntry($journal, $this->acct($t, 'inventory'), round((float) $bill->subtotal - (float) ($bill->discount_amount ?? 0), 2), 0,
                     "Purchase - Bill {$bill->bill_number}");
             }
@@ -452,19 +442,10 @@ class JournalService implements JournalServiceInterface
             'description' => "Bill {$bill->bill_number} - {$bill->vendor->name}",
         ]);
 
-        [$inventoryAmount, $expenseAmount] = $this->billDebitSplit($bill);
+        [$inventoryAmount, $expenses] = $this->billDebitSplit($bill);
+        $this->postBillDebits($journal, $bill, $inventoryAmount, $expenses);
 
-        if ($inventoryAmount > 0) {
-            $this->createEntry($journal, $this->acct($t, 'inventory'), $inventoryAmount, 0,
-                "Inventory Purchase - Bill {$bill->bill_number}");
-        }
-
-        if ($expenseAmount > 0) {
-            $this->createEntry($journal, $this->acct($t, 'miscellaneous_expense'), $expenseAmount, 0,
-                "Expense - Bill {$bill->bill_number}");
-        }
-
-        if ($inventoryAmount == 0 && $expenseAmount == 0 && $bill->subtotal > 0) {
+        if ($inventoryAmount == 0 && ! $expenses && $bill->subtotal > 0) {
             $this->createEntry($journal, $this->acct($t, 'inventory'), round((float) $bill->subtotal - (float) ($bill->discount_amount ?? 0), 2), 0,
                 "Purchase - Bill {$bill->bill_number}");
         }
@@ -1719,11 +1700,17 @@ class JournalService implements JournalServiceInterface
         $credit = match ($asset->funding_source) {
             'cash' => $this->acct($t, 'cash'),
             'on_account' => $this->acct($t, 'accounts_payable'),
-            'bill' => $this->acct($t, 'miscellaneous_expense'),
+            // Taken back off the account the bill posted it to (MB-14).
+            'bill' => ChartOfAccount::where('tenant_id', $t)->whereKey($asset->funding_account_id)->value('account_code')
+                ?? $this->acct($t, 'miscellaneous_expense'),
             'opening_balance' => $this->acct($t, 'owners_capital'),
             default => $this->getPaymentAccountCode('bank_transfer', $t),
         };
         $label = FixedAsset::FUNDING_SOURCES[$asset->funding_source] ?? 'Paid from the bank';
+        // The bill line was coded straight to the asset account: it is already there.
+        if ($credit === $this->fixedAssetAccounts($asset)['asset']) {
+            return null;
+        }
 
         return $this->postSimple($asset, self::ASSET_ACQUISITION, $asset->purchase_date, "Asset purchase - {$asset->name} ({$label})", [
             [$this->fixedAssetAccounts($asset)['asset'], (float) $asset->purchase_cost, 0, "Asset - {$asset->name}"],
@@ -2234,51 +2221,80 @@ class JournalService implements JournalServiceInterface
     }
 
     /**
-     * Split a bill's cost (net of tax) between inventory and expense.
+     * How much of a bill to debit to Inventory and to each other account.
+     * Lines are taken net of input tax (which goes to Input VAT) and of
+     * their share of the document discount (already taken off when saved).
      *
-     * Line totals include their tax, and the tax is debited separately to
-     * input tax, so each line is taken net of tax. Previously the full line
-     * total was used, so a taxed bill's journal was out by the tax amount as
-     * soon as it was rebuilt with its lines (e.g. on payment).
+     * Each non-stock line goes to its own account, or Miscellaneous Expense
+     * when none was chosen (audit MB-14: every line went to Miscellaneous,
+     * while a supplier credit took its lines off their own accounts, so
+     * crediting a bill coded to repairs left Repairs below zero).
      *
-     * Any rounding difference against subtotal - discount goes to the larger
-     * side, so debits always equal the bill total.
+     * Any rounding difference against subtotal - discount goes to the
+     * largest amount, so debits always equal the bill total.
      *
-     * @return array{0: float, 1: float} [inventory, expense]
+     * @return array{0: float, 1: array<string, float>} [inventory, account code => amount]
      */
     protected function billDebitSplit(Bill $bill): array
     {
+        $t = $bill->tenant_id;
         $inventory = 0.0;
-        $expense = 0.0;
+        $expenses = [];
 
-        foreach ($bill->items as $item) {
+        foreach ($bill->items()->with(['item', 'account'])->get() as $item) {
             $net = (float) $item->total - (float) ($item->tax_amount ?? 0);
             if ($item->item && $item->item->track_inventory) {
                 $inventory += $net;
             } else {
-                $expense += $net;
+                $code = $item->account?->account_code ?? $this->acct($t, 'miscellaneous_expense');
+                $expenses[$code] = ($expenses[$code] ?? 0) + $net;
             }
         }
 
         $inventory = round($inventory, 2);
-        $expense = round($expense, 2);
+        $expenses = array_filter(array_map(fn ($amount) => round($amount, 2), $expenses), fn ($amount) => $amount != 0.0);
 
-        if ($inventory == 0.0 && $expense == 0.0) {
-            return [0.0, 0.0];
+        if ($inventory == 0.0 && ! $expenses) {
+            return [0.0, []];
         }
 
         $target = round((float) $bill->subtotal - (float) ($bill->discount_amount ?? 0), 2);
-        $difference = round($target - ($inventory + $expense), 2);
+        $difference = round($target - ($inventory + array_sum($expenses)), 2);
 
         if ($difference != 0.0 && abs($difference) <= 0.05) {
-            if ($inventory >= $expense) {
+            $largestExpense = null;
+            foreach ($expenses as $code => $amount) {
+                if ($largestExpense === null || $amount > $expenses[$largestExpense]) {
+                    $largestExpense = $code;
+                }
+            }
+            if ($largestExpense === null || $inventory >= $expenses[$largestExpense]) {
                 $inventory = round($inventory + $difference, 2);
             } else {
-                $expense = round($expense + $difference, 2);
+                $expenses[$largestExpense] = round($expenses[$largestExpense] + $difference, 2);
             }
         }
 
-        return [$inventory, $expense];
+        return [$inventory, $expenses];
+    }
+
+    /**
+     * @param  array<string, float>  $expenses
+     */
+    protected function postBillDebits(Journal $journal, Bill $bill, float $inventory, array $expenses): void
+    {
+        if ($inventory > 0) {
+            $this->createEntry($journal, $this->acct($bill->tenant_id, 'inventory'), $inventory, 0,
+                "Inventory Purchase - Bill {$bill->bill_number}");
+        }
+        // Account codes are numeric, so they arrive as int keys.
+        foreach ($expenses as $code => $amount) {
+            if ($amount > 0) {
+                $this->createEntry($journal, (string) $code, $amount, 0, "Expense - Bill {$bill->bill_number}");
+            } elseif ($amount < 0) {
+                $this->createEntry($journal, (string) $code, 0, -$amount, "Expense - Bill {$bill->bill_number}");
+            }
+        }
     }
 
     /**

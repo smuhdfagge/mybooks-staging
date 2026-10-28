@@ -3,12 +3,28 @@
 namespace App\Models;
 
 use App\Traits\RecordsVatTreatment;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BillItem extends Model
 {
+    /**
+     * The accounts a bill line can be posted to: expense and asset accounts
+     * (e.g. Prepaid Expenses, Equipment), never cash or bank (audit MB-14).
+     *
+     * @return Builder<ChartOfAccount>
+     */
+    public static function postableAccounts(int $tenantId): Builder
+    {
+        return ChartOfAccount::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->whereIn('type', ['expense', 'asset'])
+            ->where(fn ($q) => $q->whereNull('sub_type')->orWhereNotIn('sub_type', ['cash', 'bank']))
+            ->orderBy('account_code');
+    }
+
     use HasFactory, RecordsVatTreatment;
 
     protected $fillable = [

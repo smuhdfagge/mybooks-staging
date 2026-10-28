@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BillItem;
 use App\Models\ChartOfAccount;
 use App\Models\FixedAsset;
 use App\Models\FixedAssetCategory;
@@ -51,9 +52,11 @@ class FixedAssetController extends Controller
             ->get();
 
         $depreciationMethods = FixedAsset::getDepreciationMethods();
+        $billLineAccounts = BillItem::postableAccounts($tenantId)->get(['id', 'account_code', 'name'])
+            ->mapWithKeys(fn ($a) => [(string) $a->id => "{$a->account_code} - {$a->name}"])->all();
 
         return view('fixed-assets.create', compact(
-            'categories', 'vendors', 'assetAccounts', 'expenseAccounts', 'depreciationMethods'
+            'categories', 'vendors', 'assetAccounts', 'expenseAccounts', 'depreciationMethods', 'billLineAccounts'
         ));
     }
 
@@ -75,6 +78,8 @@ class FixedAssetController extends Controller
             'in_service_date' => 'required|date|after_or_equal:purchase_date',
             'purchase_cost' => 'required|numeric|min:0',
             'funding_source' => ['required', Rule::in(array_keys(FixedAsset::FUNDING_SOURCES))],
+            // On a vendor bill: the account the bill posted it to (MB-14). Empty: Miscellaneous Expense.
+            'funding_account_id' => ['nullable', 'exclude_unless:funding_source,bill', Rule::in(BillItem::postableAccounts($tenantId)->pluck('id')->all())],
             'salvage_value' => 'required|numeric|min:0|lt:purchase_cost',
             'useful_life' => 'required|numeric|min:0.5|max:50',
             'depreciation_method' => 'required|in:straight_line,declining_balance,double_declining,sum_of_years',

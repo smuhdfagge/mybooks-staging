@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Actions\Bills\SaveBill;
+use App\Models\BillItem;
 use App\Models\Warehouse;
 use App\Services\Accounting\VatTreatment;
 use Illuminate\Foundation\Http\FormRequest;
@@ -34,7 +35,8 @@ class StoreBillRequest extends FormRequest
             'items.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'items.*.vat_treatment' => ['nullable', 'in:'.implode(',', VatTreatment::ALL)],
             'items.*.discount' => ['nullable', 'numeric', 'min:0'],
-            'items.*.account_id' => ['nullable', Rule::exists('chart_of_accounts', 'id')->where('tenant_id', $tenantId)],
+            // Expense or asset accounts only; empty posts to Miscellaneous Expense (MB-14).
+            'items.*.account_id' => ['nullable', Rule::in(BillItem::postableAccounts($tenantId)->pluck('id')->all())],
             // Shared with the API (Q5).
             'vendor_bill_number' => ['nullable', 'string', 'max:100'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],

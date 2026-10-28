@@ -188,6 +188,7 @@
                                                 </div>
                                                 <input aria-label="Description" type="text" :name="`items[${index}][description]`" x-model="item.description" required placeholder="Description"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:placeholder-gray-500 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
+                                                @include('bills._line-account')
                                             </td>
                                             <td data-label="Qty">
                                                 <input aria-label="Quantity" type="number" :name="`items[${index}][quantity]`" x-model.number="item.quantity" min="0.01" step="0.01" required
@@ -378,14 +379,14 @@
 
         function billForm() {
             return {
-                items: @js($prefillItems ?: [['item_id' => '', 'description' => '', 'quantity' => 1, 'unit_price' => 0, 'tax_rate' => 0, 'itemSearch' => '', 'itemDropdownOpen' => false, 'itemHighlightedIndex' => 0]]),
+                items: @js($prefillItems ?: [['item_id' => '', 'account_id' => '', 'description' => '', 'quantity' => 1, 'unit_price' => 0, 'tax_rate' => 0, 'itemSearch' => '', 'itemDropdownOpen' => false, 'itemHighlightedIndex' => 0]]),
                 productsUrl: @js(route('lookup.items')),
                 subtotal: 0,
                 totalTax: 0,
                 total: 0,
 
                 addItem() {
-                    this.items.push({ item_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 });
+                    this.items.push({ item_id: '', account_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 });
                 },
 
                 removeItem(index) {
