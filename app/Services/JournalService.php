@@ -1921,6 +1921,12 @@ class JournalService implements JournalServiceInterface
         }
 
         return DB::transaction(function () use ($journal, $reason, $date) {
+            // Locked and re-read: two voids at once each wrote a reversal (audit MB-16).
+            $current = Journal::query()->lockForUpdate()->find($journal->id);
+            if (! $current || $current->status === 'reversed') {
+                throw new BusinessRuleException("{$journal->journal_number} has already been reversed.");
+            }
+
             // The reversing journal's own lines undo the original when they are
             // applied below. Also un-applying the original here reversed it
             // twice (a 1,075 invoice left receivables at -1,075).
