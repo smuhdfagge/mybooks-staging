@@ -428,6 +428,7 @@ class SettingsController extends Controller
         ]);
 
         try {
+            /** @var Role $role Role::create() is typed as Spatie's contract; it returns our model. */
             $role = Role::create([
                 'name' => $validated['name'],
                 'guard_name' => 'web',
@@ -497,6 +498,7 @@ class SettingsController extends Controller
 
             // Create a new tenant-specific role based on the system role
             try {
+                /** @var Role $newRole Role::create() is typed as Spatie's contract; it returns our model. */
                 $newRole = Role::create([
                     'name' => $validated['name'],
                     'guard_name' => 'web',
