@@ -135,7 +135,7 @@ class InvoiceController extends BaseApiController
         $totalAmount = Invoice::where('tenant_id', $tenantId)->sum('total');
         $totalPaid = Invoice::where('tenant_id', $tenantId)->sum('amount_paid');
         $totalOutstanding = Invoice::where('tenant_id', $tenantId)
-            ->whereIn('status', ['unpaid', 'partial', 'overdue'])
+            ->open()
             ->sum('balance_due');
         $overdueCount = Invoice::where('tenant_id', $tenantId)
             ->where('status', '!=', 'paid')

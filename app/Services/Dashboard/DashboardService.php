@@ -35,7 +35,7 @@ use Illuminate\Support\Facades\DB;
 class DashboardService
 {
     /** Invoices that still have money to come in (as the receivables report). */
-    public const OPEN_INVOICE = ['sent', 'unpaid', 'partial', 'overdue'];
+    public const OPEN_INVOICE = Invoice::OPEN_STATUSES;
 
     /** Bills still to pay (as the payables report). */
     public const OPEN_BILL = ['unpaid', 'partial', 'overdue'];
@@ -61,7 +61,8 @@ class DashboardService
      */
     public function summary(int $tenantId, DashboardPeriod $period): array
     {
-        return DashboardCache::remember($tenantId, 'summary:'.$period->cacheKey(), function () use ($tenantId, $period) {
+        // "summary2": the figures gained costOfSales (audit MB-22); a new key, so no older cached copy is used.
+        return DashboardCache::remember($tenantId, 'summary2:'.$period->cacheKey(), function () use ($tenantId, $period) {
             $pnl = $this->statements->profitAndLoss($tenantId, $period->from->toDateString(), $period->to->toDateString());
             $before = $period->compareFrom
                 ? $this->statements->profitAndLoss($tenantId, $period->compareFrom->toDateString(), $period->compareTo->toDateString())
@@ -71,9 +72,11 @@ class DashboardService
                 'cash' => $this->cashAt($tenantId, $period->to),
                 'cashBefore' => $this->cashAt($tenantId, $period->from->copy()->subDay()),
                 'cashSince' => $period->from->copy()->subDay()->toDateString(),
-                'cashAccounts' => Bank::where('tenant_id', $tenantId)->count(),
+                // The ledger accounts the cash figure adds up (audit MB-36), not the bank records.
+                'cashAccounts' => ChartOfAccount::where('tenant_id', $tenantId)->where('type', ChartOfAccount::TYPE_ASSET)->whereIn('sub_type', ['cash', 'bank'])->count(),
                 'income' => $pnl['revenue'],
                 'expenses' => $pnl['totalExpenses'],
+                'costOfSales' => $pnl['costOfGoodsSold'],
                 'profit' => $pnl['netProfit'],
                 'margin' => $pnl['revenue'] > 0 ? round($pnl['netProfit'] / $pnl['revenue'] * 100, 1) : null,
                 'compare' => $before ? [

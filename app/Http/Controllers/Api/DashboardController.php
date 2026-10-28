@@ -34,7 +34,7 @@ class DashboardController extends BaseApiController
 
         // Outstanding amounts
         $accountsReceivable = Invoice::where('tenant_id', $tenantId)
-            ->whereIn('status', ['unpaid', 'partial', 'overdue'])
+            ->open()
             ->sum('balance_due');
 
         $accountsPayable = Bill::where('tenant_id', $tenantId)
@@ -54,7 +54,7 @@ class DashboardController extends BaseApiController
 
         // Recent invoices count
         $pendingInvoices = Invoice::where('tenant_id', $tenantId)
-            ->whereIn('status', ['unpaid', 'partial', 'overdue'])
+            ->open()
             ->count();
 
         // Pending bills count

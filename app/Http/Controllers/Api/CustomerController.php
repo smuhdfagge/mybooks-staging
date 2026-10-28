@@ -102,7 +102,7 @@ class CustomerController extends BaseApiController
         $totalInvoices = $customer->invoices()->count();
         $totalSales = $customer->invoices()->sum('total');
         $outstandingBalance = $customer->invoices()
-            ->whereIn('status', ['unpaid', 'partial', 'overdue'])
+            ->open()
             ->sum('balance_due');
         $totalPayments = $customer->payments()->sum('amount');
 

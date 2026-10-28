@@ -139,7 +139,7 @@ class BudgetController extends Controller
     {
         $budget->load(['lines.account', 'createdBy', 'approvedBy']);
         $summary = $this->budgetService->getBudgetSummary($budget);
-        $months = Budget::getMonthColumns();
+        $months = Budget::getMonthColumns(Budget::firstMonth(auth()->user()->tenant_id)); // financial year order (MB-54)
 
         // Spending so far against the budget, once the budget is in use (the page doesn't need the full comparison).
         $ytdUtilization = ($budget->isActive() || $budget->isLocked()) ? $this->budgetService->getYTDUtilization($budget) : null;
@@ -163,7 +163,7 @@ class BudgetController extends Controller
             ->groupBy('type');
 
         $fiscalYears = Budget::getFiscalYears();
-        $months = Budget::getMonthColumns();
+        $months = Budget::getMonthColumns(Budget::firstMonth(auth()->user()->tenant_id)); // financial year order (MB-54)
 
         // Get existing line account IDs for the form
         $existingAccountIds = $budget->lines->pluck('account_id')->toArray();
@@ -324,7 +324,7 @@ class BudgetController extends Controller
     public function vsActual(Budget $budget)
     {
         $budget->load(['lines.account']);
-        $months = Budget::getMonthColumns();
+        $months = Budget::getMonthColumns(Budget::firstMonth(auth()->user()->tenant_id)); // financial year order (MB-54)
 
         // To date: through this month for this year's budget (tables plan T7).
         $through = $this->budgetService->throughMonth($budget);

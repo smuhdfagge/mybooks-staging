@@ -238,12 +238,12 @@ class AnalyticsController extends Controller
 
         // Outstanding balance
         $outstandingBalance = Invoice::where('tenant_id', $tenantId)
-            ->whereIn('status', ['unpaid', 'partial', 'overdue'])
+            ->open()
             ->sum('balance_due');
 
         // Overdue amount
         $overdueAmount = Invoice::where('tenant_id', $tenantId)
-            ->whereIn('status', ['unpaid', 'partial'])
+            ->open()
             ->where('due_date', '<', now())
             ->sum('balance_due');
 
@@ -685,7 +685,7 @@ class AnalyticsController extends Controller
     {
         // Days Sales Outstanding (DSO)
         $avgReceivables = Invoice::where('tenant_id', $tenantId)
-            ->whereIn('status', ['unpaid', 'partial', 'overdue'])
+            ->open()
             ->avg('balance_due') ?? 0;
 
         $dailySales = Invoice::where('tenant_id', $tenantId)
@@ -700,26 +700,26 @@ class AnalyticsController extends Controller
         // Collection by aging bucket
         $aging = [
             'current' => Invoice::where('tenant_id', $tenantId)
-                ->whereIn('status', ['unpaid', 'partial'])
+                ->open()
                 ->where('due_date', '>=', now())
                 ->sum('balance_due'),
             '1_30' => Invoice::where('tenant_id', $tenantId)
-                ->whereIn('status', ['unpaid', 'partial'])
+                ->open()
                 ->where('due_date', '<', now())
                 ->where('due_date', '>=', now()->subDays(30))
                 ->sum('balance_due'),
             '31_60' => Invoice::where('tenant_id', $tenantId)
-                ->whereIn('status', ['unpaid', 'partial'])
+                ->open()
                 ->where('due_date', '<', now()->subDays(30))
                 ->where('due_date', '>=', now()->subDays(60))
                 ->sum('balance_due'),
             '61_90' => Invoice::where('tenant_id', $tenantId)
-                ->whereIn('status', ['unpaid', 'partial'])
+                ->open()
                 ->where('due_date', '<', now()->subDays(60))
                 ->where('due_date', '>=', now()->subDays(90))
                 ->sum('balance_due'),
             'over_90' => Invoice::where('tenant_id', $tenantId)
-                ->whereIn('status', ['unpaid', 'partial'])
+                ->open()
                 ->where('due_date', '<', now()->subDays(90))
                 ->sum('balance_due'),
         ];
@@ -801,7 +801,7 @@ class AnalyticsController extends Controller
     private function getOverdueAnalysis($tenantId): array
     {
         $overdueInvoices = Invoice::where('tenant_id', $tenantId)
-            ->whereIn('status', ['unpaid', 'partial'])
+            ->open()
             ->where('due_date', '<', now())
             ->with('customer')
             ->orderBy('due_date')

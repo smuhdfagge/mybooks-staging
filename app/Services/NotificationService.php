@@ -120,7 +120,7 @@ class NotificationService
         $count = 0;
 
         $overdueInvoices = Invoice::where('tenant_id', $tenantId)
-            ->whereIn('status', ['unpaid', 'partial'])
+            ->open()
             ->where('due_date', '<', now())
             ->where('balance_due', '>', 0)
             ->with(['customer', 'tenant'])
@@ -158,7 +158,7 @@ class NotificationService
         $targetDate = now()->addDays($daysBefore)->toDateString();
 
         $upcomingInvoices = Invoice::where('tenant_id', $tenantId)
-            ->whereIn('status', ['unpaid', 'partial'])
+            ->open()
             ->whereDate('due_date', $targetDate)
             ->where('balance_due', '>', 0)
             ->with(['customer', 'tenant'])

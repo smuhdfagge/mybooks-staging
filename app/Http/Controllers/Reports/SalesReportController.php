@@ -26,8 +26,7 @@ class SalesReportController extends ReportController
         // the next day" because SQLite keeps a time part on dates.
         $invoices = Invoice::where('tenant_id', $tenantId)
             ->where('invoice_date', '<', Carbon::parse($asOf)->addDay()->toDateString())
-            ->whereIn('status', ['sent', 'unpaid', 'partial', 'overdue'])
-            ->where('balance_due', '>', 0)
+            ->open()
             ->with('customer')
             ->orderBy('due_date')
             ->get();
@@ -122,8 +121,7 @@ class SalesReportController extends ReportController
         // the next day" because SQLite keeps a time part on dates.
         $invoices = Invoice::where('tenant_id', $tenantId)
             ->where('invoice_date', '<', Carbon::parse($asOf)->addDay()->toDateString())
-            ->whereIn('status', ['sent', 'unpaid', 'partial', 'overdue'])
-            ->where('balance_due', '>', 0)
+            ->open()
             ->with('customer')
             ->orderBy('due_date')
             ->get();

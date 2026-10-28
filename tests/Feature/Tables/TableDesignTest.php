@@ -155,8 +155,9 @@ class TableDesignTest extends TestCase
         $tabs = $t->viewData('tabs');
         $this->assertSame([4, 1, 2, 1, 1], [$tabs['']['count'], $tabs['draft']['count'], $tabs['unpaid']['count'], $tabs['overdue']['count'], $tabs['paid']['count']]);
         $this->assertArrayNotHasKey('cancelled', $tabs, 'Cancelled only shows when there are some');
-        $this->assertEquals(6400, $t->viewData('totals')->total);
-        $this->assertEquals(3400, $t->viewData('totals')->balance);
+        // Money totals leave out the 400 draft (audit MB-21).
+        $this->assertEquals(6000, $t->viewData('totals')->total);
+        $this->assertEquals(3000, $t->viewData('totals')->balance);
 
         $t->set('tab', 'overdue');
         $this->assertSame(['INV-2'], $t->viewData('invoices')->pluck('invoice_number')->all());
@@ -309,7 +310,7 @@ class TableDesignTest extends TestCase
         $t = Livewire::test(BillsTable::class)->assertSet('sortField', 'bill_date')->assertSet('perPage', 25);
         $tabs = $t->viewData('tabs');
         $this->assertSame([4, 1, 2, 1, 1], [$tabs['']['count'], $tabs['draft']['count'], $tabs['unpaid']['count'], $tabs['overdue']['count'], $tabs['paid']['count']]);
-        $this->assertEquals(6400, $t->viewData('totals')->total);
+        $this->assertEquals(6000, $t->viewData('totals')->total, 'Nor counted in the total (audit MB-21)');
         $this->assertEquals(3000, $t->viewData('totals')->balance, 'The draft is not owed yet');
 
         $t->set('tab', 'overdue');

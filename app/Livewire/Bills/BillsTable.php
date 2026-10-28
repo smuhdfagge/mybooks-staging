@@ -227,7 +227,7 @@ class BillsTable extends Component
         return view('livewire.bills.bills-table', [
             'bills' => $this->rows(),
             'tabs' => $this->tabs(),
-            'totals' => $this->filteredQuery()->toBase()->selectRaw("COUNT(*) as n, COALESCE(SUM(total), 0) as total, COALESCE(SUM(CASE WHEN status IN ('unpaid','partial','overdue') THEN balance_due ELSE 0 END), 0) as balance")->first(),
+            'totals' => $this->filteredQuery()->toBase()->selectRaw("COUNT(*) as n, COALESCE(SUM(CASE WHEN status NOT IN ('draft','cancelled') THEN total ELSE 0 END), 0) as total, COALESCE(SUM(CASE WHEN status IN ('unpaid','partial','overdue') THEN balance_due ELSE 0 END), 0) as balance")->first(),
             'vendors' => Vendor::where('is_active', true)->orderBy('name')->pluck('name', 'id'),
             'periods' => self::periodOptions(),
             'filtered' => $this->isFiltered(),

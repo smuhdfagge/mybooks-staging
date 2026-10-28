@@ -45,8 +45,8 @@ class CustomerMessenger
         'not_due' => 'Nothing is owed on this invoice.',
     ];
 
-    /** Invoice statuses that can still be paid. */
-    private const OPEN = ['sent', 'unpaid', 'partial', 'overdue'];
+    /** Invoice statuses that can still be paid (one list, audit MB-55). */
+    private const OPEN = Invoice::OPEN_STATUSES;
 
     public function __construct(
         private MessagingDrivers $drivers,
