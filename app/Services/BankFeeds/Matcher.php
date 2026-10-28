@@ -119,32 +119,42 @@ class Matcher
     private function score(BankFeedLine $line, Candidate $candidate): int
     {
         $days = (int) abs(CarbonImmutable::parse($line->date)->startOfDay()->diffInDays($candidate->date->startOfDay(), false));
-        $dateScore = match (true) {
+
+        return min(100, 50 + self::dateScore($days) + $this->textScore((string) $line->narration, $candidate->references, $candidate->party));
+    }
+
+    /** Up to 25 for how close the dates are (also used by statement import, audit MB-08). */
+    public static function dateScore(int $days): int
+    {
+        return match (true) {
             $days === 0 => 25,
             $days === 1 => 20,
             $days === 2 => 15,
             $days === 3 => 10,
             default => 5,
         };
-
-        return min(100, 50 + $dateScore + $this->textScore((string) $line->narration, $candidate));
     }
 
-    /** Up to 25: the record's number or reference in the narration, else the name's words. */
-    private function textScore(string $narration, Candidate $candidate): int
+    /**
+     * Up to 25: the record's number or reference in the narration, else the
+     * name's words (also used by statement import, audit MB-08).
+     *
+     * @param  array<int, string>  $references
+     */
+    public function textScore(string $narration, array $references, ?string $party): int
     {
         $flat = $this->flatten($narration);
         if ($flat === '') {
             return 0;
         }
-        foreach ($candidate->references as $reference) {
+        foreach ($references as $reference) {
             $ref = $this->flatten($reference);
             if (strlen($ref) >= 4 && str_contains($flat, $ref)) {
                 return 25;
             }
         }
 
-        $words = collect(preg_split('/[^a-z0-9]+/', Str::lower((string) $candidate->party)) ?: [])
+        $words = collect(preg_split('/[^a-z0-9]+/', Str::lower((string) $party)) ?: [])
             ->filter(fn ($w) => strlen($w) >= 3 && ! in_array($w, self::NOISE, true))->unique()->values();
         if ($words->isEmpty()) {
             return 0;

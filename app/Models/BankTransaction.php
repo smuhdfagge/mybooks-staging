@@ -30,6 +30,8 @@ class BankTransaction extends Model
         'reconciled_by',
         'transactionable_type',
         'transactionable_id',
+        'journal_entry_id',
+        'journal_id',
     ];
 
     protected $casts = [

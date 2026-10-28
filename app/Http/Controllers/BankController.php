@@ -12,7 +12,9 @@ use App\Models\JournalEntry;
 use App\Models\PaymentMade;
 use App\Models\PaymentReceived;
 use App\Services\BankFeeds\FeedStatement;
+use App\Services\BankLines;
 use App\Services\BankReconciliationService;
+use App\Services\BankStatements\StatementImport;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -204,10 +206,23 @@ class BankController extends Controller
         ]);
     }
 
-    public function reconcile(Request $request, Bank $bank, BankReconciliationService $reconciliationService, FeedStatement $feedStatement)
+    public function reconcile(Request $request, Bank $bank, BankReconciliationService $reconciliationService, FeedStatement $feedStatement, BankLines $bankLines, StatementImport $statementImport)
     {
         $fromDate = $request->query('from_date');
         $toDate = $request->query('to_date');
+
+        // Without a feed, the lines to tick are what the books show for this bank (audit MB-08).
+        $bankLines->sync($bank);
+        $fromLedger = $bankLines->fromLedger($bank);
+
+        // An imported statement: match again (something may have been recorded since),
+        // tick the matched lines and offer the statement's closing balance and date.
+        $statementImport->match($bank);
+        $statementLines = $statementImport->open($bank);
+        $preTicked = $statementLines->pluck('bank_transaction_id')->filter()->map(fn ($id) => (int) $id)->all();
+        $lastWithBalance = $statementLines->whereNotNull('balance')->last();
+        $statementClosing = $lastWithBalance ? number_format((float) $lastWithBalance->balance, 2, '.', '') : '';
+        $statementDate = $statementLines->max('date')?->toDateString() ?? now()->toDateString();
 
         $unreconciledTransactions = $reconciliationService->getUnreconciledTransactions($bank, $fromDate, $toDate);
         $summary = $reconciliationService->getSummary($bank);
@@ -215,7 +230,8 @@ class BankController extends Controller
         // A linked bank feed is the statement: its balance and lines (session 17)
         $feed = config('mybooks.features.bank_feeds') ? $feedStatement->forBank($bank) : null;
 
-        return view('banks.reconcile', compact('bank', 'unreconciledTransactions', 'summary', 'fromDate', 'toDate', 'feed'));
+        return view('banks.reconcile', compact('bank', 'unreconciledTransactions', 'summary', 'fromDate', 'toDate', 'feed', 'fromLedger',
+            'statementLines', 'preTicked', 'statementClosing', 'statementDate'));
     }
 
     public function processReconciliation(Request $request, Bank $bank, BankReconciliationService $reconciliationService)
