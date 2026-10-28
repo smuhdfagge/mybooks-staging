@@ -133,6 +133,20 @@
                                 @error('funding_source') <p id="funding_source-error" class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                             </div>
 
+                            {{-- Only used for "On a vendor bill": the cost is taken back off this account (audit MB-14). --}}
+                            <div>
+                                <label for="funding_account_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Account the bill line was posted to</label>
+                                <select name="funding_account_id" id="funding_account_id"
+                                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500" @error('funding_account_id') aria-invalid="true" aria-describedby="funding_account_id-error" @enderror>
+                                    <option value="">Miscellaneous Expense</option>
+                                    @foreach ($billLineAccounts as $id => $label)
+                                        <option value="{{ $id }}" @selected((string) old('funding_account_id') === (string) $id)>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Only for an asset on a vendor bill. If the bill line was posted to this asset's own account, nothing more is posted.</p>
+                                @error('funding_account_id') <p id="funding_account_id-error" class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                            </div>
+
                             <div>
                                 <label for="salvage_value" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Salvage Value *</label>
                                 <input type="number" name="salvage_value" id="salvage_value" value="{{ old('salvage_value', 0) }}" step="0.01" min="0" required

@@ -143,6 +143,7 @@
                                                 </div>
                                                 <input aria-label="Description" type="text" :name="`items[${index}][description]`" x-model="item.description" required placeholder="Description"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:placeholder-gray-500 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
+                                                @include('bills._line-account')
                                             </td>
                                             <td data-label="Qty">
                                                 <input aria-label="Quantity" type="number" :name="`items[${index}][quantity]`" x-model.number="item.quantity" min="0.01" step="0.01" required
@@ -324,6 +325,7 @@
                 productsUrl: @js(route('lookup.items')),
                 items: @js($bill->items->map(fn($item) => [
                     'item_id' => $item->item_id ?? '',
+                    'account_id' => $item->account_id ? (string) $item->account_id : '',
                     'description' => $item->description,
                     'quantity' => $item->quantity,
                     'unit_price' => $item->unit_price,
@@ -373,7 +375,7 @@
                 },
 
                 addItem() {
-                    this.items.push({ item_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 });
+                    this.items.push({ item_id: '', account_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 });
                 },
 
                 removeItem(index) {

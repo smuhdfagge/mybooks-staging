@@ -45,6 +45,7 @@ class FixedAsset extends Model
         'in_service_date',
         'purchase_cost',
         'funding_source',
+        'funding_account_id',
         'salvage_value',
         'depreciable_amount',
         'useful_life',
