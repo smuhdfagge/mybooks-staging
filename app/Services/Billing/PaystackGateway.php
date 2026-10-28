@@ -100,6 +100,27 @@ class PaystackGateway
     }
 
     /**
+     * Whether Paystack accepts the secret key, with a read-only call (list
+     * one transaction) that changes nothing. For billing:check-paystack.
+     *
+     * @return array{ok: bool, message: string}
+     */
+    public function ping(): array
+    {
+        try {
+            $response = $this->client()->get('/transaction', ['perPage' => 1]);
+        } catch (ConnectionException $e) {
+            return ['ok' => false, 'message' => "Couldn't reach Paystack: ".$e->getMessage()];
+        }
+
+        if ($response->successful() && $response->json('status')) {
+            return ['ok' => true, 'message' => 'Paystack accepted the secret key.'];
+        }
+
+        return ['ok' => false, 'message' => 'Paystack refused the secret key: '.($response->json('message') ?: 'HTTP '.$response->status())];
+    }
+
+    /**
      * Webhooks are signed with HMAC-SHA512 of the raw body using the secret
      * key, sent in the x-paystack-signature header (checked 2026-10-06,
      * https://paystack.com/docs/payments/webhooks/).
