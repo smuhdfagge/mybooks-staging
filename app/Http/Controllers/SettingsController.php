@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Auth\SignOutOtherSessions;
+use App\Models\ActivityLog;
 use App\Models\Country;
 use App\Models\NotificationSetting;
 use App\Models\Role;
@@ -12,6 +13,8 @@ use App\Models\User;
 use App\Notifications\EmailAddressChangedNotification;
 use App\Notifications\TestEmailNotification;
 use App\Rules\Tin;
+use App\Services\ActivityLogService;
+use App\Support\Privileges;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Hash;
@@ -96,13 +99,20 @@ class SettingsController extends Controller
 
     /**
      * Roles a tenant may assign: its own roles plus the shared system roles,
-     * never the platform-wide super-admin role (finding H4).
+     * never the platform-wide super-admin role (finding H4), and only roles
+     * within the editor's own access (audit MB-05).
      */
     private function assignableRoles()
     {
-        return Role::forTenant(auth()->user()->tenant_id)
+        $actor = auth()->user();
+
+        return Role::forTenant($actor->tenant_id)
             ->where('name', '!=', 'super-admin')
-            ->orderBy('name');
+            ->with('permissions:id,name')
+            ->orderBy('name')
+            ->get()
+            ->filter(fn (Role $role) => Privileges::canAssignRole($actor, $role))
+            ->values();
     }
 
     /**
@@ -118,7 +128,35 @@ class SettingsController extends Controller
 
     private function rolesFromIds(array $ids)
     {
-        return $this->assignableRoles()->whereIn('id', $ids)->get();
+        return $this->assignableRoles()->whereIn('id', $ids)->values();
+    }
+
+    /** Someone with more access than the editor, or any admin for a non-admin, is off limits (audit MB-05). */
+    private function authorizeManaging(User $user): void
+    {
+        abort_unless(Privileges::canManageUser(auth()->user(), $user), 403, 'You can only manage users who have no more access than you.');
+    }
+
+    /** Record which roles were added to and taken from $user. */
+    private function logRoleChanges(User $user, array $before, array $after): void
+    {
+        foreach (array_diff($after, $before) as $name) {
+            ActivityLogService::logRoleChanged($user, $name, 'assigned');
+        }
+        foreach (array_diff($before, $after) as $name) {
+            ActivityLogService::logRoleChanged($user, $name, 'removed');
+        }
+    }
+
+    /** Record which permissions were added to and taken from $role. */
+    private function logPermissionChanges(Role $role, array $before, array $after): void
+    {
+        $added = array_values(array_diff($after, $before));
+        $removed = array_values(array_diff($before, $after));
+        if ($added || $removed) {
+            ActivityLogService::log(ActivityLog::ACTION_PERMISSION_CHANGED, "Permissions changed for role '{$role->name}'",
+                Role::class, $role->id, $role->name, array_filter(['added' => $added, 'removed' => $removed]));
+        }
     }
 
     public function users()
@@ -147,7 +185,7 @@ class SettingsController extends Controller
                 ->with('error', "You have reached the maximum number of users allowed on the {$planName} plan. Please upgrade your subscription to add more users.");
         }
 
-        $roles = $this->assignableRoles()->get();
+        $roles = $this->assignableRoles();
 
         return view('settings.users.create', compact('roles'));
     }
@@ -183,6 +221,7 @@ class SettingsController extends Controller
 
         if (! empty($validated['roles'])) {
             $user->syncRoles($this->rolesFromIds($validated['roles']));
+            $this->logRoleChanges($user, [], $user->roles->pluck('name')->all());
         }
 
         return redirect()->route('settings.users')->with('success', 'User created successfully.');
@@ -194,16 +233,26 @@ class SettingsController extends Controller
             abort(403);
         }
 
-        $roles = $this->assignableRoles()->get();
         $isSelf = $user->id === auth()->id() && ! auth()->user()->isSuperAdmin();
+        if (! $isSelf) {
+            $this->authorizeManaging($user);
+        }
+        $roles = $this->assignableRoles();
+        $canChangeCredentials = $isSelf || Privileges::isAdmin(auth()->user());
 
-        return view('settings.users.edit', compact('user', 'roles', 'isSelf'));
+        return view('settings.users.edit', compact('user', 'roles', 'isSelf', 'canChangeCredentials'));
     }
 
     public function updateUser(Request $request, User $user)
     {
         if ($user->tenant_id !== auth()->user()->tenant_id) {
             abort(403);
+        }
+
+        // Users cannot change their own roles or deactivate themselves (H4).
+        $isSelf = $user->id === auth()->id() && ! auth()->user()->isSuperAdmin();
+        if (! $isSelf) {
+            $this->authorizeManaging($user);
         }
 
         $validated = $request->validate([
@@ -215,8 +264,22 @@ class SettingsController extends Controller
             ...$this->roleRules(),
         ]);
 
-        // Users cannot change their own roles or deactivate themselves (H4).
-        $isSelf = $user->id === auth()->id() && ! auth()->user()->isSuperAdmin();
+        // Another person's sign-in details are an admin's to change, and only
+        // just after confirming their own password (audit MB-05): otherwise
+        // whoever holds "edit users" could take over any account.
+        $changesCredentials = mb_strtolower($validated['email']) !== mb_strtolower($user->email) || ! empty($validated['password']);
+        if (! $isSelf && $changesCredentials) {
+            if (! Privileges::isAdmin(auth()->user())) {
+                return back()->withInput($request->except('password', 'password_confirmation'))
+                    ->withErrors(['email' => 'Only an admin can change another user\'s email or password.']);
+            }
+            if (! $this->passwordRecentlyConfirmed($request)) {
+                $request->session()->put('url.intended', route('settings.users.edit', $user));
+
+                return redirect()->route('password.confirm')
+                    ->with('status', 'Confirm your password, then save the change to '.$user->name.'\'s sign-in details again.');
+            }
+        }
 
         $oldEmail = $user->email;
         // The last active admin keeps the admin role and stays active, or
@@ -245,12 +308,19 @@ class SettingsController extends Controller
             $user->update(['password' => Hash::make($validated['password'])]);
             // The user is signed out everywhere else, API tokens included (S5).
             app(SignOutOtherSessions::class)->handle($user, $request);
+            if (! $isSelf) {
+                ActivityLogService::log(ActivityLog::ACTION_PASSWORD_CHANGED, "Password changed for user '{$user->name}' by '".auth()->user()->name."'",
+                    User::class, $user->id, $user->name);
+            }
         }
 
         if (! $isSelf) {
             // Keep any role the editor cannot see or assign (e.g. super-admin).
-            $kept = $user->roles->reject(fn ($role) => $this->assignableRoles()->whereKey($role->id)->exists());
+            $before = $user->roles->pluck('name')->all();
+            $assignable = $this->assignableRoles()->pluck('id');
+            $kept = $user->roles->reject(fn ($role) => $assignable->contains($role->id));
             $user->syncRoles($kept->merge($this->rolesFromIds($validated['roles'] ?? [])));
+            $this->logRoleChanges($user, $before, $user->fresh()->roles->pluck('name')->all());
         }
 
         return redirect()->route('settings.users')->with('success', 'User updated successfully.');
@@ -265,6 +335,7 @@ class SettingsController extends Controller
         if ($user->id === auth()->id()) {
             return redirect()->back()->with('error', 'You cannot delete your own account.');
         }
+        $this->authorizeManaging($user);
 
         if ($user->isLastActiveAdmin()) {
             return redirect()->back()->with('error', 'This is the only admin of the business. Make another user an admin first.');
@@ -273,6 +344,44 @@ class SettingsController extends Controller
         $user->delete();
 
         return redirect()->route('settings.users')->with('success', 'User deleted successfully.');
+    }
+
+    /** Whether the signed-in person confirmed their password within auth.password_timeout. */
+    private function passwordRecentlyConfirmed(Request $request): bool
+    {
+        return time() - (int) $request->session()->get('auth.password_confirmed_at', 0) < (int) config('auth.password_timeout', 10800);
+    }
+
+    /** Permissions to offer in the role forms: only those the editor holds (audit MB-05). */
+    private function grantablePermissions()
+    {
+        $actor = auth()->user();
+        $held = Privileges::isAdmin($actor) ? null : Privileges::permissionsOf($actor);
+
+        return Permission::all()
+            ->when($held !== null, fn ($all) => $all->filter(fn ($p) => $held->contains($p->name)))
+            ->groupBy(function ($permission) {
+                // Group by resource (second part of permission name, e.g., "invoices" from "view invoices")
+                $parts = explode(' ', $permission->name, 2);
+
+                return $parts[1] ?? $parts[0];
+            });
+    }
+
+    /** Validation: every permission given is one the editor holds. */
+    private function heldPermissionsOnly(): \Closure
+    {
+        return function ($attribute, $value, $fail) {
+            if ($missing = Privileges::missing(auth()->user(), (array) $value)) {
+                $fail('You can only give permissions you have yourself. Not yours: '.implode(', ', $missing).'.');
+            }
+        };
+    }
+
+    /** A role the editor has, or one beyond their access, is not theirs to change (audit MB-05). */
+    private function authorizeRole(Role $role): void
+    {
+        abort_unless(Privileges::canManageRole(auth()->user(), $role), 403, 'You can only change roles you do not have yourself and that give no more access than you have.');
     }
 
     public function roles()
@@ -289,12 +398,7 @@ class SettingsController extends Controller
 
     public function createRole()
     {
-        $permissions = Permission::all()->groupBy(function ($permission) {
-            // Group by resource (second part of permission name, e.g., "invoices" from "view invoices")
-            $parts = explode(' ', $permission->name, 2);
-
-            return $parts[1] ?? $parts[0];
-        });
+        $permissions = $this->grantablePermissions();
 
         return view('settings.roles.create', compact('permissions'));
     }
@@ -319,7 +423,7 @@ class SettingsController extends Controller
                     }
                 },
             ],
-            'permissions' => 'array',
+            'permissions' => ['array', $this->heldPermissionsOnly()],
             'permissions.*' => 'exists:permissions,name',
         ]);
 
@@ -335,6 +439,7 @@ class SettingsController extends Controller
 
         if (! empty($validated['permissions'])) {
             $role->syncPermissions($validated['permissions']);
+            $this->logPermissionChanges($role, [], $validated['permissions']);
         }
 
         return redirect()->route('settings.roles')->with('success', 'Role created successfully.');
@@ -343,6 +448,7 @@ class SettingsController extends Controller
     public function editRole(Role $role)
     {
         $tenantId = auth()->user()->tenant_id;
+        $this->authorizeRole($role);
 
         // If it's a global role, check if tenant already has a customized version
         if ($role->isGlobal()) {
@@ -356,12 +462,7 @@ class SettingsController extends Controller
             }
         }
 
-        $permissions = Permission::all()->groupBy(function ($permission) {
-            // Group by resource (second part of permission name)
-            $parts = explode(' ', $permission->name, 2);
-
-            return $parts[1] ?? $parts[0];
-        });
+        $permissions = $this->grantablePermissions();
         $rolePermissions = $role->permissions->pluck('name')->toArray();
         $isCustomizing = $role->isGlobal();
 
@@ -371,6 +472,7 @@ class SettingsController extends Controller
     public function updateRole(Request $request, Role $role)
     {
         $tenantId = auth()->user()->tenant_id;
+        $this->authorizeRole($role);
 
         // If it's a global role, create a tenant-specific copy
         if ($role->isGlobal()) {
@@ -389,7 +491,7 @@ class SettingsController extends Controller
                         }
                     },
                 ],
-                'permissions' => 'array',
+                'permissions' => ['array', $this->heldPermissionsOnly()],
                 'permissions.*' => 'exists:permissions,name',
             ]);
 
@@ -405,6 +507,7 @@ class SettingsController extends Controller
             }
 
             $newRole->syncPermissions($validated['permissions'] ?? []);
+            $this->logPermissionChanges($newRole, [], $validated['permissions'] ?? []);
 
             return redirect()->route('settings.roles')->with('success', 'Custom role created successfully based on system role.');
         }
@@ -425,12 +528,14 @@ class SettingsController extends Controller
                     }
                 },
             ],
-            'permissions' => 'array',
+            'permissions' => ['array', $this->heldPermissionsOnly()],
             'permissions.*' => 'exists:permissions,name',
         ]);
 
+        $before = $role->permissions->pluck('name')->all();
         $role->update(['name' => $validated['name']]);
         $role->syncPermissions($validated['permissions'] ?? []);
+        $this->logPermissionChanges($role, $before, $validated['permissions'] ?? []);
 
         return redirect()->route('settings.roles')->with('success', 'Role updated successfully.');
     }
@@ -441,6 +546,8 @@ class SettingsController extends Controller
         if ($role->isGlobal()) {
             return redirect()->back()->with('error', 'System roles cannot be deleted.');
         }
+
+        $this->authorizeRole($role);
 
         if ($role->users()->count() > 0) {
             return redirect()->back()->with('error', 'Cannot delete role assigned to users.');

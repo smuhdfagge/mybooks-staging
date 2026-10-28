@@ -566,12 +566,19 @@ class PhaseDApiOpsTest extends TestCase
             ->assertSessionHasErrorsIn('userDeletion', 'password');
         $this->assertNotNull($admin->fresh());
 
-        // Someone else deleting, demoting or deactivating them.
-        $this->actingAs($manager)->delete(route('settings.users.destroy', $admin))->assertSessionHas('error');
+        // A non-admin can't delete, demote or deactivate an admin at all (audit MB-05).
+        $this->actingAs($manager)->delete(route('settings.users.destroy', $admin))->assertForbidden();
+        $this->put(route('settings.users.update', $admin), ['name' => 'A', 'email' => $admin->email, 'is_active' => true, 'roles' => []])
+            ->assertForbidden();
+
+        // Nor can someone who may, while it is the only admin.
+        $super = $this->createUserForTenant($tenant, ['delete users', 'edit users'], ['is_super_admin' => true]);
+        $this->actingAs($super)->delete(route('settings.users.destroy', $admin))->assertSessionHas('error');
         $this->assertNotNull($admin->fresh());
         $this->put(route('settings.users.update', $admin), ['name' => 'A', 'email' => $admin->email, 'is_active' => true, 'roles' => []])
             ->assertSessionHas('error');
         $this->assertTrue($admin->fresh()->hasRole('admin'));
+        $this->actingAs($manager);
 
         // With a second admin, the first can go.
         $manager->assignRole($this->adminRole());

@@ -11,6 +11,7 @@ use App\Models\Customer;
 use App\Models\Export;
 use App\Models\Journal;
 use App\Models\Plan;
+use App\Models\Role;
 use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\User;
@@ -445,6 +446,8 @@ class PhaseDSecurityTest extends TestCase
     public function test_s5_a_password_set_by_an_admin_signs_the_user_out(): void
     {
         $manager = $this->createAuthenticatedUser(['edit users']);
+        $manager->assignRole(Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => null]));
+        $this->withSession(['auth.password_confirmed_at' => time()]);
         $staff = $this->createUserForTenant($this->tenant);
         $old = $this->sessionFingerprint($staff);
         $staff->createToken('phone');
@@ -514,6 +517,8 @@ class PhaseDSecurityTest extends TestCase
     {
         Notification::fake();
         $user = $this->createAuthenticatedUser(['edit users']);
+        $user->assignRole(Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web', 'tenant_id' => null]));
+        $this->withSession(['auth.password_confirmed_at' => time()]);
         $old = $user->email;
 
         // A business admin changing someone else's email.

@@ -6,6 +6,8 @@
     if ($max !== null) {
         $line .= " {$userCount} of {$max} users".($left > 0 ? ", {$left} ".\Illuminate\Support\Str::plural('place', $left).' left.' : '. Your plan is full.');
     }
+    // Only people with no more access than you can be managed (audit MB-05).
+    $manages = fn ($user) => $user->id === auth()->id() || \App\Support\Privileges::canManageUser(auth()->user(), $user);
     $plus = '<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 4a1 1 0 011 1v4h4a1 1 0 110 2h-4v4a1 1 0 11-2 0v-4H5a1 1 0 110-2h4V5a1 1 0 011-1z"/></svg>';
 @endphp
 <x-app-layout>
@@ -47,6 +49,7 @@
                     <td class="{{ $user->roles->isEmpty() ? 'tbl-zero' : '' }}">{{ $user->roles->pluck('name')->map(fn ($r) => ucfirst($r))->join(', ') ?: 'No role' }}</td>
                     <td><x-status-badge :status="($user->is_active ?? true) ? 'active' : 'inactive'" /></td>
                     <td class="tbl-menu">
+                        @if ($manages($user))
                         @canany(['edit users', 'delete users'])
                             <x-table.dropdown :sr-label="'Actions for '.$user->name">
                                 @can('edit users')<x-table.menu-item :href="route('settings.users.edit', $user)">Edit</x-table.menu-item>@endcan
@@ -55,6 +58,7 @@
                                 @endif
                             </x-table.dropdown>
                         @endcanany
+                        @endif
                     </td>
                 </tr>
             @endforeach
@@ -62,7 +66,7 @@
         <ul class="space-y-2 md:hidden" aria-label="Users">
             @foreach ($users as $user)
                 <li>
-                    <x-table.card :href="auth()->user()->can('edit users') ? route('settings.users.edit', $user) : null" :title="$user->name" :meta="$user->email.($user->roles->isNotEmpty() ? ' · '.$user->roles->pluck('name')->map(fn ($r) => ucfirst($r))->join(', ') : '')">
+                    <x-table.card :href="auth()->user()->can('edit users') && $manages($user) ? route('settings.users.edit', $user) : null" :title="$user->name" :meta="$user->email.($user->roles->isNotEmpty() ? ' · '.$user->roles->pluck('name')->map(fn ($r) => ucfirst($r))->join(', ') : '')">
                         @if (! ($user->is_active ?? true))
                             <x-slot name="badge"><x-status-badge status="inactive" /></x-slot>
                         @endif
