@@ -6,6 +6,7 @@ use App\Models\ActivityLog;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
@@ -18,15 +19,17 @@ use Tests\TestCase;
  */
 class Session4RoleEscalationTest extends TestCase
 {
-    private const NEW_PASSWORD = 'An0ther-Passw0rd!';
-
     private const MANAGER = ['view users', 'create users', 'edit users', 'delete users', 'view roles', 'create roles', 'edit roles', 'delete roles', 'view invoices'];
 
     private User $admin;
 
+    /** Made up for each run, so no password is written in the source. */
+    private string $newPassword;
+
     protected function setUp(): void
     {
         parent::setUp();
+        $this->newPassword = 'Aa1!'.Str::random(16);
         Permission::findOrCreate('delete invoices', 'web');
 
         // A manager with a custom role, and the business's admin.
@@ -72,7 +75,7 @@ class Session4RoleEscalationTest extends TestCase
         $this->get(route('settings.users.edit', $this->admin))->assertForbidden();
         $this->put(route('settings.users.update', $this->admin), $this->form($this->admin, ['email' => 'mine@evil.test']))->assertForbidden();
         $this->put(route('settings.users.update', $this->admin), $this->form($this->admin, [
-            'password' => self::NEW_PASSWORD, 'password_confirmation' => self::NEW_PASSWORD,
+            'password' => $this->newPassword, 'password_confirmation' => $this->newPassword,
         ]))->assertForbidden();
         $this->delete(route('settings.users.destroy', $this->admin))->assertForbidden();
 
@@ -92,7 +95,7 @@ class Session4RoleEscalationTest extends TestCase
         $this->put(route('settings.users.update', $clerk), $this->form($clerk, ['roles' => [$this->adminRole()->id]]))->assertSessionHasErrors('roles.0');
         $this->put(route('settings.users.update', $clerk), $this->form($clerk, ['roles' => [$bigger->id]]))->assertSessionHasErrors('roles.0');
         $this->post(route('settings.users.store'), [
-            'name' => 'New', 'email' => 'new@example.test', 'password' => self::NEW_PASSWORD, 'password_confirmation' => self::NEW_PASSWORD,
+            'name' => 'New', 'email' => 'new@example.test', 'password' => $this->newPassword, 'password_confirmation' => $this->newPassword,
             'roles' => [$this->adminRole()->id],
         ])->assertSessionHasErrors('roles.0');
 
@@ -112,7 +115,7 @@ class Session4RoleEscalationTest extends TestCase
 
         $this->put(route('settings.users.update', $clerk), $this->form($clerk, ['email' => 'other@example.test']))->assertSessionHasErrors('email');
         $this->put(route('settings.users.update', $clerk), $this->form($clerk, [
-            'password' => self::NEW_PASSWORD, 'password_confirmation' => self::NEW_PASSWORD,
+            'password' => $this->newPassword, 'password_confirmation' => $this->newPassword,
         ]))->assertSessionHasErrors('email');
         $this->assertTrue(Hash::check('password', $clerk->fresh()->password));
     }
@@ -144,7 +147,7 @@ class Session4RoleEscalationTest extends TestCase
     {
         $clerk = $this->clerk();
         $this->actingAs($this->admin);
-        $change = $this->form($clerk, ['email' => 'clerk@new.test', 'password' => self::NEW_PASSWORD, 'password_confirmation' => self::NEW_PASSWORD]);
+        $change = $this->form($clerk, ['email' => 'clerk@new.test', 'password' => $this->newPassword, 'password_confirmation' => $this->newPassword]);
 
         $this->put(route('settings.users.update', $clerk), $change)->assertRedirect(route('password.confirm'));
         $this->assertNotSame('clerk@new.test', $clerk->fresh()->email);
@@ -153,7 +156,7 @@ class Session4RoleEscalationTest extends TestCase
             ->put(route('settings.users.update', $clerk), $change)->assertRedirect(route('settings.users'));
         $clerk->refresh();
         $this->assertSame('clerk@new.test', $clerk->email);
-        $this->assertTrue(Hash::check(self::NEW_PASSWORD, $clerk->password));
+        $this->assertTrue(Hash::check($this->newPassword, $clerk->password));
         $this->assertTrue(ActivityLog::where('action', ActivityLog::ACTION_PASSWORD_CHANGED)->where('model_id', $clerk->id)->where('user_id', $this->admin->id)->exists());
     }
 
