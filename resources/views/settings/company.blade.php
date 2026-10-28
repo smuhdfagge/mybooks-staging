@@ -120,6 +120,18 @@
                             <div>
                                 <x-field name="fiscal_year_start" label="Fiscal Year Start" type="date" :value="old('fiscal_year_start', $tenant->fiscal_year_start?->format('Y-m-d'))" />
                             </div>
+
+                            {{-- The VAT rate new lines start with (audit MB-20); items keep their own rate. --}}
+                            @foreach (['sales' => ['default_sales_tax_id', 'VAT on new sales lines', 'Invoices, cash sales, quotes, sales orders and credit notes.'], 'purchases' => ['default_purchase_tax_id', 'VAT on new purchase lines', 'Bills, purchase orders and supplier credits.']] as $type => [$field, $label, $where])
+                                <div>
+                                    <x-field :name="$field" :label="$label" type="select" :help="$where.' A line for an item uses the item\'s own rate. Rates are set up under Tax rates.'">
+                                        <option value="">No VAT (0%)</option>
+                                        @foreach ($taxRates[$type] as $rate)
+                                            <option value="{{ $rate->id }}" @selected((string) old($field, $tenant->{$field}) === (string) $rate->id)>{{ $rate->name }} ({{ (float) $rate->rate }}%)</option>
+                                        @endforeach
+                                    </x-field>
+                                </div>
+                            @endforeach
                         </div>
                     </div>
 

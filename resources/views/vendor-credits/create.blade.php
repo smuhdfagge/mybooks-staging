@@ -4,7 +4,7 @@
     </x-slot>
 
     @php
-        $oldLines = old('items', $lines ?: [['item_id' => '', 'account_id' => '', 'description' => '', 'quantity' => 1, 'unit_price' => 0, 'tax_rate' => 0]]);
+        $oldLines = old('items', $lines ?: [['item_id' => '', 'account_id' => '', 'description' => '', 'quantity' => 1, 'unit_price' => 0, 'tax_rate' => \App\Support\TaxChoices::defaultRate('purchases')]]);
     @endphp
 
     <div class="py-6">
@@ -96,7 +96,7 @@
                                         <input type="number" step="0.01" min="0" :name="`items[${i}][unit_price]`" x-model.number="line.unit_price" class="form-control text-sm" aria-label="Price">
                                     </td>
                                     <td data-label="VAT %">
-                                        <input type="number" step="0.01" min="0" max="100" :name="`items[${i}][tax_rate]`" x-model.number="line.tax_rate" class="form-control text-sm" aria-label="VAT rate">
+                                        <x-tax-rate-select type="purchases" model="line.tax_rate" name="`items[${i}][tax_rate]`" />
                                     </td>
                                     <td class="num" data-label="Total" x-text="money(lineTotal(line))"></td>
                                     <td data-cell="actions">
@@ -106,7 +106,7 @@
                             </template>
 </x-table>
                     <div class="flex flex-col sm:flex-row sm:justify-between gap-3 mt-4">
-                        <button type="button" @click="lines.push({item_id: '', account_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0})" class="text-sm text-brand-600 dark:text-brand-300 text-left">+ Add a line</button>
+                        <button type="button" @click="lines.push({item_id: '', account_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: {{ \App\Support\TaxChoices::defaultRate('purchases') }}})" class="text-sm text-brand-600 dark:text-brand-300 text-left">+ Add a line</button>
                         <dl class="text-sm text-gray-700 dark:text-gray-300 sm:text-right space-y-1">
                             <div>Before VAT: <span class="font-medium" x-text="money(subtotal())"></span></div>
                             <div>VAT: <span class="font-medium" x-text="money(vat())"></span></div>
