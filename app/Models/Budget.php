@@ -191,6 +191,6 @@ class Budget extends Model
     /** The first month (1-12) of the tenant's financial year (audit MB-54). */
     public static function firstMonth(int $tenantId): int
     {
-        return Tenant::find($tenantId)?->fiscal_year_start?->month ?? 1;
+        return Tenant::find($tenantId)?->fiscal_year_start->month ?? 1;
     }
 }
