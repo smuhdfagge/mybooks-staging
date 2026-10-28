@@ -148,7 +148,7 @@ class StatementImport
     public function discard(Bank $bank): int
     {
         $lines = $this->open($bank);
-        BankStatementLine::withoutGlobalScopes()->whereKey($lines->modelKeys())->delete();
+        BankStatementLine::withoutGlobalScopes()->whereKey($lines->pluck('id')->all())->delete();
 
         return $lines->count();
     }

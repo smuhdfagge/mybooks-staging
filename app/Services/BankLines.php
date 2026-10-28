@@ -113,7 +113,7 @@ class BankLines
         });
     }
 
-    /** @return Collection<int, object> posted entries on the bank's ledger account */
+    /** @return Collection<int, \stdClass> posted entries on the bank's ledger account */
     protected function entries(Bank $bank): Collection
     {
         return DB::table('journal_entries as je')
