@@ -12,6 +12,7 @@ use App\Models\JournalEntry;
 use App\Models\PaymentMade;
 use App\Models\PaymentReceived;
 use App\Services\BankFeeds\FeedStatement;
+use App\Services\BankLines;
 use App\Services\BankReconciliationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -204,10 +205,14 @@ class BankController extends Controller
         ]);
     }
 
-    public function reconcile(Request $request, Bank $bank, BankReconciliationService $reconciliationService, FeedStatement $feedStatement)
+    public function reconcile(Request $request, Bank $bank, BankReconciliationService $reconciliationService, FeedStatement $feedStatement, BankLines $bankLines)
     {
         $fromDate = $request->query('from_date');
         $toDate = $request->query('to_date');
+
+        // Without a feed, the lines to tick are what the books show for this bank (audit MB-08).
+        $bankLines->sync($bank);
+        $fromLedger = $bankLines->fromLedger($bank);
 
         $unreconciledTransactions = $reconciliationService->getUnreconciledTransactions($bank, $fromDate, $toDate);
         $summary = $reconciliationService->getSummary($bank);
@@ -215,7 +220,7 @@ class BankController extends Controller
         // A linked bank feed is the statement: its balance and lines (session 17)
         $feed = config('mybooks.features.bank_feeds') ? $feedStatement->forBank($bank) : null;
 
-        return view('banks.reconcile', compact('bank', 'unreconciledTransactions', 'summary', 'fromDate', 'toDate', 'feed'));
+        return view('banks.reconcile', compact('bank', 'unreconciledTransactions', 'summary', 'fromDate', 'toDate', 'feed', 'fromLedger'));
     }
 
     public function processReconciliation(Request $request, Bank $bank, BankReconciliationService $reconciliationService)

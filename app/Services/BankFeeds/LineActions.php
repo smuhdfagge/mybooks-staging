@@ -21,8 +21,9 @@ use Illuminate\Support\Facades\DB;
  * Accepting posts nothing. It links the line to the record and marks the
  * record cleared the way bank reconciliation does: a bank_transactions row
  * with is_reconciled = true, dated as the bank line, which the
- * reconciliation screen counts. (Nothing else creates bank_transactions
- * rows, so on a feed account this is what fills that screen.)
+ * reconciliation screen counts. (On a feed account nothing else creates
+ * bank_transactions rows, so this is what fills that screen; without a
+ * feed, App\Services\BankLines makes them from the ledger.)
  */
 class LineActions
 {

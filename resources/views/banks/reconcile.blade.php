@@ -44,8 +44,14 @@
                 @if ($filtered)
                     <x-table.empty filtered title="Nothing to reconcile in these dates" :clear="route('banks.reconcile', $bank)" />
                 @elseif (abs($summary['difference']) >= 0.005)
-                    {{-- Audit MB-08: with nothing to tick, a difference can't be cleared here. --}}
-                    <x-table.empty title="No bank lines to reconcile" text="Lines come from a bank feed. The difference above can't be cleared on this screen yet; manual reconciliation is coming." />
+                    {{-- Audit MB-08: never "All caught up" while a difference remains; say why there is nothing to tick. --}}
+                    @if (! $bank->chart_of_account_id)
+                        <x-table.empty title="No bank lines to reconcile" text="This bank isn't linked to a ledger account, so the books have no lines for it. Link one under Edit, and its receipts, payments and journals appear here to tick." />
+                    @elseif (! $fromLedger)
+                        <x-table.empty title="No bank lines to reconcile" text="Lines come from the bank feed. Match or post the feed's lines and they appear here as reconciled." />
+                    @else
+                        <x-table.empty title="Nothing left to tick" text="Every line in the books is ticked, but the difference isn't zero: a line ticked earlier may since have been changed or deleted in the books." />
+                    @endif
                 @else
                     <x-table.empty title="All caught up" text="Every bank line has been reconciled." />
                 @endif

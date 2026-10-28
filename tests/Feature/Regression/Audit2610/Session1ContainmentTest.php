@@ -48,7 +48,7 @@ class Session1ContainmentTest extends TestCase
     // MB-53: the stopgap (no linking) is replaced by the setup journal in
     // session 8; see Session8ScheduleSetupTest.
 
-    // MB-08 stopgap
+    // MB-08: the stopgap message is gone (session 10); the deposit is now a line to tick.
     public function test_reconcile_screen_never_says_all_caught_up_while_a_difference_remains(): void
     {
         $bank = Bank::factory()->create(['tenant_id' => $this->tenant->id, 'chart_of_account_id' => $this->account('1000')->id, 'opening_balance' => 1000, 'current_balance' => 1000]);
@@ -61,8 +61,8 @@ class Session1ContainmentTest extends TestCase
 
         $this->get(route('banks.reconcile', $bank))->assertOk()
             ->assertDontSee('All caught up')
-            ->assertSee('No bank lines to reconcile')
-            ->assertSee('Lines come from a bank feed');
+            ->assertDontSee('manual reconciliation is coming')
+            ->assertSee('Reconcile ticked lines');
     }
 
     // MB-18 stopgap
