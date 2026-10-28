@@ -6,6 +6,7 @@ use App\Actions\Bills\SaveBill;
 use App\Actions\Inventory\AdjustStock;
 use App\Actions\Invoices\SaveInvoice;
 use App\Enums\BillStatus;
+use App\Models\Bill;
 use App\Models\Budget;
 use App\Models\BudgetLine;
 use App\Models\ChartOfAccount;
@@ -15,10 +16,12 @@ use App\Models\Designation;
 use App\Models\Employee;
 use App\Models\Expense;
 use App\Models\Import;
+use App\Models\Invoice;
 use App\Models\Item;
 use App\Models\ItemCategory;
 use App\Models\Journal;
 use App\Models\JournalEntry;
+use App\Models\User;
 use App\Models\Vendor;
 use App\Support\Csv;
 use App\Support\PaymentMethods;
@@ -1472,7 +1475,9 @@ class ImportService
      * the journal posted. The invoice number in the file is kept as the
      * reference — MyBooks gives the invoice its own number from the
      * business's sequence, so an imported invoice cannot take a number
-     * that is already spoken for.
+     * that is already spoken for. With "Skip duplicate records" ticked (the
+     * default), one already in the books for the same customer with that
+     * reference is skipped.
      */
     protected function importInvoices(Import $import, iterable $data): bool
     {
@@ -1485,8 +1490,10 @@ class ImportService
 
         $items = $this->itemsByNameAndSku();
         $grouped = $this->groupDocuments($data, $mapping, 'invoice_number', $import);
+        $skipDuplicates = $this->options['skip_duplicates'] ?? true;
 
         $successful = 0;
+        $skipped = 0;
         $failed = count($grouped['missing']);
         foreach ($grouped['missing'] as $rowNum) {
             $this->errors[] = "Row {$rowNum}: Invoice Number is required. It is what ties the lines of one invoice together.";
@@ -1509,6 +1516,14 @@ class ImportService
                 }
 
                 $customerId = $customers[mb_strtolower($name)] ?? null;
+                if ($customerId && $skipDuplicates && Invoice::where('tenant_id', $this->tenantId)
+                    ->where('customer_id', $customerId)->where('reference', $number)->exists()) {
+                    $this->warnings[] = "Invoice {$number} for {$name} is already in your books, so it was skipped. "
+                        .'Untick "Skip duplicate records" to import it again.';
+                    $skipped += $rowCount;
+
+                    continue;
+                }
                 if (! $customerId) {
                     $customerId = Customer::create(['tenant_id' => $this->tenantId, 'name' => $name])->id;
                     $customers[mb_strtolower($name)] = $customerId;
@@ -1575,7 +1590,7 @@ class ImportService
         $import->update([
             'successful_rows' => $successful,
             'failed_rows' => $failed,
-            'skipped_rows' => 0,
+            'skipped_rows' => $skipped,
         ]);
 
         return true;
@@ -1587,7 +1602,9 @@ class ImportService
      * Through the same action the bill form uses, so the goods go into
      * stock and the journal is posted line by line. A line can name an
      * account instead of an item, the way a bill for rent or diesel is
-     * entered. The vendor's own bill number is kept as the reference.
+     * entered. The vendor's own bill number is kept as the reference. With
+     * "Skip duplicate records" ticked (the default), a bill already in the
+     * books from the same vendor with that number is skipped.
      */
     protected function importBills(Import $import, iterable $data): bool
     {
@@ -1606,8 +1623,10 @@ class ImportService
 
         $items = $this->itemsByNameAndSku();
         $grouped = $this->groupDocuments($data, $mapping, 'bill_number', $import);
+        $skipDuplicates = $this->options['skip_duplicates'] ?? true;
 
         $successful = 0;
+        $skipped = 0;
         $failed = count($grouped['missing']);
         foreach ($grouped['missing'] as $rowNum) {
             $this->errors[] = "Row {$rowNum}: Bill Number is required. It is what ties the lines of one bill together.";
@@ -1630,6 +1649,14 @@ class ImportService
                 }
 
                 $vendorId = $vendors[mb_strtolower($name)] ?? null;
+                if ($vendorId && $skipDuplicates && Bill::where('tenant_id', $this->tenantId)
+                    ->where('vendor_id', $vendorId)->where('vendor_bill_number', $number)->exists()) {
+                    $this->warnings[] = "Bill {$number} from {$name} is already in your books, so it was skipped. "
+                        .'Untick "Skip duplicate records" to import it again.';
+                    $skipped += $rowCount;
+
+                    continue;
+                }
                 if (! $vendorId) {
                     $vendorId = Vendor::create(['tenant_id' => $this->tenantId, 'name' => $name])->id;
                     $vendors[mb_strtolower($name)] = $vendorId;
@@ -1696,7 +1723,7 @@ class ImportService
         $import->update([
             'successful_rows' => $successful,
             'failed_rows' => $failed,
-            'skipped_rows' => 0,
+            'skipped_rows' => $skipped,
         ]);
 
         return true;
@@ -1709,7 +1736,12 @@ class ImportService
      * is not imported, and the rest of the file still is. Journals arrive
      * as drafts, the way the journal form leaves them, and are posted from
      * the journal itself — unless the file says posted, which posts it
-     * through the same path as the button.
+     * through the same path as the button. Only for someone who may post
+     * journals: "create journals" alone would otherwise post them.
+     *
+     * With "Skip duplicate records" ticked (the default), a journal already
+     * in the books with the same reference, date and total is skipped, so
+     * the file can be imported again once its refused journals are fixed.
      */
     protected function importJournals(Import $import, iterable $data): bool
     {
@@ -1722,8 +1754,11 @@ class ImportService
         }
 
         $grouped = $this->groupDocuments($data, $mapping, 'reference', $import);
+        $skipDuplicates = $this->options['skip_duplicates'] ?? true;
+        $canPost = (bool) User::find($import->user_id)?->can('post journals');
 
         $successful = 0;
+        $skipped = 0;
         $failed = count($grouped['missing']);
         foreach ($grouped['missing'] as $rowNum) {
             $this->errors[] = "Row {$rowNum}: Reference is required. It is what ties the lines of one journal together.";
@@ -1841,6 +1876,21 @@ class ImportService
                     continue;
                 }
 
+                if ($skipDuplicates && Journal::where('tenant_id', $this->tenantId)->where('reference', $reference)
+                    ->whereDate('journal_date', $date)->where('total_debit', $totalDebit)->exists()) {
+                    $this->warnings[] = "Journal {$reference} is already in your books (same date and total), so it was skipped. "
+                        .'Untick "Skip duplicate records" to import it again.';
+                    $skipped += $rowCount;
+
+                    continue;
+                }
+
+                if ($wanted === 'posted' && ! $canPost) {
+                    $this->warnings[] = "Journal {$reference} arrived as a draft: you don't have permission to post journals. "
+                        .'Someone who does can post it from the journal.';
+                    $wanted = 'draft';
+                }
+
                 DB::transaction(function () use ($reference, $date, $head, $entries, $import, $wanted) {
                     $journal = Journal::create([
                         'tenant_id' => $this->tenantId,
@@ -1878,7 +1928,7 @@ class ImportService
         $import->update([
             'successful_rows' => $successful,
             'failed_rows' => $failed,
-            'skipped_rows' => 0,
+            'skipped_rows' => $skipped,
         ]);
 
         return true;
