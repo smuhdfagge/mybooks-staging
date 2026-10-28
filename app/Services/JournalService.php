@@ -235,27 +235,13 @@ class JournalService implements JournalServiceInterface
         return DB::transaction(function () use ($invoice) {
             $t = $invoice->tenant_id;
 
-            // Check if journal already exists for this invoice
-            $existingJournal = Journal::where('reference_type', Invoice::class)
-                ->where('reference_id', $invoice->id)
-                ->first();
-
-            if ($existingJournal) {
-                // Update existing journal
-                return $this->updateInvoiceJournal($invoice, $existingJournal);
-            }
-
-            $journal = Journal::create([
+            $journal = new Journal([
                 'tenant_id' => $invoice->tenant_id,
-                'journal_number' => Journal::generateNumber($invoice->tenant_id),
                 'journal_date' => $invoice->invoice_date,
                 'reference' => $invoice->invoice_number,
                 'description' => "Invoice {$invoice->invoice_number} - {$invoice->customer->name}",
                 'reference_type' => Invoice::class,
                 'reference_id' => $invoice->id,
-                'status' => 'posted',
-                'is_posted' => true,
-                'posted_at' => now(),
                 'created_by' => $invoice->created_by ?? auth()->id(),
             ]);
 
@@ -287,12 +273,7 @@ class JournalService implements JournalServiceInterface
                     "Inventory Sold - Invoice {$invoice->invoice_number}");
             }
 
-            $journal->updateTotals();
-            $journal->save();
-
-            $this->updateAccountBalances($journal);
-
-            return $journal;
+            return $this->postDocumentJournal($journal, 'Invoice edited');
         });
     }
 
@@ -302,56 +283,6 @@ class JournalService implements JournalServiceInterface
     protected function calculateCOGS(Invoice $invoice): float
     {
         return $this->documentCogs($invoice, Invoice::class, false);
-    }
-
-    /**
-     * Update existing invoice journal when invoice is modified
-     */
-    protected function updateInvoiceJournal(Invoice $invoice, Journal $journal): Journal
-    {
-        $t = $invoice->tenant_id;
-
-        // Delete old entries
-        $this->reverseAccountBalances($journal);
-        $journal->entries()->delete();
-
-        // Update journal details
-        $journal->update([
-            'journal_date' => $invoice->invoice_date,
-            'reference' => $invoice->invoice_number,
-            'description' => "Invoice {$invoice->invoice_number} - {$invoice->customer->name}",
-        ]);
-
-        // Recreate entries
-        $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), $invoice->total, 0,
-            "Invoice {$invoice->invoice_number} - {$invoice->customer->name}");
-
-        $revenueAmount = $invoice->subtotal - ($invoice->discount_amount ?? 0);
-        if ($revenueAmount > 0) {
-            $this->createEntry($journal, $this->acct($t, 'sales_revenue'), 0, $revenueAmount,
-                "Sales - Invoice {$invoice->invoice_number}");
-        }
-
-        if ($invoice->tax_amount > 0) {
-            $this->createEntry($journal, $this->acct($t, 'sales_tax_payable'), 0, $invoice->tax_amount,
-                "Tax - Invoice {$invoice->invoice_number}");
-        }
-
-        // Record Cost of Goods Sold for inventory items
-        $cogsAmount = $this->calculateCOGS($invoice);
-        if ($cogsAmount > 0) {
-            $this->createEntry($journal, $this->acct($t, 'cost_of_goods_sold'), $cogsAmount, 0,
-                "COGS - Invoice {$invoice->invoice_number}");
-            $this->createEntry($journal, $this->acct($t, 'inventory'), 0, $cogsAmount,
-                "Inventory Sold - Invoice {$invoice->invoice_number}");
-        }
-
-        $journal->updateTotals();
-        $journal->save();
-
-        $this->updateAccountBalances($journal);
-
-        return $journal;
     }
 
     /**
@@ -375,25 +306,13 @@ class JournalService implements JournalServiceInterface
         return DB::transaction(function () use ($bill) {
             $t = $bill->tenant_id;
 
-            $existingJournal = Journal::where('reference_type', Bill::class)
-                ->where('reference_id', $bill->id)
-                ->first();
-
-            if ($existingJournal) {
-                return $this->updateBillJournal($bill, $existingJournal);
-            }
-
-            $journal = Journal::create([
+            $journal = new Journal([
                 'tenant_id' => $bill->tenant_id,
-                'journal_number' => Journal::generateNumber($bill->tenant_id),
                 'journal_date' => $bill->bill_date,
                 'reference' => $bill->bill_number,
                 'description' => "Bill {$bill->bill_number} - {$bill->vendor->name}",
                 'reference_type' => Bill::class,
                 'reference_id' => $bill->id,
-                'status' => 'posted',
-                'is_posted' => true,
-                'posted_at' => now(),
                 'created_by' => $bill->created_by ?? auth()->id(),
             ]);
 
@@ -417,53 +336,8 @@ class JournalService implements JournalServiceInterface
             $this->createEntry($journal, $this->acct($t, 'accounts_payable'), 0, $bill->total,
                 "Bill {$bill->bill_number} - {$bill->vendor->name}");
 
-            $journal->updateTotals();
-            $journal->save();
-
-            $this->updateAccountBalances($journal);
-
-            return $journal;
+            return $this->postDocumentJournal($journal, 'Bill edited');
         });
-    }
-
-    /**
-     * Update existing bill journal when bill is modified
-     */
-    protected function updateBillJournal(Bill $bill, Journal $journal): Journal
-    {
-        $t = $bill->tenant_id;
-
-        $this->reverseAccountBalances($journal);
-        $journal->entries()->delete();
-
-        $journal->update([
-            'journal_date' => $bill->bill_date,
-            'reference' => $bill->bill_number,
-            'description' => "Bill {$bill->bill_number} - {$bill->vendor->name}",
-        ]);
-
-        [$inventoryAmount, $expenses] = $this->billDebitSplit($bill);
-        $this->postBillDebits($journal, $bill, $inventoryAmount, $expenses);
-
-        if ($inventoryAmount == 0 && ! $expenses && $bill->subtotal > 0) {
-            $this->createEntry($journal, $this->acct($t, 'inventory'), round((float) $bill->subtotal - (float) ($bill->discount_amount ?? 0), 2), 0,
-                "Purchase - Bill {$bill->bill_number}");
-        }
-
-        if ($bill->tax_amount > 0) {
-            $this->createEntry($journal, $this->acct($t, 'input_vat'), $bill->tax_amount, 0,
-                "Input Tax - Bill {$bill->bill_number}");
-        }
-
-        $this->createEntry($journal, $this->acct($t, 'accounts_payable'), 0, $bill->total,
-            "Bill {$bill->bill_number} - {$bill->vendor->name}");
-
-        $journal->updateTotals();
-        $journal->save();
-
-        $this->updateAccountBalances($journal);
-
-        return $journal;
     }
 
     /**
@@ -481,25 +355,13 @@ class JournalService implements JournalServiceInterface
         return DB::transaction(function () use ($expense) {
             $t = $expense->tenant_id;
 
-            $existingJournal = Journal::where('reference_type', Expense::class)
-                ->where('reference_id', $expense->id)
-                ->first();
-
-            if ($existingJournal) {
-                return $this->updateExpenseJournal($expense, $existingJournal);
-            }
-
-            $journal = Journal::create([
+            $journal = new Journal([
                 'tenant_id' => $expense->tenant_id,
-                'journal_number' => Journal::generateNumber($expense->tenant_id),
                 'journal_date' => $expense->expense_date,
                 'reference' => $expense->expense_number,
                 'description' => "Expense {$expense->expense_number} - {$expense->name}",
                 'reference_type' => Expense::class,
                 'reference_id' => $expense->id,
-                'status' => 'posted',
-                'is_posted' => true,
-                'posted_at' => now(),
                 'created_by' => $expense->created_by ?? auth()->id(),
             ]);
 
@@ -520,51 +382,8 @@ class JournalService implements JournalServiceInterface
             $this->createEntry($journal, $paymentAccountCode, 0, $expense->total,
                 "Payment - {$expense->expense_number}");
 
-            $journal->updateTotals();
-            $journal->save();
-
-            $this->updateAccountBalances($journal);
-
-            return $journal;
+            return $this->postDocumentJournal($journal, 'Expense edited');
         });
-    }
-
-    /**
-     * Update existing expense journal
-     */
-    protected function updateExpenseJournal(Expense $expense, Journal $journal): Journal
-    {
-        $t = $expense->tenant_id;
-
-        $this->reverseAccountBalances($journal);
-        $journal->entries()->delete();
-
-        $journal->update([
-            'journal_date' => $expense->expense_date,
-            'reference' => $expense->expense_number,
-            'description' => "Expense {$expense->expense_number} - {$expense->name}",
-        ]);
-
-        $expenseAccountCode = $expense->expenseAccount?->account_code ?? $this->acct($t, 'miscellaneous_expense');
-        $this->createEntry($journal, $expenseAccountCode, $expense->amount, 0,
-            "Expense - {$expense->name}");
-
-        if ($expense->tax_amount > 0) {
-            $this->createEntry($journal, $this->acct($t, 'input_vat'), $expense->tax_amount, 0,
-                "Input Tax - {$expense->expense_number}");
-        }
-
-        $paymentAccountCode = $expense->paidThroughAccount?->account_code
-            ?? $this->paymentAccountFor($expense->bank, $expense->payment_method, $t);
-        $this->createEntry($journal, $paymentAccountCode, 0, $expense->total,
-            "Payment - {$expense->expense_number}");
-
-        $journal->updateTotals();
-        $journal->save();
-
-        $this->updateAccountBalances($journal);
-
-        return $journal;
     }
 
     /**
@@ -591,14 +410,6 @@ class JournalService implements JournalServiceInterface
         return DB::transaction(function () use ($payment) {
             $t = $payment->tenant_id;
 
-            $existingJournal = Journal::where('reference_type', PaymentReceived::class)
-                ->where('reference_id', $payment->id)
-                ->first();
-
-            if ($existingJournal) {
-                return $this->updatePaymentReceivedJournal($payment, $existingJournal);
-            }
-
             // Build description based on payment type
             if ($payment->is_deposit) {
                 $description = "Customer Deposit {$payment->payment_number} - {$payment->customer->name}";
@@ -610,17 +421,13 @@ class JournalService implements JournalServiceInterface
                 $description = "Payment Received {$payment->payment_number} - {$payment->customer->name}{$invoiceRef}";
             }
 
-            $journal = Journal::create([
+            $journal = new Journal([
                 'tenant_id' => $payment->tenant_id,
-                'journal_number' => Journal::generateNumber($payment->tenant_id),
                 'journal_date' => $payment->payment_date,
                 'reference' => $payment->payment_number,
                 'description' => $description,
                 'reference_type' => PaymentReceived::class,
                 'reference_id' => $payment->id,
-                'status' => 'posted',
-                'is_posted' => true,
-                'posted_at' => now(),
                 'created_by' => $payment->created_by ?? auth()->id(),
             ]);
 
@@ -643,12 +450,7 @@ class JournalService implements JournalServiceInterface
                 $this->writeRegularPaymentReceivedLines($journal, $payment);
             }
 
-            $journal->updateTotals();
-            $journal->save();
-
-            $this->updateAccountBalances($journal);
-
-            return $journal;
+            return $this->postDocumentJournal($journal, 'Payment edited');
         });
     }
 
@@ -748,60 +550,6 @@ class JournalService implements JournalServiceInterface
     }
 
     /**
-     * Update existing payment received journal
-     */
-    protected function updatePaymentReceivedJournal(PaymentReceived $payment, Journal $journal): Journal
-    {
-        $t = $payment->tenant_id;
-
-        $this->reverseAccountBalances($journal);
-        $journal->entries()->delete();
-
-        // Build description based on payment type
-        if ($payment->is_deposit) {
-            $description = "Customer Deposit {$payment->payment_number} - {$payment->customer->name}";
-        } elseif ($payment->payment_method === 'deposit') {
-            $invoiceRef = $payment->invoice ? " for Invoice {$payment->invoice->invoice_number}" : '';
-            $description = "Deposit Applied {$payment->payment_number} - {$payment->customer->name}{$invoiceRef}";
-        } else {
-            $invoiceRef = $payment->invoice ? " for Invoice {$payment->invoice->invoice_number}" : '';
-            $description = "Payment Received {$payment->payment_number} - {$payment->customer->name}{$invoiceRef}";
-        }
-
-        $journal->update([
-            'journal_date' => $payment->payment_date,
-            'reference' => $payment->payment_number,
-            'description' => $description,
-        ]);
-
-        if ($payment->is_deposit) {
-            // Customer deposit: Debit Cash, Credit Customer Deposits (liability)
-            $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
-            $this->createEntry($journal, $paymentAccountCode, $payment->amount, 0,
-                "Customer Deposit - {$payment->payment_number}");
-
-            $this->createEntry($journal, $this->acct($t, 'customer_deposits'), 0, $payment->amount,
-                "Customer Deposit from {$payment->customer->name}");
-        } elseif ($payment->payment_method === 'deposit') {
-            // Payment from deposit: Debit Customer Deposits (reduce liability), Credit A/R
-            $this->createEntry($journal, $this->acct($t, 'customer_deposits'), $payment->amount, 0,
-                "Deposit Applied - {$payment->payment_number}");
-
-            $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), 0, $payment->amount,
-                "Payment for {$payment->customer->name}");
-        } else {
-            $this->writeRegularPaymentReceivedLines($journal, $payment);
-        }
-
-        $journal->updateTotals();
-        $journal->save();
-
-        $this->updateAccountBalances($journal);
-
-        return $journal;
-    }
-
-    /**
      * Create journal entry for invoice refund
      *
      * Reverses the original invoice and payment entries:
@@ -821,28 +569,16 @@ class JournalService implements JournalServiceInterface
         return DB::transaction(function () use ($refund) {
             $t = $refund->tenant_id;
 
-            $existingJournal = Journal::where('reference_type', InvoiceRefund::class)
-                ->where('reference_id', $refund->id)
-                ->first();
-
-            if ($existingJournal) {
-                return $this->updateRefundJournal($refund, $existingJournal);
-            }
-
             $invoice = $refund->invoice;
             $description = "Refund {$refund->refund_number} - Invoice {$invoice->invoice_number} - {$refund->customer->name}";
 
-            $journal = Journal::create([
+            $journal = new Journal([
                 'tenant_id' => $refund->tenant_id,
-                'journal_number' => Journal::generateNumber($refund->tenant_id),
                 'journal_date' => $refund->refund_date,
                 'reference' => $refund->refund_number,
                 'description' => $description,
                 'reference_type' => InvoiceRefund::class,
                 'reference_id' => $refund->id,
-                'status' => 'posted',
-                'is_posted' => true,
-                'posted_at' => now(),
                 'created_by' => $refund->created_by ?? auth()->id(),
             ]);
 
@@ -868,59 +604,8 @@ class JournalService implements JournalServiceInterface
             $this->createEntry($journal, $paymentAccountCode, 0, $refund->amount,
                 "Refund Payment - {$refund->refund_number}");
 
-            $journal->updateTotals();
-            $journal->save();
-
-            $this->updateAccountBalances($journal);
-
-            return $journal;
+            return $this->postDocumentJournal($journal, 'Refund edited');
         });
-    }
-
-    /**
-     * Update existing refund journal
-     */
-    protected function updateRefundJournal(InvoiceRefund $refund, Journal $journal): Journal
-    {
-        $t = $refund->tenant_id;
-
-        $this->reverseAccountBalances($journal);
-        $journal->entries()->delete();
-
-        $invoice = $refund->invoice;
-        $description = "Refund {$refund->refund_number} - Invoice {$invoice->invoice_number} - {$refund->customer->name}";
-
-        $journal->update([
-            'journal_date' => $refund->refund_date,
-            'reference' => $refund->refund_number,
-            'description' => $description,
-        ]);
-
-        // Calculate proportional amounts
-        $refundPercentage = $refund->amount / max($invoice->total, 0.01);
-        $revenueRefund = ($invoice->subtotal - ($invoice->discount_amount ?? 0)) * $refundPercentage;
-        $taxRefund = ($invoice->tax_amount ?? 0) * $refundPercentage;
-
-        if ($revenueRefund > 0) {
-            $this->createEntry($journal, $this->acct($t, 'sales_revenue'), $revenueRefund, 0,
-                "Sales Refund - {$refund->refund_number}");
-        }
-
-        if ($taxRefund > 0) {
-            $this->createEntry($journal, $this->acct($t, 'sales_tax_payable'), $taxRefund, 0,
-                "Tax Refund - {$refund->refund_number}");
-        }
-
-        $paymentAccountCode = $this->getPaymentAccountCode($refund->refund_method, $t);
-        $this->createEntry($journal, $paymentAccountCode, 0, $refund->amount,
-            "Refund Payment - {$refund->refund_number}");
-
-        $journal->updateTotals();
-        $journal->save();
-
-        $this->updateAccountBalances($journal);
-
-        return $journal;
     }
 
     /**
@@ -937,67 +622,24 @@ class JournalService implements JournalServiceInterface
         }
 
         return DB::transaction(function () use ($payment) {
-            $existingJournal = Journal::where('reference_type', PaymentMade::class)
-                ->where('reference_id', $payment->id)
-                ->first();
-
-            if ($existingJournal) {
-                return $this->updatePaymentMadeJournal($payment, $existingJournal);
-            }
 
             $billRef = $payment->bill ? " for Bill {$payment->bill->bill_number}" : '';
             $kind = $payment->is_advance ? 'Supplier Advance' : 'Payment Made';
 
-            $journal = Journal::create([
+            $journal = new Journal([
                 'tenant_id' => $payment->tenant_id,
-                'journal_number' => Journal::generateNumber($payment->tenant_id),
                 'journal_date' => $payment->payment_date,
                 'reference' => $payment->payment_number,
                 'description' => "{$kind} {$payment->payment_number} - {$payment->vendor->name}{$billRef}",
                 'reference_type' => PaymentMade::class,
                 'reference_id' => $payment->id,
-                'status' => 'posted',
-                'is_posted' => true,
-                'posted_at' => now(),
                 'created_by' => $payment->created_by ?? auth()->id(),
             ]);
 
             $this->writePaymentMadeLines($journal, $payment);
 
-            $journal->updateTotals();
-            $journal->save();
-
-            $this->updateAccountBalances($journal);
-
-            return $journal;
+            return $this->postDocumentJournal($journal, 'Payment edited');
         });
-    }
-
-    /**
-     * Update existing payment made journal
-     */
-    protected function updatePaymentMadeJournal(PaymentMade $payment, Journal $journal): Journal
-    {
-        $this->reverseAccountBalances($journal);
-        $journal->entries()->delete();
-
-        $billRef = $payment->bill ? " for Bill {$payment->bill->bill_number}" : '';
-        $kind = $payment->is_advance ? 'Supplier Advance' : 'Payment Made';
-
-        $journal->update([
-            'journal_date' => $payment->payment_date,
-            'reference' => $payment->payment_number,
-            'description' => "{$kind} {$payment->payment_number} - {$payment->vendor->name}{$billRef}",
-        ]);
-
-        $this->writePaymentMadeLines($journal, $payment);
-
-        $journal->updateTotals();
-        $journal->save();
-
-        $this->updateAccountBalances($journal);
-
-        return $journal;
     }
 
     /**
@@ -1171,27 +813,15 @@ class JournalService implements JournalServiceInterface
         return DB::transaction(function () use ($receipt) {
             $t = $receipt->tenant_id;
 
-            $existingJournal = Journal::where('reference_type', SalesReceipt::class)
-                ->where('reference_id', $receipt->id)
-                ->first();
-
-            if ($existingJournal) {
-                return $this->updateSalesReceiptJournal($receipt, $existingJournal);
-            }
-
             $customerName = $receipt->customer ? $receipt->customer->name : 'Walk-in Customer';
 
-            $journal = Journal::create([
+            $journal = new Journal([
                 'tenant_id' => $receipt->tenant_id,
-                'journal_number' => Journal::generateNumber($receipt->tenant_id),
                 'journal_date' => $receipt->receipt_date,
                 'reference' => $receipt->receipt_number,
                 'description' => "Sales Receipt {$receipt->receipt_number} - {$customerName}",
                 'reference_type' => SalesReceipt::class,
                 'reference_id' => $receipt->id,
-                'status' => 'posted',
-                'is_posted' => true,
-                'posted_at' => now(),
                 'created_by' => $receipt->created_by ?? auth()->id(),
             ]);
 
@@ -1222,12 +852,7 @@ class JournalService implements JournalServiceInterface
                     "Inventory Sold - Receipt {$receipt->receipt_number}");
             }
 
-            $journal->updateTotals();
-            $journal->save();
-
-            $this->updateAccountBalances($journal);
-
-            return $journal;
+            return $this->postDocumentJournal($journal, 'Sales receipt edited');
         });
     }
 
@@ -1286,55 +911,6 @@ class JournalService implements JournalServiceInterface
         }
     }
 
-    /**
-     * Update existing sales receipt journal when receipt is modified
-     */
-    protected function updateSalesReceiptJournal(SalesReceipt $receipt, Journal $journal): Journal
-    {
-        $t = $receipt->tenant_id;
-
-        $this->reverseAccountBalances($journal);
-        $journal->entries()->delete();
-
-        $customerName = $receipt->customer ? $receipt->customer->name : 'Walk-in Customer';
-
-        $journal->update([
-            'journal_date' => $receipt->receipt_date,
-            'reference' => $receipt->receipt_number,
-            'description' => "Sales Receipt {$receipt->receipt_number} - {$customerName}",
-        ]);
-
-        $paymentAccountCode = $this->getPaymentAccountCode($receipt->payment_method ?? 'cash', $t);
-        $this->createEntry($journal, $paymentAccountCode, $receipt->total, 0,
-            "Cash Sale - {$receipt->receipt_number}");
-
-        $revenueAmount = $receipt->subtotal - ($receipt->discount_amount ?? 0);
-        if ($revenueAmount > 0) {
-            $this->createEntry($journal, $this->acct($t, 'sales_revenue'), 0, $revenueAmount,
-                "Sales - Receipt {$receipt->receipt_number}");
-        }
-
-        if ($receipt->tax_amount > 0) {
-            $this->createEntry($journal, $this->acct($t, 'sales_tax_payable'), 0, $receipt->tax_amount,
-                "Tax - Receipt {$receipt->receipt_number}");
-        }
-
-        $cogsAmount = $this->calculateSalesReceiptCOGS($receipt);
-        if ($cogsAmount > 0) {
-            $this->createEntry($journal, $this->acct($t, 'cost_of_goods_sold'), $cogsAmount, 0,
-                "COGS - Receipt {$receipt->receipt_number}");
-            $this->createEntry($journal, $this->acct($t, 'inventory'), 0, $cogsAmount,
-                "Inventory Sold - Receipt {$receipt->receipt_number}");
-        }
-
-        $journal->updateTotals();
-        $journal->save();
-
-        $this->updateAccountBalances($journal);
-
-        return $journal;
-    }
-
     /** Journal types for payroll (finding A10) and employee loans (A9). */
     public const PAYROLL_ACCRUAL = 'payroll_accrual';
 
@@ -1364,85 +940,54 @@ class JournalService implements JournalServiceInterface
      */
     public function createPayrollJournal(Payroll $payroll): ?Journal
     {
-        if ((float) $payroll->gross_salary <= 0 && (float) $payroll->net_salary <= 0) {
+        // A retroactive adjustment downwards has negative figures (MB-17): only all-zero is nothing to post.
+        if (abs((float) $payroll->gross_salary) < 0.005 && abs((float) $payroll->net_salary) < 0.005) {
             return null;
         }
 
         return DB::transaction(function () use ($payroll) {
-            $existing = Journal::where('reference_type', Payroll::class)
-                ->where('reference_id', $payroll->id)
-                ->where(fn ($q) => $q->whereNull('journal_type')->orWhere('journal_type', self::PAYROLL_ACCRUAL))
-                ->where('status', 'posted')
-                ->orderBy('id')
-                ->first();
+            // A payroll paid before the cost and the payment were split has
+            // one combined journal (no type) that credited the bank for net
+            // pay; a change to it posts another of the same kind.
+            $previous = Journal::currentFor($payroll, [null, self::PAYROLL_ACCRUAL]);
+            $combined = $previous && $previous->journal_type === null;
 
-            if ($existing) {
-                return $this->updatePayrollJournal($payroll, $existing);
-            }
-
-            $journal = Journal::create([
+            $journal = new Journal([
                 'tenant_id' => $payroll->tenant_id,
-                'journal_number' => Journal::generateNumber($payroll->tenant_id),
-                'journal_date' => $payroll->pay_period_end ?? $payroll->pay_date ?? now(),
+                'journal_date' => $combined
+                    ? ($payroll->pay_date ?? now())
+                    : ($payroll->pay_period_end ?? $payroll->pay_date ?? now()),
                 'reference' => $payroll->payroll_number,
                 'description' => "Payroll {$payroll->payroll_number} - {$payroll->employee?->full_name}",
                 'reference_type' => Payroll::class,
                 'reference_id' => $payroll->id,
-                'journal_type' => self::PAYROLL_ACCRUAL,
-                'status' => 'posted',
-                'is_posted' => true,
-                'posted_at' => now(),
+                'journal_type' => $combined ? null : self::PAYROLL_ACCRUAL,
                 'created_by' => $payroll->created_by ?? auth()->id(),
-            ]); // period check applies: no posting into a locked month (A10)
+            ]);
 
-            $this->writePayrollLines($journal, $payroll, $this->acct($payroll->tenant_id, 'accrued_salaries'));
+            $netAccount = $combined
+                ? $this->getPaymentAccountCode($payroll->payment_method ?? 'bank_transfer', $payroll->tenant_id)
+                : $this->acct($payroll->tenant_id, 'accrued_salaries');
+            $this->writePayrollLines($journal, $payroll, $netAccount);
 
-            $journal->updateTotals();
-            $journal->save();
-            $this->updateAccountBalances($journal);
-
-            return $journal;
+            // The period check applies: no posting into a locked month (A10).
+            return $this->postDocumentJournal($journal, 'Payroll changed');
         });
     }
 
     /**
-     * Rebuild a payroll's cost journal after the payroll changed. An old
-     * combined journal (no type) keeps crediting the bank for net pay.
-     */
-    protected function updatePayrollJournal(Payroll $payroll, Journal $journal): Journal
-    {
-        $this->reverseAccountBalances($journal);
-        $journal->entries()->delete();
-
-        $journal->fill([
-            'journal_date' => $journal->journal_type === self::PAYROLL_ACCRUAL
-                ? ($payroll->pay_period_end ?? $payroll->pay_date ?? now())
-                : ($payroll->pay_date ?? now()),
-            'reference' => $payroll->payroll_number,
-            'description' => "Payroll {$payroll->payroll_number} - {$payroll->employee?->full_name}",
-        ]);
-        $journal->withoutPeriodValidation()->save();
-
-        $netAccount = $journal->journal_type === self::PAYROLL_ACCRUAL
-            ? $this->acct($payroll->tenant_id, 'accrued_salaries')
-            : $this->getPaymentAccountCode($payroll->payment_method ?? 'bank_transfer', $payroll->tenant_id);
-        $this->writePayrollLines($journal, $payroll, $netAccount);
-
-        $journal->updateTotals();
-        $journal->withoutPeriodValidation()->save();
-        $this->updateAccountBalances($journal);
-
-        return $journal;
-    }
-
-    /**
-     * Paying net pay (A10): Dr Accrued Salaries, Cr bank. Dated today.
+     * Paying net pay (A10): Dr Accrued Salaries, Cr bank. Dated the payroll's
+     * pay date (today if that is still to come), or the first open day after
+     * it when that is locked, with a note (audit MB-56; it was dated the day
+     * the payroll was marked paid). A negative net (a retroactive adjustment
+     * downwards) is money back from the employee: the sides swap (MB-17).
      * Nothing to do for an old combined journal (it already paid the bank)
      * or if this payroll's payment is already posted.
      */
     public function createPayrollPaymentJournal(Payroll $payroll): ?Journal
     {
-        if ((float) $payroll->net_salary <= 0) {
+        $net = round((float) $payroll->net_salary, 2);
+        if (abs($net) < 0.005) {
             return null;
         }
 
@@ -1457,14 +1002,17 @@ class JournalService implements JournalServiceInterface
             return $existing;
         }
 
-        return DB::transaction(function () use ($payroll) {
+        return DB::transaction(function () use ($payroll, $net) {
             $t = $payroll->tenant_id;
+            $paid = $payroll->pay_date->lte(today()) ? $payroll->pay_date->copy() : today(); // pay_date is required
+            $on = $this->firstOpenDate($t, $paid);
+            $moved = $on->toDateString() !== $paid->toDateString() ? ' (paid '.$paid->format('j M Y').', a locked period)' : '';
             $journal = Journal::create([
                 'tenant_id' => $t,
                 'journal_number' => Journal::generateNumber($t),
-                'journal_date' => now()->toDateString(),
+                'journal_date' => $on->toDateString(),
                 'reference' => $payroll->payroll_number,
-                'description' => "Net pay - Payroll {$payroll->payroll_number} - {$payroll->employee?->full_name}",
+                'description' => "Net pay - Payroll {$payroll->payroll_number} - {$payroll->employee?->full_name}{$moved}",
                 'reference_type' => Payroll::class,
                 'reference_id' => $payroll->id,
                 'journal_type' => self::PAYROLL_PAYMENT,
@@ -1474,16 +1022,19 @@ class JournalService implements JournalServiceInterface
                 'created_by' => auth()->id() ?? $payroll->created_by,
             ]);
 
-            $this->createEntry($journal, $this->acct($t, 'accrued_salaries'), (float) $payroll->net_salary, 0,
-                "Net pay owed - {$payroll->payroll_number}");
+            $this->payrollLine($journal, $this->acct($t, 'accrued_salaries'), $net, true, "Net pay owed - {$payroll->payroll_number}");
             // The bank it was paid from, when one was chosen (audit MB-08).
-            $this->createEntry($journal, $this->paymentAccountFor($payroll->bank, $payroll->payment_method ?? 'bank_transfer', $t), 0, (float) $payroll->net_salary,
+            $this->payrollLine($journal, $this->paymentAccountFor($payroll->bank, $payroll->payment_method ?? 'bank_transfer', $t), $net, false,
                 "Net Pay - {$payroll->payroll_number}");
 
             $journal->updateTotals();
             $journal->save();
             $this->updateAccountBalances($journal);
-            app(BankService::class)->debit($payroll->bank_id, (float) $payroll->net_salary, "Net pay {$payroll->payroll_number}");
+            if ($net > 0) {
+                app(BankService::class)->debit($payroll->bank_id, $net, "Net pay {$payroll->payroll_number}");
+            } else {
+                app(BankService::class)->credit($payroll->bank_id, abs($net), "Net pay returned {$payroll->payroll_number}");
+            }
 
             return $journal;
         });
@@ -1573,93 +1124,81 @@ class JournalService implements JournalServiceInterface
     {
         $t = $payroll->tenant_id;
         $who = $payroll->employee?->full_name;
+        // Each figure on its usual side; a negative one (a retroactive
+        // adjustment downwards) on the other side, so the journal still
+        // balances (audit MB-17).
+        $dr = fn (string $code, float $amount, string $what) => $this->payrollLine($journal, $code, $amount, true, $what);
+        $cr = fn (string $code, float $amount, string $what) => $this->payrollLine($journal, $code, $amount, false, $what);
 
-        if ($payroll->basic_salary > 0) {
-            $this->createEntry($journal, $this->acct($t, 'salaries_wages'), (float) $payroll->basic_salary, 0,
-                "Basic Salary - {$who} ({$payroll->payroll_number})");
-        }
-        if ($payroll->allowances > 0) {
-            $this->createEntry($journal, $this->acct($t, 'allowances_expense'), (float) $payroll->allowances, 0,
-                "Allowances - {$who} ({$payroll->payroll_number})");
-        }
-        if ($payroll->overtime_amount > 0) {
-            $this->createEntry($journal, $this->acct($t, 'overtime_expense'), (float) $payroll->overtime_amount, 0,
-                "Overtime - {$who} ({$payroll->payroll_number})");
-        }
+        $dr($this->acct($t, 'salaries_wages'), (float) $payroll->basic_salary, "Basic Salary - {$who} ({$payroll->payroll_number})");
+        $dr($this->acct($t, 'allowances_expense'), (float) $payroll->allowances, "Allowances - {$who} ({$payroll->payroll_number})");
+        $dr($this->acct($t, 'overtime_expense'), (float) $payroll->overtime_amount, "Overtime - {$who} ({$payroll->payroll_number})");
 
         $employerContributions = (float) ($payroll->employer_contributions ?? 0);
         $contributionDetails = $payroll->employer_contribution_details ?? [];
-        if ($employerContributions > 0) {
+        if (abs($employerContributions) >= 0.005) {
             if (! empty($contributionDetails)) {
                 foreach ($contributionDetails as $contribution) {
-                    $amount = (float) ($contribution['amount'] ?? 0);
-                    if ($amount > 0) {
-                        $this->createEntry($journal, $this->mapContributionToExpenseAccount($contribution['name'] ?? '', $t), $amount, 0,
-                            "{$contribution['name']} - {$payroll->payroll_number}");
-                    }
+                    $dr($this->mapContributionToExpenseAccount($contribution['name'] ?? '', $t), (float) ($contribution['amount'] ?? 0),
+                        "{$contribution['name']} - {$payroll->payroll_number}");
                 }
             } else {
-                $this->createEntry($journal, $this->acct($t, 'payroll_taxes'), $employerContributions, 0,
-                    "Employer Contributions - {$payroll->payroll_number}");
+                $dr($this->acct($t, 'payroll_taxes'), $employerContributions, "Employer Contributions - {$payroll->payroll_number}");
             }
         }
 
-        if ($payroll->net_salary > 0) {
-            $this->createEntry($journal, $netAccount, 0, (float) $payroll->net_salary, "Net Pay - {$payroll->payroll_number}");
-        }
+        $cr($netAccount, (float) $payroll->net_salary, "Net Pay - {$payroll->payroll_number}");
+        $cr($this->acct($t, 'tax_payable'), (float) $payroll->tax_deduction, "Tax Withheld - {$payroll->payroll_number}");
 
-        if ($payroll->tax_deduction > 0) {
-            $this->createEntry($journal, $this->acct($t, 'tax_payable'), 0, (float) $payroll->tax_deduction,
-                "Tax Withheld - {$payroll->payroll_number}");
-        }
-
-        if ($payroll->other_deductions > 0) {
+        if (abs((float) $payroll->other_deductions) >= 0.005) {
             $mappedTotal = 0;
             foreach ($payroll->deduction_details ?? [] as $deduction) {
                 if (str_starts_with($deduction['name'] ?? '', '_')) {
                     continue;
                 }
                 $amount = (float) ($deduction['amount'] ?? 0);
-                if ($amount <= 0) {
+                if (abs($amount) < 0.005) {
                     continue;
                 }
 
-                if (! empty($deduction['_loan_id']) && ($loan = EmployeeLoan::find($deduction['_loan_id']))) {
+                if ($amount > 0 && ! empty($deduction['_loan_id']) && ($loan = EmployeeLoan::find($deduction['_loan_id']))) {
                     // Loan repayment: reduces the advance; any interest is income (A9).
                     $interest = $loan->interestPortionFor($amount);
-                    $this->createEntry($journal, $this->acct($t, 'employee_advances'), 0, round($amount - $interest, 2),
-                        "{$deduction['name']} - {$payroll->payroll_number}");
-                    if ($interest > 0) {
-                        $this->createEntry($journal, $this->acct($t, 'interest_income'), 0, $interest,
-                            "Interest {$loan->loan_number} - {$payroll->payroll_number}");
-                    }
+                    $cr($this->acct($t, 'employee_advances'), round($amount - $interest, 2), "{$deduction['name']} - {$payroll->payroll_number}");
+                    $cr($this->acct($t, 'interest_income'), $interest, "Interest {$loan->loan_number} - {$payroll->payroll_number}");
                 } else {
-                    $this->createEntry($journal, $this->mapDeductionToLiabilityAccount($deduction['name'] ?? '', $t), 0, $amount,
-                        "{$deduction['name']} - {$payroll->payroll_number}");
+                    $cr($this->mapDeductionToLiabilityAccount($deduction['name'] ?? '', $t), $amount, "{$deduction['name']} - {$payroll->payroll_number}");
                 }
                 $mappedTotal += $amount;
             }
-            $remainder = round($payroll->other_deductions - $mappedTotal, 2);
-            if ($remainder > 0) {
-                $this->createEntry($journal, $this->acct($t, 'payroll_liabilities'), 0, $remainder,
-                    "Other Deductions - {$payroll->payroll_number}");
-            }
+            $cr($this->acct($t, 'payroll_liabilities'), round((float) $payroll->other_deductions - $mappedTotal, 2), "Other Deductions - {$payroll->payroll_number}");
         }
 
-        if ($employerContributions > 0) {
+        if (abs($employerContributions) >= 0.005) {
             if (! empty($contributionDetails)) {
                 foreach ($contributionDetails as $contribution) {
-                    $amount = (float) ($contribution['amount'] ?? 0);
-                    if ($amount > 0) {
-                        $this->createEntry($journal, $this->mapContributionToLiabilityAccount($contribution['name'] ?? '', $t), 0, $amount,
-                            "{$contribution['name']} Payable - {$payroll->payroll_number}");
-                    }
+                    $cr($this->mapContributionToLiabilityAccount($contribution['name'] ?? '', $t), (float) ($contribution['amount'] ?? 0),
+                        "{$contribution['name']} Payable - {$payroll->payroll_number}");
                 }
             } else {
-                $this->createEntry($journal, $this->acct($t, 'payroll_liabilities'), 0, $employerContributions,
-                    "Employer Contributions Payable - {$payroll->payroll_number}");
+                $cr($this->acct($t, 'payroll_liabilities'), $employerContributions, "Employer Contributions Payable - {$payroll->payroll_number}");
             }
         }
+    }
+
+    /**
+     * One payroll journal line: $amount on its usual side ($debit), or on the
+     * other side when negative; nothing when zero.
+     */
+    protected function payrollLine(Journal $journal, string $accountCode, float $amount, bool $debit, string $description): ?JournalEntry
+    {
+        $amount = round($amount, 2);
+        if (abs($amount) < 0.005) {
+            return null;
+        }
+        $onDebit = $debit === ($amount > 0);
+
+        return $this->createEntry($journal, $accountCode, $onDebit ? abs($amount) : 0, $onDebit ? 0 : abs($amount), $description);
     }
 
     public const ASSET_ACQUISITION = 'asset_acquisition';
@@ -2042,11 +1581,13 @@ class JournalService implements JournalServiceInterface
      */
     public function reverseDocumentJournal(string $referenceType, int $referenceId, string $reason): ?Journal
     {
+        // The one it stands on now: after an edit, the journal that replaced the first.
         $journal = Journal::with('entries.account')
             ->where('reference_type', $referenceType)
             ->where('reference_id', $referenceId)
             ->where('status', 'posted')
             ->whereNot('reference', 'like', 'REV-%')
+            ->latest('id')
             ->first();
 
         return $journal ? $this->reverseJournal($journal, $reason) : null;
@@ -2082,13 +1623,15 @@ class JournalService implements JournalServiceInterface
      */
     public function purgeJournalForTransaction(string $referenceType, int $referenceId, ?int $tenantId = null): void
     {
-        foreach ($this->journalsForTransaction($referenceType, $referenceId, $tenantId) as $journal) {
-            if ($journal->status === 'posted') {
-                $this->reverseAccountBalances($journal);
+        JournalEntry::rebuilding(function () use ($referenceType, $referenceId, $tenantId) {
+            foreach ($this->journalsForTransaction($referenceType, $referenceId, $tenantId) as $journal) {
+                if ($journal->status === 'posted') {
+                    $this->reverseAccountBalances($journal);
+                }
+                $journal->entries()->forceDelete();
+                $journal->forceDelete();
             }
-            $journal->entries()->forceDelete();
-            $journal->forceDelete();
-        }
+        });
     }
 
     protected function journalsForTransaction(string $referenceType, int $referenceId, ?int $tenantId)
@@ -2121,13 +1664,107 @@ class JournalService implements JournalServiceInterface
             throw new InvalidArgumentException("Account with code {$accountCode} not found for tenant {$journal->tenant_id}");
         }
 
-        return JournalEntry::create([
+        $entry = new JournalEntry([
             'journal_id' => $journal->id,
             'account_id' => $account->id,
             'description' => $description,
             'debit' => round($debit, 2),
             'credit' => round($credit, 2),
         ]);
+
+        if (! $journal->exists) {
+            // Kept with the journal until postDocumentJournal() saves it.
+            $entry->setRelation('account', $account);
+            $journal->pendingEntries[] = $entry;
+
+            return $entry;
+        }
+
+        $entry->save();
+
+        return $entry;
+    }
+
+    /**
+     * Post a document's journal, written in memory by its create*Journal
+     * method, in place of the one the document stands on (audit MB-15).
+     *
+     * - The document has no journal yet: this one is posted.
+     * - It has one with the same lines on the same date: that one stays,
+     *   its lines as posted. Only its reference and description follow the
+     *   document (another customer on the same figures, say).
+     * - Otherwise that one is reversed, on its own date, and this one is
+     *   posted. A posted journal is never rewritten, so the ledger keeps
+     *   what the document said before it was edited, and each month's
+     *   figures still come out as the documents now say.
+     *
+     * Callers run inside DB::transaction: a refusal (a closed or locked
+     * date, lines that don't balance) leaves everything as it was.
+     */
+    protected function postDocumentJournal(Journal $journal, string $reason): Journal
+    {
+        $previous = Journal::query()
+            ->where('reference_type', $journal->reference_type)->where('reference_id', $journal->reference_id)
+            ->originals(array_values(array_unique([null, $journal->journal_type])))->where('status', 'posted')
+            ->latest('id')->first();
+
+        if ($previous
+            && $previous->journal_date->toDateString() === $journal->journal_date->toDateString()
+            && $this->netByAccount($previous->entries()->get()) === $this->netByAccount($journal->pendingEntries)) {
+            $previous->fill($journal->only(['reference', 'description']));
+            if ($previous->isDirty()) {
+                $previous->save();
+            }
+
+            return $previous;
+        }
+
+        if ($previous) {
+            $this->reverseJournal($previous, $reason, $previous->journal_date->toDateString());
+        }
+
+        $journal->fill([
+            'journal_number' => Journal::generateNumber($journal->tenant_id),
+            'status' => 'posted',
+            'is_posted' => true,
+            'posted_at' => now(),
+        ])->save(); // the period check applies: nothing is posted into a closed or locked month
+
+        foreach ($journal->pendingEntries as $entry) {
+            $entry->journal_id = $journal->id;
+            $entry->save();
+        }
+        $journal->pendingEntries = [];
+
+        $journal->updateTotals();
+        $this->updateAccountBalances($journal);
+
+        return $journal;
+    }
+
+    /**
+     * Debits less credits per account, to two places, for comparing two
+     * journals. An account whose lines net to nothing is left out.
+     *
+     * @param  iterable<JournalEntry>  $entries
+     * @return array<int, string>
+     */
+    private function netByAccount(iterable $entries): array
+    {
+        $net = [];
+        foreach ($entries as $entry) {
+            $net[(int) $entry->account_id] = ($net[(int) $entry->account_id] ?? 0.0) + (float) $entry->debit - (float) $entry->credit;
+        }
+
+        $out = [];
+        foreach ($net as $accountId => $amount) {
+            if (abs($amount) >= 0.005) {
+                $out[$accountId] = number_format($amount, 2, '.', '');
+            }
+        }
+        ksort($out);
+
+        return $out;
     }
 
     /**
@@ -2218,9 +1855,12 @@ class JournalService implements JournalServiceInterface
      */
     public function getJournalForTransaction(string $referenceType, int $referenceId): ?Journal
     {
+        // An edited document has several: the latest is the one it stands on.
         return Journal::with('entries.account')
             ->where('reference_type', $referenceType)
             ->where('reference_id', $referenceId)
+            ->originals()
+            ->latest('id')
             ->first();
     }
 

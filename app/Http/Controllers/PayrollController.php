@@ -710,47 +710,54 @@ class PayrollController extends Controller
 
         $taxService = app(PayrollTaxService::class);
 
+        // Deductions by name, without loan instalments (not part of the
+        // salary, so not adjusted) and internal entries (_tax_method).
+        $named = fn (array $details) => collect($details)
+            ->reject(fn ($d) => str_starts_with((string) ($d['name'] ?? ''), '_') || ! empty($d['_loan_id']))
+            ->groupBy(fn ($d) => (string) $d['name'])
+            ->map(fn ($group) => round($group->sum(fn ($d) => (float) ($d['amount'] ?? 0)), 2));
+
         foreach ($affectedPayrolls as $payroll) {
-            // Calculate what the payroll should have been with the current structure
-            $newBasic = $structure->basic_salary;
-            $newAllowances = $structure->calculateAllowances();
-            $newGross = $newBasic + $newAllowances + (float) $payroll->overtime_amount;
+            // What the payroll should have been with the current structure,
+            // worked out exactly as a payroll run does: statutory pension and
+            // NHF, rent relief and PAYE included (audit MB-17).
+            $new = $taxService->payslipFigures($employee, $tenantId, (float) ($payroll->payrollBatch->tax_rate ?? 0), [], $payroll->pay_period_end->toDateString());
 
-            $taxableAmount = $newGross;
-            foreach ($structure->allowances as $item) {
-                if (! $item->is_taxable) {
-                    $calculated = $item->amount_type === 'percentage'
-                        ? round($newBasic * $item->amount / 100, 2)
-                        : $item->amount;
-                    $taxableAmount -= $calculated;
-                }
-            }
+            // What changed, part by part, so the adjustment books the extra
+            // (or reduced) salary as cost and the PAYE and each deduction as
+            // its liability, not the net difference as salary.
+            $oldDeductions = $named($payroll->deduction_details ?? []);
+            $newDeductions = $named($new['deduction_details']);
+            $loanRepayments = collect($payroll->deduction_details ?? [])->filter(fn ($d) => ! empty($d['_loan_id']))->sum(fn ($d) => (float) ($d['amount'] ?? 0));
+            $basicDelta = round((float) $new['basic_salary'] - (float) $payroll->basic_salary, 2);
+            $allowancesDelta = round((float) $new['allowances'] - (float) $payroll->allowances, 2);
+            $taxDelta = round((float) $new['tax_deduction'] - (float) $payroll->tax_deduction, 2);
+            $deductionsDelta = round($newDeductions->sum() - ((float) $payroll->other_deductions - $loanRepayments), 2);
+            $byName = $newDeductions->keys()->merge($oldDeductions->keys())->unique()
+                ->mapWithKeys(fn ($name) => [$name => round(($newDeductions[$name] ?? 0) - ($oldDeductions[$name] ?? 0), 2)])
+                ->filter(fn ($delta) => abs($delta) >= 0.005);
 
-            $taxableAmount -= $structure->calculatePreTaxDeductions();
-            $taxableAmount -= $taxService->monthlyRentRelief($employee);
-
-            $taxResult = $taxService->calculateTax(max(0, $taxableAmount), $tenantId, 0, 'monthly');
-            $newTax = $taxResult['tax'];
-
-            $newDeductions = $structure->calculateDeductions();
-            $newTotalDeductions = $newTax + $newDeductions;
-            $newNet = $newGross - $newTotalDeductions;
-
-            $difference = round($newNet - (float) $payroll->net_salary, 2);
-
+            $difference = round($basicDelta + $allowancesDelta - $taxDelta - $deductionsDelta, 2);
             $adjustments[] = [
                 'payroll' => $payroll,
                 'old_gross' => (float) $payroll->gross_salary,
-                'new_gross' => $newGross,
+                'new_gross' => round((float) $new['gross_salary'] + (float) $payroll->overtime_amount, 2),
                 'old_net' => (float) $payroll->net_salary,
-                'new_net' => $newNet,
+                'new_net' => round((float) $payroll->net_salary + $difference, 2),
                 'difference' => $difference,
+                'basic_delta' => $basicDelta,
+                'allowances_delta' => $allowancesDelta,
+                'tax_delta' => $taxDelta,
+                'deductions_delta' => $deductionsDelta,
+                'deductions_by_name' => $byName->all(),
             ];
         }
 
-        $totalAdjustment = collect($adjustments)->sum('difference');
+        $sum = fn (string $key) => round(collect($adjustments)->sum($key), 2);
+        $totalAdjustment = $sum('difference');
+        $changed = collect(['basic_delta', 'allowances_delta', 'tax_delta', 'deductions_delta'])->contains(fn ($key) => abs($sum($key)) >= 0.005);
 
-        if ($doRecalculate && $totalAdjustment != 0) {
+        if ($doRecalculate && $changed) {
             // Create an adjustment payroll record for the difference
             $payroll = Payroll::create([
                 'tenant_id' => $tenantId,
@@ -761,14 +768,18 @@ class PayrollController extends Controller
                 'pay_period_start' => $affectedPayrolls->first()->pay_period_start,
                 'pay_period_end' => $affectedPayrolls->last()->pay_period_end,
                 'pay_date' => now()->toDateString(),
-                'basic_salary' => $totalAdjustment > 0 ? $totalAdjustment : 0,
-                'allowances' => 0,
+                // Each part's change, up or down (MB-17); the journal puts a
+                // negative part on the other side, so it always balances.
+                'basic_salary' => $sum('basic_delta'),
+                'allowances' => $sum('allowances_delta'),
                 'overtime_hours' => 0,
                 'overtime_amount' => 0,
-                'gross_salary' => abs($totalAdjustment),
-                'tax_deduction' => 0,
-                'other_deductions' => $totalAdjustment < 0 ? abs($totalAdjustment) : 0,
-                'total_deductions' => $totalAdjustment < 0 ? abs($totalAdjustment) : 0,
+                'gross_salary' => round($sum('basic_delta') + $sum('allowances_delta'), 2),
+                'tax_deduction' => $sum('tax_delta'),
+                'other_deductions' => $sum('deductions_delta'),
+                'deduction_details' => collect($adjustments)->flatMap(fn ($a) => collect($a['deductions_by_name'])->map(fn ($amount, $name) => ['name' => $name, 'amount' => $amount])->values())
+                    ->groupBy('name')->map(fn ($group, $name) => ['name' => $name, 'amount' => round($group->sum('amount'), 2)])->values()->all(),
+                'total_deductions' => round($sum('tax_delta') + $sum('deductions_delta'), 2),
                 'net_salary' => $totalAdjustment,
                 'status' => 'draft',
                 'notes' => "Retroactive adjustment for period {$affectedPayrolls->first()->pay_period_start->format('M Y')} to {$affectedPayrolls->last()->pay_period_end->format('M Y')} based on salary structure change effective {$effectiveFrom}.",

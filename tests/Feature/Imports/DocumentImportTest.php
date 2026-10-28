@@ -149,7 +149,8 @@ class DocumentImportTest extends TestCase
 
     public function test_a_file_can_ask_for_the_journal_to_be_posted(): void
     {
-        $this->createAuthenticatedUser();
+        // Only for someone who may post journals (audit session 16).
+        $this->createAuthenticatedUser(['post journals']);
 
         $import = $this->runImport(Import::TYPE_JOURNALS, <<<'CSV'
         reference,date,status,account_code,debit,credit

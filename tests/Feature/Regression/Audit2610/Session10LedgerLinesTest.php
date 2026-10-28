@@ -134,14 +134,17 @@ class Session10LedgerLinesTest extends TestCase
         $this->post(route('banks.reconcile.process', $this->bank), ['transaction_ids' => [$tick->id], 'statement_balance' => 850, 'statement_date' => '2026-10-06'])
             ->assertSessionHas('success');
 
-        // Both journals re-posted with new entries (as an edit does); one later deleted.
-        foreach ([$kept, $dropped] as $journal) {
-            foreach ($journal->entries as $entry) {
-                $copy = $entry->replicate();
-                $entry->delete();
-                $copy->save();
+        // Both journals' lines rewritten (as an edit did before audit MB-15; data
+        // from then is still about), one journal later deleted.
+        JournalEntry::rebuilding(function () use ($kept, $dropped) {
+            foreach ([$kept, $dropped] as $journal) {
+                foreach ($journal->entries as $entry) {
+                    $copy = $entry->replicate();
+                    $entry->delete();
+                    $copy->save();
+                }
             }
-        }
+        });
         $dropped->delete();
         app(BankLines::class)->sync($this->bank);
 

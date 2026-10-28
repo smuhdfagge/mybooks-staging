@@ -155,9 +155,7 @@
                                             <td data-label="VAT %">
                                                 {{-- VAT on cash sales, as on invoices (R3). Line discounts set elsewhere are kept. --}}
                                                 <input type="hidden" :name="`items[${index}][discount]`" :value="item.discount || 0">
-                                                <input aria-label="VAT rate (%)" type="number" :name="`items[${index}][tax_rate]`" x-model.number="item.tax_rate" min="0" max="100" step="0.01"
-                                                    @input="calculateTotals()"
-                                                    class="form-control text-sm">
+                                                <x-tax-rate-select type="sales" model="item.tax_rate" name="`items[${index}][tax_rate]`" change="calculateTotals()" />
                                             </td>
                                             <td class="num font-medium" x-text="formatMoney(lineTotal(index))" data-label="Total"></td>
                                             <td class="text-center" data-cell="actions">
@@ -296,7 +294,7 @@
 
                 init() {
                     if (this.items.length === 0) {
-                        this.items = [{ item_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0, discount: 0, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 }];
+                        this.items = [{ item_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: {{ \App\Support\TaxChoices::defaultRate('sales') }}, discount: 0, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 }];
                     } else {
                         this.items.forEach((item, index) => {
                             if (item.item_id) {
@@ -330,7 +328,7 @@
                 },
 
                 addItem() {
-                    this.items.push({ item_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0, discount: 0, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 });
+                    this.items.push({ item_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: {{ \App\Support\TaxChoices::defaultRate('sales') }}, discount: 0, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 });
                 },
 
                 removeItem(index) {

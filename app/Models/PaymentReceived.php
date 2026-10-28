@@ -138,7 +138,8 @@ class PaymentReceived extends Model
     /** @return MorphOne<Journal, $this> */
     public function journal(): MorphOne
     {
-        return $this->morphOne(Journal::class, 'reference');
+        // An edit reverses the journal and posts a new one (audit MB-15): the latest.
+        return $this->morphOne(Journal::class, 'reference')->ofMany(['id' => 'max'], fn ($q) => $q->originals());
     }
 
     /**

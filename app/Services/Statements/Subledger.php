@@ -546,7 +546,8 @@ class Subledger
         foreach ($rows as $j) {
             $id = (int) $j->reference_id;
             if (str_starts_with((string) $j->reference, 'REV-')) {
-                $out['reversed'][$id] ??= Carbon::parse($j->journal_date)->toDateString();
+                // The last: an edit reverses the journal too (on its own date), before any cancelling.
+                $out['reversed'][$id] = Carbon::parse($j->journal_date)->toDateString();
             } else {
                 $out['posted'][$id] = true;
             }

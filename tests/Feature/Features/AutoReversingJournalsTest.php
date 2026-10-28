@@ -344,7 +344,7 @@ class AutoReversingJournalsTest extends TestCase
         $broken = $this->accrual();
         $good = $this->accrual();
         // Damage the first journal's lines so its reversal can't balance.
-        JournalEntry::where('journal_id', $broken->id)->where('debit', '>', 0)->update(['debit' => 1]);
+        JournalEntry::rebuilding(fn () => JournalEntry::where('journal_id', $broken->id)->where('debit', '>', 0)->update(['debit' => 1]));
 
         Log::spy();
         $this->runReversals('2026-01-01', 1);

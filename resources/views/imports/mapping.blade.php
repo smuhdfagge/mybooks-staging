@@ -129,17 +129,35 @@
                     <!-- Import Options -->
                     <div class="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                         <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Import Options</h3>
+                        @php
+                            // Invoices, bills and journals are never changed by an import: a
+                            // duplicate is skipped or imported again, not updated.
+                            $isDocument = in_array($import->type, [\App\Models\Import::TYPE_INVOICES, \App\Models\Import::TYPE_BILLS, \App\Models\Import::TYPE_JOURNALS], true);
+                        @endphp
                         <div class="space-y-3">
                             <label class="flex items-center">
+                                {{-- Unticked, a checkbox sends nothing and the import fell back to skipping. --}}
+                                <input type="hidden" name="options[skip_duplicates]" value="0">
                                 <input type="checkbox" name="options[skip_duplicates]" value="1" checked
                                        class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
                                 <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Skip duplicate records</span>
                             </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" name="options[update_existing]" value="1"
-                                       class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
-                                <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Update existing records if found</span>
-                            </label>
+                            @if ($isDocument)
+                                <p class="ml-6 text-xs text-gray-500 dark:text-gray-400">
+                                    {{ match ($import->type) {
+                                        \App\Models\Import::TYPE_INVOICES => 'An invoice already in your books for the same customer with the same invoice number is skipped.',
+                                        \App\Models\Import::TYPE_BILLS => 'A bill already in your books from the same vendor with the same bill number is skipped.',
+                                        default => 'A journal already in your books with the same reference, date and total is skipped.',
+                                    } }}
+                                    So you can import the file again once you've fixed anything it refused.
+                                </p>
+                            @else
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="options[update_existing]" value="1"
+                                           class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
+                                    <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Update existing records if found</span>
+                                </label>
+                            @endif
                         </div>
                     </div>
 
