@@ -154,8 +154,7 @@ class ReportController extends BaseApiController
         // the next day" because SQLite keeps a time part on dates.
         $invoices = Invoice::where('tenant_id', $tenantId)
             ->where('invoice_date', '<', Carbon::parse($asOf)->addDay()->toDateString())
-            ->whereIn('status', ['sent', 'unpaid', 'partial', 'overdue'])
-            ->where('balance_due', '>', 0)
+            ->open()
             ->with('customer:id,name,email')
             ->get();
 

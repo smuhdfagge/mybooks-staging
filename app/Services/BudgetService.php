@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Budget;
 use App\Models\BudgetLine;
 use App\Models\ChartOfAccount;
+use App\Models\Journal;
 use App\Models\JournalEntry;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -17,8 +18,8 @@ class BudgetService
      */
     public function getBudgetVsActual(Budget $budget, ?string $throughMonth = null): Collection
     {
-        $year = $budget->fiscal_year;
-        $months = Budget::getMonthColumns();
+        // The budget's months in the business's financial year (audit MB-54).
+        $months = $this->monthStarts($budget->tenant_id, (int) $budget->fiscal_year);
 
         // Determine which months to include
         if ($throughMonth) {
@@ -26,15 +27,14 @@ class BudgetService
             $months = array_slice($months, 0, $monthIndex + 1, true);
         }
 
-        return $budget->lines()->with('account')->get()->map(function ($line) use ($year, $months) {
+        return $budget->lines()->with('account')->get()->map(function ($line) use ($months) {
             $isIncome = $line->account->type === 'income';
             $budgeted = 0;
             $actual = 0;
             $monthlyData = [];
 
-            foreach ($months as $monthKey => $monthName) {
-                $monthNum = $this->getMonthNumber($monthKey);
-                $startDate = Carbon::create($year, $monthNum, 1)->startOfMonth();
+            foreach ($months as $monthKey => $monthStart) {
+                $startDate = $monthStart->copy();
                 $endDate = $startDate->copy()->endOfMonth();
 
                 $monthBudget = $line->{$monthKey};
@@ -76,10 +76,14 @@ class BudgetService
      */
     protected function getAccountActual(int $accountId, Carbon $startDate, Carbon $endDate, string $accountType): float
     {
-        // A join, not a correlated EXISTS per line (P8).
+        // A join, not a correlated EXISTS per line (P8). Posted journals
+        // only, and not the year-end close, which empties income and expense
+        // accounts: the same figures as the profit and loss (audit MB-54).
         $data = JournalEntry::query()
             ->join('journals', 'journals.id', '=', 'journal_entries.journal_id')
             ->whereNull('journals.deleted_at')
+            ->where('journals.is_posted', true)
+            ->where(fn ($q) => $q->whereNull('journals.journal_type')->orWhere('journals.journal_type', '!=', Journal::TYPE_CLOSING))
             ->whereBetween('journals.journal_date', [$startDate, $endDate])
             ->where('journal_entries.account_id', $accountId)
             ->selectRaw('SUM(journal_entries.debit) as total_debit, SUM(journal_entries.credit) as total_credit')
@@ -92,6 +96,26 @@ class BudgetService
         }
 
         return ($data->total_credit ?? 0) - ($data->total_debit ?? 0);
+    }
+
+    /**
+     * The twelve months of financial year $year, in order, from the month of
+     * the tenant's fiscal_year_start (January when not set). A year that
+     * starts in April runs April $year to March $year+1, so the budget's
+     * "jan" column is January of the next calendar year (audit MB-54).
+     *
+     * @return array<string, Carbon> month column => first day of that month
+     */
+    public function monthStarts(int $tenantId, int $year): array
+    {
+        $first = Budget::firstMonth($tenantId);
+        $starts = [];
+        foreach (array_keys(Budget::getMonthColumns($first)) as $monthKey) {
+            $num = $this->getMonthNumber($monthKey);
+            $starts[$monthKey] = Carbon::create($num >= $first ? $year : $year + 1, $num, 1)->startOfMonth();
+        }
+
+        return $starts;
     }
 
     /**
@@ -205,16 +229,18 @@ class BudgetService
 
     /**
      * The last month "to date" covers: this month for this year's budget,
-     * December for a past year, and null for a future year (nothing yet).
+     * the year's last month for a past year, and null for a future year
+     * (nothing yet). Years follow the financial year (audit MB-54).
      */
     public function throughMonth(Budget $budget): ?string
     {
-        $year = (int) $budget->fiscal_year;
-        $now = now();
+        $months = $this->monthStarts($budget->tenant_id, (int) $budget->fiscal_year);
+        $keys = array_keys($months);
+        $now = now()->startOfMonth();
 
         return match (true) {
-            $year < $now->year => 'dec',
-            $year > $now->year => null,
+            $now->lt($months[$keys[0]]) => null,
+            $now->gt($months[$keys[11]]) => $keys[11],
             default => strtolower($now->format('M')),
         };
     }
@@ -270,9 +296,7 @@ class BudgetService
             foreach ($accounts as $account) {
                 $monthlyActuals = [];
 
-                foreach (Budget::getMonthColumns() as $monthKey => $monthName) {
-                    $monthNum = $this->getMonthNumber($monthKey);
-                    $startDate = Carbon::create($sourceYear, $monthNum, 1)->startOfMonth();
+                foreach ($this->monthStarts($tenantId, (int) $sourceYear) as $monthKey => $startDate) {
                     $endDate = $startDate->copy()->endOfMonth();
 
                     $monthlyActuals[$monthKey] = abs($this->getAccountActual($account->id, $startDate, $endDate, $account->type));

@@ -16,6 +16,7 @@ use App\Traits\HasWarehouse;
 use App\Traits\KeepsTotalsBalanced;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -72,6 +73,41 @@ class Invoice extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /** Statuses an invoice can still be paid in (audit MB-55). */
+    public const OPEN_STATUSES = ['sent', 'unpaid', 'partial', 'overdue'];
+
+    /**
+     * Invoices still owed: sent (and not paid, cancelled or a draft) with a
+     * balance due. The one definition reminders, analytics, lists and
+     * reports use (audit MB-55); "sent" invoices, the status after emailing
+     * and of recurring invoices, were left out of email reminders.
+     *
+     * @param  Builder<Invoice>  $query
+     * @return Builder<Invoice>
+     */
+    public function scopeOpen(Builder $query): Builder
+    {
+        return static::whereOpen($query);
+    }
+
+    /**
+     * scopeOpen for a query typed only as a Builder (list tables).
+     *
+     * @template TBuilder of Builder
+     *
+     * @param  TBuilder  $query
+     * @return TBuilder
+     */
+    public static function whereOpen(Builder $query): Builder
+    {
+        return $query->whereIn($query->qualifyColumn('status'), self::OPEN_STATUSES)->where($query->qualifyColumn('balance_due'), '>', 0);
+    }
+
+    public function isOpen(): bool
+    {
+        return in_array($this->status, self::OPEN_STATUSES, true) && (float) $this->balance_due > 0;
     }
 
     /** @return BelongsTo<Customer, $this> */

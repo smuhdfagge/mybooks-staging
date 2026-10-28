@@ -114,9 +114,9 @@
                         @php
                             $spark = $series->pluck(match ($tile) { 'cash-position' => 'cash', 'total-revenue' => 'income', 'monthly-expenses' => 'expenses', default => 'profit' })->all();
                             [$name, $value, $link, $tone] = match ($tile) {
-                                'cash-position' => ['Cash in bank', $summary['cash'], route('reports.balance-sheet'), 'income'],
+                                'cash-position' => ['Cash and bank', $summary['cash'], route('reports.balance-sheet'), 'income'],
                                 'total-revenue' => ['Income', $summary['income'], $pl(), 'income'],
-                                'monthly-expenses' => ['Expenses', $summary['expenses'], $pl(), 'expense'],
+                                'monthly-expenses' => ['Costs', $summary['expenses'], $pl(), 'expense'],
                                 default => ['Net profit', $summary['profit'], $pl(), 'profit'],
                             };
                             $canOpen = $user->can('view reports');
@@ -142,9 +142,10 @@
                             <span class="mt-auto flex items-end justify-between gap-3 pt-2">
                                 <span class="text-xs text-gray-600 dark:text-gray-400">
                                     @switch($tile)
-                                        @case('cash-position') {{ $summary['cashAccounts'] === 1 ? '1 account' : $summary['cashAccounts'].' accounts' }} @break
+                                        {{-- Audit MB-36: the ledger accounts the figure adds up; MB-22: what "Costs" is made of. --}}
+                                        @case('cash-position') {{ $summary['cashAccounts'] === 1 ? '1 cash or bank account' : $summary['cashAccounts'].' cash and bank accounts' }} @break
                                         @case('total-revenue') Invoiced in the period @break
-                                        @case('monthly-expenses') Bills, expenses and payroll @break
+                                        @case('monthly-expenses') Cost of sales @moneyWhole($summary['costOfSales']) · Other @moneyWhole($summary['expenses'] - $summary['costOfSales']) @break
                                         @default
                                             @if ($summary['compare']) {{ $against }}: {{ $summary['compare']['profit'] < 0 ? '−' : '' }}@moneyWhole(abs($summary['compare']['profit'])) @endif
                                     @endswitch

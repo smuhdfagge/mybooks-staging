@@ -88,8 +88,8 @@ class InvoicesTable extends Component
 
         return match ($this->tab) {
             'draft' => $query->where('status', 'draft'),
-            'unpaid' => $query->whereIn('status', ['sent', 'unpaid', 'partial', 'overdue'])->where('balance_due', '>', 0),
-            'overdue' => $query->whereIn('status', ['sent', 'unpaid', 'partial', 'overdue'])->where('balance_due', '>', 0)->where('due_date', '<', $today),
+            'unpaid' => Invoice::whereOpen($query),
+            'overdue' => Invoice::whereOpen($query)->where('due_date', '<', $today),
             'paid' => $query->where('status', 'paid'),
             'cancelled' => $query->whereIn('status', ['cancelled', 'void']),
             default => $query,
@@ -261,8 +261,12 @@ class InvoicesTable extends Component
     {
         $rows = $this->rows();
 
+        // Money totals leave out drafts and cancelled invoices, and "to
+        // collect" is open invoices only (Invoice::scopeOpen), so on "All"
+        // it equals the receivables ledger (audit MB-21).
+        $open = "'".implode("','", Invoice::OPEN_STATUSES)."'";
         $totals = $this->filteredQuery()->toBase()
-            ->selectRaw('COUNT(*) as n, COALESCE(SUM(total), 0) as total, COALESCE(SUM(balance_due), 0) as balance')
+            ->selectRaw("COUNT(*) as n, COALESCE(SUM(CASE WHEN status NOT IN ('draft','cancelled') THEN total ELSE 0 END), 0) as total, COALESCE(SUM(CASE WHEN status IN ({$open}) AND balance_due > 0 THEN balance_due ELSE 0 END), 0) as balance")
             ->first();
 
         return view('livewire.invoices.invoices-table', [

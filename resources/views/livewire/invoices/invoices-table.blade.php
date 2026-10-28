@@ -123,7 +123,7 @@
                 <x-slot name="foot">
                     <tr>
                         @if ($canBulk)<td></td>@endif
-                        <td colspan="4">Total of {{ number_format($totals->n) }} {{ $totals->n == 1 ? 'invoice' : 'invoices' }}@if ($filtered || $tab !== '') <span class="font-normal text-gray-600 dark:text-gray-400">(this filter)</span>@endif</td>
+                        <td colspan="4">Total of {{ number_format($totals->n) }} {{ $totals->n == 1 ? 'invoice' : 'invoices' }}@if ($filtered || $tab !== '') <span class="font-normal text-gray-600 dark:text-gray-400">(this filter)</span>@endif<span class="block text-xs font-normal tbl-muted">Amounts leave out drafts and cancelled invoices</span></td>
                         <td class="num">{{ $money($totals->total) }}</td>
                         <td class="num">{{ $money($totals->balance) }}</td>
                         <td colspan="2"></td>

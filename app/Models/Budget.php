@@ -164,11 +164,12 @@ class Budget extends Model
     }
 
     /**
-     * Get month columns for budget lines
+     * The month columns for budget lines, starting with month $first (1 = January; the
+     * financial year's first month, see firstMonth()).
      */
-    public static function getMonthColumns(): array
+    public static function getMonthColumns(int $first = 1): array
     {
-        return [
+        $columns = [
             'jan' => 'January',
             'feb' => 'February',
             'mar' => 'March',
@@ -182,5 +183,14 @@ class Budget extends Model
             'nov' => 'November',
             'dec' => 'December',
         ];
+        $first = max(1, min(12, $first));
+
+        return array_slice($columns, $first - 1, null, true) + array_slice($columns, 0, $first - 1, true);
+    }
+
+    /** The first month (1-12) of the tenant's financial year (audit MB-54). */
+    public static function firstMonth(int $tenantId): int
+    {
+        return Tenant::find($tenantId)?->fiscal_year_start?->month ?? 1;
     }
 }
