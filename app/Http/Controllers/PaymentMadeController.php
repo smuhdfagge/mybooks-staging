@@ -91,16 +91,19 @@ class PaymentMadeController extends Controller
             throw ValidationException::withMessages(['amount' => 'This advance has been used against bills, so its amount can\'t change.']);
         }
 
-        // Not more than the bill still owes, counting this payment's current
-        // amount as available again (M5). Any WHT withheld stays as it was
-        // and still counts towards the bill.
-        if ($paymentMade->bill && ($errors = PaymentValidation::forBill(
-            $paymentMade->bill, $paymentMade->vendor_id, (float) $validated['amount'] + (float) $paymentMade->wht_amount, $paymentMade->settledAmount()
-        ))) {
-            throw ValidationException::withMessages($errors);
-        }
-
         DB::transaction(function () use ($paymentMade, $validated) {
+            // Not more than the bill still owes, counting this payment's current
+            // amount as available again (M5). Any WHT withheld stays as it was
+            // and still counts towards the bill. Checked on the bill as it is
+            // now, locked until saved (audit MB-09).
+            PaymentMade::lockForUpdate()->find($paymentMade->id);
+            $paymentMade->refresh();
+            $bill = $paymentMade->bill_id ? Bill::lockForUpdate()->find($paymentMade->bill_id) : null;
+            if ($bill && ($errors = PaymentValidation::forBill(
+                $bill, $paymentMade->vendor_id, (float) $validated['amount'] + (float) $paymentMade->wht_amount, $paymentMade->settledAmount()
+            ))) {
+                throw ValidationException::withMessages($errors);
+            }
             $this->bankService->adjustOnUpdate(
                 $paymentMade->bank_id,
                 $paymentMade->amount,

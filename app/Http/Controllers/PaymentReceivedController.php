@@ -115,27 +115,36 @@ class PaymentReceivedController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        // The new amount may not exceed what the invoice still owes, counting
-        // this payment's current amount as available again (M5).
-        if (! $paymentReceived->is_deposit && $paymentReceived->invoice) {
-            // Any WHT the customer deducted stays and still counts.
-            $errors = PaymentValidation::forInvoice(
-                $paymentReceived->invoice,
-                $paymentReceived->customer_id,
-                (float) $validated['amount'] + (float) $paymentReceived->wht_amount,
-                $paymentReceived->settledAmount()
-            );
-            if ($errors) {
-                throw ValidationException::withMessages($errors);
-            }
-        }
-
         DB::transaction(function () use ($paymentReceived, $validated) {
-            // If this is a deposit, update unused_amount proportionally
+            // Checked on the payment and its invoice as they are now, locked
+            // until saved (audit MB-09).
+            PaymentReceived::lockForUpdate()->find($paymentReceived->id);
+            $paymentReceived->refresh();
+            $invoice = $paymentReceived->invoice_id ? Invoice::lockForUpdate()->find($paymentReceived->invoice_id) : null;
+
+            // The new amount may not exceed what the invoice still owes, counting
+            // this payment's current amount as available again (M5).
+            if (! $paymentReceived->is_deposit && $invoice) {
+                // Any WHT the customer deducted stays and still counts.
+                $errors = PaymentValidation::forInvoice(
+                    $invoice,
+                    $paymentReceived->customer_id,
+                    (float) $validated['amount'] + (float) $paymentReceived->wht_amount,
+                    $paymentReceived->settledAmount()
+                );
+                if ($errors) {
+                    throw ValidationException::withMessages($errors);
+                }
+            }
+
+            // A deposit can't drop below what has already been used from it:
+            // Customer Deposits would go negative (audit MB-13).
             if ($paymentReceived->is_deposit) {
-                $amountDiff = $validated['amount'] - $paymentReceived->amount;
-                $newUnusedAmount = max(0, $paymentReceived->unused_amount + $amountDiff);
-                $validated['unused_amount'] = $newUnusedAmount;
+                $used = round((float) $paymentReceived->amount - (float) $paymentReceived->unused_amount, 2);
+                if ((float) $validated['amount'] + 0.005 < $used) {
+                    throw ValidationException::withMessages(['amount' => 'The amount can\'t go below '.number_format($used, 2).': that much of this deposit has already been used on invoices. Remove those uses first to go lower.']);
+                }
+                $validated['unused_amount'] = round((float) $validated['amount'] - $used, 2);
             }
 
             $this->bankService->adjustOnUpdate(

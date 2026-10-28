@@ -15,6 +15,7 @@ use App\Http\Middleware\EnsureIdempotency;
 use App\Http\Middleware\EnsureTwoFactorVerified;
 use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Middleware\RedirectIfAdminAuthenticated;
+use App\Http\Middleware\ReplayWebForm;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\VerifyTenantOwnership;
 use App\Services\ErrorAlerter;
@@ -65,6 +66,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'active' => EnsureAccountActive::class,
             'feature' => EnsureFeatureEnabled::class,
             'idempotent' => EnsureIdempotency::class,
+            'form.once' => ReplayWebForm::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
