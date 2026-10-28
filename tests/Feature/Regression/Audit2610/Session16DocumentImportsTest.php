@@ -10,6 +10,7 @@ use App\Models\Import;
 use App\Models\Invoice;
 use App\Models\Journal;
 use App\Services\ImportService;
+use App\Services\JournalService;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -193,6 +194,57 @@ class Session16DocumentImportsTest extends TestCase
         $this->assertStringContainsString("Account 'Generator Hire' not found", $this->messages($refused));
     }
 
+    public function test_unticking_skip_duplicates_on_the_screen_imports_them_again(): void
+    {
+        $this->createAuthenticatedUser(self::PERMISSIONS);
+        $this->subscription->update(['ends_at' => '2030-12-31']);
+        $this->runImport(Import::TYPE_JOURNALS, self::JOURNALS);
+
+        Storage::disk('imports')->put('imports/again.csv', self::JOURNALS);
+        $import = Import::create([
+            'tenant_id' => $this->tenant->id, 'user_id' => $this->user->id, 'type' => Import::TYPE_JOURNALS,
+            'format' => Import::FORMAT_CSV, 'status' => Import::STATUS_PENDING,
+            'original_filename' => 'again.csv', 'file_path' => 'imports/again.csv',
+        ]);
+        $mapping = array_combine(['reference', 'date', 'status', 'account_code', 'debit', 'credit'], ['reference', 'date', 'status', 'account_code', 'debit', 'credit']);
+
+        // What the browser sends with the box unticked: only the hidden field.
+        $this->post(route('imports.process', $import), ['mapping' => $mapping, 'options' => ['skip_duplicates' => '0']])->assertRedirect();
+
+        $this->assertFalse((bool) $import->fresh()->options['skip_duplicates']);
+        $this->assertSame(4, $import->fresh()->successful_rows, $this->messages($import->fresh()));
+        $this->assertSame(2, Journal::where('reference', 'JE-001')->count());
+    }
+
+    public function test_journal_totals_are_the_lines_as_stored(): void
+    {
+        $this->createAuthenticatedUser(self::PERMISSIONS);
+
+        // 0.333 three times is 0.999, but stored to the kobo it is 0.99 against 1.00.
+        $import = $this->runImport(Import::TYPE_JOURNALS, "reference,date,account_code,debit,credit\n"
+            ."JE-7,05/10/2026,1000,0.333,\nJE-7,05/10/2026,1000,0.333,\nJE-7,05/10/2026,1000,0.333,\nJE-7,05/10/2026,3000,,0.999");
+
+        $this->assertSame(0, Journal::count());
+        $this->assertStringContainsString('does not balance', $this->messages($import));
+    }
+
+    public function test_a_documents_own_journal_is_not_a_duplicate_of_a_manual_one(): void
+    {
+        $this->createAuthenticatedUser([...self::PERMISSIONS, 'post journals']);
+        $journalService = app(JournalService::class);
+        // Any document's journal: postLines records it against the document.
+        $document = Customer::create(['tenant_id' => $this->tenant->id, 'name' => 'Dangote Stores']);
+        $journalService->postLines($document, 'JE-001', '2026-10-05', 'Invoice journal', [
+            ['1000', 5000.0, 0.0, 'x'], ['3000', 0.0, 5000.0, 'x'],
+        ], $this->user->id);
+        $this->assertSame(1, Journal::where('reference', 'JE-001')->whereNotNull('reference_type')->count());
+
+        $import = $this->runImport(Import::TYPE_JOURNALS, self::JOURNALS);
+
+        $this->assertSame(4, $import->successful_rows, $this->messages($import));
+        $this->assertSame(1, Journal::where('reference', 'JE-001')->whereNull('reference_type')->count());
+    }
+
     public function test_the_options_say_what_counts_as_a_duplicate_and_offer_no_update_for_documents(): void
     {
         $this->createAuthenticatedUser(self::PERMISSIONS);
@@ -207,6 +259,8 @@ class Session16DocumentImportsTest extends TestCase
 
         $this->withoutVite()->get(route('imports.mapping', $import))->assertOk()
             ->assertSee('Skip duplicate records')
+            // So unticking it sends a value (finding from review: it sent nothing and skipping stayed on).
+            ->assertSee('<input type="hidden" name="options[skip_duplicates]" value="0">', false)
             ->assertSee('same reference, date and total is skipped')
             ->assertDontSee('options[update_existing]', false);
     }

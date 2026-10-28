@@ -136,6 +136,8 @@
                         @endphp
                         <div class="space-y-3">
                             <label class="flex items-center">
+                                {{-- Unticked, a checkbox sends nothing and the import fell back to skipping. --}}
+                                <input type="hidden" name="options[skip_duplicates]" value="0">
                                 <input type="checkbox" name="options[skip_duplicates]" value="1" checked
                                        class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 dark:text-brand-300">
                                 <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Skip duplicate records</span>

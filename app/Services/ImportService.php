@@ -1502,6 +1502,9 @@ class ImportService
         $action = app(SaveInvoice::class);
 
         foreach ($grouped['groups'] as $number => $rows) {
+            // "1001" comes back from the array keys as an integer; MariaDB
+            // would compare it with each reference as a number ("01001", "1001-A").
+            $number = (string) $number;
             $head = $rows[0];
             $rowNum = (int) ($head['__row'] ?? 0);
             $rowCount = count($rows);
@@ -1635,6 +1638,9 @@ class ImportService
         $action = app(SaveBill::class);
 
         foreach ($grouped['groups'] as $number => $rows) {
+            // "1001" comes back from the array keys as an integer; MariaDB
+            // would compare it with each reference as a number ("01001", "1001-A").
+            $number = (string) $number;
             $head = $rows[0];
             $rowNum = (int) ($head['__row'] ?? 0);
             $rowCount = count($rows);
@@ -1765,6 +1771,7 @@ class ImportService
         }
 
         foreach ($grouped['groups'] as $reference => $rows) {
+            $reference = (string) $reference; // as for invoice numbers
             $head = $rows[0];
             $rowNum = (int) ($head['__row'] ?? 0);
             $rowCount = count($rows);
@@ -1845,8 +1852,9 @@ class ImportService
                             : (string) $row['description'],
                     ];
 
-                    $totalDebit += $debit;
-                    $totalCredit += $credit;
+                    // The lines as they will be stored, so the totals match the journal's.
+                    $totalDebit += round($debit, 2);
+                    $totalCredit += round($credit, 2);
                 }
 
                 if (! $ok) {
@@ -1876,7 +1884,8 @@ class ImportService
                     continue;
                 }
 
-                if ($skipDuplicates && Journal::where('tenant_id', $this->tenantId)->where('reference', $reference)
+                // Manual journals only: an invoice's or payment's own journal carries its number too.
+                if ($skipDuplicates && Journal::where('tenant_id', $this->tenantId)->whereNull('reference_type')->where('reference', $reference)
                     ->whereDate('journal_date', $date)->where('total_debit', $totalDebit)->exists()) {
                     $this->warnings[] = "Journal {$reference} is already in your books (same date and total), so it was skipped. "
                         .'Untick "Skip duplicate records" to import it again.';
