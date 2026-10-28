@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Builders\JournalEntryBuilder;
 use App\Services\Accounting\LockDates;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -24,6 +25,35 @@ class JournalEntry extends Model
         'debit' => 'decimal:2',
         'credit' => 'decimal:2',
     ];
+
+    /** Set only while JournalEntry::rebuilding() runs: see JournalEntryBuilder. */
+    public static bool $rebuilding = false;
+
+    /**
+     * Run $callback allowed to change or delete posted journal lines. Only
+     * for repair commands that rebuild journals from scratch and put the
+     * account balances right themselves.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    public static function rebuilding(callable $callback): mixed
+    {
+        $was = self::$rebuilding;
+        self::$rebuilding = true;
+        try {
+            return $callback();
+        } finally {
+            self::$rebuilding = $was;
+        }
+    }
+
+    public function newEloquentBuilder($query): JournalEntryBuilder
+    {
+        return new JournalEntryBuilder($query);
+    }
 
     protected static function booted(): void
     {

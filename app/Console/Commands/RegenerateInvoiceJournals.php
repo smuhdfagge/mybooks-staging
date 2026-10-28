@@ -69,48 +69,18 @@ class RegenerateInvoiceJournals extends Command
 
         foreach ($invoices as $invoice) {
             try {
-                // Delete existing journal for this invoice
-                $existingJournal = Journal::where('reference_type', Invoice::class)
-                    ->where('reference_id', $invoice->id)
-                    ->first();
+                // Re-posts only when the journal it would get now differs (COGS
+                // missing, say): the old one is reversed and a new one posted, so
+                // the balances stay right. It used to delete the old journal's
+                // lines without taking them off the balances (audit MB-15).
+                $before = Journal::currentFor($invoice);
+                $journal = $this->journalService->createInvoiceJournal($invoice);
 
-                if ($existingJournal) {
-                    // Check if COGS entry already exists
-                    $hasCogs = $existingJournal->entries()
-                        ->whereHas('account', function ($q) {
-                            $q->where('account_code', '5000');
-                        })
-                        ->exists();
-
-                    if (! $hasCogs) {
-                        // Regenerate the journal to include COGS
-                        $existingJournal->entries()->delete();
-                        $existingJournal->delete();
-
-                        $this->journalService->createInvoiceJournal($invoice);
-                        $updated++;
-
-                        // Check if COGS was added
-                        $newJournal = Journal::where('reference_type', Invoice::class)
-                            ->where('reference_id', $invoice->id)
-                            ->first();
-
-                        if ($newJournal) {
-                            $newHasCogs = $newJournal->entries()
-                                ->whereHas('account', function ($q) {
-                                    $q->where('account_code', '5000');
-                                })
-                                ->exists();
-
-                            if ($newHasCogs) {
-                                $cogsAdded++;
-                            }
-                        }
-                    }
-                } else {
-                    // Create new journal
-                    $this->journalService->createInvoiceJournal($invoice);
+                if ($journal && $journal->id !== $before?->id) {
                     $updated++;
+                    if ($before && $this->hasCogs($journal) && ! $this->hasCogs($before)) {
+                        $cogsAdded++;
+                    }
                 }
             } catch (\Exception $e) {
                 $this->newLine();
@@ -134,5 +104,10 @@ class RegenerateInvoiceJournals extends Command
         );
 
         return Command::SUCCESS;
+    }
+
+    private function hasCogs(Journal $journal): bool
+    {
+        return $journal->entries()->whereHas('account', fn ($q) => $q->where('account_code', '5000'))->exists();
     }
 }

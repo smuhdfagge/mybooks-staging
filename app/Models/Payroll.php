@@ -146,9 +146,9 @@ class Payroll extends Model
     public function journal(): MorphOne
     {
         // The cost journal (A10); the payment has its own (payment journal type).
+        // The latest: a change reverses the journal and posts a new one (audit MB-15).
         return $this->morphOne(Journal::class, 'reference')
-            ->where(fn ($q) => $q->whereNull('journal_type')->orWhere('journal_type', JournalService::PAYROLL_ACCRUAL))
-            ->orderBy('id');
+            ->ofMany(['id' => 'max'], fn ($q) => $q->originals([null, JournalService::PAYROLL_ACCRUAL]));
     }
 
     /** @return MorphMany<Journal, $this> */
