@@ -158,9 +158,7 @@
                                             <td data-label="Tax %">
                                                 {{-- Line discounts from a purchase order or the API are kept. --}}
                                                 <input type="hidden" :name="`items[${index}][discount]`" :value="item.discount || 0">
-                                                <input aria-label="Tax rate (%)" type="number" :name="`items[${index}][tax_rate]`" x-model.number="item.tax_rate" min="0" max="100" step="0.01"
-                                                    @input="calculateTotals()"
-                                                    class="form-control text-sm">
+                                                <x-tax-rate-select type="purchases" model="item.tax_rate" name="`items[${index}][tax_rate]`" change="calculateTotals()" />
                                             </td>
                                             <td class="num font-medium" x-text="formatMoney(lineTotal(index))" data-label="Total"></td>
                                             <td class="text-center" data-cell="actions">
@@ -341,7 +339,7 @@
 
                 init() {
                     if (this.items.length === 0) {
-                        this.items = [{ item_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 }];
+                        this.items = [{ item_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: {{ \App\Support\TaxChoices::defaultRate('purchases') }}, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 }];
                     }
                     this.calculateTotals();
                 },
@@ -375,7 +373,7 @@
                 },
 
                 addItem() {
-                    this.items.push({ item_id: '', account_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 });
+                    this.items.push({ item_id: '', account_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: {{ \App\Support\TaxChoices::defaultRate('purchases') }}, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 });
                 },
 
                 removeItem(index) {

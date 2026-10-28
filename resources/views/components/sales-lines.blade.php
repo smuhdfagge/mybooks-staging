@@ -81,7 +81,7 @@
                                     <input aria-label="Unit price" type="number" :name="`items[${index}][unit_price]`" x-model.number="line.unit_price" min="0" step="0.01" required class="form-control text-sm">
                                 </td>
                                 <td data-label="VAT %">
-                                    <input aria-label="VAT rate (%)" type="number" :name="`items[${index}][tax_rate]`" x-model.number="line.tax_rate" min="0" max="100" step="0.01" class="form-control text-sm">
+                                    <x-tax-rate-select type="sales" model="line.tax_rate" name="`items[${index}][tax_rate]`" />
                                     <p class="form-error" x-show="errors[`items.${index}.tax_rate`]" x-text="errors[`items.${index}.tax_rate`]"></p>
                                 </td>
                                 <td class="num font-medium" data-label="Total" x-text="money(lineTotal(line))"></td>
@@ -150,7 +150,7 @@
 
         function salesLines(config) {
             let nextKey = 1;
-            const blank = () => ({ key: nextKey++, item_id: '', itemSearch: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0, discount: 0, open: false, highlighted: 0, results: [] });
+            const blank = () => ({ key: nextKey++, item_id: '', itemSearch: '', description: '', quantity: 1, unit_price: 0, tax_rate: {{ \App\Support\TaxChoices::defaultRate('sales') }}, discount: 0, open: false, highlighted: 0, results: [] });
             const start = (config.lines || []).map(l => Object.assign(blank(), l, { key: nextKey++ }));
             return {
                 lines: start.length ? start : [blank()],

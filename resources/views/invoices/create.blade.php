@@ -204,9 +204,7 @@
                                                     class="form-control text-sm">
                                             </td>
                                             <td data-label="Tax %">
-                                                <input aria-label="Tax rate (%)" type="number" :name="`items[${index}][tax_rate]`" x-model.number="item.tax_rate" min="0" max="100" step="0.01"
-                                                    @input="calculateTotals()"
-                                                    class="form-control text-sm">
+                                                <x-tax-rate-select type="sales" model="item.tax_rate" name="`items[${index}][tax_rate]`" change="calculateTotals()" />
                                             </td>
                                             <td class="num font-medium" x-text="formatMoney(lineTotal(index))" data-label="Total"></td>
                                             <td class="text-center" data-cell="actions">
@@ -402,7 +400,7 @@
 
         function invoiceForm() {
             return {
-                items: [{ item_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0, is_taxable: false, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 }],
+                items: [{ item_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: {{ \App\Support\TaxChoices::defaultRate('sales') }}, is_taxable: false, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 }],
                 productsUrl: @js(route('lookup.items')),
                 discountType: '',
                 discountValue: 0,
@@ -412,7 +410,7 @@
                 total: 0,
 
                 addItem() {
-                    this.items.push({ item_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0, is_taxable: false, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 });
+                    this.items.push({ item_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: {{ \App\Support\TaxChoices::defaultRate('sales') }}, is_taxable: false, itemSearch: '', itemDropdownOpen: false, itemHighlightedIndex: 0 });
                 },
 
                 removeItem(index) {
