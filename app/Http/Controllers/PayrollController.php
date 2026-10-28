@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Jobs\ProcessPayrollBatch;
 use App\Models\ActivityLog;
+use App\Models\Bank;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Payroll;
@@ -86,9 +87,10 @@ class PayrollController extends Controller
     {
         abort_unless($payroll->tenant_id === auth()->user()->tenant_id, 403);
 
-        $payroll->load('employee.department', 'employee.designation');
+        $payroll->load('employee.department', 'employee.designation', 'bank');
+        $banks = $this->banks();
 
-        return view('payroll.show', compact('payroll'));
+        return view('payroll.show', compact('payroll', 'banks'));
     }
 
     public function edit(Payroll $payroll)
@@ -190,7 +192,7 @@ class PayrollController extends Controller
         return redirect()->route('payroll.show', $payroll)->with('success', 'Payroll approved.');
     }
 
-    public function markAsPaid(Payroll $payroll)
+    public function markAsPaid(Request $request, Payroll $payroll)
     {
         abort_unless($payroll->tenant_id === auth()->user()->tenant_id, 403);
 
@@ -198,7 +200,7 @@ class PayrollController extends Controller
             return redirect()->route('payroll.show', $payroll)->with('error', 'Only approved payroll can be marked as paid.');
         }
 
-        $payroll->markAsPaid();
+        $payroll->markAsPaid($this->validatedBankId($request));
 
         // Log the activity
         $payroll->logCustomActivity(ActivityLog::ACTION_PAID, "Payroll '{$payroll->payroll_number}' was marked as paid");
@@ -404,7 +406,9 @@ class PayrollController extends Controller
 
         $departments = Department::orderBy('name')->pluck('name', 'id');
 
-        return view('payroll.batch-show', compact('payrollBatch', 'payrolls', 'departments'));
+        $banks = $this->banks();
+
+        return view('payroll.batch-show', compact('payrollBatch', 'payrolls', 'departments', 'banks'));
     }
 
     public function approveBatch(PayrollBatch $payrollBatch)
@@ -447,9 +451,10 @@ class PayrollController extends Controller
         }
     }
 
-    public function markBatchAsPaid(PayrollBatch $payrollBatch)
+    public function markBatchAsPaid(Request $request, PayrollBatch $payrollBatch)
     {
         abort_unless($payrollBatch->tenant_id === auth()->user()->tenant_id, 403);
+        $bankId = $this->validatedBankId($request);
 
         // A failed background run can be tried again (N7)
         if (! in_array($payrollBatch->status, [PayrollBatch::STATUS_APPROVED, PayrollBatch::STATUS_FAILED], true)) {
@@ -462,14 +467,15 @@ class PayrollController extends Controller
         // For small batches (≤10), process synchronously for immediate feedback
         if ($approvedCount <= 10) {
             try {
-                DB::transaction(function () use ($payrollBatch) {
+                DB::transaction(function () use ($payrollBatch, $bankId) {
                     $payrollBatch->update([
                         'status' => 'paid',
                         'paid_at' => now(),
+                        'bank_id' => $bankId,
                     ]);
 
                     foreach ($payrollBatch->payrolls()->where('status', 'approved')->get() as $payroll) {
-                        $payroll->markAsPaid();
+                        $payroll->markAsPaid($bankId);
                     }
                 });
 
@@ -493,6 +499,7 @@ class PayrollController extends Controller
             'status' => PayrollBatch::STATUS_PROCESSING,
             'paid_at' => null,
             'failure_reason' => null,
+            'bank_id' => $bankId,
         ]);
 
         ProcessPayrollBatch::dispatch($payrollBatch);
@@ -565,6 +572,22 @@ class PayrollController extends Controller
         $filename = 'payslips_batch_'.$payrollBatch->batch_number.'_'.now()->format('Y-m-d').'.pdf';
 
         return $pdf->download($filename);
+    }
+
+    /** Banks net pay can be paid from (audit MB-08). */
+    private function banks()
+    {
+        return Bank::where('is_active', true)->orderByDesc('is_primary')->orderBy('name')->get(['id', 'name', 'is_primary']);
+    }
+
+    /** The bank chosen on a "mark as paid" form, if any; one of this tenant's. */
+    private function validatedBankId(Request $request): ?int
+    {
+        $validated = $request->validate([
+            'bank_id' => ['nullable', 'integer', Rule::exists('banks', 'id')->where('tenant_id', auth()->user()->tenant_id)->whereNull('deleted_at')],
+        ]);
+
+        return isset($validated['bank_id']) ? (int) $validated['bank_id'] : null;
     }
 
     private function buildPayslipData(Payroll $payroll, $tenant): array

@@ -131,6 +131,16 @@
                             @endforeach
                         </x-field>
                     </div>
+                    @if ($banks->isNotEmpty())
+                    <div>
+                        <x-field name="bank_id" label="From bank account" type="select">
+                            <option value="">Default account for the payment method</option>
+                            @foreach($banks as $bank)
+                                <option value="{{ $bank->id }}" @selected((string) old('bank_id', $banks->firstWhere('is_primary', true)?->id) === (string) $bank->id)>{{ $bank->name }}</option>
+                            @endforeach
+                        </x-field>
+                    </div>
+                    @endif
                     <div class="sm:col-span-2">
                         <x-field name="reference" label="Reference (receipt or remittance number)" :value="old('reference')" maxlength="100" />
                     </div>

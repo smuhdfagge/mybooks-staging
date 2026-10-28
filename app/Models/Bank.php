@@ -5,11 +5,14 @@ namespace App\Models;
 use App\Casts\SafeEncrypted;
 use App\Traits\BelongsToTenant;
 use App\Traits\LogsActivity;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class Bank extends Model
 {
@@ -127,6 +130,59 @@ class Bank extends Model
 
         $this->current_balance = $this->opening_balance + $deposits - $withdrawals;
         $this->save();
+    }
+
+    /**
+     * Adds `ledger_balance` (audit MB-08): the opening balance plus every
+     * posted movement on the bank's ledger account, as the bank's "Money in
+     * and out" page counts it. current_balance was a counter only payments
+     * and expenses moved, so manual journals, payroll, sales receipts and
+     * refunds never reached it. A bank with no ledger account keeps the
+     * counter.
+     */
+    public function scopeWithLedgerBalance(Builder $query, ?string $asOf = null): Builder
+    {
+        return static::addLedgerBalance($query, $asOf);
+    }
+
+    /**
+     * scopeWithLedgerBalance for a query typed only as a Builder (list tables).
+     *
+     * @template TBuilder of Builder
+     *
+     * @param  TBuilder  $query
+     * @return TBuilder
+     */
+    public static function addLedgerBalance(Builder $query, ?string $asOf = null): Builder
+    {
+        $movements = DB::table('journal_entries as je')
+            ->join('journals as j', 'j.id', '=', 'je.journal_id')
+            ->whereColumn('je.account_id', 'banks.chart_of_account_id')
+            ->whereColumn('j.tenant_id', 'banks.tenant_id')
+            ->where('j.is_posted', true)
+            ->whereNull('j.deleted_at')
+            // "Before the next day": SQLite keeps a time part on dates.
+            ->when($asOf, fn ($q) => $q->where('j.journal_date', '<', Carbon::parse($asOf)->addDay()->toDateString()))
+            ->selectRaw('COALESCE(SUM(je.debit), 0) - COALESCE(SUM(je.credit), 0)');
+
+        if ($query->getQuery()->columns === null) {
+            $query->select('banks.*');
+        }
+
+        return $query->selectRaw(
+            'CASE WHEN banks.chart_of_account_id IS NULL THEN banks.current_balance ELSE COALESCE(banks.opening_balance, 0) + ('.$movements->toSql().') END as ledger_balance',
+            $movements->getBindings()
+        );
+    }
+
+    /** The balance the books show for this bank (see scopeWithLedgerBalance). */
+    public function ledgerBalance(?string $asOf = null): float
+    {
+        if (! $this->chart_of_account_id) {
+            return round((float) $this->current_balance, 2);
+        }
+
+        return round((float) static::addLedgerBalance(static::withoutGlobalScope('tenant')->whereKey($this->getKey()), $asOf)->value('ledger_balance'), 2);
     }
 
     public function scopeActive($query)

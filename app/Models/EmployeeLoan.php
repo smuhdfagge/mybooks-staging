@@ -52,6 +52,7 @@ class EmployeeLoan extends Model
         'approved_at',
         'created_by',
         'notes',
+        'bank_id',
     ];
 
     protected $casts = [
@@ -65,6 +66,16 @@ class EmployeeLoan extends Model
         'last_deduction_date' => 'date',
         'approved_at' => 'datetime',
     ];
+
+    /**
+     * The bank it was paid from (audit MB-08).
+     *
+     * @return BelongsTo<Bank, $this>
+     */
+    public function bank(): BelongsTo
+    {
+        return $this->belongsTo(Bank::class);
+    }
 
     /** @return BelongsTo<Employee, $this> */
     public function employee(): BelongsTo

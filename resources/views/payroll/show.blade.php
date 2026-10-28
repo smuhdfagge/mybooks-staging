@@ -17,7 +17,8 @@
                         <button type="submit" class="btn-new">Approve</button>
                     </form>
                 @elseif ($payroll->status === 'approved')
-                    <form action="{{ route('payroll.mark-paid', $payroll) }}" method="POST">@csrf
+                    <form action="{{ route('payroll.mark-paid', $payroll) }}" method="POST" class="flex items-center gap-2">@csrf
+                        @include('payroll._paid-from')
                         <button type="submit" class="btn-new">Mark as paid</button>
                     </form>
                 @endif

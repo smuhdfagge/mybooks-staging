@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bank;
 use App\Models\ChartOfAccount;
 use App\Models\StatutoryRemittance;
 use App\Models\Tenant;
 use App\Services\AccountCodeService;
+use App\Services\BankService;
 use App\Services\JournalService;
 use App\Services\Payroll\StatutorySchedule;
 use App\Services\ReportExportService;
@@ -40,6 +42,7 @@ class PayrollLiabilityController extends Controller
         return view('payroll.liabilities', [
             'accounts' => $this->accounts($tenantId),
             'methods' => ['bank_transfer' => 'Bank transfer', 'cheque' => 'Cheque', 'cash' => 'Cash'],
+            'banks' => Bank::where('is_active', true)->orderByDesc('is_primary')->orderBy('name')->get(['id', 'name', 'is_primary']),
             'month' => $month,
             'summary' => $schedules->summary($tenantId, $month),
             'settings' => PayrollStatutory::settings($tenant),
@@ -64,7 +67,9 @@ class PayrollLiabilityController extends Controller
             'reference' => ['nullable', 'string', 'max:100'],
             'period' => ['nullable', 'date_format:Y-m'],
             'paid_to' => ['nullable', 'string', 'max:150'],
+            'bank_id' => ['nullable', 'integer', Rule::exists('banks', 'id')->where('tenant_id', $tenantId)->whereNull('deleted_at')],
         ]);
+        $bank = isset($validated['bank_id']) ? Bank::find($validated['bank_id']) : null;
 
         $owed = (float) $accounts->firstWhere('account_code', $validated['account_code'])->current_balance;
         if ((float) $validated['amount'] - $owed > 0.005) {
@@ -79,10 +84,11 @@ class PayrollLiabilityController extends Controller
             $to = $to->copy()->endOfYear(); // ITF is paid for the whole year
         }
 
-        $journal = DB::transaction(function () use ($tenantId, $validated, $journals, $body, $from, $to) {
+        $journal = DB::transaction(function () use ($tenantId, $validated, $journals, $body, $from, $to, $bank) {
+            // From the chosen bank's ledger account (audit MB-08).
             $journal = $journals->createPayrollRemittanceJournal(
                 $tenantId, $validated['account_code'], (float) $validated['amount'], $validated['date'],
-                $validated['payment_method'], $validated['reference'] ?? null
+                $validated['payment_method'], $validated['reference'] ?? null, $bank
             );
             StatutoryRemittance::create([
                 'tenant_id' => $tenantId,
@@ -94,10 +100,12 @@ class PayrollLiabilityController extends Controller
                 'amount' => $validated['amount'],
                 'paid_on' => $validated['date'],
                 'payment_method' => $validated['payment_method'],
+                'bank_id' => $bank?->id,
                 'reference' => $validated['reference'] ?? null,
                 'journal_id' => $journal->id,
                 'created_by' => auth()->id(),
             ]);
+            app(BankService::class)->debit($bank?->id, (float) $validated['amount'], 'Payroll remittance '.$validated['account_code']);
 
             return $journal;
         });

@@ -6,6 +6,7 @@ use App\Livewire\Concerns\ChecksPermissions;
 use App\Livewire\Concerns\ListTable;
 use App\Models\Bank;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 /** Bank and cash accounts list (tables plan T4: the shared list design). */
@@ -23,7 +24,13 @@ class BanksTable extends Component
 
     protected function sortable(): array
     {
-        return ['name', 'current_balance'];
+        return ['name', 'ledger_balance'];
+    }
+
+    /** Each bank's balance from its ledger account (audit MB-08). */
+    protected function decorateRows(Builder $query): Builder
+    {
+        return Bank::addLedgerBalance($query);
     }
 
     public function mountListTable(): void
@@ -160,7 +167,8 @@ class BanksTable extends Component
         return view('livewire.banks.banks-table', [
             'banks' => $this->rows(),
             'tabs' => $this->tabs(),
-            'totals' => $this->filteredQuery()->toBase()->selectRaw('COUNT(*) as n, COALESCE(SUM(CASE WHEN is_active = 1 THEN current_balance ELSE 0 END), 0) as balance')->first(),
+            'totals' => DB::query()->fromSub(Bank::addLedgerBalance($this->filteredQuery())->toBase(), 'b')
+                ->selectRaw('COUNT(*) as n, COALESCE(SUM(CASE WHEN is_active = 1 THEN ledger_balance ELSE 0 END), 0) as balance')->first(),
             'types' => Bank::getAccountTypes(),
             'filtered' => $this->isFiltered(),
         ]);

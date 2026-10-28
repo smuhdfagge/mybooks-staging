@@ -1476,12 +1476,14 @@ class JournalService implements JournalServiceInterface
 
             $this->createEntry($journal, $this->acct($t, 'accrued_salaries'), (float) $payroll->net_salary, 0,
                 "Net pay owed - {$payroll->payroll_number}");
-            $this->createEntry($journal, $this->getPaymentAccountCode($payroll->payment_method ?? 'bank_transfer', $t), 0, (float) $payroll->net_salary,
+            // The bank it was paid from, when one was chosen (audit MB-08).
+            $this->createEntry($journal, $this->paymentAccountFor($payroll->bank, $payroll->payment_method ?? 'bank_transfer', $t), 0, (float) $payroll->net_salary,
                 "Net Pay - {$payroll->payroll_number}");
 
             $journal->updateTotals();
             $journal->save();
             $this->updateAccountBalances($journal);
+            app(BankService::class)->debit($payroll->bank_id, (float) $payroll->net_salary, "Net pay {$payroll->payroll_number}");
 
             return $journal;
         });
@@ -1489,11 +1491,12 @@ class JournalService implements JournalServiceInterface
 
     /**
      * Paying a payroll liability to the authority or fund (PAYE to the state,
-     * pension to the PFA, NHF, NSITF, ITF...): Dr the liability, Cr bank.
+     * pension to the PFA, NHF, NSITF, ITF...): Dr the liability, Cr bank
+     * (the chosen bank's ledger account when it has one, audit MB-08).
      */
-    public function createPayrollRemittanceJournal(int $tenantId, string $liabilityCode, float $amount, string $date, ?string $paymentMethod, ?string $reference): Journal
+    public function createPayrollRemittanceJournal(int $tenantId, string $liabilityCode, float $amount, string $date, ?string $paymentMethod, ?string $reference, ?Bank $bank = null): Journal
     {
-        return DB::transaction(function () use ($tenantId, $liabilityCode, $amount, $date, $paymentMethod, $reference) {
+        return DB::transaction(function () use ($tenantId, $liabilityCode, $amount, $date, $paymentMethod, $reference, $bank) {
             $account = ChartOfAccount::where('tenant_id', $tenantId)->where('account_code', $liabilityCode)->firstOrFail();
             $journal = Journal::create([
                 'tenant_id' => $tenantId,
@@ -1509,7 +1512,7 @@ class JournalService implements JournalServiceInterface
             ]);
 
             $this->createEntry($journal, $liabilityCode, $amount, 0, "Remitted: {$account->name}");
-            $this->createEntry($journal, $this->getPaymentAccountCode($paymentMethod ?? 'bank_transfer', $tenantId), 0, $amount, "Remittance: {$account->name}");
+            $this->createEntry($journal, $this->paymentAccountFor($bank, $paymentMethod ?? 'bank_transfer', $tenantId), 0, $amount, "Remittance: {$account->name}");
 
             $journal->updateTotals();
             $journal->save();
@@ -1551,11 +1554,12 @@ class JournalService implements JournalServiceInterface
             ]);
 
             $this->createEntry($journal, $this->acct($t, 'employee_advances'), (float) $loan->principal_amount, 0, "Loan {$loan->loan_number} - {$name}");
-            $this->createEntry($journal, $this->getPaymentAccountCode('bank_transfer', $t), 0, (float) $loan->principal_amount, "Loan {$loan->loan_number} paid out");
+            $this->createEntry($journal, $this->paymentAccountFor($loan->bank, 'bank_transfer', $t), 0, (float) $loan->principal_amount, "Loan {$loan->loan_number} paid out");
 
             $journal->updateTotals();
             $journal->save();
             $this->updateAccountBalances($journal);
+            app(BankService::class)->debit($loan->bank_id, (float) $loan->principal_amount, "Loan {$loan->loan_number} paid out");
 
             return $journal;
         });

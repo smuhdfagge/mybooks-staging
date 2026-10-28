@@ -165,9 +165,15 @@ class BankReconciliationService
 
     /**
      * Get a summary of reconciliation status for a bank.
+     *
+     * The book balance is the bank's ledger balance (audit MB-08), not the
+     * current_balance counter, which manual journals and payroll never moved.
      */
     public function getSummary(Bank $bank): array
     {
+        $book = $bank->ledgerBalance();
+        $reconciled = $this->getReconciledBalance($bank);
+
         $unreconciledCount = BankTransaction::where('bank_id', $bank->id)
             ->where('is_reconciled', false)
             ->count();
@@ -182,12 +188,12 @@ class BankReconciliationService
             ->first();
 
         return [
-            'reconciled_balance' => $this->getReconciledBalance($bank),
-            'book_balance' => (float) $bank->current_balance,
+            'reconciled_balance' => $reconciled,
+            'book_balance' => $book,
             'unreconciled_count' => $unreconciledCount,
             'reconciled_count' => $reconciledCount,
             'last_reconciled_date' => $lastReconciled?->reconciled_date,
-            'difference' => round((float) $bank->current_balance - $this->getReconciledBalance($bank), 2),
+            'difference' => round($book - $reconciled, 2),
         ];
     }
 }

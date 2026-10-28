@@ -41,7 +41,7 @@ class FeedStatement
 
         $new = BankFeedLine::where('bank_id', $bank->id)->where('status', BankFeedLineStatus::New->value);
         $feedBalance = $connection->providerBalance();
-        $book = (float) $bank->current_balance;
+        $book = $bank->ledgerBalance(); // audit MB-08
 
         // Books are compared from a few days before the first line the bank gave us.
         $first = BankFeedLine::where('bank_id', $bank->id)->min('date');
