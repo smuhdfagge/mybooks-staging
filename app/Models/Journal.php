@@ -9,6 +9,7 @@ use App\Traits\BelongsToTenant;
 use App\Traits\HasDocumentNumber;
 use App\Traits\LogsActivity;
 use App\Traits\ValidatesAccountingPeriod;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -61,6 +62,53 @@ class Journal extends Model
         'total_credit' => 'decimal:2',
         'is_posted' => 'boolean',
     ];
+
+    /**
+     * Lines written for a journal not saved yet (JournalService builds a
+     * document's journal in memory, to compare it with the one it has).
+     *
+     * @var list<JournalEntry>
+     */
+    public array $pendingEntries = [];
+
+    /**
+     * A document's own posted journals, not their reversals ("REV-"):
+     * the one it stands on now, and any an edit, cancelling or deleting
+     * reversed (audit MB-15: an edit reverses the journal and posts a new
+     * one rather than rewriting it).
+     *
+     * @param  Builder<Journal>  $query
+     * @param  list<string|null>  $types  journal types; null is a document's ordinary journal
+     */
+    public function scopeOriginals(Builder $query, array $types = [null]): void
+    {
+        $query->where('is_posted', true)
+            ->where(fn ($q) => $q->whereNull('reference')->orWhere('reference', 'not like', 'REV-%'))
+            ->where(function ($q) use ($types) {
+                foreach ($types as $type) {
+                    if ($type === null) {
+                        $q->orWhereNull('journal_type');
+                    } else {
+                        $q->orWhere('journal_type', $type);
+                    }
+                }
+            });
+    }
+
+    /**
+     * The journal $document stands on now: its latest original journal
+     * still posted (not reversed). Null when it has none, or when it was
+     * cancelled or deleted.
+     *
+     * @param  list<string|null>  $types
+     */
+    public static function currentFor(Model $document, array $types = [null]): ?self
+    {
+        return static::query()
+            ->where('reference_type', $document::class)->where('reference_id', $document->getKey())
+            ->originals($types)->where('status', 'posted')
+            ->latest('id')->first();
+    }
 
     /** @return HasMany<JournalEntry, $this> */
     public function entries(): HasMany

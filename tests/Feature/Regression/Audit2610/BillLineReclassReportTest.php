@@ -32,7 +32,7 @@ class BillLineReclassReportTest extends TestCase
         ], $this->user->id);
         // As it was posted before MB-14: the rent line went to Miscellaneous Expense.
         $journal = Journal::where('reference_type', Bill::class)->where('reference_id', $old->id)->sole();
-        JournalEntry::withoutEvents(fn () => $journal->entries()->where('account_id', $rent->id)->update(['account_id' => $misc->id]));
+        JournalEntry::withoutEvents(fn () => JournalEntry::rebuilding(fn () => $journal->entries()->where('account_id', $rent->id)->update(['account_id' => $misc->id])));
 
         // A bill posted correctly is not listed.
         app(SaveBill::class)->create($this->tenant->id, [

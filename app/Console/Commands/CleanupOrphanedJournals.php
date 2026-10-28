@@ -139,8 +139,8 @@ class CleanupOrphanedJournals extends Command
 
         DB::transaction(function () use ($orphanedJournals) {
             foreach ($orphanedJournals as $journal) {
-                // Force delete entries
-                JournalEntry::where('journal_id', $journal->id)->forceDelete();
+                // Force delete entries (a repair: the balances are recalculated after)
+                JournalEntry::rebuilding(fn () => JournalEntry::where('journal_id', $journal->id)->forceDelete());
 
                 // Force delete journal
                 $journal->forceDelete();
@@ -236,8 +236,8 @@ class CleanupOrphanedJournals extends Command
         $this->info('Resetting all journals and balances...');
 
         DB::transaction(function () {
-            // Delete all journal entries first
-            $deletedEntries = JournalEntry::query()->delete();
+            // Delete all journal entries first (posted ones too: this is a full reset)
+            $deletedEntries = JournalEntry::rebuilding(fn () => JournalEntry::query()->delete());
             $this->line("Deleted {$deletedEntries} journal entries.");
 
             // Force delete all journals (including soft-deleted)
