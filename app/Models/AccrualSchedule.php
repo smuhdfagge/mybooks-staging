@@ -55,7 +55,7 @@ class AccrualSchedule extends Model
 
     protected $fillable = [
         'tenant_id', 'schedule_number', 'type', 'description', 'total_amount', 'start_date', 'months',
-        'balance_account_id', 'pl_account_id', 'source_type', 'source_id', 'reference', 'notes',
+        'balance_account_id', 'pl_account_id', 'source_type', 'source_id', 'setup_journal_id', 'reference', 'notes',
         'status', 'released_amount', 'created_by', 'cancelled_at',
     ];
 
@@ -87,6 +87,12 @@ class AccrualSchedule extends Model
     public function plAccount(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class, 'pl_account_id');
+    }
+
+    /** @return BelongsTo<Journal, $this> */
+    public function setupJournal(): BelongsTo
+    {
+        return $this->belongsTo(Journal::class, 'setup_journal_id');
     }
 
     /** @return HasMany<AccrualScheduleRelease, $this> */

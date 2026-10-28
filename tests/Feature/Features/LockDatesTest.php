@@ -277,6 +277,13 @@ class LockDatesTest extends TestCase
         $this->lock('2026-09-30', '2026-09-30');
         $this->actingAs($this->admin());
 
+        // The rent paid in advance is in Prepaid Expenses first (audit MB-53).
+        $this->post(route('journals.store'), ['journal_date' => today()->toDateString(), 'description' => 'Rent paid in advance', 'entries' => [
+            ['account_id' => $this->account('1400')->id, 'debit' => 120000, 'credit' => 0],
+            ['account_id' => $this->account('1000')->id, 'debit' => 0, 'credit' => 120000],
+        ]])->assertSessionHasNoErrors();
+        $this->post(route('journals.post', Journal::latest('id')->firstOrFail()))->assertSessionHasNoErrors();
+
         $this->post(route('accrual-schedules.store'), [
             'type' => AccrualSchedule::TYPE_PREPAID, 'description' => 'Shop rent', 'total_amount' => 120000,
             'start_month' => '2026-08', 'months' => 12,

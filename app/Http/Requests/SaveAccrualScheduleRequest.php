@@ -11,18 +11,24 @@ use Illuminate\Validation\Rule;
  * The account types are checked by
  * App\Actions\AccrualSchedules\SaveAccrualSchedule.
  *
- * Linking a bill, expense or invoice is switched off (audit MB-53): bills
- * post to their own expense lines and invoices to sales, so the money never
- * reached the prepaid or deferred revenue account and the schedule counted
- * it a second time. Schedules already linked keep their link.
+ * A linked bill, expense or invoice posts a setup journal that moves the
+ * amount into the prepaid or deferred revenue account (audit MB-53); see
+ * App\Actions\AccrualSchedules\ScheduleSetup.
  */
 class SaveAccrualScheduleRequest extends FormRequest
 {
-    public const NO_LINK = 'A schedule can\'t be linked to a bill, expense or invoice. Record the payment with a journal into the prepaid or deferred revenue account first.';
-
     public function authorize(): bool
     {
         return $this->user()->can($this->isMethod('post') ? 'create accrual-schedules' : 'edit accrual-schedules');
+    }
+
+    /** The form sends the linked document as "bill:12". */
+    protected function prepareForValidation(): void
+    {
+        $source = $this->input('source');
+        $source = is_string($source) ? $source : '';
+        [$type, $id] = str_contains($source, ':') ? explode(':', $source, 2) : [null, null];
+        $this->merge(['source_type' => $type ?: null, 'source_id' => $id ?: null]);
     }
 
     public function rules(): array
@@ -37,9 +43,8 @@ class SaveAccrualScheduleRequest extends FormRequest
             'months' => ['required', 'integer', 'min:1', 'max:'.AccrualSchedule::MAX_MONTHS],
             'balance_account_id' => ['nullable', $account],
             'pl_account_id' => ['required', $account],
-            'source' => ['prohibited'],
-            'source_type' => ['prohibited'],
-            'source_id' => ['prohibited'],
+            'source_type' => ['nullable', Rule::in(array_keys(AccrualSchedule::SOURCES))],
+            'source_id' => ['nullable', 'integer'],
             'reference' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ];
@@ -50,9 +55,6 @@ class SaveAccrualScheduleRequest extends FormRequest
         return [
             'start_month.regex' => 'Choose the first month the payment covers.',
             'months.max' => 'A schedule can run for at most :max months.',
-            'source.prohibited' => self::NO_LINK,
-            'source_type.prohibited' => self::NO_LINK,
-            'source_id.prohibited' => self::NO_LINK,
             'pl_account_id.required' => $this->input('type') === AccrualSchedule::TYPE_DEFERRED
                 ? 'Choose the income account each month goes to.'
                 : 'Choose the expense account each month goes to.',

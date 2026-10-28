@@ -123,6 +123,11 @@
                         <div><dt class="text-gray-500 dark:text-gray-400">{{ ucfirst($schedule->source_type) }}</dt>
                             <dd><a href="{{ route($sourceRoute, $source) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $source->{$numberColumn} }}</a> <span class="text-gray-500 dark:text-gray-400">@money($source->total)</span></dd></div>
                     @endif
+                    @if($schedule->setupJournal)
+                        {{-- Moved the amount from the document's account into the balance account (MB-53). --}}
+                        <div><dt class="text-gray-500 dark:text-gray-400">Moved into {{ $schedule->balanceAccount->name }} by</dt>
+                            <dd><a href="{{ route('journals.show', $schedule->setupJournal) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $schedule->setupJournal->journal_number }}</a> <span class="text-gray-500 dark:text-gray-400">{{ $schedule->setupJournal->journal_date?->format('j M Y') }}</span></dd></div>
+                    @endif
                     @if($schedule->reference)
                         <div><dt class="text-gray-500 dark:text-gray-400">Reference</dt><dd class="text-gray-900 dark:text-gray-100">{{ $schedule->reference }}</dd></div>
                     @endif
@@ -141,7 +146,14 @@
                 <form method="POST" action="{{ route('accrual-schedules.cancel', $schedule) }}" class="p-6 space-y-4">
                     @csrf
                     <p class="text-sm text-gray-700 dark:text-gray-300">No more months will be released. The {{ $schedule->releases->count() }} month(s) already released stay posted.</p>
-                    <p class="text-sm text-gray-700 dark:text-gray-300"><span class="font-semibold">@money($schedule->remaining())</span> stays in {{ $schedule->balanceAccount->name }}. If it should go elsewhere (for example the rest of the rent was refunded), move it with a manual journal.</p>
+                    @if ($schedule->setup_journal_id)
+                        <label class="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                            <input type="checkbox" name="move_back" value="1" checked class="mt-1">
+                            <span>Move what's left (<span class="font-semibold">@money($schedule->remaining())</span>) back to the account the {{ $schedule->source_type }} used, out of {{ $schedule->balanceAccount->name }}.</span>
+                        </label>
+                    @else
+                        <p class="text-sm text-gray-700 dark:text-gray-300"><span class="font-semibold">@money($schedule->remaining())</span> stays in {{ $schedule->balanceAccount->name }}. If it should go elsewhere (for example the rest of the rent was refunded), move it with a manual journal.</p>
+                    @endif
                     <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                         <button type="button" x-on:click="$dispatch('close-modal', 'cancel-schedule')" class="text-sm text-gray-600 dark:text-gray-400 hover:underline">Keep it</button>
                         <button type="submit" class="btn-danger">Cancel schedule</button>

@@ -18,8 +18,9 @@ use Illuminate\Support\Facades\DB;
  * Read-only report of data the October 2026 audit says may already be
  * wrong, so it can be checked by hand before the real fixes land:
  *
- * - prepaid/deferred schedules linked to a bill, expense or invoice (MB-53:
- *   the amount was counted twice);
+ * - prepaid/deferred schedules linked to a bill, expense or invoice with
+ *   no setup journal (MB-53: the amount was counted twice; repair with
+ *   accruals:repair-setup);
  * - Prepaid Expenses or Deferred Revenue below zero (the same cause);
  * - custom roles holding user, role or report permissions (MB-05, MB-06);
  * - banks whose balance differs from their ledger account (MB-08);
@@ -73,11 +74,12 @@ class AuditAffectedData extends Command
         $rows = AccrualSchedule::withoutGlobalScope('tenant')
             ->where('tenant_id', $tenantId)
             ->whereNotNull('source_type')
+            ->whereNull('setup_journal_id') // linked before the setup journal existed (MB-53); see accruals:repair-setup
             ->orderBy('id')
             ->get(['schedule_number', 'type', 'status', 'source_type', 'source_id', 'total_amount', 'released_amount'])
             ->map(fn ($s) => [$s->schedule_number, $s->type, $s->status, "{$s->source_type}:{$s->source_id}", $s->total_amount, $s->released_amount]);
 
-        return $this->section('Schedules linked to a document', ['Schedule', 'Type', 'Status', 'Linked to', 'Total', 'Released'], $rows->all());
+        return $this->section('Schedules linked to a document without a setup journal', ['Schedule', 'Type', 'Status', 'Linked to', 'Total', 'Released'], $rows->all());
     }
 
     /** @param Collection<int, ChartOfAccount> $ledger */

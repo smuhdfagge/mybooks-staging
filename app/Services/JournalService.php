@@ -2235,7 +2235,7 @@ class JournalService implements JournalServiceInterface
      *
      * @return array{0: float, 1: array<string, float>} [inventory, account code => amount]
      */
-    protected function billDebitSplit(Bill $bill): array
+    public function billDebitSplit(Bill $bill): array
     {
         $t = $bill->tenant_id;
         $inventory = 0.0;
