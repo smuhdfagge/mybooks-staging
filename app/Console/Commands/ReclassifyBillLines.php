@@ -105,7 +105,7 @@ class ReclassifyBillLines extends Command
                 $bills++;
                 $blocked = LockDates::instance()->blockReason($bill->bill_date, $tenant->id);
                 foreach ($changes as $code => [$before, $after, $change]) {
-                    $rows[] = [$bill->bill_number, $bill->bill_date?->toDateString(), $code, number_format($before, 2), number_format($after, 2), number_format($change, 2), $blocked ? 'closed/locked' : 'open'];
+                    $rows[] = [$bill->bill_number, $bill->bill_date->toDateString(), $code, number_format($before, 2), number_format($after, 2), number_format($change, 2), $blocked ? 'closed/locked' : 'open'];
                     $totals[$code] = round(($totals[$code] ?? 0) + $change, 2);
                 }
             });

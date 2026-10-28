@@ -161,7 +161,7 @@ class ScheduleSetup
         $document = $schedule->sourceDocument();
         $column = AccrualSchedule::SOURCES[$schedule->source_type][1] ?? null;
 
-        return ucfirst((string) $schedule->source_type).($document && $column ? ' '.$document->{$column} : '');
+        return ucfirst((string) $schedule->source_type).($document && $column ? ' '.$document->getAttribute($column) : '');
     }
 
     protected function documentDate(AccrualSchedule $schedule): Carbon

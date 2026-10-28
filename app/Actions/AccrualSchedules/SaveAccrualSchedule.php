@@ -130,7 +130,7 @@ class SaveAccrualSchedule
      */
     protected function assertCovered(AccrualSchedule $schedule, ChartOfAccount $balance): void
     {
-        $held = (float) ($this->statements->accountBalances($schedule->tenant_id, null, '2999-12-31')->firstWhere('id', $balance->id)?->balance ?? 0);
+        $held = (float) ($this->statements->accountBalances($schedule->tenant_id, null, '2999-12-31')->firstWhere('id', $balance->id)->balance ?? 0);
         $needed = AccrualSchedule::withoutGlobalScope('tenant')
             ->where('tenant_id', $schedule->tenant_id)
             ->where('balance_account_id', $balance->id)
