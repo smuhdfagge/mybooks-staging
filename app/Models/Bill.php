@@ -112,10 +112,26 @@ class Bill extends Model
         return $journalService->createBillJournal($this);
     }
 
+    /** Fields the bill journal is built from (its lines post through postWithLines()). */
+    public const POSTING_FIELDS = ['vendor_id', 'bill_date', 'subtotal', 'tax_amount', 'discount_amount', 'total', 'warehouse_id'];
+
+    /**
+     * Whether this save changes what the journal says (audit MB-01): a
+     * payment or supplier credit only moves the balance and status, and
+     * re-posting it failed for bills from a closed or locked month.
+     */
+    public function savedChangesPosting(): bool
+    {
+        $statusMatters = $this->wasChanged('status')
+            && (in_array($this->getOriginal('status'), ['draft', 'cancelled'], true) || $this->status === 'cancelled');
+
+        return $statusMatters || $this->wasChanged(self::POSTING_FIELDS) || ! $this->journal()->exists();
+    }
+
     protected static function booted()
     {
         static::saved(function ($bill) {
-            if ($bill->total > 0 && $bill->status !== 'draft') {
+            if ($bill->total > 0 && $bill->status !== 'draft' && $bill->savedChangesPosting()) {
                 BillSaved::dispatch($bill);
             }
         });

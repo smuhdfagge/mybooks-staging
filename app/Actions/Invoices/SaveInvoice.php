@@ -80,6 +80,7 @@ class SaveInvoice
             $invoice->reserveInventory();
 
             // Saving the totals posts the journal, now that the lines exist.
+            $invoice->repostOnSave = true;
             $invoice->update($this->totalsColumns($totals, 0.0));
 
             return $invoice->fresh(['items']);
@@ -147,6 +148,7 @@ class SaveInvoice
             }
 
             // Saving the totals re-posts the journal with the new lines.
+            $invoice->repostOnSave = true;
             $invoice->update($this->totalsColumns($totals, (float) $invoice->amount_paid));
 
             return $invoice->fresh(['items']);

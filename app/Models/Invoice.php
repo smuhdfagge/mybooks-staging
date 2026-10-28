@@ -150,11 +150,38 @@ class Invoice extends Model
         return $journalService->createInvoiceJournal($this);
     }
 
+    /** Fields the invoice journal is built from. */
+    public const POSTING_FIELDS = ['customer_id', 'invoice_date', 'subtotal', 'tax_amount', 'discount_amount', 'total', 'warehouse_id'];
+
+    /**
+     * Set by SaveInvoice before it saves the totals: the lines (and the
+     * header, saved quietly) changed, so re-post even if the totals didn't.
+     */
+    public bool $repostOnSave = false;
+
+    /**
+     * Whether this save changes what the journal says (audit MB-01). A
+     * payment or credit only moves amount_paid, balance_due and status
+     * between unpaid/partial/paid; re-posting then rebuilt the journal's
+     * lines, which a lock date or closed period refuses, so paying an
+     * invoice from a closed month failed.
+     */
+    public function savedChangesPosting(): bool
+    {
+        $statusMatters = $this->wasChanged('status')
+            && (in_array($this->getOriginal('status'), ['draft', 'cancelled'], true) || $this->status === 'cancelled');
+
+        return $this->repostOnSave || $statusMatters || $this->wasChanged(self::POSTING_FIELDS) || ! $this->journal()->exists();
+    }
+
     protected static function booted()
     {
         static::saved(function ($invoice) {
             if ($invoice->total > 0 && $invoice->status !== 'draft') {
-                InvoiceSaved::dispatch($invoice);
+                if ($invoice->savedChangesPosting()) {
+                    $invoice->repostOnSave = false;
+                    InvoiceSaved::dispatch($invoice);
+                }
                 // Queued for NRS only if the business chose automatic e-invoicing,
                 // after the journal is posted; never blocks posting (session 18).
                 app(AutoSubmit::class)->invoice($invoice);
