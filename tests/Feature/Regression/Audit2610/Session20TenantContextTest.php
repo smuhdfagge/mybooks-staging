@@ -100,6 +100,8 @@ class Session20TenantContextTest extends TestCase
 
     public function test_a_queued_job_runs_in_the_context_it_was_queued_in(): void
     {
+        // --memory: the whole suite runs well past the worker's 128 MB default,
+        // and the worker would stop after one job (exit 12).
         config(['queue.default' => 'database']);
 
         Tenant::run($this->b, fn () => S20CountCustomers::dispatch('in b'));
@@ -107,7 +109,7 @@ class Session20TenantContextTest extends TestCase
         $this->actingAs($this->createUserForTenant($this->a));
         S20CountCustomers::dispatch('signed in to a');
         auth()->forgetGuards();
-        $this->artisan('queue:work', ['connection' => 'database', '--stop-when-empty' => true])->assertSuccessful();
+        $this->artisan('queue:work', ['connection' => 'database', '--memory' => 4096, '--stop-when-empty' => true])->assertSuccessful();
 
         $this->assertSame(3, Cache::get('s20:in b'));
         $this->assertSame(5, Cache::get('s20:all'));
@@ -126,7 +128,7 @@ class Session20TenantContextTest extends TestCase
         unset($payload['tenant_context']);
         DB::table('jobs')->where('id', $row->id)->update(['payload' => json_encode($payload)]);
 
-        $this->artisan('queue:work', ['connection' => 'database', '--stop-when-empty' => true, '--tries' => 1])->assertSuccessful();
+        $this->artisan('queue:work', ['connection' => 'database', '--memory' => 4096, '--stop-when-empty' => true, '--tries' => 1])->assertSuccessful();
 
         $this->assertNull(Cache::get('s20:none'));
         $this->assertStringContainsString('MissingTenantContext', (string) DB::table('failed_jobs')->value('exception'));

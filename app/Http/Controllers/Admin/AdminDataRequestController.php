@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\DataRequest;
 use App\Models\Tenant;
+use App\Services\AdminAuditService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -55,7 +57,7 @@ class AdminDataRequestController extends Controller
 
         $tenant = isset($validated['tenant_id']) ? Tenant::find($validated['tenant_id']) : null;
 
-        DataRequest::create([
+        $dataRequest = DataRequest::create([
             'tenant_id' => $tenant?->id,
             'tenant_name' => $tenant?->name,
             'requester' => $validated['requester'],
@@ -65,6 +67,9 @@ class AdminDataRequestController extends Controller
             'due_at' => now()->addDays(DataRequest::RESPONSE_DAYS),
             'handled_by' => auth('admin')->user()?->name,
         ]);
+        // In the admin audit log too, like every other admin change (audit MB-59).
+        AdminAuditService::log(ActivityLog::ACTION_CREATED, "logged a data request ({$this->typeLabel($dataRequest)}) from '{$dataRequest->requester}'"
+            .($tenant ? " for business '{$tenant->name}' (#{$tenant->id})" : ''), $dataRequest, new: $dataRequest->only(['type', 'tenant_id', 'requester', 'status', 'due_at']));
 
         return redirect()->route('admin.data-requests.index')->with('success', 'Request logged.');
     }
@@ -72,13 +77,20 @@ class AdminDataRequestController extends Controller
     public function complete(DataRequest $dataRequest)
     {
         if ($dataRequest->isOpen()) {
+            $before = $dataRequest->getAttributes();
             $dataRequest->update([
                 'status' => DataRequest::STATUS_COMPLETED,
                 'completed_at' => now(),
                 'handled_by' => auth('admin')->user()?->name,
             ]);
+            AdminAuditService::logChange("marked the data request ({$this->typeLabel($dataRequest)}) from '{$dataRequest->requester}' as done", $dataRequest, $before);
         }
 
         return redirect()->route('admin.data-requests.index')->with('success', 'Request marked as done.');
+    }
+
+    private function typeLabel(DataRequest $dataRequest): string
+    {
+        return (string) (DataRequest::TYPES[$dataRequest->type] ?? $dataRequest->type);
     }
 }

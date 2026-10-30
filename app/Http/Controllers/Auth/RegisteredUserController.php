@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -43,7 +44,8 @@ class RegisteredUserController extends Controller
 
         $request->validate([
             // Plan validation
-            'plan_id' => ['required', 'exists:plans,id'],
+            // Only a plan on sale: a retired or hidden one can't be signed up to (audit MB-28).
+            'plan_id' => ['required', Rule::exists('plans', 'id')->where('is_active', true)],
             'billing_cycle' => ['required', 'in:monthly,annual'],
             // Tenant validation
             'company_name' => ['required', 'string', 'max:255'],

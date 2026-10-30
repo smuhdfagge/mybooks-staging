@@ -68,9 +68,9 @@ class TenantContext
     /**
      * @template T
      *
-     * @param  int|'all'|null  $context  null: no tenant, whoever is signed in
+     * @param  int|'all'|null  $context  null: no business at all (scoped queries throw), even if someone is signed in
      * @param  callable(): T  $callback
-     * @return T
+     * @return T|null null when the callback returned a PendingDispatch
      */
     public static function run(int|string|null $context, callable $callback): mixed
     {

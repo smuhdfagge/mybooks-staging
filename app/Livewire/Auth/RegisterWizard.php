@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -105,7 +106,8 @@ class RegisterWizard extends Component
                 ? ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:tenants,email']
                 : ['nullable', 'string', 'unique:tenants,email'],
             'currency' => ['required', 'string', 'in:'.implode(',', array_keys(self::CURRENCIES))],
-            'plan_id' => ['required', 'exists:plans,id'],
+            // Only a plan on sale: a retired or hidden one can't be signed up to (audit MB-28).
+            'plan_id' => ['required', Rule::exists('plans', 'id')->where('is_active', true)],
             'billing_cycle' => ['required', 'in:monthly,annual'],
         ];
     }
@@ -123,6 +125,7 @@ class RegisterWizard extends Component
             'company_email.email' => 'Enter a valid email address, like accounts@business.com.',
             'company_email.unique' => 'Another business already uses this email.',
             'plan_id.required' => 'Choose a plan.',
+            'plan_id.exists' => 'That plan is no longer available. Choose another.',
         ];
     }
 
