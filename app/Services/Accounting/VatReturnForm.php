@@ -344,9 +344,11 @@ class VatReturnForm
         if (in_array($type, [CreditNote::class, InvoiceRefund::class], true)) {
             $category = 'adjustment';
         } elseif ($reversal && in_array($type, self::SALES, true)) {
-            // Cancelling a sale from an earlier month is a sales adjustment.
+            // Cancelling a sale from an earlier month is a sales adjustment. The
+            // journal reversed is REV-<its number>: an edited document has several
+            // (audit MB-15), and the first of them can be from another month.
             $original = DB::table('journals')->where('reference_type', $type)->where('reference_id', $journal->reference_id)
-                ->where('reference', 'not like', 'REV-%')->value('journal_date');
+                ->where('journal_number', substr((string) $journal->reference, 4))->value('journal_date');
             $category = $original && $original < $from ? 'adjustment' : 'supply';
         }
 
