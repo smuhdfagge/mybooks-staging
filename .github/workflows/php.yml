@@ -56,6 +56,18 @@ jobs:
     - name: Build front-end assets
       run: npm ci && npm run build
 
+    # The front-end build tools too (audit MB-34): they run on the machine
+    # that builds the release zip.
+    - name: Audit npm packages for known vulnerabilities
+      if: matrix.php == '8.4'
+      run: npm audit --audit-level=high
+
+    # deploy.sh runs on the server with set -e: a syntax error there stops a
+    # deploy half way (audit MB-25).
+    - name: Check the shell scripts parse
+      if: matrix.php == '8.4'
+      run: for f in scripts/*.sh; do bash -n "$f"; done
+
     - name: Prepare environment
       run: |
         cp .env.example .env

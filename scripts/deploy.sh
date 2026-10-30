@@ -10,6 +10,10 @@
 #
 # The front-end files (public/build) are not in git and are not built here
 # (no Node on the server): upload the build zip separately when one is sent.
+#
+# It backs the database up first and stops if that fails, and writes where
+# it started from to storage/app/last-deploy-from (and deploy-history). To
+# undo a deploy, see docs/ROLLBACK.md.
 
 set -euo pipefail
 
@@ -27,6 +31,21 @@ if [ -z "$COMPOSER_BIN" ]; then
     exit 1
 fi
 
+# A database backup before anything changes (audit MB-25: deploys used to
+# migrate with no backup). Taken while the old code is still in place, so
+# when it fails nothing has been touched and the site carries on as it was.
+echo "==> Backing up the database"
+if ! BACKUP_OUTPUT="$("$PHP" artisan mybooks:backup --only-db --no-cleanup 2>&1)"; then
+    printf '%s\n' "$BACKUP_OUTPUT" >&2
+    echo "" >&2
+    echo "The backup failed, so nothing was deployed. Fix what it says above" >&2
+    echo "(README, 'Backups') and run this again." >&2
+    exit 1
+fi
+printf '%s\n' "$BACKUP_OUTPUT" | sed 's/^/    /'
+BACKUP_FILE="$(printf '%s\n' "$BACKUP_OUTPUT" | sed -n 's/^Backup \([^ ]*\) .*/\1/p' | head -n 1)"
+PREVIOUS_COMMIT="$(git rev-parse HEAD)"
+
 echo "==> Getting the latest code"
 # Never stop at a username/password prompt: GitHub no longer accepts
 # account passwords, so a prompt here can only fail. Fail with a clear
@@ -42,6 +61,20 @@ if ! git pull --ff-only origin main; then
     echo "    server: run 'git status' to see them." >&2
     exit 1
 fi
+
+# Where this deploy started from: what docs/ROLLBACK.md goes back to.
+# Written only when new code came in, so running this again after a
+# failed step (or with nothing new) keeps the commit and backup from
+# before the deploy, not the half-deployed state. Every deploy is also
+# added to storage/app/deploy-history.
+if [ "$(git rev-parse HEAD)" != "$PREVIOUS_COMMIT" ]; then
+    mkdir -p storage/app
+    RECORD="$(printf 'commit=%s\nbackup=%s\nat=%s' "$PREVIOUS_COMMIT" "${BACKUP_FILE:-unknown}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)")"
+    printf '%s\n' "$RECORD" > storage/app/last-deploy-from
+    printf '%s to=%s\n' "$(printf '%s' "$RECORD" | tr '\n' ' ')" "$(git rev-parse HEAD)" >> storage/app/deploy-history
+fi
+LAST_FROM="$(sed -n 's/^commit=//p' storage/app/last-deploy-from 2>/dev/null || true)"
+LAST_BACKUP="$(sed -n 's/^backup=//p' storage/app/last-deploy-from 2>/dev/null || true)"
 
 echo "==> Installing PHP packages"
 "$PHP" "$COMPOSER_BIN" install --no-dev --optimize-autoloader --no-interaction
@@ -114,3 +147,8 @@ echo "==> Restarting queue workers"
 
 "$PHP" artisan up
 echo "==> Done: $(git log -1 --format='%h %s')"
+if [ "$(git rev-parse HEAD)" != "$PREVIOUS_COMMIT" ]; then
+    echo "    Came from ${PREVIOUS_COMMIT:0:7}; database backup ${BACKUP_FILE:-unknown}. To undo: docs/ROLLBACK.md"
+elif [ -n "$LAST_FROM" ]; then
+    echo "    No new code this time. The last deploy came from ${LAST_FROM:0:7} (backup ${LAST_BACKUP:-unknown}). To undo it: docs/ROLLBACK.md"
+fi
