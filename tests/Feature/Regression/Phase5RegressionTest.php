@@ -327,6 +327,23 @@ class Phase5RegressionTest extends TestCase
         $this->assertSame($subscription->id, $payment->fresh()->subscription_id);
     }
 
+    public function test_c1_callback_works_when_the_browser_is_no_longer_signed_in(): void
+    {
+        $this->paystack();
+        $this->makePending();
+        $payment = $this->startPayment();
+
+        // The session ran out while paying by transfer, or another device came back.
+        Http::fake([
+            'api.paystack.co/transaction/verify/*' => Http::response(['status' => true, 'data' => $this->charge($payment)]),
+        ]);
+        $this->signedOut(fn () => $this->get(route('billing.callback', ['reference' => $payment->reference]))
+            ->assertRedirect(route('settings.subscription'))
+            ->assertSessionHas('success', 'Payment received. Your subscription is active until '.now()->addMonth()->format('M d, Y').'.'));
+
+        $this->assertSame('success', $payment->fresh()->status);
+    }
+
     public function test_c1_webhook_with_a_bad_signature_is_rejected(): void
     {
         $this->paystack();

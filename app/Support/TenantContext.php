@@ -112,6 +112,20 @@ class TenantContext
         }
     }
 
+    /** How many contexts are open: for truncate(). */
+    public static function depth(): int
+    {
+        return app()->bound(self::STACK) ? count(app(self::STACK)) : 0;
+    }
+
+    /** Close every context opened after depth() returned $depth. */
+    public static function truncate(int $depth): void
+    {
+        while (self::depth() > $depth) {
+            self::leave();
+        }
+    }
+
     /** The innermost context set, 'none', or null when nothing was set (use the signed-in user). */
     private static function top(): int|string|null
     {

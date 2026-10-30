@@ -12,6 +12,7 @@ use App\Models\Item;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Vendor;
+use App\Support\TenantContext;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -20,6 +21,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use RuntimeException;
 use Tests\TestCase;
 use Throwable;
 
@@ -135,6 +137,18 @@ class Session20TenantContextTest extends TestCase
         $this->assertSame(5, Cache::get('s20:legacy'));
     }
 
+    public function test_the_worker_unwinds_the_context_even_when_a_job_and_its_failed_handler_throw(): void
+    {
+        config(['queue.default' => 'database']);
+        Tenant::run($this->a, fn () => S20FailsTwice::dispatch());
+
+        $this->artisan('queue:work', ['connection' => 'database', '--memory' => 4096, '--stop-when-empty' => true])->run();
+
+        // Otherwise the rest of a long-lived worker's life would run in this business.
+        $this->assertSame(0, TenantContext::depth());
+        $this->assertNull(TenantContext::current());
+    }
+
     public function test_a_job_whose_user_is_gone_is_not_run_with_nobody_and_says_why(): void
     {
         $user = $this->createUserForTenant($this->a);
@@ -223,5 +237,23 @@ class S20CountCustomers implements ShouldQueue
     public function handle(): void
     {
         Cache::put('s20:'.$this->name, Customer::count());
+    }
+}
+
+/** Fails, and so does its failed() handler. */
+class S20FailsTwice implements ShouldQueue
+{
+    use Dispatchable, Queueable;
+
+    public int $tries = 1;
+
+    public function handle(): void
+    {
+        throw new RuntimeException('the job failed');
+    }
+
+    public function failed(?Throwable $e): void
+    {
+        throw new RuntimeException('and so did its failed() handler');
     }
 }
