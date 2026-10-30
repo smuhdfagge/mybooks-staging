@@ -157,7 +157,7 @@
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div>
                                 <span class="text-gray-500 dark:text-gray-400">Basic Salary</span>
-                                <p class="font-semibold text-gray-900 dark:text-gray-100" x-text="formatCurrency(parseFloat(basicSalary) || 0)"></p>
+                                <p class="font-semibold text-gray-900 dark:text-gray-100" x-text="formatCurrency($float(basicSalary) || 0)"></p>
                             </div>
                             <div>
                                 <span class="text-gray-500 dark:text-gray-400">Total Allowances</span>
@@ -265,6 +265,9 @@
                 }
             }
         }
+
+        // Registered for the CSP build of Alpine (audit MB-29), which can't call page globals.
+        document.addEventListener('alpine:init', () => Alpine.data('salaryStructureForm', salaryStructureForm));
     </script>
     @endpush
 </x-app-layout>

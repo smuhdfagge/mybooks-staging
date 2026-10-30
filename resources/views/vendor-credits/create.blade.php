@@ -72,31 +72,31 @@
                             <template x-for="(line, i) in lines" :key="i">
                                 <tr>
                                     <td data-cell="main" data-label="Item / account">
-                                        <select :name="`items[${i}][item_id]`" x-model="line.item_id" @change="pickItem(line)" class="form-control text-sm" aria-label="Item">
+                                        <select :name="'items[' + i + '][item_id]'" x-model="line.item_id" @change="pickItem(line)" class="form-control text-sm" aria-label="Item">
                                             <option value="">No item (price correction)</option>
                                             @foreach($items as $item)
                                                 <option value="{{ $item->id }}">{{ $item->name }}</option>
                                             @endforeach
                                         </select>
-                                        <select x-show="!line.item_id" :name="`items[${i}][account_id]`" x-model="line.account_id" class="form-control text-sm mt-1" aria-label="Account">
+                                        <select x-show="!line.item_id" :name="'items[' + i + '][account_id]'" x-model="line.account_id" class="form-control text-sm mt-1" aria-label="Account">
                                             <option value="">Miscellaneous expense</option>
                                             @foreach($accounts as $account)
                                                 <option value="{{ $account->id }}">{{ $account->account_code }} {{ $account->name }}</option>
                                             @endforeach
                                         </select>
-                                        <p x-show="line.billed" class="form-help" x-text="`On the bill: ${line.billed}`"></p>
+                                        <p x-show="line.billed" class="form-help" x-text="'On the bill: ' + line.billed"></p>
                                     </td>
                                     <td data-cell="main" data-label="Description">
-                                        <input type="text" :name="`items[${i}][description]`" x-model="line.description" class="form-control text-sm" aria-label="Description">
+                                        <input type="text" :name="'items[' + i + '][description]'" x-model="line.description" class="form-control text-sm" aria-label="Description">
                                     </td>
                                     <td data-label="Qty">
-                                        <input type="number" step="any" min="0" :name="`items[${i}][quantity]`" x-model.number="line.quantity" class="form-control text-sm" aria-label="Quantity">
+                                        <input type="number" step="any" min="0" :name="'items[' + i + '][quantity]'" x-model.number="line.quantity" class="form-control text-sm" aria-label="Quantity">
                                     </td>
                                     <td data-label="Price">
-                                        <input type="number" step="0.01" min="0" :name="`items[${i}][unit_price]`" x-model.number="line.unit_price" class="form-control text-sm" aria-label="Price">
+                                        <input type="number" step="0.01" min="0" :name="'items[' + i + '][unit_price]'" x-model.number="line.unit_price" class="form-control text-sm" aria-label="Price">
                                     </td>
                                     <td data-label="VAT %">
-                                        <x-tax-rate-select type="purchases" model="line.tax_rate" name="`items[${i}][tax_rate]`" />
+                                        <x-tax-rate-select type="purchases" model="line.tax_rate" name="'items[' + i + '][tax_rate]'" />
                                     </td>
                                     <td class="num" data-label="Total" x-text="money(lineTotal(line))"></td>
                                     <td data-cell="actions">
@@ -147,6 +147,9 @@
                 money(n) { return (window.formatMoney ? window.formatMoney(n) : Number(n).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})); },
             };
         }
+
+        // Registered for the CSP build of Alpine (audit MB-29), which can't call page globals.
+        document.addEventListener('alpine:init', () => Alpine.data('vendorCreditForm', vendorCreditForm));
     </script>
     @endpush
 </x-app-layout>

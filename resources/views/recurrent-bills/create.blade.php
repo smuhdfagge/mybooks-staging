@@ -136,7 +136,7 @@
                                         <tr>
                                             <td data-label="Description" data-cell="main">
                                                 <div class="relative mb-1">
-                                                    <input type="hidden" :name="`items[${index}][item_id]`" x-model="item.item_id">
+                                                    <input type="hidden" :name="'items[' + index + '][item_id]'" x-model="item.item_id">
                                                     <input aria-label="Item" 
                                                         type="text" 
                                                         x-model="item.itemSearch"
@@ -144,8 +144,8 @@
                                                         @click="item.itemDropdownOpen = true"
                                                         @input="item.itemDropdownOpen = true"
                                                         @keydown.escape="item.itemDropdownOpen = false"
-                                                        @keydown.arrow-down.prevent="item.itemHighlightedIndex = Math.min(item.itemHighlightedIndex + 1, getFilteredProducts(item.itemSearch).length - 1)"
-                                                        @keydown.arrow-up.prevent="item.itemHighlightedIndex = Math.max(item.itemHighlightedIndex - 1, 0)"
+                                                        @keydown.arrow-down.prevent="item.itemHighlightedIndex = $math.min(item.itemHighlightedIndex + 1, getFilteredProducts(item.itemSearch).length - 1)"
+                                                        @keydown.arrow-up.prevent="item.itemHighlightedIndex = $math.max(item.itemHighlightedIndex - 1, 0)"
                                                         @keydown.enter.prevent="selectProduct(index, getFilteredProducts(item.itemSearch)[item.itemHighlightedIndex])"
                                                         placeholder="Search items..."
                                                         autocomplete="off"
@@ -179,23 +179,23 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <input aria-label="Description" type="text" :name="`items[${index}][description]`" x-model="item.description" required placeholder="Description"
+                                                <input aria-label="Description" type="text" :name="'items[' + index + '][description]'" x-model="item.description" required placeholder="Description"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:placeholder-gray-500 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
                                             </td>
                                             <td data-label="Qty">
-                                                <input aria-label="Quantity" type="number" :name="`items[${index}][quantity]`" x-model.number="item.quantity" min="0.01" step="0.01" required
+                                                <input aria-label="Quantity" type="number" :name="'items[' + index + '][quantity]'" x-model.number="item.quantity" min="0.01" step="0.01" required
                                                     @input="calculateTotals()"
                                                     class="form-control text-sm">
                                             </td>
                                             <td data-label="Price">
-                                                <input aria-label="Unit price" type="number" :name="`items[${index}][unit_price]`" x-model.number="item.unit_price" min="0" step="0.01" required
+                                                <input aria-label="Unit price" type="number" :name="'items[' + index + '][unit_price]'" x-model.number="item.unit_price" min="0" step="0.01" required
                                                     @input="calculateTotals()"
                                                     class="form-control text-sm">
                                             </td>
                                             <td data-label="Tax %">
-                                                <x-tax-rate-select type="purchases" model="item.tax_rate" name="`items[${index}][tax_rate]`" change="calculateTotals()" />
+                                                <x-tax-rate-select type="purchases" model="item.tax_rate" name="'items[' + index + '][tax_rate]'" change="calculateTotals()" />
                                             </td>
-                                            <td class="num font-medium" x-text="formatMoney(lineTotal(index))" data-label="Total"></td>
+                                            <td class="num font-medium" x-text="$money(lineTotal(index))" data-label="Total"></td>
                                             <td class="text-center" data-cell="actions">
                                                 <button type="button" @click="removeItem(index)" x-show="items.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-300 dark:hover:text-red-300" aria-label="Remove line">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -223,15 +223,15 @@
                             <div class="w-full md:w-80 space-y-3">
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600 dark:text-gray-400">Subtotal</span>
-                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(subtotal)"></span>
+                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="$money(subtotal)"></span>
                                 </div>
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600 dark:text-gray-400">Tax</span>
-                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(totalTax)"></span>
+                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="$money(totalTax)"></span>
                                 </div>
                                 <div class="flex justify-between text-lg font-bold border-t border-gray-200 dark:border-gray-700 pt-3">
                                     <span class="text-gray-900 dark:text-gray-100">Total</span>
-                                    <span class="text-gray-900 dark:text-gray-100" x-text="formatMoney(grandTotal)"></span>
+                                    <span class="text-gray-900 dark:text-gray-100" x-text="$money(grandTotal)"></span>
                                 </div>
                             </div>
                         </div>
@@ -360,5 +360,9 @@
                 }
             }
         }
+
+        // Registered for the CSP build of Alpine (audit MB-29), which can't call page globals.
+        document.addEventListener('alpine:init', () => Alpine.data('searchableSelect', searchableSelect));
+        document.addEventListener('alpine:init', () => Alpine.data('recurrentBillForm', recurrentBillForm));
     </script>
 </x-app-layout>

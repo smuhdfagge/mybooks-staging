@@ -19,7 +19,7 @@
                         </h3>
 
                         <!-- Image Upload -->
-                        <div class="mb-6" x-data="{ preview: null }">
+                        <div class="mb-6" x-data="photoPreview()">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Item Image</label>
                             <div class="flex items-center gap-4">
                                 <div class="h-24 w-24 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-gray-50 dark:bg-gray-700">
@@ -33,7 +33,7 @@
                                         Upload Image
                                     </label>
                                     <input type="file" name="image" accept="image/*" class="hidden" id="item-image-upload"
-                                        @change="const file = $event.target.files[0]; if(file) { const reader = new FileReader(); reader.onload = e => preview = e.target.result; reader.readAsDataURL(file); }" @error('image') aria-invalid="true" aria-describedby="image-error" @enderror>
+                                        @change="pick($event)" @error('image') aria-invalid="true" aria-describedby="image-error" @enderror>
                                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">JPG, PNG, GIF or WebP. Max 2MB.</p>
                                     @error('image') <p id="image-error" class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                                 </div>

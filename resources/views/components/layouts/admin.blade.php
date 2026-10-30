@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" x-data="{ dark: document.documentElement.classList.contains('dark'), sidebarOpen: false }" :class="{ 'dark': dark }">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" x-data="theme('adminDark', { sidebarOpen: false })" :class="{ 'dark': dark }">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -48,7 +48,7 @@
                     <!-- Right side actions -->
                     <div class="flex items-center gap-3 ml-auto">
                         <!-- Dark Mode Toggle -->
-                        <button @click="dark = !dark; localStorage.setItem('adminDark', dark)" 
+                        <button @click="dark = !dark" 
                                 class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
                             <svg x-show="!dark" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>

@@ -446,7 +446,7 @@ class PhaseCRegressionTest extends TestCase
 
         $prefill = $this->get(route('bills.create', ['purchase_order_id' => $order->id]))->assertOk()->viewData('prefillItems');
         $this->assertEqualsWithDelta(1000, $prefill[0]['discount'], 0.001);
-        $this->assertStringContainsString('items[${index}][discount]', file_get_contents(resource_path('views/bills/create.blade.php')));
+        $this->assertStringContainsString("'items[' + index + '][discount]'", file_get_contents(resource_path('views/bills/create.blade.php')));
     }
 
     // ── R3: cash sales ──────────────────────────────────────────

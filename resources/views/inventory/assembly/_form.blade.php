@@ -59,10 +59,10 @@
                         <template x-for="(c, i) in (info ? info.components : [])" :key="i">
                             <tr>
                                 <td x-text="c.name"></td>
-                                <td class="num" x-text="qty(c.per_unit * (Number(quantity) || 0)) + (c.unit ? ' ' + c.unit : '')"></td>
-                                <td class="num" :class="c.per_unit * (Number(quantity) || 0) > c.free + 0.00001 ? 'text-red-600 dark:text-red-300 font-medium' : ''">
+                                <td class="num" x-text="qty(c.per_unit * ($num(quantity) || 0)) + (c.unit ? ' ' + c.unit : '')"></td>
+                                <td class="num" :class="c.per_unit * ($num(quantity) || 0) > c.free + 0.00001 ? 'text-red-600 dark:text-red-300 font-medium' : ''">
                                     <span x-text="qty(c.free) + (c.unit ? ' ' + c.unit : '')"></span>
-                                    <span x-show="c.per_unit * (Number(quantity) || 0) > c.free + 0.00001" class="block text-xs">Not enough</span>
+                                    <span x-show="c.per_unit * ($num(quantity) || 0) > c.free + 0.00001" class="block text-xs">Not enough</span>
                                 </td>
                             </tr>
                         </template>
@@ -70,7 +70,7 @@
             @unless($breakdown)
                 <p class="mt-3 text-sm text-gray-700 dark:text-gray-300" x-show="info">
                     Estimated cost: <strong x-text="money(info ? info.unit_cost : 0)"></strong> each,
-                    <strong x-text="money((info ? info.unit_cost : 0) * (Number(quantity) || 0))"></strong> in all, at today's component costs. The real cost is worked out when the build is done.
+                    <strong x-text="money((info ? info.unit_cost : 0) * ($num(quantity) || 0))"></strong> in all, at today's component costs. The real cost is worked out when the build is done.
                 </p>
             @endunless
         </div>
@@ -131,6 +131,9 @@
                 money(value) { return @jsText(\App\Support\Money::symbol()) + Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
             };
         }
+
+        // Registered for the CSP build of Alpine (audit MB-29), which can't call page globals.
+        document.addEventListener('alpine:init', () => Alpine.data('assemblyPlan', assemblyPlan));
     </script>
     @endpush
 @endonce

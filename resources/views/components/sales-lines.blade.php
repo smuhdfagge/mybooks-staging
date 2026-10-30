@@ -50,14 +50,14 @@
                             <tr>
                                 <td data-label="Description" data-cell="main">
                                     <div class="relative mb-1">
-                                        <input type="hidden" :name="`items[${index}][item_id]`" :value="line.item_id">
-                                        <input type="hidden" :name="`items[${index}][discount]`" :value="line.discount">
-                                        <input type="hidden" :name="`items[${index}][discount_type]`" value="fixed">
+                                        <input type="hidden" :name="'items[' + index + '][item_id]'" :value="line.item_id">
+                                        <input type="hidden" :name="'items[' + index + '][discount]'" :value="line.discount">
+                                        <input type="hidden" :name="'items[' + index + '][discount_type]'" value="fixed">
                                         <input aria-label="Item" type="text" x-model="line.itemSearch"
-                                            @focus="line.open = true; search(index)" @input="line.open = true" @input.debounce.300ms="search(index)"
+                                            @focus="$do(line.open = true, search(index))" @input="line.open = true" @input.debounce.300ms="search(index)"
                                             @keydown.escape="line.open = false"
-                                            @keydown.arrow-down.prevent="line.highlighted = Math.min(line.highlighted + 1, (line.results || []).length - 1)"
-                                            @keydown.arrow-up.prevent="line.highlighted = Math.max(line.highlighted - 1, 0)"
+                                            @keydown.arrow-down.prevent="line.highlighted = $math.min(line.highlighted + 1, (line.results || []).length - 1)"
+                                            @keydown.arrow-up.prevent="line.highlighted = $math.max(line.highlighted - 1, 0)"
                                             @keydown.enter.prevent="pick(index, (line.results || [])[line.highlighted])"
                                             placeholder="Search items (optional)..." autocomplete="off" class="form-control text-sm">
                                         <div x-show="line.open" x-cloak @click.outside="line.open = false"
@@ -70,19 +70,19 @@
                                             <div x-show="(line.results || []).length === 0" class="py-2 px-3 text-gray-500 dark:text-gray-400">No items found</div>
                                         </div>
                                     </div>
-                                    <input aria-label="Description" type="text" :name="`items[${index}][description]`" x-model="line.description" required placeholder="Description" class="form-control text-sm">
-                                    <p class="form-error" x-show="errors[`items.${index}.description`]" x-text="errors[`items.${index}.description`]"></p>
+                                    <input aria-label="Description" type="text" :name="'items[' + index + '][description]'" x-model="line.description" required placeholder="Description" class="form-control text-sm">
+                                    <p class="form-error" x-show="errors['items.' + index + '.description']" x-text="errors['items.' + index + '.description']"></p>
                                 </td>
                                 <td data-label="Qty">
-                                    <input aria-label="Quantity" type="number" :name="`items[${index}][quantity]`" x-model.number="line.quantity" min="0.01" step="0.01" required class="form-control text-sm">
-                                    <p class="form-error" x-show="errors[`items.${index}.quantity`]" x-text="errors[`items.${index}.quantity`]"></p>
+                                    <input aria-label="Quantity" type="number" :name="'items[' + index + '][quantity]'" x-model.number="line.quantity" min="0.01" step="0.01" required class="form-control text-sm">
+                                    <p class="form-error" x-show="errors['items.' + index + '.quantity']" x-text="errors['items.' + index + '.quantity']"></p>
                                 </td>
                                 <td data-label="Price">
-                                    <input aria-label="Unit price" type="number" :name="`items[${index}][unit_price]`" x-model.number="line.unit_price" min="0" step="0.01" required class="form-control text-sm">
+                                    <input aria-label="Unit price" type="number" :name="'items[' + index + '][unit_price]'" x-model.number="line.unit_price" min="0" step="0.01" required class="form-control text-sm">
                                 </td>
                                 <td data-label="VAT %">
-                                    <x-tax-rate-select type="sales" model="line.tax_rate" name="`items[${index}][tax_rate]`" />
-                                    <p class="form-error" x-show="errors[`items.${index}.tax_rate`]" x-text="errors[`items.${index}.tax_rate`]"></p>
+                                    <x-tax-rate-select type="sales" model="line.tax_rate" name="'items[' + index + '][tax_rate]'" />
+                                    <p class="form-error" x-show="errors['items.' + index + '.tax_rate']" x-text="errors['items.' + index + '.tax_rate']"></p>
                                 </td>
                                 <td class="num font-medium" data-label="Total" x-text="money(lineTotal(line))"></td>
                                 <td class="text-center" data-cell="actions">
@@ -197,6 +197,9 @@
                 money(value) { return typeof formatMoney === 'function' ? formatMoney(value) : Number(value).toFixed(2); },
             };
         }
+
+        // Registered for the CSP build of Alpine (audit MB-29), which can't call page globals.
+        document.addEventListener('alpine:init', () => Alpine.data('salesLines', salesLines));
     </script>
     @endpush
 @endonce

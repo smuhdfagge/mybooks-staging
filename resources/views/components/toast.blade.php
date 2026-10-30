@@ -1,16 +1,6 @@
 {{-- Toast Notification System --}}
 <div
-    x-data="{
-        toasts: [],
-        add(toast) {
-            toast.id = Date.now() + Math.random();
-            this.toasts.push(toast);
-            setTimeout(() => this.remove(toast.id), toast.duration || 5000);
-        },
-        remove(id) {
-            this.toasts = this.toasts.filter(t => t.id !== id);
-        }
-    }"
+    x-data="toasts()"
     @toast.window="add($event.detail)"
     class="fixed bottom-4 right-4 z-[60] space-y-3 max-w-sm w-full pointer-events-none"
     role="status"

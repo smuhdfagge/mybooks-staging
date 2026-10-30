@@ -20,13 +20,13 @@
 
                         <!-- Photo Upload -->
                         <div class="mb-6 flex items-center gap-4">
-                            <div class="h-20 w-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden" x-data="{ preview: null }">
+                            <div class="h-20 w-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden" x-data="photoPreview()">
                                 <img x-show="preview" :src="preview" class="h-20 w-20 rounded-full object-cover" alt="Photo preview" x-cloak>
                                 <svg x-show="!preview" class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                                 </svg>
                                 <input type="file" name="photo" accept="image/*" class="hidden" id="photo-upload"
-                                    @change="const file = $event.target.files[0]; if(file) { const reader = new FileReader(); reader.onload = e => preview = e.target.result; reader.readAsDataURL(file); }" @error('photo') aria-invalid="true" aria-describedby="photo-error" @enderror>
+                                    @change="pick($event)" @error('photo') aria-invalid="true" aria-describedby="photo-error" @enderror>
                             </div>
                             <div>
                                 <label for="photo-upload" class="cursor-pointer inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition">

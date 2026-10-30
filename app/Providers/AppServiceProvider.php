@@ -98,7 +98,11 @@ class AppServiceProvider extends ServiceProvider
         // script: @jsText($value). Never '{{ $value }}': the browser decodes
         // &#039; before Alpine runs the expression, so a quote breaks out (audit
         // MB-03/MB-04). Null and arrays become ''.
-        Blade::directive('jsText', fn (string $expression) => "<?php echo \\Illuminate\\Support\\Js::from(\\App\\Support\\JsText::of({$expression})); ?>");
+        Blade::directive('jsText', fn (string $expression) => "<?php echo \\App\\Support\\JsLiteral::from(\\App\\Support\\JsText::of({$expression})); ?>");
+        // @js (Laravel's own) writes arrays and strings as JSON.parse('...'),
+        // which the CSP build of Alpine can't call: write the literal itself
+        // (audit MB-29). Laravel's optional flags argument is not used.
+        Blade::directive('js', fn (string $expression) => "<?php echo \\App\\Support\\JsLiteral::from({$expression}); ?>");
 
         // Configure password strength defaults (NIST 800-63B compliant)
         Password::defaults(function () {

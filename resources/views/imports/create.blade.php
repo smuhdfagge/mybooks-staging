@@ -58,10 +58,10 @@
                             Upload File <span class="text-red-600 dark:text-red-300">*</span>
                         </label>
                         <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg hover:border-brand-500 dark:hover:border-brand-500 transition" 
-                             x-data="{ dragging: false, fileName: '' }"
+                             x-data="fileDrop()"
                              @dragover.prevent="dragging = true"
                              @dragleave.prevent="dragging = false"
-                             @drop.prevent="dragging = false; fileName = $event.dataTransfer.files[0]?.name || ''; $refs.fileInput.files = $event.dataTransfer.files"
+                             @drop.prevent="dropped($event)"
                              :class="{ 'border-brand-500 bg-brand-50 dark:bg-brand-900/20': dragging }">
                             <div class="space-y-1 text-center">
                                 <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
@@ -73,7 +73,7 @@
                                         <input id="file" name="file" type="file" class="sr-only" required
                                                accept="{{ collect(\App\Models\Import::acceptedExtensions())->map(fn ($e) => '.'.$e)->implode(',') }}"
                                                x-ref="fileInput"
-                                               @change="fileName = $event.target.files[0]?.name || ''">
+                                               @change="chosen($event)">
                                     </label>
                                     <p class="pl-1">or drag and drop</p>
                                 </div>
@@ -101,22 +101,18 @@
                         </ul>
                     </div>
 
-                    <!-- Download Template Link -->
-                    <div class="mb-6" x-data="{ selectedType: @jsText($type ?? '') }">
-                        <select name="type" id="type" x-model="selectedType" 
-                                @change="document.getElementById('type').value = selectedType"
-                                class="hidden">
-                        </select>
-                        <template x-if="selectedType">
-                            <a :href="@jsText(route('imports.template').'?type=') + encodeURIComponent(selectedType) + '&format=csv'" 
+                    <!-- Download Template Link (for the type the page was opened with) -->
+                    @if (! empty($type))
+                    <div class="mb-6">
+                            <a href="{{ route('imports.template', ['type' => $type, 'format' => 'csv']) }}"
                                class="inline-flex items-center text-sm text-brand-600 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-300">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
                                 Download sample template for selected type
                             </a>
-                        </template>
                     </div>
+                    @endif
 
                     <!-- Submit Button -->
                     <div class="flex justify-end gap-3">

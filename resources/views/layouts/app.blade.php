@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full" x-data="{ dark: document.documentElement.classList.contains('dark') }" x-init="$watch('dark', val => { localStorage.setItem('dark', val); document.documentElement.classList.toggle('dark', val) })">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full" x-data="theme('dark')">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -125,7 +125,7 @@
         }
     </style>
 </head>
-<body class="h-full font-sans antialiased bg-gray-50 dark:bg-gray-900" x-data="{ sidebarOpen: false, closeSidebar() { if (! this.sidebarOpen) return; this.sidebarOpen = false; this.$nextTick(() => this.$refs.menuButton?.focus()) } }"
+<body class="h-full font-sans antialiased bg-gray-50 dark:bg-gray-900" x-data="sidebar()"
       @keydown.escape.window="closeSidebar()">
     {{-- Skip to main content (accessibility) --}}
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-brand-600 focus:text-white focus:rounded-md focus:shadow-lg focus:outline-none">
