@@ -39,7 +39,7 @@
                                   x-data="{ bills: @js($openBills->mapWithKeys(fn ($b) => [$b->id => (float) $b->balance_due])), bill: '', amount: '' }">
                                 @csrf
                                 <div>
-                                    <x-field name="bill_id" label="Bill" type="select" x-model="bill" x-on:change="amount = Math.min(bills[bill] || 0, {{ (float) $advance->unused_amount }}).toFixed(2)" required>
+                                    <x-field name="bill_id" label="Bill" type="select" x-model="bill" x-on:change="amount = $math.min(bills[bill] || 0, {{ (float) $advance->unused_amount }}).toFixed(2)" required>
                                         <option value="">Choose a bill</option>
                                         @foreach($openBills as $bill)
                                             <option value="{{ $bill->id }}">{{ $bill->bill_number }} · owes {{ \App\Support\Money::format($bill->balance_due) }}</option>

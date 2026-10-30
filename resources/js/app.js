@@ -32,12 +32,6 @@ window.loadChart = () => import('chart.js/auto').then(({ default: Chart }) => {
 // built-in DOMContentLoaded auto-start). This avoids a double-start race condition
 // that causes "Cannot redefine property: $persist".
 registerCspHelpers(Alpine);
-// The admin layout starts its own copy (@livewireScripts): give it the same helpers.
-document.addEventListener('alpine:init', () => {
-    if (window.Alpine && window.Alpine !== Alpine) {
-        registerCspHelpers(window.Alpine);
-    }
-});
 
 if (window.livewireScriptConfig !== undefined) {
     Livewire.start();

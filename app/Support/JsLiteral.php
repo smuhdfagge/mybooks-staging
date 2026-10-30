@@ -3,7 +3,9 @@
 namespace App\Support;
 
 use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Contracts\Support\Jsonable;
+use InvalidArgumentException;
 use JsonSerializable;
 
 /**
@@ -19,10 +21,21 @@ use JsonSerializable;
  */
 class JsLiteral
 {
-    public static function from(mixed $data): string
+    public static function from(mixed $data, int $flags = 0): string
     {
-        // Through JSON first, so collections, models and JsonSerializable
-        // objects become what they would in Js::from().
+        if ($flags !== 0) {
+            // Laravel's @js($value, JSON_...) flags don't apply to this format.
+            throw new InvalidArgumentException('@js does not take JSON flags here: see App\\Support\\JsLiteral.');
+        }
+
+        // The same conversions as Js::from(), then through JSON, so
+        // collections, models and JsonSerializable objects come out alike.
+        if ($data instanceof Htmlable && ! $data instanceof Arrayable && ! $data instanceof Jsonable && ! $data instanceof JsonSerializable) {
+            $data = $data->toHtml();
+        }
+        if ($data instanceof Arrayable && ! $data instanceof Jsonable && ! $data instanceof JsonSerializable) {
+            $data = $data->toArray();
+        }
         if ($data instanceof Jsonable) {
             $data = json_decode($data->toJson(), false, 512, JSON_THROW_ON_ERROR);
         } elseif ($data instanceof Arrayable || $data instanceof JsonSerializable || is_object($data) || is_array($data)) {
@@ -55,17 +68,35 @@ class JsLiteral
         if (! is_finite($value)) {
             return 'null';
         }
-        $text = json_encode($value);
-        if (stripos((string) $text, 'e') !== false) {
-            $text = rtrim(rtrim(number_format($value, 20, '.', ''), '0'), '.');
+        $text = (string) json_encode($value);
+        if (! preg_match('/^(-?)(\d+)(?:\.(\d+))?e([+-]?\d+)$/i', $text, $m)) {
+            return $text;
         }
 
-        return (string) $text;
+        // 1.2345e-10 -> 0.00000000012345, exactly: move the point in the digits.
+        [, $sign, $whole, $fraction, $exponent] = $m + [3 => ''];
+        $digits = ltrim($whole.$fraction, '0');
+        $point = strlen(ltrim($whole, '0')) + (int) $exponent;
+        if ($digits === '') {
+            return '0';
+        }
+        $digits = rtrim($digits, '0');
+        if ($point <= 0) {
+            return $sign.'0.'.str_repeat('0', -$point).$digits;
+        }
+        if ($point >= strlen($digits)) {
+            return $sign.$digits.str_repeat('0', $point - strlen($digits));
+        }
+
+        return $sign.substr($digits, 0, $point).'.'.substr($digits, $point);
     }
 
     private static function string(string $value): string
     {
-        $value = mb_scrub($value, 'UTF-8');
+        if (! mb_check_encoding($value, 'UTF-8')) {
+            // U+FFFD for bad bytes, as json_encode and Js::from() give.
+            $value = (string) json_decode((string) json_encode($value, JSON_INVALID_UTF8_SUBSTITUTE));
+        }
         $out = "'";
         foreach (mb_str_split($value) as $char) {
             $code = mb_ord($char, 'UTF-8');

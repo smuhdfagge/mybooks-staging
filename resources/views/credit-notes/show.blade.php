@@ -120,7 +120,7 @@
                                         <form method="POST" action="{{ route('credit-notes.apply.store', $cn) }}" class="space-y-3"
                                               x-data="{ invoices: @js($invoices->mapWithKeys(fn ($i) => [$i->id => (float) $i->balance_due])), invoice: '', amount: '' }">
                                             @csrf
-                                            <x-field name="invoice_id" label="Invoice" type="select" x-model="invoice" x-on:change="amount = Math.min(invoices[invoice] || 0, {{ (float) $cn->balance }}).toFixed(2)" required>
+                                            <x-field name="invoice_id" label="Invoice" type="select" x-model="invoice" x-on:change="amount = $math.min(invoices[invoice] || 0, {{ (float) $cn->balance }}).toFixed(2)" required>
                                                 <option value="">Choose an invoice</option>
                                                 @foreach ($invoices as $openInvoice)
                                                     <option value="{{ $openInvoice->id }}">{{ $openInvoice->invoice_number }} · due {{ $openInvoice->due_date?->format('j M Y') }} · owes {{ \App\Support\Money::format($openInvoice->balance_due) }}</option>
