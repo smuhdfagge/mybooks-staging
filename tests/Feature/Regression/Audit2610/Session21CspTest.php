@@ -4,6 +4,7 @@ namespace Tests\Feature\Regression\Audit2610;
 
 use App\Support\JsLiteral;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\HtmlString;
 use Tests\TestCase;
 
 /**
@@ -36,6 +37,27 @@ class Session21CspTest extends TestCase
         $this->assertTrue(config('livewire.csp_safe'));
     }
 
+    public function test_the_admin_layout_runs_one_copy_of_alpine(): void
+    {
+        // @livewireScripts there started a second Alpine that had none of
+        // app.js's helpers or the page components: every admin page lost
+        // its theme and drawer state.
+        $layout = file_get_contents(resource_path('views/components/layouts/admin.blade.php'));
+        $this->assertStringContainsString('@livewireScriptConfig', $layout);
+        $this->assertStringNotContainsString('@livewireScripts', $layout);
+    }
+
+    public function test_the_public_csp_build_is_the_alpine_livewire_bundles(): void
+    {
+        // An older @alpinejs/csp read no \uXXXX escapes, so every & or quote
+        // @js wrote came out as text ("plan=starteru0026cycle=annual").
+        // Read from the built files: Composer's dist of Livewire has no package.json.
+        $version = fn (string $file) => preg_match('/version: "(\d+\.\d+\.\d+)"/', (string) file_get_contents(base_path($file)), $m) ? $m[1] : null;
+        $bundled = $version('vendor/livewire/livewire/dist/livewire.csp.esm.js');
+        $this->assertNotNull($bundled, "Livewire's CSP build no longer says its Alpine version");
+        $this->assertSame('^'.$bundled, json_decode(file_get_contents(base_path('package.json')), true)['devDependencies']['@alpinejs/csp']);
+    }
+
     public function test_js_writes_a_literal_the_csp_parser_reads_not_json_parse(): void
     {
         $html = Blade::render('<div x-data="{ items: @js($items), name: @jsText($name) }"></div>', [
@@ -62,5 +84,19 @@ class Session21CspTest extends TestCase
         $this->assertSame("{'3':'a','7':'b'}", JsLiteral::from([3 => 'a', 7 => 'b']));
         $this->assertSame("['a','b']", JsLiteral::from(['a', 'b']));
         $this->assertSame('{}', JsLiteral::from(new \stdClass));
+    }
+
+    public function test_the_literal_matches_js_from_on_the_awkward_values(): void
+    {
+        // Exponents written out exactly (the CSP parser reads none).
+        $this->assertSame('0.00000000012345678901234568', JsLiteral::from(1.2345678901234568e-10));
+        $this->assertSame('10000000000000000000000000', JsLiteral::from(1.0e25));
+        $this->assertSame('-0.00000025', JsLiteral::from(-2.5e-7));
+        // As Js::from(): Htmlable as its HTML, bad bytes as U+FFFD.
+        $this->assertSame("'\\u003cb\\u003ex\\u003c/b\\u003e'", JsLiteral::from(new HtmlString('<b>x</b>')));
+        $this->assertSame("'bad\u{FFFD}('", JsLiteral::from("bad\xC3\x28"));
+        // Laravel's JSON flags don't apply: say so rather than drop them.
+        $this->expectException(\InvalidArgumentException::class);
+        JsLiteral::from([1], JSON_FORCE_OBJECT);
     }
 }

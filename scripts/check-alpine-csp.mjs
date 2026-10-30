@@ -6,8 +6,10 @@
 // can read nothing global (Math, window, formatMoney...). See
 // resources/js/alpine-csp.js for the helpers to use instead.
 //
-// This runs each expression through that parser, taken from Livewire's own
-// CSP build so it is the same one the browser uses, and flags globals.
+// This runs each expression through the parsers the browser uses: the one
+// in Livewire's CSP build (the app and the admin panel) and the one in
+// @alpinejs/csp (the public pages), and flags globals. It also checks both
+// read the \uXXXX escapes @js / @jsText write (older @alpinejs/csp didn't).
 // Blade output ({{ }}, @js(...)) is replaced by a placeholder first.
 //
 //   node scripts/check-alpine-csp.mjs        (exit 1 and a list when any fail)
@@ -19,23 +21,41 @@ import vm from 'node:vm';
 const root = new URL('..', import.meta.url).pathname;
 const views = join(root, 'resources/views');
 
-// The tokenizer and parser, out of the CSP build.
-const dist = readFileSync(join(root, 'vendor/livewire/livewire/dist/livewire.csp.esm.js'), 'utf8');
-const from = dist.indexOf('var Token = class {');
-const to = dist.indexOf('var Evaluator = class {');
-if (from < 0 || to < 0) {
-    console.error('Could not find the CSP parser in livewire.csp.esm.js: has Livewire changed its build?');
-    process.exit(2);
+// The tokenizer and parser, out of each CSP build.
+function loadParser(file) {
+    const dist = readFileSync(join(root, file), 'utf8');
+    const from = dist.indexOf('var Token = class {');
+    const to = dist.indexOf('var Evaluator = class {');
+    if (from < 0 || to < 0) {
+        console.error(`Could not find the CSP parser in ${file}: has its build changed?`);
+        process.exit(2);
+    }
+    const sandbox = {};
+    vm.runInNewContext(dist.slice(from, to) + '\nthis.Tokenizer = Tokenizer; this.Parser = Parser;', sandbox);
+    return {
+        file,
+        parse: (expr) => new sandbox.Parser(new sandbox.Tokenizer(expr).tokenize()).parse(),
+        tokenize: (expr) => new sandbox.Tokenizer(expr).tokenize(),
+    };
 }
-const sandbox = {};
-vm.runInNewContext(dist.slice(from, to) + '\nthis.Tokenizer = Tokenizer; this.Parser = Parser;', sandbox);
-const parse = (expr) => new sandbox.Parser(new sandbox.Tokenizer(expr).tokenize()).parse();
+const parsers = [
+    loadParser('vendor/livewire/livewire/dist/livewire.csp.esm.js'),
+    loadParser('node_modules/@alpinejs/csp/dist/module.esm.js'),
+];
+for (const { file, tokenize } of parsers) {
+    const token = tokenize("'a\\u0026b\\u0027c'")[0];
+    if (!token || token.value !== "a&b'c") {
+        console.error(`${file} does not read \\uXXXX escapes in strings, which @js / @jsText write: update it (npm @alpinejs/csp to Livewire's Alpine version).`);
+        process.exit(1);
+    }
+}
+const parse = (expr) => { for (const p of parsers) p.parse(expr); };
 
 const GLOBALS = ['Math', 'Number', 'parseFloat', 'parseInt', 'window', 'document', 'JSON', 'Date', 'console', 'setTimeout',
     'setInterval', 'String', 'Object', 'Array', 'localStorage', 'sessionStorage', 'encodeURIComponent', 'formatMoney',
     'loadChart', 'Livewire', 'Alpine', 'alert', 'confirm', 'navigator', 'location', 'history', 'fetch', 'Intl', 'isNaN'];
 const globalRe = new RegExp(`(^|[^\\w.$'"])(${GLOBALS.join('|')})\\b`);
-const DIRECTIVE = /^(wire:(?!model|key|loading|target|ignore|navigate|transition|dirty|offline|stream|replace|cloak|confirm|current|sort|id)[\w.:-]+|x-(data|init|show|text|html|model[\w.-]*|bind:[\w.-]+|on:[\w.:-]+|if|for|effect|id)|@[\w.:-]+|:[\w.-]+)$/;
+const DIRECTIVE = /^(wire:(?!model|key|loading|target|ignore|navigate|transition|dirty|offline|stream|replace|cloak|confirm|current|sort|id)[\w.:-]+|x-(data|init|show|text|html|model[\w.-]*|modelable|bind:[\w.-]+|on:[\w.:-]+|if|for|effect|id|trap[\w.-]*|intersect[\w.:-]*|sort[\w.:-]*|anchor[\w.-]*|mask:dynamic)|@[\w.:-]+|:[\w.-]+)$/;
 
 // Blade output becomes a placeholder, keeping line breaks for line numbers.
 function stripBlade(source) {
@@ -82,9 +102,10 @@ for (const file of bladeFiles(views)) {
             const name = attr[1];
             let value = decode((attr[2] ?? attr[3]).trim());
             const where = `${relative(root, file)}:${line} ${name}`;
-            // A component's props are PHP, but strings handed on to Alpine
-            // (name="'items[' + i + ']'") must not be template literals.
-            if (component) {
+            // A component's :props are PHP, but strings handed on to Alpine
+            // (name="'items[' + i + ']'") must not be template literals; its
+            // x-* / @ / wire: attributes pass through to Alpine as they are.
+            if (component && (name.startsWith(':') || !DIRECTIVE.test(name))) {
                 if (value.includes('`')) problems.push(`${where}: template literal handed to a component`);
                 continue;
             }

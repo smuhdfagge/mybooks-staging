@@ -125,7 +125,8 @@
     <!-- PWA Install Prompt -->
     <x-pwa-install-prompt />
 
-    @livewireScripts(['nonce' => app('csp-nonce')])
+    {{-- One copy of Livewire and Alpine, the CSP build app.js starts (as layouts/app). --}}
+    @livewireScriptConfig(['nonce' => app('csp-nonce')])
     
     <!-- Service Worker Registration -->
     <script nonce="{{ app('csp-nonce') }}">
