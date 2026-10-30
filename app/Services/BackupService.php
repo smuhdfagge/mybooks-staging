@@ -107,8 +107,9 @@ class BackupService
 
     /**
      * Open a backup and check it holds the database (audit MB-33: the only
-     * check was a restore test by hand, once a quarter). The newest on the
-     * first backup disk unless $file is named.
+     * check was a restore test by hand, once a quarter). The newest on
+     * $disk (default: the first backup disk) unless $file is named; the
+     * command checks every disk.
      *
      * The archive has to open (with BACKUP_ARCHIVE_PASSWORD when set) and
      * hold a database.sql that isn't empty and has every one of
@@ -153,13 +154,21 @@ class BackupService
         try {
             $zipPath = $work.'/backup.zip';
             $in = $storage->readStream($file);
-            $out = fopen($zipPath, 'wb');
-            if (! is_resource($in) || $out === false) {
+            if (! is_resource($in)) {
                 throw new RuntimeException(basename($file).' could not be read from the "'.$disk.'" disk.');
             }
-            stream_copy_to_stream($in, $out);
-            fclose($out);
+            $out = fopen($zipPath, 'wb');
+            $copied = $out === false ? false : stream_copy_to_stream($in, $out);
+            if ($out !== false) {
+                fclose($out);
+            }
             fclose($in);
+            if ($copied === false) {
+                throw new RuntimeException(basename($file).' could not be copied here to check it (is there room in storage/app?).');
+            }
+            if ($copied === 0) {
+                throw new RuntimeException(basename($file).' is empty (0 bytes): it was cut off while being written or uploaded.');
+            }
 
             $dumpPath = $this->extractDump($zipPath, $work);
             $size = (int) filesize($dumpPath);
@@ -224,7 +233,7 @@ class BackupService
         if ($header === "SQLite format 3\0") {
             try {
                 $pdo = new PDO('sqlite:'.$path, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-                $statement = $pdo->query("SELECT name FROM sqlite_master WHERE type = 'table'");
+                $statement = $pdo->query("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'");
 
                 return $statement === false ? [] : array_values(array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN)));
             } catch (\PDOException $e) {
@@ -388,7 +397,7 @@ class BackupService
     }
 
     /** @return array<int, string> */
-    protected function disks(): array
+    public function disks(): array
     {
         $disks = array_values(array_filter(array_map('trim', (array) config('mybooks.backup.disks', ['backups']))));
         if ($disks === []) {

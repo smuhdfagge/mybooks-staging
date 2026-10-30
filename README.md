@@ -83,7 +83,7 @@ Take a database backup before every deploy (`php artisan mybooks:backup --only-d
 
 ### Updating the server
 
-`bash scripts/deploy.sh` backs up the database, pulls `main`, installs packages, migrates and refreshes the caches. If the backup fails it stops before changing anything. It writes the commit it started from and the backup it took to `storage/app/last-deploy-from`, which is what [docs/ROLLBACK.md](docs/ROLLBACK.md) goes back to. The front-end files (`public/build`) are uploaded separately as a zip, because the server has no Node.
+`bash scripts/deploy.sh` backs up the database, pulls `main`, installs packages, migrates and refreshes the caches. If the backup fails it stops before changing anything. When new code comes in, it writes the commit it started from and the backup it took to `storage/app/last-deploy-from` (and adds a line to `storage/app/deploy-history`), which is what [docs/ROLLBACK.md](docs/ROLLBACK.md) goes back to. Running it again after a failed step leaves that record alone. The front-end files (`public/build`) are uploaded separately as a zip, because the server has no Node.
 
 Build that zip on your own machine with `bash scripts/package-assets.sh`. It runs the build, records the commit it was built from, and writes `build-<commit>.zip`. Upload it and unzip it over the project folder (`unzip -o build-<commit>.zip`).
 
@@ -123,9 +123,9 @@ By default the only disk is `backups` (`storage/app/backups` on the same server)
 3. In `.env`: `BACKUP_DISKS=backups,offsite`, the `BACKUP_S3_*` settings (see `config/filesystems.php`), and `BACKUP_ARCHIVE_PASSWORD` to encrypt the zip (AES-256). Keep that password somewhere other than the server.
 4. Run `php artisan mybooks:backup` once and check the file arrives.
 
-**Weekly check:** `php artisan mybooks:backup:verify` runs every Monday at 03:15. It opens the newest backup (with `BACKUP_ARCHIVE_PASSWORD`) and checks that `database.sql` holds the core tables, and that the newest backup is less than two days old. If not, it emails `BACKUP_NOTIFY_EMAIL`. Run it by hand any time, or with `--file=<name>` for one backup.
+**Weekly check:** `php artisan mybooks:backup:verify` runs every Monday at 03:15. On every disk in `BACKUP_DISKS` it opens the newest backup (with `BACKUP_ARCHIVE_PASSWORD`) and checks that `database.sql` holds the core tables, and that the newest backup is less than two days old. If not, it emails `BACKUP_NOTIFY_EMAIL`. Run it by hand any time, with `--file=<name>` for one backup or `--disk=<disk>` for one disk. It copies the backup to `storage/app/backup-temp` and unpacks the dump there, so that needs room for both. The backups `deploy.sh` takes count as backups too, so on a server that is deployed every day the age check only notices a stopped nightly backup once deploys stop as well; the nightly backup emails on its own when it fails.
 
-**Restore test (still worth doing every quarter):** the weekly check doesn't load the dump anywhere. Download a backup, unzip it with the password (7-Zip or `unzip`), load `database.sql` into an empty database with `mysql new_db < database.sql`, and check the row counts look right. `files/` holds the uploads to copy back under `storage/app/`.
+**Restore test (still worth doing every quarter):** the weekly check doesn't load the dump anywhere. Download a backup, unzip it with the password (7-Zip; plain `unzip` cannot open AES-encrypted zips, see [docs/ROLLBACK.md](docs/ROLLBACK.md) step 4 for a PHP one-liner), load `database.sql` into an empty database with `mysql new_db < database.sql`, and check the row counts look right. `files/` holds the uploads to copy back under `storage/app/`.
 
 ## VAT
 

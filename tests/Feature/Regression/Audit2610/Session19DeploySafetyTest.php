@@ -65,7 +65,7 @@ class Session19DeploySafetyTest extends TestCase
     }
 
     /** Put a backup zip holding $dump as database.sql on the fake disk. */
-    private function backup(string $name, ?string $dump, ?string $password = null, int $hoursOld = 1): string
+    private function backup(string $name, ?string $dump, ?string $password = null, int $hoursOld = 1, string $disk = 'backups'): string
     {
         $zipPath = $this->work.'/'.$name;
         $zip = new ZipArchive;
@@ -82,8 +82,8 @@ class Session19DeploySafetyTest extends TestCase
         $zip->close();
 
         $file = BackupService::FOLDER.'/'.$name;
-        Storage::disk('backups')->put($file, (string) file_get_contents($zipPath));
-        touch(Storage::disk('backups')->path($file), now()->subHours($hoursOld)->getTimestamp());
+        Storage::disk($disk)->put($file, (string) file_get_contents($zipPath));
+        touch(Storage::disk($disk)->path($file), now()->subHours($hoursOld)->getTimestamp());
 
         return $file;
     }
@@ -119,7 +119,7 @@ class Session19DeploySafetyTest extends TestCase
 
     public function test_an_encrypted_backup_opens_with_the_password_and_not_without(): void
     {
-        $file = $this->backup('mybooks-2026-10-30-013000.zip', $this->mysqlDump(BackupService::CORE_TABLES), password: 'correct horse');
+        $this->backup('mybooks-2026-10-30-013000.zip', $this->mysqlDump(BackupService::CORE_TABLES), password: 'correct horse');
 
         config(['mybooks.backup.password' => 'correct horse']);
         $this->assertSame(count(BackupService::CORE_TABLES), app(BackupService::class)->verify()['tables']);
@@ -149,6 +149,9 @@ class Session19DeploySafetyTest extends TestCase
         Storage::disk('backups')->put(BackupService::FOLDER.'/broken.zip', 'not a zip at all');
         $this->failsWith('damaged or not a zip', 'broken.zip');
 
+        Storage::disk('backups')->put(BackupService::FOLDER.'/cut-off.zip', '');
+        $this->failsWith('is empty (0 bytes)', 'cut-off.zip');
+
         $this->failsWith('There is no backup called', 'nope.zip');
     }
 
@@ -177,6 +180,27 @@ class Session19DeploySafetyTest extends TestCase
             ->expectsOutputToContain('Backup mybooks-2026-10-30-013000.zip on "backups" is good');
     }
 
+    public function test_the_command_checks_every_disk_and_names_the_one_that_failed(): void
+    {
+        config(['mybooks.backup.disks' => ['backups', 'offsite']]);
+        Storage::fake('offsite');
+        $this->backup('mybooks-2026-10-30-013000.zip', $this->mysqlDump(BackupService::CORE_TABLES));
+        $this->backup('mybooks-2026-10-27-013000.zip', $this->mysqlDump(BackupService::CORE_TABLES), hoursOld: 72, disk: 'offsite');
+        Mail::shouldReceive('raw')->once()->withArgs(fn (string $body) => str_contains($body, '"offsite" disk: mybooks-2026-10-27-013000.zip is the newest backup'));
+
+        $this->artisan('mybooks:backup:verify')->assertFailed()
+            ->expectsOutputToContain('Backup mybooks-2026-10-30-013000.zip on "backups" is good')
+            ->expectsOutputToContain('"offsite" disk: mybooks-2026-10-27-013000.zip is the newest backup and it is 72 hours old');
+    }
+
+    public function test_a_disk_that_is_not_configured_is_reported_not_a_crash(): void
+    {
+        Mail::shouldReceive('raw')->once()->withArgs(fn (string $body) => str_contains($body, '"nosuch" disk:'));
+
+        $this->artisan('mybooks:backup:verify', ['--disk' => 'nosuch'])->assertFailed()
+            ->expectsOutputToContain('Backup check failed: "nosuch" disk:');
+    }
+
     public function test_the_check_runs_weekly(): void
     {
         $event = collect(app(Schedule::class)->events())->first(fn ($e) => str_contains((string) $e->command, 'mybooks:backup:verify'));
@@ -191,7 +215,7 @@ class Session19DeploySafetyTest extends TestCase
      *
      * @return array{0: Process, 1: list<string>, 2: string}
      */
-    private function deploy(bool $backupFails): array
+    private function deploy(bool $backupFails, int $runs = 1): array
     {
         $root = $this->work.'/deploy';
         $origin = $root.'/origin.git';
@@ -205,7 +229,12 @@ class Session19DeploySafetyTest extends TestCase
             .'if [ "$2" = "mybooks:backup" ]; then '.($backupFails ? 'echo "Backup failed: disk full"; exit 1' : 'echo "Backup mybooks-2026-10-30-091500.zip (0.1 MB) written to: backups. Old backups removed: 0."').'; fi'."\n");
         chmod($fakePhp, 0755);
 
-        $sh = fn (string $cmd, string $cwd) => Process::fromShellCommandline($cmd, $cwd)->mustRun();
+        // Git must not see the caller's repository or settings: run from a
+        // git hook, GIT_DIR would point it at the real one (false unsets a
+        // variable), and a global commit.gpgsign would stop the commits.
+        $env = ['GIT_DIR' => false, 'GIT_WORK_TREE' => false, 'GIT_INDEX_FILE' => false,
+            'GIT_CONFIG_GLOBAL' => '/dev/null', 'GIT_CONFIG_NOSYSTEM' => '1', 'GIT_TERMINAL_PROMPT' => '0'];
+        $sh = fn (string $cmd, string $cwd) => Process::fromShellCommandline($cmd, $cwd, $env)->mustRun();
         $sh('git init -q --bare -b main '.escapeshellarg($origin), $root);
         $sh('git init -q -b main && git config user.email t@example.com && git config user.name t && git add . && git commit -qm first'
             .' && git remote add origin '.escapeshellarg($origin).' && git push -q origin main', $app);
@@ -214,8 +243,10 @@ class Session19DeploySafetyTest extends TestCase
         $sh('git clone -q '.escapeshellarg($origin).' next && cd next && git config user.email t@example.com && git config user.name t'
             .' && echo v2 > VERSION && git add . && git commit -qm second && git push -q origin main', $root);
 
-        $process = new Process(['bash', 'scripts/deploy.sh'], $app, ['PHP' => $fakePhp, 'COMPOSER_BIN' => '/bin/true', 'GIT_TERMINAL_PROMPT' => '0']);
-        $process->run();
+        for ($run = 1; $run <= $runs; $run++) {
+            $process = new Process(['bash', 'scripts/deploy.sh'], $app, ['PHP' => $fakePhp, 'COMPOSER_BIN' => '/bin/true'] + $env);
+            $process->run();
+        }
 
         return [$process, is_file($log) ? file($log, FILE_IGNORE_NEW_LINES) : [], $before];
     }
@@ -236,6 +267,17 @@ class Session19DeploySafetyTest extends TestCase
         $this->assertStringContainsString("backup=mybooks-2026-10-30-091500.zip\n", $record);
         $this->assertFileExists($this->work.'/deploy/app/VERSION', 'the new code came in');
         $this->assertStringContainsString('To undo: docs/ROLLBACK.md', $process->getOutput());
+    }
+
+    public function test_running_it_again_with_nothing_new_keeps_the_record_of_the_last_deploy(): void
+    {
+        [$process, $calls, $before] = $this->deploy(backupFails: false, runs: 2);
+
+        $this->assertTrue($process->isSuccessful(), $process->getErrorOutput().$process->getOutput());
+        $this->assertCount(2, array_keys($calls, 'artisan mybooks:backup --only-db --no-cleanup', true), 'it still backs up each time');
+        $this->assertStringContainsString("commit={$before}\n", (string) file_get_contents($this->work.'/deploy/app/storage/app/last-deploy-from'));
+        $this->assertCount(1, file($this->work.'/deploy/app/storage/app/deploy-history'));
+        $this->assertStringContainsString('No new code this time. The last deploy came from '.substr($before, 0, 7), $process->getOutput());
     }
 
     public function test_deploy_stops_before_changing_anything_when_the_backup_fails(): void
