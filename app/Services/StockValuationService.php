@@ -147,16 +147,14 @@ class StockValuationService
 
         $cost = 0.0;
         foreach ($pieces as [$layer, $taken, $unitCost]) {
-            if ($layer) {
-                $layer->remaining_quantity = round((float) $layer->remaining_quantity - $taken, 4);
-                $layer->save();
-            }
+            $layer->remaining_quantity = round((float) $layer->remaining_quantity - $taken, 4);
+            $layer->save();
 
             InventoryLayerConsumption::create([
                 'tenant_id' => $item->tenant_id,
                 'item_id' => $item->id,
                 'warehouse_id' => $warehouseId,
-                'inventory_layer_id' => $layer?->id,
+                'inventory_layer_id' => $layer->id,
                 'source_type' => $sourceType,
                 'source_id' => $sourceId,
                 'quantity' => round($taken, 4),
