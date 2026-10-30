@@ -6,6 +6,6 @@
 @endphp
 <th scope="col" class="tbl-check">
     <input type="checkbox" class="tbl-checkbox" aria-label="{{ $label }}" @checked($all)
-        x-init="$el.indeterminate = {{ $some && ! $all ? 'true' : 'false' }}"
+        x-init="$indeterminate({{ $some && ! $all ? 'true' : 'false' }})"
         wire:click="selectPage({{ json_encode(array_values($ids)) }}, $event.target.checked)">
 </th>

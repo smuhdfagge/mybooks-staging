@@ -1,6 +1,10 @@
 import './bootstrap';
 
-import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.esm';
+// The CSP build: Alpine expressions are evaluated without eval, so the page
+// needs no 'unsafe-eval' (audit MB-29). See alpine-csp.js for what an
+// expression may contain.
+import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.csp.esm';
+import { registerCspHelpers } from './alpine-csp';
 
 // Show money the same way as @money() in Blade (U8): the business's currency
 // symbol (from <meta name="currency-symbol">), thousands separators and 2
@@ -27,6 +31,14 @@ window.loadChart = () => import('chart.js/auto').then(({ default: Chart }) => {
 // Only start manually when @livewireScriptConfig was rendered (which prevents the
 // built-in DOMContentLoaded auto-start). This avoids a double-start race condition
 // that causes "Cannot redefine property: $persist".
+registerCspHelpers(Alpine);
+// The admin layout starts its own copy (@livewireScripts): give it the same helpers.
+document.addEventListener('alpine:init', () => {
+    if (window.Alpine && window.Alpine !== Alpine) {
+        registerCspHelpers(window.Alpine);
+    }
+});
+
 if (window.livewireScriptConfig !== undefined) {
     Livewire.start();
 }

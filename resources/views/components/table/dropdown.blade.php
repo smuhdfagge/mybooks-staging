@@ -7,21 +7,7 @@
         <x-table.menu-item href="…">View</x-table.menu-item> …
 --}}
 @props(['label' => null, 'srLabel' => 'Actions', 'align' => 'right', 'width' => 'w-52'])
-<div class="inline-block text-left" x-data="{
-        open: false, top: 0, left: 0,
-        toggle() {
-            if (this.open) { this.open = false; return; }
-            const r = this.$refs.btn.getBoundingClientRect();
-            this.open = true;
-            this.$nextTick(() => {
-                const m = this.$refs.menu.getBoundingClientRect();
-                this.left = Math.max(8, Math.min(window.innerWidth - m.width - 8, {{ $align === 'right' ? 'r.right - m.width' : 'r.left' }}));
-                this.top = (r.bottom + 4 + m.height > window.innerHeight && r.top - m.height - 4 > 0) ? r.top - m.height - 4 : r.bottom + 4;
-                const first = this.$refs.menu.querySelector('a,button');
-                if (first) first.focus();
-            });
-        }
-    }" x-on:keydown.escape.window="open = false" x-on:scroll.window="open = false" x-on:resize.window="open = false">
+<div class="inline-block text-left" x-data="rowMenu(@js($align))" x-on:keydown.escape.window="open = false" x-on:scroll.window="open = false" x-on:resize.window="open = false">
     @if ($label)
         <button type="button" x-ref="btn" x-on:click="toggle()" :aria-expanded="open.toString()" aria-haspopup="menu"
             class="inline-flex h-9 items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
@@ -36,8 +22,8 @@
             <span class="sr-only">{{ $srLabel }}</span>
         </button>
     @endif
-    <div x-ref="menu" x-show="open" x-on:click.outside="open = false" x-on:click="if ($event.target.closest('a,button')) open = false" style="display: none"
-        :style="`position: fixed; top: ${top}px; left: ${left}px`" role="menu"
+    <div x-ref="menu" x-show="open" x-on:click.outside="open = false" x-on:click="$event.target.closest('a,button') && (open = false)" style="display: none"
+        :style="'position: fixed; top: ' + top + 'px; left: ' + left + 'px'" role="menu"
         class="z-50 {{ $width }} rounded-lg border border-gray-200 bg-white p-1 text-left shadow-lg dark:border-gray-700 dark:bg-gray-800">
         {{ $slot }}
     </div>

@@ -20,8 +20,8 @@
             @if($error) aria-invalid="true" aria-describedby="{{ $name }}-error" @endif
             x-model="search" @focus="open = true" @click="open = true" @input="open = true"
             @keydown.escape="open = false"
-            @keydown.arrow-down.prevent="highlightedIndex = Math.min(highlightedIndex + 1, items.length - 1)"
-            @keydown.arrow-up.prevent="highlightedIndex = Math.max(highlightedIndex - 1, 0)"
+            @keydown.arrow-down.prevent="highlightedIndex = $math.min(highlightedIndex + 1, items.length - 1)"
+            @keydown.arrow-up.prevent="highlightedIndex = $math.max(highlightedIndex - 1, 0)"
             @keydown.enter.prevent="items[highlightedIndex] && selectItem(items[highlightedIndex])"
             placeholder="Search customers..."
             class="form-control {{ $error ? 'border-red-500' : '' }}">
@@ -88,6 +88,9 @@
                 },
             };
         }
+
+        // Registered for the CSP build of Alpine (audit MB-29), which can't call page globals.
+        document.addEventListener('alpine:init', () => Alpine.data('customerPicker', customerPicker));
     </script>
     @endpush
 @endonce

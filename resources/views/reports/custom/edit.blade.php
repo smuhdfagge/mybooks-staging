@@ -62,7 +62,7 @@
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Select Columns *</h3>
                     <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Choose which columns to include in your report.</p>
                     
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3" x-show="Object.keys(availableColumns).length > 0">
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3" x-show="hasColumns">
                         <template x-for="(config, column) in availableColumns" :key="column">
                             <label class="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-colors">
                                 <input type="checkbox" :name="'columns[]'" :value="column"
@@ -73,7 +73,7 @@
                         </template>
                     </div>
                     
-                    <div x-show="Object.keys(availableColumns).length === 0" class="text-center py-4 text-gray-500 dark:text-gray-400">
+                    <div x-show="!hasColumns" class="text-center py-4 text-gray-500 dark:text-gray-400">
                         <p>Loading columns...</p>
                     </div>
 
@@ -94,7 +94,7 @@
                             class="block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                             <option value="">No date filter</option>
                             <template x-for="field in dateFields" :key="field">
-                                <option :value="field" x-text="availableColumns[field]?.label || field"></option>
+                                <option :value="field" x-text="(availableColumns[field] && availableColumns[field].label) || field"></option>
                             </template>
                         </select>
                     </div>
@@ -166,7 +166,7 @@
                             class="block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">
                             <option value="">No grouping</option>
                             <template x-for="field in groupFields" :key="field">
-                                <option :value="field" x-text="availableColumns[field]?.label || field"></option>
+                                <option :value="field" x-text="(availableColumns[field] && availableColumns[field].label) || field"></option>
                             </template>
                         </select>
                     </div>
@@ -249,7 +249,7 @@
                                     class="rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm">
                                     <option value="">Select column</option>
                                     <template x-for="column in selectedColumns" :key="column">
-                                        <option :value="column" x-text="availableColumns[column]?.label || column"></option>
+                                        <option :value="column" x-text="(availableColumns[column] && availableColumns[column].label) || column"></option>
                                     </template>
                                 </select>
                                 
@@ -293,6 +293,7 @@
     <script nonce="{{ app('csp-nonce') }}">
         function reportBuilder(existingReport) {
             return {
+                get hasColumns() { return Object.keys(this.availableColumns).length > 0; },
                 dataSource: existingReport.data_source || '',
                 availableColumns: {},
                 selectedColumns: existingReport.columns || [],
@@ -373,6 +374,9 @@
                 }
             };
         }
+
+        // Registered for the CSP build of Alpine (audit MB-29), which can't call page globals.
+        document.addEventListener('alpine:init', () => Alpine.data('reportBuilder', reportBuilder));
     </script>
     @endpush
 </x-app-layout>

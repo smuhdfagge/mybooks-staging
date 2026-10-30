@@ -68,6 +68,12 @@ jobs:
       if: matrix.php == '8.4'
       run: for f in scripts/*.sh; do bash -n "$f"; done
 
+    # The pages send no 'unsafe-eval' (audit MB-29): every Alpine / Livewire
+    # expression in the views must parse with the CSP build's own parser.
+    - name: Check Alpine expressions run under the CSP build
+      if: matrix.php == '8.4'
+      run: node scripts/check-alpine-csp.mjs
+
     - name: Prepare environment
       run: |
         cp .env.example .env

@@ -32,8 +32,7 @@
                         <div x-data="searchableSelect({
                             items: @js($customers->map(fn ($customer) => ['id' => (string) $customer->id, 'name' => (string) $customer->name])->values()),
                             selectedId: @jsText(old('customer_id', $invoice?->customer_id)),
-                            onSelect: (id) => { selectedCustomer = id; filterInvoices(); filterDeposits(); }
-                        })" class="relative">
+                        })" @picked="customerChosen($event.detail)" class="relative">
                             <label for="customer_search" class="form-label">Customer <span class="text-red-600 dark:text-red-300">*</span></label>
                             <input type="hidden" name="customer_id" :value="selectedId" required @error('customer_id') aria-invalid="true" aria-describedby="customer_id-error" @enderror>
                             <div class="relative">
@@ -93,7 +92,7 @@
                                 class="form-control">
                                 <option value="">No specific invoice</option>
                                 <template x-for="inv in filteredInvoices" :key="inv.id">
-                                    <option :value="inv.id" x-text="inv.invoice_number + ' - ' + formatMoney(inv.balance_due) + ' due'"></option>
+                                    <option :value="inv.id" x-text="inv.invoice_number + ' - ' + $money(inv.balance_due) + ' due'"></option>
                                 </template>
                             </select>
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" x-show="!selectedCustomer">Select a customer to see their unpaid invoices</p>
@@ -140,8 +139,8 @@
                                         class="form-control @error('wht_amount') border-red-500 @enderror">
                                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">As shown on the customer's payment advice. Recorded as a WHT credit note receivable.</p>
                                     <p class="mt-1 text-xs text-gray-700 dark:text-gray-300" x-show="whtAmount > 0">
-                                        Received <span x-text="formatMoney(parseFloat(amount) || 0)"></span> + WHT <span x-text="formatMoney(parseFloat(whtAmount) || 0)"></span>
-                                        = settles <span class="font-semibold" x-text="formatMoney((parseFloat(amount) || 0) + (parseFloat(whtAmount) || 0))"></span>.
+                                        Received <span x-text="$money($float(amount) || 0)"></span> + WHT <span x-text="$money($float(whtAmount) || 0)"></span>
+                                        = settles <span class="font-semibold" x-text="$money(($float(amount) || 0) + ($float(whtAmount) || 0))"></span>.
                                     </p>
                                     @error('wht_amount')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -212,7 +211,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                     </svg>
                                     <span class="text-sm font-medium text-green-800 dark:text-green-300">
-                                        Customer has available deposit: <span class="font-bold" x-text="formatMoney(totalAvailableDeposit)"></span>
+                                        Customer has available deposit: <span class="font-bold" x-text="$money(totalAvailableDeposit)"></span>
                                     </span>
                                 </div>
                                 <div class="flex items-center">
@@ -229,7 +228,7 @@
                                             class="form-control">
                                             <option value="">Select a deposit to apply</option>
                                             <template x-for="dep in availableDeposits" :key="dep.id">
-                                                <option :value="dep.id" x-text="dep.payment_number + ' - ' + formatMoney(dep.unused_amount) + ' available'"></option>
+                                                <option :value="dep.id" x-text="dep.payment_number + ' - ' + $money(dep.unused_amount) + ' available'"></option>
                                             </template>
                                         </select>
                                     </div>
@@ -239,7 +238,7 @@
                                             :max="maxDepositAmount" x-model="depositAmountToApply"
                                             class="form-control">
                                         <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" x-show="selectedDepositId">
-                                            Maximum: <span x-text="formatMoney(maxDepositAmount)"></span>
+                                            Maximum: <span x-text="$money(maxDepositAmount)"></span>
                                         </p>
                                     </div>
                                 </div>
@@ -280,7 +279,6 @@
                 search: '',
                 open: false,
                 highlightedIndex: 0,
-                onSelect: config.onSelect || null,
 
                 init() {
                     if (this.selectedId) {
@@ -302,7 +300,9 @@
                     this.selectedId = item.id;
                     this.search = item.name;
                     this.open = false;
-                    if (this.onSelect) this.onSelect(item.id);
+                    // The payment form listens (@picked): an arrow function in the
+                    // attribute can't run under the CSP build (audit MB-29).
+                    this.$dispatch('picked', item.id);
                 },
 
                 highlightNext() {
@@ -327,6 +327,11 @@
 
         function paymentForm() {
             return {
+                customerChosen(id) {
+                    this.selectedCustomer = id;
+                    this.filterInvoices();
+                    this.filterDeposits();
+                },
                 selectedCustomer: @jsText(old('customer_id', $invoice?->customer_id ?? '')),
                 selectedInvoice: @jsText(old('invoice_id', $invoice?->id ?? '')),
                 allInvoices: @json($unpaidInvoices),
@@ -434,6 +439,10 @@
                 }
             }
         }
+
+        // Registered for the CSP build of Alpine (audit MB-29), which can't call page globals.
+        document.addEventListener('alpine:init', () => Alpine.data('searchableSelect', searchableSelect));
+        document.addEventListener('alpine:init', () => Alpine.data('paymentForm', paymentForm));
     </script>
     @endpush
 </x-app-layout>

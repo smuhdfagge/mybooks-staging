@@ -139,8 +139,8 @@
                     <span class="flex-1"></span>
                     <p class="text-sm text-gray-700 dark:text-gray-300" aria-live="polite">
                         <span x-text="selectedCount"></span> ticked ·
-                        in <span class="font-medium tabular-nums" x-text="formatMoney(selectedDeposits, '')"></span> ·
-                        out <span class="font-medium tabular-nums" x-text="formatMoney(selectedWithdrawals, '')"></span>
+                        in <span class="font-medium tabular-nums" x-text="$money(selectedDeposits, '')"></span> ·
+                        out <span class="font-medium tabular-nums" x-text="$money(selectedWithdrawals, '')"></span>
                     </p>
                     <button type="submit" class="btn-new" x-bind:disabled="selectedCount === 0" x-bind:class="selectedCount === 0 && 'opacity-50'">Reconcile ticked lines</button>
                 </div>
@@ -224,6 +224,9 @@
                 }
             };
         }
+
+        // Registered for the CSP build of Alpine (audit MB-29), which can't call page globals.
+        document.addEventListener('alpine:init', () => Alpine.data('reconciliationForm', reconciliationForm));
     </script>
     @endpush
 </x-app-layout>
