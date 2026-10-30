@@ -71,7 +71,7 @@
 
                         @include('journals.partials.control-account-warning')
 
-                        <x-table caption="Journal lines" id="entriesTable">
+                        <x-table caption="Journal lines" id="entriesTable" body-id="entriesBody">
 <x-slot name="head">
                                         <x-table.th class="w-1/3">Account</x-table.th>
                                         <x-table.th>Description</x-table.th>
