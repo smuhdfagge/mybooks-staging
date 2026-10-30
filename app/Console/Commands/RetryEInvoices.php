@@ -8,6 +8,7 @@ use App\Jobs\SubmitEInvoice;
 use App\Models\EInvoiceSetting;
 use App\Models\EInvoiceSubmission;
 use App\Models\Invoice;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\EInvoiceNotReportedNotification;
 use App\Services\EInvoicing\EInvoiceDrivers;
@@ -33,6 +34,13 @@ class RetryEInvoices extends Command
     protected $description = 'Retry failed NRS e-invoice submissions and warn about unreported B2C invoices';
 
     public function handle(SubmitInvoiceToNrs $submit, EInvoiceDrivers $drivers, PayloadBuilder $payloads): int
+    {
+        // Every business, on purpose (audit MB-26: tenant-scoped queries need
+        // an explicit context; see Tenant::acrossAll()).
+        return Tenant::acrossAll(fn () => $this->runForEveryBusiness($submit, $drivers, $payloads));
+    }
+
+    private function runForEveryBusiness(SubmitInvoiceToNrs $submit, EInvoiceDrivers $drivers, PayloadBuilder $payloads): int
     {
         if (! config('mybooks.features.e_invoicing')) {
             return self::SUCCESS;

@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\PayrollBatch;
+use App\Models\Tenant;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -38,7 +39,7 @@ class ProcessPayrollBatch implements ShouldQueue
             return; // already handled, or cancelled meanwhile
         }
 
-        DB::transaction(function () use ($batch) {
+        Tenant::run($batch->tenant_id, fn () => DB::transaction(function () use ($batch) {
             $batch->payrolls()
                 ->where('status', 'approved')
                 ->each(fn ($payroll) => $payroll->markAsPaid($batch->bank_id));
@@ -49,7 +50,7 @@ class ProcessPayrollBatch implements ShouldQueue
                 'failure_reason' => null,
             ]);
             $batch->recalculateTotals();
-        });
+        }));
     }
 
     public function failed(?Throwable $e): void

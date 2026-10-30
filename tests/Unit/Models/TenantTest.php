@@ -30,7 +30,7 @@ class TenantTest extends TestCase
     public function test_tenant_has_active_subscription_returns_false_when_no_subscription(): void
     {
         $tenant = Tenant::factory()->create();
-        $this->assertFalse($tenant->hasActiveSubscription());
+        $this->assertFalse(Tenant::run($tenant, fn () => $tenant->hasActiveSubscription()));
     }
 
     public function test_tenant_has_active_subscription_returns_false_when_cancelled(): void
@@ -60,7 +60,7 @@ class TenantTest extends TestCase
     public function test_tenant_cannot_add_users_without_subscription(): void
     {
         $tenant = Tenant::factory()->create();
-        $this->assertFalse($tenant->canAddUsers());
+        $this->assertFalse(Tenant::run($tenant, fn () => $tenant->canAddUsers()));
     }
 
     public function test_tenant_remaining_user_slots(): void
@@ -74,7 +74,7 @@ class TenantTest extends TestCase
     public function test_tenant_remaining_slots_zero_without_subscription(): void
     {
         $tenant = Tenant::factory()->create();
-        $this->assertEquals(0, $tenant->remainingUserSlots());
+        $this->assertEquals(0, Tenant::run($tenant, fn () => $tenant->remainingUserSlots()));
     }
 
     public function test_subscription_status_attribute_active(): void
@@ -86,7 +86,7 @@ class TenantTest extends TestCase
     public function test_subscription_status_attribute_no_subscription(): void
     {
         $tenant = Tenant::factory()->create();
-        $this->assertEquals('No Subscription', $tenant->subscription_status);
+        $this->assertEquals('No Subscription', Tenant::run($tenant, fn () => $tenant->subscription_status));
     }
 
     public function test_currency_symbol_attribute(): void
@@ -101,7 +101,7 @@ class TenantTest extends TestCase
     public function test_tenant_creates_default_chart_of_accounts(): void
     {
         $tenant = Tenant::factory()->create();
-        $this->assertGreaterThan(0, $tenant->accounts()->count());
+        $this->assertGreaterThan(0, Tenant::run($tenant, fn () => $tenant->accounts()->count()));
     }
 
     public function test_tenant_soft_deletes(): void

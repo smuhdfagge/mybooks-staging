@@ -46,7 +46,7 @@ class ReclassifyBillLines extends Command
 
         $grand = 0;
         foreach ($tenants as $tenant) {
-            $grand += $this->tenant($tenant, $journals);
+            $grand += Tenant::run($tenant, fn () => $this->tenant($tenant, $journals));
         }
 
         $this->newLine();

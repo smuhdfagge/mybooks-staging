@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Bill;
+use App\Models\Tenant;
 use Illuminate\Console\Command;
 
 /**
@@ -17,6 +18,13 @@ class ReceivePendingBillStock extends Command
     protected $description = 'Receive stock for posted bills whose stock was waiting for payment';
 
     public function handle(): int
+    {
+        // Every business, on purpose (audit MB-26: tenant-scoped queries need
+        // an explicit context; see Tenant::acrossAll()).
+        return Tenant::acrossAll(fn () => $this->runForEveryBusiness());
+    }
+
+    private function runForEveryBusiness(): int
     {
         $bills = Bill::withoutGlobalScopes()
             ->whereNull('inventory_updated_at')

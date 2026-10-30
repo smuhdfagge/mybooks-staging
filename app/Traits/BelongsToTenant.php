@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use App\Models\Tenant;
+use App\Support\TenantContext;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -21,8 +22,9 @@ trait BelongsToTenant
                 return;
             }
 
-            if (auth()->check() && auth()->user()->tenant_id) {
-                $model->tenant_id = auth()->user()->tenant_id;
+            $tenantId = TenantContext::id();
+            if ($tenantId !== null) {
+                $model->tenant_id = $tenantId;
             }
 
             // Ensure tenant_id is present before persisting
@@ -43,13 +45,14 @@ trait BelongsToTenant
             }
         });
 
-        // Qualify column with table name to avoid ambiguity in joins
+        // Fails closed (audit MB-26): with no tenant to scope to, and no
+        // explicit Tenant::acrossAll(), the query throws rather than reading
+        // every business's rows. See TenantContext. The column is qualified
+        // with the table name to avoid ambiguity in joins.
         static::addGlobalScope('tenant', function (Builder $builder) {
-            if (auth()->check() && auth()->user()?->tenant_id) {
-                $builder->where(
-                    $builder->getModel()->getTable().'.tenant_id',
-                    auth()->user()->tenant_id
-                );
+            $tenantId = TenantContext::require(class_basename($builder->getModel()));
+            if ($tenantId !== null) {
+                $builder->where($builder->getModel()->getTable().'.tenant_id', $tenantId);
             }
         });
     }

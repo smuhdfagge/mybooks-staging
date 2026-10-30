@@ -32,6 +32,7 @@ use App\Services\ActivityLogService;
 use App\Services\BankFeeds\LineActions;
 use App\Services\Dashboard\DashboardCache;
 use App\Services\JournalService;
+use App\Support\TenantContext;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
@@ -40,6 +41,10 @@ use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Queue\Events\JobExceptionOccurred;
+use Illuminate\Queue\Events\JobProcessed;
+use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Queue\Queue as QueueBase;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -178,6 +183,17 @@ class AppServiceProvider extends ServiceProvider
         Gate::before(function ($user, $ability) {
             return $user->isSuperAdmin() ? true : null;
         });
+
+        // A queued job, mail or notification runs in the tenant context it
+        // was queued in (audit MB-26), not with every business visible. A
+        // job queued before this was added has no context in its payload
+        // and runs across all businesses, as every job used to.
+        QueueBase::createPayloadUsing(fn () => ['tenant_context' => TenantContext::current()]);
+        Event::listen(JobProcessing::class, function (JobProcessing $event) {
+            $payload = $event->job->payload();
+            TenantContext::enter(array_key_exists('tenant_context', $payload) ? $payload['tenant_context'] : TenantContext::ALL);
+        });
+        Event::listen([JobProcessed::class, JobExceptionOccurred::class], fn () => TenantContext::leave());
 
         // Log authentication events (only for regular users, not admin users)
         Event::listen(Login::class, function (Login $event) {

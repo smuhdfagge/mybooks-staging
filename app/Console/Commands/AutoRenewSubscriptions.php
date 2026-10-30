@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Tenant;
 use App\Services\Billing\AutoRenewal;
 use Illuminate\Console\Command;
 
@@ -17,6 +18,13 @@ class AutoRenewSubscriptions extends Command
     protected $description = 'Renew subscriptions with the saved card, retry failed charges and warn about expiring cards';
 
     public function handle(AutoRenewal $renewal): int
+    {
+        // Every business, on purpose (audit MB-26: tenant-scoped queries need
+        // an explicit context; see Tenant::acrossAll()).
+        return Tenant::acrossAll(fn () => $this->runForEveryBusiness($renewal));
+    }
+
+    private function runForEveryBusiness(AutoRenewal $renewal): int
     {
         if (! $renewal->enabled()) {
             $this->info('Auto-renewal is switched off (mybooks.features.auto_renewal).');

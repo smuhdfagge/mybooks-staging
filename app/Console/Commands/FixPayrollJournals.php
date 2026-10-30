@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Journal;
 use App\Models\Payroll;
+use App\Models\Tenant;
 use App\Services\JournalService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -41,7 +42,7 @@ class FixPayrollJournals extends Command
 
         foreach ($paidPayrolls as $payroll) {
             try {
-                DB::transaction(function () use ($payroll, $journalService, &$fixed, &$created, $tenantId) {
+                Tenant::run($tenantId, fn () => DB::transaction(function () use ($payroll, $journalService, &$fixed, &$created, $tenantId) {
                     $existingJournal = Journal::withoutGlobalScopes()
                         ->where('reference_type', Payroll::class)
                         ->where('reference_id', $payroll->id)
@@ -55,7 +56,7 @@ class FixPayrollJournals extends Command
                     }
 
                     $journalService->createPayrollJournal($payroll);
-                });
+                }));
             } catch (\Exception $e) {
                 $errors++;
                 $this->newLine();

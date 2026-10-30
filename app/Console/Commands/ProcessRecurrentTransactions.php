@@ -10,6 +10,7 @@ use App\Models\Invoice;
 use App\Models\RecurrentBill;
 use App\Models\RecurrentExpense;
 use App\Models\RecurrentInvoice;
+use App\Models\Tenant;
 use App\Services\JournalService;
 use Carbon\CarbonInterface;
 use Illuminate\Console\Command;
@@ -31,6 +32,13 @@ class ProcessRecurrentTransactions extends Command
     protected int $errors = 0;
 
     public function handle(): int
+    {
+        // Every business, on purpose (audit MB-26: tenant-scoped queries need
+        // an explicit context; see Tenant::acrossAll()).
+        return Tenant::acrossAll(fn () => $this->runForEveryBusiness());
+    }
+
+    private function runForEveryBusiness(): int
     {
         $dryRun = $this->option('dry-run');
 

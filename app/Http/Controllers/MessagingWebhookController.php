@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\MessageStatus;
 use App\Models\Customer;
 use App\Models\CustomerMessage;
+use App\Models\Tenant;
 use App\Support\PhoneNumber;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -54,7 +55,7 @@ class MessagingWebhookController extends Controller
         if ($id !== '' && $mapped) {
             $cost = isset($event['cost']) && is_numeric($event['cost']) ? (float) $event['cost'] : null;
             CustomerMessage::withoutGlobalScopes()->where('provider_message_id', $id)->get()
-                ->each(fn (CustomerMessage $m) => $m->markFromProvider($mapped, $mapped === MessageStatus::Failed ? 'Termii: '.($event['status'] ?? 'failed') : null, $cost));
+                ->each(fn (CustomerMessage $m) => Tenant::run($m->tenant_id, fn () => $m->markFromProvider($mapped, $mapped === MessageStatus::Failed ? 'Termii: '.($event['status'] ?? 'failed') : null, $cost)));
         }
 
         return response()->json(['received' => true]);
@@ -98,7 +99,7 @@ class MessagingWebhookController extends Controller
                     if ($mapped && ! empty($report['id'])) {
                         $error = $report['errors'][0]['title'] ?? $report['errors'][0]['message'] ?? 'failed';
                         CustomerMessage::withoutGlobalScopes()->where('provider_message_id', (string) $report['id'])->get()
-                            ->each(fn (CustomerMessage $m) => $m->markFromProvider($mapped, 'WhatsApp: '.$error));
+                            ->each(fn (CustomerMessage $m) => Tenant::run($m->tenant_id, fn () => $m->markFromProvider($mapped, 'WhatsApp: '.$error)));
                     }
                 }
 
@@ -150,6 +151,12 @@ class MessagingWebhookController extends Controller
             return;
         }
 
+        // Nobody is signed in to a webhook: the work runs in that business (audit MB-26).
+        Tenant::run($last->tenant_id, fn () => $this->optOut($last, $to, $channel, $word));
+    }
+
+    private function optOut(CustomerMessage $last, string $to, string $channel, string $word): void
+    {
         $customers = Customer::withoutGlobalScope('tenant')->where('tenant_id', $last->tenant_id)
             ->where(fn ($q) => $q->where('id', $last->customer_id)->orWhere('phone', 'like', '%'.substr($to, -4).'%'))
             ->get()

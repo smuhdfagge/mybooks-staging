@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\ChartOfAccount;
 use App\Models\Journal;
 use App\Models\JournalEntry;
+use App\Models\Tenant;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -26,10 +27,17 @@ class CleanupOrphanedJournals extends Command
      */
     protected $description = 'Clean up orphaned journal entries where the source transaction has been deleted and recalculate chart of account balances';
 
+    public function handle()
+    {
+        // Every business, on purpose (audit MB-26: tenant-scoped queries need
+        // an explicit context; see Tenant::acrossAll()).
+        return Tenant::acrossAll(fn () => $this->runForEveryBusiness());
+    }
+
     /**
      * Execute the console command.
      */
-    public function handle()
+    private function runForEveryBusiness()
     {
         $dryRun = $this->option('dry-run');
         $resetAll = $this->option('reset-all');

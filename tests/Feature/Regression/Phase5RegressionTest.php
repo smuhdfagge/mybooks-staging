@@ -9,6 +9,7 @@ use App\Models\Plan;
 use App\Models\Role;
 use App\Models\Subscription;
 use App\Models\SubscriptionPayment;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\SubscriptionExpiringNotification;
 use Illuminate\Support\Facades\Http;
@@ -210,10 +211,11 @@ class Phase5RegressionTest extends TestCase
     {
         $body = json_encode($event);
 
-        return $this->call('POST', route('billing.webhook'), [], [], [], [
+        // Paystack's server: nobody signed in.
+        return $this->signedOut(fn () => $this->call('POST', route('billing.webhook'), [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_PAYSTACK_SIGNATURE' => hash_hmac('sha512', $body, self::SECRET),
-        ], $body);
+        ], $body));
     }
 
     private function charge(SubscriptionPayment $payment, array $overrides = []): array
@@ -355,7 +357,7 @@ class Phase5RegressionTest extends TestCase
         $endsAt = $this->subscription->fresh()->ends_at;
         $this->signedWebhook($event)->assertOk();
 
-        $this->assertTrue($this->tenant->fresh()->hasActiveSubscription());
+        $this->assertTrue(Tenant::run($this->tenant, fn () => $this->tenant->fresh()->hasActiveSubscription()));
         $this->assertEquals($endsAt, $this->subscription->fresh()->ends_at);
     }
 

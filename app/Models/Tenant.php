@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Services\Accounting\LockDates;
 use App\Services\Accounting\VatDefaults;
 use App\Services\ChartOfAccountService;
+use App\Support\TenantContext;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,14 +23,45 @@ class Tenant extends Model
      */
     protected static function booted(): void
     {
-        static::created(function (Tenant $tenant) {
+        static::created(fn (Tenant $tenant) => self::run($tenant, function () use ($tenant) {
             ChartOfAccountService::createDefaultAccountsForTenant($tenant);
             WhtCategory::seedDefaults($tenant->id);
             VatDefaults::seedForTenant($tenant->id);
             // Every business keeps its stock in at least one warehouse (session 12).
             Warehouse::ensureDefaultFor($tenant->id);
-        });
+        }));
         static::saved(fn (Tenant $tenant) => LockDates::instance()->forget($tenant->id));
+    }
+
+    /**
+     * Run $callback with tenant-scoped queries limited to this business
+     * (audit MB-26): for console commands, jobs and webhooks, where nobody
+     * is signed in. Models created inside get this tenant_id. With null,
+     * no business at all: a tenant-scoped query inside throws.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    public static function run(int|self|null $tenant, callable $callback): mixed
+    {
+        return TenantContext::run($tenant instanceof self ? $tenant->id : $tenant, $callback);
+    }
+
+    /**
+     * Run $callback with tenant-scoped queries reading every business: for
+     * work that really is across all of them (a nightly sweep, the admin
+     * panel). Say so on purpose; it is never the default.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    public static function acrossAll(callable $callback): mixed
+    {
+        return TenantContext::run('all', $callback);
     }
 
     protected $fillable = [

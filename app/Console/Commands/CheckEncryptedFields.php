@@ -7,6 +7,7 @@ use App\Models\BillingCard;
 use App\Models\Customer;
 use App\Models\EInvoiceSetting;
 use App\Models\Employee;
+use App\Models\Tenant;
 use App\Models\Vendor;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Encryption\DecryptException;
@@ -46,6 +47,13 @@ class CheckEncryptedFields extends Command
     ];
 
     public function handle(): int
+    {
+        // Every business, on purpose (audit MB-26: tenant-scoped queries need
+        // an explicit context; see Tenant::acrossAll()).
+        return Tenant::acrossAll(fn () => $this->runForEveryBusiness());
+    }
+
+    private function runForEveryBusiness(): int
     {
         $tenantId = $this->option('tenant');
         $rows = [];

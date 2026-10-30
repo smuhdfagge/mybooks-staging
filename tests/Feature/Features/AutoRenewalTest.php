@@ -94,10 +94,11 @@ class AutoRenewalTest extends TestCase
     {
         $body = json_encode($event);
 
-        return $this->call('POST', route('billing.webhook'), [], [], [], [
+        // Paystack's server: nobody signed in.
+        return $this->signedOut(fn () => $this->call('POST', route('billing.webhook'), [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_PAYSTACK_SIGNATURE' => hash_hmac('sha512', $body, $secret),
-        ], $body);
+        ], $body));
     }
 
     /** Pay through checkout and have Paystack confirm it by webhook. */
