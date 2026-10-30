@@ -15,6 +15,7 @@ use App\Models\SalesReceipt;
 use App\Models\Vendor;
 use App\Services\StockValuationService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Permission;
 use Tests\Support\AssertsLedger;
 use Tests\TestCase;
@@ -100,14 +101,21 @@ class Phase4RegressionTest extends TestCase
         $this->assertAllJournalsBalance($this->tenant->id);
     }
 
-    public function test_n6_fifo_beyond_recorded_lots_uses_the_items_cost_price(): void
+    public function test_n6_fifo_beyond_recorded_lots_is_refused_not_costed_at_the_cost_price(): void
     {
         $item = $this->stockItem('fifo');
 
-        $this->sell($item, 12);                     // 5@10 + 5@20 + 2@99 (cost price)
+        // 10 recorded (5@10 + 5@20); the other 2 used to go out at the item's
+        // cost price (99), a cost the Inventory account never held (MB-31).
+        try {
+            $this->sell($item, 12);
+            $this->fail('sold 2 more than have a recorded cost');
+        } catch (ValidationException $e) {
+            $this->assertStringContainsString('only 10 of the 12 to take out have a recorded cost', $e->getMessage());
+        }
 
-        $this->assertSame(348.0, $this->cogs());
-        $this->assertSame([0.0, 0.0], $this->remainingLayers($item));
+        $this->assertSame(0.0, $this->cogs());
+        $this->assertSame([5.0, 5.0], $this->remainingLayers($item));
     }
 
     public function test_weighted_average_uses_the_average_and_keeps_it(): void

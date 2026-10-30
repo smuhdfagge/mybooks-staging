@@ -165,23 +165,39 @@ class DepreciationService
             throw new Exception('Asset cannot be depreciated.');
         }
 
-        // One depreciation per asset per month (A11): the manual button and
-        // the monthly run could both post the same month.
-        $alreadyDone = $asset->depreciations()
-            ->where('status', FixedAssetDepreciation::STATUS_POSTED)
-            ->whereYear('depreciation_date', $depreciationDate->year)
-            ->whereMonth('depreciation_date', $depreciationDate->month)
-            ->exists();
-        if ($alreadyDone) {
-            throw new Exception("{$asset->name} has already been depreciated for {$depreciationDate->format('F Y')}.");
-        }
-
         return DB::transaction(function () use ($asset, $depreciationDate, $notes) {
-            // Calculate period number
-            $periodNumber = $asset->depreciations()->count() + 1;
+            // The asset row is locked first, and everything below reads it
+            // fresh (audit MB-32): the manual button and the monthly run, or
+            // two runs at once, used to pass the check below together and
+            // both post the month.
+            $locked = FixedAsset::withoutGlobalScope('tenant')->lockForUpdate()->findOrFail($asset->id);
+            $asset->setRawAttributes($locked->getAttributes(), true);
+            if (! $asset->canDepreciate()) {
+                throw new Exception('Asset cannot be depreciated.');
+            }
+
+            // One depreciation per asset per month (A11). Locking reads, so
+            // they see what a run that held the lock just committed.
+            $alreadyDone = $asset->depreciations()
+                ->where('status', FixedAssetDepreciation::STATUS_POSTED)
+                ->whereYear('depreciation_date', $depreciationDate->year)
+                ->whereMonth('depreciation_date', $depreciationDate->month)
+                ->lockForUpdate()
+                ->first(['id']) !== null;
+            if ($alreadyDone) {
+                throw new Exception("{$asset->name} has already been depreciated for {$depreciationDate->format('F Y')}.");
+            }
+
+            // The amount is worked out for the months actually posted: a
+            // reversed month used to count, which pushed the declining-balance
+            // methods a period on. The row still takes the next number, which
+            // is unique per asset (fad_asset_period_unique), so a second run
+            // of the same month can't be stored either.
+            $postedPeriods = $asset->depreciations()->where('status', FixedAssetDepreciation::STATUS_POSTED)->lockForUpdate()->count();
+            $periodNumber = (int) $asset->depreciations()->lockForUpdate()->max('period_number') + 1;
 
             // Calculate depreciation amount
-            $depreciationAmount = $this->calculateMonthlyDepreciation($asset, $periodNumber);
+            $depreciationAmount = $this->calculateMonthlyDepreciation($asset, $postedPeriods + 1);
 
             if ($depreciationAmount <= 0) {
                 throw new Exception('No depreciation amount to record.');

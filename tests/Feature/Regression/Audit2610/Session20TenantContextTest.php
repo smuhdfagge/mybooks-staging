@@ -207,7 +207,7 @@ class Session20TenantContextTest extends TestCase
             'bills:receive-pending-stock' => [], 'bills:reclassify-lines' => ['--dry-run' => true], 'journals:regenerate-invoices' => [],
             'accruals:release' => [], 'accruals:repair-setup' => [], 'einvoice:retry' => [], 'tenants:seed-accounts' => [],
             'notifications:send-bill-reminders' => [], 'notifications:send-low-stock-alerts' => [], 'notifications:send-payment-reminders' => [],
-            'messages:send-queued' => [], 'bankfeeds:sync' => [], 'logs:verify' => [],
+            'messages:send-queued' => [], 'bankfeeds:sync' => [], 'logs:verify' => [], 'stock:reconcile-layers' => [],
         ];
         $listed = collect(Artisan::all())->keys()->filter(fn ($name) => str_starts_with((string) get_class(Artisan::all()[$name]), 'App\\Console\\Commands\\'));
         $this->assertEqualsCanonicalizing(

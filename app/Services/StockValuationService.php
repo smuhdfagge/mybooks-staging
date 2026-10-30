@@ -9,6 +9,7 @@ use App\Models\InventoryLayerConsumption;
 use App\Models\Item;
 use App\Models\VendorCredit;
 use App\Models\Warehouse;
+use Illuminate\Validation\ValidationException;
 
 class StockValuationService
 {
@@ -112,7 +113,6 @@ class StockValuationService
                 $pieces[] = [$layer, $take, (float) $layer->unit_cost];
                 $remaining -= $take;
             }
-            $fallbackCost = (float) ($item->cost_price ?? 0);
         } else {
             $average = $this->getWeightedAverageCost($item, $warehouseId);
             $total = (float) $layers->sum('remaining_quantity');
@@ -129,25 +129,32 @@ class StockValuationService
                     $remaining -= $take;
                 }
             }
-            $fallbackCost = $average;
         }
 
+        // More going out than has a recorded cost (audit MB-31): on hand and
+        // the cost layers have drifted apart (stock from before layers were
+        // kept, say). It used to go out at a cost made up from the item's
+        // cost price, which the Inventory account never held. Refused, so no
+        // cost is invented: stock:reconcile-layers records the missing cost.
         if ($remaining > 0.00001) {
-            $pieces[] = [null, $remaining, $fallbackCost];
+            $costed = round($quantity - $remaining, 4);
+            throw ValidationException::withMessages(['items' => sprintf(
+                '%s: only %s of the %s to take out have a recorded cost in this warehouse, so the rest can\'t be costed. '
+                .'Ask an administrator to record the cost of that stock (php artisan stock:reconcile-layers) and try again.',
+                $item->name, self::quantity($costed), self::quantity($quantity),
+            )]);
         }
 
         $cost = 0.0;
         foreach ($pieces as [$layer, $taken, $unitCost]) {
-            if ($layer) {
-                $layer->remaining_quantity = round((float) $layer->remaining_quantity - $taken, 4);
-                $layer->save();
-            }
+            $layer->remaining_quantity = round((float) $layer->remaining_quantity - $taken, 4);
+            $layer->save();
 
             InventoryLayerConsumption::create([
                 'tenant_id' => $item->tenant_id,
                 'item_id' => $item->id,
                 'warehouse_id' => $warehouseId,
-                'inventory_layer_id' => $layer?->id,
+                'inventory_layer_id' => $layer->id,
                 'source_type' => $sourceType,
                 'source_id' => $sourceId,
                 'quantity' => round($taken, 4),
@@ -492,5 +499,10 @@ class StockValuationService
         $inventory->unit_cost = $totalQty > 0
             ? round(($existingValue + $newValue) / $totalQty, 4)
             : 0;
+    }
+
+    private static function quantity(float $value): string
+    {
+        return rtrim(rtrim(number_format($value, 4, '.', ''), '0'), '.');
     }
 }

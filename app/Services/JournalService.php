@@ -1715,10 +1715,18 @@ class JournalService implements JournalServiceInterface
      */
     protected function postDocumentJournal(Journal $journal, string $reason): Journal
     {
+        // One live journal per document (audit MB-30). Two saves of the
+        // same document at once (a double submit, a payment arriving as the
+        // invoice is edited) could both find no journal, or the same one,
+        // and both post. The document's row is locked first, so the second
+        // waits for the first to commit; the look-up is a locking read, so
+        // it then sees the journal the first one posted.
+        $this->lockDocument($journal->reference_type, (int) $journal->reference_id);
+
         $previous = Journal::query()
             ->where('reference_type', $journal->reference_type)->where('reference_id', $journal->reference_id)
             ->originals(array_values(array_unique([null, $journal->journal_type])))->where('status', 'posted')
-            ->latest('id')->first();
+            ->latest('id')->lockForUpdate()->first();
 
         if ($previous
             && $previous->journal_date->toDateString() === $journal->journal_date->toDateString()
@@ -1752,6 +1760,14 @@ class JournalService implements JournalServiceInterface
         $this->updateAccountBalances($journal);
 
         return $journal;
+    }
+
+    /** Lock a document's row until the transaction it is posted in ends. */
+    private function lockDocument(?string $type, int $id): void
+    {
+        if ($type && is_subclass_of($type, Model::class)) {
+            $type::query()->withoutGlobalScopes()->whereKey($id)->lockForUpdate()->first([(new $type)->getKeyName()]);
+        }
     }
 
     /**
