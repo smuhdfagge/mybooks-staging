@@ -74,8 +74,9 @@ class StockValuationService
      *
      * The cost is decided here, once: FIFO uses the oldest cost layers first;
      * weighted average uses the current average cost and takes the quantity
-     * from the layers in proportion. Stock beyond the recorded layers is costed
-     * at the item's cost price (FIFO) or the average (weighted average).
+     * from the layers in proportion. Taking out more than the layers hold is
+     * refused (audit MB-31), unless $uncostedAtZero: a stock count or
+     * write-off takes the stock with no layer out at no cost.
      *
      * Every piece taken is recorded against the document, so returnStock()
      * can put back exactly what was taken if it is edited, cancelled or deleted.
@@ -88,7 +89,7 @@ class StockValuationService
      * out of the given warehouse (default: the business's default one), at
      * that warehouse's FIFO layers or average cost.
      */
-    public function issue(Item $item, float $quantity, string $sourceType, int $sourceId, bool $reduceOnHand = false, ?int $warehouseId = null): float
+    public function issue(Item $item, float $quantity, string $sourceType, int $sourceId, bool $reduceOnHand = false, ?int $warehouseId = null, bool $uncostedAtZero = false): float
     {
         if ($quantity <= 0) {
             return 0.0;
@@ -115,8 +116,10 @@ class StockValuationService
             }
         } else {
             $average = $this->getWeightedAverageCost($item, $warehouseId);
+            $layers = $layers->values();
             $total = (float) $layers->sum('remaining_quantity');
-            foreach ($layers->values() as $index => $layer) {
+            $taken = [];
+            foreach ($layers as $index => $layer) {
                 if ($remaining <= 0.00001 || $total <= 0) {
                     break;
                 }
@@ -125,9 +128,24 @@ class StockValuationService
                     : round($quantity * (float) $layer->remaining_quantity / $total, 4);
                 $take = min($share, (float) $layer->remaining_quantity, $remaining);
                 if ($take > 0) {
-                    $pieces[] = [$layer, $take, $average];
+                    $taken[$index] = $take;
                     $remaining -= $take;
                 }
+            }
+            // Rounding the shares can leave a sliver (0.0001) that the last
+            // layer hasn't room for: it comes out of any layer that has.
+            foreach ($layers as $index => $layer) {
+                if ($remaining <= 0.00001) {
+                    break;
+                }
+                $more = min(round((float) $layer->remaining_quantity - ($taken[$index] ?? 0), 4), $remaining);
+                if ($more > 0) {
+                    $taken[$index] = ($taken[$index] ?? 0) + $more;
+                    $remaining -= $more;
+                }
+            }
+            foreach ($taken as $index => $take) {
+                $pieces[] = [$layers[$index], $take, $average];
             }
         }
 
@@ -136,11 +154,17 @@ class StockValuationService
         // kept, say). It used to go out at a cost made up from the item's
         // cost price, which the Inventory account never held. Refused, so no
         // cost is invented: stock:reconcile-layers records the missing cost.
+        if ($remaining > 0.00001 && $uncostedAtZero) {
+            // A count or write-off (AdjustStock): stock with no layer has no
+            // value in the Inventory account, so it goes out at nothing.
+            $remaining = 0.0;
+        }
         if ($remaining > 0.00001) {
             $costed = round($quantity - $remaining, 4);
             throw ValidationException::withMessages(['items' => sprintf(
                 '%s: only %s of the %s to take out have a recorded cost in this warehouse, so the rest can\'t be costed. '
-                .'Ask an administrator to record the cost of that stock (php artisan stock:reconcile-layers) and try again.',
+                .'Ask an administrator to record the cost of that stock (php artisan stock:reconcile-layers, which needs the item\'s cost price), '
+                .'or count the stock down to what is really there, and try again.',
                 $item->name, self::quantity($costed), self::quantity($quantity),
             )]);
         }

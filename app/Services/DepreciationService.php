@@ -309,7 +309,16 @@ class DepreciationService
         }
 
         return DB::transaction(function () use ($depreciation) {
-            $asset = $depreciation->fixedAsset;
+            // The asset, then the row, locked and read again (as
+            // recordDepreciation does, MB-32): a month being recorded, or
+            // this one reversed twice at once, would otherwise work from
+            // balances read before the other one changed them.
+            $asset = FixedAsset::withoutGlobalScope('tenant')->lockForUpdate()->findOrFail($depreciation->fixed_asset_id);
+            $depreciation->setRawAttributes(FixedAssetDepreciation::withoutGlobalScope('tenant')->lockForUpdate()->findOrFail($depreciation->id)->getAttributes(), true);
+            $depreciation->setRelation('fixedAsset', $asset);
+            if (! $depreciation->canReverse()) {
+                throw new Exception('This depreciation cannot be reversed.');
+            }
 
             // Reverse the journal entry if exists
             if ($depreciation->journal) {

@@ -879,6 +879,11 @@ class JournalService implements JournalServiceInterface
      */
     protected function documentCogs($document, string $documentType, bool $reduceOnHand): float
     {
+        // The document before its stock (MB-30): two postings of it at once
+        // would otherwise both take stock out before either waits on the
+        // other, and every path then locks in the one order.
+        $this->lockDocument($documentType, (int) $document->id);
+
         $lines = $document->items()->with('item')->get();
         $stockLines = $lines->filter(fn ($line) => $line->item && $line->item->track_inventory && (float) $line->quantity > 0);
 
@@ -1719,18 +1724,34 @@ class JournalService implements JournalServiceInterface
         // same document at once (a double submit, a payment arriving as the
         // invoice is edited) could both find no journal, or the same one,
         // and both post. The document's row is locked first, so the second
-        // waits for the first to commit; the look-up is a locking read, so
-        // it then sees the journal the first one posted.
+        // waits for the first to commit; the look-ups are locking reads, so
+        // it then sees the journal, and its lines, that the first one posted
+        // (a plain read could see the database as it was before).
+        //
+        // The look-up finds no row on a document's first posting, so it
+        // locks the gap where the journal goes in. Two first postings at
+        // once (any two new documents) would each wait on the other's gap
+        // to insert: a deadlock. So the business's journal numbering is
+        // locked before it, which the posting would take anyway, and the
+        // look-up uses the index that starts with the business, so one
+        // business's gap is never another's.
         $this->lockDocument($journal->reference_type, (int) $journal->reference_id);
+        DB::table('document_sequences')->where('tenant_id', $journal->tenant_id)->where('type', 'Journal.journal_number')
+            ->lockForUpdate()->first(['id']);
 
         $previous = Journal::query()
+            ->where('tenant_id', $journal->tenant_id)
             ->where('reference_type', $journal->reference_type)->where('reference_id', $journal->reference_id)
             ->originals(array_values(array_unique([null, $journal->journal_type])))->where('status', 'posted')
             ->latest('id')->lockForUpdate()->first();
+        if ($previous) {
+            // Its lines as committed, for the comparison and for reverseJournal().
+            $previous->setRelation('entries', $previous->entries()->lockForUpdate()->get());
+        }
 
         if ($previous
             && $previous->journal_date->toDateString() === $journal->journal_date->toDateString()
-            && $this->netByAccount($previous->entries()->get()) === $this->netByAccount($journal->pendingEntries)) {
+            && $this->netByAccount($previous->entries) === $this->netByAccount($journal->pendingEntries)) {
             $previous->fill($journal->only(['reference', 'description']));
             if ($previous->isDirty()) {
                 $previous->save();

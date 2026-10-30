@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Invoices\DeleteInvoice;
 use App\Actions\Invoices\SaveInvoice;
+use App\Exceptions\BusinessRuleException;
 use App\Http\Requests\StoreInvoiceRequest;
 use App\Http\Requests\UpdateInvoiceRequest;
 use App\Models\ActivityLog;
@@ -117,19 +118,24 @@ class InvoiceController extends Controller
             return redirect()->back()->with('error', 'Customer does not have an email address.');
         }
 
-        // Send the invoice email
-        $sent = $notificationService->sendInvoice($invoice);
-
-        if ($sent) {
-            $invoice->update(['status' => 'sent']);
-
-            // Log the activity
-            $invoice->logCustomActivity(ActivityLog::ACTION_SENT, "Invoice '{$invoice->invoice_number}' was sent to {$invoice->customer->email}");
-
-            return redirect()->back()->with('success', "Invoice sent to {$invoice->customer->email}");
+        // Marked sent (which posts its journal) and emailed together: a
+        // posting that is refused (stock with no cost, a closed month) sends
+        // nothing, and an email that fails leaves it as it was.
+        try {
+            DB::transaction(function () use ($invoice, $notificationService) {
+                $invoice->update(['status' => 'sent']);
+                if (! $notificationService->sendInvoice($invoice)) {
+                    throw new BusinessRuleException('Failed to send invoice. Please check the customer email address.');
+                }
+            });
+        } catch (BusinessRuleException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
         }
 
-        return redirect()->back()->with('error', 'Failed to send invoice. Please check the customer email address.');
+        // Log the activity
+        $invoice->logCustomActivity(ActivityLog::ACTION_SENT, "Invoice '{$invoice->invoice_number}' was sent to {$invoice->customer->email}");
+
+        return redirect()->back()->with('success', "Invoice sent to {$invoice->customer->email}");
     }
 
     public function release(Invoice $invoice)
