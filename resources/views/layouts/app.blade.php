@@ -27,10 +27,6 @@
             }
         }
         
-        /* Prevent horizontal overflow on mobile */
-        html, body {
-            overflow-x: hidden;
-        }
         /* Smooth transitions for sidebar */
         .sidebar-transition {
             transition: transform 0.3s ease-in-out;
@@ -52,8 +48,8 @@
 
         /* Print styles */
         @media print {
-            /* The screen rule above makes the body a scroll box, which cuts a
-               printout to its first page. Let the page run on. */
+            /* h-full fixes the body to the screen's height; let a printout
+               run on past the first page. */
             html, body {
                 overflow: visible !important;
                 height: auto !important;
@@ -129,7 +125,8 @@
         }
     </style>
 </head>
-<body class="h-full font-sans antialiased bg-gray-50 dark:bg-gray-900" x-data="{ sidebarOpen: false }">
+<body class="h-full font-sans antialiased bg-gray-50 dark:bg-gray-900" x-data="{ sidebarOpen: false, closeSidebar() { if (! this.sidebarOpen) return; this.sidebarOpen = false; this.$nextTick(() => this.$refs.menuButton?.focus()) } }"
+      @keydown.escape.window="closeSidebar()">
     {{-- Skip to main content (accessibility) --}}
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-brand-600 focus:text-white focus:rounded-md focus:shadow-lg focus:outline-none">
         Skip to main content
@@ -148,7 +145,7 @@
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
              class="fixed inset-0 z-40 bg-gray-900/80 backdrop-blur-sm lg:hidden"
-             @click="sidebarOpen = false"
+             @click="closeSidebar()"
              x-cloak>
         </div>
 
@@ -185,7 +182,7 @@
                             <div class="ml-3 flex-1">
                                 <p class="text-sm font-medium text-green-800 dark:text-green-200">{{ session('success') }}</p>
                             </div>
-                            <button @click="show = false" class="ml-3 flex-shrink-0 text-green-700 hover:text-green-600">
+                            <button type="button" @click="show = false" aria-label="Dismiss" class="ml-3 flex-shrink-0 text-green-700 hover:text-green-600">
                                 <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
                                 </svg>
@@ -205,7 +202,7 @@
                             <div class="ml-3 flex-1">
                                 <p class="text-sm font-medium text-red-800 dark:text-red-200">{{ session('error') }}</p>
                             </div>
-                            <button @click="show = false" class="ml-3 flex-shrink-0 text-red-600 hover:text-red-600">
+                            <button type="button" @click="show = false" aria-label="Dismiss" class="ml-3 flex-shrink-0 text-red-600 hover:text-red-600">
                                 <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
                                 </svg>

@@ -45,14 +45,15 @@
                                         placeholder="Search customers..."
                                         autocomplete="off"
                                         class="form-control @error('customer_id') border-red-500 @enderror">
-                                    <button type="button" @click="open = !open" class="absolute inset-y-0 right-0 flex items-center pr-2">
-                                        <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <button type="button" @click="open = !open" aria-label="Show options" :aria-expanded="open.toString()" aria-controls="party-options" class="absolute inset-y-0 right-0 flex items-center pr-2">
+                                        <svg aria-hidden="true" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
                                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                                         </svg>
                                     </button>
                                 </div>
                                 <div 
                                     x-show="open" 
+                                    id="party-options"
                                     @click.away="open = false"
                                     x-transition
                                     class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">

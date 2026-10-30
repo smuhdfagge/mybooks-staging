@@ -84,7 +84,7 @@
                                         @foreach(old('entries') as $index => $entry)
                                             <tr class="entry-row">
                                                 <td>
-                                                    <select name="entries[{{ $index }}][account_id]" required
+                                                    <select name="entries[{{ $index }}][account_id]" required aria-label="Account"
                                                         class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                                         <option value="">Select Account</option>
                                                         @foreach($accounts as $account)
@@ -110,7 +110,7 @@
                                                         placeholder="0.00">
                                                 </td>
                                                 <td class="text-center">
-                                                    <button type="button" class="remove-row-btn text-red-600 hover:text-red-900 dark:text-red-300 dark:hover:text-red-300">
+                                                    <button type="button" aria-label="Remove line" class="remove-row-btn text-red-600 hover:text-red-900 dark:text-red-300 dark:hover:text-red-300">
                                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                                         </svg>
@@ -121,7 +121,7 @@
                                     @else
                                         <tr class="entry-row">
                                             <td>
-                                                <select name="entries[0][account_id]" required
+                                                <select name="entries[0][account_id]" required aria-label="Account"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                                     <option value="">Select Account</option>
                                                     @foreach($accounts as $account)
@@ -145,7 +145,7 @@
                                                     placeholder="0.00">
                                             </td>
                                             <td class="text-center">
-                                                <button type="button" class="remove-row-btn text-red-600 hover:text-red-900 dark:text-red-300 dark:hover:text-red-300">
+                                                <button type="button" aria-label="Remove line" class="remove-row-btn text-red-600 hover:text-red-900 dark:text-red-300 dark:hover:text-red-300">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                                     </svg>
@@ -154,7 +154,7 @@
                                         </tr>
                                         <tr class="entry-row">
                                             <td>
-                                                <select name="entries[1][account_id]" required
+                                                <select name="entries[1][account_id]" required aria-label="Account"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                                     <option value="">Select Account</option>
                                                     @foreach($accounts as $account)
@@ -178,7 +178,7 @@
                                                     placeholder="0.00">
                                             </td>
                                             <td class="text-center">
-                                                <button type="button" class="remove-row-btn text-red-600 hover:text-red-900 dark:text-red-300 dark:hover:text-red-300">
+                                                <button type="button" aria-label="Remove line" class="remove-row-btn text-red-600 hover:text-red-900 dark:text-red-300 dark:hover:text-red-300">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                                     </svg>
@@ -251,7 +251,7 @@
             row.className = 'entry-row';
             row.innerHTML = `
                 <td class="px-4 py-2">
-                    <select name="entries[${rowIndex}][account_id]" required
+                    <select name="entries[${rowIndex}][account_id]" required aria-label="Account"
                         class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         <option value="">Select Account</option>
                     </select>
@@ -272,7 +272,7 @@
                         placeholder="0.00">
                 </td>
                 <td class="px-4 py-2 text-center">
-                    <button type="button" class="remove-row-btn text-red-600 hover:text-red-900 dark:text-red-300 dark:hover:text-red-300">
+                    <button type="button" aria-label="Remove line" class="remove-row-btn text-red-600 hover:text-red-900 dark:text-red-300 dark:hover:text-red-300">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                         </svg>

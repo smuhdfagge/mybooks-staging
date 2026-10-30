@@ -38,7 +38,7 @@
         .title { font-size: 18px; font-weight: bold; color: #1F4E79; text-align: right; }
         .meta { width: 100%; margin-bottom: 14px; }
         .meta td { vertical-align: top; width: 50%; }
-        .label { font-size: 8.5px; text-transform: uppercase; color: #6b7280; letter-spacing: .5px; }
+        .label { font-size: 8.5px; text-transform: uppercase; color: #4b5563; letter-spacing: .5px; }
         .summary { width: 100%; margin-bottom: 14px; }
         .summary td { border: 1px solid #e5e7eb; background: #f9fafb; padding: 6px 8px; width: 25%; }
         .summary .value { font-size: 12.5px; font-weight: bold; }
@@ -61,6 +61,8 @@
         .print-bar { padding: 10px 40px; background: #EEF3F8; text-align: right; }
         .print-bar button { padding: 6px 14px; background: #1F4E79; color: #fff; border: 0; border-radius: 4px; cursor: pointer; }
         @media print { .print-bar { display: none; } .screen .page { padding: 0; } }
+        /* On a phone the statement scrolls sideways in its own box, not the page. */
+        @media screen and (max-width: 640px) { .screen .page { padding: 16px; overflow-x: auto; } .print-bar { padding: 10px 16px; } }
     </style>
 </head>
 <body class="{{ empty($forPdf) ? 'screen' : '' }}">

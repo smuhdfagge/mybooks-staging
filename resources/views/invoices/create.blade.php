@@ -48,14 +48,15 @@
                                         placeholder="Search customers..."
                                         autocomplete="off"
                                         class="form-control @error('customer_id') border-red-500 @enderror">
-                                    <button type="button" @click="open = !open" class="absolute inset-y-0 right-0 flex items-center pr-2">
-                                        <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <button type="button" @click="open = !open" aria-label="Show options" :aria-expanded="open.toString()" aria-controls="party-options" class="absolute inset-y-0 right-0 flex items-center pr-2">
+                                        <svg aria-hidden="true" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
                                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                                         </svg>
                                     </button>
                                 </div>
                                 <div 
                                     x-show="open" 
+                                    id="party-options"
                                     @click.away="open = false"
                                     x-transition:enter="transition ease-out duration-100"
                                     x-transition:enter-start="opacity-0 scale-95"
@@ -271,7 +272,7 @@
                                 <div class="flex items-center justify-between text-sm">
                                     <div class="flex items-center gap-2">
                                         <span class="text-gray-600 dark:text-gray-400">Discount</span>
-                                        <select name="discount_type" x-model="discountType" @change="calculateTotals()"
+                                        <select name="discount_type" aria-label="Discount type" x-model="discountType" @change="calculateTotals()"
                                             class="text-xs rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 py-1">
                                             <option value="">None</option>
                                             <option value="percentage">%</option>

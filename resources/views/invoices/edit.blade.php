@@ -214,7 +214,7 @@
                                 <div class="flex items-center justify-between text-sm">
                                     <div class="flex items-center gap-2">
                                         <span class="text-gray-600 dark:text-gray-400">Discount</span>
-                                        <select name="discount_type" x-model="discountType" @change="calculateTotals()"
+                                        <select name="discount_type" aria-label="Discount type" x-model="discountType" @change="calculateTotals()"
                                             class="text-xs rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 py-1">
                                             <option value="">None</option>
                                             <option value="percentage">%</option>
