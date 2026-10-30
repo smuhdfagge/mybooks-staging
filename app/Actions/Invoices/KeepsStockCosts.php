@@ -23,14 +23,23 @@ trait KeepsStockCosts
 {
     /**
      * The stock lines' costs before the edit, by item and quantity; null
-     * when a stock line has none yet (nothing to keep).
+     * when there is nothing to keep: a stock line with no cost yet, or a
+     * line issued from stock whose item no longer is a stock item (made a
+     * service, tracking turned off, deleted). That one's stock has to go
+     * back, and only a full re-issue does that.
      *
      * @return array<string, list<string>>|null
      */
     protected function stockCosts(Invoice|SalesReceipt $document): ?array
     {
+        $stock = $this->stockLines($document);
+        $issued = $document->items()->whereNotNull('unit_cost')->count();
+        if ($issued !== count(array_filter($stock, fn ($line) => $line->unit_cost !== null))) {
+            return null;
+        }
+
         $costs = [];
-        foreach ($this->stockLines($document) as $line) {
+        foreach ($stock as $line) {
             if ($line->unit_cost === null) {
                 return null;
             }
@@ -74,9 +83,9 @@ trait KeepsStockCosts
      */
     private function stockLines(Invoice|SalesReceipt $document): array
     {
-        return $document->items()->with('item')->orderBy('id')->get()
+        return array_values($document->items()->with('item')->orderBy('id')->get()
             ->filter(fn ($line) => $line->item && $line->item->track_inventory && (float) $line->quantity > 0)
-            ->values()->all();
+            ->all());
     }
 
     private function stockKey(InvoiceItem|SalesReceiptItem $line): string

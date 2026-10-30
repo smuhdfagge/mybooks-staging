@@ -6,6 +6,7 @@ use App\Actions\Bills\SaveBill;
 use App\Actions\Invoices\SaveInvoice;
 use App\Actions\SalesReceipts\SaveSalesReceipt;
 use App\Models\Customer;
+use App\Models\Inventory;
 use App\Models\Invoice;
 use App\Models\Item;
 use App\Models\Journal;
@@ -108,5 +109,29 @@ class Session17ReviewFixesTest extends TestCase
         // Changing the stock on it still re-issues and re-posts.
         app(SaveInvoice::class)->update($invoice->fresh(), ['items' => [['quantity' => 3] + $line]]);
         $this->assertNotSame($invoiceJournal->id, Journal::currentFor($invoice)->id);
+    }
+
+    public function test_stock_from_an_item_no_longer_kept_in_stock_goes_back_on_the_next_edit(): void
+    {
+        $rice = Item::factory()->product()->create(['tenant_id' => $this->tenant->id, 'name' => 'Rice']);
+        $oil = Item::factory()->product()->create(['tenant_id' => $this->tenant->id, 'name' => 'Oil']);
+        $this->buy($rice, 10, 1000, '2026-10-01');
+        $this->buy($oil, 10, 500, '2026-10-01');
+        $lines = [
+            ['item_id' => $rice->id, 'description' => 'Rice', 'quantity' => 2, 'unit_price' => 1500, 'tax_rate' => 0],
+            ['item_id' => $oil->id, 'description' => 'Oil', 'quantity' => 4, 'unit_price' => 800, 'tax_rate' => 0],
+        ];
+        $receipt = app(SaveSalesReceipt::class)->create($this->tenant->id, ['receipt_date' => '2026-10-07', 'payment_method' => 'cash', 'items' => $lines], $this->user->id);
+        $onHand = fn (Item $item) => (float) Inventory::withoutGlobalScopes()->where('item_id', $item->id)->sum('quantity');
+        $this->assertEqualsWithDelta(6, $onHand($oil), 0.001);
+
+        // Oil stops being kept in stock; the receipt is then edited without changing its figures.
+        $oil->update(['track_inventory' => false]);
+        app(SaveSalesReceipt::class)->update($receipt->fresh(), ['receipt_date' => '2026-10-07', 'payment_method' => 'cash', 'notes' => 'Walk-in', 'items' => $lines]);
+
+        // The journal no longer takes oil out of stock, so the stock records give it back too.
+        $this->assertEqualsWithDelta(10, $onHand($oil), 0.001);
+        $this->assertEqualsWithDelta(8, $onHand($rice), 0.001);
+        $this->assertEqualsWithDelta(2000, $this->cogs(Journal::currentFor($receipt)), 0.001, 'only the rice');
     }
 }
