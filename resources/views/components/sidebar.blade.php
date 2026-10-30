@@ -1,5 +1,5 @@
 <!-- Fixed Sidebar -->
-<aside class="fixed inset-y-0 left-0 z-50 print:hidden w-64 flex flex-col bg-brand-900 sidebar-transition"
+<aside id="app-sidebar" class="fixed inset-y-0 left-0 z-50 print:hidden w-64 flex flex-col bg-brand-900 sidebar-transition"
        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
        x-cloak>
     
@@ -9,7 +9,7 @@
             <x-brand-mark variant="reversed" class="h-8 w-8" />
             <span class="text-xl font-semibold text-white">MyBooks</span>
         </a>
-        <button @click="sidebarOpen = false" class="lg:hidden p-1 rounded-md text-gray-400 hover:text-white hover:bg-brand-800 focus:outline-none focus:ring-2 focus:ring-white">
+        <button type="button" @click="closeSidebar()" class="lg:hidden p-1 rounded-md text-gray-400 hover:text-white hover:bg-brand-800 focus:outline-none focus:ring-2 focus:ring-white">
             <span class="sr-only">Close sidebar</span>
             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -33,7 +33,7 @@
         <!-- Items Module -->
         @canany(['view items', 'view inventory'])
         <div x-data="{ open: {{ request()->is('items*') || request()->is('inventory*') || request()->is('warehouses*') || request()->is('stock-transfers*') || request()->is('bill-of-materials*') || request()->is('assembly-orders*') ? 'true' : 'false' }} }">
-            <button @click="open = !open" 
+            <button @click="open = !open" :aria-expanded="open.toString()"
                     class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-brand-800 hover:text-white transition-colors">
                 <div class="flex items-center">
                     <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -78,7 +78,7 @@
         <!-- Sales Module -->
         @canany(['view customers', 'view invoices', 'view sales-orders', 'view sales-receipts', 'view payments-received'])
         <div x-data="{ open: {{ request()->is('sales*') || request()->is('customers*') || request()->is('invoices*') || request()->is('quotations*') || request()->is('delivery-notes*') || request()->is('credit-notes*') || request()->is('e-invoices*') ? 'true' : 'false' }} }">
-            <button @click="open = !open" 
+            <button @click="open = !open" :aria-expanded="open.toString()"
                     class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-brand-800 hover:text-white transition-colors">
                 <div class="flex items-center">
                     <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -133,7 +133,7 @@
         <!-- Purchases Module -->
         @canany(['view vendors', 'view expenses', 'view bills', 'view purchase-orders', 'view recurrent-bills', 'view recurrent-expenses', 'view payments-made'])
         <div x-data="{ open: {{ request()->is('purchases*') || request()->is('vendors*') || request()->is('bills*') || request()->is('purchase-orders*') || request()->is('expenses*') || request()->is('vendor-credits*') || request()->is('supplier-advances*') ? 'true' : 'false' }} }">
-            <button @click="open = !open" 
+            <button @click="open = !open" :aria-expanded="open.toString()"
                     class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-brand-800 hover:text-white transition-colors">
                 <div class="flex items-center">
                     <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -180,7 +180,7 @@
         <!-- Human Resource Module -->
         @canany(['view employees', 'view departments', 'view designations', 'view leaves', 'view leave-types'])
         <div x-data="{ open: {{ request()->is('hr*') || request()->is('employees*') || request()->is('departments*') ? 'true' : 'false' }} }">
-            <button @click="open = !open" 
+            <button @click="open = !open" :aria-expanded="open.toString()"
                     class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-brand-800 hover:text-white transition-colors">
                 <div class="flex items-center">
                     <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -215,7 +215,7 @@
         <!-- Payroll Module -->
         @can('view payroll')
         <div x-data="{ open: {{ request()->routeIs('payroll.*') || request()->routeIs('salary-structures.*') || request()->routeIs('allowances.*') || request()->routeIs('deductions.*') ? 'true' : 'false' }} }">
-            <button @click="open = !open" 
+            <button @click="open = !open" :aria-expanded="open.toString()"
                     class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-brand-800 hover:text-white transition-colors">
                 <div class="flex items-center">
                     <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -240,7 +240,7 @@
         <!-- Accountant Module -->
         @canany(['view journals', 'view chart-of-accounts', 'view banks', 'view budgets', 'view withholding-tax', 'view accrual-schedules'])
         <div x-data="{ open: {{ request()->is('accountant*') || request()->is('journals*') || request()->is('accrual-schedules*') || request()->is('chart-of-accounts*') || request()->is('banks*') || request()->is('bank-feeds*') || request()->is('budgets*') || request()->is('withholding-tax*') ? 'true' : 'false' }} }">
-            <button @click="open = !open" 
+            <button @click="open = !open" :aria-expanded="open.toString()"
                     class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-brand-800 hover:text-white transition-colors">
                 <div class="flex items-center">
                     <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -300,7 +300,7 @@
         <!-- Fixed Assets Module -->
         @canany(['view fixed-assets', 'view fixed-asset-categories'])
         <div x-data="{ open: {{ request()->is('fixed-assets*') || request()->is('fixed-asset-categories*') ? 'true' : 'false' }} }">
-            <button @click="open = !open" 
+            <button @click="open = !open" :aria-expanded="open.toString()"
                     class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-brand-800 hover:text-white transition-colors">
                 <div class="flex items-center">
                     <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -365,7 +365,7 @@
         <!-- Settings Module -->
         @canany(['view settings', 'view users', 'view roles', 'view tax-rates', 'export reports', 'import data'])
         <div x-data="{ open: {{ request()->is('settings*') || request()->is('activity-logs*') || request()->is('tax-rates*') || request()->is('tax-groups*') || request()->is('exports*') || request()->is('imports*') ? 'true' : 'false' }} }">
-            <button @click="open = !open" 
+            <button @click="open = !open" :aria-expanded="open.toString()"
                     class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-brand-800 hover:text-white transition-colors">
                 <div class="flex items-center">
                     <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

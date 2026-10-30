@@ -212,7 +212,7 @@
                             <div class="p-6 text-sm space-y-3">
                                 <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 pb-2 border-b border-gray-200 dark:border-gray-700">Related documents</h3>
                                 @if($salesOrder->quotation && \App\Http\Middleware\EnsureFeatureEnabled::enabled('quotations'))
-                                    <p>From quotation <a href="{{ route('quotations.show', $salesOrder->quotation) }}" class="text-brand-600 dark:text-brand-300 hover:underline">{{ $salesOrder->quotation->quotation_number }}</a></p>
+                                    <p>From quotation <a href="{{ route('quotations.show', $salesOrder->quotation) }}" class="text-brand-600 dark:text-brand-300 underline">{{ $salesOrder->quotation->quotation_number }}</a></p>
                                 @endif
                                 @foreach($salesOrder->invoices as $invoice)
                                     <p class="flex justify-between gap-2"><a href="{{ route('invoices.show', $invoice) }}" class="text-brand-600 dark:text-brand-300 hover:underline">Invoice {{ $invoice->invoice_number }}</a><x-status-badge :status="$invoice->status" /></p>

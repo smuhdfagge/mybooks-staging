@@ -102,24 +102,22 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Employee Details</h3>
-                        <dl class="space-y-4">
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Employee ID</dt>
-                                    <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $payroll->employee?->employee_id ?? '-' }}</dd>
-                                </div>
-                                <div>
-                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Department</dt>
-                                    <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $payroll->employee?->department?->name ?? '-' }}</dd>
-                                </div>
-                                <div>
-                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Designation</dt>
-                                    <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $payroll->employee?->designation?->title ?? $payroll->employee?->designation?->name ?? '-' }}</dd>
-                                </div>
-                                <div>
-                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Email</dt>
-                                    <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $payroll->employee?->email ?? '-' }}</dd>
-                                </div>
+                        <dl class="grid grid-cols-2 gap-4">
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Employee ID</dt>
+                                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $payroll->employee?->employee_id ?? '-' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Department</dt>
+                                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $payroll->employee?->department?->name ?? '-' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Designation</dt>
+                                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $payroll->employee?->designation?->title ?? $payroll->employee?->designation?->name ?? '-' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Email</dt>
+                                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $payroll->employee?->email ?? '-' }}</dd>
                             </div>
                         </dl>
                     </div>
@@ -129,24 +127,22 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Pay Period Details</h3>
-                        <dl class="space-y-4">
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Pay Period Start</dt>
-                                    <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $payroll->pay_period_start?->format('M d, Y') ?? '-' }}</dd>
-                                </div>
-                                <div>
-                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Pay Period End</dt>
-                                    <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $payroll->pay_period_end?->format('M d, Y') ?? '-' }}</dd>
-                                </div>
-                                <div>
-                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Pay Date</dt>
-                                    <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $payroll->pay_date?->format('M d, Y') ?? '-' }}</dd>
-                                </div>
-                                <div>
-                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Payroll Number</dt>
-                                    <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $payroll->payroll_number }}</dd>
-                                </div>
+                        <dl class="grid grid-cols-2 gap-4">
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Pay Period Start</dt>
+                                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $payroll->pay_period_start?->format('M d, Y') ?? '-' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Pay Period End</dt>
+                                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $payroll->pay_period_end?->format('M d, Y') ?? '-' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Pay Date</dt>
+                                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $payroll->pay_date?->format('M d, Y') ?? '-' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Payroll Number</dt>
+                                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $payroll->payroll_number }}</dd>
                             </div>
                         </dl>
                     </div>

@@ -22,8 +22,8 @@
                         <p class="text-white/80 text-xs">Add to your device</p>
                     </div>
                 </div>
-                <button @click="dismissPrompt()" class="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button type="button" @click="dismissPrompt()" aria-label="Dismiss" class="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 transition">
+                    <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
@@ -157,6 +157,11 @@
 function pwaInstall() {
     return {
         showPrompt: false,
+        offered: false,
+        interacted: false,
+        afterInteraction: null,
+        timer: null,
+        standDown: false,
         deferredPrompt: null,
         isIos: false,
         isStandalone: false,
@@ -185,30 +190,78 @@ function pwaInstall() {
                 }
             }
 
+            // A click or key press counts from the start, even before the
+            // browser says the app can be installed.
+            const events = ['pointerdown', 'keydown'];
+            const seen = () => {
+                events.forEach((type) => window.removeEventListener(type, seen));
+                this.interacted = true;
+                this.afterInteraction?.();
+                this.afterInteraction = null;
+            };
+            events.forEach((type) => window.addEventListener(type, seen));
+
+            // Installing from the header menu: this banner has nothing left to offer.
+            window.addEventListener('pwa-install-started', () => this.stop());
+
             // Listen for beforeinstallprompt event (Chrome, Edge, etc.)
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 this.deferredPrompt = e;
-                
-                // Show prompt after a short delay
-                setTimeout(() => {
-                    this.showPrompt = true;
-                }, 3000);
+                this.offer();
             });
 
-            // For iOS, show prompt after delay (no beforeinstallprompt event)
+            // iOS has no beforeinstallprompt event
             if (this.isIos && !this.isStandalone) {
-                setTimeout(() => {
-                    this.showPrompt = true;
-                }, 5000);
+                this.offer();
             }
 
             // Listen for successful installation
             window.addEventListener('appinstalled', () => {
-                this.showPrompt = false;
+                this.stop();
                 this.deferredPrompt = null;
                 console.log('PWA installed successfully');
             });
+        },
+
+        /**
+         * Once a session, a few seconds after the person has first clicked or
+         * typed on the page (audit MB-58: it slid over the bottom of every
+         * page 3 to 5 seconds after it loaded).
+         */
+        offer() {
+            if (this.offered) {
+                return;
+            }
+            this.offered = true;
+            try {
+                if (sessionStorage.getItem('pwa-prompt-shown')) {
+                    return;
+                }
+            } catch (e) {}
+
+            const show = () => {
+                this.timer = setTimeout(() => {
+                    if (this.standDown) {
+                        return;
+                    }
+                    this.showPrompt = true;
+                    try { sessionStorage.setItem('pwa-prompt-shown', '1'); } catch (e) {}
+                }, 4000);
+            };
+            if (this.interacted) {
+                show();
+            } else {
+                this.afterInteraction = show;
+            }
+        },
+
+        /** Installed, or being installed from the header menu: never show again on this page. */
+        stop() {
+            this.standDown = true;
+            clearTimeout(this.timer);
+            this.afterInteraction = null;
+            this.showPrompt = false;
         },
 
         async installApp() {

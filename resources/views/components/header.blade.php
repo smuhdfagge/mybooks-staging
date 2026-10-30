@@ -2,7 +2,8 @@
 <header class="sticky top-0 z-30 print:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
     <div class="flex h-16 items-center justify-between px-3 sm:px-4 lg:px-6 gap-3">
         <!-- Mobile menu button -->
-        <button @click="sidebarOpen = true" 
+        <button type="button" @click="sidebarOpen = true" x-ref="menuButton"
+                aria-controls="app-sidebar" :aria-expanded="sidebarOpen.toString()"
                 class="lg:hidden -ml-1 p-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand-500">
             <span class="sr-only">Open sidebar</span>
             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -44,7 +45,7 @@
 
             <!-- User dropdown -->
             <div x-data="{ open: false }" class="relative">
-                <button @click="open = !open" 
+                <button @click="open = !open" :aria-expanded="open.toString()"
                         class="flex items-center gap-2 p-1 sm:p-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
                     <div class="h-8 w-8 rounded-full bg-brand-600 flex items-center justify-center flex-shrink-0">
                         <span class="text-sm font-medium text-white">{{ auth()->user() ? strtoupper(substr(auth()->user()->name, 0, 1)) : 'G' }}</span>
@@ -122,6 +123,9 @@
     }
 
     function triggerPwaInstall() {
+        // The install banner stands down (it can't reuse the browser's prompt).
+        window.dispatchEvent(new CustomEvent('pwa-install-started'));
+
         if (isIosDevice) {
             // Show iOS instructions modal
             window.dispatchEvent(new CustomEvent('show-ios-install'));
