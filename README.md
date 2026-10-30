@@ -273,6 +273,7 @@ red and amber only ever mean done, problem and waiting.
 | `php artisan bankfeeds:sync` | Reads new transactions for every linked bank account and removes abandoned link attempts (runs every 3 hours) |
 | `php artisan subscriptions:grace --days=14` | Gives active subscriptions time to renew (one-off) |
 | `php artisan bills:receive-pending-stock --dry-run` | Once after the October 2026 update: brings in stock for posted, unpaid bills (stock used to wait for payment) |
+| `php artisan stock:reconcile-layers` | Lists stock on hand with no recorded cost (taking it out is refused until its cost is recorded); `--apply` records it at the average or cost price with an opening-stock journal. Run once after the session 22 update |
 | `php artisan mybooks:backup` | Backs up the database and uploaded files now (`--only-db` for the database alone) |
 | `php artisan mybooks:ensure-admin-roles` | Makes sure every organisation's first user has the admin role |
 

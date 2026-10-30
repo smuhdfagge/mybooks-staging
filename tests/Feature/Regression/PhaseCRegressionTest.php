@@ -23,6 +23,7 @@ use App\Models\SalesReceipt;
 use App\Models\Tenant;
 use App\Models\Vendor;
 use App\Services\AccountCodeService;
+use App\Services\StockValuationService;
 use App\Support\Money;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -85,6 +86,8 @@ class PhaseCRegressionTest extends TestCase
             'tenant_id' => $this->tenant->id, 'type' => 'product', 'track_inventory' => true, 'selling_price' => 10000,
         ]);
         Inventory::create(['tenant_id' => $this->tenant->id, 'item_id' => $item->id, 'quantity' => $onHand, 'reserved_quantity' => 0]);
+        // With its cost, as stock received is (audit MB-31).
+        app(StockValuationService::class)->addLayer($this->tenant->id, $item->id, $onHand, (float) $item->cost_price);
 
         return $item;
     }
