@@ -22,6 +22,9 @@ trait BelongsToTenant
                 return;
             }
 
+            // The context's business wins over a tenant_id passed in, as the
+            // signed-in user's always did: to create a row for another
+            // business, do it inside Tenant::run() for that business.
             $tenantId = TenantContext::id();
             if ($tenantId !== null) {
                 $model->tenant_id = $tenantId;

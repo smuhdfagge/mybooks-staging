@@ -172,7 +172,8 @@ class Session20TenantContextTest extends TestCase
      * businesses' data: none may hit a tenant-scoped query without saying
      * which business (the plan's caution for MB-26). key:rotate (writes
      * .env), the backups and the site files are left out: they read no
-     * business's rows.
+     * business's rows. The rows here are thin; each command's own test runs
+     * it (signed out, see PendingCommandAsCron) on the rows it works on.
      */
     public function test_every_command_runs_signed_out_without_a_missing_context(): void
     {
@@ -217,7 +218,8 @@ class Session20TenantContextTest extends TestCase
 
         foreach ($commands as $command => $arguments) {
             try {
-                $this->artisan($command, $arguments)->run();
+                // Some commands catch a row's error and only print it.
+                $this->artisan($command, $arguments)->doesntExpectOutputToContain('queried with no tenant')->run();
             } catch (MissingTenantContext $e) {
                 $missing[] = "{$command}: {$e->getMessage()}";
             }
