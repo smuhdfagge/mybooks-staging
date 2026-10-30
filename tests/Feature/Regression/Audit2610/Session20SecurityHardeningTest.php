@@ -63,7 +63,7 @@ class Session20SecurityHardeningTest extends TestCase
         }
 
         $this->apiLogin($user->email, $this->secret, '10.9.1.1')
-            ->assertStatus(429)->assertJsonFragment(['success' => false]);
+            ->assertStatus(429)->assertJsonFragment(['success' => false])->assertHeader('Retry-After');
         $this->assertTrue(ActivityLog::withoutGlobalScopes()->where('action', ActivityLog::ACTION_ACCOUNT_LOCKED)->where('user_name', strtoupper($user->email))->exists());
 
         // Another account from the same addresses is unaffected.
@@ -119,7 +119,7 @@ class Session20SecurityHardeningTest extends TestCase
             'plan_id' => $retired->id, 'billing_cycle' => 'monthly',
             'company_name' => 'Retired Plan Ltd', 'company_email' => 'co@retired.test', 'currency' => 'NGN',
             'name' => 'Owner', 'email' => 'owner2@retired.test', 'password' => $this->secret, 'password_confirmation' => $this->secret,
-        ])->assertSessionHasErrors('plan_id');
+        ])->assertSessionHasErrors(['plan_id' => 'That plan is no longer available. Choose another.']);
         $this->assertGuest();
     }
 
@@ -175,9 +175,10 @@ class Session20SecurityHardeningTest extends TestCase
     /**
      * Only a super admin reaches these routes and they can't change
      * themselves, so through the screens one always remains; the rule is
-     * held here directly, as delete's already was.
+     * held here directly, as delete's already was. (update() checks the
+     * same isLastActiveSuperAdmin() before a role change.)
      */
-    public function test_the_last_active_super_admin_cannot_be_deactivated_demoted_or_deleted(): void
+    public function test_the_last_active_super_admin_cannot_be_deactivated_or_deleted(): void
     {
         $viewer = AdminUser::create(['name' => 'Viewer', 'email' => 'viewer@mybooks.test', 'password' => $this->secret, 'role' => AdminUser::ROLE_VIEWER, 'is_active' => true]);
         $last = AdminUser::create(['name' => 'Root', 'email' => 'root@mybooks.test', 'password' => $this->secret, 'role' => AdminUser::ROLE_SUPER_ADMIN, 'is_active' => true]);

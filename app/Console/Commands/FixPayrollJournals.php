@@ -19,6 +19,13 @@ class FixPayrollJournals extends Command
     {
         $tenantId = (int) $this->argument('tenant_id');
 
+        // One business, set up front (audit MB-26): the employee eager load
+        // below is tenant-scoped too.
+        return Tenant::run($tenantId, fn () => $this->fix($tenantId, $journalService));
+    }
+
+    private function fix(int $tenantId, JournalService $journalService): int
+    {
         $paidPayrolls = Payroll::withoutGlobalScopes()
             ->where('tenant_id', $tenantId)
             ->where('status', 'paid')
@@ -42,7 +49,7 @@ class FixPayrollJournals extends Command
 
         foreach ($paidPayrolls as $payroll) {
             try {
-                Tenant::run($tenantId, fn () => DB::transaction(function () use ($payroll, $journalService, &$fixed, &$created, $tenantId) {
+                DB::transaction(function () use ($payroll, $journalService, &$fixed, &$created, $tenantId) {
                     $existingJournal = Journal::withoutGlobalScopes()
                         ->where('reference_type', Payroll::class)
                         ->where('reference_id', $payroll->id)
@@ -56,7 +63,7 @@ class FixPayrollJournals extends Command
                     }
 
                     $journalService->createPayrollJournal($payroll);
-                }));
+                });
             } catch (\Exception $e) {
                 $errors++;
                 $this->newLine();

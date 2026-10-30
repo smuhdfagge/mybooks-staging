@@ -62,6 +62,8 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'phone' => ['nullable', 'string', 'max:20'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ], [
+            'plan_id.exists' => 'That plan is no longer available. Choose another.',
         ]);
 
         // Get the plan and validate billing cycle

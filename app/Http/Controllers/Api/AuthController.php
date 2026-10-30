@@ -40,9 +40,11 @@ class AuthController extends BaseApiController
         // stopped too, as on the web and admin sign-ins.
         $lockKey = 'api-login:'.Str::lower(trim((string) $request->email));
         if (RateLimiter::tooManyAttempts($lockKey, self::MAX_ATTEMPTS)) {
-            $minutes = (int) ceil(RateLimiter::availableIn($lockKey) / 60);
+            $seconds = RateLimiter::availableIn($lockKey);
+            $minutes = (int) ceil($seconds / 60);
 
-            return $this->error("Too many failed sign-in attempts for this account. Please try again in {$minutes} minute(s).", 429);
+            return $this->error("Too many failed sign-in attempts for this account. Please try again in {$minutes} minute(s).", 429)
+                ->header('Retry-After', (string) $seconds);
         }
 
         $user = User::where('email', $request->email)->first();
