@@ -158,6 +158,10 @@ function pwaInstall() {
     return {
         showPrompt: false,
         offered: false,
+        interacted: false,
+        afterInteraction: null,
+        timer: null,
+        standDown: false,
         deferredPrompt: null,
         isIos: false,
         isStandalone: false,
@@ -186,6 +190,20 @@ function pwaInstall() {
                 }
             }
 
+            // A click or key press counts from the start, even before the
+            // browser says the app can be installed.
+            const events = ['pointerdown', 'keydown'];
+            const seen = () => {
+                events.forEach((type) => window.removeEventListener(type, seen));
+                this.interacted = true;
+                this.afterInteraction?.();
+                this.afterInteraction = null;
+            };
+            events.forEach((type) => window.addEventListener(type, seen));
+
+            // Installing from the header menu: this banner has nothing left to offer.
+            window.addEventListener('pwa-install-started', () => this.stop());
+
             // Listen for beforeinstallprompt event (Chrome, Edge, etc.)
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
@@ -200,7 +218,7 @@ function pwaInstall() {
 
             // Listen for successful installation
             window.addEventListener('appinstalled', () => {
-                this.showPrompt = false;
+                this.stop();
                 this.deferredPrompt = null;
                 console.log('PWA installed successfully');
             });
@@ -222,15 +240,28 @@ function pwaInstall() {
                 }
             } catch (e) {}
 
-            const events = ['pointerdown', 'keydown'];
             const show = () => {
-                events.forEach((type) => window.removeEventListener(type, show));
-                setTimeout(() => {
+                this.timer = setTimeout(() => {
+                    if (this.standDown) {
+                        return;
+                    }
                     this.showPrompt = true;
                     try { sessionStorage.setItem('pwa-prompt-shown', '1'); } catch (e) {}
                 }, 4000);
             };
-            events.forEach((type) => window.addEventListener(type, show));
+            if (this.interacted) {
+                show();
+            } else {
+                this.afterInteraction = show;
+            }
+        },
+
+        /** Installed, or being installed from the header menu: never show again on this page. */
+        stop() {
+            this.standDown = true;
+            clearTimeout(this.timer);
+            this.afterInteraction = null;
+            this.showPrompt = false;
         },
 
         async installApp() {

@@ -123,6 +123,9 @@
     }
 
     function triggerPwaInstall() {
+        // The install banner stands down (it can't reuse the browser's prompt).
+        window.dispatchEvent(new CustomEvent('pwa-install-started'));
+
         if (isIosDevice) {
             // Show iOS instructions modal
             window.dispatchEvent(new CustomEvent('show-ios-install'));
