@@ -10,6 +10,10 @@
 #
 # The front-end files (public/build) are not in git and are not built here
 # (no Node on the server): upload the build zip separately when one is sent.
+#
+# It backs the database up first and stops if that fails, and writes where
+# it started from to storage/app/last-deploy-from. To undo a deploy, see
+# docs/ROLLBACK.md.
 
 set -euo pipefail
 
@@ -26,6 +30,25 @@ if [ -z "$COMPOSER_BIN" ]; then
     echo "Composer not found. Set COMPOSER_BIN=/path/to/composer and try again." >&2
     exit 1
 fi
+
+# A database backup before anything changes (audit MB-25: deploys used to
+# migrate with no backup). Taken while the old code is still in place, so
+# when it fails nothing has been touched and the site carries on as it was.
+echo "==> Backing up the database"
+if ! BACKUP_OUTPUT="$("$PHP" artisan mybooks:backup --only-db --no-cleanup 2>&1)"; then
+    printf '%s\n' "$BACKUP_OUTPUT" >&2
+    echo "" >&2
+    echo "The backup failed, so nothing was deployed. Fix what it says above" >&2
+    echo "(README, 'Backups') and run this again." >&2
+    exit 1
+fi
+printf '    %s\n' "$BACKUP_OUTPUT"
+BACKUP_FILE="$(printf '%s\n' "$BACKUP_OUTPUT" | sed -n 's/^Backup \([^ ]*\) .*/\1/p' | head -n 1)"
+
+# Where this deploy started from: what docs/ROLLBACK.md goes back to.
+PREVIOUS_COMMIT="$(git rev-parse HEAD)"
+mkdir -p storage/app
+printf 'commit=%s\nbackup=%s\nat=%s\n' "$PREVIOUS_COMMIT" "${BACKUP_FILE:-unknown}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > storage/app/last-deploy-from
 
 echo "==> Getting the latest code"
 # Never stop at a username/password prompt: GitHub no longer accepts
@@ -114,3 +137,4 @@ echo "==> Restarting queue workers"
 
 "$PHP" artisan up
 echo "==> Done: $(git log -1 --format='%h %s')"
+echo "    Came from ${PREVIOUS_COMMIT:0:7}; database backup ${BACKUP_FILE:-unknown}. To undo: docs/ROLLBACK.md"

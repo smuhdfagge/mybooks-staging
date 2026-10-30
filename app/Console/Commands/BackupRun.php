@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use App\Services\BackupService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Throwable;
 
 /**
@@ -27,7 +26,7 @@ class BackupRun extends Command
         } catch (Throwable $e) {
             Log::error('Backup failed: '.$e->getMessage());
             $this->error('Backup failed: '.$e->getMessage());
-            $this->notify('MyBooks backup FAILED', 'The backup at '.now()->toDayDateTimeString()." failed:\n\n".$e->getMessage()."\n\nCheck storage/logs and run: php artisan mybooks:backup");
+            $backups->notifyFailure('MyBooks backup FAILED', 'The backup at '.now()->toDayDateTimeString()." failed:\n\n".$e->getMessage()."\n\nCheck storage/logs and run: php artisan mybooks:backup");
 
             return self::FAILURE;
         }
@@ -43,19 +42,5 @@ class BackupRun extends Command
         ));
 
         return self::SUCCESS;
-    }
-
-    private function notify(string $subject, string $body): void
-    {
-        $to = config('mybooks.backup.notify');
-        if (! $to) {
-            return;
-        }
-
-        try {
-            Mail::raw($body, fn ($m) => $m->to($to)->subject($subject));
-        } catch (Throwable $e) {
-            Log::error('Could not send the backup failure email: '.$e->getMessage());
-        }
     }
 }

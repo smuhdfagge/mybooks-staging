@@ -169,11 +169,18 @@ Schedule::command('subscriptions:auto-renew')
 |--------------------------------------------------------------------------
 | Backups (finding O1)
 |--------------------------------------------------------------------------
-| Database and uploaded files, daily, to the disks in BACKUP_DISKS.
+| Database and uploaded files, daily, to the disks in BACKUP_DISKS; and
+| once a week, a check that the newest one opens and holds the database
+| (audit MB-33).
 */
 if (config('mybooks.backup.enabled')) {
     Schedule::command('mybooks:backup')
         ->dailyAt('01:30')
         ->withoutOverlapping(120)
+        ->onOneServer();
+
+    Schedule::command('mybooks:backup:verify')
+        ->weeklyOn(1, '03:15')
+        ->withoutOverlapping(60)
         ->onOneServer();
 }

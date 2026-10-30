@@ -500,7 +500,8 @@ class PhaseARegressionTest extends TestCase
     public function test_o1_backup_is_scheduled_daily(): void
     {
         $events = collect(app(Schedule::class)->events())
-            ->filter(fn ($e) => str_contains($e->command ?? '', 'mybooks:backup'));
+            // The backup itself, not mybooks:backup:verify (weekly).
+            ->filter(fn ($e) => preg_match('/mybooks:backup(\s|$)/', $e->command ?? '') === 1);
 
         $this->assertCount(1, $events);
         $this->assertSame('30 1 * * *', $events->first()->expression);
