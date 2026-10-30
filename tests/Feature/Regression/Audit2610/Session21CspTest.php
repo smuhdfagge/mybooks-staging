@@ -51,9 +51,11 @@ class Session21CspTest extends TestCase
     {
         // An older @alpinejs/csp read no \uXXXX escapes, so every & or quote
         // @js wrote came out as text ("plan=starteru0026cycle=annual").
-        $bundled = json_decode(file_get_contents(base_path('vendor/livewire/livewire/package.json')), true)['dependencies']['alpinejs'];
-        $ours = json_decode(file_get_contents(base_path('package.json')), true)['devDependencies']['@alpinejs/csp'];
-        $this->assertSame(ltrim($bundled, '^~'), ltrim($ours, '^~'));
+        // Read from the built files: Composer's dist of Livewire has no package.json.
+        $version = fn (string $file) => preg_match('/version: "(\d+\.\d+\.\d+)"/', (string) file_get_contents(base_path($file)), $m) ? $m[1] : null;
+        $bundled = $version('vendor/livewire/livewire/dist/livewire.csp.esm.js');
+        $this->assertNotNull($bundled, "Livewire's CSP build no longer says its Alpine version");
+        $this->assertSame('^'.$bundled, json_decode(file_get_contents(base_path('package.json')), true)['devDependencies']['@alpinejs/csp']);
     }
 
     public function test_js_writes_a_literal_the_csp_parser_reads_not_json_parse(): void
