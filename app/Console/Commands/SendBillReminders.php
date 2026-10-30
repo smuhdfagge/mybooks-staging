@@ -31,16 +31,18 @@ class SendBillReminders extends Command
         $total = 0;
 
         foreach ($tenants as $tenant) {
-            $settings = NotificationSetting::getForTenant($tenant->id);
+            Tenant::run($tenant, function () use ($tenant, &$total) {
+                $settings = NotificationSetting::getForTenant($tenant->id);
 
-            if ($settings->send_bill_due_reminders) {
-                $count = $this->notificationService->sendBillDueReminders(
-                    $tenant->id,
-                    $settings->bill_reminder_days_before
-                );
-                $total += $count;
-                $this->info("Tenant {$tenant->name}: {$count} bill reminders sent");
-            }
+                if ($settings->send_bill_due_reminders) {
+                    $count = $this->notificationService->sendBillDueReminders(
+                        $tenant->id,
+                        $settings->bill_reminder_days_before
+                    );
+                    $total += $count;
+                    $this->info("Tenant {$tenant->name}: {$count} bill reminders sent");
+                }
+            });
         }
 
         $this->info("Total: {$total} bill reminders sent");

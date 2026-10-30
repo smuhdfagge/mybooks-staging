@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Tenant;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,6 +27,10 @@ class AdminAuthenticate
                 ->with('error', 'Your account has been deactivated.');
         }
 
-        return $next($request);
+        // The platform admin works across every business, on purpose
+        // (audit MB-26: tenant-scoped queries need an explicit context).
+        // Route model binding has already run by now: an admin route that
+        // binds a tenant-scoped model must bind it withoutGlobalScope('tenant').
+        return Tenant::acrossAll(fn () => $next($request));
     }
 }

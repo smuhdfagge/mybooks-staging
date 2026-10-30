@@ -12,12 +12,18 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends BaseApiController
 {
+    /** Wrong passwords allowed per account before a 15-minute lockout (audit MB-27). */
+    public const MAX_ATTEMPTS = 5;
+
+    public const LOCKOUT_SECONDS = 900;
+
     /**
      * Login user and create token
      */
@@ -29,13 +35,31 @@ class AuthController extends BaseApiController
             'device_name' => 'required|string',
         ]);
 
+        // Per-account lockout on top of the per-IP route throttle (audit
+        // MB-27): guessing one account's password from many addresses is
+        // stopped too, as on the web and admin sign-ins.
+        $lockKey = 'api-login:'.Str::lower(trim((string) $request->email));
+        if (RateLimiter::tooManyAttempts($lockKey, self::MAX_ATTEMPTS)) {
+            $minutes = (int) ceil(RateLimiter::availableIn($lockKey) / 60);
+
+            return $this->error("Too many failed sign-in attempts for this account. Please try again in {$minutes} minute(s).", 429);
+        }
+
         $user = User::where('email', $request->email)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
+            if (RateLimiter::hit($lockKey, self::LOCKOUT_SECONDS) >= self::MAX_ATTEMPTS) {
+                ActivityLogService::logAccountLocked((string) $request->email, 'Too many failed API sign-in attempts');
+            } else {
+                ActivityLogService::logFailedLogin((string) $request->email);
+            }
+
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
         }
+
+        RateLimiter::clear($lockKey);
 
         if (! $user->is_active) {
             return $this->error('Your account has been deactivated. Please contact support.', 403);
@@ -79,9 +103,11 @@ class AuthController extends BaseApiController
         // Revoke old tokens for this device
         $user->tokens()->where('name', $request->device_name)->delete();
 
-        // Create new token with scoped abilities
-        $abilities = $this->getTokenAbilities($user);
-        $token = $user->createToken($request->device_name, $abilities)->plainTextToken;
+        // No ability list on the token (audit MB-47): nothing checked it,
+        // and a copy of the permissions taken at sign-in goes stale when a
+        // role changes. What the token may do is the user's permissions,
+        // checked live by the permission middleware on every API route.
+        $token = $user->createToken($request->device_name)->plainTextToken;
 
         ActivityLogService::logApiTokenCreated($user, $request->device_name);
 
@@ -144,9 +170,8 @@ class AuthController extends BaseApiController
         // Delete current token
         $request->user()->currentAccessToken()->delete();
 
-        // Create new token with scoped abilities
-        $abilities = $this->getTokenAbilities($user);
-        $token = $user->createToken($deviceName, $abilities)->plainTextToken;
+        // Permissions are checked live, not carried on the token (see login()).
+        $token = $user->createToken($deviceName)->plainTextToken;
 
         return $this->success([
             'token' => $token,
@@ -251,88 +276,6 @@ class AuthController extends BaseApiController
         }
 
         return $this->error(__($status), 400);
-    }
-
-    /**
-     * Get token abilities based on user permissions.
-     */
-    protected function getTokenAbilities(User $user): array
-    {
-        $abilities = ['*:read']; // All authenticated users can read their own profile
-
-        $permissionMap = [
-            'view dashboard' => 'dashboard:read',
-            'view customers' => 'customers:read',
-            'create customers' => 'customers:write',
-            'edit customers' => 'customers:write',
-            'delete customers' => 'customers:delete',
-            'view vendors' => 'vendors:read',
-            'create vendors' => 'vendors:write',
-            'edit vendors' => 'vendors:write',
-            'delete vendors' => 'vendors:delete',
-            'view items' => 'items:read',
-            'create items' => 'items:write',
-            'edit items' => 'items:write',
-            'delete items' => 'items:delete',
-            'view invoices' => 'invoices:read',
-            'create invoices' => 'invoices:write',
-            'edit invoices' => 'invoices:write',
-            'delete invoices' => 'invoices:delete',
-            'send invoices' => 'invoices:send',
-            'view bills' => 'bills:read',
-            'create bills' => 'bills:write',
-            'edit bills' => 'bills:write',
-            'delete bills' => 'bills:delete',
-            'view expenses' => 'expenses:read',
-            'create expenses' => 'expenses:write',
-            'edit expenses' => 'expenses:write',
-            'delete expenses' => 'expenses:delete',
-            'view payments-received' => 'payments-received:read',
-            'create payments-received' => 'payments-received:write',
-            'delete payments-received' => 'payments-received:delete',
-            'view payments-made' => 'payments-made:read',
-            'create payments-made' => 'payments-made:write',
-            'delete payments-made' => 'payments-made:delete',
-            'view chart-of-accounts' => 'accounts:read',
-            'create chart-of-accounts' => 'accounts:write',
-            'edit chart-of-accounts' => 'accounts:write',
-            'delete chart-of-accounts' => 'accounts:delete',
-            'view journals' => 'journals:read',
-            'create journals' => 'journals:write',
-            'edit journals' => 'journals:write',
-            'delete journals' => 'journals:delete',
-            'view banks' => 'banks:read',
-            'create banks' => 'banks:write',
-            'edit banks' => 'banks:write',
-            'delete banks' => 'banks:delete',
-            'view inventory' => 'inventory:read',
-            'adjust inventory' => 'inventory:write',
-            'view employees' => 'employees:read',
-            'create employees' => 'employees:write',
-            'edit employees' => 'employees:write',
-            'delete employees' => 'employees:delete',
-            'view sales-orders' => 'sales-orders:read',
-            'create sales-orders' => 'sales-orders:write',
-            'edit sales-orders' => 'sales-orders:write',
-            'delete sales-orders' => 'sales-orders:delete',
-            'view reports' => 'reports:read',
-            'export reports' => 'reports:export',
-            'view settings' => 'settings:read',
-            'edit settings' => 'settings:write',
-        ];
-
-        // Super admins get all abilities
-        if ($user->isSuperAdmin()) {
-            return ['*'];
-        }
-
-        foreach ($permissionMap as $permission => $ability) {
-            if ($user->can($permission)) {
-                $abilities[] = $ability;
-            }
-        }
-
-        return array_unique($abilities);
     }
 
     /**

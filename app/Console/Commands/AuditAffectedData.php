@@ -55,12 +55,12 @@ class AuditAffectedData extends Command
         foreach ($tenants as $tenant) {
             $this->newLine();
             $this->info("Tenant {$tenant->id}: {$tenant->name}");
-            $ledger = $statements->accountBalances($tenant->id, null, '2999-12-31')->keyBy('id');
-            $flagged += $this->linkedSchedules($tenant->id)
+            $ledger = Tenant::run($tenant, fn () => $statements->accountBalances($tenant->id, null, '2999-12-31')->keyBy('id'));
+            $flagged += Tenant::run($tenant, fn () => $this->linkedSchedules($tenant->id)
                 + $this->negativeBalances($tenant->id, $ledger)
                 + $this->sensitiveRoles($tenant->id)
                 + $this->bankDifferences($tenant->id, $ledger)
-                + $this->unknownPaymentMethods($tenant->id);
+                + $this->unknownPaymentMethods($tenant->id));
         }
 
         $this->newLine();

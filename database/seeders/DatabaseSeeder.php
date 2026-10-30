@@ -312,7 +312,7 @@ class DatabaseSeeder extends Seeder
         ChartOfAccountService::createDefaultAccounts($tenant->id);
 
         // Create default leave types
-        $this->createLeaveTypes($tenant->id);
+        Tenant::run($tenant, fn () => $this->createLeaveTypes($tenant->id));
     }
 
     private function createLeaveTypes(int $tenantId): void

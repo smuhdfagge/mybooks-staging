@@ -22,6 +22,7 @@ use App\Models\PaymentMade;
 use App\Models\PaymentReceived;
 use App\Models\SalesReceipt;
 use App\Models\TaxRate;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Services\DepreciationService;
@@ -607,7 +608,7 @@ class Phase3RegressionTest extends TestCase
         $user = User::factory()->create(['tenant_id' => $tenant->id]);
         $user->givePermissionTo(Permission::findOrCreate('create payments-received', 'web'));
         $customer = Customer::factory()->create(['tenant_id' => $tenant->id]);
-        $invoice = Invoice::factory()->sent()->create(['tenant_id' => $tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000044']);
+        $invoice = Tenant::run($tenant, fn () => Invoice::factory()->sent()->create(['tenant_id' => $tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000044']));
 
         // Form-encoded, so IDs arrive as strings. The old strict comparison rejected this.
         $this->actingAs($user, 'sanctum')

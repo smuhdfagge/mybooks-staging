@@ -104,6 +104,11 @@ class ChartOfAccountService
      */
     public static function createDefaultAccounts(int $tenantId): int
     {
+        return Tenant::run($tenantId, fn () => self::createDefaultAccountsIn($tenantId));
+    }
+
+    private static function createDefaultAccountsIn(int $tenantId): int
+    {
         $accounts = self::getDefaultAccounts();
         $createdCount = 0;
 
@@ -140,7 +145,7 @@ class ChartOfAccountService
      */
     public static function tenantHasAccounts(int $tenantId): bool
     {
-        return ChartOfAccount::where('tenant_id', $tenantId)->exists();
+        return Tenant::run($tenantId, fn () => ChartOfAccount::where('tenant_id', $tenantId)->exists());
     }
 
     /**

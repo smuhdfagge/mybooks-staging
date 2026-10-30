@@ -10,6 +10,7 @@ use App\Models\SubscriptionPayment;
 use App\Models\SubscriptionRenewalAttempt;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\TenantContext;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -130,6 +131,16 @@ class SubscriptionBilling
         $reference = (string) ($data['reference'] ?? '');
         if ($reference === '') {
             return null;
+        }
+
+        // From the webhook nobody is signed in (and from the callback it is
+        // whoever's browser came back), so the work runs in the payment's
+        // own business (audit MB-26).
+        $tenantId = SubscriptionPayment::withoutGlobalScopes()->where('reference', $reference)->value('tenant_id');
+        if ($tenantId !== null && TenantContext::id() !== (int) $tenantId) {
+            // The subscription is read inside, too: the callback shows its
+            // end date after this context has ended.
+            return Tenant::run((int) $tenantId, fn () => $this->applyCharge($data)?->loadMissing('subscription'));
         }
 
         $renewed = null;

@@ -31,17 +31,19 @@ class SendLowStockAlerts extends Command
         $alertsSent = 0;
 
         foreach ($tenants as $tenant) {
-            $settings = NotificationSetting::getForTenant($tenant->id);
+            Tenant::run($tenant, function () use ($tenant, &$alertsSent) {
+                $settings = NotificationSetting::getForTenant($tenant->id);
 
-            if ($settings->send_low_stock_alerts) {
-                $sent = $this->notificationService->sendLowStockAlerts($tenant->id);
-                if ($sent) {
-                    $alertsSent++;
-                    $this->info("Tenant {$tenant->name}: Low stock alert sent");
-                } else {
-                    $this->line("Tenant {$tenant->name}: No low stock items");
+                if ($settings->send_low_stock_alerts) {
+                    $sent = $this->notificationService->sendLowStockAlerts($tenant->id);
+                    if ($sent) {
+                        $alertsSent++;
+                        $this->info("Tenant {$tenant->name}: Low stock alert sent");
+                    } else {
+                        $this->line("Tenant {$tenant->name}: No low stock items");
+                    }
                 }
-            }
+            });
         }
 
         $this->info("Total: {$alertsSent} tenants alerted");

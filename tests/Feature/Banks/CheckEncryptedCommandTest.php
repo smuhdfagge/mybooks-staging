@@ -38,7 +38,7 @@ class CheckEncryptedCommandTest extends TestCase
             ->assertSuccessful();
 
         // The readable row is not counted, and nothing was written.
-        $this->assertSame('0123456789', Bank::find($good->id)->account_number);
+        $this->assertSame('0123456789', Bank::withoutGlobalScope('tenant')->find($good->id)->account_number);
         $this->assertSame('not-our-ciphertext', DB::table('banks')->where('id', $bad->id)->value('account_number'));
     }
 }

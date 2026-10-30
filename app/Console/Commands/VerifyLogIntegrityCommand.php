@@ -47,7 +47,7 @@ class VerifyLogIntegrityCommand extends Command
     {
         $this->info("Verifying tenant #{$tenantId}...");
 
-        $result = LogIntegrityService::verifyChain($tenantId, $limit);
+        $result = Tenant::run($tenantId, fn () => LogIntegrityService::verifyChain($tenantId, $limit));
 
         if ($result['valid']) {
             $this->info("  ✓ {$result['checked']} entries verified — no tampering detected.");

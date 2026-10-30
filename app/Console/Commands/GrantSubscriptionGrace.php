@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Subscription;
+use App\Models\Tenant;
 use Illuminate\Console\Command;
 
 /**
@@ -22,6 +23,13 @@ class GrantSubscriptionGrace extends Command
     protected $description = 'Give existing active subscriptions time to renew before billing is enforced';
 
     public function handle(): int
+    {
+        // Every business, on purpose (audit MB-26: tenant-scoped queries need
+        // an explicit context; see Tenant::acrossAll()).
+        return Tenant::acrossAll(fn () => $this->runForEveryBusiness());
+    }
+
+    private function runForEveryBusiness(): int
     {
         $days = max(1, (int) $this->option('days'));
         $until = now()->addDays($days)->endOfDay();

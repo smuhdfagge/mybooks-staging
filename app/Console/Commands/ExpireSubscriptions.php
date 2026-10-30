@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Http\Middleware\EnsureFeatureEnabled;
 use App\Models\BillingCard;
 use App\Models\Subscription;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\SubscriptionExpiringNotification;
 use Illuminate\Console\Command;
@@ -27,6 +28,13 @@ class ExpireSubscriptions extends Command
     public const REMINDER_DAYS = [7, 1];
 
     public function handle(): int
+    {
+        // Every business, on purpose (audit MB-26: tenant-scoped queries need
+        // an explicit context; see Tenant::acrossAll()).
+        return Tenant::acrossAll(fn () => $this->runForEveryBusiness());
+    }
+
+    private function runForEveryBusiness(): int
     {
         $expired = 0;
         $reminded = 0;

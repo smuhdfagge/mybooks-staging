@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
+use App\Models\Tenant;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -21,10 +22,17 @@ class RecalculateAccountBalances extends Command
      */
     protected $description = 'Recalculate all chart of account balances from journal entries';
 
+    public function handle(): int
+    {
+        // Every business, on purpose (audit MB-26: tenant-scoped queries need
+        // an explicit context; see Tenant::acrossAll()).
+        return Tenant::acrossAll(fn () => $this->runForEveryBusiness());
+    }
+
     /**
      * Execute the console command.
      */
-    public function handle(): int
+    private function runForEveryBusiness(): int
     {
         $dryRun = $this->option('dry-run');
         $tenantId = $this->option('tenant');

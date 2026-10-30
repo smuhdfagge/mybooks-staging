@@ -9,6 +9,7 @@ use App\Models\Plan;
 use App\Models\Role;
 use App\Models\Subscription;
 use App\Models\SubscriptionPayment;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\SubscriptionExpiringNotification;
 use Illuminate\Support\Facades\Http;
@@ -210,10 +211,11 @@ class Phase5RegressionTest extends TestCase
     {
         $body = json_encode($event);
 
-        return $this->call('POST', route('billing.webhook'), [], [], [], [
+        // Paystack's server: nobody signed in.
+        return $this->signedOut(fn () => $this->call('POST', route('billing.webhook'), [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_PAYSTACK_SIGNATURE' => hash_hmac('sha512', $body, self::SECRET),
-        ], $body);
+        ], $body));
     }
 
     private function charge(SubscriptionPayment $payment, array $overrides = []): array
@@ -325,6 +327,23 @@ class Phase5RegressionTest extends TestCase
         $this->assertSame($subscription->id, $payment->fresh()->subscription_id);
     }
 
+    public function test_c1_callback_works_when_the_browser_is_no_longer_signed_in(): void
+    {
+        $this->paystack();
+        $this->makePending();
+        $payment = $this->startPayment();
+
+        // The session ran out while paying by transfer, or another device came back.
+        Http::fake([
+            'api.paystack.co/transaction/verify/*' => Http::response(['status' => true, 'data' => $this->charge($payment)]),
+        ]);
+        $this->signedOut(fn () => $this->get(route('billing.callback', ['reference' => $payment->reference]))
+            ->assertRedirect(route('settings.subscription'))
+            ->assertSessionHas('success', 'Payment received. Your subscription is active until '.now()->addMonth()->format('M d, Y').'.'));
+
+        $this->assertSame('success', $payment->fresh()->status);
+    }
+
     public function test_c1_webhook_with_a_bad_signature_is_rejected(): void
     {
         $this->paystack();
@@ -355,7 +374,7 @@ class Phase5RegressionTest extends TestCase
         $endsAt = $this->subscription->fresh()->ends_at;
         $this->signedWebhook($event)->assertOk();
 
-        $this->assertTrue($this->tenant->fresh()->hasActiveSubscription());
+        $this->assertTrue(Tenant::run($this->tenant, fn () => $this->tenant->fresh()->hasActiveSubscription()));
         $this->assertEquals($endsAt, $this->subscription->fresh()->ends_at);
     }
 

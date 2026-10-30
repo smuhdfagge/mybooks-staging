@@ -56,7 +56,7 @@ class PostMissingDisposalJournals extends Command
                 $date = Carbon::parse($asset->disposal_date ?? $asset->updated_at)->startOfDay();
                 $proceeds = round((float) ($asset->disposal_amount ?? 0), 2);
                 $gainLoss = round($proceeds - (float) $asset->book_value, 2);
-                $blocked = LockDates::instance()->blockReason($date, $t);
+                $blocked = Tenant::run($t, fn () => LockDates::instance()->blockReason($date, $t));
                 $status = match (true) {
                     (float) $asset->purchase_cost <= 0 => 'nothing to post (no cost)',
                     $blocked !== null => 'SKIPPED: date is locked or closed',
@@ -79,7 +79,7 @@ class PostMissingDisposalJournals extends Command
                     continue;
                 }
 
-                DB::transaction(function () use ($asset, $date, $proceeds, $gainLoss, $journals) {
+                Tenant::run($t, fn () => DB::transaction(function () use ($asset, $date, $proceeds, $gainLoss, $journals) {
                     $journal = $journals->createDisposalJournal($asset, $date, $proceeds, $gainLoss);
                     $journal?->forceFill(['description' => $journal->description.' (posted late)'])->withoutPeriodValidation()->save();
                     $asset->forceFill([
@@ -88,7 +88,7 @@ class PostMissingDisposalJournals extends Command
                         'disposal_method' => $asset->disposal_method ?: 'other',
                         'gain_loss_on_disposal' => $gainLoss,
                     ])->withoutPeriodValidation()->save();
-                });
+                }));
             }
             $this->table(['Date', 'Asset', 'Name', 'Cost', 'Depreciation', 'Received', 'Gain / loss', 'Result'], $rows);
         }

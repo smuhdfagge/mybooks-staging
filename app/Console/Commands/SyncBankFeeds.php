@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\BankFeedConnection;
+use App\Models\Tenant;
 use App\Services\BankFeeds\BankFeedSync;
 use Illuminate\Console\Command;
 
@@ -18,6 +19,13 @@ class SyncBankFeeds extends Command
     protected $description = 'Pull new bank transactions for all linked bank accounts';
 
     public function handle(BankFeedSync $sync): int
+    {
+        // Every business, on purpose (audit MB-26: tenant-scoped queries need
+        // an explicit context; see Tenant::acrossAll()).
+        return Tenant::acrossAll(fn () => $this->runForEveryBusiness($sync));
+    }
+
+    private function runForEveryBusiness(BankFeedSync $sync): int
     {
         if (! config('mybooks.features.bank_feeds')) {
             return self::SUCCESS;

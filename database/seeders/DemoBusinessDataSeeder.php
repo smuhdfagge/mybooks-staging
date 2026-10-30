@@ -43,6 +43,13 @@ class DemoBusinessDataSeeder extends Seeder
         }
 
         $tenant = Tenant::where('slug', 'demo-company')->firstOrFail();
+        // Seeding runs with nobody signed in: the demo data goes in the
+        // demo business (audit MB-26).
+        Tenant::run($tenant, fn () => $this->seedDemo($tenant));
+    }
+
+    private function seedDemo(Tenant $tenant): void
+    {
         $user = User::where('email', 'demo@mybooks.local')->firstOrFail();
         $tenantId = (int) $tenant->id;
 

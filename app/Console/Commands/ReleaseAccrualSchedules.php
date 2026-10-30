@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Actions\AccrualSchedules\ReleaseAccrualSchedule;
 use App\Http\Middleware\EnsureFeatureEnabled;
 use App\Models\AccrualSchedule;
+use App\Models\Tenant;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -42,7 +43,7 @@ class ReleaseAccrualSchedules extends Command
         $failed = 0;
         foreach ($schedules as $schedule) {
             try {
-                $count = $release->handle($schedule, $today);
+                $count = Tenant::run($schedule->tenant_id, fn () => $release->handle($schedule, $today));
                 if ($count) {
                     $released += $count;
                     $this->line("Business #{$schedule->tenant_id}: {$schedule->schedule_number} released {$count} month(s)");

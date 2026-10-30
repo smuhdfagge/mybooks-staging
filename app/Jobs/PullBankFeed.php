@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\BankFeedConnection;
+use App\Models\Tenant;
 use App\Services\BankFeeds\BankFeedSync;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -28,7 +29,7 @@ class PullBankFeed implements ShouldQueue
     {
         $connection = BankFeedConnection::withoutGlobalScopes()->find($this->connectionId);
         if ($connection) {
-            $sync->pull($connection);
+            Tenant::run($connection->tenant_id, fn () => $sync->pull($connection));
         }
     }
 }
