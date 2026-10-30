@@ -6,6 +6,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\SalesReceipt;
 use App\Models\SalesReceiptItem;
+use App\Services\StockValuationService;
 
 /**
  * An edit writes an invoice's or sales receipt's lines again, which drops
@@ -18,6 +19,10 @@ use App\Models\SalesReceiptItem;
  * When the stock lines are the same (item and quantity, from the same
  * warehouse), the new lines keep the costs the old ones were issued at.
  * Any change to them still re-issues the whole document, as before.
+ *
+ * documentCogs only puts stock back when it has a stock line to issue
+ * again, so an edit that leaves none (the stock line replaced by a
+ * service, or its item no longer kept in stock) puts it back here.
  */
 trait KeepsStockCosts
 {
@@ -52,12 +57,20 @@ trait KeepsStockCosts
     /** @param  array<string, list<string>>|null  $before  from stockCosts() */
     protected function keepStockCosts(Invoice|SalesReceipt $document, ?array $before, bool $sameWarehouse): void
     {
+        $stock = $this->stockLines($document);
+        if ($stock === []) {
+            // A no-op when the document never took any.
+            app(StockValuationService::class)->returnStock($document::class, $document->id);
+
+            return;
+        }
+
         if (! $before || ! $sameWarehouse) {
             return;
         }
 
         $after = [];
-        foreach ($this->stockLines($document) as $line) {
+        foreach ($stock as $line) {
             $after[$this->stockKey($line)][] = $line;
         }
         $counts = fn (array $lines) => array_map('count', $lines);

@@ -139,4 +139,29 @@ class Session17ReviewFixesTest extends TestCase
         $this->assertEqualsWithDelta(8, $onHand($rice), 0.001);
         $this->assertEqualsWithDelta(2000, $this->cogs(Journal::currentFor($receipt)), 0.001, 'only the rice');
     }
+
+    public function test_an_edit_that_leaves_no_stock_lines_gives_the_stock_back(): void
+    {
+        $rice = Item::factory()->product()->create(['tenant_id' => $this->tenant->id, 'name' => 'Rice']);
+        $oil = Item::factory()->product()->create(['tenant_id' => $this->tenant->id, 'name' => 'Oil']);
+        $this->buy($rice, 10, 1000, '2026-10-01');
+        $this->buy($oil, 10, 500, '2026-10-01');
+        $onHand = fn (Item $item) => (float) Inventory::withoutGlobalScopes()->where('item_id', $item->id)->sum('quantity');
+        $sell = fn (Item $item) => app(SaveSalesReceipt::class)->create($this->tenant->id, ['receipt_date' => '2026-10-07', 'payment_method' => 'cash',
+            'items' => [['item_id' => $item->id, 'description' => $item->name, 'quantity' => 3, 'unit_price' => 1500, 'tax_rate' => 0]]], $this->user->id);
+
+        // The stock line replaced by a service.
+        $receipt = $sell($rice);
+        app(SaveSalesReceipt::class)->update($receipt->fresh(), ['receipt_date' => '2026-10-07', 'payment_method' => 'cash',
+            'items' => [['description' => 'Delivery', 'quantity' => 1, 'unit_price' => 4500, 'tax_rate' => 0]]]);
+        $this->assertEqualsWithDelta(10, $onHand($rice), 0.001);
+        $this->assertEqualsWithDelta(0, $this->cogs(Journal::currentFor($receipt)), 0.001);
+
+        // The only stock item no longer kept in stock.
+        $receipt = $sell($oil);
+        $oil->update(['track_inventory' => false]);
+        app(SaveSalesReceipt::class)->update($receipt->fresh(), ['receipt_date' => '2026-10-07', 'payment_method' => 'cash', 'notes' => 'x',
+            'items' => [['item_id' => $oil->id, 'description' => 'Oil', 'quantity' => 3, 'unit_price' => 1500, 'tax_rate' => 0]]]);
+        $this->assertEqualsWithDelta(10, $onHand($oil), 0.001);
+    }
 }
