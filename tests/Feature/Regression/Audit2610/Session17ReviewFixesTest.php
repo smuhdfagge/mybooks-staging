@@ -70,15 +70,20 @@ class Session17ReviewFixesTest extends TestCase
         $this->assertEqualsWithDelta(0, $october['lines'][35], 0.001, 'no sales adjustment in October');
     }
 
-    public function test_an_edited_invoice_cancelled_before_its_date_comes_off_the_statement_the_day_it_was_cancelled(): void
+    public function test_an_edited_invoice_cancelled_before_its_date_comes_off_the_statement_on_its_date(): void
     {
+        // Dated 15 November, edited, then cancelled on 20 October.
         $invoice = $this->invoice('2026-11-15');
         app(SaveInvoice::class)->update($invoice, ['items' => [['description' => 'Consulting', 'quantity' => 2, 'unit_price' => 10000, 'tax_rate' => 7.5]]]);
         $invoice->fresh()->update(['status' => 'cancelled']);
 
+        // Not on the edit's reversal date, and not before the invoice either:
+        // the books never show receivables below zero for it.
         $statement = app(Subledger::class)->movements($this->tenant->id, Subledger::CUSTOMERS, $this->customer->id);
-        $this->assertSame('reversal', $statement->firstWhere('kind', 'reversal')?->kind);
-        $this->assertSame('2026-10-20', $statement->firstWhere('kind', 'reversal')->date);
+        $this->assertSame([['invoice', '2026-11-15'], ['reversal', '2026-11-15']], $statement->map(fn ($m) => [$m->kind, $m->date])->all());
+        $this->assertSame([], array_filter(app(Subledger::class)->balances($this->tenant->id, Subledger::CUSTOMERS, '2026-10-31')),
+            'October closes at nothing, as November opens');
+        $this->assertSame('2026-11-15', Journal::where('reference_type', Invoice::class)->where('reference_id', $invoice->id)->latest('id')->first()->journal_date->toDateString());
     }
 
     public function test_a_no_change_edit_of_a_stock_sale_keeps_its_cost_and_its_journal(): void

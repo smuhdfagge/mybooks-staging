@@ -1590,7 +1590,19 @@ class JournalService implements JournalServiceInterface
             ->latest('id')
             ->first();
 
-        return $journal ? $this->reverseJournal($journal, $reason) : null;
+        return $journal ? $this->reverseJournal($journal, $reason, $this->reversalDate($journal)) : null;
+    }
+
+    /**
+     * Today, or the journal's own date if that is later. Cancelling an
+     * invoice dated next month reversed it today, before it was ever due:
+     * receivables (and the customer's statement) went below zero until its
+     * date, and one month's closing balance didn't match the next one's
+     * opening balance.
+     */
+    protected function reversalDate(Journal $journal): string
+    {
+        return max(today()->toDateString(), $journal->journal_date->toDateString());
     }
 
     /**
@@ -1608,7 +1620,7 @@ class JournalService implements JournalServiceInterface
 
         foreach ($this->journalsForTransaction($referenceType, $referenceId, $tenantId) as $journal) {
             if ($journal->status === 'posted' && ! str_starts_with((string) $journal->reference, 'REV-')) {
-                $this->reverseJournal($journal, class_basename($referenceType).' deleted');
+                $this->reverseJournal($journal, class_basename($referenceType).' deleted', $this->reversalDate($journal));
             } elseif (! in_array($journal->status, ['posted', 'reversed'], true)) {
                 $journal->entries()->forceDelete();
                 $journal->forceDelete();
