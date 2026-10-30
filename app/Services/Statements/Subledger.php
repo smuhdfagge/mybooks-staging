@@ -541,12 +541,13 @@ class Subledger
         $out = ['posted' => [], 'reversed' => []];
         $rows = DB::table('journals')->where('tenant_id', $tenantId)->where('reference_type', $type)
             ->where('is_posted', true)->whereNull('deleted_at')
-            ->orderBy('journal_date')->orderBy('id')
+            ->orderBy('id')
             ->get(['reference_id', 'reference', 'journal_date']);
         foreach ($rows as $j) {
             $id = (int) $j->reference_id;
             if (str_starts_with((string) $j->reference, 'REV-')) {
-                // The last: an edit reverses the journal too (on its own date), before any cancelling.
+                // The last one made: an edit reverses the journal too (on the old
+                // journal's date, which can be later than the day it was cancelled).
                 $out['reversed'][$id] = Carbon::parse($j->journal_date)->toDateString();
             } else {
                 $out['posted'][$id] = true;
