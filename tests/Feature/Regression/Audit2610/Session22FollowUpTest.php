@@ -102,9 +102,9 @@ class Session22FollowUpTest extends TestCase
         ChartOfAccount::where('tenant_id', $this->tenant->id)->where('account_code', '3900')->delete();
 
         $this->artisan('stock:reconcile-layers', ['--apply' => true])
-            ->expectsOutputToContain('failed: ')
-            ->expectsOutputToContain('0 cost layer(s) added, 1 difference(s) found')
-            ->assertSuccessful();
+            ->expectsOutputToContain('| failed: ')
+            ->expectsOutputToContain('0 cost layer(s) added, 1 difference(s) found. 1 failed')
+            ->assertFailed();
         $this->assertSame(0, InventoryLayer::where('reference_type', 'opening_stock')->count());
     }
 
@@ -170,6 +170,17 @@ class Session22FollowUpTest extends TestCase
         $this->assertLessThan($layers, $document, 'the invoice before its layers');
         $this->assertLessThan($lookup, $numbering, 'the numbering before the journal look-up');
         $this->assertStringContainsString('`tenant_id`', $sql[$lookup]);
+    }
+
+    public function test_the_journal_numbering_row_is_made_before_it_is_locked(): void
+    {
+        DB::table('document_sequences')->where('tenant_id', $this->tenant->id)->where('type', 'Journal.journal_number')->delete();
+        $invoice = $this->invoice($this->item(10, 10), 4);
+
+        $invoice->update(['status' => 'sent']);
+
+        $this->assertSame(1, DB::table('document_sequences')->where('tenant_id', $this->tenant->id)->where('type', 'Journal.journal_number')->count());
+        $this->assertNotNull(Journal::where('reference_type', Invoice::class)->where('reference_id', $invoice->id)->value('journal_number'));
     }
 
     // ---- depreciation ------------------------------------------------------------

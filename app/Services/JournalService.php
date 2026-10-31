@@ -27,6 +27,7 @@ use App\Models\VendorCredit;
 use App\Models\VendorCreditRefund;
 use App\Models\WhtCreditUtilisation;
 use App\Services\Accounting\LockDates;
+use App\Support\DocumentNumber;
 use App\Support\PayrollStatutory;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -1732,12 +1733,12 @@ class JournalService implements JournalServiceInterface
         // locks the gap where the journal goes in. Two first postings at
         // once (any two new documents) would each wait on the other's gap
         // to insert: a deadlock. So the business's journal numbering is
-        // locked before it, which the posting would take anyway, and the
-        // look-up uses the index that starts with the business, so one
-        // business's gap is never another's.
+        // locked before it (one business posts one document at a time),
+        // and the look-up uses the index that starts with the business, so
+        // two businesses share a gap only where one's journals end and the
+        // next one's begin.
         $this->lockDocument($journal->reference_type, (int) $journal->reference_id);
-        DB::table('document_sequences')->where('tenant_id', $journal->tenant_id)->where('type', 'Journal.journal_number')
-            ->lockForUpdate()->first(['id']);
+        DocumentNumber::lock((int) $journal->tenant_id, Journal::class, 'journal_number', 'JE-');
 
         $previous = Journal::query()
             ->where('tenant_id', $journal->tenant_id)

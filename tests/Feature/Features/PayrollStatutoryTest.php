@@ -171,6 +171,19 @@ class PayrollStatutoryTest extends TestCase
             ->assertSee('162,000.00', false); // pension owed: 2 x 81,000
     }
 
+    public function test_a_month_is_run_for_that_month_whatever_the_day_today(): void
+    {
+        // 'Y-m' took today's day: on the 31st, "2026-09" was 31 September,
+        // that is 1 October, and September's payroll came out as October's.
+        $this->travelTo(Carbon::parse('2026-10-31 10:00'));
+        $this->createAuthenticatedUser(self::PERMS);
+        $this->runPayroll([$this->employee($this->tenant)]);
+
+        $payroll = Payroll::sole();
+        $this->assertSame('2026-09-01', $payroll->pay_period_start->toDateString());
+        $this->assertSame('2026-09-30', $payroll->pay_period_end->toDateString());
+    }
+
     public function test_recording_a_remittance_posts_the_journal_and_clears_the_month(): void
     {
         $this->createAuthenticatedUser(self::PERMS);

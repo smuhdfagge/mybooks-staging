@@ -8,8 +8,9 @@ use Illuminate\Support\Facades\Schema;
  * Finding a document's journal by business first (audit MB-30). Posting
  * looks it up with a locking read; on a first posting that locks the gap
  * in the index where the journal will go. Starting the index with the
- * business keeps each business's gap its own, so two businesses posting
- * new documents at once don't wait on (or deadlock with) each other.
+ * business keeps each business's gaps its own (but for the one where one
+ * business's journals end and the next one's begin), so two businesses
+ * posting new documents at once don't wait on (or deadlock with) each other.
  */
 return new class extends Migration
 {

@@ -169,7 +169,9 @@ class InvoiceController extends BaseApiController
 
         // Out of draft (which posts its journal) and emailed together: a
         // posting that is refused (stock with no cost, a closed month) sends
-        // nothing, and an email that fails leaves it as it was.
+        // nothing. The email is queued (InvoiceSentNotification), so its job
+        // goes in with the posting or not at all; one that can't be queued
+        // leaves the invoice as it was.
         $emailFailed = false;
         try {
             DB::transaction(function () use ($invoice, $notificationService, &$emailFailed) {

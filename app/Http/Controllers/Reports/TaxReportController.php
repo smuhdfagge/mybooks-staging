@@ -242,7 +242,7 @@ class TaxReportController extends ReportController
             case 'month':
             default:
                 try {
-                    return Carbon::createFromFormat('Y-m', $period)->format('F Y');
+                    return Carbon::createFromFormat('!Y-m', $period)->format('F Y');
                 } catch (\Exception $e) {
                     return $period;
                 }

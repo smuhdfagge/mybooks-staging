@@ -47,22 +47,24 @@ class ReconcileStockLayers extends Command
         $tenants = Tenant::query()->when($this->option('tenant'), fn ($q, $id) => $q->whereKey((int) $id))->orderBy('id')->get();
         $found = 0;
         $fixed = 0;
+        $failed = 0;
 
         foreach ($tenants as $tenant) {
-            [$f, $x] = Tenant::run($tenant, fn () => $this->tenant($tenant, $journals, $valuation, $apply));
+            [$f, $x, $e] = Tenant::run($tenant, fn () => $this->tenant($tenant, $journals, $valuation, $apply));
             $found += $f;
             $fixed += $x;
+            $failed += $e;
         }
 
         $this->newLine();
         $this->line($apply
-            ? "{$fixed} cost layer(s) added, {$found} difference(s) found."
+            ? "{$fixed} cost layer(s) added, {$found} difference(s) found.".($failed ? " {$failed} failed: see the table." : '')
             : "{$found} difference(s) found. Dry run: nothing was changed. Run again with --apply once the owner agrees.");
 
-        return self::SUCCESS;
+        return $failed ? self::FAILURE : self::SUCCESS;
     }
 
-    /** @return array{0: int, 1: int} found, fixed */
+    /** @return array{0: int, 1: int, 2: int} found, fixed, failed */
     private function tenant(Tenant $tenant, JournalService $journals, StockValuationService $valuation, bool $apply): array
     {
         $t = (int) $tenant->id;
@@ -83,6 +85,7 @@ class ReconcileStockLayers extends Command
         $rows = [];
         $found = 0;
         $fixed = 0;
+        $failed = 0;
         foreach ($stock as $row) {
             $warehouseId = (int) ($row->warehouse_id ?: Warehouse::defaultIdFor($t));
             $withCost = (float) ($layered->get($row->item_id.':'.$warehouseId)->qty ?? 0);
@@ -107,6 +110,7 @@ class ReconcileStockLayers extends Command
                     $fixed++;
                     $result = 'added';
                 } catch (\Throwable $e) {
+                    $failed++;
                     $result = 'failed: '.mb_substr($e->getMessage(), 0, 120);
                 }
             }
@@ -121,7 +125,7 @@ class ReconcileStockLayers extends Command
             $this->table(['Item', 'Warehouse', 'On hand', 'Sold, not released', 'With a cost', 'Missing', 'Unit cost', 'Value', 'Result'], $rows);
         }
 
-        return [$found, $fixed];
+        return [$found, $fixed, $failed];
     }
 
     /** The missing layer, and its journal: Dr Inventory, Cr Opening Balance Equity. */

@@ -77,6 +77,26 @@ class DocumentNumber
      *
      * @param  class-string<Model>  $model
      */
+    /**
+     * Lock a business's sequence row until the transaction ends, without
+     * using a number up. The row is made first if there is none: locking a
+     * row that isn't there locks only the gap where it would go, which two
+     * transactions can both hold, and then neither can insert it.
+     */
+    public static function lock(int $tenantId, string $model, string $column, string $prefix): void
+    {
+        $type = class_basename($model).'.'.$column;
+        $row = fn () => DB::table('document_sequences')->where('tenant_id', $tenantId)->where('type', $type);
+
+        if (! $row()->exists()) {
+            DB::table('document_sequences')->insertOrIgnore([
+                'tenant_id' => $tenantId, 'type' => $type, 'next_number' => static::highestUsed($tenantId, $model, $column, $prefix) + 1,
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
+        $row()->lockForUpdate()->first(['id']);
+    }
+
     public static function preview(int $tenantId, string $model, string $column, string $prefix, int $pad = 6): string
     {
         $type = class_basename($model).'.'.$column;
