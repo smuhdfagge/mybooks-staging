@@ -13,6 +13,7 @@ use App\Models\StatutoryTaxTemplate;
 use App\Models\TaxBracket;
 use App\Services\BankFileExportService;
 use App\Services\PayrollTaxService;
+use App\Support\Money;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -114,6 +115,10 @@ class PayrollController extends Controller
             return redirect()->route('payroll.show', $payroll)->with('error', 'Paid payroll cannot be updated.');
         }
 
+        // Amounts come in as typed: "150,000.00" (MB-39, <x-money-field>).
+        $money = ['basic_salary', 'allowances', 'overtime_amount', 'tax_deduction', 'other_deductions'];
+        $request->merge(array_map([Money::class, 'fromInput'], $request->only($money)));
+
         $validated = $request->validate([
             'pay_period_start' => 'required|date',
             'pay_period_end' => 'required|date|after:pay_period_start',
@@ -125,6 +130,24 @@ class PayrollController extends Controller
             'other_deductions' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
         ]);
+
+        // "Calculate PAYE": the tax on the pay as edited goes in the box, to
+        // be checked and saved; nothing is saved yet.
+        if ($request->boolean('calculate_paye')) {
+            $paye = app(PayrollTaxService::class)->payeForEdit($payroll, (float) $validated['basic_salary'],
+                (float) ($validated['allowances'] ?? 0), (float) ($validated['overtime_amount'] ?? 0));
+            if ($paye['method'] === 'flat' && ! $paye['breakdown'] && (float) $paye['tax'] === 0.0) {
+                // No tax table and no flat rate: nothing to work it out from,
+                // so the amount there stays and the person is told why.
+                return redirect()->route('payroll.edit', $payroll)
+                    ->withInput($request->except(['_token', '_method', 'calculate_paye']))
+                    ->with('error', 'PAYE can\'t be worked out: this business has no tax table and this payslip keeps no flat rate. Apply a table under Payroll, More, Tax templates, or enter the amount yourself.');
+            }
+
+            return redirect()->route('payroll.edit', $payroll)
+                ->withInput(['tax_deduction' => number_format((float) $paye['tax'], 2, '.', '')] + $request->except(['_token', '_method', 'calculate_paye']))
+                ->with('success', 'PAYE on this pay is '.Money::format($paye['tax']).'. Check it, then save.');
+        }
 
         $grossSalary = ($validated['basic_salary'] ?? 0)
                      + ($validated['allowances'] ?? 0)

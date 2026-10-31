@@ -63,7 +63,7 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Gross Pay</p>
-                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ number_format($payroll->gross_salary ?? $payroll->gross_pay ?? 0, 2) }}</p>
+                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ \App\Support\Money::format($payroll->gross_salary ?? $payroll->gross_pay ?? 0) }}</p>
                         </div>
                     </div>
                 </div>
@@ -77,7 +77,7 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Deductions</p>
-                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ number_format($payroll->total_deductions ?? 0, 2) }}</p>
+                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ \App\Support\Money::format($payroll->total_deductions ?? 0) }}</p>
                         </div>
                     </div>
                 </div>
@@ -91,7 +91,7 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Net Pay</p>
-                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ number_format($payroll->net_salary ?? $payroll->net_pay ?? 0, 2) }}</p>
+                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ \App\Support\Money::format($payroll->net_salary ?? $payroll->net_pay ?? 0) }}</p>
                         </div>
                     </div>
                 </div>
@@ -155,7 +155,7 @@
                         <dl class="space-y-3">
                             <div class="flex justify-between">
                                 <dt class="text-sm text-gray-500 dark:text-gray-400">Basic Salary</dt>
-                                <dd class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ number_format($payroll->basic_salary ?? 0, 2) }}</dd>
+                                <dd class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ \App\Support\Money::format($payroll->basic_salary ?? 0) }}</dd>
                             </div>
                             @if(!empty($payroll->allowance_details))
                                 @foreach($payroll->allowance_details as $allowance)
@@ -166,22 +166,22 @@
                                                 <span class="text-xs text-gray-500 dark:text-gray-400">({{ $allowance['rate'] }}%)</span>
                                             @endif
                                         </dt>
-                                        <dd class="text-sm font-medium text-green-700 dark:text-green-400">+{{ number_format($allowance['amount'], 2) }}</dd>
+                                        <dd class="text-sm font-medium text-green-700 dark:text-green-400">+{{ \App\Support\Money::format($allowance['amount']) }}</dd>
                                     </div>
                                 @endforeach
                             @else
                                 <div class="flex justify-between">
                                     <dt class="text-sm text-gray-500 dark:text-gray-400">Allowances</dt>
-                                    <dd class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ number_format($payroll->allowances ?? 0, 2) }}</dd>
+                                    <dd class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ \App\Support\Money::format($payroll->allowances ?? 0) }}</dd>
                                 </div>
                             @endif
                             <div class="flex justify-between">
                                 <dt class="text-sm text-gray-500 dark:text-gray-400">Overtime ({{ $payroll->overtime_hours ?? 0 }} hrs)</dt>
-                                <dd class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ number_format($payroll->overtime_amount ?? 0, 2) }}</dd>
+                                <dd class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ \App\Support\Money::format($payroll->overtime_amount ?? 0) }}</dd>
                             </div>
                             <div class="flex justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
                                 <dt class="text-sm font-medium text-gray-900 dark:text-gray-100">Gross Salary</dt>
-                                <dd class="text-sm font-bold text-green-700 dark:text-green-400">{{ number_format($payroll->gross_salary ?? 0, 2) }}</dd>
+                                <dd class="text-sm font-bold text-green-700 dark:text-green-400">{{ \App\Support\Money::format($payroll->gross_salary ?? 0) }}</dd>
                             </div>
                         </dl>
                     </div>
@@ -194,7 +194,7 @@
                         <dl class="space-y-3">
                             <div class="flex justify-between">
                                 <dt class="text-sm text-gray-500 dark:text-gray-400">Tax Deduction</dt>
-                                <dd class="text-sm font-medium text-red-600 dark:text-red-300">{{ number_format($payroll->tax_deduction ?? 0, 2) }}</dd>
+                                <dd class="text-sm font-medium text-red-600 dark:text-red-300">{{ \App\Support\Money::format($payroll->tax_deduction ?? 0) }}</dd>
                             </div>
                             @if(!empty($payroll->deduction_details))
                                 @foreach($payroll->deduction_details as $deduction)
@@ -208,22 +208,22 @@
                                                 <span class="text-xs text-gray-500 dark:text-gray-400">({{ $deduction['rate'] }}%)</span>
                                             @endif
                                         </dt>
-                                        <dd class="text-sm font-medium text-red-600 dark:text-red-300">-{{ number_format($deduction['amount'], 2) }}</dd>
+                                        <dd class="text-sm font-medium text-red-600 dark:text-red-300">-{{ \App\Support\Money::format($deduction['amount']) }}</dd>
                                     </div>
                                 @endforeach
                             @else
                                 <div class="flex justify-between">
                                     <dt class="text-sm text-gray-500 dark:text-gray-400">Other Deductions</dt>
-                                    <dd class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ number_format($payroll->other_deductions ?? 0, 2) }}</dd>
+                                    <dd class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ \App\Support\Money::format($payroll->other_deductions ?? 0) }}</dd>
                                 </div>
                             @endif
                             <div class="flex justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
                                 <dt class="text-sm font-medium text-gray-900 dark:text-gray-100">Total Deductions</dt>
-                                <dd class="text-sm font-bold text-red-600 dark:text-red-300">{{ number_format($payroll->total_deductions ?? 0, 2) }}</dd>
+                                <dd class="text-sm font-bold text-red-600 dark:text-red-300">{{ \App\Support\Money::format($payroll->total_deductions ?? 0) }}</dd>
                             </div>
                             <div class="flex justify-between pt-3 border-t-2 border-gray-300 dark:border-gray-600">
                                 <dt class="text-base font-bold text-gray-900 dark:text-gray-100">Net Salary</dt>
-                                <dd class="text-base font-bold text-brand-600 dark:text-brand-300">{{ number_format($payroll->net_salary ?? 0, 2) }}</dd>
+                                <dd class="text-base font-bold text-brand-600 dark:text-brand-300">{{ \App\Support\Money::format($payroll->net_salary ?? 0) }}</dd>
                             </div>
                         </dl>
                     </div>

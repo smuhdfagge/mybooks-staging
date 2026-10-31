@@ -187,21 +187,21 @@
                             <div class="space-y-3">
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600 dark:text-gray-400">Subtotal</span>
-                                    <span class="font-medium text-gray-900 dark:text-gray-100">{{ number_format($salesOrder->subtotal, 2) }}</span>
+                                    <span class="font-medium text-gray-900 dark:text-gray-100">{{ \App\Support\Money::format($salesOrder->subtotal) }}</span>
                                 </div>
                                 @if($salesOrder->discount_amount > 0)
                                     <div class="flex justify-between text-sm">
                                         <span class="text-gray-600 dark:text-gray-400">Discount</span>
-                                        <span class="font-medium text-red-600 dark:text-red-300">-{{ number_format($salesOrder->discount_amount, 2) }}</span>
+                                        <span class="font-medium text-red-600 dark:text-red-300">-{{ \App\Support\Money::format($salesOrder->discount_amount) }}</span>
                                     </div>
                                 @endif
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600 dark:text-gray-400">Tax</span>
-                                    <span class="font-medium text-gray-900 dark:text-gray-100">{{ number_format($salesOrder->tax_amount, 2) }}</span>
+                                    <span class="font-medium text-gray-900 dark:text-gray-100">{{ \App\Support\Money::format($salesOrder->tax_amount) }}</span>
                                 </div>
                                 <div class="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between">
                                     <span class="text-lg font-bold text-gray-900 dark:text-gray-100">Total</span>
-                                    <span class="text-lg font-bold text-brand-600 dark:text-brand-300">{{ number_format($salesOrder->total, 2) }}</span>
+                                    <span class="text-lg font-bold text-brand-600 dark:text-brand-300">{{ \App\Support\Money::format($salesOrder->total) }}</span>
                                 </div>
                             </div>
                         </div>

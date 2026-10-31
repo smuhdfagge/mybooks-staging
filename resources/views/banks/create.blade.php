@@ -152,7 +152,7 @@
                                 placeholder="-- Select Account (Optional) --"
                                 search-placeholder="Search accounts..."
                                 :has-error="$errors->has('chart_of_account_id')" />
-                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Link this bank account to an asset account in your Chart of Accounts for journal entries.</p>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave it empty and a ledger account named after this bank is opened for it (current, savings and cash accounts), so it can be reconciled on its own. Credit cards and other accounts are left for you to link.</p>
                             @error('chart_of_account_id')
                                 <p id="chart_of_account_id-error" class="mt-1 text-sm text-red-600 dark:text-red-300">{{ $message }}</p>
                             @enderror

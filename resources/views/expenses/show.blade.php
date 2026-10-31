@@ -195,7 +195,7 @@
             {{-- Vendor --}}
             @if ($expense->vendor)
                 <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                    <h3 class="font-medium text-gray-900 dark:text-white">Paid to</h3>
+                    <h2 class="section-title">Paid to</h2>
                     <p class="mt-2 text-sm">
                         <a href="{{ route('vendors.show', $expense->vendor) }}" class="link">{{ $expense->vendor->name }}</a>
                     </p>
@@ -213,35 +213,21 @@
 
             {{-- Activity --}}
             @php
-                $events = collect([['when' => $expense->created_at, 'text' => 'Recorded', 'who' => $expense->createdBy?->name]]);
+                $events = [['date' => $expense->expense_date ?? $expense->created_at, 'recorded' => $expense->created_at, 'text' => 'Spent', 'who' => $expense->createdBy?->name]];
                 if ($expense->submitted_at) {
-                    $events->push(['when' => $expense->submitted_at, 'text' => 'Submitted for approval', 'who' => null]);
+                    $events[] = ['date' => $expense->submitted_at, 'text' => 'Submitted for approval'];
                 }
                 if ($expense->approved_at) {
-                    $events->push(['when' => $expense->approved_at, 'text' => 'Approved', 'who' => $expense->approvedByUser?->name]);
+                    $events[] = ['date' => $expense->approved_at, 'text' => 'Approved', 'who' => $expense->approvedByUser?->name];
                 }
                 if ($expense->rejected_at) {
-                    $events->push(['when' => $expense->rejected_at, 'text' => 'Rejected', 'who' => $expense->rejectedByUser?->name]);
+                    $events[] = ['date' => $expense->rejected_at, 'text' => 'Rejected', 'who' => $expense->rejectedByUser?->name];
                 }
                 if ($expense->journal?->posted_at) {
-                    $events->push(['when' => $expense->journal->posted_at, 'text' => 'Posted to the ledger', 'who' => null]);
+                    $events[] = ['date' => $expense->journal->posted_at, 'text' => 'Posted to the ledger'];
                 }
-                $events = $events->sortBy(fn ($event) => $event['when'])->values();
             @endphp
-            <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                <h3 class="font-medium text-gray-900 dark:text-white">Activity</h3>
-                <ol class="mt-3 space-y-3 border-l border-gray-200 pl-4 dark:border-gray-700">
-                    @foreach ($events as $event)
-                        <li class="relative text-sm">
-                            <span class="absolute -left-[1.3rem] top-1.5 h-2 w-2 rounded-full bg-gray-400 ring-4 ring-white dark:bg-gray-500 dark:ring-gray-800" aria-hidden="true"></span>
-                            <p class="text-gray-900 dark:text-gray-100">{{ $event['text'] }}</p>
-                            <p class="text-gray-600 dark:text-gray-400">
-                                <time datetime="{{ $event['when']?->toIso8601String() }}">{{ $event['when']?->format('j M Y') }}</time>@if ($event['who']), {{ $event['who'] }}@endif
-                            </p>
-                        </li>
-                    @endforeach
-                </ol>
-            </section>
+            <x-activity-timeline :events="$events" />
         </aside>
     </div>
 

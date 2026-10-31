@@ -120,7 +120,7 @@
             {{-- Withholding tax, and the credit note that has to follow --}}
             @if ($wht > 0)
                 <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10" data-testid="wht-panel">
-                    <h3 class="font-medium text-gray-900 dark:text-white">Withholding tax</h3>
+                    <h2 class="section-title">Withholding tax</h2>
                     <dl class="mt-3 space-y-1 text-sm">
                         <div class="flex justify-between gap-3"><dt class="text-gray-600 dark:text-gray-400">Deducted</dt><dd class="font-medium tabular-nums text-gray-900 dark:text-gray-100">{{ $money($wht) }}</dd></div>
                         <div class="flex justify-between gap-3"><dt class="text-gray-600 dark:text-gray-400">Rate</dt><dd class="text-gray-900 dark:text-gray-100">{{ \App\Support\Figure::rate($pr->wht_rate) }}</dd></div>
@@ -149,7 +149,7 @@
             {{-- Where a deposit went --}}
             @if ($pr->is_deposit && $pr->depositApplications->isNotEmpty())
                 <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                    <h3 class="font-medium text-gray-900 dark:text-white">Where it went</h3>
+                    <h2 class="section-title">Where it went</h2>
                     @foreach ($pr->depositApplications as $application)
                         <div class="mt-3 flex items-start justify-between gap-3 text-sm">
                             <p class="text-gray-700 dark:text-gray-300">
@@ -165,7 +165,7 @@
             {{-- Customer --}}
             @if ($pr->customer)
                 <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                    <h3 class="font-medium text-gray-900 dark:text-white">Customer</h3>
+                    <h2 class="section-title">Customer</h2>
                     <p class="mt-2 text-sm"><a href="{{ route('customers.show', $pr->customer) }}" class="link">{{ $pr->customer->name }}</a></p>
                     @if ($pr->customer->email)
                         <p class="truncate text-sm"><a href="mailto:{{ $pr->customer->email }}" class="link">{{ $pr->customer->email }}</a></p>

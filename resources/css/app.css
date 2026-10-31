@@ -59,6 +59,11 @@
         @apply border-transparent bg-red-700 text-white hover:bg-red-800 active:bg-red-900 focus-visible:ring-red-600;
     }
     .btn-primary svg, .btn-secondary svg, .btn-danger svg { @apply h-4 w-4 shrink-0; }
+    /* The heading of a panel on a page (audit MB-44): one size and level
+       (h2, under the page's h1) everywhere. */
+    .section-title {
+        @apply text-base font-medium text-gray-900 dark:text-white;
+    }
     .card {
         @apply bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg;
     }

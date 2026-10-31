@@ -169,7 +169,7 @@
                             </div>
                             <div>
                                 <span class="text-gray-500 dark:text-gray-400">Total Deductions</span>
-                                <p class="font-semibold text-red-600 dark:text-red-300" x-text="'-' + formatCurrency(totalDeductions())"></p>
+                                <p class="font-semibold text-red-600 dark:text-red-300" x-text="totalDeductions() > 0 ? '-' + formatCurrency(totalDeductions()) : formatCurrency(0)"></p>
                             </div>
                         </div>
                         <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">

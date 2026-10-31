@@ -753,20 +753,20 @@ class AssemblyTest extends TestCase
         $this->post(route('assembly-orders.complete', $order))->assertForbidden();
         $this->postJson('/api/v1/assembly-orders', [])->assertForbidden();
         $this->getJson('/api/v1/assembly-orders')->assertOk();
-        $this->get(route('items.index'))->assertOk()->assertSee('">Bills of materials</a>', false)->assertDontSee('">Assembly orders</a>', false);
+        $this->get(route('items.index'))->assertOk()->assertSee('">Bills of Materials</a>', false)->assertDontSee('">Assembly Orders</a>', false);
     }
 
     public function test_switched_off_the_module_is_hidden(): void
     {
         $bom = $this->bom();
-        $this->get(route('items.index'))->assertSee('">Bills of materials</a>', false)->assertSee('">Assembly orders</a>', false);
+        $this->get(route('items.index'))->assertSee('">Bills of Materials</a>', false)->assertSee('">Assembly Orders</a>', false);
 
         config(['mybooks.features.assembly' => false]);
         $this->get(route('bill-of-materials.index'))->assertNotFound();
         $this->get(route('bill-of-materials.show', $bom))->assertNotFound();
         $this->get(route('assembly-orders.index'))->assertNotFound();
         $this->getJson('/api/v1/assembly-orders')->assertNotFound();
-        $this->get(route('items.index'))->assertDontSee('">Bills of materials</a>', false)->assertDontSee('">Assembly orders</a>', false);
+        $this->get(route('items.index'))->assertDontSee('">Bills of Materials</a>', false)->assertDontSee('">Assembly Orders</a>', false);
     }
 
     public function test_the_api_can_list_read_and_create_with_complete(): void

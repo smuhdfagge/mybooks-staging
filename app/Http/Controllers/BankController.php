@@ -54,7 +54,7 @@ class BankController extends Controller
                 ->update(['is_primary' => false]);
         }
 
-        Bank::create($validated);
+        DB::transaction(fn () => Bank::create($validated)->openLedgerAccount());
 
         return redirect()->route('banks.index')->with('success', 'Bank account created successfully.');
     }
@@ -139,6 +139,7 @@ class BankController extends Controller
         }
 
         $bank->update($validated);
+        $bank->renameLedgerAccount();
 
         return redirect()->route('banks.index')->with('success', 'Bank account updated successfully.');
     }

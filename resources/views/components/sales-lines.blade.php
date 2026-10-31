@@ -119,7 +119,7 @@
                             <input type="number" name="discount_amount" aria-label="Discount amount" x-model.number="discountValue" x-show="discountType" min="0" step="0.01"
                                 class="w-24 text-xs rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 py-1">
                         </div>
-                        <span class="font-medium text-red-600 dark:text-red-300" x-text="'-' + money(discount)"></span>
+                        <span class="font-medium text-red-600 dark:text-red-300" x-text="discount > 0 ? '-' + money(discount) : money(0)"></span>
                     </div>
                 @endif
                 <div class="flex justify-between text-sm">

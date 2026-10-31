@@ -155,7 +155,7 @@
 
             {{-- Payments --}}
             <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                <h3 class="font-medium text-gray-900 dark:text-white">Payments</h3>
+                <h2 class="section-title">Payments</h2>
                 @forelse ($bill->payments as $payment)
                     <div class="mt-3 flex items-start justify-between gap-3 border-t border-gray-100 pt-3 text-sm first-of-type:border-0 first-of-type:pt-0 dark:border-gray-700">
                         <div class="min-w-0">
@@ -177,7 +177,7 @@
             {{-- Supplier credits --}}
             @unless (in_array($bill->status, ['draft', 'cancelled'], true))
                 <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                    <h3 class="font-medium text-gray-900 dark:text-white">Supplier credits</h3>
+                    <h2 class="section-title">Supplier credits</h2>
                     @forelse ($bill->vendorCreditApplications as $application)
                         <div class="mt-3 flex items-start justify-between gap-3 text-sm">
                             <p class="text-gray-700 dark:text-gray-300">
@@ -197,32 +197,18 @@
 
             {{-- Activity --}}
             @php
-                $events = collect([['when' => $bill->created_at, 'text' => 'Recorded', 'who' => $bill->createdBy?->name]]);
+                $events = [['date' => $bill->bill_date ?? $bill->created_at, 'recorded' => $bill->created_at, 'text' => 'Bill dated', 'who' => $bill->createdBy?->name]];
                 if ($bill->updated_at->gt($bill->created_at->copy()->addMinute())) {
-                    $events->push(['when' => $bill->updated_at, 'text' => 'Last changed', 'who' => null]);
+                    $events[] = ['date' => $bill->updated_at, 'text' => 'Last changed'];
                 }
                 foreach ($bill->payments as $payment) {
-                    $events->push(['when' => $payment->payment_date ?? $payment->created_at, 'text' => 'Payment of '.$money($payment->amount), 'who' => $payment->createdBy?->name]);
+                    $events[] = ['date' => $payment->payment_date ?? $payment->created_at, 'recorded' => $payment->created_at, 'text' => 'Payment of '.$money($payment->amount), 'who' => $payment->createdBy?->name];
                 }
                 if ($bill->inventory_updated_at) {
-                    $events->push(['when' => $bill->inventory_updated_at, 'text' => 'Stock taken in', 'who' => null]);
+                    $events[] = ['date' => $bill->inventory_updated_at, 'text' => 'Stock taken in'];
                 }
-                $events = $events->sortBy(fn ($event) => $event['when'])->values();
             @endphp
-            <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                <h3 class="font-medium text-gray-900 dark:text-white">Activity</h3>
-                <ol class="mt-3 space-y-3 border-l border-gray-200 pl-4 dark:border-gray-700">
-                    @foreach ($events as $event)
-                        <li class="relative text-sm">
-                            <span class="absolute -left-[1.3rem] top-1.5 h-2 w-2 rounded-full bg-gray-400 ring-4 ring-white dark:bg-gray-500 dark:ring-gray-800" aria-hidden="true"></span>
-                            <p class="text-gray-900 dark:text-gray-100">{{ $event['text'] }}</p>
-                            <p class="text-gray-600 dark:text-gray-400">
-                                <time datetime="{{ $event['when']?->toIso8601String() }}">{{ $event['when']?->format('j M Y') }}</time>@if ($event['who']), {{ $event['who'] }}@endif
-                            </p>
-                        </li>
-                    @endforeach
-                </ol>
-            </section>
+            <x-activity-timeline :events="$events" />
         </aside>
     </div>
 

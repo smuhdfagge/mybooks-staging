@@ -22,7 +22,7 @@
     </label>
     @isset($filters)
         <button type="button" x-on:click="more = !more" :aria-expanded="more.toString()" class="tbl-chip h-9 md:hidden">
-            Filters @if ($filtered)<span class="h-2 w-2 rounded-full bg-brand-600 dark:bg-brand-300" aria-label="(on)"></span>@endif
+            Filters @if ($filtered)<span class="h-2 w-2 rounded-full bg-brand-600 dark:bg-brand-300" aria-hidden="true"></span><span class="sr-only">(on)</span>@endif
         </button>
         <div class="w-full flex-wrap items-center gap-2 md:flex md:w-auto" :class="more ? 'flex' : 'hidden md:flex'">
             {{ $filters }}
