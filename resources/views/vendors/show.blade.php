@@ -61,7 +61,7 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Purchases</p>
-                            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ number_format($vendor->total_purchases, 2) }}</p>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ \App\Support\Money::format($vendor->total_purchases) }}</p>
                         </div>
                     </div>
                 </div>

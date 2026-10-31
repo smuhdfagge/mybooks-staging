@@ -17,405 +17,285 @@
         </button>
     </div>
 
-    <!-- Navigation -->
-    <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1 sidebar-scroll">
-        <!-- Dashboard -->
+    <!-- Navigation: by business area (audit MB-40), each area's pages in the order the work goes. -->
+    @php
+        $on = fn (string ...$routes) => request()->routeIs(...$routes);
+        $feature = fn (string $flag) => \App\Http\Middleware\EnsureFeatureEnabled::enabled($flag);
+    @endphp
+    <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1 sidebar-scroll" aria-label="Main">
         @can('view dashboard')
-        <a href="{{ route('dashboard') }}" 
-           class="group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors {{ request()->routeIs('dashboard') ? 'nav-active' : 'text-gray-300 hover:bg-brand-800 hover:text-white' }}">
-            <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <a href="{{ route('dashboard') }}" @if ($on('dashboard')) aria-current="page" @endif
+           class="group flex min-h-9 items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors {{ $on('dashboard') ? 'nav-active' : 'text-gray-300 hover:bg-brand-800 hover:text-white' }}">
+            <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
             Dashboard
         </a>
         @endcan
 
-        <!-- Items Module -->
-        @canany(['view items', 'view inventory'])
-        <div x-data="{ open: {{ request()->is('items*') || request()->is('inventory*') || request()->is('warehouses*') || request()->is('stock-transfers*') || request()->is('bill-of-materials*') || request()->is('assembly-orders*') ? 'true' : 'false' }} }">
-            <button @click="open = !open" :aria-expanded="open.toString()"
-                    class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-brand-800 hover:text-white transition-colors">
-                <div class="flex items-center">
-                    <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
-                    Items
-                </div>
-                <svg :class="open ? 'rotate-90' : ''" class="h-4 w-4 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-            </button>
-            <div x-show="open" x-collapse x-cloak class="mt-1 space-y-1 pl-10">
-                @can('view items')
-                <a href="{{ route('items.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('items.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Items</a>
-                @endcan
-                <a href="{{ route('item-categories.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('item-categories.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Item Categories</a>
-                @can('view inventory')
-                <a href="{{ route('inventory.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('inventory.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Inventory</a>
-                @endcan
-                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('warehouses'))
-                @can('view inventory')
-                <a href="{{ route('warehouses.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('warehouses.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Warehouses</a>
-                @endcan
-                @endif
-                @if(\App\Models\StockTransfer::moduleOn())
-                @can('adjust inventory')
-                <a href="{{ route('stock-transfers.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('stock-transfers.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Stock transfers</a>
-                @endcan
-                @endif
-                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('assembly'))
-                @can('view items')
-                <a href="{{ route('bill-of-materials.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('bill-of-materials.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Bills of materials</a>
-                @endcan
-                @can('adjust inventory')
-                <a href="{{ route('assembly-orders.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('assembly-orders.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Assembly orders</a>
-                @endcan
-                @endif
-            </div>
-        </div>
-        @endcanany
-
-        <!-- Sales Module -->
+        {{-- Sales: from the customer to the money in --}}
         @canany(['view customers', 'view invoices', 'view sales-orders', 'view sales-receipts', 'view payments-received'])
-        <div x-data="{ open: {{ request()->is('sales*') || request()->is('customers*') || request()->is('invoices*') || request()->is('quotations*') || request()->is('delivery-notes*') || request()->is('credit-notes*') || request()->is('e-invoices*') ? 'true' : 'false' }} }">
-            <button @click="open = !open" :aria-expanded="open.toString()"
-                    class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-brand-800 hover:text-white transition-colors">
-                <div class="flex items-center">
-                    <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                    Sales
-                </div>
-                <svg :class="open ? 'rotate-90' : ''" class="h-4 w-4 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-            </button>
-            <div x-show="open" x-collapse x-cloak class="mt-1 space-y-1 pl-10">
-                @can('view customers')
-                <a href="{{ route('customers.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('customers.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Customers</a>
-                @endcan
-                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('quotations'))
-                @can('view invoices')
-                <a href="{{ route('quotations.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('quotations.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Quotations</a>
-                @endcan
-                @endif
-                @can('view invoices')
-                <a href="{{ route('invoices.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('invoices.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Invoices</a>
-                @endcan
-                @can('view sales-orders')
-                <a href="{{ route('sales-orders.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('sales-orders.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Sales Orders</a>
-                @endcan
-                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('delivery_notes'))
-                @can('view invoices')
-                <a href="{{ route('delivery-notes.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('delivery-notes.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Delivery Notes</a>
-                @endcan
-                @endif
-                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('credit_notes'))
-                @can('view invoices')
-                <a href="{{ route('credit-notes.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('credit-notes.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Credit Notes</a>
-                @endcan
-                @endif
-                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('e_invoicing'))
-                @can('view e-invoices')
-                <a href="{{ route('e-invoices.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('e-invoices.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">E-invoices</a>
-                @endcan
-                @endif
-                @can('view sales-receipts')
-                <a href="{{ route('sales-receipts.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('sales-receipts.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Sales Receipt</a>
-                @endcan
-                @can('view payments-received')
-                <a href="{{ route('payments-received.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('payments-received.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Payment Received</a>
-                @endcan
-            </div>
-        </div>
+        <x-sidebar.group label="Sales" icon="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            :open="$on('customers.*', 'quotations.*', 'sales-orders.*', 'invoices.*', 'delivery-notes.*', 'sales-receipts.*', 'payments-received.*', 'credit-notes.*', 'e-invoices.*')">
+            @can('view customers')
+            <x-sidebar.link :href="route('customers.index')" :active="$on('customers.*')">Customers</x-sidebar.link>
+            @endcan
+            @if ($feature('quotations'))
+            @can('view invoices')
+            <x-sidebar.link :href="route('quotations.index')" :active="$on('quotations.*')">Quotations</x-sidebar.link>
+            @endcan
+            @endif
+            @can('view sales-orders')
+            <x-sidebar.link :href="route('sales-orders.index')" :active="$on('sales-orders.*')">Sales Orders</x-sidebar.link>
+            @endcan
+            @can('view invoices')
+            <x-sidebar.link :href="route('invoices.index')" :active="$on('invoices.*')">Invoices</x-sidebar.link>
+            @endcan
+            @if ($feature('delivery_notes'))
+            @can('view invoices')
+            <x-sidebar.link :href="route('delivery-notes.index')" :active="$on('delivery-notes.*')">Delivery Notes</x-sidebar.link>
+            @endcan
+            @endif
+            @can('view sales-receipts')
+            <x-sidebar.link :href="route('sales-receipts.index')" :active="$on('sales-receipts.*')">Sales Receipts</x-sidebar.link>
+            @endcan
+            @can('view payments-received')
+            <x-sidebar.link :href="route('payments-received.index')" :active="$on('payments-received.*')">Payments Received</x-sidebar.link>
+            @endcan
+            @if ($feature('credit_notes'))
+            @can('view invoices')
+            <x-sidebar.link :href="route('credit-notes.index')" :active="$on('credit-notes.*')">Credit Notes</x-sidebar.link>
+            @endcan
+            @endif
+            @if ($feature('e_invoicing'))
+            @can('view e-invoices')
+            <x-sidebar.link :href="route('e-invoices.index')" :active="$on('e-invoices.*')">E-invoices</x-sidebar.link>
+            @endcan
+            @endif
+        </x-sidebar.group>
         @endcanany
 
-        <!-- Purchases Module -->
+        {{-- Purchases: from the vendor to the money out --}}
         @canany(['view vendors', 'view expenses', 'view bills', 'view purchase-orders', 'view recurrent-bills', 'view recurrent-expenses', 'view payments-made'])
-        <div x-data="{ open: {{ request()->is('purchases*') || request()->is('vendors*') || request()->is('bills*') || request()->is('purchase-orders*') || request()->is('expenses*') || request()->is('vendor-credits*') || request()->is('supplier-advances*') ? 'true' : 'false' }} }">
-            <button @click="open = !open" :aria-expanded="open.toString()"
-                    class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-brand-800 hover:text-white transition-colors">
-                <div class="flex items-center">
-                    <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    Purchases
-                </div>
-                <svg :class="open ? 'rotate-90' : ''" class="h-4 w-4 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-            </button>
-            <div x-show="open" x-collapse x-cloak class="mt-1 space-y-1 pl-10">
-                @can('view vendors')
-                <a href="{{ route('vendors.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('vendors.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Vendors</a>
-                @endcan
-                @can('view expenses')
-                <a href="{{ route('expenses.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('expenses.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Expenses</a>
-                @endcan
-                @can('view bills')
-                <a href="{{ route('bills.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('bills.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Bills</a>
-                @endcan
-                @can('view purchase-orders')
-                <a href="{{ route('purchase-orders.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('purchase-orders.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Purchase Orders</a>
-                @endcan
-                @can('view recurrent-bills')
-                <a href="{{ route('recurrent-bills.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('recurrent-bills.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Recurrent Bills</a>
-                @endcan
-                @can('view recurrent-expenses')
-                <a href="{{ route('recurrent-expenses.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('recurrent-expenses.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Recurrent Expenses</a>
-                @endcan
-                @can('view payments-made')
-                <a href="{{ route('payments-made.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('payments-made.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Payments Made</a>
-                @endcan
-                @can('view bills')
-                <a href="{{ route('vendor-credits.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('vendor-credits.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Supplier Credits</a>
-                @endcan
-                @can('view payments-made')
-                <a href="{{ route('supplier-advances.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('supplier-advances.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Supplier Advances</a>
-                @endcan
-            </div>
-        </div>
+        <x-sidebar.group label="Purchases" icon="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+            :open="$on('vendors.*', 'purchase-orders.*', 'bills.*', 'expenses.*', 'payments-made.*', 'vendor-credits.*', 'supplier-advances.*', 'recurrent-bills.*', 'recurrent-expenses.*')">
+            @can('view vendors')
+            <x-sidebar.link :href="route('vendors.index')" :active="$on('vendors.*')">Vendors</x-sidebar.link>
+            @endcan
+            @can('view purchase-orders')
+            <x-sidebar.link :href="route('purchase-orders.index')" :active="$on('purchase-orders.*')">Purchase Orders</x-sidebar.link>
+            @endcan
+            @can('view bills')
+            <x-sidebar.link :href="route('bills.index')" :active="$on('bills.*')">Bills</x-sidebar.link>
+            @endcan
+            @can('view expenses')
+            <x-sidebar.link :href="route('expenses.index')" :active="$on('expenses.*')">Expenses</x-sidebar.link>
+            @endcan
+            @can('view payments-made')
+            <x-sidebar.link :href="route('payments-made.index')" :active="$on('payments-made.*')">Payments Made</x-sidebar.link>
+            @endcan
+            @can('view bills')
+            <x-sidebar.link :href="route('vendor-credits.index')" :active="$on('vendor-credits.*')">Supplier Credits</x-sidebar.link>
+            @endcan
+            @can('view payments-made')
+            <x-sidebar.link :href="route('supplier-advances.index')" :active="$on('supplier-advances.*')">Supplier Advances</x-sidebar.link>
+            @endcan
+            @can('view recurrent-bills')
+            <x-sidebar.link :href="route('recurrent-bills.index')" :active="$on('recurrent-bills.*')">Recurring Bills</x-sidebar.link>
+            @endcan
+            @can('view recurrent-expenses')
+            <x-sidebar.link :href="route('recurrent-expenses.index')" :active="$on('recurrent-expenses.*')">Recurring Expenses</x-sidebar.link>
+            @endcan
+        </x-sidebar.group>
         @endcanany
 
-        <!-- Human Resource Module -->
+        {{-- Inventory --}}
+        @canany(['view items', 'view inventory'])
+        <x-sidebar.group label="Items & Stock" icon="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+            :open="$on('items.*', 'item-categories.*', 'inventory.*', 'warehouses.*', 'stock-transfers.*', 'bill-of-materials.*', 'assembly-orders.*')">
+            @can('view items')
+            <x-sidebar.link :href="route('items.index')" :active="$on('items.*')">Items</x-sidebar.link>
+            @endcan
+            <x-sidebar.link :href="route('item-categories.index')" :active="$on('item-categories.*')">Item Categories</x-sidebar.link>
+            @can('view inventory')
+            <x-sidebar.link :href="route('inventory.index')" :active="$on('inventory.*')">Stock on Hand</x-sidebar.link>
+            @if ($feature('warehouses'))
+            <x-sidebar.link :href="route('warehouses.index')" :active="$on('warehouses.*')">Warehouses</x-sidebar.link>
+            @endif
+            @endcan
+            @if (\App\Models\StockTransfer::moduleOn())
+            @can('adjust inventory')
+            <x-sidebar.link :href="route('stock-transfers.index')" :active="$on('stock-transfers.*')">Stock Transfers</x-sidebar.link>
+            @endcan
+            @endif
+            @if ($feature('assembly'))
+            @can('view items')
+            <x-sidebar.link :href="route('bill-of-materials.index')" :active="$on('bill-of-materials.*')">Bills of Materials</x-sidebar.link>
+            @endcan
+            @can('adjust inventory')
+            <x-sidebar.link :href="route('assembly-orders.index')" :active="$on('assembly-orders.*')">Assembly Orders</x-sidebar.link>
+            @endcan
+            @endif
+        </x-sidebar.group>
+        @endcanany
+
+        {{-- Accounting: banks and the ledger --}}
+        @canany(['view journals', 'view chart-of-accounts', 'view banks', 'view budgets', 'view accrual-schedules'])
+        <x-sidebar.group label="Accounting" icon="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+            :open="$on('banks.*', 'bank-feeds.*', 'journals.*', 'accrual-schedules.*', 'chart-of-accounts.*', 'accounting-periods.*', 'budgets.*')">
+            @can('view banks')
+            <x-sidebar.link :href="route('banks.index')" :active="$on('banks.*')">Banks</x-sidebar.link>
+            @if ($feature('bank_feeds'))
+            <x-sidebar.link :href="route('bank-feeds.index')" :active="$on('bank-feeds.*')">Bank Feeds</x-sidebar.link>
+            @endif
+            @endcan
+            @can('view journals')
+            <x-sidebar.link :href="route('journals.index')" :active="$on('journals.*')">Manual Journals</x-sidebar.link>
+            @endcan
+            @if ($feature('prepaid_schedules'))
+            @can('view accrual-schedules')
+            <x-sidebar.link :href="route('accrual-schedules.index')" :active="$on('accrual-schedules.*')">Prepaid &amp; Deferred</x-sidebar.link>
+            @endcan
+            @endif
+            @can('view chart-of-accounts')
+            <x-sidebar.link :href="route('chart-of-accounts.index')" :active="$on('chart-of-accounts.*')">Chart of Accounts</x-sidebar.link>
+            <x-sidebar.link :href="route('accounting-periods.index')" :active="$on('accounting-periods.*')">Accounting Periods</x-sidebar.link>
+            @endcan
+            @can('view budgets')
+            @php $hasBudgetAccess = in_array(auth()->user()?->tenant?->activeSubscription?->plan?->slug, ['professional', 'enterprise'], true); @endphp
+            @if ($hasBudgetAccess)
+            <x-sidebar.link :href="route('budgets.index')" :active="$on('budgets.*')">Budgets</x-sidebar.link>
+            @else
+            {{-- The plan gate, said in words (audit MB-52): a hover title can't be read on a phone. --}}
+            @can('view settings')
+            <x-sidebar.link :href="route('settings.subscription')" data-testid="budgets-gate">
+                <span>Budgets <span class="block text-xs text-gray-400">On Professional and Enterprise. See plans</span></span>
+            </x-sidebar.link>
+            @else
+            <p class="px-3 py-2 text-sm text-gray-400" data-testid="budgets-gate">Budgets <span class="block text-xs">On Professional and Enterprise plans</span></p>
+            @endcan
+            @endif
+            @endcan
+        </x-sidebar.group>
+        @endcanany
+
+        {{-- Tax: returns and rates --}}
+        @canany(['view vat-returns', 'view withholding-tax', 'view tax-rates'])
+        <x-sidebar.group label="Tax" icon="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"
+            :open="$on('reports.vat-return*', 'withholding-tax.*', 'tax-rates.*', 'tax-groups.*')">
+            @can('view vat-returns')
+            <x-sidebar.link :href="route('reports.vat-return')" :active="$on('reports.vat-return*')">VAT Return</x-sidebar.link>
+            @endcan
+            @can('view withholding-tax')
+            <x-sidebar.link :href="route('withholding-tax.setup')" :active="$on('withholding-tax.*')">Withholding Tax</x-sidebar.link>
+            @endcan
+            @can('view tax-rates')
+            <x-sidebar.link :href="route('tax-rates.index')" :active="$on('tax-rates.*')">Tax Rates</x-sidebar.link>
+            <x-sidebar.link :href="route('tax-groups.index')" :active="$on('tax-groups.*')">Tax Groups</x-sidebar.link>
+            @endcan
+        </x-sidebar.group>
+        @endcanany
+
+        @canany(['view fixed-assets', 'view fixed-asset-categories'])
+        <x-sidebar.group label="Fixed Assets" icon="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+            :open="$on('fixed-assets.*', 'fixed-asset-categories.*')">
+            @can('view fixed-assets')
+            <x-sidebar.link :href="route('fixed-assets.index')" :active="$on('fixed-assets.index', 'fixed-assets.show')">Assets</x-sidebar.link>
+            @endcan
+            @can('create fixed-assets')
+            <x-sidebar.link :href="route('fixed-assets.create')" :active="$on('fixed-assets.create')">Add an Asset</x-sidebar.link>
+            @endcan
+            @can('view fixed-assets')
+            <x-sidebar.link :href="route('fixed-assets.register')" :active="$on('fixed-assets.register')">Asset Register</x-sidebar.link>
+            @endcan
+            @can('view fixed-asset-categories')
+            <x-sidebar.link :href="route('fixed-asset-categories.index')" :active="$on('fixed-asset-categories.*')">Asset Categories</x-sidebar.link>
+            @endcan
+        </x-sidebar.group>
+        @endcanany
+
         @canany(['view employees', 'view departments', 'view designations', 'view leaves', 'view leave-types'])
-        <div x-data="{ open: {{ request()->is('hr*') || request()->is('employees*') || request()->is('departments*') ? 'true' : 'false' }} }">
-            <button @click="open = !open" :aria-expanded="open.toString()"
-                    class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-brand-800 hover:text-white transition-colors">
-                <div class="flex items-center">
-                    <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    Human Resource
-                </div>
-                <svg :class="open ? 'rotate-90' : ''" class="h-4 w-4 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-            </button>
-            <div x-show="open" x-collapse x-cloak class="mt-1 space-y-1 pl-10">
-                @can('view employees')
-                <a href="{{ route('employees.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('employees.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Employee</a>
-                @endcan
-                @can('view departments')
-                <a href="{{ route('departments.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('departments.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Departments</a>
-                @endcan
-                @can('view designations')
-                <a href="{{ route('designations.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('designations.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Designation</a>
-                @endcan
-                @can('view leave-types')
-                <a href="{{ route('leave-types.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('leave-types.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Leave Types</a>
-                @endcan
-                @can('view leaves')
-                <a href="{{ route('leaves.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('leaves.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Leaves</a>
-                @endcan
-            </div>
-        </div>
+        <x-sidebar.group label="Human Resources" icon="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+            :open="$on('employees.*', 'departments.*', 'designations.*', 'leave-types.*', 'leaves.*')">
+            @can('view employees')
+            <x-sidebar.link :href="route('employees.index')" :active="$on('employees.*')">Employees</x-sidebar.link>
+            @endcan
+            @can('view departments')
+            <x-sidebar.link :href="route('departments.index')" :active="$on('departments.*')">Departments</x-sidebar.link>
+            @endcan
+            @can('view designations')
+            <x-sidebar.link :href="route('designations.index')" :active="$on('designations.*')">Designations</x-sidebar.link>
+            @endcan
+            @can('view leaves')
+            <x-sidebar.link :href="route('leaves.index')" :active="$on('leaves.*')">Leave Requests</x-sidebar.link>
+            @endcan
+            @can('view leave-types')
+            <x-sidebar.link :href="route('leave-types.index')" :active="$on('leave-types.*')">Leave Types</x-sidebar.link>
+            @endcan
+        </x-sidebar.group>
         @endcanany
 
-        <!-- Payroll Module -->
         @can('view payroll')
-        <div x-data="{ open: {{ request()->routeIs('payroll.*') || request()->routeIs('salary-structures.*') || request()->routeIs('allowances.*') || request()->routeIs('deductions.*') ? 'true' : 'false' }} }">
-            <button @click="open = !open" :aria-expanded="open.toString()"
-                    class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-brand-800 hover:text-white transition-colors">
-                <div class="flex items-center">
-                    <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    Payroll
-                </div>
-                <svg :class="open ? 'rotate-90' : ''" class="h-4 w-4 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-            </button>
-            <div x-show="open" x-collapse x-cloak class="mt-1 space-y-1 pl-10">
-                <a href="{{ route('payroll.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('payroll.*') && ! request()->routeIs('payroll.liabilities*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Payroll</a>
-                <a href="{{ route('payroll.liabilities') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('payroll.liabilities*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">PAYE, Pension &amp; Levies</a>
-                <a href="{{ route('salary-structures.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('salary-structures.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Salary Structure</a>
-                <a href="{{ route('allowances.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('allowances.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Allowances</a>
-                <a href="{{ route('deductions.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('deductions.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Deductions</a>
-            </div>
-        </div>
+        <x-sidebar.group label="Payroll" icon="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+            :open="$on('payroll.*', 'salary-structures.*', 'allowances.*', 'deductions.*')">
+            <x-sidebar.link :href="route('payroll.index')" :active="$on('payroll.*') && ! $on('payroll.liabilities*')">Pay Runs</x-sidebar.link>
+            <x-sidebar.link :href="route('payroll.liabilities')" :active="$on('payroll.liabilities*')">PAYE, Pension &amp; Levies</x-sidebar.link>
+            <x-sidebar.link :href="route('salary-structures.index')" :active="$on('salary-structures.*')">Salary Structures</x-sidebar.link>
+            <x-sidebar.link :href="route('allowances.index')" :active="$on('allowances.*')">Allowances</x-sidebar.link>
+            <x-sidebar.link :href="route('deductions.index')" :active="$on('deductions.*')">Deductions</x-sidebar.link>
+        </x-sidebar.group>
         @endcan
 
-        <!-- Accountant Module -->
-        @canany(['view journals', 'view chart-of-accounts', 'view banks', 'view budgets', 'view withholding-tax', 'view accrual-schedules'])
-        <div x-data="{ open: {{ request()->is('accountant*') || request()->is('journals*') || request()->is('accrual-schedules*') || request()->is('chart-of-accounts*') || request()->is('banks*') || request()->is('bank-feeds*') || request()->is('budgets*') || request()->is('withholding-tax*') ? 'true' : 'false' }} }">
-            <button @click="open = !open" :aria-expanded="open.toString()"
-                    class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-brand-800 hover:text-white transition-colors">
-                <div class="flex items-center">
-                    <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                    </svg>
-                    Accountant
-                </div>
-                <svg :class="open ? 'rotate-90' : ''" class="h-4 w-4 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-            </button>
-            <div x-show="open" x-collapse x-cloak class="mt-1 space-y-1 pl-10">
-                @can('view banks')
-                <a href="{{ route('banks.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('banks.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Banks</a>
-                @endcan
-                @can('view banks')
-                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('bank_feeds'))
-                <a href="{{ route('bank-feeds.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('bank-feeds.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Bank feeds</a>
-                @endif
-                @endcan
-                @can('view journals')
-                <a href="{{ route('journals.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('journals.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Manual Journals</a>
-                @endcan
-                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('prepaid_schedules'))
-                @can('view accrual-schedules')
-                <a href="{{ route('accrual-schedules.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('accrual-schedules.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Prepaid &amp; Deferred</a>
-                @endcan
-                @endif
-                @can('view chart-of-accounts')
-                <a href="{{ route('chart-of-accounts.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('chart-of-accounts.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Chart of Accounts</a>
-                <a href="{{ route('accounting-periods.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('accounting-periods.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Accounting Periods</a>
-                @endcan
-                @can('view withholding-tax')
-                <a href="{{ route('withholding-tax.setup') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('withholding-tax.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Withholding Tax</a>
-                @endcan
-                @can('view budgets')
-                @php
-                    $currentPlan = auth()->user()?->tenant?->activeSubscription?->plan?->slug;
-                    $hasBudgetAccess = in_array($currentPlan, ['professional', 'enterprise']);
-                @endphp
-                @if($hasBudgetAccess)
-                <a href="{{ route('budgets.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('budgets.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">
-                    Budgets
-                    <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-accent-100 text-accent-800">Pro</span>
-                </a>
-                @else
-                <span class="block px-3 py-2 text-sm rounded-lg text-slate-400 cursor-not-allowed" title="Available on Professional and Enterprise plans">
-                    Budgets
-                    <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-brand-800 text-gray-400">Pro</span>
-                </span>
-                @endif
-                @endcan
-            </div>
-        </div>
-        @endcanany
-
-        <!-- Fixed Assets Module -->
-        @canany(['view fixed-assets', 'view fixed-asset-categories'])
-        <div x-data="{ open: {{ request()->is('fixed-assets*') || request()->is('fixed-asset-categories*') ? 'true' : 'false' }} }">
-            <button @click="open = !open" :aria-expanded="open.toString()"
-                    class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-brand-800 hover:text-white transition-colors">
-                <div class="flex items-center">
-                    <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                    Fixed Assets
-                </div>
-                <svg :class="open ? 'rotate-90' : ''" class="h-4 w-4 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-            </button>
-            <div x-show="open" x-collapse x-cloak class="mt-1 space-y-1 pl-10">
-                @can('view fixed-assets')
-                <a href="{{ route('fixed-assets.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('fixed-assets.index') || request()->routeIs('fixed-assets.show') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">All Assets</a>
-                @endcan
-                @can('create fixed-assets')
-                <a href="{{ route('fixed-assets.create') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('fixed-assets.create') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Add New Asset</a>
-                @endcan
-                @can('view fixed-assets')
-                <a href="{{ route('fixed-assets.register') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('fixed-assets.register') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Asset Register</a>
-                @endcan
-                @can('view fixed-asset-categories')
-                <a href="{{ route('fixed-asset-categories.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('fixed-asset-categories.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Categories</a>
-                @endcan
-            </div>
-        </div>
-        @endcanany
-
-        <!-- Reports -->
         @can('view reports')
-        <a href="{{ route('reports.index') }}" 
-           class="group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors {{ request()->routeIs('reports.*') ? 'nav-active' : 'text-gray-300 hover:bg-brand-800 hover:text-white' }}">
-            <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <a href="{{ route('reports.index') }}" @if ($on('reports.*') && ! $on('reports.vat-return*')) aria-current="page" @endif
+           class="group flex min-h-9 items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors {{ $on('reports.*') && ! $on('reports.vat-return*') ? 'nav-active' : 'text-gray-300 hover:bg-brand-800 hover:text-white' }}">
+            <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             Reports
         </a>
-        @endcan
-
-        <!-- Monthly VAT return -->
-        @can('view vat-returns')
-        <a href="{{ route('reports.vat-return') }}"
-           class="group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors {{ request()->routeIs('reports.vat-return*') ? 'nav-active' : 'text-gray-300 hover:bg-brand-800 hover:text-white' }}">
-            <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
-            </svg>
-            VAT Return
-        </a>
-        @endcan
-
-        <!-- Analytics Dashboard -->
-        @can('view reports')
-        <a href="{{ route('analytics.index') }}" 
-           class="group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors {{ request()->routeIs('analytics.*') ? 'nav-active' : 'text-gray-300 hover:bg-brand-800 hover:text-white' }}">
-            <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <a href="{{ route('analytics.index') }}" @if ($on('analytics.*')) aria-current="page" @endif
+           class="group flex min-h-9 items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors {{ $on('analytics.*') ? 'nav-active' : 'text-gray-300 hover:bg-brand-800 hover:text-white' }}">
+            <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
             </svg>
             Analytics
         </a>
         @endcan
 
-        <!-- Settings Module -->
-        @canany(['view settings', 'view users', 'view roles', 'view tax-rates', 'export reports', 'import data'])
-        <div x-data="{ open: {{ request()->is('settings*') || request()->is('activity-logs*') || request()->is('tax-rates*') || request()->is('tax-groups*') || request()->is('exports*') || request()->is('imports*') ? 'true' : 'false' }} }">
-            <button @click="open = !open" :aria-expanded="open.toString()"
-                    class="w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:bg-brand-800 hover:text-white transition-colors">
-                <div class="flex items-center">
-                    <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Settings
-                </div>
-                <svg :class="open ? 'rotate-90' : ''" class="h-4 w-4 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-            </button>
-            <div x-show="open" x-collapse x-cloak class="mt-1 space-y-1 pl-10">
-                @can('view settings')
-                <a href="{{ route('settings.company') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('settings.company') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Company Profile</a>
-                <a href="{{ route('settings.notifications') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('settings.notifications*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Notifications</a>
-                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('sms_whatsapp'))
-                <a href="{{ route('settings.messaging') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('settings.messaging*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">SMS &amp; WhatsApp</a>
-                @endif
-                @if(\App\Http\Middleware\EnsureFeatureEnabled::enabled('e_invoicing'))
-                @can('view e-invoices')
-                <a href="{{ route('settings.e-invoicing') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('settings.e-invoicing*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">E-invoicing</a>
-                @endcan
-                @endif
-                <a href="{{ route('settings.invoice-templates.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('settings.invoice-templates*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Invoice Templates</a>
-                <a href="{{ route('settings.subscription') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('settings.subscription') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">
-                    Subscription
-                </a>
-                @endcan
-                @can('view tax-rates')
-                <a href="{{ route('tax-rates.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('tax-rates.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Tax Rates</a>
-                <a href="{{ route('tax-groups.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('tax-groups.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Tax Groups</a>
-                @endcan
-                @can('view users')
-                <a href="{{ route('settings.users') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('settings.users*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Users Management</a>
-                @endcan
-                @can('view roles')
-                <a href="{{ route('settings.roles') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('settings.roles*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Roles and Permission</a>
-                @endcan
-                @can('view settings')
-                <a href="{{ route('activity-logs.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('activity-logs.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Activity Logs</a>
-                @endcan
-                @can('export reports')
-                <a href="{{ route('exports.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('exports.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Data Export</a>
-                @endcan
-                @can('import data')
-                <a href="{{ route('imports.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('imports.*') ? 'nav-active' : 'text-gray-400 hover:text-white hover:bg-brand-800' }}">Data Import</a>
-                @endcan
-            </div>
-        </div>
+        @canany(['view settings', 'view users', 'view roles', 'export reports', 'import data'])
+        <x-sidebar.group label="Settings" icon="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            :open="$on('settings.*', 'activity-logs.*', 'exports.*', 'imports.*')">
+            @can('view settings')
+            <x-sidebar.link :href="route('settings.company')" :active="$on('settings.company')">Company Profile</x-sidebar.link>
+            <x-sidebar.link :href="route('settings.notifications')" :active="$on('settings.notifications*')">Notifications</x-sidebar.link>
+            @if ($feature('sms_whatsapp'))
+            <x-sidebar.link :href="route('settings.messaging')" :active="$on('settings.messaging*')">SMS &amp; WhatsApp</x-sidebar.link>
+            @endif
+            @if ($feature('e_invoicing'))
+            @can('view e-invoices')
+            <x-sidebar.link :href="route('settings.e-invoicing')" :active="$on('settings.e-invoicing*')">E-invoicing</x-sidebar.link>
+            @endcan
+            @endif
+            <x-sidebar.link :href="route('settings.invoice-templates.index')" :active="$on('settings.invoice-templates*')">Invoice Templates</x-sidebar.link>
+            <x-sidebar.link :href="route('settings.subscription')" :active="$on('settings.subscription')">Subscription</x-sidebar.link>
+            @endcan
+            @can('view users')
+            <x-sidebar.link :href="route('settings.users')" :active="$on('settings.users*')">Users</x-sidebar.link>
+            @endcan
+            @can('view roles')
+            <x-sidebar.link :href="route('settings.roles')" :active="$on('settings.roles*')">Roles &amp; Permissions</x-sidebar.link>
+            @endcan
+            @can('view settings')
+            <x-sidebar.link :href="route('activity-logs.index')" :active="$on('activity-logs.*')">Activity Log</x-sidebar.link>
+            @endcan
+            @can('export reports')
+            <x-sidebar.link :href="route('exports.index')" :active="$on('exports.*')">Data Export</x-sidebar.link>
+            @endcan
+            @can('import data')
+            <x-sidebar.link :href="route('imports.index')" :active="$on('imports.*')">Data Import</x-sidebar.link>
+            @endcan
+        </x-sidebar.group>
         @endcanany
     </nav>
 

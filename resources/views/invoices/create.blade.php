@@ -282,7 +282,7 @@
                                             @input="calculateTotals()"
                                             class="w-20 text-xs rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 py-1">
                                     </div>
-                                    <span class="font-medium text-red-600 dark:text-red-300" x-text="'-' + $money(discount)">-@money(0)</span>
+                                    <span class="font-medium text-red-600 dark:text-red-300" x-text="discount > 0 ? '-' + $money(discount) : $money(0)">@money(0)</span>
                                 </div>
 
                                 <div class="flex justify-between text-sm">

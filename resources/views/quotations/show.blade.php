@@ -91,7 +91,7 @@
             {{-- Next steps --}}
             @if ($answerable || $convertible)
                 <section class="space-y-3 rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                    <h3 class="font-medium text-gray-900 dark:text-white">Next steps</h3>
+                    <h2 class="section-title">Next steps</h2>
                     @can('edit invoices')
                         @if ($status === 'draft')
                             <form method="POST" action="{{ route('quotations.mark-sent', $quotation) }}">@csrf
@@ -128,7 +128,7 @@
             {{-- What it became --}}
             @if ($quotation->salesOrder || $quotation->invoice)
                 <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                    <h3 class="font-medium text-gray-900 dark:text-white">Became</h3>
+                    <h2 class="section-title">Became</h2>
                     @if ($quotation->salesOrder)
                         <p class="mt-2 text-sm"><a href="{{ route('sales-orders.show', $quotation->salesOrder) }}" class="link">Sales order {{ $quotation->salesOrder->order_number }}</a></p>
                     @endif
@@ -140,7 +140,7 @@
 
             {{-- Customer --}}
             <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                <h3 class="font-medium text-gray-900 dark:text-white">Customer</h3>
+                <h2 class="section-title">Customer</h2>
                 <p class="mt-2 text-sm"><a href="{{ route('customers.show', $quotation->customer) }}" class="link">{{ $quotation->customer->name }}</a></p>
                 @if ($quotation->customer->company_name && $quotation->customer->company_name !== $quotation->customer->name)
                     <p class="text-sm text-gray-600 dark:text-gray-400">{{ $quotation->customer->company_name }}</p>

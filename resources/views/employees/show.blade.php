@@ -38,7 +38,7 @@
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Salary Structure</p>
                             <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $employee->salaryStructure->name ?? 'Not Assigned' }}</p>
                             @if($employee->salaryStructure)
-                                <p class="text-xs text-gray-500 dark:text-gray-400">Net: {{ number_format($employee->salaryStructure->net_salary, 2) }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Net: {{ \App\Support\Money::format($employee->salaryStructure->net_salary) }}</p>
                             @endif
                         </div>
                     </div>

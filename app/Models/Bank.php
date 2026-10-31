@@ -185,6 +185,63 @@ class Bank extends Model
         return round((float) static::addLedgerBalance(static::withoutGlobalScope('tenant')->whereKey($this->getKey()), $asOf)->value('ledger_balance'), 2);
     }
 
+    /** Marks a ledger account the app opened for a bank, so it follows the bank's name. */
+    public const LEDGER_NOTE = 'Opened with the bank account #';
+
+    /**
+     * Give a new bank its own ledger account, named after it (audit MB-38),
+     * when none was chosen: money through it then posts there, and it can be
+     * reconciled on its own, rather than sharing "Checking Account" with
+     * every other bank. Current and savings accounts go from 1120, cash from
+     * 1011. A credit card (a liability) or "other" is left for a person to
+     * link.
+     */
+    public function openLedgerAccount(): void
+    {
+        $range = match ($this->account_type) {
+            'checking', 'savings' => [1120, 1199, 'bank'],
+            'cash' => [1011, 1099, 'cash'],
+            default => null,
+        };
+        if ($this->chart_of_account_id || ! $range) {
+            return;
+        }
+
+        [$from, $to, $subType] = $range;
+        $used = ChartOfAccount::query()->where('tenant_id', $this->tenant_id)
+            ->whereBetween('account_code', [(string) $from, (string) $to])->pluck('account_code')->map(fn ($code) => (int) $code)->all();
+        $code = collect(range($from, $to))->first(fn ($candidate) => ! in_array($candidate, $used, true));
+        if (! $code) {
+            return; // the range is full: left for a person to link
+        }
+
+        $account = ChartOfAccount::create([
+            'tenant_id' => $this->tenant_id, 'account_code' => (string) $code, 'name' => $this->ledgerAccountName(),
+            'type' => 'asset', 'sub_type' => $subType, 'is_active' => true, 'description' => self::LEDGER_NOTE.$this->id,
+        ]);
+        $this->forceFill(['chart_of_account_id' => $account->id])->save();
+    }
+
+    /** Rename the ledger account the app opened for this bank when the bank is renamed. */
+    public function renameLedgerAccount(): void
+    {
+        $account = $this->chart_of_account_id ? ChartOfAccount::find($this->chart_of_account_id) : null;
+        if ($account && $account->description === self::LEDGER_NOTE.$this->id && $account->name !== $this->ledgerAccountName()) {
+            $account->update(['name' => $this->ledgerAccountName()]);
+        }
+    }
+
+    /** "GTBank, Main current (…1234)": what the account is called in the ledger. */
+    public function ledgerAccountName(): string
+    {
+        $name = $this->bank_name && ! str_contains(mb_strtolower($this->name), mb_strtolower($this->bank_name))
+            ? $this->bank_name.', '.$this->name
+            : $this->name;
+        $digits = preg_replace('/\D/', '', (string) $this->account_number);
+
+        return mb_substr($name.(strlen($digits) >= 4 ? ' (…'.substr($digits, -4).')' : ''), 0, 255);
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);

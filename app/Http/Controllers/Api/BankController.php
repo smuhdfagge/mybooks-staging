@@ -81,6 +81,7 @@ class BankController extends BaseApiController
         }
 
         $bank = Bank::create($validated);
+        $bank->openLedgerAccount();
 
         return $this->created(new BankResource($bank), 'Bank account created successfully');
     }
@@ -101,6 +102,7 @@ class BankController extends BaseApiController
         }
 
         $bank->update($validated);
+        $bank->renameLedgerAccount();
 
         return $this->success(new BankResource($bank), 'Bank account updated successfully');
     }

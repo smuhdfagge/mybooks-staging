@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Employee;
 use App\Models\EmployeeLoan;
+use App\Models\Payroll;
 use App\Models\TaxBracket;
 use App\Models\Tenant;
 use App\Support\Money;
@@ -164,6 +165,28 @@ class PayrollTaxService
      * @param  array<int, array<string, mixed>>  $employerContributionRules
      * @return array<string, mixed> Payroll attributes
      */
+    /**
+     * PAYE for a payslip whose pay is being edited (audit MB-39): the
+     * edited basic, allowances and overtime, less the reliefs the payslip
+     * already carries (non-taxable allowances, pre-tax deductions such as
+     * pension and NHF, rent relief), on the tax table, or the flat rate it
+     * was worked out at.
+     *
+     * @return array{tax: float, breakdown: array, method: string}
+     */
+    public function payeForEdit(Payroll $payroll, float $basic, float $allowances, float $overtime): array
+    {
+        $nonTaxable = collect($payroll->allowance_details ?? [])->filter(fn ($a) => ! ($a['is_taxable'] ?? true))->sum('amount');
+        $preTax = collect($payroll->deduction_details ?? [])->filter(fn ($d) => ($d['pre_tax'] ?? false) === true)->sum('amount');
+        $rent = $payroll->employee ? $this->monthlyRentRelief($payroll->employee) : 0.0;
+        $method = collect($payroll->deduction_details ?? [])->firstWhere('name', '_tax_method');
+        $flat = (float) (collect($method['breakdown'] ?? [])->firstWhere('bracket', 'Flat Rate')['rate'] ?? 0);
+
+        $taxable = $basic + $allowances + $overtime - (float) $nonTaxable - (float) $preTax - $rent;
+
+        return $this->calculateTax(max(0, $taxable), (int) $payroll->tenant_id, $flat, 'monthly');
+    }
+
     public function payslipFigures(Employee $employee, int $tenantId, float $flatTaxRate, array $employerContributionRules, string $periodEnd): array
     {
         $structure = $employee->salaryStructure;

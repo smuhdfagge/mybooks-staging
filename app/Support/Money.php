@@ -119,6 +119,22 @@ final class Money
         return ($value < 0 ? '-' : '').self::symbol($currency).number_format(abs($value), 0);
     }
 
+    /**
+     * An amount as typed in a form ("₦150,000.50", "150 000.5"): the
+     * separators and symbol taken off, so the "numeric" rule can check it
+     * (audit MB-39, <x-money-field>). Anything else is returned as it was,
+     * for validation to refuse.
+     */
+    public static function fromInput(mixed $value): mixed
+    {
+        if (! is_string($value)) {
+            return $value;
+        }
+        $plain = preg_replace('/[\s,]+/u', '', preg_replace('/^[^\d.-]+/u', '', trim($value)) ?? '');
+
+        return is_numeric($plain) ? $plain : $value;
+    }
+
     /** Symbol for a currency code (the business's by default). In Blade: @currencySymbol. */
     public static function symbol(?string $currency = null): string
     {

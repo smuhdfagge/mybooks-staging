@@ -226,7 +226,7 @@
 
             @if ($cn->applications->isNotEmpty() || $cn->refunds->isNotEmpty())
                 <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                    <h3 class="font-medium text-gray-900 dark:text-white">Where the credit went</h3>
+                    <h2 class="section-title">Where the credit went</h2>
                     @foreach ($cn->applications as $application)
                         <div class="mt-3 flex items-start justify-between gap-3 text-sm">
                             <p class="text-gray-700 dark:text-gray-300">
@@ -248,7 +248,7 @@
             @endif
 
             <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                <h3 class="font-medium text-gray-900 dark:text-white">Customer</h3>
+                <h2 class="section-title">Customer</h2>
                 <p class="mt-2 text-sm"><a href="{{ route('customers.show', $cn->customer) }}" class="link">{{ $cn->customer->name }}</a></p>
                 @if ($cn->customer->email)
                     <p class="truncate text-sm"><a href="mailto:{{ $cn->customer->email }}" class="link">{{ $cn->customer->email }}</a></p>

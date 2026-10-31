@@ -28,6 +28,14 @@
 //   x-data="lockDateNotice({...})"  <x-lock-date-notice>
 //   x-data="rowMenu('right')"     <x-table.dropdown>
 //   x-data="fileDrop()"           a drop zone over x-ref="fileInput"
+//   x-data="moneyInput()"         <x-money-field>: "150,000.00" once you leave it
+//   x-data="payslipForm()"        payroll edit: gross, deductions and net as you type
+
+// "₦150,000.50" or "150000.5" -> 150000.5; anything else -> NaN.
+export function parseMoney(value) {
+    const text = String(value === undefined || value === null ? '' : value).replace(/[^0-9.-]/g, '');
+    return text === '' ? NaN : parseFloat(text);
+}
 
 export function registerCspHelpers(Alpine) {
     Alpine.magic('money', () => (amount, symbol) => window.formatMoney(amount, symbol));
@@ -88,6 +96,36 @@ export function registerCspHelpers(Alpine) {
             if (!this.sidebarOpen) return;
             this.sidebarOpen = false;
             this.$nextTick(() => this.$refs.menuButton && this.$refs.menuButton.focus());
+        },
+    }));
+
+    // A money amount typed as text (audit MB-39): grouped and to 2 places
+    // once the field is left. The server takes the separators off again.
+    Alpine.data('moneyInput', () => ({
+        tidy() {
+            const amount = parseMoney(this.$el.value);
+            if (Number.isNaN(amount)) return;
+            this.$el.value = amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            this.$el.dispatchEvent(new Event('input', { bubbles: true }));
+        },
+    }));
+
+    // Payroll edit (MB-39): the totals follow the amounts as they are typed.
+    Alpine.data('payslipForm', () => ({
+        changed: 0,
+        amount(name) {
+            const field = this.$root.querySelector('[name="' + name + '"]');
+            const value = field ? parseMoney(field.value) : NaN;
+            return Number.isNaN(value) ? 0 : value;
+        },
+        get gross() {
+            return this.changed >= 0 ? this.amount('basic_salary') + this.amount('allowances') + this.amount('overtime_amount') : 0;
+        },
+        get deductions() {
+            return this.changed >= 0 ? this.amount('tax_deduction') + this.amount('other_deductions') : 0;
+        },
+        get net() {
+            return this.gross - this.deductions;
         },
     }));
 

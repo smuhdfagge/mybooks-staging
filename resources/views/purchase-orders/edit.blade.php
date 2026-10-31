@@ -247,7 +247,7 @@
 
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600 dark:text-gray-400">Discount</span>
-                                    <span class="font-medium text-red-600 dark:text-red-300" x-text="'-' + $money(totalDiscount)">-@money(0)</span>
+                                    <span class="font-medium text-red-600 dark:text-red-300" x-text="totalDiscount > 0 ? '-' + $money(totalDiscount) : $money(0)">@money(0)</span>
                                 </div>
 
                                 <div class="flex justify-between text-sm">

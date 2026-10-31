@@ -633,16 +633,16 @@ class StockTransfersTest extends TestCase
         $this->get(route('stock-transfers.show', $transfer))->assertForbidden();
         $this->post(route('stock-transfers.ship', $transfer))->assertForbidden();
         $this->postJson('/api/v1/stock-transfers', [])->assertForbidden();
-        $this->get(route('items.index'))->assertOk()->assertDontSee('">Stock transfers</a>', false);
+        $this->get(route('items.index'))->assertOk()->assertDontSee('">Stock Transfers</a>', false);
     }
 
     public function test_switched_off_the_module_is_hidden(): void
     {
-        $this->get(route('items.index'))->assertSee('">Stock transfers</a>', false);
+        $this->get(route('items.index'))->assertSee('">Stock Transfers</a>', false);
 
         config(['mybooks.features.stock_transfers' => false]);
         $this->get(route('stock-transfers.index'))->assertNotFound();
-        $this->get(route('items.index'))->assertDontSee('">Stock transfers</a>', false);
+        $this->get(route('items.index'))->assertDontSee('">Stock Transfers</a>', false);
         $this->getJson('/api/v1/stock-transfers')->assertNotFound();
 
         config(['mybooks.features.stock_transfers' => true, 'mybooks.features.warehouses' => false]);

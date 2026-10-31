@@ -111,7 +111,7 @@
             {{-- Withholding tax we kept back and have to remit --}}
             @if ($wht > 0)
                 <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10" data-testid="wht-panel">
-                    <h3 class="font-medium text-gray-900 dark:text-white">Withholding tax</h3>
+                    <h2 class="section-title">Withholding tax</h2>
                     <dl class="mt-3 space-y-1 text-sm">
                         <div class="flex justify-between gap-3"><dt class="text-gray-600 dark:text-gray-400">Withheld</dt><dd class="font-medium tabular-nums text-gray-900 dark:text-gray-100">{{ $money($wht) }}</dd></div>
                         <div class="flex justify-between gap-3"><dt class="text-gray-600 dark:text-gray-400">Rate</dt><dd class="text-gray-900 dark:text-gray-100">{{ \App\Support\Figure::rate($pm->wht_rate) }}</dd></div>
@@ -131,7 +131,7 @@
             {{-- Where an advance went --}}
             @if ($pm->is_advance && $pm->advanceApplications->isNotEmpty())
                 <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                    <h3 class="font-medium text-gray-900 dark:text-white">Where it went</h3>
+                    <h2 class="section-title">Where it went</h2>
                     @foreach ($pm->advanceApplications as $application)
                         <div class="mt-3 flex items-start justify-between gap-3 text-sm">
                             <p class="text-gray-700 dark:text-gray-300">
@@ -147,7 +147,7 @@
             {{-- Supplier --}}
             @if ($pm->vendor)
                 <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                    <h3 class="font-medium text-gray-900 dark:text-white">Supplier</h3>
+                    <h2 class="section-title">Supplier</h2>
                     <p class="mt-2 text-sm"><a href="{{ route('vendors.show', $pm->vendor) }}" class="link">{{ $pm->vendor->name }}</a></p>
                     @if ($pm->vendor->email)
                         <p class="truncate text-sm"><a href="mailto:{{ $pm->vendor->email }}" class="link">{{ $pm->vendor->email }}</a></p>

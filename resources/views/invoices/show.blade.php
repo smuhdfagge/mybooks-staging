@@ -178,7 +178,7 @@
 
             {{-- Payments --}}
             <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                <h3 class="font-medium text-gray-900 dark:text-white">Payments</h3>
+                <h2 class="section-title">Payments</h2>
                 @forelse ($invoice->payments as $payment)
                     <div class="mt-3 flex items-start justify-between gap-3 border-t border-gray-100 pt-3 text-sm first-of-type:border-0 first-of-type:pt-0 dark:border-gray-700">
                         <div class="min-w-0">
@@ -200,7 +200,7 @@
             {{-- Credit notes --}}
             @if ($creditFeature && ($invoice->creditNotes->isNotEmpty() || $invoice->creditNoteApplications->isNotEmpty()))
                 <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                    <h3 class="font-medium text-gray-900 dark:text-white">Credit notes</h3>
+                    <h2 class="section-title">Credit notes</h2>
                     @foreach ($invoice->creditNotes as $note)
                         <div class="mt-3 flex items-start justify-between gap-3 text-sm">
                             <div>
@@ -225,7 +225,7 @@
             {{-- Refunds --}}
             @if ($invoice->refunds->isNotEmpty())
                 <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                    <h3 class="font-medium text-gray-900 dark:text-white">Refunds</h3>
+                    <h2 class="section-title">Refunds</h2>
                     @foreach ($invoice->refunds as $refund)
                         <div class="mt-3 flex items-start justify-between gap-3 text-sm">
                             <div class="min-w-0">
@@ -246,32 +246,18 @@
 
             {{-- Activity --}}
             @php
-                $events = collect([['when' => $invoice->created_at, 'text' => 'Created', 'who' => $invoice->createdBy?->name]]);
+                $events = [['date' => $invoice->invoice_date, 'recorded' => $invoice->created_at, 'text' => 'Issued', 'who' => $invoice->createdBy?->name]];
                 if ($invoice->updated_at->gt($invoice->created_at->copy()->addMinute())) {
-                    $events->push(['when' => $invoice->updated_at, 'text' => 'Last changed', 'who' => null]);
+                    $events[] = ['date' => $invoice->updated_at, 'text' => 'Last changed'];
                 }
                 foreach ($invoice->payments as $p) {
-                    $events->push(['when' => $p->payment_date ?? $p->created_at, 'text' => 'Payment of '.$money($p->amount), 'who' => $p->createdBy?->name]);
+                    $events[] = ['date' => $p->payment_date ?? $p->created_at, 'recorded' => $p->created_at, 'text' => 'Payment of '.$money($p->amount), 'who' => $p->createdBy?->name];
                 }
                 if ($invoice->released_at) {
-                    $events->push(['when' => $invoice->released_at, 'text' => 'Goods released'.($invoice->waybill_number ? ', waybill '.$invoice->waybill_number : ''), 'who' => null]);
+                    $events[] = ['date' => $invoice->released_at, 'text' => 'Goods released'.($invoice->waybill_number ? ', waybill '.$invoice->waybill_number : '')];
                 }
-                $events = $events->sortBy(fn ($e) => $e['when'])->values();
             @endphp
-            <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                <h3 class="font-medium text-gray-900 dark:text-white">Activity</h3>
-                <ol class="mt-3 space-y-3 border-l border-gray-200 pl-4 dark:border-gray-700">
-                    @foreach ($events as $event)
-                        <li class="relative text-sm">
-                            <span class="absolute -left-[1.3rem] top-1.5 h-2 w-2 rounded-full bg-gray-400 ring-4 ring-white dark:bg-gray-500 dark:ring-gray-800" aria-hidden="true"></span>
-                            <p class="text-gray-900 dark:text-gray-100">{{ $event['text'] }}</p>
-                            <p class="text-gray-600 dark:text-gray-400">
-                                <time datetime="{{ $event['when']?->toIso8601String() }}">{{ $event['when']?->format('j M Y') }}</time>@if ($event['who']), {{ $event['who'] }}@endif
-                            </p>
-                        </li>
-                    @endforeach
-                </ol>
-            </section>
+            <x-activity-timeline :events="$events" />
         </aside>
     </div>
 
