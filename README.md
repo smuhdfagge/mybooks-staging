@@ -143,7 +143,7 @@ In production, server errors are also emailed to `ERROR_ALERT_EMAIL` (default: t
 
 ## Feature switches
 
-Each module below can be switched off for every business in `.env` (`config/mybooks.php`, `features`); a module that is off answers 404 and leaves the menu. All are **on** by default except the two marked off.
+Each module below can be switched off for every business in `.env` (`config/mybooks.php`, `features`); a module that is off answers 404 and leaves the menu (the automatic reversals and auto-renewal have no pages: off, they simply stop). All are **on** by default except the two marked off.
 
 | Setting | Default | Module |
 |---|---|---|

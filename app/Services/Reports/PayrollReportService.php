@@ -86,7 +86,8 @@ class PayrollReportService
         $endDate = $startDate->copy()->endOfMonth();
         $query = $this->registerQuery($tenantId, $month, $status, $departmentId);
 
-        $payrolls = $perPage ? $query->paginate($perPage)->withQueryString() : $query->get();
+        // A copy: paginate() puts the page's LIMIT/OFFSET on the query, which the totals must not have.
+        $payrolls = $perPage ? (clone $query)->paginate($perPage)->withQueryString() : $query->get();
 
         $sums = $this->sums($query, self::REGISTER_SUMS);
         $totals = array_intersect_key($sums, array_flip(self::REGISTER_SUMS));
@@ -279,11 +280,13 @@ class PayrollReportService
     {
         $query = $this->bankDisbursementQuery($tenantId, $startDate, $endDate, $status, $paymentMethod);
 
-        $payrolls = $perPage ? $query->paginate($perPage)->withQueryString() : $query->get();
+        // A copy: paginate() puts the page's LIMIT/OFFSET on the query, which the totals must not have.
+        $payrolls = $perPage ? (clone $query)->paginate($perPage)->withQueryString() : $query->get();
 
         $byPaymentMethod = (clone $query)->reorder()->toBase()
-            ->selectRaw('payment_method, COUNT(*) as n, COALESCE(SUM(net_salary), 0) as total')
-            ->groupBy('payment_method')->orderBy('payment_method')->get()
+            // Unset and empty are one "Not Specified", in the order the methods first come up.
+            ->selectRaw("COALESCE(payment_method, '') as payment_method, COUNT(*) as n, COALESCE(SUM(net_salary), 0) as total, MIN(payroll_number) as first_number")
+            ->groupByRaw("COALESCE(payment_method, '')")->orderBy('first_number')->get()
             ->map(fn ($row) => ['method' => $row->payment_method ?: 'Not Specified', 'count' => (int) $row->n, 'total' => round((float) $row->total, 2)])
             ->values();
 

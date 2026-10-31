@@ -137,7 +137,8 @@ class PayrollReportController extends ReportController
         $query = $this->earningsQuery($tenantId, $startDate, $endDate, $employeeId);
 
         // One page of payslips, totals over the period (audit MB-45).
-        $payrolls = $query->paginate(PayrollReportService::PER_PAGE)->withQueryString();
+        // A copy: paginate() puts the page's LIMIT/OFFSET on the query, which the totals must not have.
+        $payrolls = (clone $query)->paginate(PayrollReportService::PER_PAGE)->withQueryString();
         $sums = app(PayrollReportService::class)->sums($query, ['basic_salary', 'allowances', 'overtime_amount', 'gross_salary', 'tax_deduction', 'total_deductions', 'net_salary']);
         $totalBasic = $sums['basic_salary'];
         $totalGross = $sums['gross_salary'];

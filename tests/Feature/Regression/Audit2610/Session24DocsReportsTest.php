@@ -80,8 +80,15 @@ class Session24DocsReportsTest extends TestCase
         $earnings = $this->get(route('reports.employee-earnings', $period))->assertOk();
         $earnings->assertViewHas('payrolls', fn ($page) => $page->count() === 50 && $page->total() === 60);
         $earnings->assertViewHas('totalGross', 60000.0)->assertSee('60 payslips');
-        $this->get(route('reports.employee-earnings', $period + ['page' => 2]))
-            ->assertViewHas('payrolls', fn ($page) => $page->count() === 10);
+        // Page 2: its own rows, the period's totals (paginate() had put its OFFSET on the totals too).
+        $page2 = $period + ['page' => 2];
+        $this->get(route('reports.employee-earnings', $page2))
+            ->assertViewHas('payrolls', fn ($page) => $page->count() === 10)->assertViewHas('totalGross', 60000.0);
+        $this->get(route('reports.payroll-register', ['month' => '2026-09', 'page' => 2]))
+            ->assertViewHas('payslipCount', 60)->assertViewHas('statusCounts', fn ($counts) => $counts['approved'] === 60);
+        $this->get(route('reports.bank-disbursement', $page2))
+            ->assertViewHas('totals', fn ($totals) => $totals['count'] === 60)
+            ->assertViewHas('byPaymentMethod', fn ($methods) => $methods->count() === 1 && $methods[0]['count'] === 60);
 
         $this->get(route('reports.payroll-summary', $period))->assertOk()
             ->assertViewHas('byEmployee', fn ($page) => $page->count() === 50 && $page->total() === 60)
