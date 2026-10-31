@@ -11,6 +11,7 @@ use App\Models\Bill;
 use App\Models\ChartOfAccount;
 use App\Models\CreditNote;
 use App\Models\CreditNoteRefund;
+use App\Models\Customer;
 use App\Models\EmployeeLoan;
 use App\Models\Expense;
 use App\Models\FixedAsset;
@@ -27,6 +28,11 @@ use App\Models\VendorCredit;
 use App\Models\VendorCreditRefund;
 use App\Models\WhtCreditUtilisation;
 use App\Services\Accounting\LockDates;
+use App\Services\Journals\BillPosting;
+use App\Services\Journals\ExpensePosting;
+use App\Services\Journals\InvoicePosting;
+use App\Services\Journals\PaymentReceivedPosting;
+use App\Services\Journals\SalesReceiptPosting;
 use App\Support\DocumentNumber;
 use App\Support\PayrollStatutory;
 use Carbon\Carbon;
@@ -93,8 +99,10 @@ class JournalService implements JournalServiceInterface
     /**
      * Resolve an account code for a tenant.
      * Delegates to AccountCodeService which checks tenant settings then falls back to defaults.
+     *
+     * @internal public for the document postings in App\Services\Journals (MB-51), not for other callers
      */
-    protected function acct(int $tenantId, string $logicalName): string
+    public function acct(int $tenantId, string $logicalName): string
     {
         return AccountCodeService::resolve($tenantId, $logicalName);
     }
@@ -207,275 +215,28 @@ class JournalService implements JournalServiceInterface
         return $this->acct($tenantId, 'payroll_liabilities');
     }
 
-    /**
-     * Create journal entry for an invoice (Accounts Receivable)
-     *
-     * Debit: Accounts Receivable (asset increases)
-     * Credit: Sales Revenue (income increases)
-     * Credit: Sales Tax Payable (liability increases) - if applicable
-     *
-     * For inventory items (Perpetual Inventory Method):
-     * Debit: Cost of Goods Sold (expense increases)
-     * Credit: Inventory (asset decreases)
-     */
+    /** An invoice's journal: see Journals\InvoicePosting (audit MB-51). */
     public function createInvoiceJournal(Invoice $invoice): ?Journal
     {
-        if ($invoice->status === 'cancelled') {
-            // A cancelled invoice keeps its original journal plus a reversal (C5),
-            // and the stock it took goes back into its cost layers.
-            $this->reverseDocumentJournal(Invoice::class, $invoice->id, 'Invoice cancelled');
-            $this->returnDocumentStock(Invoice::class, $invoice->id);
-
-            return null;
-        }
-
-        if ($invoice->total <= 0) {
-            return null;
-        }
-
-        return DB::transaction(function () use ($invoice) {
-            $t = $invoice->tenant_id;
-
-            $journal = new Journal([
-                'tenant_id' => $invoice->tenant_id,
-                'journal_date' => $invoice->invoice_date,
-                'reference' => $invoice->invoice_number,
-                'description' => "Invoice {$invoice->invoice_number} - {$invoice->customer->name}",
-                'reference_type' => Invoice::class,
-                'reference_id' => $invoice->id,
-                'created_by' => $invoice->created_by ?? auth()->id(),
-            ]);
-
-            // Debit: Accounts Receivable
-            $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), $invoice->total, 0,
-                "Invoice {$invoice->invoice_number} - {$invoice->customer->name}");
-
-            // Credit: Sales Revenue (subtotal less discount)
-            $revenueAmount = $invoice->subtotal - ($invoice->discount_amount ?? 0);
-            if ($revenueAmount > 0) {
-                $this->createEntry($journal, $this->acct($t, 'sales_revenue'), 0, $revenueAmount,
-                    "Sales - Invoice {$invoice->invoice_number}");
-            }
-
-            // Credit: Sales Tax Payable (if tax amount exists)
-            if ($invoice->tax_amount > 0) {
-                $this->createEntry($journal, $this->acct($t, 'sales_tax_payable'), 0, $invoice->tax_amount,
-                    "Tax - Invoice {$invoice->invoice_number}");
-            }
-
-            // Record Cost of Goods Sold for inventory items (Perpetual Inventory Method)
-            $cogsAmount = $this->calculateCOGS($invoice);
-            if ($cogsAmount > 0) {
-                // Debit: Cost of Goods Sold (expense)
-                $this->createEntry($journal, $this->acct($t, 'cost_of_goods_sold'), $cogsAmount, 0,
-                    "COGS - Invoice {$invoice->invoice_number}");
-                // Credit: Inventory (reduce inventory asset)
-                $this->createEntry($journal, $this->acct($t, 'inventory'), 0, $cogsAmount,
-                    "Inventory Sold - Invoice {$invoice->invoice_number}");
-            }
-
-            return $this->postDocumentJournal($journal, 'Invoice edited');
-        });
+        return (new InvoicePosting($this))->post($invoice);
     }
 
-    /**
-     * Calculate Cost of Goods Sold for an invoice using stock valuation service.
-     */
-    protected function calculateCOGS(Invoice $invoice): float
-    {
-        return $this->documentCogs($invoice, Invoice::class, false);
-    }
-
-    /**
-     * Create journal entry for a bill (Accounts Payable)
-     *
-     * Debit: Expense Account or Inventory (depending on items)
-     * Credit: Accounts Payable (liability increases)
-     */
+    /** A bill's journal: see Journals\BillPosting (audit MB-51). */
     public function createBillJournal(Bill $bill): ?Journal
     {
-        if ($bill->status === 'cancelled') {
-            $this->reverseDocumentJournal(Bill::class, $bill->id, 'Bill cancelled');
-
-            return null;
-        }
-
-        if ($bill->total <= 0) {
-            return null;
-        }
-
-        return DB::transaction(function () use ($bill) {
-            $t = $bill->tenant_id;
-
-            $journal = new Journal([
-                'tenant_id' => $bill->tenant_id,
-                'journal_date' => $bill->bill_date,
-                'reference' => $bill->bill_number,
-                'description' => "Bill {$bill->bill_number} - {$bill->vendor->name}",
-                'reference_type' => Bill::class,
-                'reference_id' => $bill->id,
-                'created_by' => $bill->created_by ?? auth()->id(),
-            ]);
-
-            // Debit: Inventory for stocked items, and each other line's own account (MB-14)
-            [$inventoryAmount, $expenses] = $this->billDebitSplit($bill);
-            $this->postBillDebits($journal, $bill, $inventoryAmount, $expenses);
-
-            // If no items or all have zero totals, debit inventory by default
-            if ($inventoryAmount == 0 && ! $expenses && $bill->subtotal > 0) {
-                $this->createEntry($journal, $this->acct($t, 'inventory'), round((float) $bill->subtotal - (float) ($bill->discount_amount ?? 0), 2), 0,
-                    "Purchase - Bill {$bill->bill_number}");
-            }
-
-            // Debit: Tax if applicable (Input VAT is typically an asset)
-            if ($bill->tax_amount > 0) {
-                $this->createEntry($journal, $this->acct($t, 'input_vat'), $bill->tax_amount, 0,
-                    "Input VAT - Bill {$bill->bill_number}"); // own account, not Prepaid Expenses (A5)
-            }
-
-            // Credit: Accounts Payable
-            $this->createEntry($journal, $this->acct($t, 'accounts_payable'), 0, $bill->total,
-                "Bill {$bill->bill_number} - {$bill->vendor->name}");
-
-            return $this->postDocumentJournal($journal, 'Bill edited');
-        });
+        return (new BillPosting($this))->post($bill);
     }
 
-    /**
-     * Create journal entry for an expense
-     *
-     * Debit: Expense Account (expense increases)
-     * Credit: Cash/Bank Account (asset decreases)
-     */
+    /** An expense's journal: see Journals\ExpensePosting (audit MB-51). */
     public function createExpenseJournal(Expense $expense): ?Journal
     {
-        if ($expense->total <= 0) {
-            return null;
-        }
-
-        return DB::transaction(function () use ($expense) {
-            $t = $expense->tenant_id;
-
-            $journal = new Journal([
-                'tenant_id' => $expense->tenant_id,
-                'journal_date' => $expense->expense_date,
-                'reference' => $expense->expense_number,
-                'description' => "Expense {$expense->expense_number} - {$expense->name}",
-                'reference_type' => Expense::class,
-                'reference_id' => $expense->id,
-                'created_by' => $expense->created_by ?? auth()->id(),
-            ]);
-
-            // Debit: Expense Account (use the expense's assigned account)
-            $expenseAccountCode = $expense->expenseAccount?->account_code ?? $this->acct($t, 'miscellaneous_expense');
-            $this->createEntry($journal, $expenseAccountCode, $expense->amount, 0,
-                "Expense - {$expense->name}");
-
-            // Debit: Input Tax (if applicable)
-            if ($expense->tax_amount > 0) {
-                $this->createEntry($journal, $this->acct($t, 'input_vat'), $expense->tax_amount, 0,
-                    "Input Tax - {$expense->expense_number}");
-            }
-
-            // Credit: Payment Account (cash, bank, etc.)
-            $paymentAccountCode = $expense->paidThroughAccount?->account_code
-                ?? $this->paymentAccountFor($expense->bank, $expense->payment_method, $t);
-            $this->createEntry($journal, $paymentAccountCode, 0, $expense->total,
-                "Payment - {$expense->expense_number}");
-
-            return $this->postDocumentJournal($journal, 'Expense edited');
-        });
+        return (new ExpensePosting($this))->post($expense);
     }
 
-    /**
-     * Create journal entry for payment received (customer payment on invoice)
-     *
-     * For regular payments:
-     * Debit: Cash/Bank (asset increases)
-     * Credit: Accounts Receivable (asset decreases)
-     *
-     * For customer deposits:
-     * Debit: Cash/Bank (asset increases)
-     * Credit: Customer Deposits (liability increases)
-     *
-     * For payments from deposit:
-     * Debit: Customer Deposits (liability decreases)
-     * Credit: Accounts Receivable (asset decreases)
-     */
+    /** A customer payment's journal: see Journals\PaymentReceivedPosting (audit MB-51). */
     public function createPaymentReceivedJournal(PaymentReceived $payment): ?Journal
     {
-        if ($payment->amount <= 0) {
-            return null;
-        }
-
-        return DB::transaction(function () use ($payment) {
-            $t = $payment->tenant_id;
-
-            // Build description based on payment type
-            if ($payment->is_deposit) {
-                $description = "Customer Deposit {$payment->payment_number} - {$payment->customer->name}";
-            } elseif ($payment->payment_method === 'deposit') {
-                $invoiceRef = $payment->invoice ? " for Invoice {$payment->invoice->invoice_number}" : '';
-                $description = "Deposit Applied {$payment->payment_number} - {$payment->customer->name}{$invoiceRef}";
-            } else {
-                $invoiceRef = $payment->invoice ? " for Invoice {$payment->invoice->invoice_number}" : '';
-                $description = "Payment Received {$payment->payment_number} - {$payment->customer->name}{$invoiceRef}";
-            }
-
-            $journal = new Journal([
-                'tenant_id' => $payment->tenant_id,
-                'journal_date' => $payment->payment_date,
-                'reference' => $payment->payment_number,
-                'description' => $description,
-                'reference_type' => PaymentReceived::class,
-                'reference_id' => $payment->id,
-                'created_by' => $payment->created_by ?? auth()->id(),
-            ]);
-
-            if ($payment->is_deposit) {
-                // Customer deposit: Debit Cash, Credit Customer Deposits (liability)
-                $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
-                $this->createEntry($journal, $paymentAccountCode, $payment->amount, 0,
-                    "Customer Deposit - {$payment->payment_number}");
-
-                $this->createEntry($journal, $this->acct($t, 'customer_deposits'), 0, $payment->amount,
-                    "Customer Deposit from {$payment->customer->name}");
-            } elseif ($payment->payment_method === 'deposit') {
-                // Payment from deposit: Debit Customer Deposits (reduce liability), Credit A/R
-                $this->createEntry($journal, $this->acct($t, 'customer_deposits'), $payment->amount, 0,
-                    "Deposit Applied - {$payment->payment_number}");
-
-                $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), 0, $payment->amount,
-                    "Payment for {$payment->customer->name}");
-            } else {
-                $this->writeRegularPaymentReceivedLines($journal, $payment);
-            }
-
-            return $this->postDocumentJournal($journal, 'Payment edited');
-        });
-    }
-
-    /**
-     * Regular payment: Dr the bank with the money received, Dr WHT Credit
-     * Notes Receivable with any WHT the customer deducted, Cr Accounts
-     * Receivable with what the payment settles.
-     */
-    protected function writeRegularPaymentReceivedLines(Journal $journal, PaymentReceived $payment): void
-    {
-        $t = $payment->tenant_id;
-        $wht = round((float) $payment->wht_amount, 2);
-
-        $paymentAccountCode = $this->paymentAccountFor($payment->bank, $payment->payment_method, $t);
-        $this->createEntry($journal, $paymentAccountCode, $payment->amount, 0,
-            "Payment Received - {$payment->payment_number}");
-
-        if ($wht > 0) {
-            $this->createEntry($journal, $this->acct($t, 'wht_receivable'), $wht, 0,
-                "WHT deducted by {$payment->customer->name} - {$payment->payment_number}");
-        }
-
-        $this->createEntry($journal, $this->acct($t, 'accounts_receivable'), 0, $payment->settledAmount(),
-            "Payment for {$payment->customer->name}");
+        return (new PaymentReceivedPosting($this))->post($payment);
     }
 
     /**
@@ -602,7 +363,7 @@ class JournalService implements JournalServiceInterface
 
             // Credit: Payment Account (cash/bank going out)
             $paymentAccountCode = $this->getPaymentAccountCode($refund->refund_method, $t);
-            $this->createEntry($journal, $paymentAccountCode, 0, $refund->amount,
+            $this->createEntry($journal, $paymentAccountCode, 0, (float) $refund->amount,
                 "Refund Payment - {$refund->refund_number}");
 
             return $this->postDocumentJournal($journal, 'Refund edited');
@@ -794,76 +555,10 @@ class JournalService implements JournalServiceInterface
         });
     }
 
-    /**
-     * Create journal entry for a sales receipt (cash sale)
-     *
-     * Debit: Cash/Bank (asset increases - based on payment method)
-     * Credit: Sales Revenue (income increases)
-     * Credit: Sales Tax Payable (liability increases) - if applicable
-     *
-     * For inventory items (Perpetual Inventory Method):
-     * Debit: Cost of Goods Sold (expense increases)
-     * Credit: Inventory (asset decreases)
-     */
+    /** A cash sale's journal: see Journals\SalesReceiptPosting (audit MB-51). */
     public function createSalesReceiptJournal(SalesReceipt $receipt): ?Journal
     {
-        if ($receipt->total <= 0) {
-            return null;
-        }
-
-        return DB::transaction(function () use ($receipt) {
-            $t = $receipt->tenant_id;
-
-            $customerName = $receipt->customer ? $receipt->customer->name : 'Walk-in Customer';
-
-            $journal = new Journal([
-                'tenant_id' => $receipt->tenant_id,
-                'journal_date' => $receipt->receipt_date,
-                'reference' => $receipt->receipt_number,
-                'description' => "Sales Receipt {$receipt->receipt_number} - {$customerName}",
-                'reference_type' => SalesReceipt::class,
-                'reference_id' => $receipt->id,
-                'created_by' => $receipt->created_by ?? auth()->id(),
-            ]);
-
-            // Debit: Cash/Bank (based on payment method)
-            $paymentAccountCode = $this->getPaymentAccountCode($receipt->payment_method ?? 'cash', $t);
-            $this->createEntry($journal, $paymentAccountCode, $receipt->total, 0,
-                "Cash Sale - {$receipt->receipt_number}");
-
-            // Credit: Sales Revenue (subtotal less discount)
-            $revenueAmount = $receipt->subtotal - ($receipt->discount_amount ?? 0);
-            if ($revenueAmount > 0) {
-                $this->createEntry($journal, $this->acct($t, 'sales_revenue'), 0, $revenueAmount,
-                    "Sales - Receipt {$receipt->receipt_number}");
-            }
-
-            // Credit: Sales Tax Payable (if tax amount exists)
-            if ($receipt->tax_amount > 0) {
-                $this->createEntry($journal, $this->acct($t, 'sales_tax_payable'), 0, $receipt->tax_amount,
-                    "Tax - Receipt {$receipt->receipt_number}");
-            }
-
-            // Record Cost of Goods Sold for inventory items
-            $cogsAmount = $this->calculateSalesReceiptCOGS($receipt);
-            if ($cogsAmount > 0) {
-                $this->createEntry($journal, $this->acct($t, 'cost_of_goods_sold'), $cogsAmount, 0,
-                    "COGS - Receipt {$receipt->receipt_number}");
-                $this->createEntry($journal, $this->acct($t, 'inventory'), 0, $cogsAmount,
-                    "Inventory Sold - Receipt {$receipt->receipt_number}");
-            }
-
-            return $this->postDocumentJournal($journal, 'Sales receipt edited');
-        });
-    }
-
-    /**
-     * Calculate COGS for a sales receipt using stock valuation service.
-     */
-    protected function calculateSalesReceiptCOGS(SalesReceipt $receipt): float
-    {
-        // A cash sale hands the goods over now, so it also lowers stock on hand.
-        return $this->documentCogs($receipt, SalesReceipt::class, true);
+        return (new SalesReceiptPosting($this))->post($receipt);
     }
 
     /**
@@ -877,8 +572,10 @@ class JournalService implements JournalServiceInterface
      * If a line has no stored cost (first posting, or the lines were
      * replaced by an edit), everything the document took is put back and all
      * its lines are costed again.
+     *
+     * @internal public for the document postings in App\Services\Journals (MB-51), not for other callers
      */
-    protected function documentCogs($document, string $documentType, bool $reduceOnHand): float
+    public function documentCogs($document, string $documentType, bool $reduceOnHand): float
     {
         // The document before its stock (MB-30): two postings of it at once
         // would otherwise both take stock out before either waits on the
@@ -909,8 +606,10 @@ class JournalService implements JournalServiceInterface
 
     /**
      * Put back the stock a sales document took (when it is cancelled or deleted).
+     *
+     * @internal public for the document postings in App\Services\Journals (MB-51), not for other callers
      */
-    protected function returnDocumentStock(string $referenceType, int $referenceId): void
+    public function returnDocumentStock(string $referenceType, int $referenceId): void
     {
         if (in_array($referenceType, [Invoice::class, SalesReceipt::class], true)) {
             app(StockValuationService::class)->returnStock($referenceType, $referenceId);
@@ -1368,7 +1067,7 @@ class JournalService implements JournalServiceInterface
                 return $existing;
             }
 
-            $customer = $creditNote->customer?->name ?? 'Customer';
+            $customer = Customer::whereKey($creditNote->customer_id)->value('name') ?? 'Customer'; // none, or deleted since
             $journal = Journal::create([
                 'tenant_id' => $t,
                 'journal_number' => Journal::generateNumber($t),
@@ -1485,7 +1184,7 @@ class JournalService implements JournalServiceInterface
             // Create reversing entries (swap debit and credit)
             foreach ($journal->entries as $entry) {
                 $this->createEntry($reversingJournal, $entry->account->account_code,
-                    $entry->credit, $entry->debit, "Reversal: {$entry->description}");
+                    (float) $entry->credit, (float) $entry->debit, "Reversal: {$entry->description}");
             }
 
             $reversingJournal->updateTotals();
@@ -1718,8 +1417,10 @@ class JournalService implements JournalServiceInterface
      *
      * Callers run inside DB::transaction: a refusal (a closed or locked
      * date, lines that don't balance) leaves everything as it was.
+     *
+     * @internal public for the document postings in App\Services\Journals (MB-51), not for other callers
      */
-    protected function postDocumentJournal(Journal $journal, string $reason): Journal
+    public function postDocumentJournal(Journal $journal, string $reason): Journal
     {
         // One live journal per document (audit MB-30). Two saves of the
         // same document at once (a double submit, a payment arriving as the
@@ -1819,8 +1520,10 @@ class JournalService implements JournalServiceInterface
 
     /**
      * Get the payment account code based on payment method, resolved per-tenant.
+     *
+     * @internal public for the document postings in App\Services\Journals (MB-51), not for other callers
      */
-    protected function getPaymentAccountCode(?string $paymentMethod, int $tenantId): string
+    public function getPaymentAccountCode(?string $paymentMethod, int $tenantId): string
     {
         // tenantId is required: the old fallback for a missing tenant used an
         // undefined variable and would have crashed (L16).
@@ -1834,8 +1537,10 @@ class JournalService implements JournalServiceInterface
      * account (Banks > chart of account), post there, so each bank can be
      * reconciled in the ledger (M5). Otherwise use the payment method's
      * default account (cash, checking, ...), as before.
+     *
+     * @internal public for the document postings in App\Services\Journals (MB-51), not for other callers
      */
-    protected function paymentAccountFor(?Bank $bank, ?string $paymentMethod, int $tenantId): string
+    public function paymentAccountFor(?Bank $bank, ?string $paymentMethod, int $tenantId): string
     {
         if ($bank && $bank->chart_of_account_id) {
             $code = ChartOfAccount::where('tenant_id', $tenantId)
@@ -1970,25 +1675,6 @@ class JournalService implements JournalServiceInterface
         }
 
         return [$inventory, $expenses];
-    }
-
-    /**
-     * @param  array<string, float>  $expenses
-     */
-    protected function postBillDebits(Journal $journal, Bill $bill, float $inventory, array $expenses): void
-    {
-        if ($inventory > 0) {
-            $this->createEntry($journal, $this->acct($bill->tenant_id, 'inventory'), $inventory, 0,
-                "Inventory Purchase - Bill {$bill->bill_number}");
-        }
-        // Account codes are numeric, so they arrive as int keys.
-        foreach ($expenses as $code => $amount) {
-            if ($amount > 0) {
-                $this->createEntry($journal, (string) $code, $amount, 0, "Expense - Bill {$bill->bill_number}");
-            } elseif ($amount < 0) {
-                $this->createEntry($journal, (string) $code, 0, -$amount, "Expense - Bill {$bill->bill_number}");
-            }
-        }
     }
 
     /**

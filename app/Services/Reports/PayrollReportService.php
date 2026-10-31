@@ -6,6 +6,7 @@ use App\Models\Employee;
 use App\Models\Payroll;
 use App\Models\SalaryStructureVersion;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 /**
@@ -17,14 +18,52 @@ use Illuminate\Support\Collection;
  */
 class PayrollReportService
 {
-    /** Detailed register for one month. */
-    public function payrollRegister(int $tenantId, string $month, ?string $status = null, $departmentId = null): array
+    /**
+     * Payslips a report page shows (audit MB-45). The totals and counts
+     * are worked out in the database over the whole period, so a page
+     * never loads every payslip to add them up.
+     */
+    public const PER_PAGE = 50;
+
+    /** The amounts the register adds up. */
+    public const REGISTER_SUMS = ['basic_salary', 'allowances', 'overtime_amount', 'gross_salary', 'tax_deduction',
+        'other_deductions', 'total_deductions', 'net_salary', 'employer_contributions'];
+
+    /**
+     * Totals of $columns over the payslips $query finds, with how many
+     * payslips and employees: one query, nothing loaded.
+     *
+     * @param  Builder<Payroll>  $query
+     * @param  list<string>  $columns  fixed column names, never user input
+     * @return array<string, float|int>
+     */
+    public function sums(Builder $query, array $columns): array
+    {
+        $select = ['COUNT(*) as payslips', 'COUNT(DISTINCT employee_id) as employees'];
+        foreach ($columns as $column) {
+            $select[] = "COALESCE(SUM({$column}), 0) as {$column}";
+        }
+        $row = (array) (clone $query)->reorder()->toBase()->selectRaw(implode(', ', $select))->first();
+
+        $sums = ['payslips' => (int) ($row['payslips'] ?? 0), 'employees' => (int) ($row['employees'] ?? 0)];
+        foreach ($columns as $column) {
+            $sums[$column] = round((float) ($row[$column] ?? 0), 2);
+        }
+
+        return $sums;
+    }
+
+    /**
+     * The register's payslips for one month.
+     *
+     * @return Builder<Payroll>
+     */
+    public function registerQuery(int $tenantId, string $month, ?string $status = null, $departmentId = null): Builder
     {
         $startDate = Carbon::parse($month.'-01')->startOfMonth();
-        $endDate = $startDate->copy()->endOfMonth();
 
         $query = Payroll::where('tenant_id', $tenantId)
-            ->whereBetween('pay_period_start', [$startDate, $endDate])
+            ->whereBetween('pay_period_start', [$startDate, $startDate->copy()->endOfMonth()])
             ->with(['employee.department', 'salaryStructure']);
 
         if ($status) {
@@ -34,28 +73,33 @@ class PayrollReportService
             $query->whereHas('employee', fn ($q) => $q->where('department_id', $departmentId));
         }
 
-        $payrolls = $query->orderBy('payroll_number')->get();
+        return $query->orderBy('payroll_number')->orderBy('id');
+    }
 
-        $totals = [
-            'basic_salary' => $payrolls->sum('basic_salary'),
-            'allowances' => $payrolls->sum('allowances'),
-            'overtime_amount' => $payrolls->sum('overtime_amount'),
-            'gross_salary' => $payrolls->sum('gross_salary'),
-            'tax_deduction' => $payrolls->sum('tax_deduction'),
-            'other_deductions' => $payrolls->sum('other_deductions'),
-            'total_deductions' => $payrolls->sum('total_deductions'),
-            'net_salary' => $payrolls->sum('net_salary'),
-            'employer_contributions' => $payrolls->sum('employer_contributions'),
-        ];
+    /**
+     * Detailed register for one month: every payslip, or one page of
+     * $perPage (the web page); the totals are always over the month.
+     */
+    public function payrollRegister(int $tenantId, string $month, ?string $status = null, $departmentId = null, ?int $perPage = null): array
+    {
+        $startDate = Carbon::parse($month.'-01')->startOfMonth();
+        $endDate = $startDate->copy()->endOfMonth();
+        $query = $this->registerQuery($tenantId, $month, $status, $departmentId);
 
-        $statusCounts = [
-            'draft' => $payrolls->where('status', 'draft')->count(),
-            'approved' => $payrolls->where('status', 'approved')->count(),
-            'paid' => $payrolls->where('status', 'paid')->count(),
-            'cancelled' => $payrolls->where('status', 'cancelled')->count(),
-        ];
+        $payrolls = $perPage ? $query->paginate($perPage)->withQueryString() : $query->get();
 
-        return compact('payrolls', 'totals', 'statusCounts', 'startDate', 'endDate');
+        $sums = $this->sums($query, self::REGISTER_SUMS);
+        $totals = array_intersect_key($sums, array_flip(self::REGISTER_SUMS));
+        $employeeCount = $sums['employees'];
+        $payslipCount = $sums['payslips'];
+
+        $byStatus = (clone $query)->reorder()->toBase()->selectRaw('status, COUNT(*) as n')->groupBy('status')->pluck('n', 'status');
+        $statusCounts = [];
+        foreach (['draft', 'approved', 'paid', 'cancelled'] as $state) {
+            $statusCounts[$state] = (int) ($byStatus[$state] ?? 0);
+        }
+
+        return compact('payrolls', 'totals', 'statusCounts', 'startDate', 'endDate', 'employeeCount', 'payslipCount');
     }
 
     /** Cumulative earnings per employee for a year. */
@@ -208,13 +252,17 @@ class PayrollReportService
         return compact('contributionTypes', 'byEmployee', 'monthlyTrend', 'totals');
     }
 
-    /** Net pay to send to the bank. */
-    public function bankDisbursement(int $tenantId, string $startDate, string $endDate, ?string $status, ?string $paymentMethod = null): array
+    /**
+     * The bank payment list's payslips.
+     *
+     * @return Builder<Payroll>
+     */
+    public function bankDisbursementQuery(int $tenantId, string $startDate, string $endDate, ?string $status, ?string $paymentMethod = null): Builder
     {
         $query = Payroll::where('tenant_id', $tenantId)
             ->whereBetween('pay_date', $this->days($startDate, $endDate))
             ->with('employee')
-            ->orderBy('payroll_number');
+            ->orderBy('payroll_number')->orderBy('id');
 
         if ($status) {
             $query->where('status', $status);
@@ -223,18 +271,27 @@ class PayrollReportService
             $query->where('payment_method', $paymentMethod);
         }
 
-        $payrolls = $query->get();
+        return $query;
+    }
 
-        $byPaymentMethod = $payrolls->groupBy('payment_method')->map(fn ($records, $method) => [
-            'method' => $method ?: 'Not Specified',
-            'count' => $records->count(),
-            'total' => (float) $records->sum('net_salary'),
-        ])->values();
+    /** Net pay to send to the bank: every payslip, or one page of $perPage; totals over all. */
+    public function bankDisbursement(int $tenantId, string $startDate, string $endDate, ?string $status, ?string $paymentMethod = null, ?int $perPage = null): array
+    {
+        $query = $this->bankDisbursementQuery($tenantId, $startDate, $endDate, $status, $paymentMethod);
 
+        $payrolls = $perPage ? $query->paginate($perPage)->withQueryString() : $query->get();
+
+        $byPaymentMethod = (clone $query)->reorder()->toBase()
+            ->selectRaw('payment_method, COUNT(*) as n, COALESCE(SUM(net_salary), 0) as total')
+            ->groupBy('payment_method')->orderBy('payment_method')->get()
+            ->map(fn ($row) => ['method' => $row->payment_method ?: 'Not Specified', 'count' => (int) $row->n, 'total' => round((float) $row->total, 2)])
+            ->values();
+
+        $sums = $this->sums($query, ['net_salary', 'gross_salary']);
         $totals = [
-            'count' => $payrolls->count(),
-            'total_net' => (float) $payrolls->sum('net_salary'),
-            'total_gross' => (float) $payrolls->sum('gross_salary'),
+            'count' => $sums['payslips'],
+            'total_net' => (float) $sums['net_salary'],
+            'total_gross' => (float) $sums['gross_salary'],
         ];
 
         return compact('payrolls', 'byPaymentMethod', 'totals');

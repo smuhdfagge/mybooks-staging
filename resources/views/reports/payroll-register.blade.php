@@ -24,10 +24,10 @@
         </x-report.filters>
 
         <x-report.stats :cols="4">
-            <x-report.stat label="Gross pay" :value="\App\Support\Figure::show($totals['gross_salary'])" :hint="$payrolls->unique('employee_id')->count().' employees'" />
+            <x-report.stat label="Gross pay" :value="\App\Support\Figure::show($totals['gross_salary'])" :hint="$employeeCount.' employees'" />
             <x-report.stat label="Deductions" :value="\App\Support\Figure::show($totals['total_deductions'])" />
             <x-report.stat label="Net pay" :value="\App\Support\Figure::show($totals['net_salary'])" />
-            <x-report.stat label="Payslips" :value="number_format($payrolls->count())"
+            <x-report.stat label="Payslips" :value="number_format($payslipCount)"
                 :hint="collect($statusCounts)->filter()->map(fn ($n, $s) => $n.' '.strtolower($statuses[$s] ?? $s))->join(', ') ?: null" />
         </x-report.stats>
 
@@ -82,6 +82,7 @@
                     </tr>
                 </x-slot>
             </x-table>
+            {{ $payrolls->links() }}
         @endif
     </x-report.sheet>
 </x-app-layout>
