@@ -117,6 +117,17 @@ class Session23UxNavigationTest extends TestCase
         $this->assertStringContainsString('Recorded <time datetime="2026-10-20', $timeline);
     }
 
+    public function test_on_the_same_business_date_what_was_recorded_first_comes_first(): void
+    {
+        $at = fn (string $date, string $recorded, string $text) => ['date' => Carbon::parse($date), 'recorded' => Carbon::parse($recorded), 'text' => $text];
+        $html = $this->blade('<x-activity-timeline :events="$events" />', ['events' => [
+            $at('2026-09-01', '2026-10-25 09:00', 'Payment'),
+            $at('2026-09-01', '2026-10-20 15:00', 'Issued'),
+        ]]);
+
+        $html->assertSeeInOrder(['Issued', 'Payment']);
+    }
+
     // ---- MB-38: a bank's own ledger account -------------------------------------
 
     public function test_a_new_bank_gets_a_ledger_account_named_after_it_that_follows_its_name(): void
@@ -139,6 +150,11 @@ class Session23UxNavigationTest extends TestCase
         $this->assertSame('1121', ChartOfAccount::findOrFail(Bank::where('name', 'Savings')->value('chart_of_account_id'))->account_code);
         $this->post(route('banks.store'), ['name' => 'Company card', 'account_type' => 'credit_card', 'currency' => 'NGN']);
         $this->assertNull(Bank::where('name', 'Company card')->value('chart_of_account_id'));
+
+        // A deleted account keeps its code: the next bank goes past it.
+        ChartOfAccount::create(['tenant_id' => $this->tenant->id, 'account_code' => '1122', 'name' => 'Old bank', 'type' => 'asset', 'sub_type' => 'bank'])->delete();
+        $this->post(route('banks.store'), ['name' => 'Payroll', 'account_type' => 'checking', 'currency' => 'NGN'])->assertRedirect(route('banks.index'));
+        $this->assertSame('1123', ChartOfAccount::findOrFail(Bank::where('name', 'Payroll')->value('chart_of_account_id'))->account_code);
     }
 
     // ---- MB-39: payroll edit -------------------------------------------------------
@@ -171,7 +187,9 @@ class Session23UxNavigationTest extends TestCase
             ->assertSee('x-data="payslipForm()"', false)
             ->assertSee('aria-live="polite"', false)
             ->assertSee('data-testid="calculate-paye"', false)
-            ->assertDontSee('type="number" name="basic_salary"', false);
+            ->assertDontSee('type="number" name="basic_salary"', false)
+            // Enter saves: the first submit button in the form is Update, not Calculate PAYE.
+            ->assertSeeInOrder(['<button type="submit" class="sr-only" tabindex="-1" aria-hidden="true">Update payroll</button>', 'data-testid="calculate-paye"'], false);
 
         $this->put(route('payroll.update', $payroll), ['pay_period_start' => '2026-09-01', 'pay_period_end' => '2026-09-30',
             'basic_salary' => '₦160,000.00', 'allowances' => '5,000', 'tax_deduction' => '1,000.50', 'other_deductions' => '8,000'])
@@ -194,6 +212,15 @@ class Session23UxNavigationTest extends TestCase
             ->assertSessionHasInput('basic_salary', '200000.00');
 
         $this->assertSame('150000.00', $payroll->fresh()->basic_salary);
+
+        // A percentage relief (8% pension) is taken again on the edited pay: 10% of (300,000 - 24,000).
+        $payroll->update(['deduction_details' => [
+            ['name' => 'Pension (employee 8%)', 'amount_type' => 'percentage', 'rate' => 8, 'amount' => 12000, 'pre_tax' => true, '_statutory' => 'pension'],
+            ['name' => '_tax_method', 'method' => 'flat', 'breakdown' => [['bracket' => 'Flat Rate', 'rate' => 10, 'taxable' => 0, 'tax' => 0]]],
+        ]]);
+        $this->from(route('payroll.edit', $payroll))->put(route('payroll.update', $payroll), ['pay_period_start' => '2026-09-01', 'pay_period_end' => '2026-09-30',
+            'basic_salary' => '300,000.00', 'calculate_paye' => '1'])
+            ->assertSessionHasInput('tax_deduction', '27600.00');
 
         // With no tax table and no flat rate there is nothing to work it out from: the amount typed stays.
         $payroll->update(['deduction_details' => []]);
@@ -221,6 +248,10 @@ class Session23UxNavigationTest extends TestCase
         $this->assertSame('150000.50', Money::fromInput('₦150,000.50'));
         $this->assertSame('-1200', Money::fromInput('-1,200'));
         $this->assertSame('12abc', Money::fromInput('12abc'));
+        foreach (['abc12', '150.000,50', '1e3', '1,20,000'] as $unclear) {
+            $this->assertSame($unclear, Money::fromInput($unclear), 'left for validation to refuse');
+        }
+        $this->assertSame('2500', Money::fromInput('NGN 2,500'));
         $this->assertSame(5, Money::fromInput(5));
     }
 

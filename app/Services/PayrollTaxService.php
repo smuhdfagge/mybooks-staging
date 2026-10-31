@@ -155,6 +155,45 @@ class PayrollTaxService
     }
 
     /**
+     * PAYE for a payslip whose pay is being edited (audit MB-39), worked
+     * out as the pay run does: the edited basic, allowances and overtime,
+     * less the payslip's reliefs: its non-taxable allowances (no more than
+     * the allowances now on it), its pre-tax deductions (a percentage one,
+     * such as pension or NHF, taken again on the edited pay) and rent
+     * relief; on the business's tax table, else the flat rate the payslip
+     * was worked out at.
+     *
+     * @return array{tax: float, breakdown: array, method: string}
+     */
+    public function payeForEdit(Payroll $payroll, float $basic, float $allowances, float $overtime): array
+    {
+        $allowanceDetails = $payroll->allowance_details ?? [];
+        $nonTaxable = min($allowances, (float) collect($allowanceDetails)->filter(fn ($a) => ! ($a['is_taxable'] ?? true))->sum('amount'));
+
+        $preTax = 0.0;
+        foreach ($payroll->deduction_details ?? [] as $deduction) {
+            if (($deduction['pre_tax'] ?? false) !== true) {
+                continue;
+            }
+            $preTax += ($deduction['amount_type'] ?? null) === 'percentage'
+                ? Money::percent(match ($deduction['_statutory'] ?? null) {
+                    'pension' => $this->pensionablePay($basic, $allowanceDetails),
+                    'nhf' => $basic,
+                    default => $basic + $allowances, // a structure deduction: a share of gross, as payslipFigures takes it
+                }, $deduction['rate'] ?? 0)
+                : (float) ($deduction['amount'] ?? 0);
+        }
+
+        $rent = $payroll->employee ? $this->monthlyRentRelief($payroll->employee) : 0.0;
+        $method = collect($payroll->deduction_details ?? [])->firstWhere('name', '_tax_method');
+        $flat = (float) (collect($method['breakdown'] ?? [])->firstWhere('bracket', 'Flat Rate')['rate'] ?? 0);
+
+        $taxable = $basic + $allowances + $overtime - $nonTaxable - $preTax - $rent;
+
+        return $this->calculateTax(max(0, $taxable), (int) $payroll->tenant_id, $flat, 'monthly');
+    }
+
+    /**
      * One employee's payslip figures for a pay period ending $periodEnd:
      * allowances, pre-tax reliefs (pension, NHF, rent), PAYE, other
      * deductions and loan instalments. The payroll run and bulk create both
@@ -165,28 +204,6 @@ class PayrollTaxService
      * @param  array<int, array<string, mixed>>  $employerContributionRules
      * @return array<string, mixed> Payroll attributes
      */
-    /**
-     * PAYE for a payslip whose pay is being edited (audit MB-39): the
-     * edited basic, allowances and overtime, less the reliefs the payslip
-     * already carries (non-taxable allowances, pre-tax deductions such as
-     * pension and NHF, rent relief), on the tax table, or the flat rate it
-     * was worked out at.
-     *
-     * @return array{tax: float, breakdown: array, method: string}
-     */
-    public function payeForEdit(Payroll $payroll, float $basic, float $allowances, float $overtime): array
-    {
-        $nonTaxable = collect($payroll->allowance_details ?? [])->filter(fn ($a) => ! ($a['is_taxable'] ?? true))->sum('amount');
-        $preTax = collect($payroll->deduction_details ?? [])->filter(fn ($d) => ($d['pre_tax'] ?? false) === true)->sum('amount');
-        $rent = $payroll->employee ? $this->monthlyRentRelief($payroll->employee) : 0.0;
-        $method = collect($payroll->deduction_details ?? [])->firstWhere('name', '_tax_method');
-        $flat = (float) (collect($method['breakdown'] ?? [])->firstWhere('bracket', 'Flat Rate')['rate'] ?? 0);
-
-        $taxable = $basic + $allowances + $overtime - (float) $nonTaxable - (float) $preTax - $rent;
-
-        return $this->calculateTax(max(0, $taxable), (int) $payroll->tenant_id, $flat, 'monthly');
-    }
-
     public function payslipFigures(Employee $employee, int $tenantId, float $flatTaxRate, array $employerContributionRules, string $periodEnd): array
     {
         $structure = $employee->salaryStructure;

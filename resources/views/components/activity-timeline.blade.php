@@ -12,7 +12,7 @@
 @php
     $events = collect($events)
         ->filter(fn ($event) => $event['date'] ?? null)
-        ->sortBy(fn ($event) => $event['date']->format('Y-m-d').' '.($event['recorded'] ?? $event['date'])->format('H:i:s'))
+        ->sortBy(fn ($event) => $event['date']->format('Y-m-d').' '.($event['recorded'] ?? $event['date'])->format('Y-m-d H:i:s'))
         ->values();
 @endphp
 

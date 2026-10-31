@@ -169,6 +169,7 @@ class BankFeedLinker
                     'current_balance' => 0,
                     'is_active' => true,
                 ]);
+                $bank->openLedgerAccount(); // its own ledger account, to reconcile the feed against (MB-38)
             }
             $this->assertFree($bank, $connection->id);
 

@@ -246,7 +246,7 @@
 
             {{-- Activity --}}
             @php
-                $events = [['date' => $invoice->invoice_date, 'recorded' => $invoice->created_at, 'text' => 'Issued', 'who' => $invoice->createdBy?->name]];
+                $events = [['date' => $invoice->invoice_date, 'recorded' => $invoice->created_at, 'text' => $invoice->status === 'draft' ? 'Created' : 'Issued', 'who' => $invoice->createdBy?->name]];
                 if ($invoice->updated_at->gt($invoice->created_at->copy()->addMinute())) {
                     $events[] = ['date' => $invoice->updated_at, 'text' => 'Last changed'];
                 }

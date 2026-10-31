@@ -12,6 +12,8 @@
                 <form action="{{ route('payroll.update', $payroll) }}" method="POST" class="p-6" x-data="payslipForm()" @input="changed++">
                     @csrf
                     @method('PUT')
+                    {{-- Enter in a field saves: a form's first submit button is the one Enter presses, and Calculate PAYE comes before Update below. --}}
+                    <button type="submit" class="sr-only" tabindex="-1" aria-hidden="true">Update payroll</button>
 
                     <!-- Employee Info (Read Only) -->
                     <div class="mb-8">
@@ -87,12 +89,12 @@
                     </div>
 
                     <!-- What the employee gets, as the amounts are typed -->
-                    <div class="mb-8 rounded-lg bg-gray-50 p-4 dark:bg-gray-900/40" aria-live="polite" data-testid="payslip-totals">
+                    <div class="mb-8 rounded-lg bg-gray-50 p-4 dark:bg-gray-900/40" data-testid="payslip-totals">
                         <h2 class="sr-only">Totals</h2>
                         <dl class="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
                             <div><dt class="text-gray-600 dark:text-gray-400">Gross pay</dt><dd class="text-lg font-semibold tabular-nums text-gray-900 dark:text-white" x-text="$money(gross)">{{ \App\Support\Money::format($payroll->gross_salary) }}</dd></div>
                             <div><dt class="text-gray-600 dark:text-gray-400">Deductions</dt><dd class="text-lg font-semibold tabular-nums text-gray-900 dark:text-white" x-text="$money(deductions)">{{ \App\Support\Money::format($payroll->total_deductions) }}</dd></div>
-                            <div><dt class="text-gray-600 dark:text-gray-400">Net pay</dt><dd class="text-lg font-semibold tabular-nums text-gray-900 dark:text-white" x-text="$money(net)">{{ \App\Support\Money::format($payroll->net_salary) }}</dd></div>
+                            <div><dt class="text-gray-600 dark:text-gray-400">Net pay</dt><dd class="text-lg font-semibold tabular-nums text-gray-900 dark:text-white" aria-live="polite" x-text="$money(net)">{{ \App\Support\Money::format($payroll->net_salary) }}</dd></div>
                         </dl>
                     </div>
 

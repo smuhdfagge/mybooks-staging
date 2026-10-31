@@ -141,7 +141,7 @@ class PayrollController extends Controller
                 // so the amount there stays and the person is told why.
                 return redirect()->route('payroll.edit', $payroll)
                     ->withInput($request->except(['_token', '_method', 'calculate_paye']))
-                    ->with('error', 'PAYE can\'t be worked out: this business has no tax table. Apply one under Payroll, More, Tax templates, or enter the amount yourself.');
+                    ->with('error', 'PAYE can\'t be worked out: this business has no tax table and this payslip keeps no flat rate. Apply a table under Payroll, More, Tax templates, or enter the amount yourself.');
             }
 
             return redirect()->route('payroll.edit', $payroll)

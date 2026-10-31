@@ -208,7 +208,8 @@ class Bank extends Model
         }
 
         [$from, $to, $subType] = $range;
-        $used = ChartOfAccount::query()->where('tenant_id', $this->tenant_id)
+        // Deleted accounts keep their codes (the unique index still has them).
+        $used = ChartOfAccount::withTrashed()->where('tenant_id', $this->tenant_id)
             ->whereBetween('account_code', [(string) $from, (string) $to])->pluck('account_code')->map(fn ($code) => (int) $code)->all();
         $code = collect(range($from, $to))->first(fn ($candidate) => ! in_array($candidate, $used, true));
         if (! $code) {

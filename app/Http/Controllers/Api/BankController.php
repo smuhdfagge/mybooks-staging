@@ -8,6 +8,7 @@ use App\Http\Resources\BankResource;
 use App\Models\Bank;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BankController extends BaseApiController
 {
@@ -80,8 +81,12 @@ class BankController extends BaseApiController
                 ->update(['is_primary' => false]);
         }
 
-        $bank = Bank::create($validated);
-        $bank->openLedgerAccount();
+        $bank = DB::transaction(function () use ($validated) {
+            $bank = Bank::create($validated);
+            $bank->openLedgerAccount();
+
+            return $bank;
+        });
 
         return $this->created(new BankResource($bank), 'Bank account created successfully');
     }

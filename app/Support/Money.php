@@ -130,9 +130,14 @@ final class Money
         if (! is_string($value)) {
             return $value;
         }
-        $plain = preg_replace('/[\s,]+/u', '', preg_replace('/^[^\d.-]+/u', '', trim($value)) ?? '');
+        // A currency in front ("₦", "$", "US$", "NGN "), then digits grouped
+        // in threes by commas or spaces, or not grouped at all.
+        $amount = preg_replace('/^(?:[A-Z]{0,3}[^\w\s.,-]|[A-Z]{3}\s)\s*/u', '', trim($value)) ?? '';
+        if (! preg_match('/^-?(?:\d{1,3}(?:([,\s])\d{3})?(?:\1\d{3})*|\d+)(?:\.\d+)?$/u', $amount)) {
+            return $value;
+        }
 
-        return is_numeric($plain) ? $plain : $value;
+        return preg_replace('/[,\s]/u', '', $amount);
     }
 
     /** Symbol for a currency code (the business's by default). In Blade: @currencySymbol. */
