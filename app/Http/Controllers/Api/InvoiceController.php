@@ -167,22 +167,32 @@ class InvoiceController extends BaseApiController
             return $this->error('Customer does not have an email address.', 422);
         }
 
-        $sent = $notificationService->sendInvoice($invoice);
-
-        if ($sent) {
-            if ($invoice->status === 'draft') {
-                $invoice->update(['status' => 'unpaid']);
-            }
-
-            $invoice->logCustomActivity(ActivityLog::ACTION_SENT, "Invoice '{$invoice->invoice_number}' was sent to {$invoice->customer->email}");
-
-            return $this->success([
-                'invoice' => new InvoiceResource($invoice->fresh(['customer', 'items.item'])),
-                'sent_to' => $invoice->customer->email,
-            ], "Invoice sent to {$invoice->customer->email}");
+        // Out of draft (which posts its journal) and emailed together: a
+        // posting that is refused (stock with no cost, a closed month) sends
+        // nothing. The email is queued (InvoiceSentNotification), so its job
+        // goes in with the posting or not at all; one that can't be queued
+        // leaves the invoice as it was.
+        $emailFailed = false;
+        try {
+            DB::transaction(function () use ($invoice, $notificationService, &$emailFailed) {
+                if ($invoice->status === 'draft') {
+                    $invoice->update(['status' => 'unpaid']);
+                }
+                if (! $notificationService->sendInvoice($invoice)) {
+                    $emailFailed = true;
+                    throw new BusinessRuleException('Failed to send invoice. Please check the customer email address.');
+                }
+            });
+        } catch (BusinessRuleException $e) {
+            return $this->error($e->getMessage(), $emailFailed ? 500 : 422);
         }
 
-        return $this->error('Failed to send invoice. Please check the customer email address.', 500);
+        $invoice->logCustomActivity(ActivityLog::ACTION_SENT, "Invoice '{$invoice->invoice_number}' was sent to {$invoice->customer->email}");
+
+        return $this->success([
+            'invoice' => new InvoiceResource($invoice->fresh(['customer', 'items.item'])),
+            'sent_to' => $invoice->customer->email,
+        ], "Invoice sent to {$invoice->customer->email}");
     }
 
     /**

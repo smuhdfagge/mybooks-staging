@@ -285,7 +285,7 @@ class PayrollController extends Controller
             'employer_contributions.*.cap' => 'nullable|numeric|min:0',
         ]);
 
-        $payPeriodStart = Carbon::createFromFormat('Y-m', $validated['month'])->startOfMonth();
+        $payPeriodStart = Carbon::createFromFormat('!Y-m', $validated['month'])->startOfMonth();
         $payPeriodEnd = $payPeriodStart->copy()->endOfMonth();
         $flatTaxRate = $validated['tax_rate'] ?? 0;
         $employerContributionRules = $validated['employer_contributions'] ?? [];
