@@ -25,78 +25,6 @@ parameters:
 			path: app/Http/Controllers/Admin/AdminTenantController.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Customer\:\:\$invoices_sum_amount_paid\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/AnalyticsController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Customer\:\:\$invoices_sum_total\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/AnalyticsController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Invoice\:\:\$count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/AnalyticsController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Invoice\:\:\$day_of_week\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/AnalyticsController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Invoice\:\:\$hour\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/AnalyticsController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\PaymentReceived\:\:\$count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/AnalyticsController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\PaymentReceived\:\:\$total\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/AnalyticsController.php
-
-		-
-			message: '#^Expression on left side of \?\? is not nullable\.$#'
-			identifier: nullCoalesce.expr
-			count: 2
-			path: app/Http/Controllers/AnalyticsController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\AnalyticsController\:\:getCollectionEfficiency\(\) is unused\.$#'
-			identifier: method.unused
-			count: 1
-			path: app/Http/Controllers/AnalyticsController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\AnalyticsController\:\:getRevenueByCategory\(\) is unused\.$#'
-			identifier: method.unused
-			count: 1
-			path: app/Http/Controllers/AnalyticsController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\AnalyticsController\:\:getSalesFunnel\(\) is unused\.$#'
-			identifier: method.unused
-			count: 1
-			path: app/Http/Controllers/AnalyticsController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\PaymentReceived\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Http/Controllers/AnalyticsController.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\Invoice\:\:\$invoice_count\.$#'
 			identifier: property.notFound
 			count: 1
@@ -197,30 +125,6 @@ parameters:
 			identifier: property.notFound
 			count: 2
 			path: app/Http/Controllers/Reports/SalesReportController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Bill\:\:\$bill_count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Reports/TaxReportController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Bill\:\:\$taxable_purchases\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Reports/TaxReportController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Invoice\:\:\$invoice_count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Reports/TaxReportController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Invoice\:\:\$taxable_sales\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Reports/TaxReportController.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
@@ -1109,30 +1013,6 @@ parameters:
 			identifier: class.notFound
 			count: 1
 			path: app/Services/ImportService.php
-
-		-
-			message: '#^Parameter \#3 \$debit of method App\\Services\\JournalService\:\:createEntry\(\) expects float, string given\.$#'
-			identifier: argument.type
-			count: 9
-			path: app/Services/JournalService.php
-
-		-
-			message: '#^Parameter \#4 \$credit of method App\\Services\\JournalService\:\:createEntry\(\) expects float, string given\.$#'
-			identifier: argument.type
-			count: 8
-			path: app/Services/JournalService.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>account_code" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 2
-			path: app/Services/JournalService.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Services/JournalService.php
 
 		-
 			message: '#^Parameter \#2 \$daysOverdue of class App\\Notifications\\InvoiceOverdueNotification constructor expects int, float given\.$#'
