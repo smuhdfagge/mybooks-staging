@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\ActivityLog;
+use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Provides HMAC-SHA256 integrity hashing for activity log entries.
@@ -59,6 +61,22 @@ class LogIntegrityService
     }
 
     /**
+     * Record the id and hash of the signed entries $entries is about to
+     * delete, so logs:verify can tell an erasure from a deletion. Call it
+     * in the same transaction as the delete.
+     *
+     * @param  Builder  $entries  a query on activity_logs
+     */
+    public static function tombstone(Builder $entries, string $reason): void
+    {
+        DB::table('activity_log_tombstones')->insertUsing(
+            ['id', 'integrity_hash', 'reason', 'created_at'],
+            (clone $entries)->whereNotNull('integrity_hash')
+                ->selectRaw('id, integrity_hash, ? as reason, ? as created_at', [$reason, now()->toDateTimeString()])
+        );
+    }
+
+    /**
      * Verify a single entry's integrity hash.
      */
     public static function verify(ActivityLog $log): bool
@@ -83,9 +101,13 @@ class LogIntegrityService
      * later. previous_hash is inside the HMAC, so a link can't be changed
      * without the entry's own hash failing too.
      *
-     * retention:purge deletes entries past mybooks.retention's
-     * activity_log_months each month, so an entry near that age may follow
-     * one that was purged: that is not reported.
+     * Erasing a closed business and retention:purge delete entries on
+     * purpose and leave a tombstone (id and hash) for each: a link to a
+     * tombstoned entry is not a break.
+     *
+     * A deletion shows on the entry after it in the whole log, which may be
+     * another business's: only a check of every business sees them all.
+     * The newest $limit entries are checked (0: all of them).
      *
      * @return array{valid: bool, checked: int, errors: array<string>}
      */
@@ -97,25 +119,29 @@ class LogIntegrityService
         $logs = ActivityLog::withoutGlobalScopes()
             ->where('tenant_id', $tenantId)
             ->whereNotNull('integrity_hash')
-            ->orderBy('id')
-            ->limit($limit)
-            ->get();
+            ->orderByDesc('id')
+            ->when($limit > 0, fn ($q) => $q->limit($limit))
+            ->get()
+            ->reverse()
+            ->values();
 
         // Where each link points: integrity_hash => id, across every business
         // (only the hashes and ids of other businesses' entries are read).
         $linked = [];
         $links = $logs->pluck('previous_hash')->filter(fn ($h) => $h !== null && $h !== $genesis)->unique()->values();
+        $erased = [];
         foreach ($links->chunk(500) as $chunk) {
+            // Lowest id first wins a (practically impossible) shared hash.
             $linked += ActivityLog::withoutGlobalScopes()
                 ->whereIn('integrity_hash', $chunk->all())
-                ->orderBy('id')
+                ->orderByDesc('id')
+                ->pluck('id', 'integrity_hash')
+                ->all();
+            $erased += DB::table('activity_log_tombstones')
+                ->whereIn('integrity_hash', $chunk->all())
                 ->pluck('id', 'integrity_hash')
                 ->all();
         }
-
-        $months = (int) (config('mybooks.retention.activity_log_months') ?? 84);
-        // Purge runs monthly; an entry that follows a purged one is about as old.
-        $purgedBefore = $months > 0 ? now()->subMonths($months)->addMonths(2) : null;
 
         foreach ($logs as $log) {
             if (! static::verify($log)) {
@@ -132,8 +158,8 @@ class LogIntegrityService
 
             $target = $linked[$log->previous_hash] ?? null;
             if ($target === null) {
-                if ($purgedBefore !== null && $log->created_at !== null && $log->created_at->lessThan($purgedBefore)) {
-                    continue; // follows an entry retention:purge removed
+                if (isset($erased[$log->previous_hash])) {
+                    continue; // follows an entry erased on purpose
                 }
                 $errors[] = "Entry #{$log->id}: chain break — the entry it follows is no longer in the log (deleted?).";
             } elseif ($target >= $log->id) {

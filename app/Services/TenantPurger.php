@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\Storage;
  *    imports, exports).
  *
  * The data_requests log is kept, as the record that the erasure happened.
+ * Its activity log entries go, leaving only each one's id and hash in
+ * activity_log_tombstones so the log's hash chain still verifies.
  * A table without tenant_id that is in neither CHILD_TABLES nor
  * SHARED_TABLES makes the purge stop, so a new table is never skipped
  * silently.
@@ -60,7 +62,7 @@ class TenantPurger
 
     /** Tables with no business data: never touched. */
     public const SHARED_TABLES = [
-        'admin_users', 'cache', 'cache_locks', 'countries', 'data_requests', 'failed_jobs',
+        'activity_log_tombstones', 'admin_users', 'cache', 'cache_locks', 'countries', 'data_requests', 'failed_jobs',
         'job_batches', 'jobs', 'migrations', 'permissions', 'plans', 'states',
         'statutory_tax_templates', 'tenants',
     ];
@@ -75,7 +77,7 @@ class TenantPurger
     ];
 
     /**
-     * Tables that hold rows per business (tenant_id column), except the log.
+     * Tables that hold rows per business (tenant_id column).
      *
      * @return array<int, string>
      */
@@ -133,6 +135,11 @@ class TenantPurger
                 }
 
                 $deleted += $this->purgeUserRows($userIds, $emails);
+
+                // The log is a hash chain across businesses: leave the id and
+                // hash of each erased entry, so other businesses' entries that
+                // follow one still verify (logs:verify).
+                LogIntegrityService::tombstone(DB::table('activity_logs')->where('tenant_id', $tenantId), 'business erased');
 
                 foreach ($this->tenantTables() as $table) {
                     $deleted[$table] = DB::table($table)->where('tenant_id', $tenantId)->delete();
