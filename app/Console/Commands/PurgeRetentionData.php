@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\ActivityLog;
 use App\Models\Employee;
 use App\Models\Tenant;
+use App\Services\LogIntegrityService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -204,10 +205,18 @@ class PurgeRetentionData extends Command
             $batchQuery->where('tenant_id', $tenantId);
         }
 
+        // A tombstone (id and hash) for each, so logs:verify can tell the
+        // entries that followed them weren't tampered with.
         do {
-            $batch = $batchQuery->limit(1000)->delete();
-            $deleted += $batch;
-        } while ($batch > 0);
+            $ids = (clone $batchQuery)->orderBy('id')->limit(1000)->pluck('id')->all();
+            if ($ids !== []) {
+                DB::transaction(function () use ($ids) {
+                    LogIntegrityService::tombstone(DB::table('activity_logs')->whereIn('id', $ids), 'retention');
+                    DB::table('activity_logs')->whereIn('id', $ids)->delete();
+                });
+            }
+            $deleted += count($ids);
+        } while ($ids !== []);
 
         return $deleted;
     }

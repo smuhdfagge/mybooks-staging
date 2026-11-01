@@ -13,12 +13,6 @@ parameters:
 			path: app/Console/Commands/SeedDefaultChartOfAccounts.php
 
 		-
-			message: '#^Offset ''checked'' does not exist on array\{valid\: true, errors\: array\<string\>\}\.$#'
-			identifier: offsetAccess.notFound
-			count: 1
-			path: app/Console/Commands/VerifyLogIntegrityCommand.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>monthly_price" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
