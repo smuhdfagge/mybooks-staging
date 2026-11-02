@@ -56,6 +56,7 @@
                 'supplier-advances' => 'Supplier Advances',
                 'recurring-invoices' => 'Recurring Invoices',
                 'inventory' => 'Inventory',
+                'stock-costs' => 'Missing stock costs',
                 'reports' => 'Reports',
                 'settings' => 'Settings',
                 'imports' => 'Imports',

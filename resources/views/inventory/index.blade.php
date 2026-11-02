@@ -4,6 +4,7 @@
             <x-slot name="more">
                 @if (\App\Models\Warehouse::moduleOn())<x-table.menu-item :href="route('warehouses.index')">Warehouses</x-table.menu-item>@endif
                 @if (\App\Models\Warehouse::moduleOn() && \App\Http\Middleware\EnsureFeatureEnabled::enabled('stock_transfers'))@can('adjust inventory')<x-table.menu-item :href="route('stock-transfers.index')">Stock transfers</x-table.menu-item>@endcan @endif
+                @can('adjust inventory')<x-table.menu-item :href="route('stock-costs.index')">Missing stock costs</x-table.menu-item>@endcan
                 @can('view reports')<x-table.menu-item :href="route('reports.inventory-summary')">Stock report</x-table.menu-item>@endcan
             </x-slot>
             <x-slot name="actions">

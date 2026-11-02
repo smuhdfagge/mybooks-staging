@@ -73,6 +73,7 @@ use App\Http\Controllers\SalesOrderController;
 use App\Http\Controllers\SalesReceiptController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StatementController;
+use App\Http\Controllers\StockCostController;
 use App\Http\Controllers\StockTransferController;
 use App\Http\Controllers\SupplierAdvanceController;
 use App\Http\Controllers\TaxGroupController;
@@ -310,6 +311,15 @@ Route::middleware(['auth', 'active', 'verified', 'two-factor', 'subscription', '
     Route::post('inventory/{item}/adjust', [InventoryController::class, 'adjust'])
         ->middleware('permission:adjust inventory')
         ->name('inventory.adjust');
+
+    // Stock on hand with no recorded cost (audit MB-31). Recording it posts
+    // Dr Inventory, Cr Opening Balance Equity, so it also needs post journals.
+    Route::get('stock-costs', [StockCostController::class, 'index'])
+        ->middleware('permission:adjust inventory')
+        ->name('stock-costs.index');
+    Route::post('stock-costs', [StockCostController::class, 'store'])
+        ->middleware(['permission:adjust inventory', 'permission:post journals'])
+        ->name('stock-costs.store');
 
     Route::middleware('feature:warehouses')->group(function () {
         // Warehouses

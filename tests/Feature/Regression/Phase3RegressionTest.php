@@ -432,6 +432,9 @@ class Phase3RegressionTest extends TestCase
         $message = $component->get('errorMessage');
         $this->assertStringStartsWith('Not marked as sent: INV-000030: Groundnut oil: only 2 of the 5 to take out have a recorded cost', $message);
         $this->assertStringNotContainsString('closed period', $message);
+        // Shown to users, so no server commands in it.
+        $this->assertStringNotContainsString('php artisan', $message);
+        $this->assertStringContainsString('Record its cost under Items & Stock > Missing Stock Costs', $message);
         $this->assertSame('draft', $invoice->fresh()->status);
     }
 
