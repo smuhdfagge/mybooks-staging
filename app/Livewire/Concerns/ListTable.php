@@ -2,9 +2,12 @@
 
 namespace App\Livewire\Concerns;
 
+use App\Exceptions\BusinessRuleException;
+use App\Exceptions\UnbalancedJournalException;
 use App\Services\Dashboard\DashboardService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\ValidationException;
 use Livewire\WithPagination;
 
 /**
@@ -211,6 +214,47 @@ trait ListTable
     {
         $this->reset(array_merge(['search', 'tab'], $this->filterProperties()));
         $this->resetPage();
+    }
+
+    /**
+     * Why one record in a bulk action was refused, in words the person can
+     * act on: a posting rule (stock with no recorded cost, a closed or
+     * locked month, an unbalanced journal) says what to fix. Anything else
+     * is a bug, so it is reported and only said to have failed.
+     */
+    protected function bulkFailureReason(\Throwable $e): string
+    {
+        if ($e instanceof ValidationException) {
+            return implode(' ', array_unique($e->validator->errors()->all()));
+        }
+        if ($e instanceof BusinessRuleException || $e instanceof UnbalancedJournalException) {
+            return $e->getMessage();
+        }
+
+        report($e);
+
+        return 'an unexpected error, which has been logged';
+    }
+
+    /**
+     * The error line for a bulk action's refused records, e.g. "Not changed:
+     * INV-000012: <reason>"; failures with the same reason share one line.
+     *
+     * @param  array<string, string>  $failed  document number => reason
+     */
+    protected function bulkFailureMessage(string $lead, array $failed): string
+    {
+        $byReason = [];
+        foreach ($failed as $number => $reason) {
+            $byReason[$reason][] = $number;
+        }
+
+        $parts = [];
+        foreach ($byReason as $reason => $numbers) {
+            $parts[] = implode(', ', $numbers).': '.rtrim($reason, '.').'.';
+        }
+
+        return $lead.' '.implode(' ', $parts);
     }
 
     /** Run a bulk action from the bulk bar on the ticked rows. */

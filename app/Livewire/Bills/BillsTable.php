@@ -161,13 +161,12 @@ class BillsTable extends Component
                         DB::transaction(fn () => $bill->update(['status' => 'cancelled']));
                         $cancelled++;
                     } catch (\Throwable $e) {
-                        report($e);
-                        $failed[] = $bill->bill_number;
+                        $failed[$bill->bill_number] = $this->bulkFailureReason($e);
                     }
                 }
                 $this->successMessage = "Cancelled {$cancelled} bill(s).".($skipped ? " Skipped {$skipped} with payments." : '');
                 if ($failed) {
-                    $this->errorMessage = 'Not cancelled (closed period or invalid totals): '.implode(', ', $failed).'.';
+                    $this->errorMessage = $this->bulkFailureMessage('Not cancelled:', $failed);
                 }
                 break;
 
