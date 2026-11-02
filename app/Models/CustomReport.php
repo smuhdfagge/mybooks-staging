@@ -118,7 +118,6 @@ class CustomReport extends Model
                     'vendor.name' => ['label' => 'Vendor', 'type' => 'string', 'relation' => 'vendor'],
                     'account.name' => ['label' => 'Account', 'type' => 'string', 'relation' => 'account'],
                     'expense_date' => ['label' => 'Date', 'type' => 'date'],
-                    'category' => ['label' => 'Category', 'type' => 'string'],
                     'amount' => ['label' => 'Amount', 'type' => 'decimal'],
                     'tax_amount' => ['label' => 'Tax Amount', 'type' => 'decimal'],
                     'description' => ['label' => 'Description', 'type' => 'string'],
@@ -126,7 +125,7 @@ class CustomReport extends Model
                     'is_billable' => ['label' => 'Billable', 'type' => 'boolean'],
                 ],
                 'date_fields' => ['expense_date'],
-                'group_fields' => ['vendor.name', 'account.name', 'category', 'payment_method', 'expense_date'],
+                'group_fields' => ['vendor.name', 'account.name', 'payment_method', 'expense_date'],
             ],
             'customers' => [
                 'label' => 'Customers',

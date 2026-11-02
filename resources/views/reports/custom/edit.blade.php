@@ -3,8 +3,8 @@
         <x-table.page-header title="Edit custom report" />
     </x-slot>
 
-    <div x-data="reportBuilder(@js($report))" x-init="init()">
-        <form method="POST" action="{{ route('reports.custom.update', $report) }}" class="space-y-6">
+    <div x-data="reportBuilder(@js($customReport))" x-init="init()">
+        <form method="POST" action="{{ route('reports.custom.update', $customReport) }}" class="space-y-6">
             @csrf
             @method('PUT')
 
@@ -16,7 +16,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Report Name *</label>
-                            <input type="text" name="name" id="name" required value="{{ old('name', $report->name) }}"
+                            <input type="text" name="name" id="name" required value="{{ old('name', $customReport->name) }}"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
                                 placeholder="e.g., Monthly Sales Summary" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                             @error('name')
@@ -42,12 +42,12 @@
                             <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
                             <textarea name="description" id="description" rows="2"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
-                                placeholder="Optional description of this report">{{ old('description', $report->description) }}</textarea>
+                                placeholder="Optional description of this report">{{ old('description', $customReport->description) }}</textarea>
                         </div>
 
                         <div>
                             <label class="flex items-center">
-                                <input type="checkbox" name="is_public" value="1" {{ old('is_public', $report->is_public) ? 'checked' : '' }}
+                                <input type="checkbox" name="is_public" value="1" {{ old('is_public', $customReport->is_public) ? 'checked' : '' }}
                                     class="rounded border-gray-300 text-brand-600 shadow-sm focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-brand-300">
                                 <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Share with team members</span>
                             </label>

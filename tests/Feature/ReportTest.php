@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Bill;
 use App\Models\ChartOfAccount;
 use App\Models\Customer;
+use App\Models\CustomReport;
 use App\Models\Expense;
 use App\Models\Inventory;
 use App\Models\Invoice;
@@ -311,6 +312,46 @@ class ReportTest extends TestCase
         $this->createAuthenticatedUser(['view reports']);
         $response = $this->get(route('reports.custom.create'));
         $response->assertOk();
+    }
+
+    public function test_custom_report_edit_loads(): void
+    {
+        $this->createAuthenticatedUser(['view reports', 'view expenses']);
+        $report = $this->makeExpenseCustomReport();
+
+        $this->get(route('reports.custom.edit', $report))
+            ->assertOk()
+            ->assertSee('Expense account report');
+    }
+
+    public function test_custom_expense_report_runs_with_account_column(): void
+    {
+        $this->createAuthenticatedUser(['view reports', 'view expenses']);
+        $account = ChartOfAccount::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Office Supplies']);
+        Expense::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'expense_account_id' => $account->id,
+            'expense_number' => 'EXP-ACC-1',
+        ]);
+        $report = $this->makeExpenseCustomReport();
+
+        $this->get(route('reports.custom.run', $report))
+            ->assertOk()
+            ->assertSee('EXP-ACC-1')
+            ->assertSee('Office Supplies');
+    }
+
+    private function makeExpenseCustomReport(): CustomReport
+    {
+        return CustomReport::create([
+            'tenant_id' => $this->tenant->id,
+            'created_by' => $this->user->id,
+            'name' => 'Expense account report',
+            'data_source' => 'expenses',
+            'columns' => ['expense_number', 'account.name', 'amount'],
+            'group_by' => null,
+            'sort_by' => [['column' => 'expense_date', 'direction' => 'desc']],
+        ]);
     }
 
     // ─────────────────────────────────────────────────────
