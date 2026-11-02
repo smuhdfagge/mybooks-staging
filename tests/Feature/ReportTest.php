@@ -341,6 +341,49 @@ class ReportTest extends TestCase
             ->assertSee('Office Supplies');
     }
 
+    public function test_custom_report_skips_filters_and_sorts_on_computed_columns(): void
+    {
+        // Outstanding balance and total sales come from accessors; customers
+        // has no such columns, so SQL on them fails on MariaDB.
+        $this->assertFalse(CustomReport::isQueryable(CustomReport::getDataSources()['customers']['columns'], 'outstanding_balance'));
+        $this->assertFalse(CustomReport::isQueryable(CustomReport::getDataSources()['customers']['columns'], 'total_sales'));
+        $this->assertFalse(CustomReport::isQueryable(CustomReport::getDataSources()['vendors']['columns'], 'outstanding_balance'));
+        $this->assertFalse(CustomReport::isQueryable(CustomReport::getDataSources()['expenses']['columns'], 'account.name'));
+        $this->assertTrue(CustomReport::isQueryable(CustomReport::getDataSources()['customers']['columns'], 'city'));
+
+        $this->createAuthenticatedUser(['view reports', 'view customers']);
+        Customer::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Ada Stores']);
+        $report = CustomReport::create([
+            'tenant_id' => $this->tenant->id,
+            'created_by' => $this->user->id,
+            'name' => 'Customer balances',
+            'data_source' => 'customers',
+            'columns' => ['name', 'outstanding_balance'],
+            'filters' => [['column' => 'outstanding_balance', 'operator' => 'greater_than', 'value' => '0']],
+            'sort_by' => [['column' => 'total_sales', 'direction' => 'desc']],
+        ]);
+
+        $this->get(route('reports.custom.run', $report))
+            ->assertOk()
+            ->assertSee('Ada Stores')
+            ->assertDontSee('Only where');
+    }
+
+    public function test_custom_report_applies_and_lists_a_between_filter(): void
+    {
+        $this->createAuthenticatedUser(['view reports', 'view expenses']);
+        Expense::factory()->create(['tenant_id' => $this->tenant->id, 'expense_number' => 'EXP-IN', 'amount' => 50]);
+        Expense::factory()->create(['tenant_id' => $this->tenant->id, 'expense_number' => 'EXP-OUT', 'amount' => 500]);
+        $report = $this->makeExpenseCustomReport();
+        $report->update(['filters' => [['column' => 'amount', 'operator' => 'between', 'value' => ['10', '100']]]]);
+
+        $this->get(route('reports.custom.run', $report))
+            ->assertOk()
+            ->assertSee('EXP-IN')
+            ->assertDontSee('EXP-OUT')
+            ->assertSee('"10 and 100"', false);
+    }
+
     private function makeExpenseCustomReport(): CustomReport
     {
         return CustomReport::create([
