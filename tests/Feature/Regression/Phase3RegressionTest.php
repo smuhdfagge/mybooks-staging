@@ -28,6 +28,7 @@ use App\Models\Vendor;
 use App\Services\DepreciationService;
 use App\Services\ImportService;
 use App\Services\JournalService;
+use App\Services\StockValuationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -409,6 +410,31 @@ class Phase3RegressionTest extends TestCase
         $this->assertSame('cancelled', $unpaid->fresh()->status);
     }
 
+    public function test_bulk_mark_sent_says_which_stock_has_no_recorded_cost(): void
+    {
+        $this->createAuthenticatedUser(['send invoices']);
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        // 5 on hand, but only 2 with a recorded cost (stock from before cost layers were kept).
+        $item = Item::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Groundnut oil', 'type' => 'product',
+            'track_inventory' => true, 'valuation_method' => 'fifo', 'cost_price' => 400]);
+        Inventory::create(['tenant_id' => $this->tenant->id, 'item_id' => $item->id, 'quantity' => 5, 'reserved_quantity' => 0, 'unit_cost' => 0]);
+        app(StockValuationService::class)->addLayer($this->tenant->id, $item->id, 2, 350);
+
+        $invoice = Invoice::factory()->create([
+            'tenant_id' => $this->tenant->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-000030',
+            'subtotal' => 2500, 'tax_amount' => 0, 'discount_amount' => 0, 'total' => 2500, 'balance_due' => 2500,
+        ]);
+        InvoiceItem::create(['invoice_id' => $invoice->id, 'item_id' => $item->id, 'description' => 'Groundnut oil',
+            'quantity' => 5, 'unit_price' => 500, 'tax_rate' => 0, 'tax_amount' => 0, 'total' => 2500]);
+
+        $component = $this->bulk(InvoicesTable::class, [$invoice->id], 'mark_sent')->assertOk();
+
+        $message = $component->get('errorMessage');
+        $this->assertStringStartsWith('Not marked as sent: INV-000030: Groundnut oil: only 2 of the 5 to take out have a recorded cost', $message);
+        $this->assertStringNotContainsString('closed period', $message);
+        $this->assertSame('draft', $invoice->fresh()->status);
+    }
+
     public function test_c5_an_invoice_in_a_closed_period_is_reported_not_crashed(): void
     {
         $this->createAuthenticatedUser(['edit invoices', 'send invoices']);
@@ -425,7 +451,7 @@ class Phase3RegressionTest extends TestCase
 
         $this->bulk(InvoicesTable::class, [$old->id, $current->id], 'mark_sent')
             ->assertOk()
-            ->assertSet('errorMessage', 'Not changed (closed period or invalid totals): INV-000026.');
+            ->assertSet('errorMessage', 'Not marked as sent: INV-000026: This record belongs to a closed accounting period and cannot be modified.');
 
         $this->assertSame('draft', $old->fresh()->status);
         $this->assertSame('sent', $current->fresh()->status);

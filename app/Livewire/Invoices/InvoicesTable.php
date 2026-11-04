@@ -181,13 +181,12 @@ class InvoicesTable extends Component
                         DB::transaction(fn () => $invoice->update(['status' => 'sent']));
                         $sent++;
                     } catch (\Throwable $e) {
-                        report($e);
-                        $failed[] = $invoice->invoice_number;
+                        $failed[$invoice->invoice_number] = $this->bulkFailureReason($e);
                     }
                 }
                 $this->successMessage = "Marked {$sent} invoice(s) as sent.";
                 if ($failed) {
-                    $this->errorMessage = 'Not changed (closed period or invalid totals): '.implode(', ', $failed).'.';
+                    $this->errorMessage = $this->bulkFailureMessage('Not marked as sent:', $failed);
                 }
                 break;
 
@@ -213,13 +212,12 @@ class InvoicesTable extends Component
                         });
                         $cancelled++;
                     } catch (\Throwable $e) {
-                        report($e);
-                        $failed[] = $invoice->invoice_number;
+                        $failed[$invoice->invoice_number] = $this->bulkFailureReason($e);
                     }
                 }
                 $this->successMessage = "Cancelled {$cancelled} invoice(s).".($skipped ? " Skipped {$skipped} with payments." : '');
                 if ($failed) {
-                    $this->errorMessage = 'Not cancelled (closed period or invalid totals): '.implode(', ', $failed).'.';
+                    $this->errorMessage = $this->bulkFailureMessage('Not cancelled:', $failed);
                 }
                 break;
 
