@@ -89,6 +89,17 @@ class Expense extends Model
         return $this->belongsTo(ChartOfAccount::class, 'expense_account_id');
     }
 
+    /**
+     * The expense account under the name the custom report builder uses:
+     * saved reports hold the column 'account.name'.
+     *
+     * @return BelongsTo<ChartOfAccount, $this>
+     */
+    public function account(): BelongsTo
+    {
+        return $this->expenseAccount();
+    }
+
     /** @return BelongsTo<ChartOfAccount, $this> */
     public function paidThroughAccount(): BelongsTo
     {

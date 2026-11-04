@@ -118,7 +118,6 @@ class CustomReport extends Model
                     'vendor.name' => ['label' => 'Vendor', 'type' => 'string', 'relation' => 'vendor'],
                     'account.name' => ['label' => 'Account', 'type' => 'string', 'relation' => 'account'],
                     'expense_date' => ['label' => 'Date', 'type' => 'date'],
-                    'category' => ['label' => 'Category', 'type' => 'string'],
                     'amount' => ['label' => 'Amount', 'type' => 'decimal'],
                     'tax_amount' => ['label' => 'Tax Amount', 'type' => 'decimal'],
                     'description' => ['label' => 'Description', 'type' => 'string'],
@@ -126,7 +125,7 @@ class CustomReport extends Model
                     'is_billable' => ['label' => 'Billable', 'type' => 'boolean'],
                 ],
                 'date_fields' => ['expense_date'],
-                'group_fields' => ['vendor.name', 'account.name', 'category', 'payment_method', 'expense_date'],
+                'group_fields' => ['vendor.name', 'account.name', 'payment_method', 'expense_date'],
             ],
             'customers' => [
                 'label' => 'Customers',
@@ -140,8 +139,8 @@ class CustomReport extends Model
                     'city' => ['label' => 'City', 'type' => 'string'],
                     'state' => ['label' => 'State', 'type' => 'string'],
                     'country' => ['label' => 'Country', 'type' => 'string'],
-                    'outstanding_balance' => ['label' => 'Outstanding Balance', 'type' => 'decimal'],
-                    'total_sales' => ['label' => 'Total Sales', 'type' => 'decimal'],
+                    'outstanding_balance' => ['label' => 'Outstanding Balance', 'type' => 'decimal', 'computed' => true],
+                    'total_sales' => ['label' => 'Total Sales', 'type' => 'decimal', 'computed' => true],
                     'created_at' => ['label' => 'Created Date', 'type' => 'date'],
                 ],
                 'date_fields' => ['created_at'],
@@ -159,7 +158,7 @@ class CustomReport extends Model
                     'city' => ['label' => 'City', 'type' => 'string'],
                     'state' => ['label' => 'State', 'type' => 'string'],
                     'country' => ['label' => 'Country', 'type' => 'string'],
-                    'outstanding_balance' => ['label' => 'Outstanding Balance', 'type' => 'decimal'],
+                    'outstanding_balance' => ['label' => 'Outstanding Balance', 'type' => 'decimal', 'computed' => true],
                     'created_at' => ['label' => 'Created Date', 'type' => 'date'],
                 ],
                 'date_fields' => ['created_at'],
@@ -224,7 +223,7 @@ class CustomReport extends Model
                     'pay_date' => ['label' => 'Pay Date', 'type' => 'date'],
                     'basic_salary' => ['label' => 'Basic Salary', 'type' => 'decimal'],
                     'allowances' => ['label' => 'Allowances', 'type' => 'decimal'],
-                    'deductions' => ['label' => 'Deductions', 'type' => 'decimal'],
+                    'total_deductions' => ['label' => 'Deductions', 'type' => 'decimal'],
                     'gross_salary' => ['label' => 'Gross Salary', 'type' => 'decimal'],
                     'net_salary' => ['label' => 'Net Salary', 'type' => 'decimal'],
                     'status' => ['label' => 'Status', 'type' => 'string'],
@@ -265,6 +264,18 @@ class CustomReport extends Model
             'aggregations.*.function' => ['required', Rule::in(array_keys(static::getAggregations()))],
             'date_field' => ['nullable', 'string', Rule::in($source['date_fields'] ?? [])],
         ];
+    }
+
+    /**
+     * Whether a source column can go into SQL, to filter or sort on. Not
+     * relation columns ('vendor.name'), and not 'computed' ones, which an
+     * accessor works out and the table doesn't have.
+     */
+    public static function isQueryable(array $columnConfig, string $column): bool
+    {
+        return isset($columnConfig[$column])
+            && ! str_contains($column, '.')
+            && empty($columnConfig[$column]['computed']);
     }
 
     /**
