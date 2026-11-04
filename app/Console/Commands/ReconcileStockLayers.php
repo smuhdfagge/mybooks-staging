@@ -2,21 +2,18 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Invoice;
-use App\Models\Item;
 use App\Models\Tenant;
-use App\Models\Warehouse;
-use App\Services\AccountCodeService;
-use App\Services\JournalService;
-use App\Services\StockValuationService;
+use App\Services\UncostedStock;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Stock on hand with no cost layer behind it (audit MB-31): stock recorded
  * before cost layers were kept, or written past the app. Taking it out is
  * refused (StockValuationService::issue) rather than costed at a price the
  * Inventory account never held, so this records what it cost.
+ *
+ * The work is in App\Services\UncostedStock, which the Missing Stock Costs
+ * page (Items & Stock) also uses.
  *
  * Without --apply it only lists, per business, item and warehouse, the
  * stock on hand, the stock with a cost layer, and what would be added.
@@ -41,7 +38,7 @@ class ReconcileStockLayers extends Command
 
     protected $description = 'List stock on hand with no recorded cost, and with --apply record it';
 
-    public function handle(JournalService $journals, StockValuationService $valuation): int
+    public function handle(UncostedStock $uncosted): int
     {
         $apply = (bool) $this->option('apply');
         $tenants = Tenant::query()->when($this->option('tenant'), fn ($q, $id) => $q->whereKey((int) $id))->orderBy('id')->get();
@@ -50,7 +47,7 @@ class ReconcileStockLayers extends Command
         $failed = 0;
 
         foreach ($tenants as $tenant) {
-            [$f, $x, $e] = Tenant::run($tenant, fn () => $this->tenant($tenant, $journals, $valuation, $apply));
+            [$f, $x, $e] = Tenant::run($tenant, fn () => $this->tenant($tenant, $uncosted, $apply));
             $found += $f;
             $fixed += $x;
             $failed += $e;
@@ -65,38 +62,17 @@ class ReconcileStockLayers extends Command
     }
 
     /** @return array{0: int, 1: int, 2: int} found, fixed, failed */
-    private function tenant(Tenant $tenant, JournalService $journals, StockValuationService $valuation, bool $apply): array
+    private function tenant(Tenant $tenant, UncostedStock $uncosted, bool $apply): array
     {
         $t = (int) $tenant->id;
-        $layered = DB::table('inventory_layers')->where('tenant_id', $t)
-            ->selectRaw('item_id, warehouse_id, SUM(remaining_quantity) as qty')->groupBy('item_id', 'warehouse_id')->get()
-            ->keyBy(fn ($row) => $row->item_id.':'.$row->warehouse_id);
-        $unreleased = DB::table('inventory_layer_consumptions as c')
-            ->join('invoices as i', 'i.id', '=', 'c.source_id')
-            ->where('c.tenant_id', $t)->where('c.source_type', Invoice::class)->where('c.reduced_on_hand', false)
-            ->whereNull('i.released_at')
-            ->selectRaw('c.item_id, c.warehouse_id, SUM(c.quantity) as qty')->groupBy('c.item_id', 'c.warehouse_id')->get()
-            ->keyBy(fn ($row) => $row->item_id.':'.$row->warehouse_id);
-        $stock = DB::table('inventories')->join('items', 'items.id', '=', 'inventories.item_id')
-            ->where('inventories.tenant_id', $t)->where('items.track_inventory', true)->whereNull('items.deleted_at')
-            ->orderBy('items.name')->orderBy('inventories.warehouse_id')
-            ->get(['inventories.item_id', 'inventories.warehouse_id', 'inventories.quantity', 'inventories.unit_cost', 'items.cost_price', 'items.name']);
-
         $rows = [];
         $found = 0;
         $fixed = 0;
         $failed = 0;
-        foreach ($stock as $row) {
-            $warehouseId = (int) ($row->warehouse_id ?: Warehouse::defaultIdFor($t));
-            $withCost = (float) ($layered->get($row->item_id.':'.$warehouseId)->qty ?? 0);
-            $awaiting = (float) ($unreleased->get($row->item_id.':'.$warehouseId)->qty ?? 0);
-            $onHand = (float) $row->quantity;
-            $missing = round($onHand - $awaiting - $withCost, 4);
-            if (abs($missing) <= 0.0001) {
-                continue;
-            }
+        foreach ($uncosted->find($t) as $row) {
             $found++;
-            $cost = round((float) $row->unit_cost > 0 ? (float) $row->unit_cost : (float) $row->cost_price, 4);
+            $missing = $row['missing'];
+            $cost = $row['suggested_cost'];
 
             $result = match (true) {
                 $missing < 0 => 'layers exceed on hand: check with a stock count',
@@ -106,7 +82,7 @@ class ReconcileStockLayers extends Command
             };
             if ($result === null) {
                 try {
-                    $this->record($t, (int) $row->item_id, $warehouseId, $missing, $cost, $journals, $valuation);
+                    $uncosted->record($t, $row['item_id'], $row['warehouse_id'], $cost);
                     $fixed++;
                     $result = 'added';
                 } catch (\Throwable $e) {
@@ -115,8 +91,9 @@ class ReconcileStockLayers extends Command
                 }
             }
 
-            $rows[] = [$row->name, Warehouse::withoutGlobalScopes()->whereKey($warehouseId)->value('name') ?? '#'.$warehouseId,
-                $this->qty($onHand), $this->qty($awaiting), $this->qty($withCost), $this->qty($missing), number_format($cost, 2), number_format(max(0, $missing) * $cost, 2), $result];
+            $rows[] = [$row['item_name'], $row['warehouse_name'],
+                UncostedStock::quantity($row['on_hand']), UncostedStock::quantity($row['awaiting']), UncostedStock::quantity($row['with_cost']),
+                UncostedStock::quantity($missing), number_format($cost, 2), number_format(max(0, $missing) * $cost, 2), $result];
         }
 
         if ($rows) {
@@ -126,26 +103,5 @@ class ReconcileStockLayers extends Command
         }
 
         return [$found, $fixed, $failed];
-    }
-
-    /** The missing layer, and its journal: Dr Inventory, Cr Opening Balance Equity. */
-    private function record(int $t, int $itemId, int $warehouseId, float $quantity, float $cost, JournalService $journals, StockValuationService $valuation): void
-    {
-        DB::transaction(function () use ($t, $itemId, $warehouseId, $quantity, $cost, $journals, $valuation) {
-            $item = Item::query()->findOrFail($itemId);
-            $layer = $valuation->addLayer($t, $itemId, $quantity, $cost, $warehouseId, 'opening_stock');
-            $date = $journals->firstOpenDate($t, today());
-            $value = round($quantity * $cost, 2);
-            $text = mb_substr("Opening stock with no recorded cost: {$item->name} {$this->qty($quantity)}", 0, 190);
-            $journals->postLines($layer, 'STK-L'.$layer->id, $date, $text, [
-                [AccountCodeService::resolve($t, 'inventory'), $value, 0.0, $text],
-                [AccountCodeService::resolve($t, 'opening_balance_equity'), 0.0, $value, $text],
-            ], null, 'stock_adjustment');
-        });
-    }
-
-    private function qty(float $quantity): string
-    {
-        return rtrim(rtrim(number_format($quantity, 4, '.', ''), '0'), '.');
     }
 }

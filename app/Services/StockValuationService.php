@@ -153,7 +153,8 @@ class StockValuationService
         // the cost layers have drifted apart (stock from before layers were
         // kept, say). It used to go out at a cost made up from the item's
         // cost price, which the Inventory account never held. Refused, so no
-        // cost is invented: stock:reconcile-layers records the missing cost.
+        // cost is invented: the Missing Stock Costs page (UncostedStock) or
+        // stock:reconcile-layers records the missing cost.
         if ($remaining > 0.00001 && $uncostedAtZero) {
             // A count or write-off (AdjustStock): stock with no layer has no
             // value in the Inventory account, so it goes out at nothing.
@@ -163,7 +164,7 @@ class StockValuationService
             $costed = round($quantity - $remaining, 4);
             throw ValidationException::withMessages(['items' => sprintf(
                 '%s: only %s of the %s to take out have a recorded cost in this warehouse, so the rest can\'t be costed. '
-                .'Ask an administrator to record the cost of that stock (php artisan stock:reconcile-layers, which needs the item\'s cost price), '
+                .'Record its cost under Items & Stock > Missing Stock Costs (or ask an administrator to), '
                 .'or count the stock down to what is really there, and try again.',
                 $item->name, self::quantity($costed), self::quantity($quantity),
             )]);

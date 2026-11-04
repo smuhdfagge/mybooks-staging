@@ -112,7 +112,7 @@
         {{-- Inventory --}}
         @canany(['view items', 'view inventory'])
         <x-sidebar.group label="Items & Stock" icon="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-            :open="$on('items.*', 'item-categories.*', 'inventory.*', 'warehouses.*', 'stock-transfers.*', 'bill-of-materials.*', 'assembly-orders.*')">
+            :open="$on('items.*', 'item-categories.*', 'inventory.*', 'stock-costs.*', 'warehouses.*', 'stock-transfers.*', 'bill-of-materials.*', 'assembly-orders.*')">
             @can('view items')
             <x-sidebar.link :href="route('items.index')" :active="$on('items.*')">Items</x-sidebar.link>
             @endcan
@@ -122,6 +122,9 @@
             @if ($feature('warehouses'))
             <x-sidebar.link :href="route('warehouses.index')" :active="$on('warehouses.*')">Warehouses</x-sidebar.link>
             @endif
+            @endcan
+            @can('adjust inventory')
+            <x-sidebar.link :href="route('stock-costs.index')" :active="$on('stock-costs.*')">Missing Stock Costs</x-sidebar.link>
             @endcan
             @if (\App\Models\StockTransfer::moduleOn())
             @can('adjust inventory')
