@@ -193,6 +193,9 @@ html.dark .dark\:text-gray-400 {
     .tbl tfoot tr:last-child > :first-child { @apply rounded-bl-lg; }
     .tbl tfoot tr:last-child > :last-child { @apply rounded-br-lg; }
     .tbl .num { @apply text-right tabular-nums; }
+    /* A form's line: the main cell stacks its fields (item, description, a
+       bill's account). Kept on one line they ran into the next columns. */
+    .tbl.line-items tbody td[data-cell="main"] { @apply whitespace-normal; }
     .tbl .tbl-check { @apply w-10 pr-0; }
     .tbl .tbl-menu { @apply w-12 text-right; }
     .tbl-link {
