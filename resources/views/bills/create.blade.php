@@ -188,7 +188,7 @@
                                                     </div>
                                                 </div>
                                                 <input aria-label="Description" type="text" :name="'items[' + index + '][description]'" x-model="item.description" required placeholder="Description"
-                                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:placeholder-gray-500 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
+                                                    class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:placeholder-gray-500 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
                                                 @include('bills._line-account')
                                             </td>
                                             <td data-label="Qty">
