@@ -85,7 +85,7 @@
                         </span>
                     </button>
                     <hr class="my-1 border-gray-200 dark:border-gray-600">
-                    <form method="POST" action="{{ route('logout') }}">
+                    <form method="POST" action="{{ route('logout') }}" data-clears-drafts>
                         @csrf
                         <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600">Sign out</button>
                     </form>

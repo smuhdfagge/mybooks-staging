@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     @include('partials.theme-init')
+    @include('partials.clear-drafts')
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="currency-symbol" content="@currencySymbol">
     
