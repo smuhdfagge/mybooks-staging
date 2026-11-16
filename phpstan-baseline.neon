@@ -6,11 +6,6 @@ parameters:
 			count: 1
 			path: app/Console/Commands/ProcessRecurrentTransactions.php
 
-		-
-			message: '#^Parameter \#1 \$tenantId of method App\\Console\\Commands\\SeedDefaultChartOfAccounts\:\:seedSingleTenant\(\) expects int, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Console/Commands/SeedDefaultChartOfAccounts.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>monthly_price" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'

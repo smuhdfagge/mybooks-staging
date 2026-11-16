@@ -81,6 +81,10 @@ class GuidesAndPricingTest extends TestCase
             'e-invoicing' => ['e-invoicing-nigeria', "Nigeria's e-invoicing rules: when it reaches you (2026)", 'Merchant Buyer Solution'],
             'wht' => ['withholding-tax-nigeria', 'Withholding tax in Nigeria: rates, who deducts, and when (2026)', 'Deduction of Tax at Source'],
             'small business' => ['small-business-accounting-nigeria', 'Small business accounting in Nigeria: a plain guide (2026)', 'Separate the business from yourself'],
+            'paye' => ['paye-nigeria', 'How to calculate PAYE in Nigeria: the 2026 bands, reliefs and a worked example', '₦61,700 a month'],
+            'payroll deductions' => ['payroll-deductions-nigeria', 'Payroll deductions in Nigeria: pension, NHF, NSITF and ITF (2026)', 'Federal Mortgage Bank of Nigeria'],
+            'tax act' => ['nigeria-tax-act-small-business', 'The Nigeria Tax Act 2025: what changed for small businesses (2026)', 'A 4% development levy replaces four old ones'],
+            'tax calendar' => ['nigeria-tax-calendar', 'The Nigerian business tax calendar: every deadline in one place (2026)', 'A year at a glance'],
         ];
     }
 

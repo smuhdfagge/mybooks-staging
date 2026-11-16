@@ -121,6 +121,12 @@ Route::get('/about', function () {
     return view('pages.about');
 })->name('about');
 
+// The accountant partner programme: accountants bring their clients
+// (Nigeria marketing plan, channel 1).
+Route::get('/partners', function () {
+    return view('pages.partners');
+})->name('partners');
+
 Route::get('/privacy-policy', function () {
     return view('pages.privacy-policy');
 })->name('privacy-policy');
