@@ -37,7 +37,9 @@
                 background: #3A6798;
             }
         </style>
-        @include('partials.clear-drafts', ['now' => true])
+        @guest
+            @include('partials.clear-drafts', ['now' => true])
+        @endguest
     </head>
     <body class="antialiased bg-brand-950">
         <div class="min-h-screen flex guest-bg">

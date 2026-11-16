@@ -6,14 +6,18 @@
 
     @include('partials.clear-drafts')                     in the app layout:
         clears them when a form marked data-clears-drafts is submitted
-        (the sign-out forms)
-    @include('partials.clear-drafts', ['now' => true])    in the guest layout:
-        clears them on the sign-in pages, which is where a session that
-        timed out, or was ended elsewhere, lands
+        (sign out, delete account), and stops any auto-save still pending
+    @include('partials.clear-drafts', ['now' => true])    in the guest and
+        public layouts, inside @guest: clears them when nobody is signed in,
+        which is where a session that timed out, was ended elsewhere, or
+        was just signed out lands. Never for a signed-in user: the guest
+        layout also draws the error pages and confirm-password.
 --}}
-<script nonce="{{ app('csp-nonce') }}" data-clear-drafts>
+<script nonce="{{ app('csp-nonce') }}" data-clear-drafts="{{ ($now ?? false) ? 'on-load' : 'on-sign-out' }}">
 (function () {
     function clearDrafts() {
+        // Read by x-form-auto-save: no saves after this on this page.
+        window.mybooksDraftsCleared = true;
         try {
             for (var i = window.localStorage.length - 1; i >= 0; i--) {
                 var key = window.localStorage.key(i);
