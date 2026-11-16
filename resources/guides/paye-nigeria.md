@@ -44,17 +44,18 @@ are:
 - **National Housing Fund:** the 2.5% contribution, where the employee pays it
 - **Health insurance:** National Health Insurance Scheme contributions
 - **Life assurance:** premiums the employee paid for themselves or their spouse
-- **Mortgage interest:** interest on a loan to build or buy the home they live in
+- **Mortgage interest:** interest on a loan to develop the home they live in
 - **Rent relief:** 20% of the yearly rent they pay, up to **₦500,000**
 
-The **consolidated relief allowance is gone.** It used to take ₦200,000 plus 20%
-of gross pay off before tax. Rent relief is far narrower, and only applies when
+The **consolidated relief allowance is gone.** It used to take the higher of
+₦200,000 or 1% of gross income, plus 20% of gross income, off before tax. Rent relief is far narrower, and only applies when
 the employee declares the rent they actually pay.
 
 ## A worked example
 
-Amaka earns ₦500,000 a month, ₦6,000,000 a year. Her pension contribution is 8%,
-and she pays ₦1,200,000 a year in rent.
+Amaka earns ₦500,000 a month, ₦6,000,000 a year, all of it basic salary,
+housing and transport, so her 8% pension is worked out on the whole of it. She
+pays ₦1,200,000 a year in rent.
 
 | | Yearly |
 | --- | --- |

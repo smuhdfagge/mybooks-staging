@@ -23,8 +23,8 @@ Here they all are.
 | **30th** | Withholding tax deducted last month, from individuals and unincorporated businesses | The state revenue service |
 | Within one month | National Housing Fund contributions deducted | Federal Mortgage Bank of Nigeria |
 
-Pension contributions go to each employee's Pension Fund Administrator every
-month, as soon as salaries are paid.
+Pension contributions go to each employee's Pension Fund Administrator within
+seven working days of paying salaries.
 
 The 21st is the busy one. VAT and federal withholding tax share it, so one
 afternoon's work clears both.
@@ -40,7 +40,7 @@ afternoon's work clears both.
 For a company whose year ends on **31 December**, the income tax return is due
 by **30 June**. A newly incorporated company files within six months of its
 year end or 18 months after incorporation, whichever comes first. The NRS can
-allow up to two months more if you apply in writing before the deadline.
+allow up to two months more, at its discretion.
 
 **Small companies file too.** A company paying 0% income tax still files its
 return by the same date. See [what the Nigeria Tax Act
@@ -56,6 +56,9 @@ changed](/guides/nigeria-tax-act-small-business).
 | April to May | 10th PAYE · 21st VAT and WHT, each month |
 | June | 10th PAYE · 21st VAT and WHT · **30th company return (31 December year end)** |
 | July to December | 10th PAYE · 21st VAT and WHT, each month |
+
+Where they apply to you, add the 14th (VAT withheld as a withholding VAT agent)
+and the 30th (withholding tax owed to a state) to every month.
 
 If a date falls on a weekend or public holiday, do not count on it moving. File
 before it.

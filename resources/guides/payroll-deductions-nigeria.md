@@ -26,8 +26,8 @@ Here is each one: who pays it, how much, and where it goes.
 ## Pension
 
 Under the Pension Reform Act, an employer with **at least 15 employees** must
-put them in the contributory pension scheme. Smaller employers and the
-self-employed can join voluntarily.
+put them in the contributory pension scheme. Organisations with fewer than
+three employees, and the self-employed, can join voluntarily.
 
 - The **minimum contribution is 18%** of monthly emoluments: at least 10% from
   the employer and 8% from the employee.
@@ -38,8 +38,9 @@ self-employed can join voluntarily.
   at least three times each employee's yearly emoluments.
 
 The money goes to each employee's own Pension Fund Administrator, not to the
-government. "Monthly emoluments" here means basic salary, housing and
-transport, not every allowance on the payslip.
+government. "Monthly emoluments" here is at least basic salary, housing and
+transport; check with your Pension Fund Administrator what else your pay
+structure brings in.
 
 ## National Housing Fund
 
@@ -95,7 +96,7 @@ What the company pays on top of his ₦400,000:
 | Deduction | Paid to | When |
 | --- | --- | --- |
 | PAYE | State revenue service (NRS for FCT residents) | By the 10th of the next month |
-| Pension | The employee's Pension Fund Administrator | Monthly, as soon as salaries are paid |
+| Pension | The employee's Pension Fund Administrator | Within 7 working days of paying salaries |
 | NHF | Federal Mortgage Bank of Nigeria | Within one month of deduction |
 | NSITF | Nigeria Social Insurance Trust Fund | As assessed by the NSITF |
 | ITF | Industrial Training Fund | Yearly |
@@ -110,7 +111,7 @@ what is due to whom before the date arrives.
 
 ---
 
-Sources: [PwC Worldwide Tax Summaries, Nigeria: other taxes (pension, NHF, payroll contribution)](https://taxsummaries.pwc.com/nigeria/individual/other-taxes), last reviewed by PwC on 29 May 2026.
+Sources: [PwC Worldwide Tax Summaries, Nigeria: other taxes (pension, NHF, payroll contribution)](https://taxsummaries.pwc.com/nigeria/individual/other-taxes), last reviewed by PwC on 29 May 2026. The pension remittance deadline is from the Pension Reform Act 2014, and the ITF levy and its thresholds from the Industrial Training Fund (Amendment) Act 2011; PwC's summary does not cover them.
 
 This guide is general information about Nigerian payroll deductions, not tax
 advice for your own business. Rates, thresholds and deadlines change, and each

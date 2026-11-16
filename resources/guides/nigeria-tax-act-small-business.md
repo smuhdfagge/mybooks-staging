@@ -20,6 +20,9 @@ A company is **small** when both of these are true:
 - yearly gross turnover of **₦100 million or less**, and
 - total fixed assets of **no more than ₦250 million**.
 
+Firms that provide professional services, such as law, accounting and
+consultancy practices, cannot count as small, however small they are.
+
 A small company's income tax rate is **0%**. Every other company pays **30%**.
 
 0% is not the same as nothing to do. **Every company still files its tax return
@@ -51,7 +54,9 @@ guide](/guides/paye-nigeria) has the bands and a worked example.
 ## VAT: same rate, better recovery
 
 - The rate is still **7.5%**.
-- **Small businesses do not have to charge VAT** to their customers.
+- **Businesses turning over less than ₦50 million a year do not charge VAT**
+  or file VAT returns. Note this is a different line from the ₦100 million
+  small company test above.
 - Basic food, medical and pharmaceutical products, educational books and
   materials, and exported services are **zero-rated**.
 - VAT paid on **services and fixed assets** used to make taxable supplies can

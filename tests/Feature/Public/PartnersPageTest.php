@@ -32,8 +32,11 @@ class PartnersPageTest extends TestCase
         $this->assertStringContainsString('<link rel="canonical" href="'.route('partners').'">', $html);
         $this->assertStringContainsString('<loc>'.route('partners').'</loc>', $this->get(route('sitemap'))->getContent());
 
-        // Linked from the footer of every public page.
-        $this->get(route('about'))->assertOk()->assertSee(route('partners'), false);
+        // Linked from the top bar and the footer of every public page.
+        $about = $this->get(route('about'))->assertOk()->getContent();
+        $footer = substr($about, (int) strrpos($about, '<footer'));
+        $this->assertStringContainsString('href="'.route('partners').'"', $footer, 'The footer links to the partner page.');
+        $this->assertStringContainsString('href="'.route('partners').'"', substr($about, 0, (int) strpos($about, '<main')), 'The top bar links to the partner page.');
     }
 
     public function test_it_sends_accountants_to_the_contact_form_as_a_partnership(): void
@@ -50,8 +53,16 @@ class PartnersPageTest extends TestCase
         // "Your own login with the Accountant role ... post your adjustments".
         $this->seed(DatabaseSeeder::class);
         $accountant = Role::whereNull('tenant_id')->where('name', 'accountant')->firstOrFail();
-        $this->assertTrue($accountant->hasPermissionTo('post journals'));
-        $this->assertTrue($accountant->hasPermissionTo('view reports'));
+        // "The ledgers, journals and financial reports" ... "post your adjustments".
+        foreach (['view chart-of-accounts', 'view journals', 'post journals', 'view reports'] as $permission) {
+            $this->assertTrue($accountant->hasPermissionTo($permission), $permission);
+        }
+        // Payroll is not the Accountant role's: the page says a client gives it
+        // through a role of their own, and MyBooks runs the imports.
+        $this->assertFalse($accountant->hasPermissionTo('view payroll'));
+        $this->get(route('partners'))->assertOk()
+            ->assertSee('a role they set up to include payroll too')
+            ->assertSee('import their records for them');
 
         // It points at the 2026 guides, which exist.
         $this->get(route('partners'))->assertOk()
