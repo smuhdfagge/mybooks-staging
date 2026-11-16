@@ -13,7 +13,7 @@
             ->concat(app(\App\Support\PublicSite\Guides::class)->all()->take(3)
                 ->map(fn (array $guide) => [$guide['title'], route('guides.show', $guide['slug'])]))
             ->all(),
-        'Company' => [['About', route('about')], ['Contact', route('contact')], ['Support', route('support')]],
+        'Company' => [['About', route('about')], ['For accountants', route('partners')], ['Contact', route('contact')], ['Support', route('support')]],
         'Legal' => [['Privacy policy', route('privacy-policy')], ['Terms of service', route('terms-of-service')]],
     ];
     if (Route::has('login')) {

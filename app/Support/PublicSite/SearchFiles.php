@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\File;
 class SearchFiles
 {
     /** The public pages that are not a guide or a feature page, most important first. */
-    public const PAGES = ['home', 'pricing', 'about', 'contact', 'support', 'guides.index', 'privacy-policy', 'terms-of-service'];
+    public const PAGES = ['home', 'pricing', 'about', 'partners', 'contact', 'support', 'guides.index', 'privacy-policy', 'terms-of-service'];
 
     public function __construct(
         private Guides $guides,
