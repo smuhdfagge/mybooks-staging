@@ -50,6 +50,8 @@
             storageKey: 'mybooks_draft_' + formKey,
 
             save() {
+                // Signing out cleared the drafts: a save still pending must not write one back.
+                if (window.mybooksDraftsCleared) return;
                 const form = this.$el.querySelector('form') || this.$el.closest('form');
                 if (!form) return;
 
