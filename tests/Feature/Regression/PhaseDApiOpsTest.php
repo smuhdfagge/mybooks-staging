@@ -367,6 +367,11 @@ class PhaseDApiOpsTest extends TestCase
 
         $runs = collect($ci['jobs']['tests']['steps'])->pluck('run')->filter()->implode("\n");
         $this->assertStringContainsString('composer audit', $runs);
+
+        // npm: what ships blocks the build; the build tools (MB-34) are still
+        // audited on every run, as a warning, since a fix can lag an advisory.
+        $this->assertStringContainsString('npm audit --omit=dev --audit-level=high', $runs);
+        $this->assertMatchesRegularExpression('/if ! npm audit --audit-level=high; then\s+echo "::warning /', $runs);
     }
 
     // ── P-payroll: bulk create deducts tax like a payroll run ───
