@@ -90,6 +90,7 @@
             </div>
         @endforeach
     </div>
-    <p class="mt-4 text-sm text-gray-600 dark:text-gray-300">Prices in naira. Pay through Paystack.</p>
+    @php $trialDays = \App\Services\Billing\SubscriptionBilling::trialDays(); @endphp
+    <p class="mt-4 text-sm text-gray-600 dark:text-gray-300">@if ($trialDays > 0)Every paid plan starts with a {{ $trialDays }}-day free trial, no card needed. @endif Prices in naira. Pay through Paystack.</p>
 </div>
 @endif

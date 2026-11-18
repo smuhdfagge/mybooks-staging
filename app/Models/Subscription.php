@@ -48,7 +48,12 @@ class Subscription extends Model
     const STATUS_EXPIRED = 'expired';
 
     const STATUS_PAST_DUE = 'past_due';
-    // Trial status removed - no trial for tenants
+
+    /** Signed up for a paid plan and using it free until ends_at (trial_ends_at). */
+    const STATUS_TRIALING = 'trialing';
+
+    /** The statuses that give access while ends_at is still ahead. */
+    public const RUNNING_STATUSES = [self::STATUS_ACTIVE, self::STATUS_TRIALING];
 
     /**
      * Billing cycle constants
@@ -76,13 +81,20 @@ class Subscription extends Model
     }
 
     /**
-     * Check if subscription is on trial
-     *
-     * @deprecated Trials have been removed
+     * On the free trial, and it has not ended.
      */
     public function onTrial(): bool
     {
-        return false; // Trials have been removed
+        return $this->status === self::STATUS_TRIALING && ! $this->hasExpired();
+    }
+
+    /**
+     * A trial that ended without being paid for: it is the latest
+     * subscription of a business that has never paid.
+     */
+    public function isUnpaidTrial(): bool
+    {
+        return $this->trial_ends_at !== null && $this->payment_reference === null;
     }
 
     /**
@@ -152,7 +164,7 @@ class Subscription extends Model
      */
     public function reactivate(): bool
     {
-        if ($this->status !== self::STATUS_ACTIVE || $this->hasExpired()) {
+        if (! in_array($this->status, self::RUNNING_STATUSES, true) || $this->hasExpired()) {
             return false;
         }
 
@@ -162,12 +174,12 @@ class Subscription extends Model
     }
 
     /**
-     * Active, and the paid period has not ended. A subscription with no end
-     * date (granted by an admin) counts as running.
+     * Active or on trial, and the period has not ended. A subscription with
+     * no end date (granted by an admin) counts as running.
      */
     public function isRunning(): bool
     {
-        return $this->isActive() && ! $this->hasExpired();
+        return in_array($this->status, self::RUNNING_STATUSES, true) && ! $this->hasExpired();
     }
 
     /**

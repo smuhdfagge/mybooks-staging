@@ -187,7 +187,14 @@ class AdminTenantController extends Controller
         $before = $subscription->getAttributes();
         $from = $subscription->ends_at && $subscription->ends_at->isFuture() ? $subscription->ends_at : now();
         $subscription->ends_at = Carbon::parse($from)->addDays($validated['extension_days']);
-        $subscription->status = Subscription::STATUS_ACTIVE;
+        // A free trial that was never paid for stays a trial: longer, but
+        // not counted as paying, and still asked to pay at the end.
+        if ($subscription->isUnpaidTrial() && in_array($subscription->status, [Subscription::STATUS_TRIALING, Subscription::STATUS_EXPIRED], true)) {
+            $subscription->status = Subscription::STATUS_TRIALING;
+            $subscription->trial_ends_at = $subscription->ends_at;
+        } else {
+            $subscription->status = Subscription::STATUS_ACTIVE;
+        }
         $subscription->starts_at ??= now();
         $subscription->save();
 

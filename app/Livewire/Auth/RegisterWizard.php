@@ -211,8 +211,9 @@ class RegisterWizard extends Component
                 'is_active' => true,
             ]);
 
-            // The subscription waits for payment (finding C1). A free plan
-            // is switched on straight away.
+            // A paid plan starts on its free trial (no card), or waits for
+            // payment when trials are off (finding C1). A free plan is
+            // switched on straight away.
             app(SubscriptionBilling::class)
                 ->startPendingSubscription($tenant, $plan, $this->billing_cycle);
 
