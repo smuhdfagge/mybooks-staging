@@ -228,6 +228,8 @@ class Phase5RegressionTest extends TestCase
 
     public function test_c1_sign_up_waits_for_payment(): void
     {
+        // With trials off; a paid plan's free trial is FreeTrialTest's.
+        config(['mybooks.trial_days' => 0]);
         auth()->logout();
         $plan = Plan::factory()->create(['monthly_price' => 5000, 'annual_price' => 50000]);
 
