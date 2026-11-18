@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\Role;
-use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Billing\SubscriptionBilling;
@@ -93,8 +92,9 @@ class RegisteredUserController extends Controller
                 'is_active' => true,
             ]);
 
-            // The subscription waits for payment (finding C1). A free plan
-            // is switched on straight away.
+            // A paid plan starts on its free trial (no card), or waits for
+            // payment when trials are off (finding C1). A free plan is
+            // switched on straight away.
             app(SubscriptionBilling::class)
                 ->startPendingSubscription($tenant, $plan, $billingCycle);
 

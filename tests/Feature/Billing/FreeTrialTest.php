@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Billing;
 
+use App\Http\Middleware\EnsureAdminTwoFactor;
 use App\Livewire\Auth\RegisterWizard;
 use App\Livewire\Subscriptions\SubscriptionManager;
+use App\Models\AdminUser;
 use App\Models\BillingCard;
 use App\Models\Plan;
 use App\Models\Role;
@@ -17,6 +19,7 @@ use App\Services\Billing\SubscriptionBilling;
 use App\Services\Dashboard\DashboardService;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
@@ -290,6 +293,74 @@ class FreeTrialTest extends TestCase
         $sub = $trial->fresh();
         $this->assertSame(Subscription::STATUS_ACTIVE, $sub->status);
         $this->assertSame(now()->addMonth()->toDateString(), $sub->ends_at->toDateString());
+    }
+
+    public function test_paying_after_the_trial_ran_out_but_before_the_nightly_job_sends_no_trial_ended_email(): void
+    {
+        $trial = $this->onTrial();
+        $bigger = $this->plan(['name' => 'Professional', 'monthly_price' => 12000, 'annual_price' => 120000]);
+        $this->travelTo(Carbon::parse('2026-11-28 15:00:00')); // ended at 10:00, still 'trialing'
+
+        $this->pay(fn ($c) => $c->call('openUpgradeModal', $bigger->id)->set('selectedBillingCycle', 'monthly')->call('changePlan'));
+        $this->assertSame(Subscription::STATUS_EXPIRED, $trial->fresh()->status);
+
+        $this->travelTo(Carbon::parse('2026-11-29 00:10:00'));
+        $this->artisan('subscriptions:expire')->assertSuccessful();
+
+        Notification::assertNotSentTo($this->user, SubscriptionExpiringNotification::class, fn ($n) => $n->daysLeft === 0);
+        $this->assertSame($bigger->id, $this->tenant->fresh()->activeSubscription->plan_id);
+    }
+
+    public function test_switching_to_a_free_plan_during_the_trial_ends_the_trial(): void
+    {
+        $trial = $this->onTrial();
+        $free = $this->plan(['name' => 'Free', 'monthly_price' => 0, 'annual_price' => 0]);
+
+        Livewire::test(SubscriptionManager::class)->call('openUpgradeModal', $free->id)
+            ->set('selectedBillingCycle', 'monthly')->call('changePlan');
+
+        $this->assertSame(Subscription::STATUS_EXPIRED, $trial->fresh()->status);
+        $running = $this->tenant->fresh()->activeSubscription;
+        $this->assertSame($free->id, $running->plan_id);
+        $this->assertSame(Subscription::STATUS_ACTIVE, $running->status);
+    }
+
+    public function test_a_trial_cannot_be_cancelled_so_its_reminders_still_go(): void
+    {
+        $trial = $this->onTrial();
+
+        Livewire::test(SubscriptionManager::class)->set('cancellationReason', 'x')->call('cancelSubscription');
+
+        $this->assertNull($trial->fresh()->cancelled_at);
+    }
+
+    public function test_the_dashboard_says_today_on_the_last_day_and_counts_calendar_days(): void
+    {
+        $this->onTrial(); // ends 28 Nov 10:00
+
+        $this->travelTo(Carbon::parse('2026-11-27 08:00:00'));
+        $this->assertContains('Your free trial ends tomorrow', array_column(app(DashboardService::class)->attention($this->user), 'title'));
+
+        $this->travelTo(Carbon::parse('2026-11-28 08:00:00'));
+        $this->assertContains('Your free trial ends today', array_column(app(DashboardService::class)->attention($this->user), 'title'));
+    }
+
+    public function test_an_admin_extending_a_trial_keeps_it_a_trial(): void
+    {
+        $trial = $this->onTrial();
+        $admin = AdminUser::create(['name' => 'Platform Admin', 'email' => 'root@mybooks.test', 'password' => 'Long-Admin-Pass-2026!', 'role' => AdminUser::ROLE_SUPER_ADMIN, 'is_active' => true]);
+        $admin->forceFill(['two_factor_secret' => Crypt::encryptString('JBSWY3DPEHPK3PXP'), 'two_factor_confirmed_at' => now()])->save();
+        $this->actingAs($admin, 'admin')->withSession([
+            'admin_two_factor_verified' => true,
+            'admin_password_hash' => EnsureAdminTwoFactor::passwordFingerprint($admin),
+        ]);
+
+        $this->patch(route('admin.tenants.extend-subscription', $this->tenant), ['extension_days' => 5])->assertRedirect();
+
+        $trial->refresh();
+        $this->assertSame(Subscription::STATUS_TRIALING, $trial->status);
+        $this->assertSame('2026-12-03', $trial->ends_at->toDateString());
+        $this->assertEquals($trial->ends_at, $trial->trial_ends_at);
     }
 
     public function test_trial_days_come_from_config_and_never_go_below_zero(): void

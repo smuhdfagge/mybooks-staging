@@ -101,11 +101,11 @@
 
                     @if($canManage)
                     <div class="mt-6 flex flex-wrap gap-3">
-                        @if($onTrial)
+                        @if($onTrial && $currentPlan->is_active)
                         <button wire:click="renew" wire:loading.attr="disabled" class="btn-primary">
                             Pay now: ₦{{ number_format((float) $currentSubscription->amount) }} a {{ $currentSubscription->billing_cycle === 'annual' ? 'year' : 'month' }}
                         </button>
-                        @elseif($currentSubscription->ends_at && (float) $currentSubscription->amount > 0)
+                        @elseif(! $onTrial && $currentSubscription->ends_at && (float) $currentSubscription->amount > 0)
                         <button wire:click="renew" wire:loading.attr="disabled" class="btn-primary">
                             Pay for another {{ $currentSubscription->billing_cycle === 'annual' ? 'year' : 'month' }}
                         </button>

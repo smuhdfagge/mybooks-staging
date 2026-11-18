@@ -515,10 +515,15 @@ class DashboardService
                 ->where('ends_at', '>', now())->latest('id')->first(['id', 'ends_at'])
             : null;
         if ($trial) {
-            $days = (int) max(1, ceil(now()->diffInSeconds($trial->ends_at) / 86400));
+            // Calendar days, as the reminder emails count them.
+            $days = (int) $today->diffInDays($trial->ends_at->copy()->startOfDay());
             $out[] = [
                 'tone' => $days <= 3 ? 'warn' : 'info',
-                'title' => $days === 1 ? 'Your free trial ends tomorrow' : "Your free trial: {$days} days left",
+                'title' => match ($days) {
+                    0 => 'Your free trial ends today',
+                    1 => 'Your free trial ends tomorrow',
+                    default => "Your free trial: {$days} days left",
+                },
                 'text' => 'Ends '.$trial->ends_at->format('j M').'. Pay any time to carry on; the days left are kept.',
                 'url' => route('settings.subscription'),
             ];

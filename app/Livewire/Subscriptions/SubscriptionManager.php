@@ -166,6 +166,14 @@ class SubscriptionManager extends Component
             'cancellationReason' => 'nullable|string|max:500',
         ]);
 
+        // A free trial isn't cancelled: unpaid, it just ends (and cancelling
+        // would switch off its reminders).
+        if ($this->currentSubscription?->onTrial()) {
+            $this->closeCancelModal();
+
+            return;
+        }
+
         if ($this->currentSubscription) {
             $this->currentSubscription->cancel($this->cancellationReason);
             $this->currentSubscription->refresh();

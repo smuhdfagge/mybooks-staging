@@ -403,14 +403,14 @@ class SubscriptionBilling
         return $cycle === Subscription::CYCLE_ANNUAL ? $from->copy()->addYear() : $from->copy()->addMonth();
     }
 
-    /** Whole days left of a running trial, a part day counted as a day. */
+    /** Whole days left of a running trial (a part day is not counted). */
     private function trialDaysLeft(Subscription $trial): int
     {
         if (! $trial->ends_at || ! $trial->ends_at->isFuture()) {
             return 0;
         }
 
-        return (int) ceil(now()->diffInSeconds($trial->ends_at) / 86400);
+        return (int) floor(now()->diffInSeconds($trial->ends_at) / 86400);
     }
 
     /**
@@ -441,13 +441,20 @@ class SubscriptionBilling
             ->first();
     }
 
-    /** Pending sign-up subscriptions are no longer needed once one is paid. */
+    /**
+     * Pending sign-up subscriptions are no longer needed once one is paid,
+     * and nor is one that has run out but that the daily job has not marked
+     * expired yet (a trial that ended this morning, say): left alone, that
+     * job would tell a business that has just paid that its plan ended.
+     */
     private function closePending(Tenant $tenant, Subscription $keep): void
     {
         Subscription::withoutGlobalScopes()
             ->where('tenant_id', $tenant->id)
-            ->where('status', Subscription::STATUS_PENDING)
             ->where('id', '!=', $keep->id)
+            ->where(fn ($q) => $q->where('status', Subscription::STATUS_PENDING)
+                ->orWhere(fn ($q2) => $q2->whereIn('status', Subscription::RUNNING_STATUSES)
+                    ->whereNotNull('ends_at')->where('ends_at', '<=', now())))
             ->update(['status' => Subscription::STATUS_EXPIRED, 'cancellation_reason' => 'Replaced by a paid subscription']);
     }
 
