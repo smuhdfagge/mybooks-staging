@@ -53,15 +53,16 @@ class PartnersPageTest extends TestCase
         // "Your own login with the Accountant role ... post your adjustments".
         $this->seed(DatabaseSeeder::class);
         $accountant = Role::whereNull('tenant_id')->where('name', 'accountant')->firstOrFail();
-        // "The ledgers, journals and financial reports" ... "post your adjustments".
-        foreach (['view chart-of-accounts', 'view journals', 'post journals', 'view reports'] as $permission) {
+        // "The ledgers, journals, reports and payroll" ... "run payroll, post
+        // your adjustments": payroll is the Accountant role's, all of it.
+        foreach (['view chart-of-accounts', 'view journals', 'post journals', 'view reports',
+            'view payroll', 'create payroll', 'edit payroll', 'approve payroll', 'delete payroll', 'view employees'] as $permission) {
             $this->assertTrue($accountant->hasPermissionTo($permission), $permission);
         }
-        // Payroll is not the Accountant role's: the page says a client gives it
-        // through a role of their own, and MyBooks runs the imports.
-        $this->assertFalse($accountant->hasPermissionTo('view payroll'));
+        // MyBooks runs the imports: the role cannot create customers or items.
+        $this->assertFalse($accountant->hasPermissionTo('create customers'));
         $this->get(route('partners'))->assertOk()
-            ->assertSee('a role they set up to include payroll too')
+            ->assertSee('the ledgers, journals, reports and payroll')
             ->assertSee('import their records for them');
 
         // It points at the 2026 guides, which exist.
