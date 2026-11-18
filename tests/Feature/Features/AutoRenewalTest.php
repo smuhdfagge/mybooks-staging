@@ -218,7 +218,10 @@ class AutoRenewalTest extends TestCase
 
         Livewire::test(SubscriptionManager::class)->call('toggleAutoRenew')->assertForbidden();
         Livewire::test(SubscriptionManager::class)->call('removeCard')->assertForbidden();
-        $this->get(route('settings.subscription'))->assertOk()->assertDontSee('4081');
+        // The card as the page shows it, not the bare digits: the page's random
+        // tokens (CSRF, CSP nonce, Livewire ids) can contain "4081" by chance,
+        // which failed CI on mybooks-live main (November 2026).
+        $this->get(route('settings.subscription'))->assertOk()->assertDontSee('•••• 4081');
 
         $this->assertTrue(BillingCard::sole()->auto_renew);
     }
