@@ -427,8 +427,8 @@ parallel sessions once M4 is merged.
 
 | # | Session | Repo | Branch | Status | Notes / hand-over |
 |---|---|---|---|---|---|
-| M0 | Owner setup | | | To do | |
-| M1 | Foundations | mobile | `mobile/m1-foundations` | To do | |
+| M0 | Owner setup | | | Done | |
+| M1 | Foundations | mobile | `mobile/m1-foundations` | Done | |
 | M2 | API client and sign-in | mobile | `mobile/m2-auth` | To do | |
 | M3 | App shell and Home | mobile | `mobile/m3-shell` | To do | |
 | M4 | Offline data and sync | mobile | `mobile/m4-sync` | To do | |
