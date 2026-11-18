@@ -28,11 +28,11 @@
                 </div>
                 <div class="rounded-2xl bg-gray-50 p-7 dark:bg-gray-800">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Your own login, your own role</h3>
-                    <p class="mt-2 text-gray-600 dark:text-gray-300">Your client adds you as a user with the Accountant role, for the ledgers, journals and financial reports, or with a role they set up to include payroll too. Their staff see only what their roles allow.</p>
+                    <p class="mt-2 text-gray-600 dark:text-gray-300">Your client adds you as a user with the Accountant role: the ledgers, journals, reports and payroll. Their staff see only what their roles allow.</p>
                 </div>
                 <div class="rounded-2xl bg-gray-50 p-7 dark:bg-gray-800">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">The reports you work from</h3>
-                    <p class="mt-2 text-gray-600 dark:text-gray-300">Trial balance, general ledger, profit and loss, balance sheet and cash flow, with comparatives, plus payroll and tax reports for the users allowed to see them, exported when you need them.</p>
+                    <p class="mt-2 text-gray-600 dark:text-gray-300">Trial balance, general ledger, profit and loss, balance sheet and cash flow, with comparatives, plus payroll and tax reports: 28 in all, exported when you need them.</p>
                 </div>
                 <div class="rounded-2xl bg-gray-50 p-7 dark:bg-gray-800">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">A clean start from Excel</h3>
@@ -83,7 +83,7 @@
                 <li class="rounded-2xl border border-gray-200 p-7 dark:border-gray-700">
                     <span class="text-sm font-semibold text-brand-700 dark:text-brand-300">Step 3</span>
                     <h3 class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">Work in their books</h3>
-                    <p class="mt-2 text-gray-600 dark:text-gray-300">Sign in with your own login, review the month, post your adjustments and prepare the returns from the figures.</p>
+                    <p class="mt-2 text-gray-600 dark:text-gray-300">Sign in with your Accountant role, review the month, run payroll, post your adjustments and file from the figures.</p>
                 </li>
             </ol>
             <p class="mt-8 text-gray-600 dark:text-gray-300">New to the 2026 rules? Our guides cover <a href="{{ route('guides.show', 'nigeria-tax-act-small-business') }}" class="font-medium text-brand-600 underline dark:text-brand-300">what the Nigeria Tax Act changed</a>, <a href="{{ route('guides.show', 'paye-nigeria') }}" class="font-medium text-brand-600 underline dark:text-brand-300">PAYE</a> and <a href="{{ route('guides.show', 'nigeria-tax-calendar') }}" class="font-medium text-brand-600 underline dark:text-brand-300">every filing date</a>.</p>

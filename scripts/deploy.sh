@@ -14,6 +14,15 @@
 # It backs the database up first and stops if that fails, and writes where
 # it started from to storage/app/last-deploy-from (and deploy-history). To
 # undo a deploy, see docs/ROLLBACK.md.
+#
+# The host may have pulled the code already (auto-deploy on merge). Then the
+# scheduler runs this within a minute (php artisan mybooks:deploy-if-pulled)
+# with DEPLOY_NO_PULL=1, deploying the code as it is. A finished deploy
+# writes the commit it deployed to storage/app/deployed-commit; that is
+# also what the rollback record names as "what was live" next time.
+#
+# Only one deploy runs at a time: a second one, by hand or by the
+# scheduler, stops at once (exit 75) and leaves the first to finish.
 
 set -euo pipefail
 
@@ -21,6 +30,13 @@ PHP="${PHP:-/opt/alt/php84/usr/bin/php}"
 COMPOSER_BIN="${COMPOSER_BIN:-$(command -v composer || true)}"
 
 cd "$(dirname "$0")/.."
+
+mkdir -p storage/framework storage/app
+exec 9>storage/framework/deploy.lock
+if command -v flock >/dev/null 2>&1 && ! flock -n 9; then
+    echo "Another deploy is running. Leaving it to finish; see storage/logs/auto-deploy.log." >&2
+    exit 75
+fi
 
 if [ ! -x "$PHP" ]; then
     echo "PHP 8.4 not found at $PHP. Set PHP=/path/to/php84 and try again." >&2
@@ -44,14 +60,18 @@ if ! BACKUP_OUTPUT="$("$PHP" artisan mybooks:backup --only-db --no-cleanup 2>&1)
 fi
 printf '%s\n' "$BACKUP_OUTPUT" | sed 's/^/    /'
 BACKUP_FILE="$(printf '%s\n' "$BACKUP_OUTPUT" | sed -n 's/^Backup \([^ ]*\) .*/\1/p' | head -n 1)"
-PREVIOUS_COMMIT="$(git rev-parse HEAD)"
+# What was live before this deploy: the commit the last finished deploy
+# left (the host may have pulled newer code since), else the code as it is.
+PREVIOUS_COMMIT="${DEPLOYED_FROM:-$(cat storage/app/deployed-commit 2>/dev/null || git rev-parse HEAD)}"
 
 echo "==> Getting the latest code"
 # Never stop at a username/password prompt: GitHub no longer accepts
 # account passwords, so a prompt here can only fail. Fail with a clear
 # message instead (see "Server access to GitHub" in the README).
 export GIT_TERMINAL_PROMPT=0
-if ! git pull --ff-only origin main; then
+if [ "${DEPLOY_NO_PULL:-}" = "1" ]; then
+    echo "    The host pulled it already."
+elif ! git pull --ff-only origin main; then
     echo "" >&2
     echo "Could not get the latest code from GitHub." >&2
     echo "  - If it said 'could not read Username' or asked for a password, the" >&2
@@ -61,17 +81,19 @@ if ! git pull --ff-only origin main; then
     echo "    server: run 'git status' to see them." >&2
     exit 1
 fi
+# The commit this deploy deploys. Read once: the host may pull newer code
+# while this runs, and that is the next deploy's to finish.
+DEPLOYING="$(git rev-parse HEAD)"
 
 # Where this deploy started from: what docs/ROLLBACK.md goes back to.
 # Written only when new code came in, so running this again after a
 # failed step (or with nothing new) keeps the commit and backup from
 # before the deploy, not the half-deployed state. Every deploy is also
 # added to storage/app/deploy-history.
-if [ "$(git rev-parse HEAD)" != "$PREVIOUS_COMMIT" ]; then
-    mkdir -p storage/app
+if [ "$DEPLOYING" != "$PREVIOUS_COMMIT" ]; then
     RECORD="$(printf 'commit=%s\nbackup=%s\nat=%s' "$PREVIOUS_COMMIT" "${BACKUP_FILE:-unknown}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)")"
     printf '%s\n' "$RECORD" > storage/app/last-deploy-from
-    printf '%s to=%s\n' "$(printf '%s' "$RECORD" | tr '\n' ' ')" "$(git rev-parse HEAD)" >> storage/app/deploy-history
+    printf '%s to=%s\n' "$(printf '%s' "$RECORD" | tr '\n' ' ')" "$DEPLOYING" >> storage/app/deploy-history
 fi
 LAST_FROM="$(sed -n 's/^commit=//p' storage/app/last-deploy-from 2>/dev/null || true)"
 LAST_BACKUP="$(sed -n 's/^backup=//p' storage/app/last-deploy-from 2>/dev/null || true)"
@@ -81,8 +103,10 @@ echo "==> Installing PHP packages"
 
 echo "==> Maintenance mode on"
 "$PHP" artisan down --retry=30 || true
-# Bring the site back up even if a step below fails.
-trap '"$PHP" artisan up >/dev/null 2>&1 || true' EXIT
+# Bring the site back up even if a step below fails, and even if the new
+# code cannot boot to do it (then the scheduler, which skips its jobs while
+# the site is down, would stay stopped too): the down file is removed.
+trap '"$PHP" artisan up >/dev/null 2>&1 || rm -f storage/framework/down' EXIT
 
 echo "==> Database changes"
 "$PHP" artisan migrate --force
@@ -107,7 +131,7 @@ echo "==> Writing robots.txt and sitemap.xml"
 # easy to blame on the page itself. Say so instead.
 echo "==> Checking the front-end files"
 BUILT_FROM="$(cat public/build/BUILD_COMMIT 2>/dev/null || true)"
-HEAD_COMMIT="$(git rev-parse HEAD)"
+HEAD_COMMIT="$DEPLOYING"
 if [ ! -d public/build ]; then
     echo "    public/build is missing: the site will have no styling." >&2
     echo "    Run 'bash scripts/package-assets.sh' on your machine and upload the zip." >&2
@@ -115,7 +139,7 @@ elif [ -z "$BUILT_FROM" ]; then
     echo "    Cannot tell which commit these files were built from." >&2
     echo "    If anything looks unstyled, upload a fresh build (scripts/package-assets.sh)." >&2
 elif [ "$BUILT_FROM" != "$HEAD_COMMIT" ]; then
-    echo "    These were built from ${BUILT_FROM:0:7}, but the code is now $(git rev-parse --short HEAD)." >&2
+    echo "    These were built from ${BUILT_FROM:0:7}, but the code is now ${DEPLOYING:0:7}." >&2
     # 'git diff --quiet' says "no difference" with 0 and "there is one"
     # with 1, but it also fails with 128 when it cannot find a commit at
     # all, which is what happens on a shallow clone. Treating that as a
@@ -124,7 +148,7 @@ elif [ "$BUILT_FROM" != "$HEAD_COMMIT" ]; then
     # Asked this way so that a non-zero answer is read, not treated as the
     # script itself failing (set -e).
     DIFFED=0
-    git diff --quiet "$BUILT_FROM" HEAD -- resources package.json package-lock.json tailwind.config.js vite.config.js 2>/dev/null || DIFFED=$?
+    git diff --quiet "$BUILT_FROM" "$DEPLOYING" -- resources package.json package-lock.json tailwind.config.js vite.config.js 2>/dev/null || DIFFED=$?
     case $DIFFED in
         0)
             echo "    Nothing that affects them changed, so this is fine." >&2
@@ -145,9 +169,12 @@ fi
 echo "==> Restarting queue workers"
 "$PHP" artisan queue:restart || true
 
+# What is now live: the scheduler compares the code with this. Written
+# before the site comes up, so no scheduler run sees it up but unrecorded.
+printf '%s\n' "$DEPLOYING" > storage/app/deployed-commit
 "$PHP" artisan up
-echo "==> Done: $(git log -1 --format='%h %s')"
-if [ "$(git rev-parse HEAD)" != "$PREVIOUS_COMMIT" ]; then
+echo "==> Done: $(git log -1 --format='%h %s' "$DEPLOYING")"
+if [ "$DEPLOYING" != "$PREVIOUS_COMMIT" ]; then
     echo "    Came from ${PREVIOUS_COMMIT:0:7}; database backup ${BACKUP_FILE:-unknown}. To undo: docs/ROLLBACK.md"
 elif [ -n "$LAST_FROM" ]; then
     echo "    No new code this time. The last deploy came from ${LAST_FROM:0:7} (backup ${LAST_BACKUP:-unknown}). To undo it: docs/ROLLBACK.md"

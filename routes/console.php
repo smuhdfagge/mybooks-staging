@@ -139,6 +139,17 @@ Schedule::command('queue:prune-failed', ['--hours' => 720])
     ->dailyAt('03:20')
     ->onOneServer();
 
+// The host pulls new code on a merge without running deploy.sh: finish the
+// deploy within a minute (backup, Composer, migrations, caches). Production
+// only; output in storage/logs/auto-deploy.log, a failure emails an alert.
+// deploy.sh holds its own lock, since optimize:clear empties the cache that
+// holds this mutex.
+Schedule::command('mybooks:deploy-if-pulled')
+    ->everyMinute()
+    ->withoutOverlapping(30)
+    ->runInBackground()
+    ->onOneServer();
+
 // robots.txt and sitemap.xml are real files the web server serves itself
 // (see SearchFiles). The deploy writes them, but the host can pull new code
 // on a merge without the deploy running, so they are rewritten every hour:
