@@ -4,6 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>API Documentation - MyBooks</title>
+    {{-- In the sitemap like the other public pages, so it carries the same
+         head: canonical address, noindex off the live site, share tags and
+         the analytics tag (SearchFiles::PAGES). --}}
+    @php
+        $docsDescription = 'The MyBooks REST API: authentication, customers, vendors, items, invoices, bills, expenses, payments and reports, with request and response examples.';
+        $docsCanonical = \App\Support\PublicSite\CanonicalUrl::for();
+        $docsImage = asset('images/share/mybooks-share.png');
+    @endphp
+    <meta name="description" content="{{ $docsDescription }}">
+    <link rel="canonical" href="{{ $docsCanonical }}">
+    @unless (config('mybooks.search_indexing'))
+        <meta name="robots" content="noindex, nofollow">
+    @endunless
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="MyBooks">
+    <meta property="og:locale" content="en_NG">
+    <meta property="og:title" content="API Documentation · MyBooks">
+    <meta property="og:description" content="{{ $docsDescription }}">
+    <meta property="og:url" content="{{ $docsCanonical }}">
+    <meta property="og:image" content="{{ $docsImage }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="API Documentation · MyBooks">
+    <meta name="twitter:description" content="{{ $docsDescription }}">
+    <meta name="twitter:image" content="{{ $docsImage }}">
+    @include('partials.analytics')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
     <style>

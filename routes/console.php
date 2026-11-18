@@ -139,6 +139,15 @@ Schedule::command('queue:prune-failed', ['--hours' => 720])
     ->dailyAt('03:20')
     ->onOneServer();
 
+// robots.txt and sitemap.xml are real files the web server serves itself
+// (see SearchFiles). The deploy writes them, but the host can pull new code
+// on a merge without the deploy running, so they are rewritten every hour:
+// a new guide or page is in the sitemap within the hour either way.
+Schedule::command('site:search-files')
+    ->hourly()
+    ->withoutOverlapping()
+    ->onOneServer();
+
 Schedule::command('logs:verify')
     ->weeklyOn(0, '04:00')
     ->withoutOverlapping()
