@@ -14,6 +14,11 @@
 # It backs the database up first and stops if that fails, and writes where
 # it started from to storage/app/last-deploy-from (and deploy-history). To
 # undo a deploy, see docs/ROLLBACK.md.
+#
+# The host may have pulled the code already (auto-deploy on merge). Then the
+# scheduler runs this within a minute (php artisan mybooks:deploy-if-pulled),
+# passing DEPLOYED_FROM, the commit that was live, so the rollback record
+# still names it. A finished deploy writes storage/app/deployed-commit.
 
 set -euo pipefail
 
@@ -44,7 +49,9 @@ if ! BACKUP_OUTPUT="$("$PHP" artisan mybooks:backup --only-db --no-cleanup 2>&1)
 fi
 printf '%s\n' "$BACKUP_OUTPUT" | sed 's/^/    /'
 BACKUP_FILE="$(printf '%s\n' "$BACKUP_OUTPUT" | sed -n 's/^Backup \([^ ]*\) .*/\1/p' | head -n 1)"
-PREVIOUS_COMMIT="$(git rev-parse HEAD)"
+# What was live before this deploy: the commit the last finished deploy
+# left (passed in when the host pulled already), else the code as it is now.
+PREVIOUS_COMMIT="${DEPLOYED_FROM:-$(git rev-parse HEAD)}"
 
 echo "==> Getting the latest code"
 # Never stop at a username/password prompt: GitHub no longer accepts
@@ -146,6 +153,9 @@ echo "==> Restarting queue workers"
 "$PHP" artisan queue:restart || true
 
 "$PHP" artisan up
+# What is now live: the scheduler compares the code with this (above).
+mkdir -p storage/app
+git rev-parse HEAD > storage/app/deployed-commit
 echo "==> Done: $(git log -1 --format='%h %s')"
 if [ "$(git rev-parse HEAD)" != "$PREVIOUS_COMMIT" ]; then
     echo "    Came from ${PREVIOUS_COMMIT:0:7}; database backup ${BACKUP_FILE:-unknown}. To undo: docs/ROLLBACK.md"

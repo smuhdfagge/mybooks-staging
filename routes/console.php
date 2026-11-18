@@ -143,6 +143,15 @@ Schedule::command('queue:prune-failed', ['--hours' => 720])
 // (see SearchFiles). The deploy writes them, but the host can pull new code
 // on a merge without the deploy running, so they are rewritten every hour:
 // a new guide or page is in the sitemap within the hour either way.
+// The host pulls new code on a merge without running deploy.sh: finish the
+// deploy within a minute (backup, Composer, migrations, caches). Production
+// only; output in storage/logs/auto-deploy.log, a failure emails an alert.
+Schedule::command('mybooks:deploy-if-pulled')
+    ->everyMinute()
+    ->withoutOverlapping(30)
+    ->runInBackground()
+    ->onOneServer();
+
 Schedule::command('site:search-files')
     ->hourly()
     ->withoutOverlapping()

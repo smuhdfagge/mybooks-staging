@@ -379,4 +379,23 @@ return [
         'max_per_hour' => (int) env('ERROR_ALERT_MAX_PER_HOUR', 20),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Automatic deploys
+    |--------------------------------------------------------------------------
+    |
+    | The host pulls new code on a merge but runs none of deploy.sh. In
+    | production the scheduler notices the new commit within a minute and
+    | runs deploy.sh (mybooks:deploy-if-pulled). MYBOOKS_COMPOSER_BIN is the
+    | path to Composer when cron cannot find it on its own.
+    |
+    */
+
+    'auto_deploy' => [
+        'enabled' => (bool) env('MYBOOKS_AUTO_DEPLOY', true),
+        'composer' => env('MYBOOKS_COMPOSER_BIN'),
+        'script' => base_path('scripts/deploy.sh'),
+        'timeout' => 900,
+    ],
+
 ];
