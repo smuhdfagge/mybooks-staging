@@ -387,7 +387,9 @@ return [
     | The host pulls new code on a merge but runs none of deploy.sh. In
     | production the scheduler notices the new commit within a minute and
     | runs deploy.sh (mybooks:deploy-if-pulled). MYBOOKS_COMPOSER_BIN is the
-    | path to Composer when cron cannot find it on its own.
+    | path to Composer when cron cannot find it on its own. Only the branch
+    | named here is deployed, so a copy of the site on another branch is
+    | left alone.
     |
     */
 
@@ -395,7 +397,7 @@ return [
         'enabled' => (bool) env('MYBOOKS_AUTO_DEPLOY', true),
         'composer' => env('MYBOOKS_COMPOSER_BIN'),
         'script' => base_path('scripts/deploy.sh'),
-        'timeout' => 900,
+        'branch' => env('MYBOOKS_AUTO_DEPLOY_BRANCH', 'main'),
     ],
 
 ];

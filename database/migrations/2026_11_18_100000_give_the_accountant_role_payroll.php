@@ -27,21 +27,23 @@ return new class extends Migration
             return; // A fresh install: DatabaseSeeder gives it these.
         }
 
-        // Only permissions this install has; a missing one is not created here.
-        $existing = Permission::query()
-            ->where('guard_name', 'web')->whereIn('name', $this->permissions)->pluck('name')->all();
-        $role->givePermissionTo($existing);
+        // Only permissions this install has; a missing one is not created
+        // here. The models themselves, so no stale permission cache is asked.
+        $role->givePermissionTo($this->existing());
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
     public function down(): void
     {
         $role = Role::query()->whereNull('tenant_id')->where('name', 'accountant')->where('guard_name', 'web')->first();
-        foreach ($this->permissions as $name) {
-            if ($role?->hasPermissionTo($name)) {
-                $role->revokePermissionTo($name);
-            }
+        if ($role !== null) {
+            $role->permissions()->detach($this->existing()->modelKeys());
         }
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+    }
+
+    private function existing()
+    {
+        return Permission::query()->where('guard_name', 'web')->whereIn('name', $this->permissions)->get();
     }
 };

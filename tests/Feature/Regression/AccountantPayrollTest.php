@@ -4,6 +4,7 @@ namespace Tests\Feature\Regression;
 
 use App\Models\Role;
 use Database\Seeders\DatabaseSeeder;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -57,5 +58,18 @@ class AccountantPayrollTest extends TestCase
         // And back.
         $this->migration()->down();
         $this->assertFalse($system->fresh()->hasPermissionTo('view payroll'));
+    }
+
+    public function test_the_migration_runs_both_ways_on_an_install_missing_one_of_the_permissions(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        Permission::where('name', 'delete payroll')->delete();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $this->migration()->up();
+        $this->assertTrue(Role::whereNull('tenant_id')->where('name', 'accountant')->firstOrFail()->hasPermissionTo('view payroll'));
+
+        $this->migration()->down();
+        $this->assertFalse(Role::whereNull('tenant_id')->where('name', 'accountant')->firstOrFail()->hasPermissionTo('view payroll'));
     }
 }

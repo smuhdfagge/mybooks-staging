@@ -93,7 +93,13 @@ git fetch origin
 git checkout main
 git reset --hard "$commit"
 $PHP "$(command -v composer)" install --no-dev --optimize-autoloader --no-interaction
+git rev-parse HEAD > storage/app/deployed-commit
 ```
+
+The last line records that this older commit is now what is live. The
+scheduler's automatic deploy (`mybooks:deploy-if-pulled`) never moves the
+code back forward by itself: it sees the code went back and leaves it. It
+deploys again when the host pulls something new onto `main`.
 
 If `git status` lists files, someone changed them on the server. Copy them
 somewhere first: `git reset --hard` throws those changes away.
