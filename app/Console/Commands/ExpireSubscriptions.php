@@ -12,8 +12,10 @@ use Illuminate\Console\Command;
 
 /**
  * Daily billing housekeeping (finding C1):
- *  - marks subscriptions whose paid period has ended as expired;
- *  - reminds tenant admins 7 days and 1 day before the end.
+ *  - marks subscriptions whose paid period (or free trial) has ended as
+ *    expired;
+ *  - reminds tenant admins 7 days and 1 day before a paid period ends, and
+ *    3 days and 1 day before a free trial ends.
  *
  * Each reminder is sent once per end date, so running the command twice in
  * a day, or after a renewal, doesn't send duplicates.
@@ -26,6 +28,9 @@ class ExpireSubscriptions extends Command
 
     /** Days before the end date on which to remind. */
     public const REMINDER_DAYS = [7, 1];
+
+    /** Days before a free trial ends on which to remind. */
+    public const TRIAL_REMINDER_DAYS = [3, 1];
 
     public function handle(): int
     {
@@ -41,23 +46,25 @@ class ExpireSubscriptions extends Command
 
         $ended = Subscription::withoutGlobalScopes()
             ->with('plan')
-            ->where('status', Subscription::STATUS_ACTIVE)
+            ->whereIn('status', Subscription::RUNNING_STATUSES)
             ->whereNotNull('ends_at')
             ->where('ends_at', '<=', now())
             ->get();
 
         foreach ($ended as $subscription) {
+            $trial = $subscription->status === Subscription::STATUS_TRIALING;
             $subscription->forceFill(['status' => Subscription::STATUS_EXPIRED])->save();
             $expired++;
 
             if (! $subscription->cancelled_at) {
-                $this->notifyAdmins($subscription, 0);
+                $this->notifyAdmins($subscription, 0, $trial);
             }
         }
 
+        // The widest reminder window covers both kinds.
         $endingSoon = Subscription::withoutGlobalScopes()
             ->with('plan')
-            ->where('status', Subscription::STATUS_ACTIVE)
+            ->whereIn('status', Subscription::RUNNING_STATUSES)
             ->whereNull('cancelled_at')
             ->where('ends_at', '>', now())
             ->where('ends_at', '<=', now()->addDays(max(self::REMINDER_DAYS) + 1))
@@ -65,13 +72,15 @@ class ExpireSubscriptions extends Command
 
         foreach ($endingSoon as $subscription) {
             $daysLeft = (int) now()->startOfDay()->diffInDays($subscription->ends_at->copy()->startOfDay());
-            if (! in_array($daysLeft, self::REMINDER_DAYS, true)) {
+            $trial = $subscription->status === Subscription::STATUS_TRIALING;
+            if (! in_array($daysLeft, $trial ? self::TRIAL_REMINDER_DAYS : self::REMINDER_DAYS, true)) {
                 continue;
             }
 
             // The saved card will be charged instead (session 15); a failed
-            // charge sends its own email with a Pay now link.
-            if ($this->willAutoRenew($subscription)) {
+            // charge sends its own email with a Pay now link. A trial is
+            // never charged automatically: it has to be paid for.
+            if (! $trial && $this->willAutoRenew($subscription)) {
                 continue;
             }
 
@@ -81,7 +90,7 @@ class ExpireSubscriptions extends Command
                 continue;
             }
 
-            $this->notifyAdmins($subscription, $daysLeft);
+            $this->notifyAdmins($subscription, $daysLeft, $trial);
             $metadata[$key] = $subscription->ends_at->toDateString();
             $subscription->forceFill(['metadata' => $metadata])->save();
             $reminded++;
@@ -103,7 +112,7 @@ class ExpireSubscriptions extends Command
         return $card !== null && $card->auto_renew && $subscription->ends_at && ! $card->hasExpiredBy($subscription->ends_at);
     }
 
-    private function notifyAdmins(Subscription $subscription, int $daysLeft): void
+    private function notifyAdmins(Subscription $subscription, int $daysLeft, bool $trial = false): void
     {
         $admins = User::withoutGlobalScopes()
             ->where('tenant_id', $subscription->tenant_id)
@@ -112,7 +121,7 @@ class ExpireSubscriptions extends Command
             ->get();
 
         foreach ($admins as $admin) {
-            $admin->notify(new SubscriptionExpiringNotification($subscription, $daysLeft));
+            $admin->notify(new SubscriptionExpiringNotification($subscription, $daysLeft, $trial));
         }
     }
 }

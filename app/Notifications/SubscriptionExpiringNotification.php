@@ -9,8 +9,8 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
- * Tells a tenant's admins that their subscription is about to end, or has
- * ended ($daysLeft = 0).
+ * Tells a tenant's admins that their subscription (or free trial, $trial)
+ * is about to end, or has ended ($daysLeft = 0).
  */
 class SubscriptionExpiringNotification extends Notification implements ShouldQueue
 {
@@ -18,7 +18,8 @@ class SubscriptionExpiringNotification extends Notification implements ShouldQue
 
     public function __construct(
         public Subscription $subscription,
-        public int $daysLeft
+        public int $daysLeft,
+        public bool $trial = false,
     ) {}
 
     public function via(object $notifiable): array
@@ -32,6 +33,26 @@ class SubscriptionExpiringNotification extends Notification implements ShouldQue
         $date = $this->subscription->ends_at?->format('M d, Y');
 
         $mail = (new MailMessage)->greeting("Hello {$notifiable->name},");
+
+        if ($this->trial) {
+            $price = '₦'.number_format((float) $this->subscription->amount).' a '.($this->subscription->billing_cycle === Subscription::CYCLE_ANNUAL ? 'year' : 'month');
+
+            if ($this->daysLeft <= 0) {
+                return $mail
+                    ->subject('Your MyBooks free trial has ended')
+                    ->line("Your free trial of the {$plan} plan ended on {$date}.")
+                    ->line("Everything you entered is safe. Pay for the plan ({$price}) to carry on where you left off.")
+                    ->action('Choose how to pay', route('settings.subscription'));
+            }
+
+            $when = $this->daysLeft === 1 ? 'tomorrow' : "in {$this->daysLeft} days";
+
+            return $mail
+                ->subject("Your MyBooks free trial ends {$when}")
+                ->line("Your free trial of the {$plan} plan ends on {$date}.")
+                ->line("To keep using MyBooks without a break, pay for the plan ({$price}) before then. The days left of your trial are kept.")
+                ->action('Pay now', route('settings.subscription'));
+        }
 
         if ($this->daysLeft <= 0) {
             return $mail
@@ -56,9 +77,12 @@ class SubscriptionExpiringNotification extends Notification implements ShouldQue
             'type' => 'subscription_expiring',
             'subscription_id' => $this->subscription->id,
             'days_left' => $this->daysLeft,
-            'message' => $this->daysLeft <= 0
+            'trial' => $this->trial,
+            'message' => $this->trial
+                ? ($this->daysLeft <= 0 ? 'Your free trial has ended' : "Your free trial ends in {$this->daysLeft} day(s)")
+                : ($this->daysLeft <= 0
                 ? 'Your subscription has ended'
-                : "Your subscription ends in {$this->daysLeft} day(s)",
+                : "Your subscription ends in {$this->daysLeft} day(s)"),
         ];
     }
 }

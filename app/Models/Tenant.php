@@ -210,8 +210,8 @@ class Tenant extends Model
     }
 
     /**
-     * The subscription that currently gives access: status active and the
-     * paid period not yet over (finding C1). One with no end date was
+     * The subscription that currently gives access: status active (or on
+     * the free trial) and the period not yet over (finding C1). One with no end date was
      * granted open-ended by an admin.
      *
      * @return HasOne<Subscription, $this>
@@ -219,7 +219,7 @@ class Tenant extends Model
     public function activeSubscription(): HasOne
     {
         return $this->hasOne(Subscription::class)
-            ->where('status', Subscription::STATUS_ACTIVE)
+            ->whereIn('status', Subscription::RUNNING_STATUSES) // a free trial gives access too
             ->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>', now()))
             ->latest('ends_at')
             ->latest('id');
@@ -295,6 +295,7 @@ class Tenant extends Model
 
         return match ($subscription->status) {
             Subscription::STATUS_ACTIVE => 'Active',
+            Subscription::STATUS_TRIALING => 'Free trial',
             Subscription::STATUS_CANCELLED => 'Cancelled',
             Subscription::STATUS_EXPIRED => 'Expired',
             Subscription::STATUS_PAST_DUE => 'Past Due',

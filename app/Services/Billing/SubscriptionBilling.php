@@ -43,9 +43,18 @@ class SubscriptionBilling
         return strtoupper((string) config('services.paystack.currency', 'NGN'));
     }
 
+    /** Days of free trial a paid plan starts with at sign-up (0: none). */
+    public static function trialDays(): int
+    {
+        return max(0, (int) config('mybooks.trial_days', 0));
+    }
+
     /**
-     * The subscription created at sign-up. It stays pending (no access)
-     * until it is paid for, unless the plan is free.
+     * The subscription created at sign-up. A paid plan starts on its free
+     * trial (mybooks.trial_days, no card asked for): full use of the plan
+     * until the trial ends, then it needs paying for like any lapsed plan.
+     * With trials off it stays pending (no access) until paid. A free plan
+     * is switched on straight away.
      */
     public function startPendingSubscription(Tenant $tenant, Plan $plan, string $cycle): Subscription
     {
@@ -59,6 +68,16 @@ class SubscriptionBilling
             'amount' => $amount,
             'currency' => $this->currency(),
         ]);
+
+        if ($amount > 0 && ($days = self::trialDays()) > 0) {
+            $ends = now()->addDays($days);
+            $subscription->forceFill([
+                'status' => Subscription::STATUS_TRIALING,
+                'starts_at' => now(),
+                'trial_ends_at' => $ends,
+                'ends_at' => $ends,
+            ]);
+        }
         $subscription->save();
 
         if ($amount <= 0) {
@@ -295,10 +314,13 @@ class SubscriptionBilling
             ? Subscription::withoutGlobalScopes()->lockForUpdate()->find($payment->subscription_id)
             : null;
 
-        // Renewing the same plan: add a period to whatever is left
+        // Renewing the same plan: add a period to whatever is left. Paying
+        // during the free trial does the same: the paid period starts when
+        // the trial would have ended, so no trial day is lost.
         if ($current && (int) $current->plan_id === (int) $payment->plan_id && $current->billing_cycle === $payment->billing_cycle) {
             $from = $current->ends_at && $current->ends_at->isFuture() ? $current->ends_at : now();
             $current->forceFill([
+                'status' => Subscription::STATUS_ACTIVE,
                 'ends_at' => $this->periodEnd($from, $payment->billing_cycle),
                 'amount' => $payment->amount,
                 'currency' => $payment->currency,
@@ -312,10 +334,15 @@ class SubscriptionBilling
         }
 
         // A new plan (or no running subscription): start it today, with the
-        // unused value of the current plan added as extra days.
-        $extraDays = $current ? $this->unusedDays($current, (float) $payment->amount, $payment->billing_cycle) : 0;
+        // unused value of the current plan added as extra days. The days
+        // left of a free trial are added as they are: nothing was paid.
+        $extraDays = match (true) {
+            $current === null => 0,
+            $current->status === Subscription::STATUS_TRIALING => $this->trialDaysLeft($current),
+            default => $this->unusedDays($current, (float) $payment->amount, $payment->billing_cycle),
+        };
 
-        $subscription = $linked && in_array($linked->status, [Subscription::STATUS_PENDING, Subscription::STATUS_EXPIRED], true)
+        $subscription = $linked && in_array($linked->status, [Subscription::STATUS_PENDING, Subscription::STATUS_EXPIRED, Subscription::STATUS_TRIALING], true)
             ? $linked
             : new Subscription(['tenant_id' => $tenant->id]);
 
@@ -376,6 +403,16 @@ class SubscriptionBilling
         return $cycle === Subscription::CYCLE_ANNUAL ? $from->copy()->addYear() : $from->copy()->addMonth();
     }
 
+    /** Whole days left of a running trial, a part day counted as a day. */
+    private function trialDaysLeft(Subscription $trial): int
+    {
+        if (! $trial->ends_at || ! $trial->ends_at->isFuture()) {
+            return 0;
+        }
+
+        return (int) ceil(now()->diffInSeconds($trial->ends_at) / 86400);
+    }
+
     /**
      * Value of the time left on $current, as days of the new plan.
      */
@@ -392,11 +429,12 @@ class SubscriptionBilling
         return (int) floor($credit / $newDaily);
     }
 
+    /** The subscription giving access now: paid, or on the free trial. */
     private function runningSubscription(Tenant $tenant): ?Subscription
     {
         return Subscription::withoutGlobalScopes()
             ->where('tenant_id', $tenant->id)
-            ->where('status', Subscription::STATUS_ACTIVE)
+            ->whereIn('status', Subscription::RUNNING_STATUSES)
             ->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>', now()))
             ->latest('ends_at')->latest('id')
             ->lockForUpdate()

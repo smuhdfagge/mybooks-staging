@@ -393,6 +393,20 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Free trial
+    |--------------------------------------------------------------------------
+    |
+    | A business that signs up for a paid plan can use it free for this many
+    | days, with no card asked for. When the trial ends it needs paying for,
+    | as any lapsed plan does; the data stays. 0 turns trials off: sign-up
+    | then waits for payment, as before.
+    |
+    */
+
+    'trial_days' => max(0, (int) env('MYBOOKS_TRIAL_DAYS', 10)),
+
     'auto_deploy' => [
         'enabled' => (bool) env('MYBOOKS_AUTO_DEPLOY', true),
         'composer' => env('MYBOOKS_COMPOSER_BIN'),

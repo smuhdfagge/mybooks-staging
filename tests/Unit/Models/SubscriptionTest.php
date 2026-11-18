@@ -114,10 +114,18 @@ class SubscriptionTest extends TestCase
         $this->assertTrue($active->every(fn ($s) => $s->status === Subscription::STATUS_ACTIVE));
     }
 
-    public function test_on_trial_always_returns_false(): void
+    public function test_on_trial_only_while_a_trial_is_running(): void
     {
         $this->createAuthenticatedUser();
+        $this->assertFalse($this->subscription->onTrial(), 'A paid subscription is not a trial.');
+
+        $this->subscription->forceFill(['status' => Subscription::STATUS_TRIALING, 'ends_at' => now()->addDays(3)]);
+        $this->assertTrue($this->subscription->onTrial());
+        $this->assertTrue($this->subscription->isRunning());
+
+        $this->subscription->forceFill(['ends_at' => now()->subMinute()]);
         $this->assertFalse($this->subscription->onTrial());
+        $this->assertFalse($this->subscription->isRunning());
     }
 
     public function test_belongs_to_tenant_relationship(): void
