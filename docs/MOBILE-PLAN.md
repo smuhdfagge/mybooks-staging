@@ -434,8 +434,8 @@ parallel sessions once M4 is merged.
 | M4 | Offline data and sync | mobile | `mobile/m4-sync` | Done | |
 | M5 | Invoices | mobile | `mobile/m5-invoices` | Done | |
 | M6 | New invoice and record payment | mobile | `mobile/m6-create` | Done | |
-| M7 | Customers | mobile | `mobile/m7-customers` | To do | |
-| M8 | Expenses and approvals | mobile | `mobile/m8-expenses` | To do | |
+| M7 | Customers | mobile | `mobile/m7-customers` | Done | |
+| M8 | Expenses and approvals | mobile | `mobile/m8-expenses` | Done | |
 | M9 | Bills and vendors | mobile | `mobile/m9-purchases` | To do | |
 | M10 | Reports | mobile | `mobile/m10-reports` | To do | |
 | M11 | Stock | mobile | `mobile/m11-stock` | To do | |
