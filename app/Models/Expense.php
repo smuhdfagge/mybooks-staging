@@ -72,13 +72,17 @@ class Expense extends Model
         'submitted_at' => 'datetime',
     ];
 
-    /** @return BelongsTo<Vendor, $this> */
-    /** Receipts uploaded from the mobile app (mobile plan A1). */
+    /**
+     * Receipts uploaded from the mobile app (mobile plan A1).
+     *
+     * @return HasMany<ExpenseAttachment, $this>
+     */
     public function attachments(): HasMany
     {
         return $this->hasMany(ExpenseAttachment::class)->orderBy('id');
     }
 
+    /** @return BelongsTo<Vendor, $this> */
     public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class);

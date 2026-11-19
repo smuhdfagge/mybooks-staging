@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use App\Models\Expense;
 use App\Models\ExpenseAttachment;
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -104,7 +105,7 @@ class ExpenseAttachmentApiTest extends TestCase
 
         auth()->forgetGuards();
         [$other] = $this->createTenantWithSubscription();
-        $theirs = Expense::withoutTenantGuard(fn () => Expense::factory()->create(['tenant_id' => $other->id]));
+        $theirs = Tenant::run($other->id, fn () => Expense::factory()->create(['tenant_id' => $other->id]));
         $this->actingAs($this->user);
         $this->getJson($this->url($theirs))->assertNotFound();
         $this->postJson($this->url($theirs), ['file' => UploadedFile::fake()->image('r.jpg')])->assertNotFound();

@@ -48,11 +48,13 @@ class ExpenseAttachment extends Model
         });
     }
 
+    /** @return BelongsTo<Expense, $this> */
     public function expense(): BelongsTo
     {
         return $this->belongsTo(Expense::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function uploader(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by');
