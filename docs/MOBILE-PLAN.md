@@ -436,10 +436,10 @@ parallel sessions once M4 is merged.
 | M6 | New invoice and record payment | mobile | `mobile/m6-create` | Done | |
 | M7 | Customers | mobile | `mobile/m7-customers` | Done | |
 | M8 | Expenses and approvals | mobile | `mobile/m8-expenses` | Done | |
-| M9 | Bills and vendors | mobile | `mobile/m9-purchases` | To do | |
-| M10 | Reports | mobile | `mobile/m10-reports` | To do | |
-| M11 | Stock | mobile | `mobile/m11-stock` | To do | |
-| M12 | Accounting | mobile | `mobile/m12-accounting` | To do | |
+| M9 | Bills and vendors | mobile | `mobile/m9-purchases` | Done | |
+| M10 | Reports | mobile | `mobile/m10-reports` | Done | |
+| M11 | Stock | mobile | `mobile/m11-stock` | Done | |
+| M12 | Accounting | mobile | `mobile/m12-accounting` | Done | |
 | M13 | Sales orders, employees, settings | mobile | `mobile/m13-more` | To do | |
 | M14 | Push notifications | mobile | `mobile/m14-push` | To do | |
 | M15 | Release | mobile | `mobile/m15-release` | To do | |
