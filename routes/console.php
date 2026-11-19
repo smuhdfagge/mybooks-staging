@@ -66,6 +66,14 @@ Schedule::command('notifications:send-bill-reminders')
     ->withoutOverlapping()
     ->onOneServer();
 
+// Push today's overdue invoices and tomorrow's bills to phones, 08:00 Lagos
+// (mobile plan A2)
+Schedule::command('notifications:send-push-reminders')
+    ->dailyAt('08:00')
+    ->timezone('Africa/Lagos')
+    ->withoutOverlapping()
+    ->onOneServer();
+
 // Send low stock alerts daily at 9:00 AM
 Schedule::command('notifications:send-low-stock-alerts')
     ->dailyAt('09:00')

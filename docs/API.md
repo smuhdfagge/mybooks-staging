@@ -1593,6 +1593,59 @@ Set in `.env`: `MYBOOKS_APP_MIN_VERSION`, `MYBOOKS_APP_LATEST_VERSION`,
 
 ---
 
+## Push Notifications
+
+### Register a Device
+
+**Endpoint:** `POST /devices` (signed in; no extra permission)
+
+Call after signing in, and again whenever Firebase gives the app a new
+token. The device belongs to the signed-in user and to this API token:
+signing out (`/auth/logout`) forgets it. A token registered again by
+another user moves to that user.
+
+```json
+{
+    "token": "<Firebase registration token>",
+    "platform": "android",
+    "app_version": "1.0.0"
+}
+```
+
+`platform`: `ios` or `android`. `201` the first time, `200` after.
+
+### Remove a Device
+
+**Endpoint:** `DELETE /devices/{token}`
+
+For when the user turns notifications off. Only the user's own device is
+removed; an unknown token still returns `200`.
+
+### What Is Sent
+
+| `type` | Sent to | When |
+|---|---|---|
+| `expense_awaiting_approval` | Admins who could approve it (not the person who raised it) | An expense is submitted for approval |
+| `invoice_paid` | Users with `view invoices` | An invoice becomes paid in full |
+| `invoice_overdue` | Users with `view invoices` | 08:00 Lagos, the day after the due date |
+| `bill_due` | Users with `view bills` | 08:00 Lagos, the day before the due date |
+
+Only active users of the same business with a registered device get a
+push. Each push carries a title and body to show, and `data` for the app
+to open the right screen (values are strings):
+
+```json
+{ "type": "invoice_paid", "id": "142" }
+```
+
+`id` is the expense, invoice or bill id: open `GET /expenses/{id}`,
+`GET /invoices/{id}` or `GET /bills/{id}`. A token Firebase reports as
+no longer valid is removed. Nothing is sent until the server has
+`FCM_CREDENTIALS` (the path to the Firebase service account key file)
+in `.env`.
+
+---
+
 ## Error Handling
 
 All API responses follow a consistent format:

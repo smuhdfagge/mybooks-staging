@@ -32,6 +32,9 @@ use App\Services\ActivityLogService;
 use App\Services\BankFeeds\LineActions;
 use App\Services\Dashboard\DashboardCache;
 use App\Services\JournalService;
+use App\Services\Push\FcmSender;
+use App\Services\Push\PushNotifier;
+use App\Services\Push\PushSender;
 use App\Support\TenantContext;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
@@ -68,6 +71,10 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->bind(JournalServiceInterface::class, JournalService::class);
+
+        // Push notifications to phones (mobile plan A2): Firebase, or nothing
+        // until FCM_CREDENTIALS is set.
+        $this->app->singleton(PushSender::class, FcmSender::class);
 
         // Lock dates read once per request (session 11).
         $this->app->scoped(LockDates::class);
@@ -233,6 +240,20 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // ── Domain Event → Listener mappings ─────────────────────
+        // Push notifications to phones (mobile plan A2), when an expense is
+        // sent for approval and when an invoice becomes paid. Sent on the
+        // queue after the change is committed.
+        Expense::updated(function (Expense $expense) {
+            if ($expense->wasChanged('status') && $expense->status === Expense::STATUS_PENDING_APPROVAL) {
+                app(PushNotifier::class)->expenseAwaitingApproval($expense);
+            }
+        });
+        Invoice::updated(function (Invoice $invoice) {
+            if ($invoice->wasChanged('status') && $invoice->status === 'paid') {
+                app(PushNotifier::class)->invoicePaid($invoice);
+            }
+        });
+
         // This is the only place listeners are registered: event discovery is
         // disabled in bootstrap/app.php. Add new listeners here.
         // Invoices

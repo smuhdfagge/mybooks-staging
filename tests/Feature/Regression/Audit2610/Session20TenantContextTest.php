@@ -206,7 +206,7 @@ class Session20TenantContextTest extends TestCase
             'retention:purge' => ['--dry-run' => true, '--force' => true], 'accounts:recalculate' => ['--dry-run' => true],
             'bills:receive-pending-stock' => [], 'bills:reclassify-lines' => ['--dry-run' => true], 'journals:regenerate-invoices' => [],
             'accruals:release' => [], 'accruals:repair-setup' => [], 'einvoice:retry' => [], 'tenants:seed-accounts' => [],
-            'notifications:send-bill-reminders' => [], 'notifications:send-low-stock-alerts' => [], 'notifications:send-payment-reminders' => [],
+            'notifications:send-bill-reminders' => [], 'notifications:send-low-stock-alerts' => [], 'notifications:send-payment-reminders' => [], 'notifications:send-push-reminders' => [],
             'messages:send-queued' => [], 'bankfeeds:sync' => [], 'logs:verify' => [], 'stock:reconcile-layers' => [], 'mybooks:deploy-if-pulled' => [],
         ];
         $listed = collect(Artisan::all())->keys()->filter(fn ($name) => str_starts_with((string) get_class(Artisan::all()[$name]), 'App\\Console\\Commands\\'));
