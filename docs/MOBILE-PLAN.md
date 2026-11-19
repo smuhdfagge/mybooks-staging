@@ -432,7 +432,7 @@ parallel sessions once M4 is merged.
 | M2 | API client and sign-in | mobile | `mobile/m2-auth` | Done | |
 | M3 | App shell and Home | mobile | `mobile/m3-shell` | Done | |
 | M4 | Offline data and sync | mobile | `mobile/m4-sync` | Done | |
-| M5 | Invoices | mobile | `mobile/m5-invoices` | To do | |
+| M5 | Invoices | mobile | `mobile/m5-invoices` | Done | |
 | M6 | New invoice and record payment | mobile | `mobile/m6-create` | To do | |
 | M7 | Customers | mobile | `mobile/m7-customers` | To do | |
 | M8 | Expenses and approvals | mobile | `mobile/m8-expenses` | To do | |
