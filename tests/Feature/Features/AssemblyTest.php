@@ -795,6 +795,50 @@ class AssemblyTest extends TestCase
         $this->getJson('/api/v1/assembly-orders/'.$id)->assertOk()->assertJsonPath('data.items.0.cost', 218000);
     }
 
+    public function test_the_api_can_complete_a_saved_draft(): void
+    {
+        $this->stockUp();
+        $order = $this->draft($this->bom());
+
+        $this->postJson("/api/v1/assembly-orders/{$order->id}/complete", ['quantity_made' => 0])
+            ->assertUnprocessable()->assertJsonValidationErrors('quantity_made');
+        $this->postJson("/api/v1/assembly-orders/{$order->id}/complete", ['quantity_made' => 39])->assertOk()
+            ->assertJsonPath('data.status', 'completed')->assertJsonPath('data.quantity_made', 39)->assertJsonPath('data.total_cost', 463000);
+        $this->assertSame(39.0, $this->onHand($this->feed));
+
+        $this->postJson("/api/v1/assembly-orders/{$order->id}/complete")->assertUnprocessable()->assertJsonValidationErrors('order');
+    }
+
+    public function test_the_api_complete_needs_adjust_inventory_its_own_business_and_the_module(): void
+    {
+        $this->stockUp();
+        $order = $this->draft($this->bom());
+
+        $viewer = User::factory()->create(['tenant_id' => $this->tenant->id]);
+        $viewer->givePermissionTo(['view inventory', 'view items']);
+        $this->actingAs($viewer);
+        $this->postJson("/api/v1/assembly-orders/{$order->id}/complete")->assertForbidden();
+        $this->actingAs($this->user);
+
+        config(['mybooks.features.assembly' => false]);
+        $this->postJson("/api/v1/assembly-orders/{$order->id}/complete")->assertNotFound();
+        config(['mybooks.features.assembly' => true]);
+
+        $other = $this->otherTenant();
+        $theirs = AssemblyOrder::withoutTenantGuard(function () use ($other) {
+            $item = Item::factory()->product()->create(['tenant_id' => $other->id]);
+            $warehouse = Warehouse::create(['tenant_id' => $other->id, 'name' => 'Theirs', 'code' => 'THR']);
+            $bom = BillOfMaterial::create(['tenant_id' => $other->id, 'item_id' => $item->id, 'name' => 'Their bill', 'output_quantity' => 1]);
+
+            return AssemblyOrder::create(['tenant_id' => $other->id, 'order_number' => 'ASM-000009', 'kind' => 'build', 'assembly_date' => '2026-10-10',
+                'bill_of_materials_id' => $bom->id, 'warehouse_id' => $warehouse->id, 'to_warehouse_id' => $warehouse->id,
+                'quantity' => 1, 'planned_quantity' => 1, 'status' => 'draft']);
+        });
+        $this->postJson("/api/v1/assembly-orders/{$theirs->id}/complete")->assertNotFound();
+        $this->assertSame(AssemblyOrder::STATUS_DRAFT, AssemblyOrder::withoutGlobalScopes()->find($theirs->id)->status);
+        $this->assertSame(AssemblyOrder::STATUS_DRAFT, $order->fresh()->status);
+    }
+
     // ---- the migration ---------------------------------------------------------------
 
     public function test_migration_adds_the_production_costs_account_converts_old_orders_and_reruns(): void

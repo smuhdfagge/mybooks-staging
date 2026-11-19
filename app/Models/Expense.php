@@ -13,6 +13,7 @@ use App\Traits\ValidatesAccountingPeriod;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -70,6 +71,16 @@ class Expense extends Model
         'rejected_at' => 'datetime',
         'submitted_at' => 'datetime',
     ];
+
+    /**
+     * Receipts uploaded from the mobile app (mobile plan A1).
+     *
+     * @return HasMany<ExpenseAttachment, $this>
+     */
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(ExpenseAttachment::class)->orderBy('id');
+    }
 
     /** @return BelongsTo<Vendor, $this> */
     public function vendor(): BelongsTo
@@ -394,6 +405,12 @@ class Expense extends Model
     {
         static::deleting(function ($expense) {
             ExpenseDeleting::dispatch($expense);
+        });
+
+        // A soft delete keeps the receipts (the expense can be restored);
+        // deleting it for good removes their files too.
+        static::forceDeleting(function ($expense) {
+            $expense->attachments()->get()->each->delete();
         });
     }
 
