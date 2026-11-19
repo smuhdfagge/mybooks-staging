@@ -440,8 +440,8 @@ parallel sessions once M4 is merged.
 | M10 | Reports | mobile | `mobile/m10-reports` | Done | |
 | M11 | Stock | mobile | `mobile/m11-stock` | Done | |
 | M12 | Accounting | mobile | `mobile/m12-accounting` | Done | |
-| M13 | Sales orders, employees, settings | mobile | `mobile/m13-more` | To do | |
-| M14 | Push notifications | mobile | `mobile/m14-push` | To do | |
+| M13 | Sales orders, employees, settings | mobile | `mobile/m13-more` | Done | |
+| M14 | Push notifications | mobile | `mobile/m14-push` | Done | |
 | M15 | Release | mobile | `mobile/m15-release` | To do | |
 | A1 | API additions for the app | staging → live | `api/a1-mobile-gaps` | Done | |
 | A2 | API push notifications | staging → live | `api/a2-push` | To do | |
