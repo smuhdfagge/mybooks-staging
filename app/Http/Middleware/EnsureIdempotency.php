@@ -6,6 +6,7 @@ use App\Models\IdempotencyKey;
 use Closure;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -118,6 +119,10 @@ class EnsureIdempotency
         foreach ($data as $k => $v) {
             if (is_array($v)) {
                 $data[$k] = $this->sorted($v);
+            } elseif ($v instanceof UploadedFile) {
+                // An upload counts by its content (mobile receipts, plan A1),
+                // so the same key with a different file is a different request.
+                $data[$k] = 'file:'.hash_file('sha256', $v->getRealPath() ?: '');
             }
         }
 

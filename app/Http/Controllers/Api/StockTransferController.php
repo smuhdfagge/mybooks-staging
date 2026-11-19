@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\StockTransfers\ReceiveStockTransfer;
 use App\Actions\StockTransfers\SaveStockTransfer;
 use App\Actions\StockTransfers\ShipStockTransfer;
 use App\Actions\StockTransfers\TransferNow;
@@ -10,11 +11,13 @@ use App\Models\StockTransfer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 /**
  * Stock transfers over the API (session 13): list, read, and create, with
  * "ship": true to ship it, or "receive": true to ship and receive it in
- * one call (transfer now). Same actions as the web.
+ * one call (transfer now); then ship a draft and receive a shipped one
+ * (mobile plan A1). Same actions as the web.
  */
 class StockTransferController extends BaseApiController
 {
@@ -55,6 +58,39 @@ class StockTransferController extends BaseApiController
         });
 
         return $this->created($this->present($transfer->load(['items', 'fromWarehouse:id,name', 'toWarehouse:id,name'])));
+    }
+
+    /** Ship a draft: the goods leave the source warehouse. */
+    public function ship(StockTransfer $stockTransfer, ShipStockTransfer $ship): JsonResponse
+    {
+        abort_unless(StockTransfer::moduleOn(), 404);
+        $transfer = $ship->handle($stockTransfer);
+
+        return $this->success($this->present($transfer->load(['items', 'fromWarehouse:id,name', 'toWarehouse:id,name'])), "Transfer {$transfer->transfer_number} shipped.");
+    }
+
+    /**
+     * Receive a shipped transfer, in full or in part, the same fields as the
+     * web: received_date, shortfall (return or lost) and per-line
+     * quantity_received (a line not given is received in full).
+     */
+    public function receive(Request $request, StockTransfer $stockTransfer, ReceiveStockTransfer $receive): JsonResponse
+    {
+        abort_unless(StockTransfer::moduleOn(), 404);
+        $validated = $request->validate([
+            'received_date' => ['nullable', 'date'],
+            'shortfall' => ['nullable', Rule::in([ReceiveStockTransfer::RETURN, ReceiveStockTransfer::LOST])],
+            'items' => ['nullable', 'array'],
+            'items.*.id' => ['required', Rule::exists('stock_transfer_items', 'id')->where('stock_transfer_id', $stockTransfer->id)],
+            'items.*.quantity_received' => ['nullable', 'numeric', 'min:0'],
+        ], [
+            'items.*.id.exists' => 'That line is not on this transfer.',
+        ]);
+
+        $received = collect($validated['items'] ?? [])->mapWithKeys(fn ($l) => [(int) $l['id'] => $l['quantity_received'] ?? null])->all();
+        $transfer = $receive->handle($stockTransfer, $received, $validated['shortfall'] ?? ReceiveStockTransfer::RETURN, $validated['received_date'] ?? null);
+
+        return $this->success($this->present($transfer->load(['items', 'fromWarehouse:id,name', 'toWarehouse:id,name'])), "Transfer {$transfer->transfer_number} received.");
     }
 
     /** @return array<string, mixed> */

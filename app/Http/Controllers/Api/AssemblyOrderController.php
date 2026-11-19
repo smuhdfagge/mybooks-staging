@@ -16,7 +16,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * Assembly over the API (session 14): list bills of materials, list and
  * read assembly orders, and create one, with "complete": true to complete
- * it at once (optionally with "quantity_made"). Same actions as the web.
+ * it at once (optionally with "quantity_made"); then complete a saved
+ * draft (mobile plan A1). Same actions as the web.
  */
 class AssemblyOrderController extends BaseApiController
 {
@@ -79,6 +80,32 @@ class AssemblyOrderController extends BaseApiController
         });
 
         return $this->created($this->present($order->load(['items', 'costs', 'billOfMaterial:id,item_id,name'])));
+    }
+
+    /**
+     * Complete a saved draft, the same fields as the web: quantity_made, and
+     * per line items[].quantity and costs[].amount, each defaulting to the
+     * plan.
+     */
+    public function complete(Request $request, AssemblyOrder $assemblyOrder, CompleteAssemblyOrder $complete): JsonResponse
+    {
+        abort_unless(AssemblyOrder::moduleOn(), 404);
+        $validated = $request->validate([
+            'quantity_made' => ['nullable', 'numeric', 'gt:0'],
+            'items' => ['nullable', 'array'],
+            'items.*.id' => ['required', 'integer'],
+            'items.*.quantity' => ['nullable', 'numeric', 'min:0'],
+            'costs' => ['nullable', 'array'],
+            'costs.*.id' => ['required', 'integer'],
+            'costs.*.amount' => ['nullable', 'numeric', 'min:0'],
+        ]);
+        $order = $complete->handle($assemblyOrder, [
+            'quantity_made' => $validated['quantity_made'] ?? null,
+            'items' => collect($validated['items'] ?? [])->mapWithKeys(fn ($l) => [(int) $l['id'] => $l['quantity'] ?? null])->all(),
+            'costs' => collect($validated['costs'] ?? [])->mapWithKeys(fn ($l) => [(int) $l['id'] => $l['amount'] ?? null])->all(),
+        ]);
+
+        return $this->success($this->present($order->load(['items', 'costs', 'billOfMaterial:id,item_id,name'])), "{$order->order_number} completed.");
     }
 
     /** @return array<string, mixed> */

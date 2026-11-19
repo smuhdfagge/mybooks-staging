@@ -13,6 +13,7 @@ use App\Traits\ValidatesAccountingPeriod;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -72,6 +73,12 @@ class Expense extends Model
     ];
 
     /** @return BelongsTo<Vendor, $this> */
+    /** Receipts uploaded from the mobile app (mobile plan A1). */
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(ExpenseAttachment::class)->orderBy('id');
+    }
+
     public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class);
@@ -394,6 +401,12 @@ class Expense extends Model
     {
         static::deleting(function ($expense) {
             ExpenseDeleting::dispatch($expense);
+        });
+
+        // A soft delete keeps the receipts (the expense can be restored);
+        // deleting it for good removes their files too.
+        static::forceDeleting(function ($expense) {
+            $expense->attachments()->get()->each->delete();
         });
     }
 
