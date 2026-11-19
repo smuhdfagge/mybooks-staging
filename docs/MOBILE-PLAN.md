@@ -444,4 +444,4 @@ parallel sessions once M4 is merged.
 | M14 | Push notifications | mobile | `mobile/m14-push` | Done | |
 | M15 | Release | mobile | `mobile/m15-release` | To do | |
 | A1 | API additions for the app | staging → live | `api/a1-mobile-gaps` | Done | |
-| A2 | API push notifications | staging → live | `api/a2-push` | To do | |
+| A2 | API push notifications | staging → live | `api/a2-push` | Done | |
