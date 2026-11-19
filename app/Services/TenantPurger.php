@@ -58,6 +58,7 @@ class TenantPurger
     public const USER_TABLES = [
         'model_has_roles', 'model_has_permissions', 'personal_access_tokens',
         'notifications', 'sessions', 'idempotency_keys', 'password_reset_tokens',
+        'user_devices', // phones for push notifications (mobile plan A2)
     ];
 
     /** Tables with no business data: never touched. */
@@ -182,7 +183,7 @@ class TenantPurger
             $deleted['notifications'] = DB::table('notifications')
                 ->whereIn('notifiable_type', $morphs)->whereIn('notifiable_id', $userIds)->delete();
         }
-        foreach (['sessions', 'idempotency_keys'] as $table) {
+        foreach (['sessions', 'idempotency_keys', 'user_devices'] as $table) {
             if (Schema::hasTable($table)) {
                 $deleted[$table] = DB::table($table)->whereIn('user_id', $userIds)->delete();
             }

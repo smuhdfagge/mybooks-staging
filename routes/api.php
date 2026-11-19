@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\BillController;
 use App\Http\Controllers\Api\ChartOfAccountController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\ExpenseAttachmentController;
 use App\Http\Controllers\Api\ExpenseController;
@@ -104,6 +105,13 @@ Route::prefix('v1')->group(function () {
             Route::post('refresh', [AuthController::class, 'refresh']);
             Route::put('profile', [AuthController::class, 'updateProfile']);
             Route::put('password', [AuthController::class, 'updatePassword']);
+        });
+
+        // Phones for push notifications (mobile plan A2): the signed-in
+        // user's own devices, so no permission beyond being signed in.
+        Route::middleware('throttle:api-write')->group(function () {
+            Route::post('devices', [DeviceController::class, 'store'])->name('api.devices.store');
+            Route::delete('devices/{token}', [DeviceController::class, 'destroy'])->where('token', '.+')->name('api.devices.destroy');
         });
 
         // Dashboard
