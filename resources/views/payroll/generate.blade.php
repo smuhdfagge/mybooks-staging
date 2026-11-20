@@ -145,6 +145,9 @@
                 }
             }
         }
+
+        // Registered for the CSP build of Alpine (audit MB-29), which can't call page globals.
+        document.addEventListener('alpine:init', () => Alpine.data('generatePayrollForm', generatePayrollForm));
     </script>
     @endpush
 </x-app-layout>

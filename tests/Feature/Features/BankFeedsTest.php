@@ -268,8 +268,9 @@ class BankFeedsTest extends TestCase
 
     private function hook(array $payload, ?string $secret = self::HOOK)
     {
-        return $this->withoutMiddleware(PreventRequestForgery::class)
-            ->postJson(route('bank-feeds.webhooks.mono'), $payload, $secret === null ? [] : ['mono-webhook-secret' => $secret]);
+        // Mono's server: nobody signed in.
+        return $this->signedOut(fn () => $this->withoutMiddleware(PreventRequestForgery::class)
+            ->postJson(route('bank-feeds.webhooks.mono'), $payload, $secret === null ? [] : ['mono-webhook-secret' => $secret]));
     }
 
     // ---- linking ----------------------------------------------------------
@@ -594,10 +595,10 @@ class BankFeedsTest extends TestCase
     {
         $this->link();
         // Plain POST with CSRF middleware on (not withoutMiddleware): still reaches the controller.
-        $this->postJson(route('bank-feeds.webhooks.mono'), ['event' => 'mono.events.account_updated'], ['mono-webhook-secret' => 'nope'])->assertStatus(401);
+        $this->signedOut(fn () => $this->postJson(route('bank-feeds.webhooks.mono'), ['event' => 'mono.events.account_updated'], ['mono-webhook-secret' => 'nope'])->assertStatus(401));
 
         config(['mybooks.features.bank_feeds' => false]);
-        $this->postJson(route('bank-feeds.webhooks.mono'), [], ['mono-webhook-secret' => self::HOOK])->assertNotFound();
+        $this->signedOut(fn () => $this->postJson(route('bank-feeds.webhooks.mono'), [], ['mono-webhook-secret' => self::HOOK])->assertNotFound());
     }
 
     // ---- matching ---------------------------------------------------------
@@ -1262,7 +1263,7 @@ class BankFeedsTest extends TestCase
         $done = app(BankFeedLinker::class)->complete($ref, null, 'acc_1');
 
         $this->assertSame('linked', $done->status);
-        $this->assertSame(1, $done->lines()->count());
+        $this->assertSame(1, Tenant::run($this->tenant, fn () => $done->lines()->count()));
         $this->assertSame($this->tenant->id, Bank::withoutGlobalScopes()->where('name', 'Fresh account')->value('tenant_id'));
         $this->assertInstanceOf(User::class, $this->user);
     }

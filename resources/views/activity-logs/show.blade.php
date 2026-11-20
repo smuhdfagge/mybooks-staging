@@ -149,7 +149,7 @@
                                             Previous Values
                                         @endif
                                     </h3>
-                                    <div class="space-y-2 max-h-96 overflow-y-auto">
+                                    <div class="space-y-2 max-h-96 overflow-y-auto rounded focus-ring" tabindex="0" role="region" aria-label="Previous values">
                                         @foreach($activityLog->old_values as $key => $value)
                                             <div class="flex justify-between py-1 border-b border-red-100 dark:border-red-800 last:border-0">
                                                 <span class="text-sm text-red-600 dark:text-red-300">
@@ -181,7 +181,7 @@
                                             New Values
                                         @endif
                                     </h3>
-                                    <div class="space-y-2 max-h-96 overflow-y-auto">
+                                    <div class="space-y-2 max-h-96 overflow-y-auto rounded focus-ring" tabindex="0" role="region" aria-label="New values">
                                         @foreach($activityLog->new_values as $key => $value)
                                             <div class="flex justify-between py-1 border-b border-green-100 dark:border-green-800 last:border-0">
                                                 <span class="text-sm text-green-700 dark:text-green-400">

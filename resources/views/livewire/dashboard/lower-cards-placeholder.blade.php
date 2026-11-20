@@ -1,4 +1,4 @@
-<div class="grid grid-cols-1 gap-4 lg:grid-cols-3" aria-busy="true" aria-label="Loading more cards">
+<div class="grid grid-cols-1 gap-4 lg:grid-cols-3" role="status" aria-busy="true" aria-label="Loading more cards">
     @foreach (range(1, 3) as $i)
         <div class="h-56 animate-pulse rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
             <div class="h-4 w-1/3 rounded bg-gray-200 dark:bg-gray-700"></div>

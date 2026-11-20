@@ -128,7 +128,7 @@ class Session2AlpineXssTest extends TestCase
         $this->get(route('invoices.create', ['customer_id' => $customer->id]))->assertOk()
             ->assertSee("selectedId: '{$customer->id}'", false);
         $this->get(route('imports.create', ['type' => Import::TYPE_CUSTOMERS]))->assertOk()
-            ->assertSee("selectedType: 'customers'", false);
+            ->assertSee(e(route('imports.template', ['type' => 'customers', 'format' => 'csv'])), false);
     }
 
     public function test_js_text_directive_escapes_quotes_and_drops_arrays(): void

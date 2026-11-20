@@ -31,7 +31,7 @@
                 </svg>
                 <span class="text-sm text-brand-700 dark:text-brand-300">Unsaved draft restored from your last session.</span>
             </div>
-            <button type="button" @click="clearDraft(); hasRestored = false" class="text-xs text-brand-600 dark:text-brand-300 hover:underline">
+            <button type="button" @click="$do(clearDraft(), hasRestored = false)" class="text-xs text-brand-600 dark:text-brand-300 hover:underline">
                 Discard draft
             </button>
         </div>
@@ -50,6 +50,8 @@
             storageKey: 'mybooks_draft_' + formKey,
 
             save() {
+                // Signing out cleared the drafts: a save still pending must not write one back.
+                if (window.mybooksDraftsCleared) return;
                 const form = this.$el.querySelector('form') || this.$el.closest('form');
                 if (!form) return;
 

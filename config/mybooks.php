@@ -388,4 +388,56 @@ return [
         'max_per_hour' => (int) env('ERROR_ALERT_MAX_PER_HOUR', 20),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Automatic deploys
+    |--------------------------------------------------------------------------
+    |
+    | The host pulls new code on a merge but runs none of deploy.sh. In
+    | production the scheduler notices the new commit within a minute and
+    | runs deploy.sh (mybooks:deploy-if-pulled). MYBOOKS_COMPOSER_BIN is the
+    | path to Composer when cron cannot find it on its own. Only the branch
+    | named here is deployed, so a copy of the site on another branch is
+    | left alone.
+    |
+    */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Free trial
+    |--------------------------------------------------------------------------
+    |
+    | A business that signs up for a paid plan can use it free for this many
+    | days, with no card asked for. When the trial ends it needs paying for,
+    | as any lapsed plan does; the data stays. 0 turns trials off: sign-up
+    | then waits for payment, as before.
+    |
+    */
+
+    'trial_days' => max(0, (int) env('MYBOOKS_TRIAL_DAYS', 10)),
+
+    'auto_deploy' => [
+        'enabled' => (bool) env('MYBOOKS_AUTO_DEPLOY', true),
+        'composer' => env('MYBOOKS_COMPOSER_BIN'),
+        'script' => base_path('scripts/deploy.sh'),
+        'branch' => env('MYBOOKS_AUTO_DEPLOY_BRANCH', 'main'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mobile app versions (mobile plan A1)
+    |--------------------------------------------------------------------------
+    |
+    | Answered by GET /api/v1/app/version. An app older than min_version must
+    | update before it can be used; one older than latest_version is told an
+    | update is ready. Versions are plain x.y.z.
+    |
+    */
+    'mobile_app' => [
+        'min_version' => env('MYBOOKS_APP_MIN_VERSION', '1.0.0'),
+        'latest_version' => env('MYBOOKS_APP_LATEST_VERSION', '1.0.0'),
+        'ios_store_url' => env('MYBOOKS_APP_IOS_URL'),
+        'android_store_url' => env('MYBOOKS_APP_ANDROID_URL'),
+    ],
+
 ];

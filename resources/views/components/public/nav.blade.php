@@ -10,7 +10,7 @@
         // Pages of their own, so a search engine can find them (SEO plan).
         ['Pricing', route('pricing')],
         ['Guides', route('guides.index')],
-        ['For accountants', $home.'#accountants'],
+        ['For accountants', route('partners')],
     ];
     $link = 'rounded text-[0.95rem] font-medium text-gray-600 hover:text-gray-900 focus-ring dark:text-gray-300 dark:hover:text-white';
 @endphp

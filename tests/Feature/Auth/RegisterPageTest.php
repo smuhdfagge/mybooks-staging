@@ -76,7 +76,8 @@ class RegisterPageTest extends TestCase
         $this->assertAuthenticatedAs($user);
 
         $sub = Subscription::where('tenant_id', $tenant->id)->firstOrFail();
-        $this->assertSame(Subscription::STATUS_PENDING, $sub->status);
+        // A paid plan starts on its free trial (FreeTrialTest).
+        $this->assertSame(Subscription::STATUS_TRIALING, $sub->status);
         $this->assertSame('monthly', $sub->billing_cycle);
     }
 

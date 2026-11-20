@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Journal;
 use App\Models\Payroll;
+use App\Models\Tenant;
 use App\Services\JournalService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,13 @@ class FixPayrollJournals extends Command
     {
         $tenantId = (int) $this->argument('tenant_id');
 
+        // One business, set up front (audit MB-26): the employee eager load
+        // below is tenant-scoped too.
+        return Tenant::run($tenantId, fn () => $this->fix($tenantId, $journalService));
+    }
+
+    private function fix(int $tenantId, JournalService $journalService): int
+    {
         $paidPayrolls = Payroll::withoutGlobalScopes()
             ->where('tenant_id', $tenantId)
             ->where('status', 'paid')

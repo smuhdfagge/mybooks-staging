@@ -34,48 +34,8 @@
     $listId = $id.'-listbox';
 @endphp
 
-<div x-data="{
-    open: false,
-    search: '',
-    active: -1,
-    selected: @js((string) $value),
-    options: @js($normalized),
-    placeholder: @js($placeholder),
-    get filtered() {
-        if (!this.search) return [{ v: '', l: this.placeholder }].concat(this.options);
-        const q = this.search.toLowerCase();
-        return this.options.filter(o => o.l.toLowerCase().includes(q));
-    },
-    get selectedLabel() {
-        const found = this.options.find(o => o.v === this.selected);
-        return found ? found.l : '';
-    },
-    optionId(i) { return @js($listId) + '-' + i; },
-    show() {
-        this.open = true;
-        this.active = Math.max(0, this.filtered.findIndex(o => o.v === this.selected));
-        this.reveal();
-    },
-    close() { this.open = false; this.search = ''; this.active = -1; },
-    move(to) {
-        if (!this.open) { this.show(); return; }
-        const n = this.filtered.length;
-        if (!n) return;
-        this.active = to === 'first' ? 0 : to === 'last' ? n - 1 : (this.active + to + n) % n;
-        this.reveal();
-    },
-    reveal() {
-        this.$nextTick(() => { const el = document.getElementById(this.optionId(this.active)); if (el) el.scrollIntoView({ block: 'nearest' }); });
-    },
-    typed(text) { this.search = text; this.open = true; this.active = this.filtered.length ? 0 : -1; },
-    choose(val) {
-        this.selected = val;
-        this.close();
-        this.$refs.value.value = val;
-        this.$refs.value.dispatchEvent(new Event('change', { bubbles: true }));
-    },
-    pickActive() { const o = this.filtered[this.active]; if (o) this.choose(o.v); }
-}" @click.outside="close()" class="relative">
+{{-- The behaviour is the searchableDropdown component (resources/js/alpine-csp.js). --}}
+<div x-data="searchableDropdown({ selected: @js((string) $value), options: @js($normalized), placeholder: @js($placeholder), listId: @js($listId) })" @click.outside="close()" class="relative">
     @if($label)
         <label for="{{ $id }}" class="form-label">{{ $label }}</label>
     @endif
@@ -92,10 +52,10 @@
             @click="open ? close() : show()"
             @keydown.arrow-down.prevent="move(1)"
             @keydown.arrow-up.prevent="move(-1)"
-            @keydown.home="open && ($event.preventDefault(), move('first'))"
-            @keydown.end="open && ($event.preventDefault(), move('last'))"
-            @keydown.enter="open && ($event.preventDefault(), pickActive())"
-            @keydown.escape="open && ($event.stopPropagation(), close())"
+            @keydown.home="onKey($event, 'first')"
+            @keydown.end="onKey($event, 'last')"
+            @keydown.enter="onKey($event, 'pick')"
+            @keydown.escape="onKey($event, 'escape')"
             @keydown.tab="close()"
             class="w-full rounded-md border shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm pl-3 pr-8 py-2 bg-white dark:bg-gray-700 dark:text-gray-300 placeholder-gray-500 dark:placeholder-gray-400 {{ $hasError ? 'border-red-500' : 'border-gray-300 dark:border-gray-600' }}">
         <svg aria-hidden="true" class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

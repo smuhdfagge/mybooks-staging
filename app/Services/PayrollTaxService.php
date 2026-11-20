@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Employee;
 use App\Models\EmployeeLoan;
+use App\Models\Payroll;
 use App\Models\TaxBracket;
 use App\Models\Tenant;
 use App\Support\Money;
@@ -151,6 +152,45 @@ class PayrollTaxService
         }
 
         return round(min($rent * self::RENT_RELIEF_RATE, self::RENT_RELIEF_CAP) / 12, 2);
+    }
+
+    /**
+     * PAYE for a payslip whose pay is being edited (audit MB-39), worked
+     * out as the pay run does: the edited basic, allowances and overtime,
+     * less the payslip's reliefs: its non-taxable allowances (no more than
+     * the allowances now on it), its pre-tax deductions (a percentage one,
+     * such as pension or NHF, taken again on the edited pay) and rent
+     * relief; on the business's tax table, else the flat rate the payslip
+     * was worked out at.
+     *
+     * @return array{tax: float, breakdown: array, method: string}
+     */
+    public function payeForEdit(Payroll $payroll, float $basic, float $allowances, float $overtime): array
+    {
+        $allowanceDetails = $payroll->allowance_details ?? [];
+        $nonTaxable = min($allowances, (float) collect($allowanceDetails)->filter(fn ($a) => ! ($a['is_taxable'] ?? true))->sum('amount'));
+
+        $preTax = 0.0;
+        foreach ($payroll->deduction_details ?? [] as $deduction) {
+            if (($deduction['pre_tax'] ?? false) !== true) {
+                continue;
+            }
+            $preTax += ($deduction['amount_type'] ?? null) === 'percentage'
+                ? Money::percent(match ($deduction['_statutory'] ?? null) {
+                    'pension' => $this->pensionablePay($basic, $allowanceDetails),
+                    'nhf' => $basic,
+                    default => $basic + $allowances, // a structure deduction: a share of gross, as payslipFigures takes it
+                }, $deduction['rate'] ?? 0)
+                : (float) ($deduction['amount'] ?? 0);
+        }
+
+        $rent = $payroll->employee ? $this->monthlyRentRelief($payroll->employee) : 0.0;
+        $method = collect($payroll->deduction_details ?? [])->firstWhere('name', '_tax_method');
+        $flat = (float) (collect($method['breakdown'] ?? [])->firstWhere('bracket', 'Flat Rate')['rate'] ?? 0);
+
+        $taxable = $basic + $allowances + $overtime - $nonTaxable - $preTax - $rent;
+
+        return $this->calculateTax(max(0, $taxable), (int) $payroll->tenant_id, $flat, 'monthly');
     }
 
     /**

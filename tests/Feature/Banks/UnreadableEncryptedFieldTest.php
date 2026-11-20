@@ -49,7 +49,7 @@ class UnreadableEncryptedFieldTest extends TestCase
         $bank = Bank::factory()->create(['account_number' => '0123456789']);
         $this->corrupt('banks', $bank->id, 'account_number');
 
-        $fresh = Bank::find($bank->id);
+        $fresh = Bank::withoutGlobalScope('tenant')->find($bank->id);
 
         $this->assertNull($fresh->account_number);
         $this->assertSame($bank->name, $fresh->name, 'The rest of the row still reads normally.');
@@ -61,7 +61,7 @@ class UnreadableEncryptedFieldTest extends TestCase
 
         // The cast still encrypts and decrypts ordinary values, in the same
         // format as before, so existing rows keep working.
-        $this->assertSame('0123456789', Bank::find($bank->id)->account_number);
+        $this->assertSame('0123456789', Bank::withoutGlobalScope('tenant')->find($bank->id)->account_number);
         $this->assertNotSame('0123456789', DB::table('banks')->where('id', $bank->id)->value('account_number'));
     }
 
@@ -71,7 +71,7 @@ class UnreadableEncryptedFieldTest extends TestCase
         $bank = Bank::factory()->create(['account_number' => '0123456789']);
         $this->corrupt('banks', $bank->id, 'account_number');
 
-        Bank::find($bank->id)->account_number;
+        Bank::withoutGlobalScope('tenant')->find($bank->id)->account_number;
 
         // Otherwise a blank field looks like data nobody ever entered.
         Log::shouldHaveReceived('warning')->once();
@@ -95,10 +95,10 @@ class UnreadableEncryptedFieldTest extends TestCase
         // down as well.
         $customer = Customer::factory()->create(['tax_number' => '12345678-0001']);
         $this->corrupt('customers', $customer->id, 'tax_number');
-        $this->assertNull(Customer::find($customer->id)->tax_number);
+        $this->assertNull(Customer::withoutGlobalScope('tenant')->find($customer->id)->tax_number);
 
         $vendor = Vendor::factory()->create(['tax_number' => '12345678-0002']);
         $this->corrupt('vendors', $vendor->id, 'tax_number');
-        $this->assertNull(Vendor::find($vendor->id)->tax_number);
+        $this->assertNull(Vendor::withoutGlobalScope('tenant')->find($vendor->id)->tax_number);
     }
 }

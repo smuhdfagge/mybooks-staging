@@ -8,7 +8,9 @@ use App\Models\Payroll;
 use App\Models\SalaryStructureVersion;
 use App\Services\Reports\PayrollReportService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * Payroll reports and their exports.
@@ -18,36 +20,65 @@ use Illuminate\Http\Request;
  */
 class PayrollReportController extends ReportController
 {
+    /**
+     * Approved and paid payslips with a pay date in the period (T6: not
+     * drafts or cancelled runs).
+     *
+     * @return Builder<Payroll>
+     */
+    private function paidIn(int $tenantId, string $startDate, string $endDate): Builder
+    {
+        return Payroll::where('tenant_id', $tenantId)
+            ->whereIn('status', [Payroll::STATUS_APPROVED, Payroll::STATUS_PAID])
+            ->whereBetween('pay_date', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()]);
+    }
+
+    /**
+     * Pay per employee, added up in the database, largest gross first.
+     *
+     * One page of rows with $perPage, else all of them (a collection).
+     *
+     * @param  Builder<Payroll>  $payslips
+     */
+    private function byEmployee(Builder $payslips, ?int $perPage = null)
+    {
+        $query = (clone $payslips)->reorder()->toBase()
+            ->selectRaw('employee_id, COUNT(*) as payslips, COALESCE(SUM(gross_salary), 0) as gross, COALESCE(SUM(total_deductions), 0) as deductions, COALESCE(SUM(net_salary), 0) as net')
+            ->groupBy('employee_id')->orderByDesc('gross')->orderBy('employee_id');
+        $rows = $perPage ? $query->paginate($perPage)->withQueryString() : $query->get();
+
+        $ids = collect($rows instanceof LengthAwarePaginator ? $rows->items() : $rows)->pluck('employee_id')->filter()->all();
+        $employees = Employee::whereIn('id', $ids)->get()->keyBy('id');
+        $shape = fn ($row) => [
+            'employee' => $employees->get($row->employee_id),
+            'gross' => round((float) $row->gross, 2),
+            'deductions' => round((float) $row->deductions, 2),
+            'net' => round((float) $row->net, 2),
+            'count' => (int) $row->payslips,
+        ];
+
+        return $rows instanceof LengthAwarePaginator ? $rows->through($shape) : $rows->map($shape)->values();
+    }
+
     public function payrollSummary(Request $request)
     {
         $tenantId = auth()->user()->tenant_id;
         $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->get('end_date', now()->format('Y-m-d'));
 
-        $payrolls = Payroll::where('tenant_id', $tenantId)
-            ->whereIn('status', [Payroll::STATUS_APPROVED, Payroll::STATUS_PAID]) // not drafts or cancelled runs (T6)
-            ->whereBetween('pay_date', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()])
-            ->with('employee')
-            ->get();
-
-        $totalGross = $payrolls->sum('gross_salary');
-        $totalDeductions = $payrolls->sum('total_deductions');
-        $totalNet = $payrolls->sum('net_salary');
-
-        // Group by employee
-        $byEmployee = $payrolls->groupBy('employee_id')->map(function ($records) {
-            return [
-                'employee' => $records->first()->employee,
-                'gross' => $records->sum('gross_salary'),
-                'deductions' => $records->sum('total_deductions'),
-                'net' => $records->sum('net_salary'),
-                'count' => $records->count(),
-            ];
-        })->values();
+        // Totals over the period, one page of employees (audit MB-45).
+        $payslips = $this->paidIn($tenantId, $startDate, $endDate);
+        $sums = app(PayrollReportService::class)->sums($payslips, ['gross_salary', 'total_deductions', 'net_salary']);
+        $totalGross = $sums['gross_salary'];
+        $totalDeductions = $sums['total_deductions'];
+        $totalNet = $sums['net_salary'];
+        $payslipCount = $sums['payslips'];
+        $employeeCount = $sums['employees'];
+        $byEmployee = $this->byEmployee($payslips, PayrollReportService::PER_PAGE);
 
         return view('reports.payroll-summary', compact(
-            'payrolls', 'byEmployee', 'totalGross', 'totalDeductions',
-            'totalNet', 'startDate', 'endDate'
+            'byEmployee', 'totalGross', 'totalDeductions', 'totalNet',
+            'payslipCount', 'employeeCount', 'startDate', 'endDate'
         ));
     }
 
@@ -103,29 +134,38 @@ class PayrollReportController extends ReportController
             ->orderBy('first_name')
             ->get();
 
-        $query = Payroll::where('tenant_id', $tenantId)
-            ->whereIn('status', [Payroll::STATUS_APPROVED, Payroll::STATUS_PAID]) // not drafts or cancelled runs (T6)
-            ->whereBetween('pay_date', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()])
-            ->with('employee.department');
+        $query = $this->earningsQuery($tenantId, $startDate, $endDate, $employeeId);
 
-        if ($employeeId) {
-            $query->where('employee_id', $employeeId);
-        }
-
-        $payrolls = $query->orderBy('pay_date', 'desc')->get();
-
-        $totalGross = $payrolls->sum('gross_salary');
-        $totalAllowances = $payrolls->sum('allowances');
-        $totalOvertime = $payrolls->sum('overtime_amount');
-        $totalTax = $payrolls->sum('tax_deduction');
-        $totalDeductions = $payrolls->sum('total_deductions');
-        $totalNet = $payrolls->sum('net_salary');
+        // One page of payslips, totals over the period (audit MB-45).
+        // A copy: paginate() puts the page's LIMIT/OFFSET on the query, which the totals must not have.
+        $payrolls = (clone $query)->paginate(PayrollReportService::PER_PAGE)->withQueryString();
+        $sums = app(PayrollReportService::class)->sums($query, ['basic_salary', 'allowances', 'overtime_amount', 'gross_salary', 'tax_deduction', 'total_deductions', 'net_salary']);
+        $totalBasic = $sums['basic_salary'];
+        $totalGross = $sums['gross_salary'];
+        $totalAllowances = $sums['allowances'];
+        $totalOvertime = $sums['overtime_amount'];
+        $totalTax = $sums['tax_deduction'];
+        $totalDeductions = $sums['total_deductions'];
+        $totalNet = $sums['net_salary'];
 
         return view('reports.employee-earnings', compact(
-            'payrolls', 'employees', 'totalGross', 'totalAllowances',
+            'payrolls', 'employees', 'totalBasic', 'totalGross', 'totalAllowances',
             'totalOvertime', 'totalTax', 'totalDeductions', 'totalNet',
             'startDate', 'endDate', 'employeeId'
         ));
+    }
+
+    /**
+     * Employee earnings: approved and paid payslips, newest first.
+     *
+     * @return Builder<Payroll>
+     */
+    private function earningsQuery(int $tenantId, string $startDate, string $endDate, $employeeId): Builder
+    {
+        return $this->paidIn($tenantId, $startDate, $endDate)
+            ->with('employee.department')
+            ->when($employeeId, fn ($q) => $q->where('employee_id', $employeeId))
+            ->orderBy('pay_date', 'desc')->orderBy('id', 'desc');
     }
 
     /**
@@ -140,7 +180,7 @@ class PayrollReportController extends ReportController
         $departments = Department::where('tenant_id', $tenantId)->orderBy('name')->get();
 
         return view('reports.payroll-register', app(PayrollReportService::class)
-            ->payrollRegister($tenantId, $month, $status, $departmentId)
+            ->payrollRegister($tenantId, $month, $status, $departmentId, PayrollReportService::PER_PAGE)
             + compact('departments', 'month', 'status', 'departmentId'));
     }
 
@@ -196,7 +236,7 @@ class PayrollReportController extends ReportController
         $paymentMethod = $request->get('payment_method');
 
         return view('reports.bank-disbursement', app(PayrollReportService::class)
-            ->bankDisbursement(auth()->user()->tenant_id, $startDate, $endDate, $status, $paymentMethod)
+            ->bankDisbursement(auth()->user()->tenant_id, $startDate, $endDate, $status, $paymentMethod, PayrollReportService::PER_PAGE)
             + compact('startDate', 'endDate', 'status', 'paymentMethod'));
     }
 
@@ -224,36 +264,25 @@ class PayrollReportController extends ReportController
         $endDate = $request->get('end_date', now()->format('Y-m-d'));
         $format = $request->get('format', 'pdf');
 
-        $payrolls = Payroll::where('tenant_id', $tenantId)
-            ->whereIn('status', [Payroll::STATUS_APPROVED, Payroll::STATUS_PAID]) // not drafts or cancelled runs (T6)
-            ->whereBetween('pay_date', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()])
-            ->with('employee')
-            ->get();
-
-        $totalGross = $payrolls->sum('gross_salary');
-        $totalDeductions = $payrolls->sum('total_deductions');
-        $totalNet = $payrolls->sum('net_salary');
-
-        $byEmployee = $payrolls->groupBy('employee_id')->map(function ($records) {
-            return [
-                'employee' => $records->first()->employee,
-                'gross' => $records->sum('gross_salary'),
-                'deductions' => $records->sum('total_deductions'),
-                'net' => $records->sum('net_salary'),
-                'count' => $records->count(),
-            ];
-        })->values();
-
-        $data = compact('payrolls', 'byEmployee', 'totalGross', 'totalDeductions', 'totalNet', 'startDate', 'endDate');
+        $payslips = $this->paidIn($tenantId, $startDate, $endDate);
+        $byEmployee = $this->byEmployee($payslips); // one row per employee, added up in the database
 
         if ($format === 'csv') {
-            $exportData = $this->exportService->payrollSummaryData($payrolls, $byEmployee);
+            $exportData = $this->exportService->payrollSummaryData(null, $byEmployee);
 
             return $this->exportService
                 ->setTitle('Payroll Summary')
                 ->setFilters(['Period' => "$startDate to $endDate"])
                 ->exportToCsv($exportData['rows'], $exportData['headers']);
         }
+
+        // The PDF lists every payslip too.
+        $payrolls = (clone $payslips)->with('employee')->orderBy('pay_date')->get();
+        $sums = app(PayrollReportService::class)->sums($payslips, ['gross_salary', 'total_deductions', 'net_salary']);
+        $totalGross = $sums['gross_salary'];
+        $totalDeductions = $sums['total_deductions'];
+        $totalNet = $sums['net_salary'];
+        $data = compact('payrolls', 'byEmployee', 'totalGross', 'totalDeductions', 'totalNet', 'startDate', 'endDate');
 
         return $this->exportService
             ->setTitle('Payroll Summary')
@@ -328,34 +357,27 @@ class PayrollReportController extends ReportController
         $employeeId = $request->get('employee_id');
         $format = $request->get('format', 'pdf');
 
-        $query = Payroll::where('tenant_id', $tenantId)
-            ->whereIn('status', [Payroll::STATUS_APPROVED, Payroll::STATUS_PAID]) // not drafts or cancelled runs (T6)
-            ->whereBetween('pay_date', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()])
-            ->with('employee.department');
-
-        if ($employeeId) {
-            $query->where('employee_id', $employeeId);
-        }
-
-        $payrolls = $query->orderBy('pay_date', 'desc')->get();
-
-        $totalGross = $payrolls->sum('gross_salary');
-        $totalAllowances = $payrolls->sum('allowances');
-        $totalOvertime = $payrolls->sum('overtime_amount');
-        $totalTax = $payrolls->sum('tax_deduction');
-        $totalDeductions = $payrolls->sum('total_deductions');
-        $totalNet = $payrolls->sum('net_salary');
-
-        $data = compact('payrolls', 'totalGross', 'totalAllowances', 'totalOvertime', 'totalTax', 'totalDeductions', 'totalNet', 'startDate', 'endDate');
+        $query = $this->earningsQuery($tenantId, $startDate, $endDate, $employeeId);
 
         if ($format === 'csv') {
-            $exportData = $this->exportService->employeeEarningsData($payrolls);
+            // Read in chunks as the file is written (audit MB-45).
+            $exportData = $this->exportService->employeeEarningsData($query->lazy(500));
 
             return $this->exportService
                 ->setTitle('Employee Earnings')
                 ->setFilters(['Period' => "$startDate to $endDate"])
                 ->exportToCsv($exportData['rows'], $exportData['headers']);
         }
+
+        $payrolls = $query->get();
+        $sums = app(PayrollReportService::class)->sums($query, ['gross_salary', 'allowances', 'overtime_amount', 'tax_deduction', 'total_deductions', 'net_salary']);
+        $totalGross = $sums['gross_salary'];
+        $totalAllowances = $sums['allowances'];
+        $totalOvertime = $sums['overtime_amount'];
+        $totalTax = $sums['tax_deduction'];
+        $totalDeductions = $sums['total_deductions'];
+        $totalNet = $sums['net_salary'];
+        $data = compact('payrolls', 'totalGross', 'totalAllowances', 'totalOvertime', 'totalTax', 'totalDeductions', 'totalNet', 'startDate', 'endDate');
 
         return $this->exportService
             ->setTitle('Employee Earnings')
@@ -373,45 +395,19 @@ class PayrollReportController extends ReportController
         $status = $request->get('status');
         $departmentId = $request->get('department_id');
         $format = $request->get('format', 'pdf');
-
-        $startDate = Carbon::parse($month.'-01')->startOfMonth();
-        $endDate = $startDate->copy()->endOfMonth();
-
-        $query = Payroll::where('tenant_id', $tenantId)
-            ->whereBetween('pay_period_start', [$startDate, $endDate])
-            ->with(['employee.department', 'salaryStructure']);
-
-        if ($status) {
-            $query->where('status', $status);
-        }
-        if ($departmentId) {
-            $query->whereHas('employee', fn ($q) => $q->where('department_id', $departmentId));
-        }
-
-        $payrolls = $query->orderBy('payroll_number')->get();
-
-        $totals = [
-            'basic_salary' => $payrolls->sum('basic_salary'),
-            'allowances' => $payrolls->sum('allowances'),
-            'overtime_amount' => $payrolls->sum('overtime_amount'),
-            'gross_salary' => $payrolls->sum('gross_salary'),
-            'tax_deduction' => $payrolls->sum('tax_deduction'),
-            'other_deductions' => $payrolls->sum('other_deductions'),
-            'total_deductions' => $payrolls->sum('total_deductions'),
-            'net_salary' => $payrolls->sum('net_salary'),
-            'employer_contributions' => $payrolls->sum('employer_contributions'),
-        ];
-
-        $data = compact('payrolls', 'totals', 'month', 'startDate', 'endDate');
+        $reports = app(PayrollReportService::class);
 
         if ($format === 'csv') {
-            $exportData = $this->exportService->payrollRegisterData($payrolls);
+            // Read in chunks as the file is written (audit MB-45).
+            $exportData = $this->exportService->payrollRegisterData($reports->registerQuery($tenantId, $month, $status, $departmentId)->lazy(500));
 
             return $this->exportService
                 ->setTitle('Payroll Register')
                 ->setFilters(['Month' => $month])
                 ->exportToCsv($exportData['rows'], $exportData['headers']);
         }
+
+        $data = $reports->payrollRegister($tenantId, $month, $status, $departmentId) + compact('month');
 
         return $this->exportService
             ->setTitle('Payroll Register')
@@ -617,28 +613,24 @@ class PayrollReportController extends ReportController
         $status = $request->get('status', Payroll::STATUS_APPROVED);
         $format = $request->get('format', 'csv');
 
-        $query = Payroll::where('tenant_id', $tenantId)
-            ->whereBetween('pay_date', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()])
-            ->with('employee')
-            ->orderBy('payroll_number');
-
-        if ($status) {
-            $query->where('status', $status);
-        }
-
-        $payrolls = $query->get();
-        $totals = ['count' => $payrolls->count(), 'total_net' => (float) $payrolls->sum('net_salary')];
-
-        $data = compact('payrolls', 'totals', 'startDate', 'endDate');
+        $reports = app(PayrollReportService::class);
+        // The page's "Paid by" filter applies to the file too.
+        $query = $reports->bankDisbursementQuery($tenantId, $startDate, $endDate, $status, $request->get('payment_method'));
 
         if ($format === 'csv') {
-            $exportData = $this->exportService->bankDisbursementData($payrolls);
+            // Read in chunks as the file is written (audit MB-45).
+            $exportData = $this->exportService->bankDisbursementData($query->lazy(500));
 
             return $this->exportService
                 ->setTitle('Bank Disbursement')
                 ->setFilters(['Period' => "$startDate to $endDate"])
                 ->exportToCsv($exportData['rows'], $exportData['headers']);
         }
+
+        $payrolls = $query->get();
+        $sums = $reports->sums($query, ['net_salary']);
+        $totals = ['count' => $sums['payslips'], 'total_net' => (float) $sums['net_salary']];
+        $data = compact('payrolls', 'totals', 'startDate', 'endDate');
 
         return $this->exportService
             ->setTitle('Bank Disbursement')

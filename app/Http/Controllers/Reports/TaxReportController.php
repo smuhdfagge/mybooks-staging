@@ -103,7 +103,7 @@ class TaxReportController extends ReportController
             ->groupBy('period')
             ->orderBy('period');
 
-        $taxCollected = $taxCollectedQuery->get();
+        $taxCollected = $taxCollectedQuery->toBase()->get(); // plain rows: the sums are not invoice columns
 
         // Tax Paid (Input VAT / Purchase Tax)
         $taxPaidQuery = Bill::select(
@@ -118,7 +118,7 @@ class TaxReportController extends ReportController
             ->groupBy('period')
             ->orderBy('period');
 
-        $taxPaid = $taxPaidQuery->get();
+        $taxPaid = $taxPaidQuery->toBase()->get();
 
         // Tax by Rate breakdown
         $taxByRateOutput = InvoiceItem::select(
@@ -242,7 +242,7 @@ class TaxReportController extends ReportController
             case 'month':
             default:
                 try {
-                    return Carbon::createFromFormat('Y-m', $period)->format('F Y');
+                    return Carbon::createFromFormat('!Y-m', $period)->format('F Y');
                 } catch (\Exception $e) {
                     return $period;
                 }

@@ -17,25 +17,11 @@
 @endphp
 
 @if($dates['staff'] || $dates['all_users'])
-    <div x-data="{
+    <div x-data="lockDateNotice({
             field: @js($field), staff: @js($dates['staff']?->toDateString()), all: @js($dates['all_users']?->toDateString()),
             staffLabel: @js($dates['staff']?->format('j M Y')), allLabel: @js($dates['all_users']?->format('j M Y')),
-            override: @js($override), date: '',
-            init() {
-                const input = (this.$el.closest('form') || document).querySelector(`[name='${this.field}']`) || document.querySelector(`[name='${this.field}']`);
-                if (! input) return;
-                const read = () => { this.date = input.value || ''; };
-                read();
-                input.addEventListener('input', read);
-                input.addEventListener('change', read);
-            },
-            get state() {
-                if (! this.date) return '';
-                if (this.all && this.date <= this.all) return 'all';
-                if (this.staff && this.date <= this.staff) return this.override ? 'warn' : 'staff';
-                return '';
-            },
-         }"
+            override: @js($override),
+         })"
          x-show="state !== ''" x-cloak role="status" data-lock-date-notice
          {{ $attributes->merge(['class' => 'mb-4']) }}>
         <div x-show="state === 'all'" class="rounded-md border border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-700 p-3 text-sm text-red-800 dark:text-red-200">

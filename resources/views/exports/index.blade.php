@@ -43,7 +43,7 @@
 
         @if ($busy)
             {{-- Built on the queue (P3): reload until ready. --}}
-            <p class="text-sm text-gray-600 dark:text-gray-400" role="status" x-data x-init="setTimeout(() => window.location.reload(), 5000)">Preparing your export. This page refreshes by itself.</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400" role="status" x-data="reloadAfter(5000)">Preparing your export. This page refreshes by itself.</p>
         @endif
 
         @if ($exports->isEmpty())

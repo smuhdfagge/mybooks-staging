@@ -94,10 +94,11 @@ class AutoRenewalTest extends TestCase
     {
         $body = json_encode($event);
 
-        return $this->call('POST', route('billing.webhook'), [], [], [], [
+        // Paystack's server: nobody signed in.
+        return $this->signedOut(fn () => $this->call('POST', route('billing.webhook'), [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_PAYSTACK_SIGNATURE' => hash_hmac('sha512', $body, $secret),
-        ], $body);
+        ], $body));
     }
 
     /** Pay through checkout and have Paystack confirm it by webhook. */
@@ -217,7 +218,10 @@ class AutoRenewalTest extends TestCase
 
         Livewire::test(SubscriptionManager::class)->call('toggleAutoRenew')->assertForbidden();
         Livewire::test(SubscriptionManager::class)->call('removeCard')->assertForbidden();
-        $this->get(route('settings.subscription'))->assertOk()->assertDontSee('4081');
+        // The card as the page shows it, not the bare digits: the page's random
+        // tokens (CSRF, CSP nonce, Livewire ids) can contain "4081" by chance,
+        // which failed CI on mybooks-live main (November 2026).
+        $this->get(route('settings.subscription'))->assertOk()->assertDontSee('•••• 4081');
 
         $this->assertTrue(BillingCard::sole()->auto_renew);
     }

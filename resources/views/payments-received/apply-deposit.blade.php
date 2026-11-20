@@ -59,7 +59,7 @@
                                     class="form-control @error('amount') border-red-500 @enderror" @error('amount') aria-invalid="true" aria-describedby="amount-error" @enderror>
                             </div>
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" x-show="selectedInvoice">
-                                Maximum: <span x-text="formatMoney(maxAmount)"></span>
+                                Maximum: <span x-text="$money(maxAmount)"></span>
                             </p>
                             @error('amount')
                                 <p id="amount-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -174,6 +174,9 @@
                 }
             }
         }
+
+        // Registered for the CSP build of Alpine (audit MB-29), which can't call page globals.
+        document.addEventListener('alpine:init', () => Alpine.data('applyDepositForm', applyDepositForm));
     </script>
     @endpush
 </x-app-layout>

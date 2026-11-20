@@ -71,6 +71,7 @@
                     </tr>
                 </x-slot>
             </x-table>
+            {{ $payrolls->links() }}
             <p class="text-xs text-gray-600 dark:text-gray-400">Only the last four digits of account numbers show here. The bank file from a payroll run has them in full.</p>
         @endif
     </x-report.sheet>

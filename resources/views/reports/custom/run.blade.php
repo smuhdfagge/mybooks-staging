@@ -36,9 +36,10 @@
 
         <p class="text-sm text-gray-600 dark:text-gray-400">
             {{ number_format($data->count()) }} {{ \Illuminate\Support\Str::plural('record', $data->count()) }}@if ($grouped), grouped by {{ $columnLabels[$customReport->group_by] ?? $customReport->group_by }}@endif.
-            @foreach ($customReport->filters ?? [] as $filter)
+            @foreach ($appliedFilters ?? [] as $filter)
+                @php $filterValue = $filter['value'] ?? ''; @endphp
                 @if ($loop->first) Only where @endif
-                {{ $columnLabels[$filter['column']] ?? $filter['column'] }} {{ strtolower($operators[$filter['operator']] ?? $filter['operator']) }}@if (! in_array($filter['operator'], ['is_null', 'is_not_null'])) "{{ $filter['value'] }}"@endif{{ $loop->last ? '.' : ';' }}
+                {{ $columnLabels[$filter['column']] ?? $filter['column'] }} {{ strtolower($operators[$filter['operator']] ?? $filter['operator']) }}@if (! in_array($filter['operator'], ['is_null', 'is_not_null'])) "{{ is_array($filterValue) ? implode($filter['operator'] === 'between' ? ' and ' : ', ', $filterValue) : $filterValue }}"@endif{{ $loop->last ? '.' : ';' }}
             @endforeach
         </p>
         @if ($truncated ?? false)

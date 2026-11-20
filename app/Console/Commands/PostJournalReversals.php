@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Http\Middleware\EnsureFeatureEnabled;
 use App\Models\Journal;
+use App\Models\Tenant;
 use App\Services\JournalService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
@@ -45,7 +46,7 @@ class PostJournalReversals extends Command
         $failed = 0;
         foreach ($due as $journal) {
             try {
-                $reversal = $journals->postAutoReversal($journal, $today);
+                $reversal = Tenant::run($journal->tenant_id, fn () => $journals->postAutoReversal($journal, $today));
                 if ($reversal) {
                     $posted++;
                     $this->line("Business #{$journal->tenant_id}: {$journal->journal_number} reversed by {$reversal->journal_number} on {$reversal->journal_date->toDateString()}");

@@ -5,7 +5,7 @@
 
     <div class="py-6">
         <div class="max-w-xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div x-data x-init="setTimeout(() => window.location.href = @js($url), 600)">
+            <div x-data="redirectAfter(@js($url), 600)">
             <x-card class="p-6 text-center">
                 <p class="text-sm text-gray-700 dark:text-gray-300">
                     Opening Mono's secure page, where you pick your bank and log in. MyBooks never sees your login details.

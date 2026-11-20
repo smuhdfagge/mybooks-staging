@@ -458,30 +458,30 @@ class SmsWhatsAppRemindersTest extends TestCase
         $message = CustomerMessage::sole();
 
         $report = ['type' => 'sms', 'id' => 'req-1', 'message_id' => 'T1', 'receiver' => '2348031234567', 'sender' => 'MyBooks', 'status' => 'Delivered', 'cost' => 4.95, 'channel' => 'dnd'];
-        $this->postJson('/webhooks/messaging/termii/wrong-token', $report)->assertStatus(401);
+        $this->signedOut(fn () => $this->postJson('/webhooks/messaging/termii/wrong-token', $report)->assertStatus(401));
         $this->assertSame('sent', $message->fresh()->status);
 
-        $this->postJson('/webhooks/messaging/termii/'.self::TOKEN, $report)->assertOk();
+        $this->signedOut(fn () => $this->postJson('/webhooks/messaging/termii/'.self::TOKEN, $report)->assertOk());
         $message->refresh();
         $this->assertSame(['delivered', '4.9500'], [$message->status, $message->cost]);
         $this->assertNotNull($message->delivered_at);
 
         // A late "sent" doesn't undo "delivered".
-        $this->postJson('/webhooks/messaging/termii/'.self::TOKEN, ['message_id' => 'T1', 'status' => 'Message Sent'])->assertOk();
+        $this->signedOut(fn () => $this->postJson('/webhooks/messaging/termii/'.self::TOKEN, ['message_id' => 'T1', 'status' => 'Message Sent'])->assertOk());
         $this->assertSame('delivered', $message->fresh()->status);
 
         // With Termii's secret key set, the signature must match too.
         config(['services.termii.secret_key' => 'termii-secret']);
         $body = json_encode(['message_id' => 'T1', 'status' => 'Message Failed']);
-        $this->call('POST', '/webhooks/messaging/termii/'.self::TOKEN, [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_X_TERMII_SIGNATURE' => 'bad'], $body)->assertStatus(401);
-        $this->call('POST', '/webhooks/messaging/termii/'.self::TOKEN, [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_X_TERMII_SIGNATURE' => hash_hmac('sha512', $body, 'termii-secret')], $body)->assertOk();
+        $this->signedOut(fn () => $this->call('POST', '/webhooks/messaging/termii/'.self::TOKEN, [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_X_TERMII_SIGNATURE' => 'bad'], $body)->assertStatus(401));
+        $this->signedOut(fn () => $this->call('POST', '/webhooks/messaging/termii/'.self::TOKEN, [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_X_TERMII_SIGNATURE' => hash_hmac('sha512', $body, 'termii-secret')], $body)->assertOk());
         $this->assertSame('delivered', $message->fresh()->status); // delivered can't turn failed
     }
 
     public function test_failed_report_and_meta_whatsapp_reports(): void
     {
         $this->post(route('invoices.messages.store', $this->invoice($this->customer())), ['channel' => 'sms']);
-        $this->postJson('/webhooks/messaging/termii/'.self::TOKEN, ['message_id' => 'T1', 'status' => 'DND Active on Phone Number'])->assertOk();
+        $this->signedOut(fn () => $this->postJson('/webhooks/messaging/termii/'.self::TOKEN, ['message_id' => 'T1', 'status' => 'DND Active on Phone Number'])->assertOk());
         $sms = CustomerMessage::sole();
         $this->assertSame(['failed', 'Termii: DND Active on Phone Number'], [$sms->status, $sms->error]);
 
@@ -489,14 +489,14 @@ class SmsWhatsAppRemindersTest extends TestCase
         $wa = CustomerMessage::where('channel', 'whatsapp')->sole();
         config(['services.whatsapp_meta.app_secret' => 'app-secret']);
         $body = json_encode(['object' => 'whatsapp_business_account', 'entry' => [['changes' => [['field' => 'messages', 'value' => ['statuses' => [['id' => $wa->provider_message_id, 'status' => 'delivered', 'recipient_id' => '2348022222222']]]]]]]]);
-        $this->call('POST', '/webhooks/messaging/whatsapp/'.self::TOKEN, [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_X_HUB_SIGNATURE_256' => 'sha256=bad'], $body)->assertStatus(401);
-        $this->call('POST', '/webhooks/messaging/whatsapp/'.self::TOKEN, [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_X_HUB_SIGNATURE_256' => 'sha256='.hash_hmac('sha256', $body, 'app-secret')], $body)->assertOk();
+        $this->signedOut(fn () => $this->call('POST', '/webhooks/messaging/whatsapp/'.self::TOKEN, [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_X_HUB_SIGNATURE_256' => 'sha256=bad'], $body)->assertStatus(401));
+        $this->signedOut(fn () => $this->call('POST', '/webhooks/messaging/whatsapp/'.self::TOKEN, [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_X_HUB_SIGNATURE_256' => 'sha256='.hash_hmac('sha256', $body, 'app-secret')], $body)->assertOk());
         $this->assertSame('delivered', $wa->fresh()->status);
 
         // Meta's set-up check.
         config(['services.whatsapp_meta.verify_token' => 'verify-me']);
-        $this->get('/webhooks/messaging/whatsapp/'.self::TOKEN.'?hub_mode=subscribe&hub_verify_token=verify-me&hub_challenge=12345')->assertOk()->assertSeeText('12345');
-        $this->get('/webhooks/messaging/whatsapp/'.self::TOKEN.'?hub_mode=subscribe&hub_verify_token=nope&hub_challenge=12345')->assertForbidden();
+        $this->signedOut(fn () => $this->get('/webhooks/messaging/whatsapp/'.self::TOKEN.'?hub_mode=subscribe&hub_verify_token=verify-me&hub_challenge=12345')->assertOk()->assertSeeText('12345'));
+        $this->signedOut(fn () => $this->get('/webhooks/messaging/whatsapp/'.self::TOKEN.'?hub_mode=subscribe&hub_verify_token=nope&hub_challenge=12345')->assertForbidden());
     }
 
     public function test_provider_webhooks_skip_the_csrf_check(): void
@@ -522,7 +522,7 @@ class SmsWhatsAppRemindersTest extends TestCase
         [$otherTenant] = Customer::withoutTenantGuard(fn () => $this->createTenantWithSubscription());
         $stranger = Customer::withoutTenantGuard(fn () => Customer::factory()->create(['tenant_id' => $otherTenant->id, 'phone' => '+2348031234567']));
 
-        $this->postJson('/webhooks/messaging/termii/'.self::TOKEN, ['type' => 'inbound', 'status' => 'Received', 'sender' => '2348031234567', 'receiver' => 'MyBooks', 'message' => ' stop ', 'channel' => 'generic'])->assertOk();
+        $this->signedOut(fn () => $this->postJson('/webhooks/messaging/termii/'.self::TOKEN, ['type' => 'inbound', 'status' => 'Received', 'sender' => '2348031234567', 'receiver' => 'MyBooks', 'message' => ' stop ', 'channel' => 'generic'])->assertOk());
 
         $this->assertTrue($customer->fresh()->sms_opt_out);
         $this->assertFalse($customer->fresh()->whatsapp_opt_out);
@@ -536,7 +536,7 @@ class SmsWhatsAppRemindersTest extends TestCase
 
         // A WhatsApp STOP opts out of WhatsApp.
         $this->post(route('invoices.messages.store', $this->invoice($customer)), ['channel' => 'whatsapp']);
-        $this->postJson('/webhooks/messaging/whatsapp/'.self::TOKEN, ['entry' => [['changes' => [['value' => ['messages' => [['from' => '2348031234567', 'type' => 'text', 'text' => ['body' => 'STOP']]]]]]]]])->assertOk();
+        $this->signedOut(fn () => $this->postJson('/webhooks/messaging/whatsapp/'.self::TOKEN, ['entry' => [['changes' => [['value' => ['messages' => [['from' => '2348031234567', 'type' => 'text', 'text' => ['body' => 'STOP']]]]]]]]])->assertOk());
         $this->assertTrue($customer->fresh()->whatsapp_opt_out);
     }
 
@@ -660,7 +660,7 @@ class SmsWhatsAppRemindersTest extends TestCase
 
         $this->get(route('settings.messaging'))->assertNotFound();
         $this->post(route('invoices.messages.store', $invoice), ['channel' => 'sms'])->assertNotFound();
-        $this->postJson('/webhooks/messaging/termii/'.self::TOKEN, ['message_id' => 'T1', 'status' => 'Delivered'])->assertNotFound();
+        $this->signedOut(fn () => $this->postJson('/webhooks/messaging/termii/'.self::TOKEN, ['message_id' => 'T1', 'status' => 'Delivered'])->assertNotFound());
         $this->assertSame(0, CustomerMessage::count());
         Http::assertNothingSent();
     }

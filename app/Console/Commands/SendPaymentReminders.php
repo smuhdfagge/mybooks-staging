@@ -35,32 +35,34 @@ class SendPaymentReminders extends Command
         $totalMessages = 0;
 
         foreach ($tenants as $tenant) {
-            $settings = NotificationSetting::getForTenant($tenant->id);
+            Tenant::run($tenant, function () use ($tenant, &$totalUpcoming, &$totalOverdue, &$totalMessages) {
+                $settings = NotificationSetting::getForTenant($tenant->id);
 
-            // Send upcoming payment reminders
-            if ($settings->send_payment_reminders) {
-                $count = $this->notificationService->sendUpcomingPaymentReminders(
-                    $tenant->id,
-                    $settings->payment_reminder_days_before
-                );
-                $totalUpcoming += $count;
-                $this->info("Tenant {$tenant->name}: {$count} upcoming payment reminders sent");
-            }
+                // Send upcoming payment reminders
+                if ($settings->send_payment_reminders) {
+                    $count = $this->notificationService->sendUpcomingPaymentReminders(
+                        $tenant->id,
+                        $settings->payment_reminder_days_before
+                    );
+                    $totalUpcoming += $count;
+                    $this->info("Tenant {$tenant->name}: {$count} upcoming payment reminders sent");
+                }
 
-            // Send overdue reminders
-            if ($settings->send_overdue_reminders) {
-                $count = $this->notificationService->sendOverdueReminders($tenant->id);
-                $totalOverdue += $count;
-                $this->info("Tenant {$tenant->name}: {$count} overdue reminders sent");
-            }
+                // Send overdue reminders
+                if ($settings->send_overdue_reminders) {
+                    $count = $this->notificationService->sendOverdueReminders($tenant->id);
+                    $totalOverdue += $count;
+                    $this->info("Tenant {$tenant->name}: {$count} overdue reminders sent");
+                }
 
-            // SMS / WhatsApp reminders (session 16): their own on/off switches,
-            // the same timing as the emails.
-            $count = $this->messenger->runScheduledReminders($tenant);
-            $totalMessages += $count;
-            if ($count) {
-                $this->info("Tenant {$tenant->name}: {$count} SMS / WhatsApp reminders queued");
-            }
+                // SMS / WhatsApp reminders (session 16): their own on/off switches,
+                // the same timing as the emails.
+                $count = $this->messenger->runScheduledReminders($tenant);
+                $totalMessages += $count;
+                if ($count) {
+                    $this->info("Tenant {$tenant->name}: {$count} SMS / WhatsApp reminders queued");
+                }
+            });
         }
 
         $this->info("Total: {$totalUpcoming} upcoming, {$totalOverdue} overdue reminders sent, {$totalMessages} SMS / WhatsApp queued");

@@ -12,6 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Testing\PendingCommand;
 use Spatie\Permission\Models\Permission;
 
 abstract class TestCase extends BaseTestCase
@@ -44,6 +45,35 @@ abstract class TestCase extends BaseTestCase
         Http::fake([
             'api.pwnedpasswords.com/*' => fn () => Http::response($this->pwnedPasswordsBody),
         ]);
+    }
+
+    /**
+     * Make a request as a provider's server does (a webhook): signed out.
+     * Whoever was signed in is signed back in afterwards.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $request
+     * @return T
+     */
+    protected function signedOut(callable $request): mixed
+    {
+        $user = auth()->user();
+        auth()->forgetGuards();
+
+        try {
+            return $request();
+        } finally {
+            if ($user) {
+                $this->actingAs($user);
+            }
+        }
+    }
+
+    /** Commands run signed out, as from cron: see PendingCommandAsCron. */
+    public function mockArtisan($command, $parameters = []): PendingCommand
+    {
+        return new PendingCommandAsCron($this, $this->app, $command, $parameters);
     }
 
     /**

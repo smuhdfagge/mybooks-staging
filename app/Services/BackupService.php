@@ -5,7 +5,10 @@ namespace App\Services;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use PDO;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 use ZipArchive;
@@ -25,6 +28,12 @@ use ZipArchive;
 class BackupService
 {
     public const FOLDER = 'mybooks-backups';
+
+    /** Tables a backup has to hold to be any use (verify()). */
+    public const CORE_TABLES = ['tenants', 'users', 'chart_of_accounts', 'journals', 'journal_entries', 'customers', 'invoices', 'bills'];
+
+    /** A newest backup older than this means the nightly one has stopped. */
+    public const MAX_AGE_HOURS = 48;
 
     /**
      * Run a backup. Returns the file name written to each disk.
@@ -94,6 +103,175 @@ class BackupService
         }
 
         return $removed;
+    }
+
+    /**
+     * Open a backup and check it holds the database (audit MB-33: the only
+     * check was a restore test by hand, once a quarter). The newest on
+     * $disk (default: the first backup disk) unless $file is named; the
+     * command checks every disk.
+     *
+     * The archive has to open (with BACKUP_ARCHIVE_PASSWORD when set) and
+     * hold a database.sql that isn't empty and has every one of
+     * CORE_TABLES: CREATE TABLE statements in a mysqldump, or the tables
+     * themselves in an SQLite copy. The newest backup must also be less
+     * than MAX_AGE_HOURS old. It does not load the dump anywhere: a full
+     * restore test is still worth doing now and then (README, "Backups").
+     *
+     * @return array{file: string, disk: string, size: int, tables: int, age_hours: int}
+     *
+     * @throws RuntimeException saying what is wrong
+     */
+    public function verify(?string $file = null, ?string $disk = null): array
+    {
+        $disk ??= $this->disks()[0];
+        $storage = Storage::disk($disk);
+
+        if ($file === null) {
+            $file = collect($storage->files(self::FOLDER))
+                ->filter(fn ($f) => str_ends_with($f, '.zip'))
+                ->sortByDesc(fn ($f) => $storage->lastModified($f))
+                ->first();
+            if ($file === null) {
+                throw new RuntimeException("There is no backup on the \"{$disk}\" disk.");
+            }
+
+            $ageHours = (int) floor((now()->getTimestamp() - $storage->lastModified($file)) / 3600);
+            if ($ageHours >= self::MAX_AGE_HOURS) {
+                throw new RuntimeException(basename($file)." is the newest backup and it is {$ageHours} hours old: the nightly backup has stopped running.");
+            }
+        } else {
+            $file = str_contains($file, '/') ? $file : self::FOLDER.'/'.$file;
+            if (! $storage->exists($file)) {
+                throw new RuntimeException("There is no backup called {$file} on the \"{$disk}\" disk.");
+            }
+            $ageHours = (int) floor((now()->getTimestamp() - $storage->lastModified($file)) / 3600);
+        }
+
+        $work = storage_path('app/backup-temp/'.uniqid('verify-', true));
+        File::ensureDirectoryExists($work);
+
+        try {
+            $zipPath = $work.'/backup.zip';
+            $in = $storage->readStream($file);
+            if (! is_resource($in)) {
+                throw new RuntimeException(basename($file).' could not be read from the "'.$disk.'" disk.');
+            }
+            $out = fopen($zipPath, 'wb');
+            $copied = $out === false ? false : stream_copy_to_stream($in, $out);
+            if ($out !== false) {
+                fclose($out);
+            }
+            fclose($in);
+            if ($copied === false) {
+                throw new RuntimeException(basename($file).' could not be copied here to check it (is there room in storage/app?).');
+            }
+            if ($copied === 0) {
+                throw new RuntimeException(basename($file).' is empty (0 bytes): it was cut off while being written or uploaded.');
+            }
+
+            $dumpPath = $this->extractDump($zipPath, $work);
+            $size = (int) filesize($dumpPath);
+            if ($size === 0) {
+                throw new RuntimeException(basename($file).': the database dump is empty.');
+            }
+
+            $tables = $this->dumpTables($dumpPath);
+            $missing = array_values(array_diff(self::CORE_TABLES, $tables));
+            if ($missing !== []) {
+                throw new RuntimeException(basename($file).': the database dump has no '.implode(', ', $missing).' table'.(count($missing) > 1 ? 's' : '').'.');
+            }
+
+            return ['file' => basename($file), 'disk' => $disk, 'size' => $size, 'tables' => count($tables), 'age_hours' => $ageHours];
+        } finally {
+            File::deleteDirectory($work);
+        }
+    }
+
+    /** database.sql out of a backup archive, into $work. */
+    protected function extractDump(string $zipPath, string $work): string
+    {
+        $zip = new ZipArchive;
+        if ($zip->open($zipPath) !== true) {
+            throw new RuntimeException('The backup archive will not open: it is damaged or not a zip.');
+        }
+
+        try {
+            $password = (string) config('mybooks.backup.password', '');
+            if ($password !== '') {
+                $zip->setPassword($password);
+            }
+            if ($zip->locateName('database.sql') === false) {
+                throw new RuntimeException('The backup archive has no database.sql.');
+            }
+            if (! $zip->extractTo($work, 'database.sql')) {
+                throw new RuntimeException('database.sql could not be read from the backup archive'
+                    .($password !== '' ? ' (is BACKUP_ARCHIVE_PASSWORD the one it was made with?).' : ' (it may be encrypted: set BACKUP_ARCHIVE_PASSWORD).'));
+            }
+        } finally {
+            $zip->close();
+        }
+
+        return $work.'/database.sql';
+    }
+
+    /**
+     * The tables in a dump: an SQLite copy (what SQLite backups hold) is
+     * opened and asked; a mysqldump is read for its CREATE TABLE lines.
+     *
+     * @return list<string>
+     */
+    protected function dumpTables(string $path): array
+    {
+        $handle = fopen($path, 'rb');
+        if ($handle === false) {
+            throw new RuntimeException('The database dump could not be read.');
+        }
+        $header = (string) fread($handle, 16);
+        fclose($handle);
+
+        if ($header === "SQLite format 3\0") {
+            try {
+                $pdo = new PDO('sqlite:'.$path, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+                $statement = $pdo->query("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'");
+
+                return $statement === false ? [] : array_values(array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN)));
+            } catch (\PDOException $e) {
+                throw new RuntimeException('The SQLite copy in the backup will not open: '.$e->getMessage());
+            }
+        }
+
+        $tables = [];
+        $handle = fopen($path, 'rb');
+        if ($handle === false) {
+            throw new RuntimeException('The database dump could not be read.');
+        }
+        while (($line = fgets($handle)) !== false) {
+            if (preg_match('/^CREATE TABLE (?:IF NOT EXISTS )?`?([A-Za-z0-9_]+)`?/', $line, $m)) {
+                $tables[] = $m[1];
+            }
+        }
+        fclose($handle);
+
+        return array_values(array_unique($tables));
+    }
+
+    /**
+     * Email BACKUP_NOTIFY_EMAIL (default: the support email) that a backup
+     * or its check failed. Never throws: the failure is logged either way.
+     */
+    public function notifyFailure(string $subject, string $body): void
+    {
+        $to = config('mybooks.backup.notify');
+        if (! $to) {
+            return;
+        }
+
+        try {
+            Mail::raw($body, fn ($m) => $m->to($to)->subject($subject));
+        } catch (\Throwable $e) {
+            Log::error('Could not send the backup failure email: '.$e->getMessage());
+        }
     }
 
     /**
@@ -219,7 +397,7 @@ class BackupService
     }
 
     /** @return array<int, string> */
-    protected function disks(): array
+    public function disks(): array
     {
         $disks = array_values(array_filter(array_map('trim', (array) config('mybooks.backup.disks', ['backups']))));
         if ($disks === []) {

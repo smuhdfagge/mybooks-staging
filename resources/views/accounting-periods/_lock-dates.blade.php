@@ -28,12 +28,10 @@
 
         @if($canManage)
             <form method="POST" action="{{ route('lock-dates.update') }}" class="space-y-4"
-                  x-data="{
+                  x-data="lockDatesForm({
                       oldStaff: @js($staff?->toDateString() ?? ''), oldAll: @js($all?->toDateString() ?? ''),
                       staff: @js(old('staff_lock_date', $staff?->toDateString() ?? '')), all: @js(old('all_users_lock_date', $all?->toDateString() ?? '')),
-                      back(o, n) { return o !== '' && (n === '' || n < o); },
-                      get movingBack() { return this.back(this.oldStaff, this.staff) || this.back(this.oldAll, this.all); }
-                  }">
+                  })">
                 @csrf
                 @method('PUT')
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -55,6 +53,14 @@
                     <button type="submit" class="btn-primary">Save lock dates</button>
                 </div>
             </form>
+            <script nonce="{{ app('csp-nonce') }}">
+                // A reason is asked for when a lock date moves back or is removed.
+                document.addEventListener('alpine:init', () => Alpine.data('lockDatesForm', (dates) => ({
+                    ...dates,
+                    back(o, n) { return o !== '' && (n === '' || n < o); },
+                    get movingBack() { return this.back(this.oldStaff, this.staff) || this.back(this.oldAll, this.all); },
+                })));
+            </script>
         @else
             <p class="text-sm text-gray-500 dark:text-gray-400">Only an admin can change the lock dates.</p>
         @endif

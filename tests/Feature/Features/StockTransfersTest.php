@@ -633,16 +633,16 @@ class StockTransfersTest extends TestCase
         $this->get(route('stock-transfers.show', $transfer))->assertForbidden();
         $this->post(route('stock-transfers.ship', $transfer))->assertForbidden();
         $this->postJson('/api/v1/stock-transfers', [])->assertForbidden();
-        $this->get(route('items.index'))->assertOk()->assertDontSee('">Stock transfers</a>', false);
+        $this->get(route('items.index'))->assertOk()->assertDontSee('">Stock Transfers</a>', false);
     }
 
     public function test_switched_off_the_module_is_hidden(): void
     {
-        $this->get(route('items.index'))->assertSee('">Stock transfers</a>', false);
+        $this->get(route('items.index'))->assertSee('">Stock Transfers</a>', false);
 
         config(['mybooks.features.stock_transfers' => false]);
         $this->get(route('stock-transfers.index'))->assertNotFound();
-        $this->get(route('items.index'))->assertDontSee('">Stock transfers</a>', false);
+        $this->get(route('items.index'))->assertDontSee('">Stock Transfers</a>', false);
         $this->getJson('/api/v1/stock-transfers')->assertNotFound();
 
         config(['mybooks.features.stock_transfers' => true, 'mybooks.features.warehouses' => false]);
@@ -673,6 +673,65 @@ class StockTransfersTest extends TestCase
         $this->getJson('/api/v1/stock-transfers?status=in_transit')->assertOk()->assertJsonCount(1, 'data');
         $id = StockTransfer::where('status', 'received')->value('id');
         $this->getJson('/api/v1/stock-transfers/'.$id)->assertOk()->assertJsonPath('data.items.0.quantity_received', 3);
+    }
+
+    public function test_the_api_can_ship_a_draft_and_receive_it_in_part(): void
+    {
+        $item = $this->item();
+        $this->buy($item, 10, 1000);
+        $transfer = $this->draft([[$item, 4]]);
+        $line = $transfer->items()->first();
+
+        $this->postJson("/api/v1/stock-transfers/{$transfer->id}/receive")->assertUnprocessable()->assertJsonValidationErrors('transfer');
+
+        $this->postJson("/api/v1/stock-transfers/{$transfer->id}/ship")->assertOk()
+            ->assertJsonPath('data.status', 'in_transit')->assertJsonPath('data.shipped_cost', 4000);
+        $this->assertSame(6.0, $this->onHand($item, $this->main));
+        $this->postJson("/api/v1/stock-transfers/{$transfer->id}/ship")->assertUnprocessable()->assertJsonValidationErrors('transfer');
+
+        // A line of another transfer is refused.
+        $otherLine = $this->draft([[$item, 1]])->items()->first();
+        $this->postJson("/api/v1/stock-transfers/{$transfer->id}/receive", ['items' => [['id' => $otherLine->id, 'quantity_received' => 1]]])
+            ->assertUnprocessable()->assertJsonValidationErrors('items.0.id');
+
+        $this->postJson("/api/v1/stock-transfers/{$transfer->id}/receive", [
+            'received_date' => '2026-10-12', 'items' => [['id' => $line->id, 'quantity_received' => 3]],
+        ])->assertOk()->assertJsonPath('data.status', 'received')->assertJsonPath('data.received_date', '2026-10-12')
+            ->assertJsonPath('data.items.0.quantity_received', 3)->assertJsonPath('data.items.0.quantity_returned', 1);
+        $this->assertSame(3.0, $this->onHand($item, $this->kano));
+        $this->assertSame(7.0, $this->onHand($item, $this->main));
+        $this->assertSame($this->recordsValue(), $this->stockValue());
+    }
+
+    public function test_the_api_ship_and_receive_need_adjust_inventory_their_own_business_and_the_module(): void
+    {
+        $item = $this->item();
+        $this->buy($item, 10, 1000);
+        $transfer = $this->draft([[$item, 1]]);
+
+        $viewer = User::factory()->create(['tenant_id' => $this->tenant->id]);
+        $viewer->givePermissionTo(['view inventory', 'view items']);
+        $this->actingAs($viewer);
+        $this->postJson("/api/v1/stock-transfers/{$transfer->id}/ship")->assertForbidden();
+        $this->postJson("/api/v1/stock-transfers/{$transfer->id}/receive")->assertForbidden();
+        $this->actingAs($this->user);
+
+        config(['mybooks.features.stock_transfers' => false]);
+        $this->postJson("/api/v1/stock-transfers/{$transfer->id}/ship")->assertNotFound();
+        config(['mybooks.features.stock_transfers' => true]);
+
+        $other = $this->otherTenant();
+        $theirs = StockTransfer::withoutTenantGuard(function () use ($other) {
+            $a = Warehouse::create(['tenant_id' => $other->id, 'name' => 'A', 'code' => 'A']);
+            $b = Warehouse::create(['tenant_id' => $other->id, 'name' => 'B', 'code' => 'B']);
+
+            return StockTransfer::create(['tenant_id' => $other->id, 'transfer_number' => 'TRF-000009', 'transfer_date' => '2026-10-10',
+                'from_warehouse_id' => $a->id, 'to_warehouse_id' => $b->id, 'status' => 'draft']);
+        });
+        $this->postJson("/api/v1/stock-transfers/{$theirs->id}/ship")->assertNotFound();
+        $this->postJson("/api/v1/stock-transfers/{$theirs->id}/receive")->assertNotFound();
+        $this->assertSame('draft', StockTransfer::withoutGlobalScopes()->find($theirs->id)->status);
+        $this->assertSame('draft', $transfer->fresh()->status);
     }
 
     // ---- the migration ---------------------------------------------------

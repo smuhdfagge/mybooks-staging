@@ -31,6 +31,7 @@ use App\Models\Plan;
 use App\Models\PurchaseOrder;
 use App\Models\Role;
 use App\Models\Subscription;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Vendor;
 use Database\Seeders\DatabaseSeeder;
@@ -192,17 +193,19 @@ class Phase1RegressionTest extends TestCase
         [$t2] = $this->createTenantWithSubscription();
 
         foreach ([$t1, $t2] as $tenant) {
-            $vendor = Vendor::factory()->create(['tenant_id' => $tenant->id]);
-            PurchaseOrder::withoutTenantGuard(fn () => PurchaseOrder::create([
-                'tenant_id' => $tenant->id,
-                'vendor_id' => $vendor->id,
-                'order_number' => PurchaseOrder::generateNumber($tenant->id),
-                'order_date' => now(),
-                'status' => 'draft',
-                'subtotal' => 0,
-                'tax_amount' => 0,
-                'total' => 0,
-            ]));
+            Tenant::run($tenant, function () use ($tenant) {
+                $vendor = Vendor::factory()->create(['tenant_id' => $tenant->id]);
+                PurchaseOrder::create([
+                    'tenant_id' => $tenant->id,
+                    'vendor_id' => $vendor->id,
+                    'order_number' => PurchaseOrder::generateNumber($tenant->id),
+                    'order_date' => now(),
+                    'status' => 'draft',
+                    'subtotal' => 0,
+                    'tax_amount' => 0,
+                    'total' => 0,
+                ]);
+            });
         }
 
         $this->assertSame(2, PurchaseOrder::withoutGlobalScopes()->where('order_number', 'PO-000001')->count());
@@ -212,7 +215,7 @@ class Phase1RegressionTest extends TestCase
     {
         [$t1] = $this->createTenantWithSubscription();
         $vendor = Vendor::factory()->create(['tenant_id' => $t1->id]);
-        $make = fn () => PurchaseOrder::withoutTenantGuard(fn () => PurchaseOrder::create([
+        $make = fn () => Tenant::run($t1, fn () => PurchaseOrder::create([
             'tenant_id' => $t1->id, 'vendor_id' => $vendor->id, 'order_number' => 'PO-000001',
             'order_date' => now(), 'status' => 'draft', 'subtotal' => 0, 'tax_amount' => 0, 'total' => 0,
         ]));

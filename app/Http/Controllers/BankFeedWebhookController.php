@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Jobs\PullBankFeed;
 use App\Models\BankFeedConnection;
+use App\Models\Tenant;
 use App\Services\BankFeeds\BankFeedException;
 use App\Services\BankFeeds\BankFeedLinker;
 use App\Services\BankFeeds\MonoProvider;
@@ -42,13 +43,15 @@ class BankFeedWebhookController extends Controller
 
         try {
             $connection = $event->type === WebhookEvent::CONNECTED ? null : $this->connection($event);
-            match ($event->type) {
+            // Nobody is signed in to a webhook: the work runs in the
+            // connection's own business (audit MB-26).
+            Tenant::run($connection?->tenant_id, fn () => match ($event->type) {
                 WebhookEvent::CONNECTED => $event->ref ? $linker->complete($event->ref, null, $event->accountId) : null,
                 WebhookEvent::UPDATED => $connection && $event->hasNewData !== false ? PullBankFeed::dispatch($connection->id) : null,
                 WebhookEvent::REAUTH_REQUIRED => $connection ? $linker->markNeedsReauthorisation($connection) : null,
                 WebhookEvent::REAUTHORISED => $connection ? $linker->reauthorised($connection) : null,
                 default => null,
-            };
+            });
         } catch (BankFeedException $e) {
             // Nothing the sender can fix by retrying.
             Log::warning('Mono webhook could not be applied', ['type' => $event->type, 'error' => $e->getMessage()]);

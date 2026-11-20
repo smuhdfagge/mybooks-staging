@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Enums\QuotationStatus;
 use App\Models\Quotation;
+use App\Models\Tenant;
 use Illuminate\Console\Command;
 
 /**
@@ -17,6 +18,13 @@ class ExpireQuotations extends Command
     protected $description = 'Mark quotations past their expiry date as expired';
 
     public function handle(): int
+    {
+        // Every business, on purpose (audit MB-26: tenant-scoped queries need
+        // an explicit context; see Tenant::acrossAll()).
+        return Tenant::acrossAll(fn () => $this->runForEveryBusiness());
+    }
+
+    private function runForEveryBusiness(): int
     {
         $count = 0;
 

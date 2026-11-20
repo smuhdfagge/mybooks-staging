@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\ActivityLog;
+use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Provides HMAC-SHA256 integrity hashing for activity log entries.
@@ -59,6 +61,22 @@ class LogIntegrityService
     }
 
     /**
+     * Record the id and hash of the signed entries $entries is about to
+     * delete, so logs:verify can tell an erasure from a deletion. Call it
+     * in the same transaction as the delete.
+     *
+     * @param  Builder  $entries  a query on activity_logs
+     */
+    public static function tombstone(Builder $entries, string $reason): void
+    {
+        DB::table('activity_log_tombstones')->insertUsing(
+            ['id', 'integrity_hash', 'reason', 'created_at'],
+            (clone $entries)->whereNotNull('integrity_hash')
+                ->selectRaw('id, integrity_hash, ? as reason, ? as created_at', [$reason, now()->toDateTimeString()])
+        );
+    }
+
+    /**
      * Verify a single entry's integrity hash.
      */
     public static function verify(ActivityLog $log): bool
@@ -71,36 +89,82 @@ class LogIntegrityService
     }
 
     /**
-     * Verify a range of log entries, checking both hashes and chain links.
+     * Verify a business's log entries: each entry's own hash, and that the
+     * entry it links to is still in the log, earlier than it.
      *
-     * @return array{valid: bool, errors: array<string>}
+     * sign() links an entry to the entry before it in the whole table,
+     * whichever business wrote that one, and two saves at once can link to
+     * an older entry still. So the link is checked against the entry it
+     * names, not against this business's previous entry: other businesses'
+     * entries in between, and simultaneous saves, are not breaks. What is
+     * a break is a link to an entry that is gone (deleted) or that comes
+     * later. previous_hash is inside the HMAC, so a link can't be changed
+     * without the entry's own hash failing too.
+     *
+     * Erasing a closed business and retention:purge delete entries on
+     * purpose and leave a tombstone (id and hash) for each: a link to a
+     * tombstoned entry is not a break.
+     *
+     * A deletion shows on the entry after it in the whole log, which may be
+     * another business's: only a check of every business sees them all.
+     * The newest $limit entries are checked (0: all of them).
+     *
+     * @return array{valid: bool, checked: int, errors: array<string>}
      */
     public static function verifyChain(int $tenantId, int $limit = 1000): array
     {
         $errors = [];
+        $genesis = str_repeat('0', 64);
 
         $logs = ActivityLog::withoutGlobalScopes()
             ->where('tenant_id', $tenantId)
             ->whereNotNull('integrity_hash')
-            ->orderBy('id')
-            ->limit($limit)
-            ->get();
+            ->orderByDesc('id')
+            ->when($limit > 0, fn ($q) => $q->limit($limit))
+            ->get()
+            ->reverse()
+            ->values();
 
-        $previousHash = null;
+        // Where each link points: integrity_hash => id, across every business
+        // (only the hashes and ids of other businesses' entries are read).
+        $linked = [];
+        $links = $logs->pluck('previous_hash')->filter(fn ($h) => $h !== null && $h !== $genesis)->unique()->values();
+        $erased = [];
+        foreach ($links->chunk(500) as $chunk) {
+            // Lowest id first wins a (practically impossible) shared hash.
+            $linked += ActivityLog::withoutGlobalScopes()
+                ->whereIn('integrity_hash', $chunk->all())
+                ->orderByDesc('id')
+                ->pluck('id', 'integrity_hash')
+                ->all();
+            $erased += DB::table('activity_log_tombstones')
+                ->whereIn('integrity_hash', $chunk->all())
+                ->pluck('id', 'integrity_hash')
+                ->all();
+        }
 
         foreach ($logs as $log) {
-            // Verify individual hash
             if (! static::verify($log)) {
                 $errors[] = "Entry #{$log->id}: integrity hash mismatch — possible tampering.";
+
+                continue; // its link can't be trusted either
             }
 
-            // Verify chain link
-            if ($previousHash !== null && $log->previous_hash !== $previousHash) {
-                $prevId = $log->id - 1;
-                $errors[] = "Entry #{$log->id}: chain break — previous_hash does not match entry #{$prevId}.";
+            // The first entry signed, or one signed while the entry before it
+            // was still being written, starts from the zero hash.
+            if ($log->previous_hash === null || $log->previous_hash === $genesis) {
+                continue;
             }
 
-            $previousHash = $log->integrity_hash;
+            $target = $linked[$log->previous_hash] ?? null;
+            if ($target === null) {
+                if (isset($erased[$log->previous_hash])) {
+                    continue; // follows an entry erased on purpose
+                }
+                $errors[] = "Entry #{$log->id}: chain break — the entry it follows is no longer in the log (deleted?).";
+            } elseif ($target >= $log->id) {
+                $errors[] = "Entry #{$log->id}: chain break — it follows entry #{$target}, which comes after it.";
+            }
         }
 
         return [

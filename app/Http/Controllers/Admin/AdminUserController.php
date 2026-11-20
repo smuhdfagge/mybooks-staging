@@ -79,6 +79,10 @@ class AdminUserController extends Controller
             return back()->with('error', 'You cannot change your own role.');
         }
 
+        if ($validated['role'] !== AdminUser::ROLE_SUPER_ADMIN && $this->isLastActiveSuperAdmin($adminUser)) {
+            return back()->with('error', 'This is the last active super admin: make someone else a super admin first.');
+        }
+
         $before = $adminUser->getAttributes();
         $adminUser->name = $validated['name'];
         $adminUser->email = $validated['email'];
@@ -113,6 +117,12 @@ class AdminUserController extends Controller
             return back()->with('error', 'You cannot deactivate your own account.');
         }
 
+        // Deactivating, like deleting, must leave someone who can sign in
+        // and manage admins (audit MB-59).
+        if ($adminUser->is_active && (AdminUser::where('is_active', true)->count() <= 1 || $this->isLastActiveSuperAdmin($adminUser))) {
+            return back()->with('error', 'Cannot deactivate the last active admin who can manage admin users.');
+        }
+
         $before = $adminUser->getAttributes();
         $adminUser->is_active = ! $adminUser->is_active;
         $adminUser->save();
@@ -137,6 +147,9 @@ class AdminUserController extends Controller
         if (AdminUser::where('is_active', true)->count() <= 1) {
             return back()->with('error', 'Cannot delete the last active admin user.');
         }
+        if ($this->isLastActiveSuperAdmin($adminUser)) {
+            return back()->with('error', 'Cannot delete the last active super admin.');
+        }
 
         AdminAuditService::log(
             ActivityLog::ACTION_DELETED,
@@ -148,5 +161,12 @@ class AdminUserController extends Controller
 
         return redirect()->route('admin.users.index')
             ->with('success', 'Admin user deleted successfully.');
+    }
+
+    /** Whether $adminUser is the only active admin left who can manage admin users. */
+    private function isLastActiveSuperAdmin(AdminUser $adminUser): bool
+    {
+        return $adminUser->isSuperAdmin() && $adminUser->is_active
+            && AdminUser::where('role', AdminUser::ROLE_SUPER_ADMIN)->where('is_active', true)->count() <= 1;
     }
 }

@@ -182,10 +182,9 @@ class CustomReportController extends ReportController
             $query->with($relations);
         }
 
-        // Apply filters
-        if (! empty($customReport->filters)) {
-            $query = $this->applyFilters($query, $customReport->filters, $sourceConfig['columns']);
-        }
+        // Apply filters; the page lists only the ones that took effect.
+        $appliedFilters = $this->usableFilters($customReport->filters ?? [], $sourceConfig['columns']);
+        $query = $this->applyFilters($query, $appliedFilters, $sourceConfig['columns']);
 
         // Apply sorting
         if (! empty($customReport->sort_by)) {
@@ -193,12 +192,8 @@ class CustomReportController extends ReportController
                 if (isset($sort['column']) && isset($sort['direction'])) {
                     // Only the source's own columns, in a known direction (M7);
                     // reports saved before this check may hold anything.
-                    if (! isset($sourceConfig['columns'][$sort['column']]) || ! in_array(strtolower((string) $sort['direction']), ['asc', 'desc'], true)) {
-                        continue;
-                    }
-                    // Handle relation sorting
-                    if (strpos($sort['column'], '.') !== false) {
-                        // For simplicity, skip relation sorting in raw query
+                    // Relation and computed columns aren't sorted on.
+                    if (! CustomReport::isQueryable($sourceConfig['columns'], $sort['column']) || ! in_array(strtolower((string) $sort['direction']), ['asc', 'desc'], true)) {
                         continue;
                     }
                     $query->orderBy($sort['column'], $sort['direction']);
@@ -246,7 +241,7 @@ class CustomReportController extends ReportController
 
         return view('reports.custom.run', compact(
             'customReport', 'data', 'groupedData', 'aggregatedData',
-            'totals', 'sourceConfig', 'startDate', 'endDate', 'truncated', 'maxRows'
+            'totals', 'sourceConfig', 'startDate', 'endDate', 'truncated', 'maxRows', 'appliedFilters'
         ));
     }
 
@@ -319,24 +314,42 @@ class CustomReportController extends ReportController
     }
 
     /**
+     * The saved filters that can be applied: on the data source's own table
+     * columns (M7; relation and computed columns aren't supported yet), with
+     * a known operator, and a value of the shape that operator needs.
+     */
+    protected function usableFilters(array $filters, array $columnConfig): array
+    {
+        $operators = CustomReport::getFilterOperators();
+
+        return array_values(array_filter($filters, function ($filter) use ($columnConfig, $operators) {
+            if (! is_array($filter) || ! is_string($filter['column'] ?? null) || ! is_string($filter['operator'] ?? null)) {
+                return false;
+            }
+            if (! CustomReport::isQueryable($columnConfig, $filter['column']) || ! isset($operators[$filter['operator']])) {
+                return false;
+            }
+
+            $value = $filter['value'] ?? null;
+
+            return match ($filter['operator']) {
+                'is_null', 'is_not_null' => true,
+                'between' => is_array($value) && count($value) === 2,
+                'in' => is_array($value),
+                default => is_scalar($value) || $value === null,
+            };
+        }));
+    }
+
+    /**
      * Apply filters to query
      */
     protected function applyFilters($query, array $filters, array $columnConfig)
     {
-        foreach ($filters as $filter) {
-            if (! isset($filter['column']) || ! isset($filter['operator'])) {
-                continue;
-            }
-
+        foreach ($this->usableFilters($filters, $columnConfig) as $filter) {
             $column = $filter['column'];
             $operator = $filter['operator'];
             $value = $filter['value'] ?? null;
-
-            // Only the data source's allowed columns (M7), and not relation
-            // columns (not supported yet)
-            if (! isset($columnConfig[$column]) || strpos($column, '.') !== false) {
-                continue;
-            }
 
             switch ($operator) {
                 case 'equals':

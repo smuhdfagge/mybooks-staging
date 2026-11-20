@@ -19,6 +19,13 @@ class PurgeClosedTenants extends Command
 
     public function handle(TenantPurger $purger): int
     {
+        // Every business, on purpose (audit MB-26: tenant-scoped queries need
+        // an explicit context; see Tenant::acrossAll()).
+        return Tenant::acrossAll(fn () => $this->runForEveryBusiness($purger));
+    }
+
+    private function runForEveryBusiness(TenantPurger $purger): int
+    {
         $due = Tenant::withTrashed()
             ->whereNotNull('closure_purge_at')
             ->where('closure_purge_at', '<=', now())

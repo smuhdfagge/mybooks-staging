@@ -6,6 +6,7 @@ use App\Support\PublicSite\CanonicalUrl;
 use App\Support\PublicSite\FeaturePages;
 use App\Support\PublicSite\Guides;
 use App\Support\PublicSite\SearchFiles;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
@@ -136,5 +137,40 @@ class SearchFilesCommandTest extends TestCase
         $this->artisan('site:search-files')->assertSuccessful();
 
         $this->assertSame($once, [File::get($this->sitemap), File::get($this->robots)]);
+    }
+
+    public function test_every_public_page_is_in_the_sitemap(): void
+    {
+        // Every page anyone can open without signing in: a GET route in the
+        // web group with no sign-in, guest-only or signed-link middleware,
+        // and no {parameter} (guides and feature pages come from their own
+        // lists). A new public page that is left out of the sitemap fails here.
+        $notPages = ['sitemap', 'robots', 'billing.callback', 'up', 'sanctum.csrf-cookie'];
+        $public = collect(app('router')->getRoutes()->getRoutes())
+            ->filter(fn ($route) => in_array('GET', $route->methods(), true))
+            ->filter(fn ($route) => in_array('web', $route->gatherMiddleware(), true))
+            ->reject(fn ($route) => collect($route->gatherMiddleware())->contains(fn ($m) => is_string($m) && preg_match('/^(auth|guest|signed|verified|admin)|Authenticate|RedirectIfAuthenticated/', $m)))
+            ->reject(fn ($route) => str_contains($route->uri(), '{') || str_starts_with($route->uri(), 'admin'))
+            ->map(fn ($route) => $route->getName())
+            ->filter()
+            ->reject(fn ($name) => in_array($name, $notPages, true))
+            ->values();
+
+        $this->assertNotEmpty($public);
+        $this->assertEqualsCanonicalizing($public->all(), SearchFiles::PAGES, 'Add the public page to SearchFiles::PAGES (or, if it is not a page, to $notPages here).');
+        foreach (['partners', 'docs.api'] as $name) {
+            $this->assertContains(CanonicalUrl::route($name), app(SearchFiles::class)->urls()->all(), $name);
+        }
+    }
+
+    public function test_the_files_are_rewritten_every_hour(): void
+    {
+        // The host can pull new code on a merge without the deploy running,
+        // so the scheduler keeps the files current on its own.
+        $event = collect(app(Schedule::class)->events())
+            ->first(fn ($e) => str_contains((string) $e->command, 'site:search-files'));
+
+        $this->assertNotNull($event, 'site:search-files is scheduled');
+        $this->assertSame('0 * * * *', $event->expression);
     }
 }

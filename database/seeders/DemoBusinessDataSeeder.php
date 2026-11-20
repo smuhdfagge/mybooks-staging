@@ -31,6 +31,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Models\Warehouse;
+use App\Services\StockValuationService;
 use Illuminate\Database\Seeder;
 use RuntimeException;
 
@@ -43,6 +44,13 @@ class DemoBusinessDataSeeder extends Seeder
         }
 
         $tenant = Tenant::where('slug', 'demo-company')->firstOrFail();
+        // Seeding runs with nobody signed in: the demo data goes in the
+        // demo business (audit MB-26).
+        Tenant::run($tenant, fn () => $this->seedDemo($tenant));
+    }
+
+    private function seedDemo(Tenant $tenant): void
+    {
         $user = User::where('email', 'demo@mybooks.local')->firstOrFail();
         $tenantId = (int) $tenant->id;
 
@@ -110,10 +118,15 @@ class DemoBusinessDataSeeder extends Seeder
         );
 
         $warehouseId = Warehouse::defaultIdFor($tenantId);
-        Inventory::firstOrCreate(
+        $stock = Inventory::firstOrCreate(
             ['tenant_id' => $tenantId, 'item_id' => $product->id, 'warehouse_id' => $warehouseId],
             ['quantity' => 40, 'reserved_quantity' => 0, 'unit_cost' => 35000]
         );
+        // Its cost, so the demo sale below can be costed (stock with no cost
+        // layer is refused, audit MB-31).
+        if ($stock->wasRecentlyCreated) {
+            app(StockValuationService::class)->addLayer($tenantId, $product->id, 40, 35000, $warehouseId, 'opening_stock');
+        }
 
         $cashAccount = ChartOfAccount::where('tenant_id', $tenantId)
             ->where('type', 'asset')

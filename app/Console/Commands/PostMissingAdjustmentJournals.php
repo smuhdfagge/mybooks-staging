@@ -60,7 +60,7 @@ class PostMissingAdjustmentJournals extends Command
         $posted = 0;
         $skipped = 0;
         foreach ($tenants as $tenant) {
-            [$p, $s] = $this->tenant($tenant, $journals, $valuation, $dry);
+            [$p, $s] = Tenant::run($tenant, fn () => $this->tenant($tenant, $journals, $valuation, $dry));
             $posted += $p;
             $skipped += $s;
         }

@@ -247,7 +247,7 @@ class Phase6RegressionTest extends TestCase
         $this->get(route('bills.create', ['purchase_order_id' => $po->id]))->assertOk()
             ->assertSee('PO-000001')
             ->assertSee('Fish feed 15kg')
-            ->assertSee('\u0022quantity\u0022:8,', false)   // what was received, not the 10 ordered
+            ->assertSee("'quantity':8,", false)   // what was received, not the 10 ordered
             ->assertSee('name="purchase_order_id"', false);
     }
 

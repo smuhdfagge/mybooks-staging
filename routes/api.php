@@ -7,7 +7,9 @@ use App\Http\Controllers\Api\BillController;
 use App\Http\Controllers\Api\ChartOfAccountController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\EmployeeController;
+use App\Http\Controllers\Api\ExpenseAttachmentController;
 use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\InvoiceController;
@@ -58,12 +60,17 @@ Route::prefix('v1')->group(function () {
         ], $result['healthy'] ? 200 : 503);
     })->middleware('throttle:api-read')->name('api.health');
 
-    // Public mobile version policy (the client checks this before opening).
+    // Public mobile version policy, checked by the app at startup.
     Route::get('app/version', function () {
         return response()->json([
             'success' => true,
             'message' => 'Success',
-            'data' => config('mybooks.mobile_app'),
+            'data' => [
+                'min_version' => (string) config('mybooks.mobile_app.min_version'),
+                'latest_version' => (string) config('mybooks.mobile_app.latest_version'),
+                'ios_store_url' => config('mybooks.mobile_app.ios_store_url') ?: null,
+                'android_store_url' => config('mybooks.mobile_app.android_store_url') ?: null,
+            ],
         ]);
     })->middleware('throttle:api-read')->name('api.app.version');
 
@@ -98,6 +105,13 @@ Route::prefix('v1')->group(function () {
             Route::post('refresh', [AuthController::class, 'refresh']);
             Route::put('profile', [AuthController::class, 'updateProfile']);
             Route::put('password', [AuthController::class, 'updatePassword']);
+        });
+
+        // Phones for push notifications (mobile plan A2): the signed-in
+        // user's own devices, so no permission beyond being signed in.
+        Route::middleware('throttle:api-write')->group(function () {
+            Route::post('devices', [DeviceController::class, 'store'])->name('api.devices.store');
+            Route::delete('devices/{token}', [DeviceController::class, 'destroy'])->where('token', '.+')->name('api.devices.destroy');
         });
 
         // Dashboard
@@ -236,6 +250,17 @@ Route::prefix('v1')->group(function () {
             Route::post('expenses/{expense}/approve', [ExpenseController::class, 'approve'])->name('api.expenses.approve');
             Route::post('expenses/{expense}/reject', [ExpenseController::class, 'reject'])->name('api.expenses.reject');
         });
+        // Receipts on an expense (mobile plan A1).
+        Route::scopeBindings()->group(function () {
+            Route::middleware('permission:view expenses')->group(function () {
+                Route::get('expenses/{expense}/attachments', [ExpenseAttachmentController::class, 'index'])->name('api.expenses.attachments.index');
+                Route::get('expenses/{expense}/attachments/{attachment}', [ExpenseAttachmentController::class, 'show'])->middleware('throttle:api-export')->name('api.expenses.attachments.show');
+            });
+            Route::middleware(['permission:edit expenses', 'throttle:api-write'])->group(function () {
+                Route::post('expenses/{expense}/attachments', [ExpenseAttachmentController::class, 'store'])->name('api.expenses.attachments.store');
+                Route::delete('expenses/{expense}/attachments/{attachment}', [ExpenseAttachmentController::class, 'destroy'])->name('api.expenses.attachments.destroy');
+            });
+        });
         Route::delete('expenses/{expense}', [ExpenseController::class, 'destroy'])->middleware(['permission:delete expenses', 'throttle:api-write'])->name('api.expenses.destroy');
 
         // Payments Received
@@ -272,6 +297,10 @@ Route::prefix('v1')->group(function () {
             Route::get('stock-transfers/{stockTransfer}', [StockTransferController::class, 'show'])->name('api.stock-transfers.show');
         });
         Route::post('stock-transfers', [StockTransferController::class, 'store'])->middleware(['permission:adjust inventory', 'throttle:api-write'])->name('api.stock-transfers.store');
+        Route::middleware(['permission:adjust inventory', 'throttle:api-write'])->group(function () {
+            Route::post('stock-transfers/{stockTransfer}/ship', [StockTransferController::class, 'ship'])->name('api.stock-transfers.ship');
+            Route::post('stock-transfers/{stockTransfer}/receive', [StockTransferController::class, 'receive'])->name('api.stock-transfers.receive');
+        });
         // Assembly (session 14).
         Route::get('bill-of-materials', [AssemblyOrderController::class, 'bills'])->middleware('permission:view items')->name('api.bill-of-materials.index');
         Route::middleware('permission:view inventory')->group(function () {
@@ -279,6 +308,7 @@ Route::prefix('v1')->group(function () {
             Route::get('assembly-orders/{assemblyOrder}', [AssemblyOrderController::class, 'show'])->name('api.assembly-orders.show');
         });
         Route::post('assembly-orders', [AssemblyOrderController::class, 'store'])->middleware(['permission:adjust inventory', 'throttle:api-write'])->name('api.assembly-orders.store');
+        Route::post('assembly-orders/{assemblyOrder}/complete', [AssemblyOrderController::class, 'complete'])->middleware(['permission:adjust inventory', 'throttle:api-write'])->name('api.assembly-orders.complete');
 
         // Journals
         Route::middleware('permission:view journals')->group(function () {

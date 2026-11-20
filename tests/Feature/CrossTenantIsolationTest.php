@@ -100,7 +100,7 @@ class CrossTenantIsolationTest extends TestCase
 
     public function test_tenant_b_cannot_view_tenant_a_invoice(): void
     {
-        $invoice = Invoice::factory()->create(['tenant_id' => $this->tenantA->id]);
+        $invoice = Tenant::run($this->tenantA, fn () => Invoice::factory()->create(['tenant_id' => $this->tenantA->id]));
 
         $this->actingAs($this->userB)
             ->get(route('invoices.show', $invoice))
@@ -109,7 +109,7 @@ class CrossTenantIsolationTest extends TestCase
 
     public function test_tenant_b_cannot_edit_tenant_a_invoice(): void
     {
-        $invoice = Invoice::factory()->create(['tenant_id' => $this->tenantA->id]);
+        $invoice = Tenant::run($this->tenantA, fn () => Invoice::factory()->create(['tenant_id' => $this->tenantA->id]));
 
         $this->actingAs($this->userB)
             ->get(route('invoices.edit', $invoice))

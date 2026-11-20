@@ -650,7 +650,7 @@ class PhaseDPerformanceTest extends TestCase
 
         $create = $this->get(route('invoices.create', ['customer_id' => $chosen->id]))->assertOk();
         $create->assertSee('Chosen Customer')->assertDontSee('Other Customer Zed')->assertDontSee('Unused Gadget Zed');
-        $create->assertSee('lookup\\/customers', false)->assertSee('lookup\\/items', false);
+        $create->assertSee('lookup/customers', false)->assertSee('lookup/items', false);
 
         $invoice = Invoice::withoutEvents(fn () => Invoice::factory()->create(['tenant_id' => $tid, 'customer_id' => $chosen->id]));
         InvoiceItem::withoutEvents(fn () => InvoiceItem::create([
@@ -662,7 +662,7 @@ class PhaseDPerformanceTest extends TestCase
 
         $this->get(route('bills.create', ['vendor_id' => $vendor->id]))->assertOk()
             ->assertSee('Chosen Vendor')->assertDontSee('Other Vendor Zed')->assertDontSee('Unused Gadget Zed')
-            ->assertSee('lookup\\/vendors', false);
+            ->assertSee('lookup/vendors', false);
 
         $bill = Bill::withoutEvents(fn () => Bill::factory()->create(['tenant_id' => $tid, 'vendor_id' => $vendor->id]));
         $this->get(route('bills.edit', $bill))->assertOk()

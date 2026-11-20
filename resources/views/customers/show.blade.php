@@ -47,7 +47,7 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Deposit Balance</p>
-                            <p class="text-2xl font-bold {{ ($customer->deposit_balance ?? 0) > 0 ? 'text-green-700 dark:text-green-400' : 'text-gray-900 dark:text-gray-100' }}">{{ number_format($customer->deposit_balance ?? 0, 2) }}</p>
+                            <p class="text-2xl font-bold {{ ($customer->deposit_balance ?? 0) > 0 ? 'text-green-700 dark:text-green-400' : 'text-gray-900 dark:text-gray-100' }}">{{ \App\Support\Money::format($customer->deposit_balance ?? 0) }}</p>
                         </div>
                     </div>
                 </div>
@@ -75,7 +75,7 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Credit Limit</p>
-                            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ number_format($customer->credit_limit, 2) }}</p>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ \App\Support\Money::format($customer->credit_limit) }}</p>
                         </div>
                     </div>
                 </div>
@@ -330,7 +330,7 @@
                                         </svg>
                                         <span class="text-sm font-medium text-green-800 dark:text-green-300">Available Deposit Balance</span>
                                     </div>
-                                    <span class="text-lg font-bold text-green-700 dark:text-green-400">{{ number_format($customer->deposit_balance, 2) }}</span>
+                                    <span class="text-lg font-bold text-green-700 dark:text-green-400">{{ \App\Support\Money::format($customer->deposit_balance) }}</span>
                                 </div>
                             </div>
                             @endif

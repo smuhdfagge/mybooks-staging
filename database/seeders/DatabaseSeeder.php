@@ -182,6 +182,9 @@ class DatabaseSeeder extends Seeder
             'export data', 'import data',
             'override lock-date',
             'view e-invoices', 'submit e-invoices',
+            // Payroll, all of it (November 2026), and the staff records a pay run needs.
+            'view payroll', 'create payroll', 'edit payroll', 'approve payroll', 'delete payroll',
+            'view employees', 'edit employees',
         ]);
 
         // Sales
@@ -312,7 +315,7 @@ class DatabaseSeeder extends Seeder
         ChartOfAccountService::createDefaultAccounts($tenant->id);
 
         // Create default leave types
-        $this->createLeaveTypes($tenant->id);
+        Tenant::run($tenant, fn () => $this->createLeaveTypes($tenant->id));
     }
 
     private function createLeaveTypes(int $tenantId): void

@@ -20,8 +20,10 @@ use App\Models\RecurrentBill;
 use App\Models\RecurrentInvoice;
 use App\Models\SalesOrder;
 use App\Models\SalesReceipt;
+use App\Models\Tenant;
 use App\Models\Vendor;
 use App\Services\AccountCodeService;
+use App\Services\StockValuationService;
 use App\Support\Money;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -84,6 +86,8 @@ class PhaseCRegressionTest extends TestCase
             'tenant_id' => $this->tenant->id, 'type' => 'product', 'track_inventory' => true, 'selling_price' => 10000,
         ]);
         Inventory::create(['tenant_id' => $this->tenant->id, 'item_id' => $item->id, 'quantity' => $onHand, 'reserved_quantity' => 0]);
+        // With its cost, as stock received is (audit MB-31).
+        app(StockValuationService::class)->addLayer($this->tenant->id, $item->id, $onHand, (float) $item->cost_price);
 
         return $item;
     }
@@ -445,7 +449,7 @@ class PhaseCRegressionTest extends TestCase
 
         $prefill = $this->get(route('bills.create', ['purchase_order_id' => $order->id]))->assertOk()->viewData('prefillItems');
         $this->assertEqualsWithDelta(1000, $prefill[0]['discount'], 0.001);
-        $this->assertStringContainsString('items[${index}][discount]', file_get_contents(resource_path('views/bills/create.blade.php')));
+        $this->assertStringContainsString("'items[' + index + '][discount]'", file_get_contents(resource_path('views/bills/create.blade.php')));
     }
 
     // ── R3: cash sales ──────────────────────────────────────────
@@ -539,16 +543,16 @@ class PhaseCRegressionTest extends TestCase
         // 3.71 + 0.28 stored as 3.98: a kobo out, as unrounded sums used to give.
         $figures = ['subtotal' => 3.71, 'tax_amount' => 0.28, 'total' => 3.98];
 
-        $docs = [
+        $docs = Tenant::run($tenant, fn () => [
             SalesOrder::create($figures + ['tenant_id' => $tenant->id, 'customer_id' => $customer->id, 'order_number' => 'SO-9', 'order_date' => '2026-09-01', 'status' => 'draft']),
             Quotation::create($figures + ['tenant_id' => $tenant->id, 'customer_id' => $customer->id, 'quotation_number' => 'QT-9', 'quotation_date' => '2026-09-01', 'status' => 'draft']),
             PurchaseOrder::create($figures + ['tenant_id' => $tenant->id, 'vendor_id' => $vendor->id, 'order_number' => 'PO-9', 'order_date' => '2026-09-01', 'status' => 'draft']),
             CreditNote::create($figures + ['tenant_id' => $tenant->id, 'customer_id' => $customer->id, 'credit_note_number' => 'CN-9', 'credit_note_date' => '2026-09-01', 'status' => 'draft']),
             RecurrentBill::create($figures + ['tenant_id' => $tenant->id, 'vendor_id' => $vendor->id, 'profile_name' => 'R', 'frequency' => 'monthly', 'start_date' => '2026-09-01', 'next_bill_date' => '2026-10-01', 'status' => 'active']),
-        ];
+        ]);
 
         foreach ($docs as $doc) {
-            $this->assertEqualsWithDelta(3.99, (float) $doc->fresh()->total, 0.0001, class_basename($doc));
+            $this->assertEqualsWithDelta(3.99, (float) Tenant::run($tenant, fn () => $doc->fresh())->total, 0.0001, class_basename($doc));
         }
     }
 

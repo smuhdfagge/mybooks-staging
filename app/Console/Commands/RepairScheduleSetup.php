@@ -37,40 +37,42 @@ class RepairScheduleSetup extends Command
         $found = 0;
         $posted = 0;
         foreach ($tenants as $tenant) {
-            $rows = [];
-            $schedules = AccrualSchedule::withoutGlobalScope('tenant')
-                ->where('tenant_id', $tenant->id)
-                ->whereNotNull('source_type')->whereNull('setup_journal_id')
-                ->with(['balanceAccount' => fn ($q) => $q->withoutGlobalScope('tenant')])
-                ->orderBy('id')->get();
+            Tenant::run($tenant, function () use ($tenant, $setup, $apply, &$found, &$posted) {
+                $rows = [];
+                $schedules = AccrualSchedule::withoutGlobalScope('tenant')
+                    ->where('tenant_id', $tenant->id)
+                    ->whereNotNull('source_type')->whereNull('setup_journal_id')
+                    ->with(['balanceAccount' => fn ($q) => $q->withoutGlobalScope('tenant')])
+                    ->orderBy('id')->get();
 
-            foreach ($schedules as $schedule) {
-                try {
-                    $from = $setup->sourceAccount($schedule);
-                } catch (ValidationException $e) {
-                    $rows[] = [$schedule->schedule_number, $schedule->typeLabel(), $schedule->source_type, '-', number_format((float) $schedule->total_amount, 2), 'cannot: '.collect($e->errors())->flatten()->first()];
+                foreach ($schedules as $schedule) {
+                    try {
+                        $from = $setup->sourceAccount($schedule);
+                    } catch (ValidationException $e) {
+                        $rows[] = [$schedule->schedule_number, $schedule->typeLabel(), $schedule->source_type, '-', number_format((float) $schedule->total_amount, 2), 'cannot: '.collect($e->errors())->flatten()->first()];
 
-                    continue;
+                        continue;
+                    }
+                    if ($from === null) {
+                        continue; // the document already posted to the balance account
+                    }
+                    $found++;
+                    $direction = $schedule->isPrepaid() ? "{$from} -> {$schedule->balanceAccount?->account_code}" : "{$schedule->balanceAccount?->account_code} <- {$from}";
+                    $status = 'to post';
+                    if ($apply) {
+                        $journal = DB::transaction(fn () => $setup->post($schedule));
+                        $status = $journal ? "posted {$journal->journal_number}" : 'nothing needed';
+                        $posted += $journal ? 1 : 0;
+                    }
+                    $rows[] = [$schedule->schedule_number, $schedule->typeLabel(), $schedule->source_type, $direction, number_format((float) $schedule->total_amount, 2), $status];
                 }
-                if ($from === null) {
-                    continue; // the document already posted to the balance account
-                }
-                $found++;
-                $direction = $schedule->isPrepaid() ? "{$from} -> {$schedule->balanceAccount?->account_code}" : "{$schedule->balanceAccount?->account_code} <- {$from}";
-                $status = 'to post';
-                if ($apply) {
-                    $journal = DB::transaction(fn () => $setup->post($schedule));
-                    $status = $journal ? "posted {$journal->journal_number}" : 'nothing needed';
-                    $posted += $journal ? 1 : 0;
-                }
-                $rows[] = [$schedule->schedule_number, $schedule->typeLabel(), $schedule->source_type, $direction, number_format((float) $schedule->total_amount, 2), $status];
-            }
 
-            if ($rows) {
-                $this->newLine();
-                $this->info("Tenant {$tenant->id}: {$tenant->name}");
-                $this->table(['Schedule', 'Type', 'Linked to', 'Moves (account codes)', 'Amount', 'Status'], $rows);
-            }
+                if ($rows) {
+                    $this->newLine();
+                    $this->info("Tenant {$tenant->id}: {$tenant->name}");
+                    $this->table(['Schedule', 'Type', 'Linked to', 'Moves (account codes)', 'Amount', 'Status'], $rows);
+                }
+            });
         }
 
         $this->newLine();

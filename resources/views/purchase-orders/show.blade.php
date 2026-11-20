@@ -131,7 +131,7 @@
             {{-- Bills raised from this order --}}
             @if ($po->bills->isNotEmpty())
                 <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                    <h3 class="font-medium text-gray-900 dark:text-white">Billed</h3>
+                    <h2 class="section-title">Billed</h2>
                     @foreach ($po->bills as $bill)
                         <div class="mt-3 flex items-start justify-between gap-3 text-sm">
                             <div class="min-w-0">
@@ -146,7 +146,7 @@
 
             {{-- Supplier --}}
             <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                <h3 class="font-medium text-gray-900 dark:text-white">Supplier</h3>
+                <h2 class="section-title">Supplier</h2>
                 <p class="mt-2 text-sm"><a href="{{ route('vendors.show', $po->vendor) }}" class="link">{{ $po->vendor->name }}</a></p>
                 @if ($po->vendor->company_name && $po->vendor->company_name !== $po->vendor->name)
                     <p class="text-sm text-gray-600 dark:text-gray-400">{{ $po->vendor->company_name }}</p>
@@ -161,7 +161,7 @@
 
             {{-- Activity --}}
             <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                <h3 class="font-medium text-gray-900 dark:text-white">Activity</h3>
+                <h2 class="section-title">Activity</h2>
                 <ol class="mt-3 space-y-3 border-l border-gray-200 pl-4 dark:border-gray-700">
                     <li class="relative text-sm">
                         <span class="absolute -left-[1.3rem] top-1.5 h-2 w-2 rounded-full bg-gray-400 ring-4 ring-white dark:bg-gray-500 dark:ring-gray-800" aria-hidden="true"></span>

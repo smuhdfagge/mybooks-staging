@@ -9,6 +9,7 @@ use App\Models\Inventory;
 use App\Models\Invoice;
 use App\Models\Item;
 use App\Models\SalesOrder;
+use App\Services\StockValuationService;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
@@ -34,6 +35,8 @@ class DeliveryNotesTest extends TestCase
         $this->customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->rice = Item::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Rice', 'type' => 'product', 'track_inventory' => true, 'cost_price' => 30000]);
         Inventory::create(['tenant_id' => $this->tenant->id, 'item_id' => $this->rice->id, 'quantity' => 20, 'reserved_quantity' => 0]);
+        // With its cost, as stock received is (audit MB-31).
+        app(StockValuationService::class)->addLayer($this->tenant->id, $this->rice->id, 20, 30000);
     }
 
     /** A confirmed order: 10 bags of rice and 5 hours of labour. */

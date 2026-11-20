@@ -31,6 +31,8 @@ use Illuminate\Validation\ValidationException;
  */
 class SaveInvoice
 {
+    use KeepsStockCosts;
+
     /** Statuses a new invoice may start in. Payments and dates set the rest (I3). */
     public const START_STATUSES = [InvoiceStatus::Draft->value, InvoiceStatus::Sent->value, InvoiceStatus::Unpaid->value];
 
@@ -127,6 +129,8 @@ class SaveInvoice
 
             $invoice->load('items');
             $invoice->releaseInventoryReservation();
+            $costs = $this->stockCosts($invoice);
+            $sameWarehouse = $warehouseId === $invoice->warehouseIdOrDefault();
 
             $invoice->fill(array_filter([
                 'customer_id' => $data['customer_id'] ?? null,
@@ -142,6 +146,7 @@ class SaveInvoice
 
             $invoice->items()->delete();
             $this->writeLines($invoice, $totals['lines']);
+            $this->keepStockCosts($invoice, $costs, $sameWarehouse);
 
             if (! $invoice->isReleased()) {
                 $invoice->reserveInventory();

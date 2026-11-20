@@ -18,12 +18,14 @@ use Illuminate\Support\Facades\File;
  * Written on every deploy rather than kept in git, so a new guide cannot
  * be published and then left out of the sitemap, which is what happened
  * before this: the file on the server stayed at the six pages it had when
- * it was first written by hand.
+ * it was first written by hand. And rewritten every hour by the scheduler,
+ * because the host can pull new code on a merge without the deploy
+ * running (November 2026: four guides and /partners missing for a day).
  */
 class SearchFiles
 {
     /** The public pages that are not a guide or a feature page, most important first. */
-    public const PAGES = ['home', 'pricing', 'about', 'contact', 'support', 'guides.index', 'privacy-policy', 'terms-of-service'];
+    public const PAGES = ['home', 'pricing', 'about', 'partners', 'contact', 'support', 'guides.index', 'privacy-policy', 'terms-of-service', 'docs.api'];
 
     public function __construct(
         private Guides $guides,

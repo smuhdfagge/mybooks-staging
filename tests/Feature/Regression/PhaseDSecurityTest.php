@@ -337,8 +337,8 @@ class PhaseDSecurityTest extends TestCase
             ->assertSessionHasErrors('email');
         $this->assertFalse(session()->has('admin_two_factor:id'));
 
-        $this->assertSame(4, ActivityLog::where('admin_user_id', $admin->id)->where('action', ActivityLog::ACTION_LOGIN_FAILED)->count());
-        $this->assertTrue(ActivityLog::where('admin_user_id', $admin->id)->where('action', ActivityLog::ACTION_ACCOUNT_LOCKED)->exists());
+        $this->assertSame(4, ActivityLog::withoutGlobalScopes()->where('admin_user_id', $admin->id)->where('action', ActivityLog::ACTION_LOGIN_FAILED)->count());
+        $this->assertTrue(ActivityLog::withoutGlobalScopes()->where('admin_user_id', $admin->id)->where('action', ActivityLog::ACTION_ACCOUNT_LOCKED)->exists());
     }
 
     public function test_s2_admin_changes_are_logged_with_who_and_before_and_after(): void
@@ -354,7 +354,7 @@ class PhaseDSecurityTest extends TestCase
             'password' => 'Another-long-Passw0rd!', 'password_confirmation' => 'Another-long-Passw0rd!',
         ])->assertRedirect(route('admin.users.index'));
 
-        $logs = ActivityLog::where('admin_user_id', $admin->id)->orderBy('id')->get();
+        $logs = ActivityLog::withoutGlobalScopes()->where('admin_user_id', $admin->id)->orderBy('id')->get();
 
         $suspend = $logs->firstWhere('model_type', Tenant::class);
         $this->assertNotNull($suspend);

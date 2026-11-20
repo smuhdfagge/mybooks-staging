@@ -24,7 +24,7 @@
         @endcomponent
 
         <x-report.stats :cols="4">
-            <x-report.stat label="Gross pay" :value="\App\Support\Figure::show($totalGross)" :hint="number_format($payrolls->count()).' payslips'" />
+            <x-report.stat label="Gross pay" :value="\App\Support\Figure::show($totalGross)" :hint="number_format($payrolls->total()).' payslips'" />
             <x-report.stat label="Income tax" :value="\App\Support\Figure::show($totalTax)" />
             <x-report.stat label="All deductions" :value="\App\Support\Figure::show($totalDeductions)" />
             <x-report.stat label="Net pay" :value="\App\Support\Figure::show($totalNet)" />
@@ -65,7 +65,7 @@
                     <tr>
                         <td>Total</td>
                         <td></td>
-                        <td class="num hidden lg:table-cell">@fig($payrolls->sum('basic_salary'))</td>
+                        <td class="num hidden lg:table-cell">@fig($totalBasic)</td>
                         <td class="num hidden lg:table-cell">@fig($totalAllowances)</td>
                         <td class="num hidden xl:table-cell">@fig($totalOvertime)</td>
                         <td class="num hidden sm:table-cell">@fig($totalGross)</td>
@@ -75,6 +75,7 @@
                     </tr>
                 </x-slot>
             </x-table>
+            {{ $payrolls->links() }}
         @endif
     </x-report.sheet>
 </x-app-layout>

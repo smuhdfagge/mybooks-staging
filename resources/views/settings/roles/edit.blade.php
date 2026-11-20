@@ -83,10 +83,10 @@
                                                     @if(isset($permissionMap[$action]))
                                                         <input type="checkbox" name="permissions[]" value="{{ $permissionMap[$action] }}"
                                                             class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 permission-checkbox dark:text-brand-300"
-                                                            data-resource="{{ $resource }}"
+                                                            aria-label="{{ $resourceLabel }}: {{ ucwords(str_replace('-', ' ', $action)) }}" data-resource="{{ $resource }}"
                                                             {{ in_array($permissionMap[$action], $oldPermissions) ? 'checked' : '' }}>
                                                     @else
-                                                        <span class="tbl-zero" aria-label="Not used">—</span>
+                                                        <span class="tbl-zero" aria-hidden="true">—</span><span class="sr-only">Not used</span>
                                                     @endif
                                                 </td>
                                             @endforeach
@@ -107,12 +107,12 @@
                                                         @endforeach
                                                     </div>
                                                 @else
-                                                    <span class="tbl-zero" aria-label="Not used">—</span>
+                                                    <span class="tbl-zero" aria-hidden="true">—</span><span class="sr-only">Not used</span>
                                                 @endif
                                             </td>
                                             <td class="text-center">
                                                 <input type="checkbox" class="rounded border-gray-300 dark:border-gray-600 text-brand-600 shadow-sm focus:ring-brand-500 row-toggle dark:text-brand-300"
-                                                    data-resource="{{ $resource }}" title="Toggle all for {{ $resourceLabel }}">
+                                                    data-resource="{{ $resource }}" title="Toggle all for {{ $resourceLabel }}" aria-label="Toggle all for {{ $resourceLabel }}">
                                             </td>
                                         </tr>
                                     @endforeach

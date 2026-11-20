@@ -42,7 +42,7 @@ class CheckSubscription
             return $this->redirectWithError($request, 'No organization associated with your account.');
         }
 
-        // Check if tenant has an active subscription (not trial, not cancelled, not expired)
+        // A paid subscription or a free trial, still running (Tenant::activeSubscription)
         if (! $tenant->hasActiveSubscription()) {
             return $this->redirectWithError(
                 $request,

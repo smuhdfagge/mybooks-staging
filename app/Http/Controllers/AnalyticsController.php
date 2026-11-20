@@ -4,9 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use App\Models\Invoice;
-use App\Models\Item;
 use App\Models\PaymentReceived;
-use App\Models\SalesOrder;
 use App\Support\SqlDate;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
@@ -444,10 +442,11 @@ class AnalyticsController extends Controller
                 'id' => $customer->id,
                 'name' => $customer->name,
                 'company' => $customer->company_name,
-                'total_sales' => (float) $customer->invoices_sum_total ?? 0,
-                'amount_paid' => (float) $customer->invoices_sum_amount_paid ?? 0,
-                'invoice_count' => $customer->invoices_count ?? 0,
-                'outstanding' => ($customer->invoices_sum_total ?? 0) - ($customer->invoices_sum_amount_paid ?? 0),
+                // withSum / withCount columns (null when there is nothing to add up).
+                'total_sales' => (float) $customer->getAttribute('invoices_sum_total'),
+                'amount_paid' => (float) $customer->getAttribute('invoices_sum_amount_paid'),
+                'invoice_count' => $customer->getAttribute('invoices_count') ?? 0,
+                'outstanding' => (float) $customer->getAttribute('invoices_sum_total') - (float) $customer->getAttribute('invoices_sum_amount_paid'),
             ];
         })->toArray();
     }
@@ -536,6 +535,7 @@ class AnalyticsController extends Controller
             ->select('payment_method', DB::raw('COUNT(*) as count'), DB::raw('SUM(amount) as total'))
             ->groupBy('payment_method')
             ->orderByDesc('total')
+            ->toBase()
             ->get();
 
         return $payments->map(function ($payment) {
@@ -543,36 +543,6 @@ class AnalyticsController extends Controller
                 'method' => ucfirst(str_replace('_', ' ', $payment->payment_method)),
                 'count' => $payment->count,
                 'total' => (float) $payment->total,
-            ];
-        })->toArray();
-    }
-
-    /**
-     * Get revenue by item category.
-     */
-    private function getRevenueByCategory($tenantId, $startDate, $endDate): array
-    {
-        $categories = DB::table('invoice_items')
-            ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
-            ->leftJoin('items', 'invoice_items.item_id', '=', 'items.id')
-            ->leftJoin('item_categories', 'items.category_id', '=', 'item_categories.id')
-            ->where('invoices.tenant_id', $tenantId)
-            ->whereBetween('invoices.invoice_date', [$startDate, $endDate])
-            ->whereNull('invoices.deleted_at')
-            ->select(
-                DB::raw('COALESCE(item_categories.name, "Uncategorized") as category'),
-                DB::raw('SUM(invoice_items.total) as total'),
-                DB::raw('SUM(invoice_items.quantity) as quantity')
-            )
-            ->groupBy('item_categories.name')
-            ->orderByDesc('total')
-            ->get();
-
-        return $categories->map(function ($cat) {
-            return [
-                'category' => $cat->category,
-                'total' => (float) $cat->total,
-                'quantity' => (float) $cat->quantity,
             ];
         })->toArray();
     }
@@ -679,123 +649,6 @@ class AnalyticsController extends Controller
     }
 
     /**
-     * Get collection efficiency metrics.
-     */
-    private function getCollectionEfficiency($tenantId, $startDate, $endDate): array
-    {
-        // Days Sales Outstanding (DSO)
-        $avgReceivables = Invoice::where('tenant_id', $tenantId)
-            ->open()
-            ->avg('balance_due') ?? 0;
-
-        $dailySales = Invoice::where('tenant_id', $tenantId)
-            ->whereBetween('invoice_date', [$startDate, $endDate])
-            ->sum('total');
-
-        $daysDiff = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) ?: 1;
-        $avgDailySales = $dailySales / $daysDiff;
-
-        $dso = $avgDailySales > 0 ? round($avgReceivables / $avgDailySales, 1) : 0;
-
-        // Collection by aging bucket
-        $aging = [
-            'current' => Invoice::where('tenant_id', $tenantId)
-                ->open()
-                ->where('due_date', '>=', now())
-                ->sum('balance_due'),
-            '1_30' => Invoice::where('tenant_id', $tenantId)
-                ->open()
-                ->where('due_date', '<', now())
-                ->where('due_date', '>=', now()->subDays(30))
-                ->sum('balance_due'),
-            '31_60' => Invoice::where('tenant_id', $tenantId)
-                ->open()
-                ->where('due_date', '<', now()->subDays(30))
-                ->where('due_date', '>=', now()->subDays(60))
-                ->sum('balance_due'),
-            '61_90' => Invoice::where('tenant_id', $tenantId)
-                ->open()
-                ->where('due_date', '<', now()->subDays(60))
-                ->where('due_date', '>=', now()->subDays(90))
-                ->sum('balance_due'),
-            'over_90' => Invoice::where('tenant_id', $tenantId)
-                ->open()
-                ->where('due_date', '<', now()->subDays(90))
-                ->sum('balance_due'),
-        ];
-
-        // Payment velocity - average days to payment
-        $paidInvoices = Invoice::where('tenant_id', $tenantId)
-            ->whereBetween('invoice_date', [$startDate, $endDate])
-            ->where('status', 'paid')
-            ->whereNotNull('updated_at')
-            ->get();
-
-        $avgDaysToPayment = 0;
-        if ($paidInvoices->count() > 0) {
-            $totalDays = $paidInvoices->sum(function ($invoice) {
-                return $invoice->invoice_date->diffInDays($invoice->updated_at);
-            });
-            $avgDaysToPayment = round($totalDays / $paidInvoices->count(), 1);
-        }
-
-        return [
-            'dso' => $dso,
-            'avg_days_to_payment' => $avgDaysToPayment,
-            'aging' => $aging,
-            'total_outstanding' => array_sum($aging),
-        ];
-    }
-
-    /**
-     * Get sales funnel data.
-     */
-    private function getSalesFunnel($tenantId, $startDate, $endDate): array
-    {
-        // Sales Orders
-        $salesOrders = SalesOrder::where('tenant_id', $tenantId)
-            ->whereBetween('order_date', [$startDate, $endDate])
-            ->count();
-
-        $salesOrdersValue = SalesOrder::where('tenant_id', $tenantId)
-            ->whereBetween('order_date', [$startDate, $endDate])
-            ->sum('total');
-
-        // Invoices created
-        $invoicesCreated = Invoice::where('tenant_id', $tenantId)
-            ->whereBetween('invoice_date', [$startDate, $endDate])
-            ->count();
-
-        $invoicesValue = Invoice::where('tenant_id', $tenantId)
-            ->whereBetween('invoice_date', [$startDate, $endDate])
-            ->sum('total');
-
-        // Invoices sent
-        $invoicesSent = Invoice::where('tenant_id', $tenantId)
-            ->whereBetween('invoice_date', [$startDate, $endDate])
-            ->whereIn('status', ['sent', 'unpaid', 'partial', 'paid', 'overdue'])
-            ->count();
-
-        // Invoices paid
-        $invoicesPaid = Invoice::where('tenant_id', $tenantId)
-            ->whereBetween('invoice_date', [$startDate, $endDate])
-            ->where('status', 'paid')
-            ->count();
-
-        $paidValue = Invoice::where('tenant_id', $tenantId)
-            ->whereBetween('invoice_date', [$startDate, $endDate])
-            ->where('status', 'paid')
-            ->sum('total');
-
-        return [
-            ['stage' => 'Sales Orders', 'count' => $salesOrders, 'value' => (float) $salesOrdersValue],
-            ['stage' => 'Invoices Created', 'count' => $invoicesCreated, 'value' => (float) $invoicesValue],
-            ['stage' => 'Invoices Sent', 'count' => $invoicesSent, 'value' => (float) $invoicesValue],
-            ['stage' => 'Invoices Paid', 'count' => $invoicesPaid, 'value' => (float) $paidValue],
-        ];
-    }
-
-    /**
      * Get overdue analysis.
      */
     private function getOverdueAnalysis($tenantId): array
@@ -894,6 +747,7 @@ class AnalyticsController extends Controller
                 DB::raw('SUM(total) as total')
             )
             ->groupBy('day_of_week', 'hour')
+            ->toBase()
             ->get();
 
         // Transform to heatmap format

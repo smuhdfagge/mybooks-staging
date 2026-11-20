@@ -530,6 +530,9 @@
                 customRange.classList.add('hidden');
             }
         });
+
+        // Registered for the CSP build of Alpine (audit MB-29), which can't call page globals.
+        document.addEventListener('alpine:init', () => Alpine.data('analyticsApp', analyticsApp));
     </script>
     @endpush
 </x-app-layout>

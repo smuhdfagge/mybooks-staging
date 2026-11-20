@@ -509,6 +509,26 @@ class DashboardService
             ];
         }
 
+        // Read fresh, not from the day's cache: paying ends the trial at once.
+        $trial = $user->can('manage subscription')
+            ? Subscription::where('tenant_id', $tenantId)->where('status', Subscription::STATUS_TRIALING)
+                ->where('ends_at', '>', now())->latest('id')->first(['id', 'ends_at'])
+            : null;
+        if ($trial) {
+            // Calendar days, as the reminder emails count them.
+            $days = (int) $today->diffInDays($trial->ends_at->copy()->startOfDay());
+            $out[] = [
+                'tone' => $days <= 3 ? 'warn' : 'info',
+                'title' => match ($days) {
+                    0 => 'Your free trial ends today',
+                    1 => 'Your free trial ends tomorrow',
+                    default => "Your free trial: {$days} days left",
+                },
+                'text' => 'Ends '.$trial->ends_at->format('j M').'. Pay any time to carry on; the days left are kept.',
+                'url' => route('settings.subscription'),
+            ];
+        }
+
         if ($facts['subscriptionPending'] && $user->can('manage subscription')) {
             $out[] = [
                 'tone' => 'warn',

@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\Role;
-use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Billing\SubscriptionBilling;
@@ -17,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -43,7 +43,8 @@ class RegisteredUserController extends Controller
 
         $request->validate([
             // Plan validation
-            'plan_id' => ['required', 'exists:plans,id'],
+            // Only a plan on sale: a retired or hidden one can't be signed up to (audit MB-28).
+            'plan_id' => ['required', Rule::exists('plans', 'id')->where('is_active', true)],
             'billing_cycle' => ['required', 'in:monthly,annual'],
             // Tenant validation
             'company_name' => ['required', 'string', 'max:255'],
@@ -60,6 +61,8 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'phone' => ['nullable', 'string', 'max:20'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ], [
+            'plan_id.exists' => 'That plan is no longer available. Choose another.',
         ]);
 
         // Get the plan and validate billing cycle
@@ -89,8 +92,9 @@ class RegisteredUserController extends Controller
                 'is_active' => true,
             ]);
 
-            // The subscription waits for payment (finding C1). A free plan
-            // is switched on straight away.
+            // A paid plan starts on its free trial (no card), or waits for
+            // payment when trials are off (finding C1). A free plan is
+            // switched on straight away.
             app(SubscriptionBilling::class)
                 ->startPendingSubscription($tenant, $plan, $billingCycle);
 

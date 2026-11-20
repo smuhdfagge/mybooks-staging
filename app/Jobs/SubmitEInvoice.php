@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Actions\EInvoicing\SubmitInvoiceToNrs;
 use App\Models\CreditNote;
 use App\Models\Invoice;
+use App\Models\Tenant;
 use App\Services\EInvoicing\EInvoiceException;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -40,13 +41,15 @@ class SubmitEInvoice implements ShouldQueue
             return;
         }
 
-        try {
-            $submit->handle($document, $this->userId);
-        } catch (EInvoiceException $e) {
-            // Not set up, a draft, or something to fix first: the reason is on the e-invoice row.
-            Log::info('E-invoice not sent', ['type' => $this->type, 'id' => $this->documentId, 'reason' => $e->getMessage()]);
-        } catch (Throwable $e) {
-            report($e);
-        }
+        Tenant::run($document->tenant_id, function () use ($submit, $document) {
+            try {
+                $submit->handle($document, $this->userId);
+            } catch (EInvoiceException $e) {
+                // Not set up, a draft, or something to fix first: the reason is on the e-invoice row.
+                Log::info('E-invoice not sent', ['type' => $this->type, 'id' => $this->documentId, 'reason' => $e->getMessage()]);
+            } catch (Throwable $e) {
+                report($e);
+            }
+        });
     }
 }

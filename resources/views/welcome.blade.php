@@ -33,6 +33,9 @@
 
     $maxUsers = (int) $plans->max('users');
 
+    // Only said while trials are on (mybooks.trial_days).
+    $trialDays = \App\Services\Billing\SubscriptionBilling::trialDays();
+
     // "Yearly costs the same as ten months", only when that is true of every
     // plan that offers both.
     $both = $plans->filter(fn ($p) => $p['monthly'] !== null && $p['annual'] !== null);
@@ -135,10 +138,10 @@
                 <h1 id="home-title">Invoices out, money in, tax worked out.</h1>
                 <p class="lede">MyBooks is accounting software for Nigerian businesses. Send invoices, remind customers {{ $remindVia }}, keep your stock right and pay your staff. Your VAT, WHT, PAYE and pension figures are ready when they fall due.</p>
                 <div class="hero-cta">
-                    <a class="btn btn-main" href="#pricing">Choose a plan</a>
+                    <a class="btn btn-main" href="#pricing">{{ $trialDays > 0 ? 'Start your free trial' : 'Choose a plan' }}</a>
                     <a class="btn btn-quiet" href="{{ $demoUrl }}">Book a demo</a>
                 </div>
-                <p class="hero-note"><strong>Prices in naira.</strong> Pay through Paystack.@if ($maxUsers > 1) Up to {{ $maxUsers }} people on one account.@endif</p>
+                <p class="hero-note">@if ($trialDays > 0)<strong>Free for {{ $trialDays }} days, no card needed.</strong> Then prices in naira, paid through Paystack.@else<strong>Prices in naira.</strong> Pay through Paystack.@endif @if ($maxUsers > 1) Up to {{ $maxUsers }} people on one account.@endif</p>
             </div>
 
             <div class="scene" data-scene data-cash-from="4218400" data-amount="1531875" data-paid-text="+₦1,531,875.00 from Danjuma Foods">
@@ -416,10 +419,10 @@
             <h2 id="close-title">Ready to put your books in order?</h2>
             <div>
                 <div class="hero-cta">
-                    <a class="btn btn-main" href="#pricing">Choose a plan</a>
+                    <a class="btn btn-main" href="#pricing">{{ $trialDays > 0 ? 'Start your free trial' : 'Choose a plan' }}</a>
                     <a class="btn btn-quiet" href="{{ $demoUrl }}">Book a demo</a>
                 </div>
-                <p class="hero-note">Prices in naira. Pay through Paystack.</p>
+                <p class="hero-note">@if ($trialDays > 0)Free for {{ $trialDays }} days, no card needed. @endif Prices in naira. Pay through Paystack.</p>
             </div>
         </div>
     </section>

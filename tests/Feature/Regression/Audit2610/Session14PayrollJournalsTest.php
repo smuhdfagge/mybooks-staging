@@ -57,6 +57,17 @@ class Session14PayrollJournalsTest extends TestCase
         return $payroll->fresh();
     }
 
+    public function test_the_repair_command_runs_from_cron_for_a_business_with_paid_payrolls(): void
+    {
+        $this->paidSeptember();
+
+        // Signed out, as from cron: the employee eager load is tenant-scoped (audit MB-26).
+        $this->artisan('payroll:fix-journals', ['tenant_id' => $this->tenant->id])
+            ->expectsOutputToContain('Found 1 paid payroll records')
+            ->expectsOutputToContain('Fixed 1 existing journals, created 0 missing journals. Errors: 0.')
+            ->assertSuccessful();
+    }
+
     /** The payslip a payroll run would make now (PAYE after pension and other reliefs). */
     private function payslip(): array
     {

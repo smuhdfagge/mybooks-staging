@@ -18,36 +18,14 @@
             <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">Link the bill, expense or invoice it was paid or billed on: saving then moves the amount from the account that document used into the prepaid or deferred revenue account. Without a link, the amount must already be in that account (record it with a journal first). Each month an equal share moves to the expense or income account; months already over are released as soon as you save.</p>
 
             <form method="POST" action="{{ $editing ? route('accrual-schedules.update', $schedule) : route('accrual-schedules.store') }}" class="space-y-6"
-                  x-data="{
+                  x-data="accrualPlan({
                       type: @js($type),
                       total: @js((string) old('total_amount', $schedule->total_amount !== null ? (float) $schedule->total_amount : '')),
                       months: @js((string) old('months', $schedule->months)),
                       start: @js((string) $startMonth),
                       today: @js(today()->toDateString()),
-                      get rows() {
-                          const n = parseInt(this.months, 10);
-                          const totalMinor = Math.round(parseFloat(this.total) * 100);
-                          const m = /^(\d{4})-(\d{2})/.exec(this.start || '');
-                          if (!m || !(n >= 1 && n <= {{ \App\Models\AccrualSchedule::MAX_MONTHS }}) || !(totalMinor > 0)) return [];
-                          // Same split as the server (Money::allocate): equal shares in whole kobo, the last month takes the difference.
-                          const each = Math.round(totalMinor / n);
-                          const rows = [];
-                          for (let i = 1; i <= n; i++) {
-                              const end = new Date(Date.UTC(+m[1], +m[2] - 1 + i, 0));
-                              const iso = end.toISOString().slice(0, 10);
-                              rows.push({
-                                  i,
-                                  month: end.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }),
-                                  date: end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }),
-                                  amount: (i < n ? each : totalMinor - each * (n - 1)) / 100,
-                                  past: iso <= this.today,
-                              });
-                          }
-                          return rows;
-                      },
-                      get pastCount() { return this.rows.filter(r => r.past).length; },
-                      money(v) { return window.formatMoney ? window.formatMoney(v) : v.toFixed(2); },
-                  }">
+                      maxMonths: @js(\App\Models\AccrualSchedule::MAX_MONTHS),
+                  })">
                 @csrf
                 @if($editing) @method('PUT') @endif
 
@@ -132,7 +110,7 @@
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400" x-show="rows.length === 0">Enter the total, the first month and the number of months to see the plan.</p>
                     <div x-show="rows.length > 0" x-cloak>
                         <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                            <span x-text="rows.length"></span> month(s) of about <span class="font-semibold" x-text="money(rows[0]?.amount ?? 0)"></span>,
+                            <span x-text="rows.length"></span> month(s) of about <span class="font-semibold" x-text="money(firstAmount)"></span>,
                             each posted on the last day of its month:
                             <span x-text="type === 'prepaid_expense' ? 'Dr the expense, Cr the prepaid account.' : 'Dr the deferred revenue account, Cr the income.'"></span>
                             <span x-show="pastCount > 0" class="block text-amber-700 dark:text-amber-300"><span x-text="pastCount"></span> month(s) are already over and will be released as soon as you save.</span>
@@ -151,7 +129,7 @@
                                         </tr>
                                     </template>
 <x-slot name="foot">
-                                    <tr><td colspan="3">Total</td><td class="num" x-text="money(rows.reduce((s, r) => s + Math.round(r.amount * 100), 0) / 100)"></td></tr>
+                                    <tr><td colspan="3">Total</td><td class="num" x-text="money(totalAmount)"></td></tr>
 </x-slot>
 </x-table>
                         </div>
@@ -165,4 +143,36 @@
             </form>
         </div>
     </div>
+
+    <script nonce="{{ app('csp-nonce') }}">
+        // The month-by-month plan, as the server will post it (Money::allocate:
+        // equal shares in whole kobo, the last month takes the difference).
+        document.addEventListener('alpine:init', () => Alpine.data('accrualPlan', (config) => ({
+            ...config,
+            get rows() {
+                const n = parseInt(this.months, 10);
+                const totalMinor = Math.round(parseFloat(this.total) * 100);
+                const m = /^(\d{4})-(\d{2})/.exec(this.start || '');
+                if (!m || !(n >= 1 && n <= this.maxMonths) || !(totalMinor > 0)) return [];
+                const each = Math.round(totalMinor / n);
+                const rows = [];
+                for (let i = 1; i <= n; i++) {
+                    const end = new Date(Date.UTC(+m[1], +m[2] - 1 + i, 0));
+                    const iso = end.toISOString().slice(0, 10);
+                    rows.push({
+                        i,
+                        month: end.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }),
+                        date: end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }),
+                        amount: (i < n ? each : totalMinor - each * (n - 1)) / 100,
+                        past: iso <= this.today,
+                    });
+                }
+                return rows;
+            },
+            get pastCount() { return this.rows.filter((r) => r.past).length; },
+            get firstAmount() { return this.rows.length ? this.rows[0].amount : 0; },
+            get totalAmount() { return this.rows.reduce((sum, r) => sum + Math.round(r.amount * 100), 0) / 100; },
+            money(v) { return window.formatMoney ? window.formatMoney(v) : v.toFixed(2); },
+        })));
+    </script>
 </x-app-layout>

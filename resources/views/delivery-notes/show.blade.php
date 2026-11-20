@@ -97,7 +97,7 @@
             {{-- How it is travelling --}}
             @if ($note->shipping_method || $note->tracking_number)
                 <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                    <h3 class="font-medium text-gray-900 dark:text-white">Transport</h3>
+                    <h2 class="section-title">Transport</h2>
                     @if ($note->shipping_method)
                         <p class="mt-2 text-sm text-gray-700 dark:text-gray-300">{{ $note->shipping_method }}</p>
                     @endif
@@ -108,7 +108,7 @@
             @endif
 
             <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                <h3 class="font-medium text-gray-900 dark:text-white">Customer</h3>
+                <h2 class="section-title">Customer</h2>
                 <p class="mt-2 text-sm text-gray-900 dark:text-gray-100">{{ $note->customer->name }}</p>
                 @if ($note->customer->phone)
                     <p class="text-sm text-gray-600 dark:text-gray-400">{{ $note->customer->phone }}</p>

@@ -264,7 +264,12 @@
                                 <span class="font-semibold text-gray-900 whitespace-nowrap">₦{{ number_format($price) }} / {{ $per }}</span>
                             </div>
                             @if ($price > 0)
-                                <p class="-mt-2 mb-5 text-sm text-gray-600">Nothing is charged now. You'll pay after you confirm your email.</p>
+                                @php $trialDays = \App\Services\Billing\SubscriptionBilling::trialDays(); @endphp
+                                @if ($trialDays > 0)
+                                    <p class="-mt-2 mb-5 text-sm text-gray-600" data-testid="trial-note">Free for {{ $trialDays }} days, no card needed. Pay only if you want to carry on after the trial.</p>
+                                @else
+                                    <p class="-mt-2 mb-5 text-sm text-gray-600">Nothing is charged now. You'll pay after you confirm your email.</p>
+                                @endif
                             @endif
                         @endif
 

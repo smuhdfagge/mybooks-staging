@@ -120,7 +120,7 @@
                                         <form method="POST" action="{{ route('credit-notes.apply.store', $cn) }}" class="space-y-3"
                                               x-data="{ invoices: @js($invoices->mapWithKeys(fn ($i) => [$i->id => (float) $i->balance_due])), invoice: '', amount: '' }">
                                             @csrf
-                                            <x-field name="invoice_id" label="Invoice" type="select" x-model="invoice" x-on:change="amount = Math.min(invoices[invoice] || 0, {{ (float) $cn->balance }}).toFixed(2)" required>
+                                            <x-field name="invoice_id" label="Invoice" type="select" x-model="invoice" x-on:change="amount = $math.min(invoices[invoice] || 0, {{ (float) $cn->balance }}).toFixed(2)" required>
                                                 <option value="">Choose an invoice</option>
                                                 @foreach ($invoices as $openInvoice)
                                                     <option value="{{ $openInvoice->id }}">{{ $openInvoice->invoice_number }} · due {{ $openInvoice->due_date?->format('j M Y') }} · owes {{ \App\Support\Money::format($openInvoice->balance_due) }}</option>
@@ -226,7 +226,7 @@
 
             @if ($cn->applications->isNotEmpty() || $cn->refunds->isNotEmpty())
                 <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                    <h3 class="font-medium text-gray-900 dark:text-white">Where the credit went</h3>
+                    <h2 class="section-title">Where the credit went</h2>
                     @foreach ($cn->applications as $application)
                         <div class="mt-3 flex items-start justify-between gap-3 text-sm">
                             <p class="text-gray-700 dark:text-gray-300">
@@ -248,7 +248,7 @@
             @endif
 
             <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10">
-                <h3 class="font-medium text-gray-900 dark:text-white">Customer</h3>
+                <h2 class="section-title">Customer</h2>
                 <p class="mt-2 text-sm"><a href="{{ route('customers.show', $cn->customer) }}" class="link">{{ $cn->customer->name }}</a></p>
                 @if ($cn->customer->email)
                     <p class="truncate text-sm"><a href="mailto:{{ $cn->customer->email }}" class="link">{{ $cn->customer->email }}</a></p>

@@ -101,7 +101,22 @@ Revokes all tokens for the user.
 
 **Endpoint:** `GET /auth/user`
 
-Returns the authenticated user's profile.
+Returns the authenticated user's profile, roles and permissions, and
+`modules`: which modules are switched on, so an app can hide what is off.
+The same `modules` comes back in `user` on sign-in.
+
+```json
+"modules": {
+    "assembly": true,
+    "credit_notes": true,
+    "quotations": true,
+    "stock_transfers": true,
+    "warehouses": true
+}
+```
+
+(abridged: every module in `config/mybooks.php` → `features` is listed).
+`stock_transfers` is only `true` when `warehouses` is on too.
 
 ### Update Profile
 
@@ -1208,6 +1223,45 @@ Needs the admin role, and the approver can't be the person who raised the expens
 
 **Endpoint:** `GET /expenses/summary`
 
+### Expense Receipts
+
+Photos or PDFs attached to an expense. Files are private: download them
+through the API, signed in.
+
+| Method | Endpoint | Permission |
+|---|---|---|
+| `GET` | `/expenses/{id}/attachments` | view expenses |
+| `POST` | `/expenses/{id}/attachments` | edit expenses |
+| `GET` | `/expenses/{id}/attachments/{attachment_id}` (the file) | view expenses |
+| `DELETE` | `/expenses/{id}/attachments/{attachment_id}` | edit expenses |
+
+Upload as `multipart/form-data` with one field, `file`: JPG, PNG, WebP or
+PDF, at most 5 MB, at most 10 receipts per expense (`422` otherwise).
+Send an `Idempotency-Key` so a retried upload is not added twice; the key
+covers the file's content.
+
+**Response (upload):**
+
+```json
+{
+    "success": true,
+    "message": "Receipt added.",
+    "data": {
+        "id": 12,
+        "expense_id": 311,
+        "file_name": "fuel receipt.jpg",
+        "mime_type": "image/jpeg",
+        "size": 482113,
+        "uploaded_by": { "id": 4, "name": "Musa Ibrahim" },
+        "created_at": "2026-11-19T09:12:00.000000Z",
+        "download_url": "https://your-domain.com/api/v1/expenses/311/attachments/12"
+    }
+}
+```
+
+Deleting an expense keeps its receipts until the expense is deleted for
+good.
+
 ---
 
 ## Payments Received
@@ -1324,6 +1378,68 @@ Type can be: `add`, `subtract`, or `set`
 ### Get Inventory Summary
 
 **Endpoint:** `GET /inventory/summary`
+
+---
+
+## Stock Transfers
+
+Only when the warehouses and stock transfers modules are on (`404`
+otherwise). Reading needs `view inventory`; everything else
+`adjust inventory`.
+
+| Method | Endpoint | What it does |
+|---|---|---|
+| `GET` | `/stock-transfers` | List (`status`: draft, in_transit, received, cancelled; `warehouse_id`) |
+| `GET` | `/stock-transfers/{id}` | One transfer with its lines |
+| `POST` | `/stock-transfers` | Create a draft; add `"ship": true` to ship it, or `"receive": true` to ship and receive at once |
+| `POST` | `/stock-transfers/{id}/ship` | Ship a draft: the goods leave the source warehouse |
+| `POST` | `/stock-transfers/{id}/receive` | Receive a shipped transfer |
+
+**Receive request body** (all optional; a line not listed is received in full):
+
+```json
+{
+    "received_date": "2026-11-19",
+    "shortfall": "return",
+    "items": [
+        { "id": 55, "quantity_received": 3 }
+    ]
+}
+```
+
+`shortfall`: what happened to goods that did not arrive. `return` (the
+default) puts them back in the source warehouse; `lost` writes them off to
+Stock Losses. `id` is the transfer line's id from `items[].id`. Shipping
+more than is free, shipping twice, or receiving a draft returns `422`.
+
+---
+
+## Assembly
+
+Only when the assembly module is on (`404` otherwise). Reading needs
+`view inventory` (bills of materials: `view items`); creating and
+completing need `adjust inventory`.
+
+| Method | Endpoint | What it does |
+|---|---|---|
+| `GET` | `/bill-of-materials` | Bills of materials with components and extra costs |
+| `GET` | `/assembly-orders` | List (`status`, `kind`: build or breakdown) |
+| `GET` | `/assembly-orders/{id}` | One order |
+| `POST` | `/assembly-orders` | Create a draft; add `"complete": true` (and optionally `quantity_made`) to complete it at once |
+| `POST` | `/assembly-orders/{id}/complete` | Complete a saved draft |
+
+**Complete request body** (all optional, each defaults to the plan):
+
+```json
+{
+    "quantity_made": 39,
+    "items": [{ "id": 101, "quantity": 690 }],
+    "costs": [{ "id": 7, "amount": 21000 }]
+}
+```
+
+`items[].id` and `costs[].id` are the order's own line ids. Not enough free
+stock, or completing an order that is not a draft, returns `422`.
 
 ---
 
@@ -1476,6 +1592,85 @@ Type can be: `add`, `subtract`, or `set`
 ### Delete Tax Rate
 
 **Endpoint:** `DELETE /tax-rates/{id}`
+
+---
+
+## Mobile App Version
+
+**Endpoint:** `GET /app/version` (public, no token)
+
+The app calls this at start. Below `min_version` it must be updated before
+use; below `latest_version` it may offer the update. Store links are
+`null` until set.
+
+```json
+{
+    "success": true,
+    "message": "Success",
+    "data": {
+        "min_version": "1.0.0",
+        "latest_version": "1.0.0",
+        "ios_store_url": null,
+        "android_store_url": null
+    }
+}
+```
+
+Set in `.env`: `MYBOOKS_APP_MIN_VERSION`, `MYBOOKS_APP_LATEST_VERSION`,
+`MYBOOKS_APP_IOS_URL`, `MYBOOKS_APP_ANDROID_URL` (then `php artisan optimize`).
+
+---
+
+## Push Notifications
+
+### Register a Device
+
+**Endpoint:** `POST /devices` (signed in; no extra permission)
+
+Call after signing in, and again whenever Firebase gives the app a new
+token. The device belongs to the signed-in user and to this API token:
+signing out (`/auth/logout`) forgets it. A token registered again by
+another user moves to that user.
+
+```json
+{
+    "token": "<Firebase registration token>",
+    "platform": "android",
+    "app_version": "1.0.0"
+}
+```
+
+`platform`: `ios` or `android`. `201` the first time, `200` after.
+
+### Remove a Device
+
+**Endpoint:** `DELETE /devices/{token}`
+
+For when the user turns notifications off. Only the user's own device is
+removed; an unknown token still returns `200`.
+
+### What Is Sent
+
+| `type` | Sent to | When |
+|---|---|---|
+| `expense_awaiting_approval` | Admins who could approve it (not the person who raised it) | An expense is submitted for approval |
+| `invoice_paid` | Users with `view invoices` | An invoice becomes paid in full |
+| `invoice_overdue` | Users with `view invoices` | 08:00 Lagos, the day after the due date |
+| `bill_due` | Users with `view bills` | 08:00 Lagos, the day before the due date |
+
+Only active users of the same business with a registered device get a
+push. Each push carries a title and body to show, and `data` for the app
+to open the right screen (values are strings):
+
+```json
+{ "type": "invoice_paid", "id": "142" }
+```
+
+`id` is the expense, invoice or bill id: open `GET /expenses/{id}`,
+`GET /invoices/{id}` or `GET /bills/{id}`. A token Firebase reports as
+no longer valid is removed. Nothing is sent until the server has
+`FCM_CREDENTIALS` (the path to the Firebase service account key file)
+in `.env`.
 
 ---
 

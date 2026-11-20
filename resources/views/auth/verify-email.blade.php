@@ -56,7 +56,7 @@
             </form>
         </div>
 
-        <form method="POST" action="{{ route('logout') }}">
+        <form method="POST" action="{{ route('logout') }}" data-clears-drafts>
             @csrf
             <button type="submit" class="text-sm text-gray-400 hover:text-brand-400 transition-colors">
                 Sign out and use a different account

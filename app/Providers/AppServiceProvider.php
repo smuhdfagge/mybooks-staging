@@ -32,6 +32,10 @@ use App\Services\ActivityLogService;
 use App\Services\BankFeeds\LineActions;
 use App\Services\Dashboard\DashboardCache;
 use App\Services\JournalService;
+use App\Services\Push\FcmSender;
+use App\Services\Push\PushNotifier;
+use App\Services\Push\PushSender;
+use App\Support\TenantContext;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
@@ -40,6 +44,9 @@ use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Queue\Events\JobAttempted;
+use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Queue\Queue as QueueBase;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -64,6 +71,10 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->bind(JournalServiceInterface::class, JournalService::class);
+
+        // Push notifications to phones (mobile plan A2): Firebase, or nothing
+        // until FCM_CREDENTIALS is set.
+        $this->app->singleton(PushSender::class, FcmSender::class);
 
         // Lock dates read once per request (session 11).
         $this->app->scoped(LockDates::class);
@@ -94,7 +105,11 @@ class AppServiceProvider extends ServiceProvider
         // script: @jsText($value). Never '{{ $value }}': the browser decodes
         // &#039; before Alpine runs the expression, so a quote breaks out (audit
         // MB-03/MB-04). Null and arrays become ''.
-        Blade::directive('jsText', fn (string $expression) => "<?php echo \\Illuminate\\Support\\Js::from(\\App\\Support\\JsText::of({$expression})); ?>");
+        Blade::directive('jsText', fn (string $expression) => "<?php echo \\App\\Support\\JsLiteral::from(\\App\\Support\\JsText::of({$expression})); ?>");
+        // @js (Laravel's own) writes arrays and strings as JSON.parse('...'),
+        // which the CSP build of Alpine can't call: write the literal itself
+        // (audit MB-29). Laravel's optional flags argument is not used.
+        Blade::directive('js', fn (string $expression) => "<?php echo \\App\\Support\\JsLiteral::from({$expression}); ?>");
 
         // Configure password strength defaults (NIST 800-63B compliant)
         Password::defaults(function () {
@@ -179,6 +194,28 @@ class AppServiceProvider extends ServiceProvider
             return $user->isSuperAdmin() ? true : null;
         });
 
+        // A queued job, mail or notification runs in the tenant context it
+        // was queued in (audit MB-26), not with every business visible. A
+        // job queued before this was added has no context in its payload
+        // and runs across all businesses, as every job used to (drop that
+        // fallback once no job from before October 2026 can be retried).
+        // JobAttempted fires in a finally, after failed() has run, so the
+        // context is unwound however the job ended; cutting back to the
+        // depth it started at also covers a sync job inside Tenant::run().
+        QueueBase::createPayloadUsing(fn () => ['tenant_context' => TenantContext::current()]);
+        $depths = [];
+        Event::listen(JobProcessing::class, function (JobProcessing $event) use (&$depths) {
+            $depths[] = TenantContext::depth();
+            $payload = $event->job->payload();
+            TenantContext::enter(array_key_exists('tenant_context', $payload) ? $payload['tenant_context'] : TenantContext::ALL);
+        });
+        Event::listen(JobAttempted::class, function () use (&$depths) {
+            $depth = array_pop($depths);
+            if ($depth !== null) {
+                TenantContext::truncate($depth);
+            }
+        });
+
         // Log authentication events (only for regular users, not admin users)
         Event::listen(Login::class, function (Login $event) {
             if ($event->user instanceof User) {
@@ -203,6 +240,20 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // ── Domain Event → Listener mappings ─────────────────────
+        // Push notifications to phones (mobile plan A2), when an expense is
+        // sent for approval and when an invoice becomes paid. Sent on the
+        // queue after the change is committed.
+        Expense::updated(function (Expense $expense) {
+            if ($expense->wasChanged('status') && $expense->status === Expense::STATUS_PENDING_APPROVAL) {
+                app(PushNotifier::class)->expenseAwaitingApproval($expense);
+            }
+        });
+        Invoice::updated(function (Invoice $invoice) {
+            if ($invoice->wasChanged('status') && $invoice->status === 'paid') {
+                app(PushNotifier::class)->invoicePaid($invoice);
+            }
+        });
+
         // This is the only place listeners are registered: event discovery is
         // disabled in bootstrap/app.php. Add new listeners here.
         // Invoices

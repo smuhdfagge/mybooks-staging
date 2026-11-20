@@ -64,7 +64,7 @@
                     @if ($canBulk)
                         <th scope="col" class="tbl-check">
                             <input type="checkbox" class="tbl-checkbox" aria-label="Tick every invoice on this page"
-                                @checked($pageTicked) x-init="$el.indeterminate = {{ $someTicked && ! $pageTicked ? 'true' : 'false' }}"
+                                @checked($pageTicked) x-init="$indeterminate({{ $someTicked && ! $pageTicked ? 'true' : 'false' }})"
                                 wire:click="selectPage({{ json_encode($pageIds) }}, $event.target.checked)">
                         </th>
                     @endif

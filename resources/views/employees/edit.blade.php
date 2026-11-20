@@ -23,7 +23,7 @@
 
                         <!-- Photo Upload -->
                         <div class="mb-6 flex items-center gap-4">
-                            <div class="h-20 w-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden" x-data="{ preview: null }">
+                            <div class="h-20 w-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden" x-data="photoPreview()">
                                 @if($employee->photo_path)
                                     <img x-show="!preview" src="{{ asset('storage/' . $employee->photo_path) }}" class="h-20 w-20 rounded-full object-cover" alt="{{ $employee->first_name }}">
                                 @else
@@ -33,7 +33,7 @@
                                 @endif
                                 <img x-show="preview" :src="preview" class="h-20 w-20 rounded-full object-cover" alt="Photo preview" x-cloak>
                                 <input type="file" name="photo" accept="image/*" class="hidden" id="photo-upload"
-                                    @change="const file = $event.target.files[0]; if(file) { const reader = new FileReader(); reader.onload = e => preview = e.target.result; reader.readAsDataURL(file); }" @error('photo') aria-invalid="true" aria-describedby="photo-error" @enderror>
+                                    @change="pick($event)" @error('photo') aria-invalid="true" aria-describedby="photo-error" @enderror>
                             </div>
                             <div>
                                 <label for="photo-upload" class="cursor-pointer inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition">

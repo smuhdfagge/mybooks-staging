@@ -56,14 +56,14 @@ class Session12LivewireTwoFactorTest extends TestCase
         // A new session for the same user (a remember-me cookie) without 2FA: refused and signed out.
         $this->flushSession();
         $response = $this->deleteOne($snapshot, $second->id);
-        $this->assertNotNull(Expense::find($second->id), 'deleted without two-factor sign-in');
+        $this->assertNotNull(Expense::withoutGlobalScope('tenant')->find($second->id), 'deleted without two-factor sign-in');
         $this->assertTrue($response->isRedirect(route('two-factor.challenge')) || $response->status() >= 400, 'status '.$response->status());
         $this->assertGuest();
 
         // Control: the same request once two-factor sign-in is done works.
         $this->actingAs($this->user)->withSession(['two_factor_verified' => true]);
         $this->deleteOne($snapshot, $first->id)->assertOk();
-        $this->assertNull(Expense::find($first->id));
+        $this->assertNull(Expense::withoutGlobalScope('tenant')->find($first->id));
     }
 
     public function test_a_livewire_action_needs_a_verified_email(): void
@@ -76,7 +76,7 @@ class Session12LivewireTwoFactorTest extends TestCase
         $this->user->forceFill(['email_verified_at' => null])->save();
         $this->deleteOne($snapshot, $expense->id);
 
-        $this->assertNotNull(Expense::find($expense->id));
+        $this->assertNotNull(Expense::withoutGlobalScope('tenant')->find($expense->id));
     }
 
     public function test_an_admin_cant_approve_their_own_expense_from_the_list(): void

@@ -10,7 +10,7 @@
                     <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">A delivery note is made from a confirmed sales order. Choose the order you are delivering.</p>
                     @if($orders->isEmpty())
                         <p class="text-sm text-gray-500 dark:text-gray-400">No confirmed sales orders have goods waiting to be delivered.
-                            @can('view sales-orders')<a href="{{ route('sales-orders.index') }}" class="text-brand-600 dark:text-brand-300 hover:underline">Go to sales orders</a>.@endcan
+                            @can('view sales-orders')<a href="{{ route('sales-orders.index') }}" class="text-brand-600 dark:text-brand-300 underline">Go to sales orders</a>.@endcan
                         </p>
                     @else
                         <ul class="divide-y divide-gray-200 dark:divide-gray-700">

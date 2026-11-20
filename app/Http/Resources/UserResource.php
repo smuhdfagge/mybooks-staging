@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\StockTransfer;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -22,8 +23,25 @@ class UserResource extends JsonResource
             'tenant' => new TenantResource($this->whenLoaded('tenant')),
             'roles' => $this->whenLoaded('roles', fn () => $this->roles->pluck('name')),
             'permissions' => $this->whenLoaded('permissions', fn () => $this->getAllPermissions()->pluck('name')),
+            'modules' => self::modules(),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];
+    }
+
+    /**
+     * Which modules are on (config mybooks.features), so the mobile app can
+     * hide what is off (mobile plan A1). Each value is what the routes
+     * themselves check: stock transfers also need warehouses on.
+     *
+     * @return array<string, bool>
+     */
+    public static function modules(): array
+    {
+        $modules = array_map(fn ($on) => (bool) $on, (array) config('mybooks.features', []));
+        $modules['stock_transfers'] = StockTransfer::moduleOn();
+        ksort($modules);
+
+        return $modules;
     }
 }

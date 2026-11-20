@@ -73,7 +73,7 @@
                                 <form method="POST" action="{{ route('vendor-credits.apply', $credit) }}" class="space-y-3"
                                       x-data="{ bills: @js($openBills->mapWithKeys(fn ($b) => [$b->id => (float) $b->balance_due])), bill: '', amount: '' }">
                                     @csrf
-                                    <x-field name="bill_id" label="Bill" type="select" x-model="bill" x-on:change="amount = Math.min(bills[bill] || 0, {{ (float) $credit->balance }}).toFixed(2)" required>
+                                    <x-field name="bill_id" label="Bill" type="select" x-model="bill" x-on:change="amount = $math.min(bills[bill] || 0, {{ (float) $credit->balance }}).toFixed(2)" required>
                                         <option value="">Choose a bill</option>
                                         @foreach($openBills as $openBill)
                                             <option value="{{ $openBill->id }}">{{ $openBill->bill_number }} · due {{ $openBill->due_date->format('j M Y') }} · owes {{ \App\Support\Money::format($openBill->balance_due) }}</option>

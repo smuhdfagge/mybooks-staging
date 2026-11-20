@@ -250,7 +250,7 @@ class PhaseDUiTest extends TestCase
 
         $form = $this->get(route('bills.create'))->assertOk()->getContent();
         $this->assertStringContainsString('<meta name="currency-symbol" content="$">', $form);
-        $this->assertStringContainsString('x-text="formatMoney(total)"', $form);
+        $this->assertStringContainsString('x-text="$money(total)"', $form);
         $this->assertStringNotContainsString('₦', $form);
         $this->assertDoesNotMatchRegularExpression('/x-text="[^"]*toFixed\(2\)/', $form);
     }

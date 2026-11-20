@@ -89,8 +89,12 @@ class SecurityHeaders
      *
      * Uses nonce-based strict CSP with 'strict-dynamic':
      * - Scripts must bear the per-request nonce or be loaded by a nonced script.
-     * - 'unsafe-inline' is a fallback for CSP Level 1 browsers (ignored by Level 2+).
-     * - 'unsafe-eval' remains required for Alpine.js expression evaluation.
+     * - No 'unsafe-eval' (audit MB-29): Alpine and Livewire run their CSP
+     *   builds, which evaluate x-* / wire:* expressions without eval
+     *   (resources/js/alpine-csp.js says what an expression may hold).
+     * - No 'unsafe-inline' either: every inline script carries the nonce.
+     *   'https:' stays only as the fallback for browsers that predate
+     *   'strict-dynamic' (which ignore it).
      */
     protected function buildCsp(string $nonce): string
     {
@@ -107,7 +111,7 @@ class SecurityHeaders
 
         $directives = [
             "default-src 'self'",
-            "script-src 'nonce-{$nonce}' 'strict-dynamic' 'unsafe-eval' 'unsafe-inline' https:",
+            "script-src 'nonce-{$nonce}' 'strict-dynamic' https:",
             "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
             "font-src 'self' data:", // IBM Plex Sans is bundled (rebrand R1/R11)
             "img-src 'self' data: blob:".$analytics,

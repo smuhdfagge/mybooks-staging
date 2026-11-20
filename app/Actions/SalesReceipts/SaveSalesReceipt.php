@@ -2,6 +2,7 @@
 
 namespace App\Actions\SalesReceipts;
 
+use App\Actions\Invoices\KeepsStockCosts;
 use App\Models\Inventory;
 use App\Models\InventoryLayerConsumption;
 use App\Models\Item;
@@ -29,6 +30,8 @@ use Illuminate\Validation\ValidationException;
  */
 class SaveSalesReceipt
 {
+    use KeepsStockCosts;
+
     /** @param array<string, mixed> $data */
     public function create(int $tenantId, array $data, ?int $userId = null): SalesReceipt
     {
@@ -74,6 +77,8 @@ class SaveSalesReceipt
                 $data['discount_amount'] = $receipt->discount_amount;
             }
             $totals = $this->totals($data);
+            $costs = $this->stockCosts($receipt);
+            $sameWarehouse = $warehouseId === $receipt->warehouseIdOrDefault();
 
             $receipt->fill([
                 'customer_id' => $data['customer_id'] ?? null,
@@ -89,7 +94,8 @@ class SaveSalesReceipt
 
             $receipt->items()->delete();
             $this->writeLines($receipt, $totals['lines']);
-            // Re-posts the journal and re-issues the stock at today's cost.
+            $this->keepStockCosts($receipt, $costs, $sameWarehouse);
+            // Re-posts the journal; changed stock lines are issued again at today's cost.
             $receipt->update($this->totalsColumns($totals));
 
             return $receipt->fresh(['items']);

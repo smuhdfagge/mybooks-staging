@@ -32,8 +32,7 @@
                         <div x-data="searchableSelect({
                             items: @js($vendors->map(fn ($vendor) => ['id' => (string) $vendor->id, 'name' => (string) $vendor->name])->values()),
                             selectedId: @jsText(old('vendor_id', $bill?->vendor_id)),
-                            onSelect: (id) => { selectedVendor = id; filterBills(); whtCategoryId = ''; deductWht = !!(vendors[id] && vendors[id].wht_category_id && !vendors[id].wht_exempt); recalculate(); }
-                        })" class="relative">
+                        })" @picked="vendorChosen($event.detail)" class="relative">
                             <label for="vendor_search" class="form-label">Vendor <span class="text-red-600 dark:text-red-300">*</span></label>
                             <input type="hidden" name="vendor_id" :value="selectedId" required @error('vendor_id') aria-invalid="true" aria-describedby="vendor_id-error" @enderror>
                             <div class="relative">
@@ -51,14 +50,15 @@
                                     placeholder="Search vendors..."
                                     autocomplete="off"
                                     class="form-control @error('vendor_id') border-red-500 @enderror">
-                                <button type="button" @click="open = !open" class="absolute inset-y-0 right-0 flex items-center pr-2">
-                                    <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                <button type="button" @click="open = !open" aria-label="Show options" :aria-expanded="open.toString()" aria-controls="party-options" class="absolute inset-y-0 right-0 flex items-center pr-2">
+                                    <svg aria-hidden="true" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
                                         <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                                     </svg>
                                 </button>
                             </div>
                             <div 
                                 x-show="open" 
+                                id="party-options"
                                 @click.away="open = false"
                                 x-transition
                                 class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
@@ -92,7 +92,7 @@
                                 class="form-control">
                                 <option value="">No specific bill</option>
                                 <template x-for="b in filteredBills" :key="b.id">
-                                    <option :value="b.id" x-text="b.bill_number + ' - ' + formatMoney(b.balance_due) + ' due'"></option>
+                                    <option :value="b.id" x-text="b.bill_number + ' - ' + $money(b.balance_due) + ' due'"></option>
                                 </template>
                             </select>
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" x-show="!selectedVendor">Select a vendor to see their unpaid bills</p>
@@ -140,7 +140,7 @@
                                     <input type="number" name="wht_amount" id="wht_amount" step="0.01" min="0" x-model="whtAmount" :disabled="!deductWht"
                                         class="form-control @error('wht_amount') border-red-500 @enderror">
                                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" x-show="selectedBill">
-                                        Settles <span x-text="formatMoney((parseFloat(amount) || 0) + (parseFloat(whtAmount) || 0))"></span> of the bill.
+                                        Settles <span x-text="$money(($float(amount) || 0) + ($float(whtAmount) || 0))"></span> of the bill.
                                     </p>
                                     @error('wht_amount')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -223,7 +223,6 @@
                 search: '',
                 open: false,
                 highlightedIndex: 0,
-                onSelect: config.onSelect || null,
 
                 init() {
                     if (this.selectedId) {
@@ -245,7 +244,9 @@
                     this.selectedId = item.id;
                     this.search = item.name;
                     this.open = false;
-                    if (this.onSelect) this.onSelect(item.id);
+                    // The payment form listens (@picked): an arrow function in the
+                    // attribute can't run under the CSP build (audit MB-29).
+                    this.$dispatch('picked', item.id);
                 },
 
                 highlightNext() {
@@ -279,6 +280,13 @@
         @endphp
         function paymentForm() {
             return {
+                vendorChosen(id) {
+                    this.selectedVendor = id;
+                    this.filterBills();
+                    this.whtCategoryId = '';
+                    this.deductWht = !!(this.vendors[id] && this.vendors[id].wht_category_id && !this.vendors[id].wht_exempt);
+                    this.recalculate();
+                },
                 selectedVendor: @jsText(old('vendor_id', $bill?->vendor_id ?? '')),
                 selectedBill: @jsText(old('bill_id', $bill?->id ?? '')),
                 allBills: @json($unpaidBills),
@@ -380,6 +388,10 @@
                 }
             }
         }
+
+        // Registered for the CSP build of Alpine (audit MB-29), which can't call page globals.
+        document.addEventListener('alpine:init', () => Alpine.data('searchableSelect', searchableSelect));
+        document.addEventListener('alpine:init', () => Alpine.data('paymentForm', paymentForm));
     </script>
     @endpush
 </x-app-layout>

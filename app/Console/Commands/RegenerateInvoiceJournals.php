@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Invoice;
 use App\Models\Journal;
+use App\Models\Tenant;
 use App\Services\JournalService;
 use Illuminate\Console\Command;
 
@@ -33,10 +34,17 @@ class RegenerateInvoiceJournals extends Command
         $this->journalService = $journalService;
     }
 
+    public function handle(): int
+    {
+        // Every business, on purpose (audit MB-26: tenant-scoped queries need
+        // an explicit context; see Tenant::acrossAll()).
+        return Tenant::acrossAll(fn () => $this->runForEveryBusiness());
+    }
+
     /**
      * Execute the console command.
      */
-    public function handle(): int
+    private function runForEveryBusiness(): int
     {
         $tenantId = $this->option('tenant');
         $invoiceId = $this->option('invoice');

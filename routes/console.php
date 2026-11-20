@@ -66,6 +66,14 @@ Schedule::command('notifications:send-bill-reminders')
     ->withoutOverlapping()
     ->onOneServer();
 
+// Push today's overdue invoices and tomorrow's bills to phones, 08:00 Lagos
+// (mobile plan A2)
+Schedule::command('notifications:send-push-reminders')
+    ->dailyAt('08:00')
+    ->timezone('Africa/Lagos')
+    ->withoutOverlapping()
+    ->onOneServer();
+
 // Send low stock alerts daily at 9:00 AM
 Schedule::command('notifications:send-low-stock-alerts')
     ->dailyAt('09:00')
@@ -139,6 +147,26 @@ Schedule::command('queue:prune-failed', ['--hours' => 720])
     ->dailyAt('03:20')
     ->onOneServer();
 
+// The host pulls new code on a merge without running deploy.sh: finish the
+// deploy within a minute (backup, Composer, migrations, caches). Production
+// only; output in storage/logs/auto-deploy.log, a failure emails an alert.
+// deploy.sh holds its own lock, since optimize:clear empties the cache that
+// holds this mutex.
+Schedule::command('mybooks:deploy-if-pulled')
+    ->everyMinute()
+    ->withoutOverlapping(30)
+    ->runInBackground()
+    ->onOneServer();
+
+// robots.txt and sitemap.xml are real files the web server serves itself
+// (see SearchFiles). The deploy writes them, but the host can pull new code
+// on a merge without the deploy running, so they are rewritten every hour:
+// a new guide or page is in the sitemap within the hour either way.
+Schedule::command('site:search-files')
+    ->hourly()
+    ->withoutOverlapping()
+    ->onOneServer();
+
 Schedule::command('logs:verify')
     ->weeklyOn(0, '04:00')
     ->withoutOverlapping()
@@ -169,11 +197,18 @@ Schedule::command('subscriptions:auto-renew')
 |--------------------------------------------------------------------------
 | Backups (finding O1)
 |--------------------------------------------------------------------------
-| Database and uploaded files, daily, to the disks in BACKUP_DISKS.
+| Database and uploaded files, daily, to the disks in BACKUP_DISKS; and
+| once a week, a check that the newest one opens and holds the database
+| (audit MB-33).
 */
 if (config('mybooks.backup.enabled')) {
     Schedule::command('mybooks:backup')
         ->dailyAt('01:30')
         ->withoutOverlapping(120)
+        ->onOneServer();
+
+    Schedule::command('mybooks:backup:verify')
+        ->weeklyOn(1, '03:15')
+        ->withoutOverlapping(60)
         ->onOneServer();
 }

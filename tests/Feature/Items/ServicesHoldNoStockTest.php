@@ -4,6 +4,7 @@ namespace Tests\Feature\Items;
 
 use App\Models\Item;
 use App\Models\NotificationSetting;
+use App\Models\Tenant;
 use App\Services\NotificationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -61,7 +62,7 @@ class ServicesHoldNoStockTest extends TestCase
         // A row that got in before the rule existed, written past the model.
         DB::table('items')->where('id', $service->id)->update(['track_inventory' => true]);
 
-        $tracked = Item::query()->stockTracked()->pluck('id');
+        $tracked = Tenant::acrossAll(fn () => Item::query()->stockTracked()->pluck('id'));
 
         $this->assertTrue($tracked->contains($product->id));
         $this->assertFalse($tracked->contains($service->id), 'A service was counted as stock.');

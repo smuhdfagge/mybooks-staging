@@ -74,7 +74,7 @@
                 </x-card>
 
                 <div class="flex items-center justify-end gap-4">
-                    <a href="{{ route('sales-orders.show', $salesOrder) }}" class="text-sm text-gray-600 dark:text-gray-400 hover:underline">Cancel</a>
+                    <a href="{{ route('sales-orders.show', $salesOrder) }}" class="btn-secondary">Cancel</a>
                     <button type="submit" class="btn-primary">Save delivery note</button>
                 </div>
             </form>

@@ -44,14 +44,15 @@
                                         placeholder="Search vendors..."
                                         autocomplete="off"
                                         class="form-control @error('vendor_id') border-red-500 @enderror">
-                                    <button type="button" @click="open = !open" class="absolute inset-y-0 right-0 flex items-center pr-2">
-                                        <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <button type="button" @click="open = !open" aria-label="Show options" :aria-expanded="open.toString()" aria-controls="party-options" class="absolute inset-y-0 right-0 flex items-center pr-2">
+                                        <svg aria-hidden="true" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
                                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                                         </svg>
                                     </button>
                                 </div>
                                 <div 
                                     x-show="open" 
+                                    id="party-options"
                                     @click.away="open = false"
                                     x-transition
                                     class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
@@ -120,7 +121,7 @@
                                         <tr>
                                             <td data-label="Description" data-cell="main">
                                                 <div class="relative mb-1">
-                                                    <input type="hidden" :name="`items[${index}][item_id]`" x-model="item.item_id">
+                                                    <input type="hidden" :name="'items[' + index + '][item_id]'" x-model="item.item_id">
                                                     <input aria-label="Item" 
                                                         type="text" 
                                                         x-model="item.itemSearch"
@@ -128,8 +129,8 @@
                                                         @click="item.itemDropdownOpen = true"
                                                         @input="item.itemDropdownOpen = true"
                                                         @keydown.escape="item.itemDropdownOpen = false"
-                                                        @keydown.arrow-down.prevent="item.itemHighlightedIndex = Math.min(item.itemHighlightedIndex + 1, getFilteredProducts(item.itemSearch).length - 1)"
-                                                        @keydown.arrow-up.prevent="item.itemHighlightedIndex = Math.max(item.itemHighlightedIndex - 1, 0)"
+                                                        @keydown.arrow-down.prevent="item.itemHighlightedIndex = $math.min(item.itemHighlightedIndex + 1, getFilteredProducts(item.itemSearch).length - 1)"
+                                                        @keydown.arrow-up.prevent="item.itemHighlightedIndex = $math.max(item.itemHighlightedIndex - 1, 0)"
                                                         @keydown.enter.prevent="selectProduct(index, getFilteredProducts(item.itemSearch)[item.itemHighlightedIndex])"
                                                         placeholder="Search items..."
                                                         autocomplete="off"
@@ -163,28 +164,28 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <input aria-label="Description" type="text" :name="`items[${index}][description]`" x-model="item.description" required placeholder="Description"
+                                                <input aria-label="Description" type="text" :name="'items[' + index + '][description]'" x-model="item.description" required placeholder="Description"
                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:placeholder-gray-500 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm">
                                             </td>
                                             <td data-label="Qty">
-                                                <input aria-label="Quantity" type="number" :name="`items[${index}][quantity]`" x-model.number="item.quantity" min="0.01" step="0.01" required
+                                                <input aria-label="Quantity" type="number" :name="'items[' + index + '][quantity]'" x-model.number="item.quantity" min="0.01" step="0.01" required
                                                     @input="calculateTotals()"
                                                     class="form-control text-sm">
                                             </td>
                                             <td data-label="Price">
-                                                <input aria-label="Unit price" type="number" :name="`items[${index}][unit_price]`" x-model.number="item.unit_price" min="0" step="0.01" required
+                                                <input aria-label="Unit price" type="number" :name="'items[' + index + '][unit_price]'" x-model.number="item.unit_price" min="0" step="0.01" required
                                                     @input="calculateTotals()"
                                                     class="form-control text-sm">
                                             </td>
                                             <td data-label="Discount">
-                                                <input aria-label="Discount" type="number" :name="`items[${index}][discount]`" x-model.number="item.discount" min="0" step="0.01"
+                                                <input aria-label="Discount" type="number" :name="'items[' + index + '][discount]'" x-model.number="item.discount" min="0" step="0.01"
                                                     @input="calculateTotals()"
                                                     class="form-control text-sm">
                                             </td>
                                             <td data-label="Tax %">
-                                                <x-tax-rate-select type="purchases" model="item.tax_rate" name="`items[${index}][tax_rate]`" change="calculateTotals()" />
+                                                <x-tax-rate-select type="purchases" model="item.tax_rate" name="'items[' + index + '][tax_rate]'" change="calculateTotals()" />
                                             </td>
-                                            <td class="num font-medium" x-text="formatMoney(lineTotal(index))" data-label="Total"></td>
+                                            <td class="num font-medium" x-text="$money(lineTotal(index))" data-label="Total"></td>
                                             <td class="text-center" data-cell="actions">
                                                 <button type="button" @click="removeItem(index)" x-show="items.length > 1" class="text-red-600 hover:text-red-800 dark:text-red-300 dark:hover:text-red-300" aria-label="Remove line">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -238,22 +239,22 @@
                             <div class="space-y-3">
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600 dark:text-gray-400">Subtotal</span>
-                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(subtotal)">@money(0)</span>
+                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="$money(subtotal)">@money(0)</span>
                                 </div>
 
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600 dark:text-gray-400">Discount</span>
-                                    <span class="font-medium text-red-600 dark:text-red-300" x-text="'-' + formatMoney(totalDiscount)">-@money(0)</span>
+                                    <span class="font-medium text-red-600 dark:text-red-300" x-text="totalDiscount > 0 ? '-' + $money(totalDiscount) : $money(0)">@money(0)</span>
                                 </div>
 
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600 dark:text-gray-400">Tax</span>
-                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="formatMoney(totalTax)">@money(0)</span>
+                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="$money(totalTax)">@money(0)</span>
                                 </div>
 
                                 <div class="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between">
                                     <span class="text-lg font-bold text-gray-900 dark:text-gray-100">Total</span>
-                                    <span class="text-lg font-bold text-brand-600 dark:text-brand-300" x-text="formatMoney(total)">@money(0)</span>
+                                    <span class="text-lg font-bold text-brand-600 dark:text-brand-300" x-text="$money(total)">@money(0)</span>
                                 </div>
                             </div>
                         </div>
@@ -391,6 +392,10 @@
                 }
             }
         }
+
+        // Registered for the CSP build of Alpine (audit MB-29), which can't call page globals.
+        document.addEventListener('alpine:init', () => Alpine.data('searchableSelect', searchableSelect));
+        document.addEventListener('alpine:init', () => Alpine.data('purchaseOrderForm', purchaseOrderForm));
     </script>
     @endpush
 </x-app-layout>

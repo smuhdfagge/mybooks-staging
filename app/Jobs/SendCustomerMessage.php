@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Enums\MessageStatus;
 use App\Models\CustomerMessage;
+use App\Models\Tenant;
 use App\Services\Messaging\MessageTemplates;
 use App\Services\Messaging\MessagingDrivers;
 use App\Services\Messaging\TemporaryFailure;
@@ -39,6 +40,12 @@ class SendCustomerMessage implements ShouldQueue
         if (! $message || $message->status !== MessageStatus::Queued->value) {
             return;
         }
+
+        Tenant::run($message->tenant_id, fn () => $this->send($message, $drivers, $templates));
+    }
+
+    private function send(CustomerMessage $message, MessagingDrivers $drivers, MessageTemplates $templates): void
+    {
         if ($message->send_after && $message->send_after->isFuture()) {
             $message->forceFill(['dispatched_at' => null])->save(); // picked up again at send_after
 

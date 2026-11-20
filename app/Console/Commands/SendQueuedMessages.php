@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Enums\MessageStatus;
 use App\Models\CustomerMessage;
+use App\Models\Tenant;
 use App\Services\Messaging\CustomerMessenger;
 use Illuminate\Console\Command;
 
@@ -19,6 +20,13 @@ class SendQueuedMessages extends Command
     protected $description = 'Queue SMS and WhatsApp messages that are due to go out';
 
     public function handle(): int
+    {
+        // Every business, on purpose (audit MB-26: tenant-scoped queries need
+        // an explicit context; see Tenant::acrossAll()).
+        return Tenant::acrossAll(fn () => $this->runForEveryBusiness());
+    }
+
+    private function runForEveryBusiness(): int
     {
         // A message stuck in "sending" (worker died mid-send) is let go so
         // it stops counting against the allowance.

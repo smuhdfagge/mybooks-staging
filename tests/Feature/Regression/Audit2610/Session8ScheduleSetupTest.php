@@ -13,6 +13,7 @@ use App\Models\ChartOfAccount;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Journal;
+use App\Models\Tenant;
 use App\Models\Vendor;
 use App\Services\Accounting\FinancialStatements;
 use App\Services\JournalService;
@@ -50,7 +51,7 @@ class Session8ScheduleSetupTest extends TestCase
     /** Ledger balance, natural sign, as the reports show it. */
     private function ledger(string $code): string
     {
-        $balance = app(FinancialStatements::class)->accountBalances($this->tenant->id, null, '2030-12-31')->firstWhere('account_code', $code)?->balance ?? 0;
+        $balance = Tenant::run($this->tenant, fn () => app(FinancialStatements::class)->accountBalances($this->tenant->id, null, '2030-12-31'))->firstWhere('account_code', $code)?->balance ?? 0;
 
         return number_format((float) $balance, 2, '.', '');
     }

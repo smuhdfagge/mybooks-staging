@@ -79,6 +79,14 @@ return [
     // Bank feeds (session 17). MyBooks holds one Mono account for all businesses.
     // Mono docs (checked 2026-10-09): https://docs.mono.co/docs/financial-data/connect-link
     // The secret key goes in the mono-sec-key header; test keys use the sandbox.
+    // Push notifications to the mobile app (mobile plan A2): the path to the
+    // Firebase project's service account JSON key, kept outside the
+    // repository. Unset, no push is sent. project_id defaults to the key's.
+    'fcm' => [
+        'credentials' => env('FCM_CREDENTIALS'),
+        'project_id' => env('FCM_PROJECT_ID'),
+    ],
+
     'mono' => [
         'secret_key' => env('MONO_SECRET_KEY'),
         // Only needed if the Connect widget is used instead of the hosted link.

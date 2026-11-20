@@ -64,9 +64,9 @@
                                     <input type="text" 
                                         x-model="search" 
                                         @click="open = true" 
-                                        @keydown.arrow-down.prevent="highlightedIndex = Math.min(highlightedIndex + 1, filteredItems.length - 1)"
-                                        @keydown.arrow-up.prevent="highlightedIndex = Math.max(highlightedIndex - 1, 0)"
-                                        @keydown.enter.prevent="if(filteredItems[highlightedIndex]) selectItem(filteredItems[highlightedIndex])"
+                                        @keydown.arrow-down.prevent="highlightedIndex = $math.min(highlightedIndex + 1, filteredItems.length - 1)"
+                                        @keydown.arrow-up.prevent="highlightedIndex = $math.max(highlightedIndex - 1, 0)"
+                                        @keydown.enter.prevent="filteredItems[highlightedIndex] && selectItem(filteredItems[highlightedIndex])"
                                         @keydown.escape="open = false"
                                         placeholder="Select Vendor (Optional)"
                                         class="form-control @error('vendor_id') border-red-500 @enderror">
@@ -209,6 +209,9 @@
                 }
             };
         }
+
+        // Registered for the CSP build of Alpine (audit MB-29), which can't call page globals.
+        document.addEventListener('alpine:init', () => Alpine.data('searchableSelect', searchableSelect));
     </script>
     @endpush
 </x-app-layout>

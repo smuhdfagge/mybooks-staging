@@ -7,6 +7,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\LazyCollection;
 
 class ReportExportService
 {
@@ -110,7 +111,8 @@ class ReportExportService
         return number_format((float) $value, $decimals, '.', '');
     }
 
-    public function exportToCsv(array $rows, array $headers = [])
+    /** @param  iterable<array<int, mixed>|object>  $rows  an array, or rows made as they are written (a large payroll export, audit MB-45) */
+    public function exportToCsv(iterable $rows, array $headers = [])
     {
         $filename = str_replace(' ', '_', strtolower($this->reportTitle ?? 'report')).'_'.now()->format('Y-m-d').'.csv';
 
@@ -422,7 +424,7 @@ class ReportExportService
 
         foreach ($byEmployee as $record) {
             $rows[] = [
-                $record['employee']->first_name.' '.$record['employee']->last_name,
+                $record['employee'] ? $record['employee']->first_name.' '.$record['employee']->last_name : 'Employee removed',
                 $record['employee']->employee_id ?? '',
                 $record['count'],
                 $this->money($record['gross'], 2),
@@ -468,22 +470,24 @@ class ReportExportService
      */
     public function employeeEarningsData($payrolls): array
     {
-        $rows = [];
-
-        foreach ($payrolls as $payroll) {
-            $rows[] = [
-                ($payroll->employee->first_name ?? '').' '.($payroll->employee->last_name ?? ''),
-                $payroll->employee->department->name ?? 'N/A',
-                $payroll->pay_date->format('Y-m-d'),
-                $this->money($payroll->basic_salary, 2),
-                $this->money($payroll->allowances, 2),
-                $this->money($payroll->overtime_amount, 2),
-                $this->money($payroll->gross_salary, 2),
-                $this->money($payroll->tax_deduction, 2),
-                $this->money($payroll->total_deductions, 2),
-                $this->money($payroll->net_salary, 2),
-            ];
-        }
+        // Made one at a time as the file is written: $payrolls may be a
+        // LazyCollection read in chunks (audit MB-45).
+        $rows = LazyCollection::make(function () use ($payrolls) {
+            foreach ($payrolls as $payroll) {
+                yield [
+                    ($payroll->employee->first_name ?? '').' '.($payroll->employee->last_name ?? ''),
+                    $payroll->employee->department->name ?? 'N/A',
+                    $payroll->pay_date->format('Y-m-d'),
+                    $this->money($payroll->basic_salary, 2),
+                    $this->money($payroll->allowances, 2),
+                    $this->money($payroll->overtime_amount, 2),
+                    $this->money($payroll->gross_salary, 2),
+                    $this->money($payroll->tax_deduction, 2),
+                    $this->money($payroll->total_deductions, 2),
+                    $this->money($payroll->net_salary, 2),
+                ];
+            }
+        });
 
         return [
             'headers' => ['Employee', 'Department', 'Pay Date', 'Basic Salary', 'Allowances', 'Overtime', 'Gross Salary', 'Tax', 'Total Deductions', 'Net Salary'],
@@ -496,25 +500,27 @@ class ReportExportService
      */
     public function payrollRegisterData($payrolls): array
     {
-        $rows = [];
-
-        foreach ($payrolls as $payroll) {
-            $rows[] = [
-                $payroll->payroll_number,
-                ($payroll->employee->first_name ?? '').' '.($payroll->employee->last_name ?? ''),
-                $payroll->employee->department->name ?? 'N/A',
-                $this->money($payroll->basic_salary, 2),
-                $this->money($payroll->allowances, 2),
-                $this->money($payroll->overtime_amount, 2),
-                $this->money($payroll->gross_salary, 2),
-                $this->money($payroll->tax_deduction, 2),
-                $this->money($payroll->other_deductions, 2),
-                $this->money($payroll->total_deductions, 2),
-                $this->money($payroll->net_salary, 2),
-                $this->money($payroll->employer_contributions, 2),
-                ucfirst($payroll->status),
-            ];
-        }
+        // Made one at a time as the file is written: $payrolls may be a
+        // LazyCollection read in chunks (audit MB-45).
+        $rows = LazyCollection::make(function () use ($payrolls) {
+            foreach ($payrolls as $payroll) {
+                yield [
+                    $payroll->payroll_number,
+                    ($payroll->employee->first_name ?? '').' '.($payroll->employee->last_name ?? ''),
+                    $payroll->employee->department->name ?? 'N/A',
+                    $this->money($payroll->basic_salary, 2),
+                    $this->money($payroll->allowances, 2),
+                    $this->money($payroll->overtime_amount, 2),
+                    $this->money($payroll->gross_salary, 2),
+                    $this->money($payroll->tax_deduction, 2),
+                    $this->money($payroll->other_deductions, 2),
+                    $this->money($payroll->total_deductions, 2),
+                    $this->money($payroll->net_salary, 2),
+                    $this->money($payroll->employer_contributions, 2),
+                    ucfirst($payroll->status),
+                ];
+            }
+        });
 
         return [
             'headers' => ['Payroll #', 'Employee', 'Department', 'Basic Salary', 'Allowances', 'Overtime', 'Gross Salary', 'Tax', 'Other Deductions', 'Total Deductions', 'Net Salary', 'Employer Contributions', 'Status'],
@@ -603,20 +609,22 @@ class ReportExportService
      */
     public function bankDisbursementData($payrolls): array
     {
-        $rows = [];
-
-        foreach ($payrolls as $payroll) {
-            $rows[] = [
-                $payroll->payroll_number,
-                ($payroll->employee->first_name ?? '').' '.($payroll->employee->last_name ?? ''),
-                $payroll->employee->employee_id ?? '',
-                '****'.substr($payroll->employee->bank_account_number ?? '0000', -4),
-                $payroll->employee->bank_name ?? 'N/A',
-                ucfirst(str_replace('_', ' ', $payroll->payment_method ?? 'N/A')),
-                $this->money($payroll->net_salary, 2),
-                ucfirst($payroll->status),
-            ];
-        }
+        // Made one at a time as the file is written: $payrolls may be a
+        // LazyCollection read in chunks (audit MB-45).
+        $rows = LazyCollection::make(function () use ($payrolls) {
+            foreach ($payrolls as $payroll) {
+                yield [
+                    $payroll->payroll_number,
+                    ($payroll->employee->first_name ?? '').' '.($payroll->employee->last_name ?? ''),
+                    $payroll->employee->employee_id ?? '',
+                    '****'.substr($payroll->employee->bank_account_number ?? '0000', -4),
+                    $payroll->employee->bank_name ?? 'N/A',
+                    ucfirst(str_replace('_', ' ', $payroll->payment_method ?? 'N/A')),
+                    $this->money($payroll->net_salary, 2),
+                    ucfirst($payroll->status),
+                ];
+            }
+        });
 
         return [
             'headers' => ['Payroll #', 'Employee', 'Employee ID', 'Bank Account', 'Bank Name', 'Payment Method', 'Net Amount', 'Status'],

@@ -35,10 +35,10 @@
                     <input type="hidden" name="item_id" :value="finished.id">
                     <input type="hidden" name="item_search" :value="finished.name">
                     <input type="text" id="finished-search" role="combobox" autocomplete="off" x-model="finished.name" :aria-expanded="finished.open ? 'true' : 'false'"
-                        @focus="finished.open = true; search(finished)" @input="finished.open = true; finished.id = ''" @input.debounce.300ms="search(finished)"
+                        @focus="$do(finished.open = true, search(finished))" @input="$do(finished.open = true, finished.id = '')" @input.debounce.300ms="search(finished)"
                         @keydown.escape="finished.open = false"
-                        @keydown.arrow-down.prevent="finished.highlighted = Math.min(finished.highlighted + 1, finished.results.length - 1)"
-                        @keydown.arrow-up.prevent="finished.highlighted = Math.max(finished.highlighted - 1, 0)"
+                        @keydown.arrow-down.prevent="finished.highlighted = $math.min(finished.highlighted + 1, finished.results.length - 1)"
+                        @keydown.arrow-up.prevent="finished.highlighted = $math.max(finished.highlighted - 1, 0)"
                         @keydown.enter.prevent="pickFinished(finished.results[finished.highlighted])"
                         placeholder="Search stock items, e.g. Layer feed 25kg bag" class="form-control {{ $errors->has('item_id') ? 'border-red-500' : '' }}">
                     <div x-show="finished.open" x-cloak @click.outside="finished.open = false" role="listbox"
@@ -97,16 +97,16 @@
                         <tr>
                             <td data-label="Item" data-cell="main">
                                 <div class="relative">
-                                    <input type="hidden" :name="`components[${index}][item_id]`" :value="line.item_id">
-                                    <input type="hidden" :name="`components[${index}][itemSearch]`" :value="line.itemSearch">
-                                    <input type="hidden" :name="`components[${index}][unit]`" :value="line.unit">
-                                    <input type="hidden" :name="`components[${index}][cost]`" :value="line.cost">
+                                    <input type="hidden" :name="'components[' + index + '][item_id]'" :value="line.item_id">
+                                    <input type="hidden" :name="'components[' + index + '][itemSearch]'" :value="line.itemSearch">
+                                    <input type="hidden" :name="'components[' + index + '][unit]'" :value="line.unit">
+                                    <input type="hidden" :name="'components[' + index + '][cost]'" :value="line.cost">
                                     <input type="text" role="combobox" aria-label="Component" autocomplete="off" x-model="line.itemSearch"
                                         :aria-expanded="line.open ? 'true' : 'false'"
-                                        @focus="line.open = true; search(line)" @input="line.open = true; line.item_id = ''" @input.debounce.300ms="search(line)"
+                                        @focus="$do(line.open = true, search(line))" @input="$do(line.open = true, line.item_id = '')" @input.debounce.300ms="search(line)"
                                         @keydown.escape="line.open = false"
-                                        @keydown.arrow-down.prevent="line.highlighted = Math.min(line.highlighted + 1, line.results.length - 1)"
-                                        @keydown.arrow-up.prevent="line.highlighted = Math.max(line.highlighted - 1, 0)"
+                                        @keydown.arrow-down.prevent="line.highlighted = $math.min(line.highlighted + 1, line.results.length - 1)"
+                                        @keydown.arrow-up.prevent="line.highlighted = $math.max(line.highlighted - 1, 0)"
                                         @keydown.enter.prevent="pick(line, line.results[line.highlighted])"
                                         placeholder="Search stock items..." class="form-control text-sm">
                                     <div x-show="line.open" x-cloak @click.outside="line.open = false" role="listbox"
@@ -119,18 +119,18 @@
                                         <div x-show="line.results.length === 0" class="py-2 px-3 text-gray-500 dark:text-gray-400">No stock items found</div>
                                     </div>
                                 </div>
-                                <p class="form-error" x-show="errors[`components.${index}.item_id`]" x-text="errors[`components.${index}.item_id`]"></p>
+                                <p class="form-error" x-show="errors['components.' + index + '.item_id']" x-text="errors['components.' + index + '.item_id']"></p>
                             </td>
                             <td data-label="Quantity">
                                 <div class="flex items-center gap-1">
-                                    <input aria-label="Quantity per batch" type="number" :name="`components[${index}][quantity]`" x-model.number="line.quantity" min="0" step="any" inputmode="decimal" class="form-control text-sm">
+                                    <input aria-label="Quantity per batch" type="number" :name="'components[' + index + '][quantity]'" x-model.number="line.quantity" min="0" step="any" inputmode="decimal" class="form-control text-sm">
                                     <span class="text-xs text-gray-500 dark:text-gray-400" x-text="line.unit"></span>
                                 </div>
-                                <p class="form-error" x-show="errors[`components.${index}.quantity`]" x-text="errors[`components.${index}.quantity`]"></p>
+                                <p class="form-error" x-show="errors['components.' + index + '.quantity']" x-text="errors['components.' + index + '.quantity']"></p>
                             </td>
                             <td data-label="Wastage %">
-                                <input aria-label="Wastage percent" type="number" :name="`components[${index}][waste_percentage]`" x-model.number="line.waste_percentage" min="0" max="100" step="any" inputmode="decimal" class="form-control text-sm">
-                                <p class="form-error" x-show="errors[`components.${index}.waste_percentage`]" x-text="errors[`components.${index}.waste_percentage`]"></p>
+                                <input aria-label="Wastage percent" type="number" :name="'components[' + index + '][waste_percentage]'" x-model.number="line.waste_percentage" min="0" max="100" step="any" inputmode="decimal" class="form-control text-sm">
+                                <p class="form-error" x-show="errors['components.' + index + '.waste_percentage']" x-text="errors['components.' + index + '.waste_percentage']"></p>
                             </td>
                             <td class="num" data-label="Est. cost" x-text="money(lineCost(line))"></td>
                             <td class="text-center" data-cell="actions">
@@ -151,23 +151,23 @@
                 <template x-for="(cost, index) in costs" :key="cost.key">
                     <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-start border-b border-gray-200 dark:border-gray-700 pb-3">
                         <div class="sm:col-span-4">
-                            <label class="sr-only" :for="`cost-desc-${index}`">Description</label>
-                            <input type="text" :id="`cost-desc-${index}`" :name="`costs[${index}][description]`" x-model="cost.description" placeholder="e.g. Labour" maxlength="255" class="form-control text-sm">
-                            <p class="form-error" x-show="errors[`costs.${index}.description`]" x-text="errors[`costs.${index}.description`]"></p>
+                            <label class="sr-only" :for="'cost-desc-' + index">Description</label>
+                            <input type="text" :id="'cost-desc-' + index" :name="'costs[' + index + '][description]'" x-model="cost.description" placeholder="e.g. Labour" maxlength="255" class="form-control text-sm">
+                            <p class="form-error" x-show="errors['costs.' + index + '.description']" x-text="errors['costs.' + index + '.description']"></p>
                         </div>
                         <div class="sm:col-span-3">
-                            <label class="sr-only" :for="`cost-amount-${index}`">Amount per batch</label>
-                            <input type="number" :id="`cost-amount-${index}`" :name="`costs[${index}][amount]`" x-model.number="cost.amount" min="0" step="0.01" inputmode="decimal" placeholder="Amount per batch" class="form-control text-sm">
-                            <p class="form-error" x-show="errors[`costs.${index}.amount`]" x-text="errors[`costs.${index}.amount`]"></p>
+                            <label class="sr-only" :for="'cost-amount-' + index">Amount per batch</label>
+                            <input type="number" :id="'cost-amount-' + index" :name="'costs[' + index + '][amount]'" x-model.number="cost.amount" min="0" step="0.01" inputmode="decimal" placeholder="Amount per batch" class="form-control text-sm">
+                            <p class="form-error" x-show="errors['costs.' + index + '.amount']" x-text="errors['costs.' + index + '.amount']"></p>
                         </div>
                         <div class="sm:col-span-4">
-                            <label class="sr-only" :for="`cost-account-${index}`">Account to credit</label>
-                            <select :id="`cost-account-${index}`" :name="`costs[${index}][account_id]`" x-model="cost.account_id" class="form-control text-sm">
+                            <label class="sr-only" :for="'cost-account-' + index">Account to credit</label>
+                            <select :id="'cost-account-' + index" :name="'costs[' + index + '][account_id]'" x-model="cost.account_id" class="form-control text-sm">
                                 @foreach($accounts as $account)
                                     <option value="{{ $account->id }}">{{ $account->account_code }} {{ $account->name }}</option>
                                 @endforeach
                             </select>
-                            <p class="form-error" x-show="errors[`costs.${index}.account_id`]" x-text="errors[`costs.${index}.account_id`]"></p>
+                            <p class="form-error" x-show="errors['costs.' + index + '.account_id']" x-text="errors['costs.' + index + '.account_id']"></p>
                         </div>
                         <div class="sm:col-span-1 text-right">
                             <button type="button" @click="costs.splice(index, 1)" class="text-red-600 hover:text-red-800 dark:text-red-300 text-sm py-2" aria-label="Remove cost">Remove</button>
@@ -242,6 +242,9 @@
                 money(value) { return @jsText(\App\Support\Money::symbol()) + Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
             };
         }
+
+        // Registered for the CSP build of Alpine (audit MB-29), which can't call page globals.
+        document.addEventListener('alpine:init', () => Alpine.data('bomForm', bomForm));
     </script>
     @endpush
 @endonce

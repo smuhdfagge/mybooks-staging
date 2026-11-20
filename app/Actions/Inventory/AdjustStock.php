@@ -126,8 +126,9 @@ class AdjustStock
                     ->forceFill(['received_date' => $date])->save();
                 $value = round($change * $cost, 2);
             } elseif ($change < 0) {
-                // Out of the cost layers at FIFO / average, recorded against this row.
-                $value = $this->valuation->issue($item, -$change, InventoryHistory::class, $history->id, false, $warehouseId);
+                // Out of the cost layers at FIFO / average, recorded against this
+                // row. Stock with no cost layer (MB-31) goes out at no cost.
+                $value = $this->valuation->issue($item, -$change, InventoryHistory::class, $history->id, false, $warehouseId, uncostedAtZero: true);
             }
 
             $inventory->quantity = round((float) $inventory->quantity + $change, 4);

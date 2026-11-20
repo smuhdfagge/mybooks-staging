@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\FixedAsset;
+use App\Models\Tenant;
 use App\Services\DepreciationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -31,14 +32,13 @@ class RunBulkDepreciation implements ShouldQueue
             ? Carbon::parse($this->depreciationDate)
             : now();
 
-        FixedAsset::withoutGlobalScopes()
-            ->where('tenant_id', $this->tenantId)
+        Tenant::run($this->tenantId, fn () => FixedAsset::query()
             ->where('status', 'active')
             ->whereColumn('book_value', '>', 'salvage_value')
             ->each(function (FixedAsset $asset) use ($service, $date) {
                 DB::transaction(function () use ($service, $asset, $date) {
                     $service->recordDepreciation($asset, $date);
                 });
-            });
+            }));
     }
 }

@@ -1,4 +1,4 @@
-<div class="flex flex-col lg:flex-row gap-6" x-data="invoiceTemplateEditor()" x-init="init()">
+<div class="flex flex-col lg:flex-row gap-6" x-data>
     {{-- Left Panel: Settings --}}
     <div class="w-full lg:w-96 flex-shrink-0">
         <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg overflow-hidden sticky top-6">
@@ -225,13 +225,3 @@
         </div>
     </div>
 </div>
-
-@script
-<script>
-    Alpine.data('invoiceTemplateEditor', () => ({
-        init() {
-            // The preview updates automatically via Livewire re-render
-        }
-    }));
-</script>
-@endscript

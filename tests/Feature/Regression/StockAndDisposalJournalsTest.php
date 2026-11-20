@@ -335,9 +335,10 @@ class StockAndDisposalJournalsTest extends TestCase
             'original_filename' => 'items.csv', 'file_path' => $path, 'file_size' => strlen($csv),
         ]);
 
-        // As a queue worker would: nobody signed in.
+        // As a queue worker would: nobody signed in, the import's own
+        // business set (ProcessImport runs it as its user, audit MB-26).
         auth()->forgetGuards();
-        $this->assertTrue(app(ImportService::class)->processImport($import));
+        $this->assertTrue(Tenant::run($this->tenant, fn () => app(ImportService::class)->processImport($import)));
         $this->actingAs($this->user);
 
         $item = Item::where('name', 'Groundnut')->sole();
@@ -450,14 +451,14 @@ class StockAndDisposalJournalsTest extends TestCase
         Inventory::where('item_id', $this->maize->id)->decrement('quantity', 1);
         app(StockValuationService::class)->consumeStock($this->maize, 1);
         $this->lockUpTo('2026-09-25');
-        $before = Journal::count();
+        $before = Journal::withoutGlobalScopes()->count();
         auth()->forgetGuards();
 
         $this->artisan('stock:post-missing-adjustment-journals', ['--dry-run' => true])
             ->expectsOutputToContain('Stock adjustment')->doesntExpectOutputToContain('posted late')
             ->expectsOutputToContain('Would post 3 journal(s); 1 skipped')
             ->assertSuccessful();
-        $this->assertSame($before, Journal::count());
+        $this->assertSame($before, Journal::withoutGlobalScopes()->count());
 
         $this->artisan('stock:post-missing-adjustment-journals')->expectsOutputToContain('Posted 3 journal(s); 1 skipped')->assertSuccessful();
         $this->artisan('stock:post-missing-adjustment-journals')->expectsOutputToContain('Posted 0 journal(s); 1 skipped')->assertSuccessful();
@@ -487,11 +488,13 @@ class StockAndDisposalJournalsTest extends TestCase
             Item::factory()->product()->create(['tenant_id' => $other->id, 'name' => 'Their groundnut', 'track_inventory' => true, 'cost_price' => 200]),
         ]);
         auth()->forgetGuards();
-        app(StockValuationService::class)->addLayer($other->id, $theirSoya->id, 50, 500, Warehouse::defaultIdFor($other->id), 'bill');
-        $row = new Inventory(['tenant_id' => $other->id, 'item_id' => $theirSoya->id, 'warehouse_id' => Warehouse::defaultIdFor($other->id), 'quantity' => 50, 'reserved_quantity' => 0, 'unit_cost' => 500]);
-        $row->skipTenantGuard = true;
-        $row->save();
-        $this->oldStyleAdjustments($other->id, $theirSoya, $theirGroundnut);
+        Tenant::run($other, function () use ($other, $theirSoya, $theirGroundnut) {
+            app(StockValuationService::class)->addLayer($other->id, $theirSoya->id, 50, 500, Warehouse::defaultIdFor($other->id), 'bill');
+            $row = new Inventory(['tenant_id' => $other->id, 'item_id' => $theirSoya->id, 'warehouse_id' => Warehouse::defaultIdFor($other->id), 'quantity' => 50, 'reserved_quantity' => 0, 'unit_cost' => 500]);
+            $row->skipTenantGuard = true;
+            $row->save();
+            $this->oldStyleAdjustments($other->id, $theirSoya, $theirGroundnut);
+        });
 
         $this->artisan('stock:post-missing-adjustment-journals', ['--tenant' => $other->id])->expectsOutputToContain('Posted 3 journal(s)')->assertSuccessful();
         $this->assertSame(0, Journal::withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->where('reference_type', InventoryHistory::class)->count());

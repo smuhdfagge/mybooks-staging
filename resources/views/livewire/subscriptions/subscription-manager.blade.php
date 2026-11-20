@@ -30,6 +30,13 @@
             </div>
             <div class="p-6">
                 @if($currentSubscription && $currentPlan)
+                    @php $onTrial = $currentSubscription->onTrial(); @endphp
+                    @if($onTrial)
+                        <div class="mb-6 rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-900 dark:border-brand-800 dark:bg-brand-900/30 dark:text-brand-100" data-testid="trial-notice">
+                            You're on a free trial of the {{ $currentPlan->name }} plan until {{ $currentSubscription->ends_at->format('M d, Y') }}. No card is needed for it.
+                            Pay any time to keep using MyBooks after that; the days left of your trial are kept. Everything you enter now stays.
+                        </div>
+                    @endif
                     <div class="flex flex-col md:flex-row md:items-center md:justify-between">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
@@ -43,13 +50,14 @@
                                 <h4 class="text-xl font-bold text-gray-900 dark:text-white">{{ $currentPlan->name }} Plan</h4>
                                 <div class="flex items-center mt-1">
                                     <span class="px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                        @if($currentSubscription->isCancelled()) bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
+                                        @if($onTrial) bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200
+                                        @elseif($currentSubscription->isCancelled()) bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
                                         @elseif($currentSubscription->status === 'active') bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
                                         @elseif($currentSubscription->status === 'cancelled') bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
                                         @elseif($currentSubscription->status === 'past_due') bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
                                         @else bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200
                                         @endif">
-                                        {{ $currentSubscription->isCancelled() ? 'Cancelled' : ucfirst(str_replace('_', ' ', $currentSubscription->status)) }}
+                                        {{ $onTrial ? 'Free trial' : ($currentSubscription->isCancelled() ? 'Cancelled' : ucfirst(str_replace('_', ' ', $currentSubscription->status))) }}
                                     </span>
                                     <span class="mx-2 text-gray-500 dark:text-gray-400">•</span>
                                     <span class="text-sm text-gray-600 dark:text-gray-400">{{ ucfirst($currentSubscription->billing_cycle) }} billing</span>
@@ -74,7 +82,9 @@
                             </div>
                             <div>
                                 <div class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    @if($currentSubscription->isCancelled())
+                                    @if($onTrial)
+                                        Trial Ends
+                                    @elseif($currentSubscription->isCancelled())
                                         Access Until
                                     @else
                                         Next Billing Date
@@ -91,7 +101,11 @@
 
                     @if($canManage)
                     <div class="mt-6 flex flex-wrap gap-3">
-                        @if($currentSubscription->ends_at && (float) $currentSubscription->amount > 0)
+                        @if($onTrial && $currentPlan->is_active)
+                        <button wire:click="renew" wire:loading.attr="disabled" class="btn-primary">
+                            Pay now: ₦{{ number_format((float) $currentSubscription->amount) }} a {{ $currentSubscription->billing_cycle === 'annual' ? 'year' : 'month' }}
+                        </button>
+                        @elseif(! $onTrial && $currentSubscription->ends_at && (float) $currentSubscription->amount > 0)
                         <button wire:click="renew" wire:loading.attr="disabled" class="btn-primary">
                             Pay for another {{ $currentSubscription->billing_cycle === 'annual' ? 'year' : 'month' }}
                         </button>
@@ -102,7 +116,9 @@
                             </svg>
                             Change Plan
                         </button>
-                        @if($currentSubscription->isCancelled())
+                        @if($onTrial)
+                            {{-- Nothing to cancel: a trial that isn't paid for just ends. --}}
+                        @elseif($currentSubscription->isCancelled())
                             <button wire:click="reactivateSubscription" class="btn-primary">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
@@ -133,9 +149,13 @@
                                 (₦{{ number_format((float) $pendingSubscription->amount, 2) }}). Pay to start using MyBooks.
                             </p>
                         @elseif($lapsedSubscription)
-                            <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Your subscription has ended</h3>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ $lapsedSubscription->isUnpaidTrial() ? 'Your free trial has ended' : 'Your subscription has ended' }}</h3>
                             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                @if($lapsedSubscription->isUnpaidTrial())
+                                Your free trial of the {{ $lapsedSubscription->plan?->name }} plan ended{{ $lapsedSubscription->ends_at ? ' on '.$lapsedSubscription->ends_at->format('M d, Y') : '' }}. Everything you entered is safe; pay for the plan to carry on.
+                                @else
                                 Your {{ $lapsedSubscription->plan?->name }} plan ended{{ $lapsedSubscription->ends_at ? ' on '.$lapsedSubscription->ends_at->format('M d, Y') : '' }}. Your data is safe; renew to get back in.
+                                @endif
                             </p>
                         @else
                             <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No active subscription</h3>
@@ -148,7 +168,7 @@
                             </button>
                             @elseif($canManage && $lapsedSubscription?->plan?->is_active)
                             <button wire:click="renew" wire:loading.attr="disabled" class="btn-primary">
-                                Renew {{ $lapsedSubscription->plan->name }}
+                                {{ $lapsedSubscription->isUnpaidTrial() ? 'Pay for' : 'Renew' }} {{ $lapsedSubscription->plan->name }}
                             </button>
                             @endif
                             @if($canManage)

@@ -266,7 +266,7 @@ class LockDatesTest extends TestCase
         auth()->forgetGuards();
         $this->artisan('journals:post-reversals')->assertSuccessful();
 
-        $reversal = $journal->fresh()->autoReversal;
+        $reversal = Tenant::run($this->tenant, fn () => $journal->fresh()->autoReversal);
         $this->assertNotNull($reversal);
         $this->assertSame('2026-10-01', $reversal->journal_date->toDateString());
         $this->assertStringContainsString('due 1 Sep 2026, but the books are locked up to 30 Sep 2026, so posted on 1 Oct 2026', $reversal->description);

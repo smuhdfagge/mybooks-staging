@@ -7,6 +7,7 @@ use App\Models\Bank;
 use App\Models\BankFeedConnection;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\TenantContext;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -111,6 +112,11 @@ class BankFeedLinker
         if (! $connection) {
             return null;
         }
+        // From Mono's webhook nobody is signed in: the link is finished in
+        // its own business (audit MB-26).
+        if (TenantContext::id() !== (int) $connection->tenant_id) {
+            return Tenant::run($connection->tenant_id, fn () => $this->completeLocked($ref, $code, $accountId));
+        }
         $provider = $this->providers->for($connection->provider);
 
         // Logging in again: the account is the same, it just works again.
@@ -163,6 +169,7 @@ class BankFeedLinker
                     'current_balance' => 0,
                     'is_active' => true,
                 ]);
+                $bank->openLedgerAccount(); // its own ledger account, to reconcile the feed against (MB-38)
             }
             $this->assertFree($bank, $connection->id);
 

@@ -26,6 +26,9 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         @include('partials.theme-init')
+        @guest
+            @include('partials.clear-drafts', ['now' => true])
+        @endguest
         @php
             $fullTitle = $title ? $title.' · MyBooks' : 'MyBooks';
             // Built from APP_URL, not from the request, so the same page

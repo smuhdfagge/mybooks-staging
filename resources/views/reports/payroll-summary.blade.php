@@ -3,7 +3,6 @@
     $from = \Carbon\Carbon::parse($startDate)->format('j M Y');
     $to = \Carbon\Carbon::parse($endDate)->format('j M Y');
     $name = fn ($e) => $e ? trim($e->first_name.' '.$e->last_name) : 'Employee removed';
-    $byEmployee = $byEmployee->sortByDesc('gross')->values();
 @endphp
 <x-app-layout>
     <x-slot name="header">
@@ -24,7 +23,7 @@
             <x-report.stat label="Gross pay" :value="\App\Support\Figure::show($totalGross)" />
             <x-report.stat label="Deductions" :value="\App\Support\Figure::show($totalDeductions)" />
             <x-report.stat label="Net pay" :value="\App\Support\Figure::show($totalNet)" />
-            <x-report.stat label="Employees paid" :value="number_format($byEmployee->count())" :hint="number_format($payrolls->count()).' payslips'" />
+            <x-report.stat label="Employees paid" :value="number_format($employeeCount)" :hint="number_format($payslipCount).' payslips'" />
         </x-report.stats>
 
         @if ($byEmployee->isEmpty())
@@ -57,13 +56,14 @@
                 <x-slot name="foot">
                     <tr>
                         <td>Total</td>
-                        <td class="num hidden sm:table-cell">{{ number_format($payrolls->count()) }}</td>
+                        <td class="num hidden sm:table-cell">{{ number_format($payslipCount) }}</td>
                         <td class="num hidden sm:table-cell">@fig($totalGross)</td>
                         <td class="num hidden sm:table-cell">@fig($totalDeductions)</td>
                         <td class="num">@fig($totalNet)</td>
                     </tr>
                 </x-slot>
             </x-table>
+            {{ $byEmployee->links() }}
         @endif
     </x-report.sheet>
 </x-app-layout>

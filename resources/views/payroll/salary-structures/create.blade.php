@@ -157,7 +157,7 @@
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div>
                                 <span class="text-gray-500 dark:text-gray-400">Basic Salary</span>
-                                <p class="font-semibold text-gray-900 dark:text-gray-100" x-text="formatCurrency(parseFloat(basicSalary) || 0)"></p>
+                                <p class="font-semibold text-gray-900 dark:text-gray-100" x-text="formatCurrency($float(basicSalary) || 0)"></p>
                             </div>
                             <div>
                                 <span class="text-gray-500 dark:text-gray-400">Total Allowances</span>
@@ -169,7 +169,7 @@
                             </div>
                             <div>
                                 <span class="text-gray-500 dark:text-gray-400">Total Deductions</span>
-                                <p class="font-semibold text-red-600 dark:text-red-300" x-text="'-' + formatCurrency(totalDeductions())"></p>
+                                <p class="font-semibold text-red-600 dark:text-red-300" x-text="totalDeductions() > 0 ? '-' + formatCurrency(totalDeductions()) : formatCurrency(0)"></p>
                             </div>
                         </div>
                         <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
@@ -265,6 +265,9 @@
                 }
             }
         }
+
+        // Registered for the CSP build of Alpine (audit MB-29), which can't call page globals.
+        document.addEventListener('alpine:init', () => Alpine.data('salaryStructureForm', salaryStructureForm));
     </script>
     @endpush
 </x-app-layout>

@@ -14,6 +14,7 @@ use App\Models\Item;
 use App\Models\Journal;
 use App\Models\Vendor;
 use App\Services\ImportService;
+use App\Services\StockValuationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -92,6 +93,8 @@ class DocumentImportTest extends TestCase
             'reserved_quantity' => 0,
             'unit_cost' => 800,
         ]);
+        // With its cost, as stock received is (audit MB-31).
+        app(StockValuationService::class)->addLayer($this->user->tenant_id, $item->id, $quantity, 800);
 
         return $item;
     }
