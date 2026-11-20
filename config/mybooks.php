@@ -33,6 +33,15 @@ return [
     // and test copies so their traffic does not land in the real figures.
     'google_analytics_id' => env('MYBOOKS_GA_MEASUREMENT_ID', ''),
 
+    // Mobile app version policy. Staging permits the current 0.1.0 app while
+    // advertising 1.0.0 as an optional update.
+    'mobile_app' => [
+        'min_version' => env('MYBOOKS_MOBILE_APP_MIN_VERSION', '0.1.0'),
+        'latest_version' => env('MYBOOKS_MOBILE_APP_LATEST_VERSION', '1.0.0'),
+        'ios_store_url' => env('MYBOOKS_MOBILE_APP_IOS_STORE_URL') ?: null,
+        'android_store_url' => env('MYBOOKS_MOBILE_APP_ANDROID_STORE_URL') ?: null,
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | HSTS (finding L10)

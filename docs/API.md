@@ -10,6 +10,34 @@ The MyBooks API provides a RESTful interface for mobile applications to interact
 https://mybooks.cloud/api/v1
 ```
 
+## Mobile app version
+
+The app checks this public endpoint before opening. It does not require
+authentication.
+
+**Endpoint:** `GET /app/version`
+
+The version policy is configured with `MYBOOKS_MOBILE_APP_MIN_VERSION`,
+`MYBOOKS_MOBILE_APP_LATEST_VERSION`, `MYBOOKS_MOBILE_APP_IOS_STORE_URL` and
+`MYBOOKS_MOBILE_APP_ANDROID_STORE_URL`. The staging defaults permit version
+`0.1.0` and advertise `1.0.0` as an optional update; production should set the
+minimum to its supported release.
+
+**Response:**
+
+```json
+{
+    "success": true,
+    "message": "Success",
+    "data": {
+        "min_version": "0.1.0",
+        "latest_version": "1.0.0",
+        "ios_store_url": null,
+        "android_store_url": null
+    }
+}
+```
+
 ## Authentication
 
 ### Login

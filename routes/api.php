@@ -58,6 +58,15 @@ Route::prefix('v1')->group(function () {
         ], $result['healthy'] ? 200 : 503);
     })->middleware('throttle:api-read')->name('api.health');
 
+    // Public mobile version policy (the client checks this before opening).
+    Route::get('app/version', function () {
+        return response()->json([
+            'success' => true,
+            'message' => 'Success',
+            'data' => config('mybooks.mobile_app'),
+        ]);
+    })->middleware('throttle:api-read')->name('api.app.version');
+
     // Authentication (with rate limiting for login)
     Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:auth-sensitive');
 

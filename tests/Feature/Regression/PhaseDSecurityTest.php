@@ -381,7 +381,7 @@ class PhaseDSecurityTest extends TestCase
     /** The session value another device holds for this user. */
     private function sessionFingerprint(User $user): string
     {
-        return Auth::guard('web')->hashPasswordForCookie($user->fresh()->getAuthPassword());
+        return $user->fresh()->getAuthPassword();
     }
 
     /** Pretend to be the user's other browser, signed in before the change. */
