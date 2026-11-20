@@ -105,6 +105,8 @@ Route::prefix('v1')->group(function () {
             Route::post('refresh', [AuthController::class, 'refresh']);
             Route::put('profile', [AuthController::class, 'updateProfile']);
             Route::put('password', [AuthController::class, 'updatePassword']);
+            // Deleting one's own account works without a subscription too.
+            Route::delete('account', [AuthController::class, 'deleteAccount'])->middleware('throttle:api-write')->name('api.auth.account.destroy');
         });
 
         // Phones for push notifications (mobile plan A2): the signed-in

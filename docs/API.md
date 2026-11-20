@@ -119,6 +119,28 @@ The same `modules` comes back in `user` on sign-in.
 
 ---
 
+### Delete Account
+
+**Endpoint:** `DELETE /auth/account`
+
+Deletes the signed-in user's own account, as the profile page does; the
+mobile app's "Delete my account" (the App Store and Google Play require it).
+Works without an active subscription.
+
+```json
+{
+    "password": "current-password"
+}
+```
+
+The user, every API token (every phone is signed out) and their push
+devices are deleted; the business's books stay. A wrong password is `422`
+with `errors.password`. The business's last active admin gets `422` with
+`errors.account`: make another user an admin first, or close the
+organisation from Settings.
+
+---
+
 ## Dashboard
 
 ### Get Dashboard Summary

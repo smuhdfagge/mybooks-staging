@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Auth\DeleteUserAccount;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\ActivityLog;
 use App\Models\User;
@@ -12,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -65,16 +67,14 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
-        // The last admin can't leave the business with nobody to run it (O7).
-        if ($user->isLastActiveAdmin()) {
-            return Redirect::route('profile.edit')->withErrors([
-                'password' => 'You are the only admin of this business. Make another user an admin first, or close the organisation from Settings.',
-            ], 'userDeletion');
+        // Same rules and clean-up as the app's DELETE /auth/account.
+        try {
+            app(DeleteUserAccount::class)->handle($user);
+        } catch (ValidationException $e) {
+            return Redirect::route('profile.edit')->withErrors($e->errors(), 'userDeletion');
         }
 
         Auth::logout();
-
-        $user->delete();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

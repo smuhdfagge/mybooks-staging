@@ -15,6 +15,7 @@ class CheckSubscription
         'profile.edit',
         'profile.update',
         'profile.destroy',
+        'api.auth.account.destroy', // the app's Delete my account (store rules)
         'settings.subscription',
         'settings.close-organisation', // an owner can close even when unpaid (O7)
         'logout',

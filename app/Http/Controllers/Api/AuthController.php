@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Auth\DeleteUserAccount;
 use App\Actions\Auth\SignOutOtherSessions;
 use App\Http\Resources\UserResource;
 use App\Models\User;
@@ -197,6 +198,34 @@ class AuthController extends BaseApiController
         $user->load(['tenant', 'roles', 'permissions']);
 
         return $this->success(new UserResource($user), 'Profile updated successfully');
+    }
+
+    /**
+     * Delete the signed-in user's own account (the App Store and Google Play
+     * require it in an app with sign-up). Needs the password, as on the
+     * profile page; refused for the business's last active admin. Every
+     * token goes with the account, so every phone is signed out.
+     */
+    public function deleteAccount(Request $request, DeleteUserAccount $delete): JsonResponse
+    {
+        $request->validate([
+            'password' => 'required|string',
+        ]);
+
+        $user = $request->user();
+        if (! Hash::check($request->password, $user->password)) {
+            return $this->validationError([
+                'password' => ['The password is incorrect.'],
+            ]);
+        }
+
+        try {
+            $delete->handle($user);
+        } catch (ValidationException) {
+            return $this->error(DeleteUserAccount::LAST_ADMIN, 422, ['account' => [DeleteUserAccount::LAST_ADMIN]]);
+        }
+
+        return $this->success(null, 'Your account has been deleted.');
     }
 
     /**
